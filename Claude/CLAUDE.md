@@ -240,7 +240,7 @@ These determine:
 | Tier | Description | Features | Cost |
 |------|-------------|----------|------|
 | **Tier 0** | Base opensource | All core features, limited to 10 onboarding resets | Free |
-| **Tier 1** | Reserved | Future | TBD |
+| **Tier 1** | Mobile App | Future | centralize backend data and reporting |
 | **Tier 2** | App integration | Additional apps installed | TBD |
 | **Tier 3** | Premium subscription | Unlimited resets, cloud sync | Paid |
 | **Tier 4** | Enterprise | Fleet management | Paid |
