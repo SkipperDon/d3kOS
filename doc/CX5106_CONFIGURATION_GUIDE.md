@@ -16,6 +16,16 @@ The CX5106 is an analog-to-NMEA2000 engine gateway that converts analog engine s
 
 The CX5106 has **8 DIP switches** that control how it operates and what PGNs it outputs.
 
+### Physical DIP Switch Location
+
+**Visual Reference:**
+
+![CX5106 DIP Switches](../../assets/images/cx5106_10125.png)
+
+*Photo showing the actual CX5106 DIP switch locations on the device*
+
+The DIP switches are located on the side of the CX5106 unit and are clearly labeled 1-8 from left to right.
+
 ### DIP Switch Functions
 
 Based on the CX5106 manual analysis:
@@ -243,6 +253,12 @@ Display clear diagram showing:
 - Which switches to set DOWN (OFF)
 - Physical location on CX5106 unit
 - Photo/diagram of actual hardware
+
+**Hardware Reference Photo:**
+
+![CX5106 DIP Switches](../../assets/images/cx5106_10125.png)
+
+*Use this photo to locate the DIP switches on your CX5106 unit*
 
 **Step 4: Verification Prompt**
 ```
