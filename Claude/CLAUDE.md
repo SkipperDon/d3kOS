@@ -1,7 +1,8 @@
 # CLAUDE.md - AI Assistant Guidelines for Helm-OS Development
 ## Version 2.0
 
-**Last Updated**: February 5, 2026  
+**Last Updated**: February 6, 2026
+**Changes from v2.0**: Added CX5106 second row DIP switch documentation, expanded to 15-question wizard, regional tank sensor standards
 **Changes from v1.0**: Added voice assistant details, updated licensing tiers, API specifications, hardware requirements
 
 ---
@@ -30,7 +31,7 @@ This document provides guidelines for AI assistants (like Claude, ChatGPT, Copil
 
 Helm-OS is a **pre-built Raspberry Pi 4B marine intelligence platform** that provides:
 - NMEA2000 integration via PiCAN-M HAT
-- AI-assisted onboarding wizard (13-question engine configuration)
+- AI-assisted onboarding wizard (15-question engine configuration)
 - CX5106 engine gateway configuration
 - Real-time vessel monitoring
 - **Offline voice assistant** ("Helm")
@@ -502,9 +503,11 @@ Tier 3 (Paid Annual)
 - **Onboarding Wizard**
   - Operator setup
   - Boat identity & multi-boat support
-  - Engine configuration (13-question wizard)
+  - Engine configuration (15-question wizard)
   - CX5106 engine gateway setup
-  - DIP switch calculation & visual guidance
+  - DIP switch calculation & visual guidance (both rows)
+  - Regional tank sensor configuration (American vs European)
+  - Engine position designation (single/port/starboard)
   - Chartplotter detection & OpenCPN installation
   - QR code generation (for app pairing)
   
@@ -691,11 +694,15 @@ Tier 3 (Paid Annual)
 The CX5106 engine gateway is a **core component** of Helm-OS. AI assistants working on CX5106-related features MUST:
 
 1. **Read**: `CX5106_CONFIGURATION_GUIDE.md` and `CX5106_USER_MANUAL.md`
-2. **Understand**: DIP switch logic (8 switches control instance, RPM source, cylinders, stroke, gear ratio)
-3. **Reference**: The 13-question engine wizard that determines DIP settings
+2. **Understand**: DIP switch logic for **BOTH ROWS**:
+   - **First Row (8 switches)**: Engine instance, RPM source, cylinders, stroke, gear ratio
+   - **Second Row (2 switches)**: Tank sensor standard (American/European), Engine position (Port/Starboard)
+3. **Reference**: The 15-question engine wizard that determines DIP settings
 4. **Remember**: Non-standard gear ratios (like 1.5:1 Bravo II) require correction factors
+5. **Regional Settings**: North American boats use 240-33Ω tank senders, European boats use 0-190Ω
+6. **Single Engine Assumption**: Single engine boats default to Port/Primary designation (Second Row Switch "2" = OFF)
 
-### 13-Question Engine Wizard
+### 15-Question Engine Wizard
 
 The wizard asks these questions (in order):
 
@@ -720,12 +727,167 @@ The wizard asks these questions (in order):
 12. What is the maximum coolant temperature?
 13. What is the minimum safe oil pressure at idle and cruise?
 
+**REGIONAL & MULTI-ENGINE SETTINGS (NEW)**:
+14. **Tank Sensor Standard (Regional Setting)**: What region is your boat from, or what type of tank level sensors does it use?
+    - North America / United States / Canada (240-33Ω senders)
+    - Europe / International (0-190Ω senders)
+    - I don't know (AI suggests based on boat origin)
+    - **Maps to**: CX5106 Second Row Switch "1"
+    - **Critical**: Wrong setting causes inverted tank readings (empty shows full, full shows empty)
+
+15. **Engine Designation (For Multi-Engine Configuration)**: If you have multiple engines, which one is this CX5106 monitoring?
+    - Single engine (or primary) → Auto-set to OFF
+    - Port engine (left) → Switch OFF
+    - Starboard engine (right) → Switch ON
+    - **Maps to**: CX5106 Second Row Switch "2"
+    - **Conditional Logic**: Skip if single engine (auto-set to Port/Primary)
+
 These determine:
-- CX5106 DIP switch positions (SW1-8)
+- CX5106 DIP switch positions (**FIRST ROW**: SW1-8)
+- CX5106 DIP switch positions (**SECOND ROW**: "1"-"2")
 - Expected PGN set
 - Alarm thresholds
 - Performance baselines
 - Anomaly detection parameters
+- Tank level sensor calibration
+- Engine position designation
+
+### DIP Switch Configuration - Both Rows
+
+**FIRST ROW (8 Switches)**:
+- SW1-2: Engine Instance (Single=0, Port=1, Starboard=2, Center=3)
+- SW3-4: RPM Source (Alternator W-Terminal, Ignition Coil, Magnetic Pickup, ECU Output)
+- SW5-6: Number of Cylinders (3, 4, 6, 8)
+- SW7: Stroke Type (OFF=4-stroke, ON=2-stroke)
+- SW8: Gear Ratio (OFF=1:1 direct, ON=2:1 reduction)
+
+**SECOND ROW (2 Switches) - CRITICAL FOR TANK READINGS**:
+- Switch "1": Tank Sensor Resistance Standard
+  - **ON** = American standard (240-33Ω) - North America/Canada
+  - **OFF** = European standard (0-190Ω) - Europe/International
+  - **Impact**: Wrong setting inverts fuel, water, and waste tank readings
+
+- Switch "2": Engine Position Designation
+  - **OFF** = Port engine / Single engine / Primary
+  - **ON** = Starboard engine
+  - **Default**: OFF for single engine configurations
+
+### Regional Detection & AI Assistance
+
+**When user selects "I don't know" for tank sensor standard:**
+- AI infers based on:
+  - Country of boat registration
+  - Boat manufacturer origin (e.g., American brand → likely American senders)
+  - Engine manufacturer (e.g., Mercruiser, Yanmar)
+  - User's location/timezone
+- Default: If boat is in North America, select 240-33Ω (ON)
+- Validation: If readings are inverted after configuration, toggle this switch
+
+### Configuration Example with Both Rows
+
+**Example: Single Yanmar 3YM30 Diesel, North American Boat**
+
+```
+FIRST ROW:
+SW1: OFF  SW2: OFF  SW3: OFF  SW4: ON
+SW5: ON   SW6: ON   SW7: OFF  SW8: ON
+
+SECOND ROW:
+"1": ON   (American 240-33Ω tank senders)
+"2": OFF  (Single engine / Port)
+
+Result:
+- Instance 0 (single engine)
+- Magnetic pickup RPM
+- 3 cylinders
+- 4-stroke
+- 2:1 gear ratio
+- American tank sensor standard
+- Port/Primary designation
+```
+
+**Example: Twin Volvo Penta D4 (Port Engine), European Boat**
+
+```
+FIRST ROW:
+SW1: ON   SW2: OFF  SW3: OFF  SW4: OFF
+SW5: OFF  SW6: OFF  SW7: OFF  SW8: OFF
+
+SECOND ROW:
+"1": OFF  (European 0-190Ω tank senders)
+"2": OFF  (Port engine)
+
+Result:
+- Instance 1 (port engine)
+- Alternator W-terminal RPM
+- 4 cylinders
+- 4-stroke
+- 1:1 direct drive
+- European tank sensor standard
+- Port engine designation
+```
+
+### Common Configuration Errors
+
+**Error 1: Tank readings inverted (full shows empty)**
+- **Cause**: Wrong Second Row Switch "1" setting
+- **Fix**: Toggle Second Row Switch "1" (ON↔OFF)
+- **Prevention**: Verify boat origin during onboarding
+
+**Error 2: Duplicate engine instances on twin-engine boats**
+- **Cause**: Both CX5106 units set to same instance (SW1/SW2)
+- **Fix**: Set first to Instance 1 (Port), second to Instance 2 (Starboard)
+
+**Error 3: Tank readings from wrong engine on twin-engine boats**
+- **Cause**: Second Row Switch "2" not set correctly
+- **Fix**: Verify Port=OFF, Starboard=ON designation matches physical installation
+
+### JSON Configuration Storage (Updated)
+
+```json
+{
+  "engine": {
+    "manufacturer": "Yanmar",
+    "model": "3YM30",
+    "cylinders": 3,
+    "stroke": "4-stroke",
+    "fuel_type": "diesel",
+    "gear_ratio": "2:1"
+  },
+  "gateway": {
+    "model": "CX5106",
+    "switches": {
+      "row1": {
+        "sw1": "OFF",
+        "sw2": "OFF",
+        "sw3": "OFF",
+        "sw4": "ON",
+        "sw5": "ON",
+        "sw6": "ON",
+        "sw7": "OFF",
+        "sw8": "ON"
+      },
+      "row2": {
+        "sw1": "ON",
+        "sw2": "OFF"
+      }
+    },
+    "instance": 0,
+    "rpm_source": "magnetic_pickup",
+    "tank_sensor_standard": "american_240_33",
+    "tank_sensor_region": "North America",
+    "engine_position": "port",
+    "notes": "Single Yanmar 3YM30 diesel, 2:1 reduction, North American boat"
+  },
+  "tank_sensors": {
+    "standard": "american_240_33",
+    "resistance_range": "240-33Ω",
+    "fuel_calibration": "240Ω=empty, 33Ω=full",
+    "water_calibration": "240Ω=empty, 33Ω=full",
+    "waste_calibration": "240Ω=empty, 33Ω=full"
+  }
+}
+```
 
 ---
 
@@ -1011,7 +1173,8 @@ If you encounter:
 | Version | Date | Major Changes |
 |---------|------|---------------|
 | 1.0 | 2026-02-04 | Initial CLAUDE.md creation |
-| **2.0** | **2026-02-05** | **Added voice assistant spec, updated licensing tiers (0-3), API specification, hardware requirements (8GB RAM), Trixie OS requirement** |
+| 2.0 | 2026-02-05 | Added voice assistant spec, updated licensing tiers (0-3), API specification, hardware requirements (8GB RAM), Trixie OS requirement |
+| **2.1** | **2026-02-06** | **Added CX5106 second row DIP switch documentation (tank sensor standards, engine position), expanded wizard from 13 to 15 questions, added regional detection logic** |
 
 ---
 
@@ -1041,6 +1204,16 @@ If you encounter:
 - **Previous**: Only "Helm"
 - **Updated**: "Helm" (primary), "Hey Captain" or "Hey Boat" (alternatives)
 - **Reason**: User feedback from additionalclaude.txt
+
+### Anomaly 6: CX5106 Second Row DIP Switches - CRITICAL DISCOVERY
+- **Previous**: Documentation only covered first row (8 switches)
+- **Updated**: **Second row has 2 switches** controlling tank sensor standards and engine position
+- **Reason**: Manual analysis revealed undocumented second row:
+  - Switch "1": Tank sensor resistance (American 240-33Ω vs European 0-190Ω)
+  - Switch "2": Engine position (Port/Starboard designation)
+- **Impact**: Wrong Switch "1" setting causes inverted tank level readings (critical safety issue)
+- **Wizard**: Expanded from 13 to 15 questions (added Q14: Tank Sensor Standard, Q15: Engine Designation)
+- **Default**: Single engine boats → Second Row Switch "2" = OFF (Port/Primary)
 
 ---
 
