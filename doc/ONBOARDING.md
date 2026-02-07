@@ -64,9 +64,12 @@ The Helm-OS onboarding wizard is a 13-question process that collects critical in
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Steps 2-14: Engine Questions (Q1-Q13)                     │
+│  Steps 2-16: Configuration Questions (Q1-Q15)              │
+│  - Q1-Q13: Engine specifications                            │
+│  - Q14: Tank sensor standard (regional)                     │
+│  - Q15: Engine position (if multi-engine)                   │
 │  - Each question on separate page                           │
-│  - Progress indicator: "Step X of 13"                       │
+│  - Progress indicator: "Step X of 15"                       │
 │  - [Back] [Next] [Save & Exit] buttons                      │
 │  - Auto-save progress                                       │
 └─────────────────────────────────────────────────────────────┘
@@ -568,9 +571,100 @@ Cruise = 2500+ RPM
 
 ---
 
+### Question 14: Tank Sensor Standard (Regional Setting)
+
+**Purpose**: Configure CX5106 for correct tank level sensor readings
+
+**Input Type**: Radio buttons
+
+**How to Answer**:
+Select your boat's region or tank sensor type
+
+**Options**:
+- North America / United States / Canada (240-33Ω senders)
+- Europe / International (0-190Ω senders)
+- I don't know (AI will suggest based on boat origin)
+
+**Maps to**: CX5106 Second Row Switch "1"
+
+**Why This Matters**:
+- Tank level sensors use different resistance standards by region
+- North American boats: 240-33Ω (full tank) to 33Ω (empty)
+- European boats: 0-190Ω range
+- Wrong setting = inverted or incorrect fuel/water/waste tank readings
+
+**AI Assistance**:
+- If engine manufacturer is American (Mercury, Crusader, etc.) → Suggests American
+- If engine manufacturer is European (Volvo, Yanmar, etc.) → May suggest European
+- If boat registered in US/Canada → Suggests American
+- If boat registered in Europe → Suggests European
+
+**Validation**:
+- Cross-check with boat documentation
+- If tank readings seem inverted after installation, this setting should be toggled
+
+**Default**: North America (240-33Ω) for US/Canadian boats
+
+**Example**:
+```
+Tank Sensor Standard:
+○ North America (240-33Ω) - Most US/Canadian boats
+● Europe (0-190Ω) - European boats
+○ I don't know - Let AI suggest
+
+Affects: Fuel level, fresh water, waste water readings
+```
+
+---
+
+### Question 15: Engine Designation (For Multi-Engine Configuration)
+
+**Purpose**: Identify which physical engine this CX5106 is monitoring
+
+**Input Type**: Radio buttons (conditionally shown)
+
+**Conditional Logic**:
+- If single engine (detected from earlier questions) → **Auto-set to "Primary/Port" and skip this question**
+- If multiple engines → Show this question
+
+**How to Answer**:
+Select which engine this specific CX5106 unit is connected to
+
+**Options**:
+- Primary / Single Engine (default)
+- Port Engine (left side)
+- Starboard Engine (right side)
+
+**Maps to**: CX5106 Second Row Switch "2"
+
+**Why This Matters**:
+- Helps identify which CX5106 unit corresponds to which physical engine
+- Different from NMEA2000 instance (First Row SW1-2)
+- Used for internal organization and troubleshooting
+
+**Auto-populate**:
+- If Question 1-2 already determined engine count and position, auto-fill
+- Single engine → Automatically set to "Primary/Port" (OFF)
+- Twin engines → Ask user to confirm port vs starboard for this unit
+
+**Default**: Primary/Port (for single engine boats)
+
+**Example**:
+```
+Engine Designation:
+● Primary / Single Engine
+○ Port Engine (Left)
+○ Starboard Engine (Right)
+
+Note: This is for organizing your CX5106 units.
+Already set by earlier questions about engine count.
+```
+
+---
+
 ## CX5106 DIP SWITCH CONFIGURATION
 
-After completing all 13 questions, Helm-OS generates CX5106 DIP switch configuration.
+After completing all 15 questions, Helm-OS generates **complete** CX5106 DIP switch configuration for **both rows**.
 
 ### What is CX5106?
 
@@ -578,59 +672,71 @@ The CX5106 is a NMEA2000 engine gateway that converts analog engine sensors (RPM
 
 ### DIP Switch Overview
 
-The CX5106 has 8 DIP switches that configure:
-- Engine instance (port/starboard)
+The CX5106 has **TWO ROWS** of DIP switches:
+
+**FIRST ROW (8 switches)** - Engine Configuration:
+- Engine instance (NMEA2000 network identification)
 - Cylinder count
 - RPM sensor type
-- Temperature sensor type
-- Pressure sensor ranges
+- Engine stroke type (2-stroke vs 4-stroke)
+- Gear ratio
+
+**SECOND ROW (2 switches)** - Regional & Position Settings:
+- Tank sensor resistance standard (American vs European)
+- Engine position designation (Port vs Starboard)
 
 ### Example Configuration Display
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│          CX5106 DIP SWITCH CONFIGURATION                │
-│         For: Mercury 5.0L MPI Alpha (2018)              │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│   ┌─┬─┬─┬─┬─┬─┬─┬─┐                                    │
-│   │1│2│3│4│5│6│7│8│                                    │
-│   ├─┼─┼─┼─┼─┼─┼─┼─┤                                    │
-│   │█│░│█│░│█│░│░│█│   █ = ON   ░ = OFF                │
-│   └─┴─┴─┴─┴─┴─┴─┴─┘                                    │
-│                                                         │
-│   Switch 1: ON  - Engine Instance 0 (Single/Port)      │
-│   Switch 2: OFF - 8 Cylinder Engine                    │
-│   Switch 3: ON  - Direct RPM Measurement                │
-│   Switch 4: OFF - Standard Temperature Range            │
-│   Switch 5: ON  - 0-100 PSI Oil Pressure                │
-│   Switch 6: OFF - Standard Fuel Sender                  │
-│   Switch 7: OFF - Reserved                              │
-│   Switch 8: ON  - Enable All PGN Outputs                │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│                WHY THESE SETTINGS?                      │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ • Switch 1 ON: You have a single engine or this is     │
-│   the port engine in a twin installation               │
-│                                                         │
-│ • Switch 2 OFF: Your engine has 8 cylinders            │
-│   This configures the RPM multiplier correctly         │
-│                                                         │
-│ • Switch 3 ON: Direct RPM measurement from ignition    │
-│   Most gasoline engines use this mode                  │
-│                                                         │
-│ • Switch 4 OFF: Standard temp range (100-220°F)        │
-│   Matches your max coolant temp of 180°F               │
-│                                                         │
-│ • Switch 5 ON: 0-100 PSI oil pressure range            │
-│   Matches your cruise pressure of 40 PSI               │
-│                                                         │
-│ • Switch 8 ON: Enables all sensor outputs              │
-│   Required for full NMEA2000 functionality             │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│          CX5106 COMPLETE DIP SWITCH CONFIGURATION            │
+│         For: Mercury 5.0L MPI Alpha (2018)                   │
+│         Region: North America                                │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│   FIRST ROW (Engine Configuration):                         │
+│   ┌─┬─┬─┬─┬─┬─┬─┬─┐                                        │
+│   │1│2│3│4│5│6│7│8│                                        │
+│   ├─┼─┼─┼─┼─┼─┼─┼─┤                                        │
+│   │░│░│░│░│░│█│░│░│   █ = ON   ░ = OFF                    │
+│   └─┴─┴─┴─┴─┴─┴─┴─┘                                        │
+│                                                              │
+│   SW1: OFF - Single engine (Instance 0)                     │
+│   SW2: OFF                                                   │
+│   SW3: OFF - Alternator W-terminal                          │
+│   SW4: OFF                                                   │
+│   SW5: OFF - 8 cylinders                                    │
+│   SW6: ON                                                    │
+│   SW7: OFF - 4-stroke engine                                │
+│   SW8: OFF - 1:1 direct drive                               │
+│                                                              │
+│   SECOND ROW (Regional & Position):                         │
+│   ┌───┬───┐                                                 │
+│   │"1"│"2"│                                                 │
+│   ├───┼───┤                                                 │
+│   │ █ │ ░ │   █ = ON   ░ = OFF                             │
+│   └───┴───┘                                                 │
+│                                                              │
+│   "1": ON  - American tank senders (240-33Ω)                │
+│   "2": OFF - Single/Port engine designation                 │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│                WHY THESE SETTINGS?                           │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│ FIRST ROW:                                                   │
+│ • SW1-2 OFF/OFF: Single engine (NMEA2000 Instance 0)        │
+│ • SW3-4 OFF/OFF: Alternator W-terminal for RPM              │
+│ • SW5-6 OFF/ON: 8 cylinder V8 configuration                 │
+│ • SW7 OFF: 4-stroke engine                                  │
+│ • SW8 OFF: 1:1 gear ratio (direct drive)                    │
+│                                                              │
+│ SECOND ROW:                                                  │
+│ • "1" ON: North American boat with 240-33Ω tank senders     │
+│   (Ensures correct fuel, water, waste tank level readings)  │
+│ • "2" OFF: Single engine / Port designation                 │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 
 [Print to PDF] [Save Configuration] [Next]
 ```
@@ -646,28 +752,48 @@ The CX5106 has 8 DIP switches that configure:
 
 ### Common DIP Switch Patterns
 
-**Single 4-Cylinder Outboard**:
+**Single 4-Cylinder Outboard** (North American):
 ```
-Switch: 1  2  3  4  5  6  7  8
-        ON ON ON OFF ON OFF OFF ON
+FIRST ROW:
+Switch: 1   2   3   4   5   6   7   8
+        OFF OFF OFF OFF OFF OFF OFF OFF
+
+SECOND ROW:
+Switch: "1" "2"
+        ON  OFF  (American senders, Single engine)
 ```
 
-**Single 6-Cylinder Sterndrive**:
+**Single 6-Cylinder Sterndrive** (North American):
 ```
-Switch: 1  2  3  4  5  6  7  8
-        ON OFF ON OFF ON OFF OFF ON
+FIRST ROW:
+Switch: 1   2   3   4   5   6   7   8
+        OFF OFF OFF OFF ON  OFF OFF OFF
+
+SECOND ROW:
+Switch: "1" "2"
+        ON  OFF  (American senders, Single engine)
 ```
 
-**Port Engine (Twin 8-Cylinder)**:
+**Port Engine (Twin 8-Cylinder)** (North American):
 ```
-Switch: 1  2  3  4  5  6  7  8
-        ON OFF ON OFF ON OFF OFF ON
+FIRST ROW:
+Switch: 1   2   3   4   5   6   7   8
+        ON  OFF OFF OFF OFF ON  OFF OFF  (Instance 1, 8-cyl, 4-stroke)
+
+SECOND ROW:
+Switch: "1" "2"
+        ON  OFF  (American senders, Port engine)
 ```
 
-**Starboard Engine (Twin 8-Cylinder)**:
+**Starboard Engine (Twin 8-Cylinder)** (North American):
 ```
-Switch: 1  2  3  4  5  6  7  8
-        OFF OFF ON OFF ON OFF OFF ON
+FIRST ROW:
+Switch: 1   2   3   4   5   6   7   8
+        OFF ON  OFF OFF OFF ON  OFF OFF  (Instance 2, 8-cyl, 4-stroke)
+
+SECOND ROW:
+Switch: "1" "2"
+        ON  ON   (American senders, Starboard engine)
 ```
 
 ---
