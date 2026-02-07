@@ -207,6 +207,62 @@ Twin engines → First engine: OFF/OFF, Second engine: ON/OFF
 
 ---
 
+### **Question 7: Tank Sensor Standard (SECOND ROW)**
+**Question**: "What region is your boat from, or what type of tank level sensors does it use?"
+
+**Options**:
+- North America / United States / Canada (240-33Ω senders)
+- Europe / International (0-190Ω senders)
+- I don't know
+
+**Maps to**: Second Row Switch "1" (Tank Sensor Resistance Standard)
+
+**Help Text**:
+- **North American boats**: Use 240-33Ω resistance senders for fuel, water, and waste tanks
+- **European boats**: Use 0-190Ω resistance senders
+- This setting affects fuel level, fresh water level, and waste tank level readings
+
+**If "I don't know"**:
+- AI suggests based on:
+  - Country of boat registration
+  - Boat manufacturer origin
+  - Engine manufacturer (American engines → likely American senders)
+- Default: If boat is in North America, select 240-33Ω (ON)
+
+**Validation**:
+- Cross-check with boat origin
+- If readings are inverted (empty shows full), toggle this switch
+
+---
+
+### **Question 8: Engine Position (SECOND ROW - for multi-engine boats)**
+**Question**: "If you have multiple engines, which one is this CX5106 monitoring?"
+
+**Options**:
+- Single engine (or primary)
+- Port engine (left)
+- Starboard engine (right)
+
+**Maps to**: Second Row Switch "2" (Port/Starboard Designation)
+
+**Logic**:
+```
+Single engine → Second Row "2": OFF (Port/Primary)
+Port engine → Second Row "2": OFF
+Starboard engine → Second Row "2": ON
+```
+
+**Help Text**:
+- **Single engine**: Select "Single engine" - switch will be set to OFF
+- **Twin engines**: This designation helps organize which CX5106 is monitoring which engine
+- **Note**: This is different from First Row SW1-2 (NMEA2000 instance)
+
+**Auto-populate**:
+- If Question 1 (Number of Engines) = "Single", auto-set to OFF and skip this question
+- If Question 2 (Engine Position) answered, use that same designation
+
+---
+
 ## Part 3: Wizard Flow Integration
 
 ### Step-by-Step Configuration
@@ -224,6 +280,7 @@ For each engine:
 ```
 Wizard: "Configuring Engine 1 (Port)"
 
+FIRST ROW (Engine Configuration):
 Q1: Engine position? → Port
     Maps to: SW1=ON, SW2=OFF (Instance 1)
 
@@ -239,12 +296,28 @@ Q4: Stroke type? → 4-Stroke
 Q5: Gear ratio? → 2:1
     Maps to: SW8=ON
 
-System: Generates DIP switch diagram:
+SECOND ROW (Regional & Position):
+Q6: Tank sensor standard? → North America (240-33Ω)
+    Maps to: Second Row "1"=ON
+
+Q7: Engine position? → Port (auto-filled from Q1)
+    Maps to: Second Row "2"=OFF
+
+System: Generates complete DIP switch diagram:
+
+FIRST ROW:
 ┌─┬─┬─┬─┬─┬─┬─┬─┐
 │1│2│3│4│5│6│7│8│
 ├─┼─┼─┼─┼─┼─┼─┼─┤
 │↑│↓│↓│↓│↓│↓│↓│↑│
 └─┴─┴─┴─┴─┴─┴─┴─┘
+
+SECOND ROW:
+┌───┬───┐
+│"1"│"2"│
+├───┼───┤
+│ ↑ │ ↓ │
+└───┴───┘
 ```
 
 **Step 3: Visual Confirmation**
@@ -324,18 +397,26 @@ User Prompt: "Please verify in your engine manual"
   "gateway": {
     "model": "CX5106",
     "switches": {
-      "sw1": "ON",   // Engine instance 1 (port)
-      "sw2": "OFF",
-      "sw3": "OFF",  // Magnetic pickup
-      "sw4": "ON",
-      "sw5": "ON",   // 3 cylinders
-      "sw6": "ON",
-      "sw7": "OFF",  // 4-stroke
-      "sw8": "ON"    // 2:1 gear ratio
+      "row1": {
+        "sw1": "ON",   // Engine instance 1 (port)
+        "sw2": "OFF",
+        "sw3": "OFF",  // Magnetic pickup
+        "sw4": "ON",
+        "sw5": "ON",   // 3 cylinders
+        "sw6": "ON",
+        "sw7": "OFF",  // 4-stroke
+        "sw8": "ON"    // 2:1 gear ratio
+      },
+      "row2": {
+        "sw1": "ON",   // American 240-33Ω tank senders
+        "sw2": "OFF"   // Port engine designation
+      }
     },
     "instance": 1,
     "rpm_source": "magnetic_pickup",
-    "notes": "Port engine - Yanmar 3YM30 diesel with 2:1 reduction gear"
+    "tank_sensor_standard": "american_240_33",
+    "engine_position": "port",
+    "notes": "Port engine - Yanmar 3YM30 diesel with 2:1 reduction gear, North American boat"
   }
 }
 ```
@@ -411,8 +492,9 @@ SW8: OFF    (1:1 direct)
 
 ## Summary
 
-### 6 Critical Questions for CX5106 Configuration:
+### 8 Critical Questions for Complete CX5106 Configuration:
 
+**FIRST ROW (Engine Configuration):**
 1. **Number of engines** → SW1/SW2 (Instance)
 2. **Engine position** (if multiple) → SW1/SW2 (Instance)
 3. **RPM signal source** → SW3/SW4 (Signal Type)
@@ -420,10 +502,24 @@ SW8: OFF    (1:1 direct)
 5. **Engine stroke type** → SW7 (2-stroke/4-stroke)
 6. **Gear ratio** → SW8 (1:1 or 2:1)
 
+**SECOND ROW (Regional & Position):**
+7. **Tank sensor standard** → Second Row "1" (American/European)
+8. **Engine position designation** → Second Row "2" (Port/Starboard)
+
 ### Output:
-- Visual DIP switch diagram
-- JSON configuration
+- Complete visual DIP switch diagram (both rows)
+- JSON configuration with all settings
 - Setup instructions
 - Verification steps
 
-This ensures the CX5106 correctly converts analog engine signals to NMEA2000 PGNs that chartplotters can display.
+### Complete Configuration Example:
+```
+FIRST ROW:  [SW1-8 settings]
+SECOND ROW: ["1"-"2" settings]
+
+Result: CX5106 correctly converts:
+- Engine analog signals → NMEA2000 PGNs
+- Tank level sensors → Accurate fuel/water/waste readings
+```
+
+This ensures the CX5106 correctly converts analog engine signals AND tank level sensors to NMEA2000 PGNs that chartplotters can display with proper regional calibration.

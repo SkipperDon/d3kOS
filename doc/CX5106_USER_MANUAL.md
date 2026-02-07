@@ -324,6 +324,120 @@ Note: Displayed RPM will need manual correction
 
 ---
 
+### STEP 6: Set Tank Sensor Standard (Second Row - Switch "1")
+
+**Question**: What type of tank level sensors does your boat use?
+
+The CX5106 has a **second row** with 2 additional switches for tank level sensors and multi-engine configuration.
+
+**Tank Level Sensor Standards:**
+- **American/North American boats**: Use 240-33Ω resistance senders
+- **European boats**: Use 0-190Ω resistance senders
+
+#### How to Set Second Row Switch "1"
+
+**If you have AMERICAN/NORTH AMERICAN tank senders (240-33Ω):**
+```
+Second Row Switch "1": ↑ ON
+```
+
+**If you have EUROPEAN tank senders (0-190Ω):**
+```
+Second Row Switch "1": ↓ OFF
+```
+
+**How to tell which you have:**
+- **North American boats** (USA, Canada, Mexico): Almost always 240-33Ω
+- **European boats**: Almost always 0-190Ω
+- Check your tank sender specifications (often printed on the sender)
+- If unsure and boat is from North America: Select ON
+
+#### Reference Table: Tank Sensor Standard
+
+| Switch "1" | Resistance Range | Region |
+|------------|------------------|--------|
+| OFF | 0-190Ω | European standard |
+| ON | 240-33Ω | American/North American standard |
+
+**What this affects:**
+- Fuel tank level readings
+- Fresh water tank level readings
+- Waste water tank level readings
+- Any other fluid level sensors
+
+**IMPORTANT**: Wrong setting will cause incorrect tank level readings (empty will show full, or vice versa).
+
+---
+
+### STEP 7: Set Engine Position (Second Row - Switch "2")
+
+**Question**: If you have multiple engines, which one is this CX5106 monitoring?
+
+**This is different from Switch 1-2 in the first row!**
+- First row SW1-2: Sets NMEA2000 instance number
+- Second row Switch "2": Sets PORT/STBD designation for the CX5106 unit itself
+
+#### How to Set Second Row Switch "2"
+
+**If you have a SINGLE engine:**
+```
+Second Row Switch "2": ↓ OFF  (Primary/Port designation)
+```
+
+**If you have TWIN engines - PORT (left) engine:**
+```
+Second Row Switch "2": ↓ OFF  (Port designation)
+```
+
+**If you have TWIN engines - STARBOARD (right) engine:**
+```
+Second Row Switch "2": ↑ ON  (Starboard designation)
+```
+
+#### Reference Table: Engine Position (Second Row)
+
+| Switch "2" | Position | When to Use |
+|------------|----------|-------------|
+| OFF | PORT | Single engine OR left engine of twin setup |
+| ON | STBD (Starboard) | Right engine of twin setup |
+
+**Default for single engine: OFF**
+
+---
+
+## Complete DIP Switch Configuration Summary
+
+The CX5106 has **TWO ROWS of DIP switches**:
+
+### **FIRST ROW - 8 Switches (Engine Configuration)**
+```
+┌─┬─┬─┬─┬─┬─┬─┬─┐
+│1│2│3│4│5│6│7│8│  ← First Row
+├─┼─┼─┼─┼─┼─┼─┼─┤
+│ │ │ │ │ │ │ │ │  ← Set according to Steps 1-5
+└─┴─┴─┴─┴─┴─┴─┴─┘
+
+SW1-2: Engine Instance (NMEA2000 network)
+SW3-4: RPM Source Type
+SW5-6: Number of Cylinders
+SW7:   Engine Stroke Type
+SW8:   Gear Ratio
+```
+
+### **SECOND ROW - 2 Switches (Tank Sensors & Position)**
+```
+┌───┬───┐
+│"1"│"2"│  ← Second Row
+├───┼───┤
+│   │   │  ← Set according to Steps 6-7
+└───┴───┘
+
+"1": Tank Sensor Standard (American ON / European OFF)
+"2": Engine Position (Port OFF / Starboard ON)
+```
+
+---
+
 ## DIP Switch Reference Tables
 
 ### Complete Configuration Matrix
@@ -350,8 +464,11 @@ These are pre-configured settings for popular marine engines. Find yours and cop
 - 3 cylinders, 4-stroke diesel
 - Magnetic pickup sensor
 - 2:1 reduction gear (common on sailboats)
+- North American boat
 
 **DIP Switch Settings:**
+
+**FIRST ROW:**
 ```
 SW1: ↓ OFF  (Single engine)
 SW2: ↓ OFF
@@ -363,6 +480,12 @@ SW7: ↓ OFF  (4-stroke)
 SW8: ↑ ON   (2:1 gear ratio)
 ```
 
+**SECOND ROW:**
+```
+"1": ↑ ON   (American 240-33Ω tank senders)
+"2": ↓ OFF  (Single engine / Port)
+```
+
 ---
 
 ### **Mercruiser 7.4L V8 (1994 - Bravo II Drive)**
@@ -371,8 +494,11 @@ SW8: ↑ ON   (2:1 gear ratio)
 - 8 cylinders, 4-stroke gasoline
 - Alternator W-terminal
 - 1.5:1 gear ratio (use 1:1 setting, see note)
+- North American boat
 
 **DIP Switch Settings:**
+
+**FIRST ROW:**
 ```
 SW1: ↓ OFF  (Single engine)
 SW2: ↓ OFF
@@ -382,6 +508,12 @@ SW5: ↓ OFF  (8 cylinders)
 SW6: ↑ ON
 SW7: ↓ OFF  (4-stroke)
 SW8: ↓ OFF  (1:1 - see note below)
+```
+
+**SECOND ROW:**
+```
+"1": ↑ ON   (American 240-33Ω tank senders)
+"2": ↓ OFF  (Single engine / Port)
 ```
 
 **NOTE**: Bravo II has 1.5:1 ratio, not supported by CX5106. Set to 1:1 (OFF). Displayed RPM will be 1.5x actual. Divide displayed RPM by 1.5 for true engine RPM.
@@ -394,8 +526,11 @@ SW8: ↓ OFF  (1:1 - see note below)
 - 4 cylinders, 4-stroke diesel
 - Alternator W-terminal
 - Direct drive (1:1)
+- North American boat
 
 **DIP Switch Settings:**
+
+**FIRST ROW:**
 ```
 SW1: ↑ ON   (Port engine = Instance 1)
 SW2: ↓ OFF
@@ -407,7 +542,15 @@ SW7: ↓ OFF  (4-stroke)
 SW8: ↓ OFF  (1:1 direct drive)
 ```
 
-**For Starboard Engine**: Same settings except SW1=OFF, SW2=ON
+**SECOND ROW:**
+```
+"1": ↑ ON   (American 240-33Ω tank senders)
+"2": ↓ OFF  (Port engine)
+```
+
+**For Starboard Engine**:
+- First Row: SW1=OFF, SW2=ON (Instance 2)
+- Second Row: "1"=ON, **"2"=ON** (Starboard designation)
 
 ---
 
@@ -417,8 +560,11 @@ SW8: ↓ OFF  (1:1 direct drive)
 - 6 cylinders, 4-stroke diesel
 - Magnetic pickup
 - Direct drive (1:1)
+- North American boat
 
 **DIP Switch Settings:**
+
+**FIRST ROW:**
 ```
 SW1: ↓ OFF  (Single engine)
 SW2: ↓ OFF
@@ -430,6 +576,12 @@ SW7: ↓ OFF  (4-stroke)
 SW8: ↓ OFF  (1:1 direct drive)
 ```
 
+**SECOND ROW:**
+```
+"1": ↑ ON   (American 240-33Ω tank senders)
+"2": ↓ OFF  (Single engine / Port)
+```
+
 ---
 
 ### **Mercury 90HP Outboard (2-Stroke)**
@@ -438,8 +590,11 @@ SW8: ↓ OFF  (1:1 direct drive)
 - 4 cylinders, 2-stroke
 - Ignition coil signal
 - Direct drive
+- North American boat
 
 **DIP Switch Settings:**
+
+**FIRST ROW:**
 ```
 SW1: ↓ OFF  (Single engine)
 SW2: ↓ OFF
@@ -451,6 +606,12 @@ SW7: ↑ ON   (2-stroke)
 SW8: ↓ OFF  (Direct drive)
 ```
 
+**SECOND ROW:**
+```
+"1": ↑ ON   (American 240-33Ω tank senders)
+"2": ↓ OFF  (Single engine / Port)
+```
+
 ---
 
 ### **Cummins QSB 5.9L Diesel**
@@ -459,8 +620,11 @@ SW8: ↓ OFF  (Direct drive)
 - 6 cylinders, 4-stroke diesel
 - ECU digital output
 - Direct drive
+- North American boat
 
 **DIP Switch Settings:**
+
+**FIRST ROW:**
 ```
 SW1: ↓ OFF  (Single engine)
 SW2: ↓ OFF
@@ -470,6 +634,12 @@ SW5: ↑ ON   (6 cylinders)
 SW6: ↓ OFF
 SW7: ↓ OFF  (4-stroke)
 SW8: ↓ OFF  (Direct drive)
+```
+
+**SECOND ROW:**
+```
+"1": ↑ ON   (American 240-33Ω tank senders)
+"2": ↓ OFF  (Single engine / Port)
 ```
 
 ---
@@ -672,37 +842,49 @@ _____________________________________
 **Print and laminate this for your boat:**
 
 ```
-╔════════════════════════════════════════╗
-║   CX5106 DIP SWITCH QUICK REFERENCE    ║
-╠════════════════════════════════════════╣
-║                                        ║
-║  SW1-2: ENGINE INSTANCE                ║
-║    OFF/OFF = Single/Primary            ║
-║    ON/OFF  = Port (left)               ║
-║    OFF/ON  = Starboard (right)         ║
-║                                        ║
-║  SW3-4: RPM SOURCE                     ║
-║    OFF/OFF = Alternator W-term         ║
-║    ON/OFF  = Ignition coil             ║
-║    OFF/ON  = Magnetic pickup           ║
-║    ON/ON   = ECU digital               ║
-║                                        ║
-║  SW5-6: CYLINDERS                      ║
-║    OFF/OFF = 4 cyl                     ║
-║    ON/OFF  = 6 cyl                     ║
-║    OFF/ON  = 8 cyl                     ║
-║    ON/ON   = 3 cyl                     ║
-║                                        ║
-║  SW7: STROKE                           ║
-║    OFF = 4-stroke                      ║
-║    ON  = 2-stroke                      ║
-║                                        ║
-║  SW8: GEAR RATIO                       ║
-║    OFF = 1:1 direct                    ║
-║    ON  = 2:1 reduction                 ║
-║                                        ║
-║  ⚠️ ALWAYS POWER CYCLE AFTER CHANGES   ║
-╚════════════════════════════════════════╝
+╔═══════════════════════════════════════════════╗
+║    CX5106 DIP SWITCH QUICK REFERENCE          ║
+╠═══════════════════════════════════════════════╣
+║                                               ║
+║  FIRST ROW (8 switches):                      ║
+║  ────────────────────────                     ║
+║  SW1-2: ENGINE INSTANCE                       ║
+║    OFF/OFF = Single/Primary                   ║
+║    ON/OFF  = Port (left)                      ║
+║    OFF/ON  = Starboard (right)                ║
+║                                               ║
+║  SW3-4: RPM SOURCE                            ║
+║    OFF/OFF = Alternator W-term                ║
+║    ON/OFF  = Ignition coil                    ║
+║    OFF/ON  = Magnetic pickup                  ║
+║    ON/ON   = ECU digital                      ║
+║                                               ║
+║  SW5-6: CYLINDERS                             ║
+║    OFF/OFF = 4 cyl                            ║
+║    ON/OFF  = 6 cyl                            ║
+║    OFF/ON  = 8 cyl                            ║
+║    ON/ON   = 3 cyl                            ║
+║                                               ║
+║  SW7: STROKE                                  ║
+║    OFF = 4-stroke                             ║
+║    ON  = 2-stroke                             ║
+║                                               ║
+║  SW8: GEAR RATIO                              ║
+║    OFF = 1:1 direct                           ║
+║    ON  = 2:1 reduction                        ║
+║                                               ║
+║  SECOND ROW (2 switches):                     ║
+║  ────────────────────────                     ║
+║  "1": TANK SENSOR STANDARD                    ║
+║    OFF = European (0-190Ω)                    ║
+║    ON  = American (240-33Ω)                   ║
+║                                               ║
+║  "2": ENGINE POSITION                         ║
+║    OFF = Port/Single                          ║
+║    ON  = Starboard                            ║
+║                                               ║
+║  ⚠️ ALWAYS POWER CYCLE AFTER CHANGES          ║
+╚═══════════════════════════════════════════════╝
 ```
 
 ---
