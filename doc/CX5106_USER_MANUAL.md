@@ -64,7 +64,13 @@ A DIP switch is a small physical switch that can be set to ON (up) or OFF (down)
 
 The DIP switches are located on the side of the CX5106 unit. They are clearly labeled 1-8 from left to right.
 
-**IMPORTANT**: 
+**Visual Reference:**
+
+![CX5106 DIP Switches](../../assets/images/cx5106_10125.png)
+
+*Photo showing the actual CX5106 DIP switch locations*
+
+**IMPORTANT**:
 - Always power OFF the CX5106 before changing switches
 - After setting switches, power cycle (turn off, wait 10 seconds, turn on)
 - Changes do NOT take effect until after power cycle
