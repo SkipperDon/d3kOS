@@ -1,8 +1,8 @@
-# Helm-OS
+# d3kOS
 
-**Marine Intelligence Platform for Raspberry Pi 4**
+**Marine Intelligence Platform - d3-k1 Hardware**
 
-Helm-OS is a comprehensive marine electronics system that integrates NMEA2000 data, GPS/AIS information, camera surveillance, and AI-powered voice assistance into a unified, touchscreen-optimized interface for boat owners.
+d3kOS is marine electronics software that runs on the d3-k1 hardware platform. The d3-k1 is a comprehensive marine electronics system that integrates NMEA2000 data, GPS/AIS information, camera surveillance, and AI-powered voice assistance into a unified, touchscreen-optimized interface for boat owners.
 
 **Version**: 2.0
 **Date**: February 6, 2026
@@ -128,13 +128,13 @@ Helm-OS is a comprehensive marine electronics system that integrates NMEA2000 da
 
 ```bash
 # Download latest release from GitHub
-wget https://github.com/SkipperDon/Helm-OS/releases/latest/helm-os-v2.0.img.gz
+wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v2.0.img.gz
 
 # Download checksum
-wget https://github.com/SkipperDon/Helm-OS/releases/latest/helm-os-v2.0.img.gz.sha256
+wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v2.0.img.gz.sha256
 
 # Verify integrity
-sha256sum -c helm-os-v2.0.img.gz.sha256
+sha256sum -c d3kos-v2.0.img.gz.sha256
 ```
 
 ### 2. Flash to SD Card
@@ -149,10 +149,10 @@ sha256sum -c helm-os-v2.0.img.gz.sha256
 #### Command Line (Linux/Mac)
 ```bash
 # Decompress
-gunzip helm-os-v2.0.img.gz
+gunzip d3kos-v2.0.img.gz
 
 # Flash (replace /dev/sdX with your SD card)
-sudo dd if=helm-os-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
+sudo dd if=d3kos-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
 ### 3. Hardware Assembly
@@ -174,8 +174,8 @@ sudo dd if=helm-os-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
 
 1. Power on (wait ~60 seconds for boot)
 2. Touchscreen shows Chromium with onboarding wizard
-3. Connect to WiFi network: **"Helm-OS"** (password: `helm-os-2026`)
-4. From mobile device, navigate to: `http://helm-os.local` or `http://10.42.0.1`
+3. Connect to WiFi network: **"d3kOS"** (password: `d3kos-2026`)
+4. From mobile device, navigate to: `http://d3kos.local` or `http://10.42.0.1`
 
 ### 5. Complete Onboarding Wizard
 
@@ -402,7 +402,7 @@ Speaker
 - 30-minute benchmark run
 - Captures: RPM (idle/cruise), temperature warmup curve, oil pressure, fuel rate
 - Statistical analysis: mean, stddev, min/max for each metric
-- Stored in: `/opt/helm-os/config/benchmark-results.json`
+- Stored in: `/opt/d3kos/config/benchmark-results.json`
 
 **Anomaly Detection**:
 - Statistical Process Control (SPC) method
@@ -432,23 +432,23 @@ Speaker
 - Playback interface with timeline scrubber
 - Night vision auto-switching
 
-**Storage Path**: `/opt/helm-os/data/camera/`
+**Storage Path**: `/opt/d3kos/data/camera/`
 **Format**: MP4 (H.264), 1080p @ 30fps
 
 ### Network Configuration
 
 **WiFi Access Point**:
-- **SSID**: Helm-OS
-- **Password**: helm-os-2026 (default)
+- **SSID**: d3kOS
+- **Password**: d3kos-2026 (default)
 - **IP Address**: 10.42.0.1/24
 - **DHCP Range**: 10.42.0.2 - 10.42.0.254
 - **Security**: WPA2-PSK
 
 **Services**:
-- Main Menu: `http://helm-os.local` or `http://10.42.0.1`
-- Dashboard: `http://helm-os.local:1880/dashboard`
-- Signal K: `http://helm-os.local:3000`
-- Camera: `rtsp://helm-os.local:554/camera` (Tier 2+)
+- Main Menu: `http://d3kos.local` or `http://10.42.0.1`
+- Dashboard: `http://d3kos.local:1880/dashboard`
+- Signal K: `http://d3kos.local:3000`
+- Camera: `rtsp://d3kos.local:554/camera` (Tier 2+)
 
 **Ethernet Sharing**: Internet sharing enabled if ethernet connected
 
@@ -522,7 +522,7 @@ Speaker
 
 ### Automatic DIP Switch Configuration
 
-Helm-OS calculates correct CX5106 settings from onboarding answers.
+d3kOS calculates correct CX5106 settings from onboarding answers.
 
 **8 DIP Switches**:
 - **SW 1-2**: Engine instance (0-3)
@@ -609,10 +609,10 @@ dmesg | grep mcp251x
 ### Voice Assistant Issues (Tier 2+ Only)
 
 **Wake word not detected**:
-1. Check service: `systemctl status helm-voice`
+1. Check service: `systemctl status d3kos-voice`
 2. Verify microphone: `arecord -l`
 3. Test audio levels: `arecord -d 5 test.wav && aplay test.wav`
-4. Check logs: `/var/log/helm-voice.log`
+4. Check logs: `/var/log/d3kos-voice.log`
 
 **Slow or no response**:
 1. Check CPU temp (thermal throttling slows inference)
@@ -627,7 +627,7 @@ dmesg | grep mcp251x
 ## Project Structure
 
 ```
-Helm-OS/
+d3kOS/
 ├── MASTER_SYSTEM_SPEC.md           # Complete system specification (v2.0)
 ├── architecture.md                  # System architecture documentation
 ├── README.md                        # This file
@@ -764,8 +764,8 @@ Contributions welcome! Please:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/SkipperDon/Helm-OS/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/SkipperDon/Helm-OS/discussions)
+- **Issues**: [GitHub Issues](https://github.com/SkipperDon/d3kOS/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/SkipperDon/d3kOS/discussions)
 - **Documentation**: [Master Spec](MASTER_SYSTEM_SPEC.md) | [Architecture](architecture.md) | [Hardware](doc/reference/HARDWARE.md)
 
 ---
@@ -810,15 +810,15 @@ See [LICENSE](LICENSE) for details.
 
 ## Quick Links
 
-- 📥 [Download Latest Release](https://github.com/SkipperDon/Helm-OS/releases/latest)
+- 📥 [Download Latest Release](https://github.com/SkipperDon/d3kOS/releases/latest)
 - 📖 [Master System Spec](MASTER_SYSTEM_SPEC.md)
 - 🏗️ [System Architecture](architecture.md)
 - 🔧 [Hardware Guide](doc/reference/HARDWARE.md)
 - 🎛️ [CX5106 Manual](doc/CX5106_USER_MANUAL.md)
-- 💬 [GitHub Discussions](https://github.com/SkipperDon/Helm-OS/discussions)
+- 💬 [GitHub Discussions](https://github.com/SkipperDon/d3kOS/discussions)
 
 ---
 
-**Helm-OS v2.0** - *Marine Intelligence, Simplified.*
+**d3kOS v2.0 - Software for the d3-k1 Marine Platform** - *Marine Intelligence, Simplified.*
 
 *Built by boaters, for boaters. Powered by open source.*

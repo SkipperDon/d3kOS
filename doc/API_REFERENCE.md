@@ -20,21 +20,21 @@
 
 ## OVERVIEW
 
-Helm-OS provides multiple APIs for integration and automation:
+d3kOS provides multiple APIs for integration and automation:
 
-1. **Helm-OS REST API**: System control and configuration
+1. **d3kOS REST API**: System control and configuration
 2. **Signal K REST API**: Marine data access (standardized)
 3. **Signal K WebSocket**: Real-time data streaming
-4. **Helm-OS WebSocket**: System events and commands
+4. **d3kOS WebSocket**: System events and commands
 
 ### Base URLs
 
 | API | URL | Protocol |
 |-----|-----|----------|
-| Helm-OS REST | `http://10.42.0.1/api` | HTTP/1.1 |
+| d3kOS REST | `http://10.42.0.1/api` | HTTP/1.1 |
 | Signal K REST | `http://10.42.0.1:3000/signalk/v1/api` | HTTP/1.1 |
 | Signal K WebSocket | `ws://10.42.0.1:3000/signalk/v1/stream` | WebSocket |
-| Helm-OS WebSocket | `ws://10.42.0.1:3000/helm-os` | WebSocket |
+| d3kOS WebSocket | `ws://10.42.0.1:3000/d3kos` | WebSocket |
 
 ### Response Format
 
@@ -455,7 +455,7 @@ Content-Type: application/json
     "started_at": "2026-02-06T14:30:00Z",
     "quality": "high",
     "segment_minutes": 10,
-    "file_path": "/opt/helm-os/data/camera/20260206_143000_camera.mp4"
+    "file_path": "/opt/d3kos/data/camera/20260206_143000_camera.mp4"
   },
   "timestamp": "2026-02-06T14:30:00Z"
 }
@@ -489,7 +489,7 @@ Host: 10.42.0.1
     "stopped_at": "2026-02-06T14:45:30Z",
     "duration_seconds": 930,
     "file_size_mb": 124.5,
-    "file_path": "/opt/helm-os/data/camera/20260206_143000_camera.mp4"
+    "file_path": "/opt/d3kos/data/camera/20260206_143000_camera.mp4"
   },
   "timestamp": "2026-02-06T14:45:30Z"
 }
@@ -645,7 +645,7 @@ Host: 10.42.0.1
 
 ## SIGNAL K INTEGRATION
 
-Signal K is the standardized marine data format. Helm-OS fully implements Signal K v1.x.
+Signal K is the standardized marine data format. d3kOS fully implements Signal K v1.x.
 
 ### Base URL
 
@@ -833,16 +833,16 @@ ws.onmessage = (event) => {
 
 ---
 
-### Helm-OS WebSocket
+### d3kOS WebSocket
 
 System events and commands.
 
 **Connection:**
 ```javascript
-const ws = new WebSocket('ws://10.42.0.1:3000/helm-os');
+const ws = new WebSocket('ws://10.42.0.1:3000/d3kos');
 
 ws.onopen = () => {
-  console.log('Connected to Helm-OS');
+  console.log('Connected to d3kOS');
 };
 
 ws.onmessage = (event) => {
@@ -938,7 +938,7 @@ Authorization: Bearer <api_token>
 **Example:**
 ```
 GET /api/health HTTP/1.1
-Host: helm-os.example.com
+Host: d3kos.example.com
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -1199,7 +1199,7 @@ curl -X GET "http://10.42.0.1/api/historical/engine?start=2026-02-01T00:00:00Z&e
 
 - **Signal K Documentation**: https://signalk.org/specification/latest/
 - **Signal K GitHub**: https://github.com/SignalK
-- **Helm-OS GitHub**: https://github.com/SkipperDon/Helm-OS
+- **d3kOS GitHub**: https://github.com/SkipperDon/d3kOS
 - **WebSocket RFC**: https://tools.ietf.org/html/rfc6455
 
 ---

@@ -67,7 +67,7 @@
 ### 1.3 Data Storage Locations
 
 ```
-/opt/helm-os/
+/opt/d3kos/
 ├── config/                      # Configuration (permanent)
 │   ├── onboarding.json         # User onboarding responses
 │   ├── benchmark-results.json  # Engine baseline data
@@ -87,7 +87,7 @@
 │   │   └── recording_*.wav
 │   └── exports/                # Exported data (CSV/JSON)
 │       ├── engine_data_*.csv
-│       └── helm-os-config.json
+│       └── d3kos-config.json
 │
 ├── models/                      # AI models (static)
 │   ├── vosk/                   # STT model (50MB)
@@ -107,7 +107,7 @@
 
 ### 2.1 Signal K Overview
 
-Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 data is converted to Signal K format.
+Signal K is the marine data standard used by d3kOS. All NMEA2000 and NMEA0183 data is converted to Signal K format.
 
 **Signal K Specification**: https://signalk.org/specification/
 
@@ -131,7 +131,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 }
 ```
 
-### 2.3 Signal K Paths (Helm-OS Core)
+### 2.3 Signal K Paths (d3kOS Core)
 
 #### Navigation Data
 
@@ -303,7 +303,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 
 ### 3.1 Onboarding Configuration
 
-**File**: `/opt/helm-os/config/onboarding.json`
+**File**: `/opt/d3kos/config/onboarding.json`
 
 ```json
 {
@@ -374,13 +374,13 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
     "autoInstallOpenCPN": true
   },
   "installationID": "abc123def456",
-  "qrCode": "helm-os://pair?id=abc123def456&version=2.0&tier=2"
+  "qrCode": "d3kos://pair?id=abc123def456&version=2.0&tier=2"
 }
 ```
 
 ### 3.2 Engine Baseline
 
-**File**: `/opt/helm-os/config/benchmark-results.json`
+**File**: `/opt/d3kos/config/benchmark-results.json`
 
 ```json
 {
@@ -467,7 +467,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 
 ### 3.3 License Configuration
 
-**File**: `/opt/helm-os/config/license.json`
+**File**: `/opt/d3kos/config/license.json`
 
 ```json
 {
@@ -495,7 +495,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 
 ### 3.4 Manufacturer Database
 
-**File**: `/opt/helm-os/config/engine-manufacturers.json`
+**File**: `/opt/d3kos/config/engine-manufacturers.json`
 
 ```json
 {
@@ -555,7 +555,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 
 ### 4.1 Reset Counter
 
-**File**: `/opt/helm-os/state/onboarding-reset-count.json`
+**File**: `/opt/d3kos/state/onboarding-reset-count.json`
 
 ```json
 {
@@ -583,7 +583,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 
 ### 4.2 System Health Status
 
-**File**: `/opt/helm-os/state/pi-health-status.json`
+**File**: `/opt/d3kos/state/pi-health-status.json`
 
 ```json
 {
@@ -641,7 +641,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
     "gpsd": "active",
     "helm-voice": "active",
     "helm-camera": "inactive",
-    "helm-health": "active"
+    "d3kos-health": "active"
   }
 }
 ```
@@ -652,7 +652,7 @@ Signal K is the marine data standard used by Helm-OS. All NMEA2000 and NMEA0183 
 
 ### 5.1 SQLite Database Schema
 
-**Database**: `/opt/helm-os/data/historical.db`
+**Database**: `/opt/d3kos/data/historical.db`
 
 #### Table: engine_metrics
 
@@ -834,7 +834,7 @@ ORDER BY hour DESC;
 
 ### 6.1 Boat Log (Text Format)
 
-**File**: `/opt/helm-os/data/boat-log.txt`
+**File**: `/opt/d3kos/data/boat-log.txt`
 
 **Format**: Plain text, one entry per line
 
@@ -852,7 +852,7 @@ YYYY-MM-DD HH:MM:SS | Engine Hours: <hours> | Pos: <lat>,<lon> | <entry text>
 
 ### 6.2 Camera Recordings
 
-**Directory**: `/opt/helm-os/data/camera/`
+**Directory**: `/opt/d3kos/data/camera/`
 
 **File Naming**: `YYYYMMDD_HHMMSS_camera.mp4`
 
@@ -883,7 +883,7 @@ YYYY-MM-DD HH:MM:SS | Engine Hours: <hours> | Pos: <lat>,<lon> | <entry text>
 
 ### 6.3 Voice Recordings (Temporary)
 
-**Directory**: `/opt/helm-os/data/voice/`
+**Directory**: `/opt/d3kos/data/voice/`
 
 **File Naming**: `recording_<timestamp>.wav`
 
@@ -897,7 +897,7 @@ YYYY-MM-DD HH:MM:SS | Engine Hours: <hours> | Pos: <lat>,<lon> | <entry text>
 
 ### 6.4 Exported Data
 
-**Directory**: `/opt/helm-os/data/exports/`
+**Directory**: `/opt/d3kos/data/exports/`
 
 **CSV Export Example** (`engine_data_202602.csv`):
 ```csv
@@ -908,7 +908,7 @@ timestamp,engine_hours,rpm,oil_pressure,coolant_temp,fuel_rate,voltage
 ...
 ```
 
-**JSON Configuration Export** (`helm-os-config.json`):
+**JSON Configuration Export** (`d3kos-config.json`):
 ```json
 {
   "exported": "2026-02-06T14:30:00.000Z",
@@ -989,7 +989,7 @@ Reolink Camera (RTSP stream)
          ↓ YES
   [Segmenter: 10-minute chunks]
          ↓
-  /opt/helm-os/data/camera/YYYYMMDD_HHMMSS_camera.mp4
+  /opt/d3kos/data/camera/YYYYMMDD_HHMMSS_camera.mp4
          ↓
   [FIFO Cleanup: if disk < 18%]
          ↓
@@ -1074,7 +1074,7 @@ Response:
 }
 ```
 
-### 8.2 Helm-OS Custom API
+### 8.2 d3kOS Custom API
 
 **Base URL**: `http://localhost/api/`
 
@@ -1203,50 +1203,50 @@ ws.send(JSON.stringify({
 
 ### 9.2 Auto-Cleanup Implementation
 
-**Cleanup Script** (`/opt/helm-os/scripts/data-cleanup.sh`):
+**Cleanup Script** (`/opt/d3kos/scripts/data-cleanup.sh`):
 
 ```bash
 #!/bin/bash
-# Run daily via cron: 0 2 * * * /opt/helm-os/scripts/data-cleanup.sh
+# Run daily via cron: 0 2 * * * /opt/d3kos/scripts/data-cleanup.sh
 
-TIER=$(jq -r '.tier' /opt/helm-os/config/license.json)
+TIER=$(jq -r '.tier' /opt/d3kos/config/license.json)
 
 # Cleanup boat log
 if [ "$TIER" -eq 0 ]; then
     # Tier 0: Keep 30 days
-    find /opt/helm-os/data -name "boat-log.txt" -mtime +30 -exec truncate -s 0 {} \;
+    find /opt/d3kos/data -name "boat-log.txt" -mtime +30 -exec truncate -s 0 {} \;
 fi
 
 # Cleanup historical metrics
 if [ "$TIER" -eq 0 ]; then
     # Tier 0: Delete > 30 days
-    sqlite3 /opt/helm-os/data/historical.db \
+    sqlite3 /opt/d3kos/data/historical.db \
         "DELETE FROM engine_metrics WHERE timestamp < datetime('now', '-30 days');"
-    sqlite3 /opt/helm-os/data/historical.db \
+    sqlite3 /opt/d3kos/data/historical.db \
         "DELETE FROM system_metrics WHERE timestamp < datetime('now', '-7 days');"
 elif [ "$TIER" -ge 2 ]; then
     # Tier 2+: Delete > 90 days
-    sqlite3 /opt/helm-os/data/historical.db \
+    sqlite3 /opt/d3kos/data/historical.db \
         "DELETE FROM engine_metrics WHERE timestamp < datetime('now', '-90 days');"
-    sqlite3 /opt/helm-os/data/historical.db \
+    sqlite3 /opt/d3kos/data/historical.db \
         "DELETE FROM system_metrics WHERE timestamp < datetime('now', '-30 days');"
 fi
 
 # Cleanup camera recordings (all tiers: FIFO at 18% disk free)
-DISK_FREE=$(df -h /opt/helm-os/data | tail -1 | awk '{print $5}' | sed 's/%//')
+DISK_FREE=$(df -h /opt/d3kos/data | tail -1 | awk '{print $5}' | sed 's/%//')
 if [ "$DISK_FREE" -gt 82 ]; then  # 82% used = 18% free
     # Delete oldest 10 recordings
-    ls -t /opt/helm-os/data/camera/*.mp4 | tail -10 | xargs rm -f
+    ls -t /opt/d3kos/data/camera/*.mp4 | tail -10 | xargs rm -f
 fi
 
 # Cleanup voice recordings (immediate delete, should be none)
-find /opt/helm-os/data/voice -name "*.wav" -mtime +0 -delete
+find /opt/d3kos/data/voice -name "*.wav" -mtime +0 -delete
 
 # Cleanup application logs
-find /opt/helm-os/logs -name "*.log" -mtime +30 -delete
+find /opt/d3kos/logs -name "*.log" -mtime +30 -delete
 
 # Vacuum SQLite database
-sqlite3 /opt/helm-os/data/historical.db "VACUUM;"
+sqlite3 /opt/d3kos/data/historical.db "VACUUM;"
 
 echo "Cleanup completed: $(date)"
 ```
@@ -1257,13 +1257,13 @@ echo "Cleanup completed: $(date)"
 
 ### 10.1 Schema Version Management
 
-**Migrations Directory**: `/opt/helm-os/db/migrations/`
+**Migrations Directory**: `/opt/d3kos/db/migrations/`
 
 **Migration 001** (`001_initial_schema.sql`):
 ```sql
 -- Migration 001: Initial schema
 -- Date: 2026-02-06
--- Author: Helm-OS Team
+-- Author: d3kOS Team
 
 CREATE TABLE schema_version (
     version INTEGER PRIMARY KEY,
@@ -1324,13 +1324,13 @@ CREATE TABLE system_metrics (
 );
 ```
 
-**Apply Migration Script** (`/opt/helm-os/scripts/migrate.sh`):
+**Apply Migration Script** (`/opt/d3kos/scripts/migrate.sh`):
 ```bash
 #!/bin/bash
 # Apply database migrations
 
-DB="/opt/helm-os/data/historical.db"
-MIGRATIONS_DIR="/opt/helm-os/db/migrations"
+DB="/opt/d3kos/data/historical.db"
+MIGRATIONS_DIR="/opt/d3kos/db/migrations"
 
 # Get current version
 CURRENT_VERSION=$(sqlite3 $DB "SELECT MAX(version) FROM schema_version;" 2>/dev/null || echo 0)

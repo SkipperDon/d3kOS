@@ -32,18 +32,18 @@
 ### Download Pre-Built Image
 ```bash
 # Download latest release from GitHub
-wget https://github.com/YOUR_USERNAME/helm-os/releases/latest/helm-os-v1.0.0-pi4b.img.gz
+wget https://github.com/YOUR_USERNAME/d3kos/releases/latest/d3kos-v1.0.0-pi4b.img.gz
 
 # Verify SHA256 checksum
-sha256sum helm-os-v1.0.0-pi4b.img.gz
+sha256sum d3kos-v1.0.0-pi4b.img.gz
 # Compare with: <CHECKSUM_HERE>
 ```
 
 ### Flash to SD Card
 ```bash
 # Linux/Mac
-gunzip helm-os-v1.0.0-pi4b.img.gz
-sudo dd if=helm-os-v1.0.0-pi4b.img of=/dev/sdX bs=4M status=progress
+gunzip d3kos-v1.0.0-pi4b.img.gz
+sudo dd if=d3kos-v1.0.0-pi4b.img of=/dev/sdX bs=4M status=progress
 sync
 
 # Windows: Use Raspberry Pi Imager or Etcher
@@ -67,7 +67,7 @@ sync
 ```markdown
 ## Voice Assistant - "Helm"
 
-Helm-OS includes a fully offline voice assistant called "Helm".
+d3kOS includes a fully offline voice assistant called "Helm".
 
 ### Wake Word
 Say **"Helm"** to activate listening mode
@@ -124,7 +124,7 @@ Tier 3 and 4 available via ecommerce site (future)
 
 #### 1.4 Hardware Requirements Update (MEDIUM PRIORITY)
 **Current**: Generic list  
-**Required**: Match lookandfeelhelm-os.txt exactly
+**Required**: Match lookandfeeld3kos.txt exactly
 
 **Update Hardware Section**:
 ```markdown
@@ -182,7 +182,7 @@ Tier 3 and 4 available via ecommerce site (future)
 ```markdown
 ## Main Menu Features
 
-The Helm-OS main menu provides access to:
+The d3kOS main menu provides access to:
 
 ### System Functions
 - **Voice Enable** - Toggle voice assistant on/off
@@ -238,7 +238,7 @@ The Helm-OS main menu provides access to:
 ```markdown
 ## Mobile App Integration
 
-After completing onboarding, Helm-OS generates a unique QR code for pairing with the mobile app (future feature).
+After completing onboarding, d3kOS generates a unique QR code for pairing with the mobile app (future feature).
 
 ### QR Code Contains
 - Installation UUID
@@ -259,11 +259,11 @@ After completing onboarding, Helm-OS generates a unique QR code for pairing with
 
 **Replace Entire Document** with:
 ```markdown
-# Helm-OS Installation Guide
+# d3kOS Installation Guide
 
 ## Overview
 
-Helm-OS is distributed as a **pre-built Raspberry Pi image**. Simply flash to an SD card and boot.
+d3kOS is distributed as a **pre-built Raspberry Pi image**. Simply flash to an SD card and boot.
 
 ## Prerequisites
 
@@ -282,24 +282,24 @@ Helm-OS is distributed as a **pre-built Raspberry Pi image**. Simply flash to an
 
 ## Installation Steps
 
-### Step 1: Download Helm-OS Image
+### Step 1: Download d3kOS Image
 
 ```bash
 # Download latest release
-wget https://github.com/YOUR_USERNAME/helm-os/releases/latest/helm-os-vX.X.X-pi4b.img.gz
+wget https://github.com/YOUR_USERNAME/d3kos/releases/latest/d3kos-vX.X.X-pi4b.img.gz
 
 # Download SHA256 checksum file
-wget https://github.com/YOUR_USERNAME/helm-os/releases/latest/helm-os-vX.X.X-pi4b.img.gz.sha256
+wget https://github.com/YOUR_USERNAME/d3kos/releases/latest/d3kos-vX.X.X-pi4b.img.gz.sha256
 ```
 
 ### Step 2: Verify Image Integrity
 
 ```bash
 # Linux/Mac
-sha256sum -c helm-os-vX.X.X-pi4b.img.gz.sha256
+sha256sum -c d3kos-vX.X.X-pi4b.img.gz.sha256
 
 # Expected output:
-# helm-os-vX.X.X-pi4b.img.gz: OK
+# d3kos-vX.X.X-pi4b.img.gz: OK
 ```
 
 ### Step 3: Flash Image to SD Card
@@ -315,16 +315,16 @@ sha256sum -c helm-os-vX.X.X-pi4b.img.gz.sha256
 #### Option B: Linux/Mac Command Line
 ```bash
 # Decompress image
-gunzip helm-os-vX.X.X-pi4b.img.gz
+gunzip d3kos-vX.X.X-pi4b.img.gz
 
 # Flash to SD card (replace /dev/sdX with your SD card device)
-sudo dd if=helm-os-vX.X.X-pi4b.img of=/dev/sdX bs=4M status=progress
+sudo dd if=d3kos-vX.X.X-pi4b.img of=/dev/sdX bs=4M status=progress
 sync
 ```
 
 #### Option C: Windows (Etcher)
 1. Download and install Etcher
-2. Select Helm-OS .img.gz file
+2. Select d3kOS .img.gz file
 3. Select SD card drive
 4. Click "Flash"
 
@@ -342,7 +342,7 @@ sync
 5. **Wait** for boot (~60 seconds)
 
 **Expected Behavior**:
-- Screen shows Helm-OS logo
+- Screen shows d3kOS logo
 - Boot messages scroll (if monitor connected)
 - Onboarding wizard launches automatically
 
@@ -365,14 +365,14 @@ Follow the on-screen onboarding wizard to configure:
 After onboarding completes:
 
 ```bash
-# SSH into Helm-OS (optional)
-ssh pi@helm-os.local
+# SSH into d3kOS (optional)
+ssh pi@d3kos.local
 
 # Check all services running
 systemctl status signalk
 systemctl status nodered
 systemctl status can0
-systemctl status helm-onboarding
+systemctl status d3kos-onboarding
 ```
 
 **Expected**: All services show "Active: active (running)"
@@ -400,13 +400,13 @@ systemctl status helm-onboarding
 
 ## Network Configuration (Post-Installation)
 
-After onboarding, Helm-OS creates:
-- **WiFi AP**: SSID "Helm-OS"
+After onboarding, d3kOS creates:
+- **WiFi AP**: SSID "d3kOS"
 - **Ethernet**: Shared mode at 10.42.0.1/24
 
 Access points:
-- **Main UI**: http://helm-os.local:1880
-- **Signal K**: http://helm-os.local:3000
+- **Main UI**: http://d3kos.local:1880
+- **Signal K**: http://d3kos.local:3000
 - **OpenCPN**: Launch from main menu
 
 ---
@@ -446,13 +446,13 @@ The image includes everything:
 # Test thoroughly
 
 # Create image
-sudo dd if=/dev/mmcblk0 of=helm-os-custom.img bs=4M status=progress
+sudo dd if=/dev/mmcblk0 of=d3kos-custom.img bs=4M status=progress
 
 # Compress
-gzip helm-os-custom.img
+gzip d3kos-custom.img
 
 # Generate checksum
-sha256sum helm-os-custom.img.gz > helm-os-custom.img.gz.sha256
+sha256sum d3kos-custom.img.gz > d3kos-custom.img.gz.sha256
 ```
 
 See `DEPLOYMENT.md` for complete build process.
@@ -682,7 +682,7 @@ Generates:
    - Proceed with reset
 5. If count = 10:
    - Show error: "Maximum resets reached"
-   - Display: "Download new image from helm-os.github.io"
+   - Display: "Download new image from d3kos.github.io"
    - Do NOT reset
    - Provide download link
 
@@ -724,7 +724,7 @@ Generates:
 
 #### Display
 - Large QR code (center of screen)
-- Instructions: "Scan with Helm-OS mobile app"
+- Instructions: "Scan with d3kOS mobile app"
 - "Continue to Main Menu" button
 - QR code also accessible from main menu
 ```
@@ -759,7 +759,7 @@ Each step includes:
 
 #### Example Flow
 ```
-[Voice]: "Welcome to Helm-OS. Let's configure your vessel."
+[Voice]: "Welcome to d3kOS. Let's configure your vessel."
 [User]: "Helm, I'm ready"
 [Voice]: "What is your operator name?"
 [User]: "Captain Don"

@@ -1,4 +1,4 @@
-# HELM-OS MASTER SYSTEM SPECIFICATION
+# d3kOS MASTER SYSTEM SPECIFICATION
 
 **Version**: 2.0  
 **Date**: February 6, 2026  
@@ -11,8 +11,8 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-02-04 | Helm-OS Team | Initial specification |
-| 2.0 | 2026-02-06 | Helm-OS Team | Integrated approved recommendations from gap analysis |
+| 1.0 | 2026-02-04 | d3kOS Team | Initial specification |
+| 2.0 | 2026-02-06 | d3kOS Team | Integrated approved recommendations from gap analysis |
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### 1.1 Project Overview
 
-Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4, designed to provide boat owners with advanced engine monitoring, navigation assistance, and voice-controlled operations. The system integrates NMEA2000 data, GPS/AIS information, camera surveillance, and AI-powered voice assistance into a unified, touchscreen-optimized interface.
+d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, designed to provide boat owners with advanced engine monitoring, navigation assistance, and voice-controlled operations. The system integrates NMEA2000 data, GPS/AIS information, camera surveillance, and AI-powered voice assistance into a unified, touchscreen-optimized interface.
 
 ### 1.2 Key Objectives
 
@@ -209,9 +209,9 @@ Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4, de
 | Signal K | `signalk.service` | Marine data server | Yes |
 | Node-RED | `nodered.service` | Automation and dashboard | Yes |
 | gpsd | `gpsd.service` | GPS data processing | Yes |
-| Voice Assistant | `helm-voice.service` | Wake word and voice control | Yes (Tier 2+) |
+| Voice Assistant | `d3kos-voice.service` | Wake word and voice control | Yes (Tier 2+) |
 | Camera Service | `helm-camera.service` | IP camera management | Yes (if camera detected) |
-| Health Monitor | `helm-health.service` | System and engine monitoring | Yes |
+| Health Monitor | `d3kos-health.service` | System and engine monitoring | Yes |
 | Boat Log | `helm-boatlog.service` | Voice log management | Yes (Tier 2+) |
 
 #### 4.1.3 CAN Bus Configuration
@@ -368,10 +368,10 @@ Page 3: Health Reports
 
 **PocketSphinx Configuration**:
 ```python
-# /opt/helm-os/config/sphinx/helm.dict
+# /opt/d3kos/config/sphinx/helm.dict
 HELM    HH EH L M
 
-# /opt/helm-os/config/sphinx/helm.lm
+# /opt/d3kos/config/sphinx/helm.lm
 # Language model with "Helm" as primary keyword
 ```
 
@@ -385,7 +385,7 @@ HELM    HH EH L M
 **Vosk Model**:
 - Model: `vosk-model-small-en-us-0.15`
 - Size: 50MB
-- Location: `/opt/helm-os/models/vosk/`
+- Location: `/opt/d3kos/models/vosk/`
 - Sample rate: 16kHz
 - Real-time factor: < 0.5 (2x faster than real-time on Pi 4)
 
@@ -550,18 +550,18 @@ const commands = {
 **localStorage Keys**:
 ```javascript
 {
-  "helm-os-voice-enabled": boolean,
-  "helm-os-last-page": string,
-  "helm-os-license-tier": 0 | 2 | 3,
-  "helm-os-onboarding-complete": boolean,
-  "helm-os-theme": "dark" (future: allow light theme)
+  "d3kos-voice-enabled": boolean,
+  "d3kos-last-page": string,
+  "d3kos-license-tier": 0 | 2 | 3,
+  "d3kos-onboarding-complete": boolean,
+  "d3kos-theme": "dark" (future: allow light theme)
 }
 ```
 
 **WebSocket Connection**:
 ```javascript
 // Connect to backend services
-const ws = new WebSocket('ws://localhost:3000/helm-os');
+const ws = new WebSocket('ws://localhost:3000/d3kos');
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
@@ -666,7 +666,7 @@ const thresholds = {
 - Export: Button to download as CSV
 
 **Data Storage**:
-- Location: `/opt/helm-os/data/historical/`
+- Location: `/opt/d3kos/data/historical/`
 - Format: SQLite database for efficient queries
 - Retention: 90 days (auto-purge older data)
 - Backup: Daily export to JSON (optional cloud sync in Tier 3)
@@ -689,7 +689,7 @@ Welcome → Q1 → Q2 → ... → Q13 → CX5106 Config → QR Code → Complete
 
 **Question 1: Engine Manufacturer**
 - Input type: Autocomplete dropdown
-- Data source: `/opt/helm-os/data/engine-manufacturers.json`
+- Data source: `/opt/d3kos/data/engine-manufacturers.json`
 - AI assist: Suggest based on partial input
 - Validation: Required field
 - Fallback: Manual text entry if not in list
@@ -834,7 +834,7 @@ function generateInstallationID() {
 
 **QR Code Content**:
 ```
-helm-os://pair?id=abc123def456&version=1.0.3&tier=2
+d3kos://pair?id=abc123def456&version=1.0.3&tier=2
 ```
 
 **Display**:
@@ -845,7 +845,7 @@ helm-os://pair?id=abc123def456&version=1.0.3&tier=2
 
 #### 5.3.5 Reset Counter
 
-**Counter File** (`/opt/helm-os/state/onboarding-reset-count.json`):
+**Counter File** (`/opt/d3kos/state/onboarding-reset-count.json`):
 ```json
 {
   "reset_count": 7,
@@ -864,7 +864,7 @@ helm-os://pair?id=abc123def456&version=1.0.3&tier=2
 **Warning Messages**:
 - Reset 8: "Warning: Only 2 resets remaining. Consider upgrading to Tier 2 for unlimited resets."
 - Reset 9: "Warning: This is your last reset. Next reset will require a fresh image download."
-- Reset 10: "Maximum resets reached. Please download a fresh Helm-OS image or upgrade to Tier 2."
+- Reset 10: "Maximum resets reached. Please download a fresh d3kOS image or upgrade to Tier 2."
 
 **Tier 2 Bypass**:
 ```javascript
@@ -901,7 +901,7 @@ if (tier >= 2) {
 
 #### 5.4.2 Recording Management
 
-**Storage Path**: `/opt/helm-os/data/camera/`
+**Storage Path**: `/opt/d3kos/data/camera/`
 
 **File Naming**: `YYYYMMDD_HHMMSS_camera.mp4`
 
@@ -940,16 +940,16 @@ function monitorStorageDuringRecording() {
 **FIFO Deletion**:
 ```javascript
 function deleteOldestRecordings(count) {
-  const files = fs.readdirSync('/opt/helm-os/data/camera/')
+  const files = fs.readdirSync('/opt/d3kos/data/camera/')
     .filter(f => f.endsWith('.mp4'))
     .map(f => ({
       name: f,
-      time: fs.statSync(`/opt/helm-os/data/camera/${f}`).mtime.getTime()
+      time: fs.statSync(`/opt/d3kos/data/camera/${f}`).mtime.getTime()
     }))
     .sort((a, b) => a.time - b.time);
   
   for (let i = 0; i < count && i < files.length; i++) {
-    fs.unlinkSync(`/opt/helm-os/data/camera/${files[i].name}`);
+    fs.unlinkSync(`/opt/d3kos/data/camera/${files[i].name}`);
     console.log(`Deleted: ${files[i].name}`);
   }
 }
@@ -1000,7 +1000,7 @@ const baseline = {
 };
 ```
 
-**Storage**: `/opt/helm-os/config/benchmark-results.json`
+**Storage**: `/opt/d3kos/config/benchmark-results.json`
 
 #### 6.1.2 Anomaly Detection
 
@@ -1084,7 +1084,7 @@ RECOMMENDATIONS:
 
 #### 6.2.1 System Metrics Collection
 
-**Monitoring Script** (`/opt/helm-os/services/health/pi-monitor.js`):
+**Monitoring Script** (`/opt/d3kos/services/health/pi-monitor.js`):
 ```javascript
 const { exec } = require('child_process');
 
@@ -1103,7 +1103,7 @@ function getSystemMetrics() {
 
 **Update Frequency**: Every 10 seconds
 
-**Storage**: `/opt/helm-os/state/pi-health-status.json`
+**Storage**: `/opt/d3kos/state/pi-health-status.json`
 
 #### 6.2.2 Thresholds and Alerts
 
@@ -1163,7 +1163,7 @@ Uptime: 3 days, 14 hours
 
 #### 6.3.1 Tier Detection
 
-**License File** (`/opt/helm-os/config/license.json`):
+**License File** (`/opt/d3kos/config/license.json`):
 ```json
 {
   "tier": 0,
@@ -1191,7 +1191,7 @@ function detectTier() {
   }
   
   // Tier 3: Valid subscription key (future)
-  if (fs.existsSync('/opt/helm-os/config/subscription.key')) {
+  if (fs.existsSync('/opt/d3kos/config/subscription.key')) {
     return { tier: 3, reason: 'Active subscription' };
   }
   
@@ -1234,7 +1234,7 @@ function detectTier() {
 ```javascript
 async function checkForUpdates() {
   try {
-    const response = await fetch('https://api.github.com/repos/helm-os/helm-os/releases/latest');
+    const response = await fetch('https://api.github.com/repos/d3kos/d3kos/releases/latest');
     const data = await response.json();
     const latestVersion = data.tag_name; // e.g., "v1.0.5"
     const currentVersion = "v1.0.3"; // From config
@@ -1277,11 +1277,11 @@ Release Notes:
 
 **QR Code Content**:
 ```
-helm-os://pair?id=abc123def456&version=1.0.3&tier=2&boat=MyBoat
+d3kos://pair?id=abc123def456&version=1.0.3&tier=2&boat=MyBoat
 ```
 
 **Mobile App Use Case**:
-- Scan QR code to pair mobile app with Helm-OS
+- Scan QR code to pair mobile app with d3kOS
 - Mobile app can remotely view dashboard (Tier 3)
 - Mobile app can view camera feed (Tier 2+)
 - Mobile app can receive alerts (all tiers)
@@ -1297,20 +1297,20 @@ helm-os://pair?id=abc123def456&version=1.0.3&tier=2&boat=MyBoat
 
 ### 7.1 WiFi Access Point
 
-**Configuration** (`/etc/NetworkManager/system-connections/Helm-OS-AP`):
+**Configuration** (`/etc/NetworkManager/system-connections/d3kOS-AP`):
 ```ini
 [connection]
-id=Helm-OS-AP
+id=d3kOS-AP
 type=wifi
 autoconnect=true
 
 [wifi]
 mode=ap
-ssid=Helm-OS
+ssid=d3kOS
 
 [wifi-security]
 key-mgmt=wpa-psk
-psk=helm-os-2026
+psk=d3kos-2026
 
 [ipv4]
 method=shared
@@ -1341,10 +1341,10 @@ address=10.42.0.1/24
 # Check if ethernet has internet
 if ping -c 1 8.8.8.8 &> /dev/null; then
   # Enable sharing
-  nmcli connection modify Helm-OS-AP ipv4.method shared
+  nmcli connection modify d3kOS-AP ipv4.method shared
 else
   # Direct mode
-  nmcli connection modify Helm-OS-AP ipv4.method auto
+  nmcli connection modify d3kOS-AP ipv4.method auto
 fi
 ```
 
@@ -1364,16 +1364,16 @@ ufw deny in on eth0 to any port 22       # SSH
 ```
 
 **mDNS (Avahi)**:
-- Hostname: `helm-os.local`
+- Hostname: `d3kos.local`
 - Service: `_http._tcp` (Web interface)
 - Service: `_signalk._tcp` (Signal K server)
 - Service: `_nodered._tcp` (Node-RED dashboard)
 
 **Access URLs**:
-- Main menu: `http://helm-os.local` or `http://10.42.0.1`
-- Dashboard: `http://helm-os.local:1880/dashboard`
-- Signal K: `http://helm-os.local:3000`
-- Camera: `rtsp://helm-os.local:554/camera`
+- Main menu: `http://d3kos.local` or `http://10.42.0.1`
+- Dashboard: `http://d3kos.local:1880/dashboard`
+- Signal K: `http://d3kos.local:3000`
+- Camera: `rtsp://d3kos.local:554/camera`
 
 ---
 
@@ -1383,37 +1383,37 @@ ufw deny in on eth0 to any port 22       # SSH
 
 | Data Type | Location | Format | Retention |
 |-----------|----------|--------|-----------|
-| Onboarding Config | `/opt/helm-os/config/onboarding.json` | JSON | Permanent |
-| Engine Baseline | `/opt/helm-os/config/benchmark-results.json` | JSON | Permanent |
-| License Info | `/opt/helm-os/config/license.json` | JSON | Permanent |
-| Reset Counter | `/opt/helm-os/state/onboarding-reset-count.json` | JSON | Permanent |
-| Pi Health Status | `/opt/helm-os/state/pi-health-status.json` | JSON | Overwrite |
-| Boat Log | `/opt/helm-os/data/boat-log.txt` | Text | 30d (Tier 0), ∞ (Tier 2+) |
-| Camera Recordings | `/opt/helm-os/data/camera/` | MP4 | Until disk full |
-| Historical Data | `/opt/helm-os/data/historical.db` | SQLite | 90 days |
-| Voice Recordings | `/opt/helm-os/data/voice/` | WAV | Temp (delete after STT) |
+| Onboarding Config | `/opt/d3kos/config/onboarding.json` | JSON | Permanent |
+| Engine Baseline | `/opt/d3kos/config/benchmark-results.json` | JSON | Permanent |
+| License Info | `/opt/d3kos/config/license.json` | JSON | Permanent |
+| Reset Counter | `/opt/d3kos/state/onboarding-reset-count.json` | JSON | Permanent |
+| Pi Health Status | `/opt/d3kos/state/pi-health-status.json` | JSON | Overwrite |
+| Boat Log | `/opt/d3kos/data/boat-log.txt` | Text | 30d (Tier 0), ∞ (Tier 2+) |
+| Camera Recordings | `/opt/d3kos/data/camera/` | MP4 | Until disk full |
+| Historical Data | `/opt/d3kos/data/historical.db` | SQLite | 90 days |
+| Voice Recordings | `/opt/d3kos/data/voice/` | WAV | Temp (delete after STT) |
 
 ### 8.2 Backup & Restore
 
 **Automated Backup** (Daily at 2 AM):
 ```bash
 #!/bin/bash
-# /opt/helm-os/scripts/backup.sh
+# /opt/d3kos/scripts/backup.sh
 
-BACKUP_DIR="/opt/helm-os/backups"
+BACKUP_DIR="/opt/d3kos/backups"
 DATE=$(date +%Y%m%d)
 
 # Create backup directory
 mkdir -p $BACKUP_DIR
 
 # Backup configuration files
-tar -czf $BACKUP_DIR/config_$DATE.tar.gz /opt/helm-os/config/
+tar -czf $BACKUP_DIR/config_$DATE.tar.gz /opt/d3kos/config/
 
 # Backup state files
-tar -czf $BACKUP_DIR/state_$DATE.tar.gz /opt/helm-os/state/
+tar -czf $BACKUP_DIR/state_$DATE.tar.gz /opt/d3kos/state/
 
 # Backup boat log
-cp /opt/helm-os/data/boat-log.txt $BACKUP_DIR/boat-log_$DATE.txt
+cp /opt/d3kos/data/boat-log.txt $BACKUP_DIR/boat-log_$DATE.txt
 
 # Delete backups older than 30 days
 find $BACKUP_DIR -type f -mtime +30 -delete
@@ -1424,7 +1424,7 @@ echo "Backup completed: $DATE"
 **Restore Process**:
 ```bash
 #!/bin/bash
-# /opt/helm-os/scripts/restore.sh
+# /opt/d3kos/scripts/restore.sh
 
 BACKUP_FILE=$1
 
@@ -1449,16 +1449,16 @@ echo "Restore completed from: $BACKUP_FILE"
 
 **CSV Export** (for logs and historical data):
 ```javascript
-// /opt/helm-os/services/export/csv-exporter.js
+// /opt/d3kos/services/export/csv-exporter.js
 
 function exportToCSV(data, filename) {
   const csv = data.map(row => Object.values(row).join(',')).join('\n');
   const header = Object.keys(data[0]).join(',');
   const fullCSV = header + '\n' + csv;
   
-  fs.writeFileSync(`/opt/helm-os/data/exports/${filename}`, fullCSV);
+  fs.writeFileSync(`/opt/d3kos/data/exports/${filename}`, fullCSV);
   
-  return `/opt/helm-os/data/exports/${filename}`;
+  return `/opt/d3kos/data/exports/${filename}`;
 }
 
 // Example usage
@@ -1470,14 +1470,14 @@ exportToCSV(historicalData, 'engine_data_2026-02.csv');
 ```javascript
 function exportConfig() {
   const config = {
-    onboarding: JSON.parse(fs.readFileSync('/opt/helm-os/config/onboarding.json')),
-    baseline: JSON.parse(fs.readFileSync('/opt/helm-os/config/benchmark-results.json')),
-    license: JSON.parse(fs.readFileSync('/opt/helm-os/config/license.json'))
+    onboarding: JSON.parse(fs.readFileSync('/opt/d3kos/config/onboarding.json')),
+    baseline: JSON.parse(fs.readFileSync('/opt/d3kos/config/benchmark-results.json')),
+    license: JSON.parse(fs.readFileSync('/opt/d3kos/config/license.json'))
   };
   
-  fs.writeFileSync('/opt/helm-os/data/exports/helm-os-config.json', JSON.stringify(config, null, 2));
+  fs.writeFileSync('/opt/d3kos/data/exports/d3kos-config.json', JSON.stringify(config, null, 2));
   
-  return '/opt/helm-os/data/exports/helm-os-config.json';
+  return '/opt/d3kos/data/exports/d3kos-config.json';
 }
 ```
 
@@ -1518,7 +1518,7 @@ function exportConfig() {
 - Camera: Disabled (UI buttons hidden)
 
 **Tier Detection**:
-- Run on boot: `/opt/helm-os/scripts/detect-tier.sh`
+- Run on boot: `/opt/d3kos/scripts/detect-tier.sh`
 - Update license.json
 - Enable/disable services based on tier
 
@@ -1720,7 +1720,7 @@ function monitorDiskUsage() {
 **Image Build Process**:
 ```bash
 #!/bin/bash
-# /opt/helm-os/scripts/create-image.sh
+# /opt/d3kos/scripts/create-image.sh
 
 # Install all dependencies
 ./install-signalk.sh
@@ -1743,19 +1743,19 @@ rm -rf ~/.bash_history
 ./shrink-filesystem.sh
 
 # Create image
-dd if=/dev/mmcblk0 of=/mnt/usb/helm-os-v1.0.3.img bs=4M status=progress
+dd if=/dev/mmcblk0 of=/mnt/usb/d3kos-v1.0.3.img bs=4M status=progress
 
 # Compress
-gzip -9 /mnt/usb/helm-os-v1.0.3.img
+gzip -9 /mnt/usb/d3kos-v1.0.3.img
 
 # Generate checksum
-sha256sum /mnt/usb/helm-os-v1.0.3.img.gz > /mnt/usb/helm-os-v1.0.3.img.gz.sha256
+sha256sum /mnt/usb/d3kos-v1.0.3.img.gz > /mnt/usb/d3kos-v1.0.3.img.gz.sha256
 ```
 
 **Image Hosting**:
 - Platform: GitHub Releases
-- File: `helm-os-v1.0.3.img.gz` (~4GB compressed)
-- Checksum: `helm-os-v1.0.3.img.gz.sha256`
+- File: `d3kos-v1.0.3.img.gz` (~4GB compressed)
+- Checksum: `d3kos-v1.0.3.img.gz.sha256`
 - Release notes: Changelog + known issues
 
 ### 12.2 Flashing Guide
@@ -1763,16 +1763,16 @@ sha256sum /mnt/usb/helm-os-v1.0.3.img.gz > /mnt/usb/helm-os-v1.0.3.img.gz.sha256
 **Recommended Tool**: Raspberry Pi Imager
 
 **Steps**:
-1. Download `helm-os-v1.0.3.img.gz` from GitHub
-2. Verify checksum: `sha256sum -c helm-os-v1.0.3.img.gz.sha256`
+1. Download `d3kos-v1.0.3.img.gz` from GitHub
+2. Verify checksum: `sha256sum -c d3kos-v1.0.3.img.gz.sha256`
 3. Open Raspberry Pi Imager
 4. Choose OS → Use custom → Select downloaded .img.gz
 5. Choose storage → Select SD card
 6. Write → Wait for completion
 7. Insert SD card into Raspberry Pi
 8. Power on → Wait for first boot (2-3 minutes)
-9. Connect to WiFi "Helm-OS" (password: helm-os-2026)
-10. Open browser → `http://helm-os.local` or `http://10.42.0.1`
+9. Connect to WiFi "d3kOS" (password: d3kos-2026)
+10. Open browser → `http://d3kos.local` or `http://10.42.0.1`
 11. Complete onboarding wizard
 
 ### 12.3 First Boot Configuration
@@ -1802,12 +1802,12 @@ sha256sum /mnt/usb/helm-os-v1.0.3.img.gz > /mnt/usb/helm-os-v1.0.3.img.gz.sha256
 - System logs: `/var/log/syslog`
 - Signal K logs: `/home/signalk/.signalk/logs/`
 - Node-RED logs: `/home/pi/.node-red/logs/`
-- Helm-OS logs: `/opt/helm-os/logs/`
+- d3kOS logs: `/opt/d3kos/logs/`
 
 **Log Rotation**:
 ```bash
-# /etc/logrotate.d/helm-os
-/opt/helm-os/logs/*.log {
+# /etc/logrotate.d/d3kos
+/opt/d3kos/logs/*.log {
     daily
     rotate 7
     compress
@@ -1837,16 +1837,16 @@ sudo systemctl restart helm-*
 
 **Update Process**:
 1. Download new image from GitHub
-2. Backup configuration: `/opt/helm-os/scripts/backup.sh`
+2. Backup configuration: `/opt/d3kos/scripts/backup.sh`
 3. Flash new image to new SD card
 4. Boot with new SD card
-5. Restore configuration: `/opt/helm-os/scripts/restore.sh backup_file.tar.gz`
+5. Restore configuration: `/opt/d3kos/scripts/restore.sh backup_file.tar.gz`
 
 **In-Place Updates** (Future):
 ```bash
-# /opt/helm-os/scripts/update.sh
-wget https://github.com/helm-os/helm-os/releases/latest/download/helm-os-update.tar.gz
-tar -xzf helm-os-update.tar.gz
+# /opt/d3kos/scripts/update.sh
+wget https://github.com/d3kos/d3kos/releases/latest/download/d3kos-update.tar.gz
+tar -xzf d3kos-update.tar.gz
 ./install.sh
 sudo systemctl restart helm-*
 ```
@@ -1925,7 +1925,7 @@ GET  /signalk/v1/api/vessels/self/navigation/position
 POST /signalk/v1/api/vessels/self/_attr
 ```
 
-**Helm-OS API**:
+**d3kOS API**:
 ```
 GET  /api/health                  # System health status
 GET  /api/engine/baseline         # Engine baseline data
@@ -1939,7 +1939,7 @@ GET  /api/license                 # License information
 ### Appendix E: File System Layout
 
 ```
-/opt/helm-os/
+/opt/d3kos/
 ├── config/
 │   ├── onboarding.json
 │   ├── benchmark-results.json
