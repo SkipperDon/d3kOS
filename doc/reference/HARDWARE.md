@@ -23,7 +23,7 @@
 
 ## 1. HARDWARE OVERVIEW
 
-Helm-OS is built on the Raspberry Pi 4 platform, designed to provide a complete marine electronics solution with engine monitoring, navigation, and voice control capabilities.
+d3kOS is built on the Raspberry Pi 4 platform, designed to provide a complete marine electronics solution with engine monitoring, navigation, and voice control capabilities.
 
 ### 1.1 System Block Diagram
 
@@ -420,7 +420,7 @@ cansend can0 1FFFFFFF#0011223344556677
 
 **Consistent Device Naming** (udev rules):
 
-Create `/etc/udev/rules.d/99-helm-os.rules`:
+Create `/etc/udev/rules.d/99-d3kos.rules`:
 ```bash
 # GPS Receiver
 SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", SYMLINK+="gps0"
@@ -461,7 +461,7 @@ SUBSYSTEM=="sound", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000a", TAG+="sys
   - Mount in shaded location (not on console)
   - Use aluminum enclosure as heatsink
   - Ensure ventilation (convection cooling)
-  - Monitor CPU temp (helm-health.service)
+  - Monitor CPU temp (d3kos-health.service)
 
 **Moisture Protection**:
 - **Issue**: Condensation can damage electronics
@@ -489,7 +489,7 @@ SUBSYSTEM=="sound", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000a", TAG+="sys
 
 ### 5.3 Temperature Monitoring
 
-Helm-OS monitors CPU temperature and throttles if needed:
+d3kOS monitors CPU temperature and throttles if needed:
 
 ```javascript
 // CPU Temperature Thresholds
@@ -602,7 +602,7 @@ const tempThresholds = {
 │          Navigation Console         │
 │  ┌─────────────────────────────┐   │
 │  │                             │   │
-│  │    Helm-OS Touchscreen      │   │
+│  │    d3kOS Touchscreen      │   │
 │  │        (Flush Mount)        │   │
 │  │                             │   │
 │  └─────────────────────────────┘   │
@@ -753,14 +753,14 @@ Before starting, gather:
 - [ ] Tools: Screwdrivers (Phillips, flathead), wire cutters, crimpers
 - [ ] Multimeter (for testing voltages)
 - [ ] Computer with microSD card reader
-- [ ] Helm-OS image file downloaded
+- [ ] d3kOS image file downloaded
 - [ ] Raspberry Pi Imager software
 
 ### 9.2 Assembly Steps
 
 **Step 1: Flash MicroSD Card**
-1. Download Helm-OS image from GitHub releases
-2. Verify checksum: `sha256sum helm-os-vX.X.X.img.gz`
+1. Download d3kOS image from GitHub releases
+2. Verify checksum: `sha256sum d3kos-vX.X.X.img.gz`
 3. Launch Raspberry Pi Imager
 4. Choose OS → Use custom → Select .img.gz file
 5. Choose storage → Select your microSD card
@@ -831,8 +831,8 @@ Before starting, gather:
 
 **Step 10: Initial Configuration**
 1. Touchscreen should show Chromium (maximized)
-2. Look for WiFi network: "Helm-OS"
-3. Connect from phone/tablet (password: `helm-os-2026`)
+2. Look for WiFi network: "d3kOS"
+3. Connect from phone/tablet (password: `d3kos-2026`)
 4. Navigate to: `http://10.42.0.1`
 5. Complete onboarding wizard (13 questions)
 

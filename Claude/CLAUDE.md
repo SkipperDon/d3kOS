@@ -1,7 +1,8 @@
-# CLAUDE.md - AI Assistant Guidelines for Helm-OS Development
-## Version 2.0
+# CLAUDE.md - AI Assistant Guidelines for d3kOS Development
+## Version 2.2
 
-**Last Updated**: February 6, 2026
+**Last Updated**: February 7, 2026
+**Changes from v2.1**: Full rebrand from Helm-OS to d3kOS, added d3-k1 hardware product designation, voice assistant "Helm" name unchanged
 **Changes from v2.0**: Added CX5106 second row DIP switch documentation, expanded to 15-question wizard, regional tank sensor standards
 **Changes from v1.0**: Added voice assistant details, updated licensing tiers, API specifications, hardware requirements
 
@@ -9,7 +10,7 @@
 
 ## Purpose
 
-This document provides guidelines for AI assistants (like Claude, ChatGPT, Copilot) working on the Helm-OS project. It ensures consistency, prevents circular development, and maintains alignment with the project's core specifications.
+This document provides guidelines for AI assistants (like Claude, ChatGPT, Copilot) working on the d3kOS project. It ensures consistency, prevents circular development, and maintains alignment with the project's core specifications.
 
 ---
 
@@ -27,9 +28,20 @@ This document provides guidelines for AI assistants (like Claude, ChatGPT, Copil
 
 ## Project Overview
 
-### What is Helm-OS?
+### What is d3kOS?
 
-Helm-OS is a **pre-built Raspberry Pi 4B marine intelligence platform** that provides:
+**d3kOS** is marine electronics software that runs on the **d3-k1** hardware platform.
+
+**The d3-k1 Hardware System** includes:
+- Raspberry Pi 4B (8GB RAM recommended)
+- PiCAN-M HAT (NMEA2000 interface)
+- 10.1" touchscreen (1920×1200, 1000 nit, sunlight readable)
+- IP67 marine-grade enclosure
+- Membrane for air circulation
+- All sensors, GPS, AIS, camera (Tier 2+)
+- Pre-installed with d3kOS software
+
+**d3kOS Software** provides:
 - NMEA2000 integration via PiCAN-M HAT
 - AI-assisted onboarding wizard (15-question engine configuration)
 - CX5106 engine gateway configuration
@@ -271,7 +283,7 @@ Piper → speaks response back
 ### System Requirements
 
 **Required**:
-- systemd service file (helm-voice.service)
+- systemd service file (d3kos-voice.service)
   - Starts on boot
   - Restarts on failure
   - Logs output
@@ -301,7 +313,7 @@ Piper → speaks response back
 
 ### Tier 0: Base Opensource
 **Features**:
-- All core Helm-OS functionality
+- All core d3kOS functionality
 - Offline voice assistant
 - NMEA2000 integration
 - OpenCPN auto-install
@@ -446,7 +458,7 @@ Tier 3 (Paid Annual)
 {
   "installation_uuid": "550e8400-e29b-41d4-a716-446655440000",
   "pairing_token": "TOKEN_1_TIME_USE",
-  "api_endpoint": "https://helm-os-cloud/api/v1",
+  "api_endpoint": "https://d3kos-cloud/api/v1",
   "current_tier": 0
 }
 ```
@@ -619,7 +631,7 @@ Tier 3 (Paid Annual)
 
 ### Networking
 - **Wi-Fi AP**
-  - SSID: "Helm-OS"
+  - SSID: "d3kOS"
   - DHCP: 10.42.0.1/24
   - Password configurable
 
@@ -691,7 +703,7 @@ Tier 3 (Paid Annual)
 
 ### Critical Information
 
-The CX5106 engine gateway is a **core component** of Helm-OS. AI assistants working on CX5106-related features MUST:
+The CX5106 engine gateway is a **core component** of d3kOS. AI assistants working on CX5106-related features MUST:
 
 1. **Read**: `CX5106_CONFIGURATION_GUIDE.md` and `CX5106_USER_MANUAL.md`
 2. **Understand**: DIP switch logic for **BOTH ROWS**:
@@ -974,7 +986,7 @@ Result:
 
 ### Directory Layout
 ```
-/opt/helm-os/
+/opt/d3kos/
 ├── services/
 │   ├── onboarding/          # Onboarding wizard backend
 │   ├── voice/               # Voice assistant service
@@ -993,10 +1005,10 @@ Result:
 │   ├── baseline.json
 │   └── health-status.json
 ├── system/                  # Systemd services
-│   ├── helm-onboarding.service
-│   ├── helm-voice.service
-│   ├── helm-health.service
-│   └── helm-benchmark.service
+│   ├── d3kos-onboarding.service
+│   ├── d3kos-voice.service
+│   ├── d3kos-health.service
+│   └── d3kos-benchmark.service
 └── scripts/                 # Installation scripts
 ```
 
@@ -1004,7 +1016,7 @@ Result:
 
 All configuration MUST be:
 - **Format**: JSON (not YAML, XML, or TOML)
-- **Location**: `/opt/helm-os/config/` or `/opt/helm-os/state/`
+- **Location**: `/opt/d3kos/config/` or `/opt/d3kos/state/`
 - **Atomic writes**: Write to temp file, then rename
 - **Power-loss safe**: No partial writes
 - **Human-readable**: Properly indented
@@ -1042,16 +1054,16 @@ All configuration MUST be:
 5. Download Piper voices
 6. Download Phi-2 model
 7. Test thoroughly on hardware
-8. Create image: `sudo dd if=/dev/mmcblk0 of=helm-os-vX.X.X-pi4b.img bs=4M`
-9. Compress: `gzip helm-os-vX.X.X-pi4b.img`
-10. Generate checksum: `sha256sum helm-os-vX.X.X-pi4b.img.gz > helm-os-vX.X.X-pi4b.img.gz.sha256`
+8. Create image: `sudo dd if=/dev/mmcblk0 of=d3kos-vX.X.X-pi4b.img bs=4M`
+9. Compress: `gzip d3kos-vX.X.X-pi4b.img`
+10. Generate checksum: `sha256sum d3kos-vX.X.X-pi4b.img.gz > d3kos-vX.X.X-pi4b.img.gz.sha256`
 11. Upload to GitHub releases
 
 ### Image Naming
 ```
-helm-os-v<version>-pi4b-<date>.img.gz
+d3kos-v<version>-pi4b-<date>.img.gz
 
-Example: helm-os-v1.0.0-pi4b-20260205.img.gz
+Example: d3kos-v1.0.0-pi4b-20260205.img.gz
 ```
 
 ### Included in Image
@@ -1221,6 +1233,6 @@ If you encounter:
 
 **This is not a suggestion document - it is a REQUIREMENT document.**
 
-All AI assistants working on Helm-OS MUST follow these guidelines. Deviations must be explicitly justified and documented.
+All AI assistants working on d3kOS MUST follow these guidelines. Deviations must be explicitly justified and documented.
 
 When in doubt: **Read MASTER_SYSTEM_SPEC.md and CLAUDE.md v2 again.**

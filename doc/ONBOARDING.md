@@ -20,7 +20,7 @@
 
 ## OVERVIEW
 
-The Helm-OS onboarding wizard is a 13-question process that collects critical information about your marine engine. This data is used to:
+The d3kOS onboarding wizard is a 13-question process that collects critical information about your marine engine. This data is used to:
 
 - Configure the CX5106 NMEA2000 gateway DIP switches
 - Establish engine performance baselines
@@ -664,7 +664,7 @@ Already set by earlier questions about engine count.
 
 ## CX5106 DIP SWITCH CONFIGURATION
 
-After completing all 15 questions, Helm-OS generates **complete** CX5106 DIP switch configuration for **both rows**.
+After completing all 15 questions, d3kOS generates **complete** CX5106 DIP switch configuration for **both rows**.
 
 ### What is CX5106?
 
@@ -802,7 +802,7 @@ Switch: "1" "2"
 
 ### Purpose
 
-The QR code uniquely identifies your Helm-OS installation and allows:
+The QR code uniquely identifies your d3kOS installation and allows:
 - Mobile app pairing
 - Remote monitoring (Tier 3)
 - Configuration backup
@@ -822,12 +822,12 @@ Generated from:
 ### QR Code Content
 
 ```
-helm-os://pair?id=a3f7c91e8d2b4f60&version=2.0.0&tier=0&boat=MyBoat
+d3kos://pair?id=a3f7c91e8d2b4f60&version=2.0.0&tier=0&boat=MyBoat
 ```
 
 Parameters:
 - `id`: Installation ID
-- `version`: Helm-OS version
+- `version`: d3kOS version
 - `tier`: License tier (0, 2, or 3)
 - `boat`: Boat name (optional, from Q1 if entered)
 
@@ -848,7 +848,7 @@ Parameters:
 │    Installation ID:                     │
 │    a3f7c91e8d2b4f60                    │
 │                                         │
-│    Scan with Helm-OS mobile app         │
+│    Scan with d3kOS mobile app         │
 │    to pair your device                  │
 │                                         │
 │    [Regenerate QR Code]                 │
@@ -916,7 +916,7 @@ Consider upgrading to Tier 2 for unlimited resets by installing OpenCPN or anoth
 ```
 ⚠️ Warning: This is your last reset.
 
-After this reset, you will need to download a fresh Helm-OS image or upgrade to Tier 2+ for unlimited resets.
+After this reset, you will need to download a fresh d3kOS image or upgrade to Tier 2+ for unlimited resets.
 
 [Continue] [Cancel]
 ```
@@ -926,7 +926,7 @@ After this reset, you will need to download a fresh Helm-OS image or upgrade to 
 ❌ Maximum resets reached (10/10).
 
 Options:
-1. Download fresh Helm-OS image from GitHub
+1. Download fresh d3kOS image from GitHub
 2. Upgrade to Tier 2+ by installing OpenCPN
 
 [Download Image] [View Upgrade Options] [Cancel]
@@ -942,7 +942,7 @@ From main menu:
 
 ### Counter Storage
 
-Location: `/opt/helm-os/state/onboarding-reset-count.json`
+Location: `/opt/d3kos/state/onboarding-reset-count.json`
 
 ```json
 {
@@ -1066,7 +1066,7 @@ Location: `/opt/helm-os/state/onboarding-reset-count.json`
 **Solutions**:
 1. Verify all onboarding answers are correct
 2. Check CX5106 model number (different models vary)
-3. Follow Helm-OS configuration (optimized for your engine)
+3. Follow d3kOS configuration (optimized for your engine)
 4. Contact support if data still incorrect
 
 ### Issue: Hit Reset Limit (Tier 0)
@@ -1080,7 +1080,7 @@ Location: `/opt/helm-os/state/onboarding-reset-count.json`
    - Get unlimited resets
 
 2. **Option 2**: Fresh image
-   - Download new Helm-OS image from GitHub
+   - Download new d3kOS image from GitHub
    - Flash to SD card
    - Lose current configuration
    - Get fresh 10 resets
@@ -1092,8 +1092,8 @@ Location: `/opt/helm-os/state/onboarding-reset-count.json`
 **Solutions**:
 1. Wait 30 seconds (slow SD card)
 2. Check disk space: Must have >2GB free
-3. Check logs: `sudo journalctl -u helm-onboarding`
-4. Restart service: `sudo systemctl restart helm-onboarding`
+3. Check logs: `sudo journalctl -u d3kos-onboarding`
+4. Restart service: `sudo systemctl restart d3kos-onboarding`
 
 ### Issue: QR Code Won't Generate
 
@@ -1101,9 +1101,9 @@ Location: `/opt/helm-os/state/onboarding-reset-count.json`
 
 **Solutions**:
 1. Check network interface: `ifconfig`
-2. Verify installation ID exists: `cat /opt/helm-os/config/license.json`
+2. Verify installation ID exists: `cat /opt/d3kos/config/license.json`
 3. Regenerate from main menu: "QR Code" button
-4. Check logs: `/opt/helm-os/logs/onboarding.log`
+4. Check logs: `/opt/d3kos/logs/onboarding.log`
 
 ---
 
@@ -1122,4 +1122,4 @@ For detailed operational instructions, see:
 
 ---
 
-**Onboarding Complete!** Your Helm-OS is configured and ready to monitor your engine.
+**Onboarding Complete!** Your d3kOS is configured and ready to monitor your engine.

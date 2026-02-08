@@ -1,7 +1,7 @@
-# Helm-OS Missing Requirements & Implementation Checklist
+# d3kOS Missing Requirements & Implementation Checklist
 
 **Generated**: February 4, 2026  
-**Based on**: MASTER_SYSTEM_SPEC.md, lookandfeelhelm-os.txt, and existing documentation
+**Based on**: MASTER_SYSTEM_SPEC.md, lookandfeeld3kos.txt, and existing documentation
 
 ---
 
@@ -272,7 +272,7 @@
 
 #### 10. Network Configuration
 - [ ] **WiFi Access Point**:
-  - [ ] SSID: "Helm-OS"
+  - [ ] SSID: "d3kOS"
   - [ ] DHCP server
   - [ ] IP range: 10.42.0.1/24
   - [ ] Password configuration
@@ -364,7 +364,7 @@
 - [ ] Add pre-built image download link
 - [ ] Add flashing instructions
 - [ ] Add first-boot instructions
-- [ ] Update hardware list to match lookandfeelhelm-os.txt
+- [ ] Update hardware list to match lookandfeeld3kos.txt
 - [ ] Add voice assistant info
 - [ ] Add licensing tiers
 
@@ -402,19 +402,19 @@
 ## CODE/SCRIPTS NEEDED
 
 ### Core Services
-- [ ] `/opt/helm-os/services/onboarding/index.js` - Onboarding backend
-- [ ] `/opt/helm-os/services/onboarding/reasoningEngine.js` - AI logic
-- [ ] `/opt/helm-os/services/onboarding/dipSwitchCalculator.js` - CX5106 logic
-- [ ] `/opt/helm-os/services/onboarding/pgnDetector.js` - NMEA2000 detection
-- [ ] `/opt/helm-os/services/voice/index.js` - Voice assistant backend
-- [ ] `/opt/helm-os/services/voice/wakeword.js` - PocketSphinx integration
-- [ ] `/opt/helm-os/services/voice/stt.js` - Vosk integration
-- [ ] `/opt/helm-os/services/voice/tts.js` - Piper integration
-- [ ] `/opt/helm-os/services/voice/llm.js` - Phi-2 integration
-- [ ] `/opt/helm-os/services/camera/index.js` - Camera management
-- [ ] `/opt/helm-os/services/health/index.js` - System health monitoring
-- [ ] `/opt/helm-os/services/health/engine-monitor.js` - Engine health
-- [ ] `/opt/helm-os/services/health/pi-monitor.js` - Pi health
+- [ ] `/opt/d3kos/services/onboarding/index.js` - Onboarding backend
+- [ ] `/opt/d3kos/services/onboarding/reasoningEngine.js` - AI logic
+- [ ] `/opt/d3kos/services/onboarding/dipSwitchCalculator.js` - CX5106 logic
+- [ ] `/opt/d3kos/services/onboarding/pgnDetector.js` - NMEA2000 detection
+- [ ] `/opt/d3kos/services/voice/index.js` - Voice assistant backend
+- [ ] `/opt/d3kos/services/voice/wakeword.js` - PocketSphinx integration
+- [ ] `/opt/d3kos/services/voice/stt.js` - Vosk integration
+- [ ] `/opt/d3kos/services/voice/tts.js` - Piper integration
+- [ ] `/opt/d3kos/services/voice/llm.js` - Phi-2 integration
+- [ ] `/opt/d3kos/services/camera/index.js` - Camera management
+- [ ] `/opt/d3kos/services/health/index.js` - System health monitoring
+- [ ] `/opt/d3kos/services/health/engine-monitor.js` - Engine health
+- [ ] `/opt/d3kos/services/health/pi-monitor.js` - Pi health
 
 ### Installation Scripts
 - [ ] `scripts/install-voice.sh` - Voice assistant setup
@@ -426,9 +426,9 @@
 - [ ] `scripts/verify-image.sh` - Generate checksums
 
 ### Systemd Services
-- [ ] `system/helm-voice.service` - Voice assistant service
+- [ ] `system/d3kos-voice.service` - Voice assistant service
 - [ ] `system/helm-camera.service` - Camera service
-- [ ] `system/helm-health.service` - Health monitoring
+- [ ] `system/d3kos-health.service` - Health monitoring
 - [ ] `system/helm-boatlog.service` - Boat log service
 
 ---
@@ -553,7 +553,7 @@
 
 ## SIGN-OFF CHECKLIST
 
-Before declaring Helm-OS v1.0 complete:
+Before declaring d3kOS v1.0 complete:
 
 - [ ] All Phase 1 items complete
 - [ ] All Phase 2 items complete
