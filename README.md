@@ -173,9 +173,13 @@ sudo dd if=d3kos-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
 ### 4. First Boot
 
 1. Power on (wait ~60 seconds for boot)
-2. Touchscreen shows Chromium with onboarding wizard
-3. Connect to WiFi network: **"d3kOS"** (password: `d3kos-2026`)
-4. From mobile device, navigate to: `http://d3kos.local` or `http://10.42.0.1`
+2. **Default credentials** (SSH/Desktop):
+   - Username: `d3kos`
+   - Password: `d3kos2026`
+   - ⚠️ **Change password after first login**: `passwd`
+3. Touchscreen shows Chromium with onboarding wizard
+4. Connect to WiFi network: **"d3kOS"** (password: `d3kos-2026`)
+5. From mobile device, navigate to: `http://d3kos.local` or `http://10.42.0.1`
 
 ### 5. Complete Onboarding Wizard
 
