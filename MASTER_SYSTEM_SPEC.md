@@ -16,6 +16,22 @@
 
 ---
 
+## DEFAULT CREDENTIALS
+
+**⚠️ Security Notice: Change after first login**
+
+| Component | Username | Password |
+|-----------|----------|----------|
+| **System User** | `d3kos` | `d3kos2026` |
+| **SSH Access** | `d3kos` | `d3kos2026` |
+| **Desktop Login** | `d3kos` | `d3kos2026` |
+| **WiFi AP** | SSID: `d3kOS` | `d3kos-2026` |
+| **Web Interface** | http://d3kos.local or http://10.42.0.1 | (no auth required) |
+
+**Change Password**: Run `passwd` after first login
+
+---
+
 ## TABLE OF CONTENTS
 
 1. [Executive Summary](#executive-summary)
