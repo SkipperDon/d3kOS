@@ -1,7 +1,21 @@
-# HELM-OS INSTALLATION GUIDE
+# d3kOS INSTALLATION GUIDE
 
 **Version**: 2.0
-**Last Updated**: February 6, 2026
+**Last Updated**: February 7, 2026
+
+---
+
+## DEFAULT CREDENTIALS
+
+**⚠️ IMPORTANT - Change After First Login**
+
+| Access Method | Username | Password |
+|---------------|----------|----------|
+| **SSH Login** | `d3kos` | `d3kos2026` |
+| **Desktop Login** | `d3kos` | `d3kos2026` |
+| **WiFi AP** | SSID: `d3kOS` | `d3kos-2026` |
+
+**Security Note**: Run `passwd` immediately after first login to change the default password.
 
 ---
 
