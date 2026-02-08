@@ -28,7 +28,7 @@
 
 ### 1.1 AI Components
 
-Helm-OS uses multiple AI models for offline intelligence:
+d3kOS uses multiple AI models for offline intelligence:
 
 | Component | Technology | Size | RAM | Purpose | Latency |
 |-----------|-----------|------|-----|---------|---------|
@@ -150,7 +150,7 @@ Helm-OS uses multiple AI models for offline intelligence:
 
 ### 2.2 Service Implementation
 
-**Systemd Service**: `/etc/systemd/system/helm-voice.service`
+**Systemd Service**: `/etc/systemd/system/d3kos-voice.service`
 
 ```ini
 [Unit]
@@ -160,8 +160,8 @@ After=network.target sound.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/opt/helm-os/services/voice
-ExecStart=/usr/bin/python3 /opt/helm-os/services/voice/assistant.py
+WorkingDirectory=/opt/d3kos/services/voice
+ExecStart=/usr/bin/python3 /opt/d3kos/services/voice/assistant.py
 Restart=always
 RestartSec=10
 Environment="PYTHONUNBUFFERED=1"
@@ -172,7 +172,7 @@ StandardError=journal
 WantedBy=multi-user.target
 ```
 
-**Main Service Script**: `/opt/helm-os/services/voice/assistant.py`
+**Main Service Script**: `/opt/d3kos/services/voice/assistant.py`
 
 ```python
 #!/usr/bin/env python3
@@ -196,7 +196,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/opt/helm-os/logs/voice.log'),
+        logging.FileHandler('/opt/d3kos/logs/voice.log'),
         logging.StreamHandler()
     ]
 )
@@ -224,7 +224,7 @@ class VoiceAssistant:
         logger.info("Voice assistant ready")
 
     def check_tier(self):
-        license_file = Path('/opt/helm-os/config/license.json')
+        license_file = Path('/opt/d3kos/config/license.json')
         if license_file.exists():
             with open(license_file) as f:
                 return json.load(f).get('tier', 0)
@@ -290,7 +290,7 @@ class VoiceAssistant:
         import wave
         import pyaudio
 
-        audio_file = f"/opt/helm-os/data/voice/recording_{int(time.time())}.wav"
+        audio_file = f"/opt/d3kos/data/voice/recording_{int(time.time())}.wav"
 
         CHUNK = 1024
         FORMAT = pyaudio.paInt16
@@ -420,7 +420,7 @@ if __name__ == '__main__':
 
 ### 3.2 Implementation
 
-**Wake Word Detector**: `/opt/helm-os/services/voice/wake_word.py`
+**Wake Word Detector**: `/opt/d3kos/services/voice/wake_word.py`
 
 ```python
 import os
@@ -487,7 +487,7 @@ EOF
 sphinx_lm_convert -i helm.corpus -o helm.lm
 
 # Move to model directory
-sudo cp helm.* /opt/helm-os/models/pocketsphinx/
+sudo cp helm.* /opt/d3kos/models/pocketsphinx/
 ```
 
 ---
@@ -504,7 +504,7 @@ sudo cp helm.* /opt/helm-os/models/pocketsphinx/
 
 ### 4.2 Implementation
 
-**STT Module**: `/opt/helm-os/services/voice/stt.py`
+**STT Module**: `/opt/d3kos/services/voice/stt.py`
 
 ```python
 import json
@@ -512,7 +512,7 @@ import wave
 from vosk import Model, KaldiRecognizer
 
 class SpeechToText:
-    def __init__(self, model_path="/opt/helm-os/models/vosk"):
+    def __init__(self, model_path="/opt/d3kos/models/vosk"):
         self.model = Model(model_path)
         self.sample_rate = 16000
 
@@ -566,7 +566,7 @@ class SpeechToText:
 
 ### 4.4 Marine Vocabulary Enhancement
 
-**Custom Dictionary**: `/opt/helm-os/models/vosk/marine-words.txt`
+**Custom Dictionary**: `/opt/d3kos/models/vosk/marine-words.txt`
 
 ```
 helm
@@ -587,7 +587,7 @@ rec = KaldiRecognizer(model, sample_rate)
 rec.SetWords(True)
 
 # Load custom vocabulary
-with open('/opt/helm-os/models/vosk/marine-words.txt') as f:
+with open('/opt/d3kos/models/vosk/marine-words.txt') as f:
     words = [line.strip() for line in f]
     rec.SetGrammar(json.dumps(words))
 ```
@@ -624,12 +624,12 @@ make
 
 # Download Phi-2 model (Q4_K_M quantization)
 wget https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q4_K_M.gguf
-mv phi-2.Q4_K_M.gguf /opt/helm-os/models/phi2/
+mv phi-2.Q4_K_M.gguf /opt/d3kos/models/phi2/
 ```
 
 ### 5.3 LLM Module Implementation
 
-**LLM Module**: `/opt/helm-os/services/voice/llm.py`
+**LLM Module**: `/opt/d3kos/services/voice/llm.py`
 
 ```python
 import subprocess
@@ -637,7 +637,7 @@ import json
 
 class LanguageModel:
     def __init__(self):
-        self.model_path = "/opt/helm-os/models/phi2/phi-2.Q4_K_M.gguf"
+        self.model_path = "/opt/d3kos/models/phi2/phi-2.Q4_K_M.gguf"
         self.llama_bin = "/usr/local/bin/llama-cli"
 
         # LLM parameters
@@ -778,7 +778,7 @@ Helm: Based on GPS, you are 2.3 nautical miles from the dock, approximately 12 m
 
 ### 6.2 Implementation
 
-**TTS Module**: `/opt/helm-os/services/voice/tts.py`
+**TTS Module**: `/opt/d3kos/services/voice/tts.py`
 
 ```python
 import subprocess
@@ -787,8 +787,8 @@ import tempfile
 class TextToSpeech:
     def __init__(self):
         self.piper_bin = "/usr/local/bin/piper"
-        self.voice_model = "/opt/helm-os/models/piper/en_US-amy-medium.onnx"
-        self.voice_config = "/opt/helm-os/models/piper/en_US-amy-medium.onnx.json"
+        self.voice_model = "/opt/d3kos/models/piper/en_US-amy-medium.onnx"
+        self.voice_config = "/opt/d3kos/models/piper/en_US-amy-medium.onnx.json"
         self.sample_rate = 22050
 
     def synthesize(self, text, output_file=None):
@@ -897,7 +897,7 @@ sox input.wav output.wav \
 
 ### 7.2 Implementation
 
-**Anomaly Detector**: `/opt/helm-os/services/health/anomaly_detector.py`
+**Anomaly Detector**: `/opt/d3kos/services/health/anomaly_detector.py`
 
 ```python
 import json
@@ -908,11 +908,11 @@ from datetime import datetime
 class AnomalyDetector:
     def __init__(self):
         self.baseline = self.load_baseline()
-        self.db = sqlite3.connect('/opt/helm-os/data/historical.db')
+        self.db = sqlite3.connect('/opt/d3kos/data/historical.db')
 
     def load_baseline(self):
         """Load engine baseline data"""
-        with open('/opt/helm-os/config/benchmark-results.json') as f:
+        with open('/opt/d3kos/config/benchmark-results.json') as f:
             return json.load(f)['baseline']
 
     def detect(self, metric_name, current_value, operating_mode='cruise'):
@@ -1111,7 +1111,7 @@ def detect_trend(metric_name, window_days=7):
 
 ### 8.1 Intent Classification
 
-**Command Parser**: `/opt/helm-os/services/voice/command_parser.py`
+**Command Parser**: `/opt/d3kos/services/voice/command_parser.py`
 
 ```python
 import re
@@ -1315,8 +1315,8 @@ class LanguageModel:
 **Cache TTS Phrases**:
 ```python
 TTS_CACHE = {
-    "all systems normal": "/opt/helm-os/cache/tts_normal.wav",
-    "oil pressure low": "/opt/helm-os/cache/tts_oil_low.wav"
+    "all systems normal": "/opt/d3kos/cache/tts_normal.wav",
+    "oil pressure low": "/opt/d3kos/cache/tts_oil_low.wav"
 }
 
 def synthesize_cached(text):
@@ -1332,7 +1332,7 @@ def synthesize_cached(text):
 ### 10.1 Model Storage
 
 ```
-/opt/helm-os/models/
+/opt/d3kos/models/
 ├── pocketsphinx/
 │   ├── en-us/              # Acoustic model
 │   ├── helm.dict           # Pronunciation dictionary
@@ -1354,14 +1354,14 @@ def synthesize_cached(text):
 
 ### 10.2 Model Updates
 
-**Update Script**: `/opt/helm-os/scripts/update-models.sh`
+**Update Script**: `/opt/d3kos/scripts/update-models.sh`
 
 ```bash
 #!/bin/bash
 # Update AI models
 
-MODELS_DIR="/opt/helm-os/models"
-BACKUP_DIR="/opt/helm-os/backups/models_$(date +%Y%m%d)"
+MODELS_DIR="/opt/d3kos/models"
+BACKUP_DIR="/opt/d3kos/backups/models_$(date +%Y%m%d)"
 
 # Backup existing models
 mkdir -p $BACKUP_DIR
@@ -1403,7 +1403,7 @@ echo "Models updated successfully"
 # Vosk model
 echo "Verifying Vosk model..."
 VOSK_CHECKSUM="abc123..."  # Expected checksum
-VOSK_ACTUAL=$(find /opt/helm-os/models/vosk -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+VOSK_ACTUAL=$(find /opt/d3kos/models/vosk -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
 
 if [ "$VOSK_CHECKSUM" != "$VOSK_ACTUAL" ]; then
     echo "ERROR: Vosk model checksum mismatch"
@@ -1413,7 +1413,7 @@ fi
 # Phi-2 model
 echo "Verifying Phi-2 model..."
 PHI2_CHECKSUM="def456..."
-PHI2_ACTUAL=$(sha256sum /opt/helm-os/models/phi2/phi-2.Q4_K_M.gguf | cut -d' ' -f1)
+PHI2_ACTUAL=$(sha256sum /opt/d3kos/models/phi2/phi-2.Q4_K_M.gguf | cut -d' ' -f1)
 
 if [ "$PHI2_CHECKSUM" != "$PHI2_ACTUAL" ]; then
     echo "ERROR: Phi-2 model checksum mismatch"
@@ -1514,7 +1514,7 @@ vcgencmd get_throttled
 ```bash
 # Test TTS directly
 echo "test" | /usr/local/bin/piper \
-    --model /opt/helm-os/models/piper/en_US-amy-medium.onnx \
+    --model /opt/d3kos/models/piper/en_US-amy-medium.onnx \
     --output_file test.wav
 
 aplay test.wav

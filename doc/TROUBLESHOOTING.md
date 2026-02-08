@@ -33,8 +33,8 @@ Before diving into specific issues, try these quick checks:
 ssh pi@10.42.0.1
 # Default password: raspberry (change this!)
 
-# Check all Helm-OS services
-sudo systemctl status signalk nodered gpsd helm-health
+# Check all d3kOS services
+sudo systemctl status signalk nodered gpsd d3kos-health
 
 # Check system health
 curl http://10.42.0.1/api/health | jq
@@ -52,8 +52,8 @@ sudo journalctl -u signalk -n 50
 # View Node-RED logs
 sudo journalctl -u nodered -n 50
 
-# View Helm-OS specific logs
-tail -f /opt/helm-os/logs/*.log
+# View d3kOS specific logs
+tail -f /opt/d3kos/logs/*.log
 ```
 
 ### 3. Check Hardware
@@ -128,7 +128,7 @@ sudo fsck /dev/sdX
 ```
 
 **Step 3: Reflash SD Card**
-1. Download fresh Helm-OS image from GitHub
+1. Download fresh d3kOS image from GitHub
 2. Flash to SD card using Raspberry Pi Imager
 3. Insert and reboot
 
@@ -217,7 +217,7 @@ sudo systemctl status gpsd
 sudo systemctl enable signalk
 sudo systemctl enable nodered
 sudo systemctl enable gpsd
-sudo systemctl enable helm-health
+sudo systemctl enable d3kos-health
 
 sudo reboot
 ```
@@ -235,7 +235,7 @@ systemctl --failed
 
 ## NETWORK AND CONNECTIVITY
 
-### Issue: Cannot Connect to "Helm-OS" WiFi
+### Issue: Cannot Connect to "d3kOS" WiFi
 
 **Symptoms:**
 - WiFi network not visible
@@ -254,18 +254,18 @@ nmcli device status
 
 **Step 2: Check WiFi Configuration**
 ```bash
-nmcli connection show Helm-OS-AP
+nmcli connection show d3kOS-AP
 
 # Verify settings:
-# - SSID: Helm-OS
+# - SSID: d3kOS
 # - Mode: ap
-# - Password: helm-os-2026
+# - Password: d3kos-2026
 ```
 
 **Step 3: Restart WiFi**
 ```bash
-sudo nmcli connection down Helm-OS-AP
-sudo nmcli connection up Helm-OS-AP
+sudo nmcli connection down d3kOS-AP
+sudo nmcli connection up d3kOS-AP
 
 # Or restart NetworkManager
 sudo systemctl restart NetworkManager
@@ -274,16 +274,16 @@ sudo systemctl restart NetworkManager
 **Step 4: Recreate WiFi AP**
 ```bash
 # Delete existing connection
-sudo nmcli connection delete Helm-OS-AP
+sudo nmcli connection delete d3kOS-AP
 
 # Create new AP
 sudo nmcli device wifi hotspot \
   ifname wlan0 \
-  ssid Helm-OS \
-  password helm-os-2026
+  ssid d3kOS \
+  password d3kos-2026
 
 # Make persistent
-sudo nmcli connection modify Helm-OS-AP \
+sudo nmcli connection modify d3kOS-AP \
   connection.autoconnect yes \
   ipv4.method shared
 ```
@@ -293,8 +293,8 @@ sudo nmcli connection modify Helm-OS-AP \
 ### Issue: Connected to WiFi But Can't Access Dashboard
 
 **Symptoms:**
-- Connected to Helm-OS WiFi
-- http://helm-os.local doesn't work
+- Connected to d3kOS WiFi
+- http://d3kos.local doesn't work
 - http://10.42.0.1 doesn't work
 
 **Solutions:**
@@ -349,10 +349,10 @@ curl http://localhost:1880/dashboard
 
 ---
 
-### Issue: mDNS (helm-os.local) Not Working
+### Issue: mDNS (d3kos.local) Not Working
 
 **Symptoms:**
-- http://helm-os.local doesn't resolve
+- http://d3kos.local doesn't resolve
 - IP address (10.42.0.1) works fine
 
 **Solution:**
@@ -372,14 +372,14 @@ sudo systemctl start avahi-daemon
 # Check hostname
 hostname
 
-# Should be: helm-os
+# Should be: d3kos
 
 # If not, set it:
-sudo hostnamectl set-hostname helm-os
+sudo hostnamectl set-hostname d3kos
 
 # Edit hosts file
 sudo nano /etc/hosts
-# Add: 127.0.1.1  helm-os
+# Add: 127.0.1.1  d3kos
 ```
 
 **Step 3: Client Device Requirements**
@@ -713,7 +713,7 @@ sudo journalctl -u helm-voice -f
 **Step 4: Test Wake Word Detection**
 ```bash
 # Run wake word detector manually
-cd /opt/helm-os/services/voice
+cd /opt/d3kos/services/voice
 python3 wake_word.py
 
 # Should show:
@@ -754,8 +754,8 @@ speaker-test -t wav -c 2
 ```bash
 # Test Piper TTS manually
 echo "Engine is running normally" | \
-  /opt/helm-os/models/piper/piper \
-  --model /opt/helm-os/models/piper/en_US-amy-medium.onnx \
+  /opt/d3kos/models/piper/piper \
+  --model /opt/d3kos/models/piper/en_US-amy-medium.onnx \
   --output_file test.wav
 
 aplay test.wav
@@ -766,12 +766,12 @@ aplay test.wav
 **Step 3: Check LLM Service**
 ```bash
 # Test Phi-2 manually
-cd /opt/helm-os/services/voice
+cd /opt/d3kos/services/voice
 python3 test_llm.py "What's the engine status?"
 
 # Should output response text
 # If fails:
-# - Check model file exists: /opt/helm-os/models/phi2/
+# - Check model file exists: /opt/d3kos/models/phi2/
 # - Check sufficient memory (need 4GB free)
 # - Check CPU not throttling
 ```
@@ -803,7 +803,7 @@ free -h
 **Step 2: Use Smaller LLM**
 ```bash
 # Edit voice service config
-sudo nano /opt/helm-os/config/voice.json
+sudo nano /opt/d3kos/config/voice.json
 
 # Change model:
 {
@@ -819,7 +819,7 @@ sudo systemctl restart helm-voice
 **Step 3: Reduce Wake Word Sensitivity**
 ```bash
 # Edit wake word config
-sudo nano /opt/helm-os/config/wake_word.json
+sudo nano /opt/d3kos/config/wake_word.json
 
 # Increase threshold (less sensitive, faster)
 {
@@ -860,13 +860,13 @@ vlc rtsp://admin:password@192.168.1.100:554/h264Preview_01_main
 # - admin:password with your camera credentials
 # - 192.168.1.100 with your camera IP
 
-# If stream works, issue is in Helm-OS camera service
+# If stream works, issue is in d3kOS camera service
 ```
 
 **Step 3: Check Camera Credentials**
 ```bash
 # Edit camera config
-sudo nano /opt/helm-os/config/camera.json
+sudo nano /opt/d3kos/config/camera.json
 
 # Verify:
 {
@@ -896,7 +896,7 @@ df -h
 
 # Need at least 18% free to start recording
 # If below 18%, delete old recordings:
-rm /opt/helm-os/data/camera/202601*.mp4
+rm /opt/d3kos/data/camera/202601*.mp4
 ```
 
 **Step 2: Check Existing Recording**
@@ -925,7 +925,7 @@ sudo journalctl -u helm-camera -n 50
 - Storage never fills up
 
 **Explanation:**
-This is normal behavior! Helm-OS automatically deletes oldest recordings when disk space drops below 18% to prevent system failure.
+This is normal behavior! d3kOS automatically deletes oldest recordings when disk space drops below 18% to prevent system failure.
 
 **To Preserve Recordings:**
 1. Copy to external USB drive regularly
@@ -934,7 +934,7 @@ This is normal behavior! Helm-OS automatically deletes oldest recordings when di
 
 ```bash
 # Disable auto-delete (not recommended)
-sudo nano /opt/helm-os/config/camera.json
+sudo nano /opt/d3kos/config/camera.json
 
 # Set:
 {
@@ -1061,7 +1061,7 @@ sudo fsck -y /dev/mmcblk0p2
 
 # Backup data
 sudo mount /dev/mmcblk0p2 /mnt
-sudo tar czf backup.tar.gz /mnt/opt/helm-os
+sudo tar czf backup.tar.gz /mnt/opt/d3kos
 
 # Reflash SD card with fresh image
 ```
@@ -1082,21 +1082,21 @@ sudo tar czf backup.tar.gz /mnt/opt/helm-os
 **Check Disk Usage:**
 ```bash
 df -h
-du -sh /opt/helm-os/data/*
+du -sh /opt/d3kos/data/*
 
 # Common space hogs:
-# - Camera recordings: /opt/helm-os/data/camera/
-# - Historical logs: /opt/helm-os/data/historical.db
+# - Camera recordings: /opt/d3kos/data/camera/
+# - Historical logs: /opt/d3kos/data/historical.db
 # - System logs: /var/log/
 ```
 
 **Free Up Space:**
 ```bash
 # Delete old camera recordings
-rm /opt/helm-os/data/camera/202601*.mp4
+rm /opt/d3kos/data/camera/202601*.mp4
 
 # Compact historical database
-sqlite3 /opt/helm-os/data/historical.db "VACUUM;"
+sqlite3 /opt/d3kos/data/historical.db "VACUUM;"
 
 # Clear system logs
 sudo journalctl --vacuum-time=7d
@@ -1119,13 +1119,13 @@ sudo apt-get clean
 **Check Database:**
 ```bash
 # Check database exists
-ls -lh /opt/helm-os/data/historical.db
+ls -lh /opt/d3kos/data/historical.db
 
 # Check database size
-du -h /opt/helm-os/data/historical.db
+du -h /opt/d3kos/data/historical.db
 
 # Query database
-sqlite3 /opt/helm-os/data/historical.db \
+sqlite3 /opt/d3kos/data/historical.db \
   "SELECT COUNT(*) FROM engine_metrics;"
 
 # Should show number of records
@@ -1133,13 +1133,13 @@ sqlite3 /opt/helm-os/data/historical.db \
 
 **Check Logging Service:**
 ```bash
-sudo systemctl status helm-health
+sudo systemctl status d3kos-health
 
 # Check logs
-sudo journalctl -u helm-health -n 50
+sudo journalctl -u d3kos-health -n 50
 
 # Restart service
-sudo systemctl restart helm-health
+sudo systemctl restart d3kos-health
 ```
 
 ---
@@ -1259,9 +1259,9 @@ sudo systemctl start nodered
 sudo tar xzf backup.tar.gz -C /
 
 # Or manually copy files
-sudo cp backup/onboarding.json /opt/helm-os/config/
-sudo cp backup/benchmark-results.json /opt/helm-os/config/
-sudo cp backup/license.json /opt/helm-os/config/
+sudo cp backup/onboarding.json /opt/d3kos/config/
+sudo cp backup/benchmark-results.json /opt/d3kos/config/
+sudo cp backup/license.json /opt/d3kos/config/
 
 sudo reboot
 ```
@@ -1344,7 +1344,7 @@ screen /dev/ttyUSB0 115200
 
 **Check Database Integrity:**
 ```bash
-sqlite3 /opt/helm-os/data/historical.db "PRAGMA integrity_check;"
+sqlite3 /opt/d3kos/data/historical.db "PRAGMA integrity_check;"
 
 # Should output: ok
 ```
@@ -1352,20 +1352,20 @@ sqlite3 /opt/helm-os/data/historical.db "PRAGMA integrity_check;"
 **Repair Corrupted Database:**
 ```bash
 # Dump to SQL
-sqlite3 /opt/helm-os/data/historical.db .dump > backup.sql
+sqlite3 /opt/d3kos/data/historical.db .dump > backup.sql
 
 # Recreate database
-rm /opt/helm-os/data/historical.db
-sqlite3 /opt/helm-os/data/historical.db < backup.sql
+rm /opt/d3kos/data/historical.db
+sqlite3 /opt/d3kos/data/historical.db < backup.sql
 
 # Verify
-sqlite3 /opt/helm-os/data/historical.db "SELECT COUNT(*) FROM engine_metrics;"
+sqlite3 /opt/d3kos/data/historical.db "SELECT COUNT(*) FROM engine_metrics;"
 ```
 
 **Optimize Database:**
 ```bash
 # Compact and optimize
-sqlite3 /opt/helm-os/data/historical.db << EOF
+sqlite3 /opt/d3kos/data/historical.db << EOF
 VACUUM;
 ANALYZE;
 EOF
@@ -1379,21 +1379,21 @@ EOF
 
 ```bash
 # Backup important data first!
-sudo /opt/helm-os/scripts/backup.sh
+sudo /opt/d3kos/scripts/backup.sh
 
 # Reset onboarding
-rm /opt/helm-os/config/onboarding.json
-rm /opt/helm-os/config/benchmark-results.json
-rm /opt/helm-os/state/onboarding-reset-count.json
+rm /opt/d3kos/config/onboarding.json
+rm /opt/d3kos/config/benchmark-results.json
+rm /opt/d3kos/state/onboarding-reset-count.json
 
 # Keep license (preserves tier)
 # Or delete to reset to Tier 0:
-# rm /opt/helm-os/config/license.json
+# rm /opt/d3kos/config/license.json
 
 # Clear data
-rm -rf /opt/helm-os/data/camera/*
-rm -rf /opt/helm-os/data/historical.db
-rm /opt/helm-os/data/boat-log.txt
+rm -rf /opt/d3kos/data/camera/*
+rm -rf /opt/d3kos/data/historical.db
+rm /opt/d3kos/data/boat-log.txt
 
 # Reboot
 sudo reboot
@@ -1411,7 +1411,7 @@ Collect this information:
 
 1. **System Info:**
    ```bash
-   cat /opt/helm-os/config/license.json
+   cat /opt/d3kos/config/license.json
    uname -a
    vcgencmd version
    ```
@@ -1440,12 +1440,12 @@ Collect this information:
 ### Where to Get Help
 
 1. **GitHub Issues:**
-   - https://github.com/SkipperDon/Helm-OS/issues
+   - https://github.com/SkipperDon/d3kOS/issues
    - Search existing issues first
    - Include all diagnostic info
 
 2. **GitHub Discussions:**
-   - https://github.com/SkipperDon/Helm-OS/discussions
+   - https://github.com/SkipperDon/d3kOS/discussions
    - General questions and community help
 
 3. **Documentation:**

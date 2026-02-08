@@ -21,7 +21,7 @@
 
 ## 1. SYSTEM OVERVIEW
 
-Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4, providing boat owners with advanced engine monitoring, navigation assistance, and voice-controlled operations.
+d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, providing boat owners with advanced engine monitoring, navigation assistance, and voice-controlled operations.
 
 ### 1.1 Core Principles
 
@@ -212,7 +212,7 @@ Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4, pr
     └─────┬─────┘  └─────┬─────┘  └────┬──────┘
           │              │              │
     ┌─────▼──────┐ ┌─────▼──────┐ ┌────▼───────┐
-    │helm-voice. │ │helm-camera.│ │helm-health.│
+    │helm-voice. │ │helm-camera.│ │d3kos-health.│
     │  service   │ │  service   │ │  service   │
     │ (Tier 2+)  │ │ (optional) │ │            │
     └────────────┘ └────────────┘ └────────────┘
@@ -225,9 +225,9 @@ Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4, pr
 | `signalk.service` | Marine data server | Yes | All |
 | `nodered.service` | Automation & dashboard | Yes | All |
 | `gpsd.service` | GPS processing | Yes | All |
-| `helm-voice.service` | Voice assistant | Yes | Tier 2+ |
+| `d3kos-voice.service` | Voice assistant | Yes | Tier 2+ |
 | `helm-camera.service` | IP camera management | Conditional | Tier 2+ |
-| `helm-health.service` | System monitoring | Yes | All |
+| `d3kos-health.service` | System monitoring | Yes | All |
 | `helm-boatlog.service` | Voice log management | Yes | Tier 2+ |
 
 ### 4.5 Data Flow Architecture
@@ -308,8 +308,8 @@ Example: Engine RPM Display
 ### 5.3 WiFi Access Point Configuration
 
 ```ini
-SSID: Helm-OS
-Password: helm-os-2026
+SSID: d3kOS
+Password: d3kos-2026
 IP Address: 10.42.0.1/24
 DHCP Range: 10.42.0.2 - 10.42.0.254
 Security: WPA2-PSK
@@ -319,10 +319,10 @@ Internet Sharing: Yes (if eth0 connected)
 
 ### 5.4 Access URLs
 
-- Main Menu: `http://helm-os.local` or `http://10.42.0.1`
-- Dashboard: `http://helm-os.local:1880/dashboard`
-- Signal K: `http://helm-os.local:3000`
-- Camera: `rtsp://helm-os.local:554/camera`
+- Main Menu: `http://d3kos.local` or `http://10.42.0.1`
+- Dashboard: `http://d3kos.local:1880/dashboard`
+- Signal K: `http://d3kos.local:3000`
+- Camera: `rtsp://d3kos.local:554/camera`
 
 ---
 
@@ -331,7 +331,7 @@ Internet Sharing: Yes (if eth0 connected)
 ### 6.1 Data Storage Structure
 
 ```
-/opt/helm-os/
+/opt/d3kos/
 ├── config/              # Permanent configuration
 │   ├── onboarding.json
 │   ├── benchmark-results.json
@@ -359,13 +359,13 @@ Internet Sharing: Yes (if eth0 connected)
 
 | Data Type | Location | Format | Retention | Backup |
 |-----------|----------|--------|-----------|--------|
-| Onboarding config | `/opt/helm-os/config/` | JSON | Permanent | Daily |
-| Engine baseline | `/opt/helm-os/config/` | JSON | Permanent | Daily |
-| License info | `/opt/helm-os/config/` | JSON | Permanent | Daily |
-| Boat log | `/opt/helm-os/data/` | Text | 30d (T0), ∞ (T2+) | Daily |
-| Camera recordings | `/opt/helm-os/data/camera/` | MP4 | Until disk full | None |
-| Historical metrics | `/opt/helm-os/data/` | SQLite | 90 days | Weekly |
-| Voice recordings | `/opt/helm-os/data/voice/` | WAV | Temp (deleted after STT) | None |
+| Onboarding config | `/opt/d3kos/config/` | JSON | Permanent | Daily |
+| Engine baseline | `/opt/d3kos/config/` | JSON | Permanent | Daily |
+| License info | `/opt/d3kos/config/` | JSON | Permanent | Daily |
+| Boat log | `/opt/d3kos/data/` | Text | 30d (T0), ∞ (T2+) | Daily |
+| Camera recordings | `/opt/d3kos/data/camera/` | MP4 | Until disk full | None |
+| Historical metrics | `/opt/d3kos/data/` | SQLite | 90 days | Weekly |
+| Voice recordings | `/opt/d3kos/data/voice/` | WAV | Temp (deleted after STT) | None |
 
 ### 6.3 Signal K Data Schema
 
@@ -457,7 +457,7 @@ CREATE TABLE boat_log (
 ### 7.3 Voice Service Architecture
 
 ```
-helm-voice.service (systemd)
+d3kos-voice.service (systemd)
          │
     ┌────┴────┐
     │         │

@@ -22,7 +22,7 @@
 
 ## OVERVIEW
 
-Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4. This guide will walk you through the complete installation process, from hardware assembly to final system configuration.
+d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4. This guide will walk you through the complete installation process, from hardware assembly to final system configuration.
 
 ### Installation Time
 
@@ -61,8 +61,8 @@ Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4. Th
 ### Software Requirements
 
 - **Raspberry Pi Imager** (free download from raspberrypi.com)
-- **Helm-OS Image** (download from GitHub releases)
-- **Web Browser** (for accessing Helm-OS interface)
+- **d3kOS Image** (download from GitHub releases)
+- **Web Browser** (for accessing d3kOS interface)
 
 ### Bill of Materials
 
@@ -198,22 +198,22 @@ Helm-OS is a comprehensive marine electronics system built on Raspberry Pi 4. Th
 
 ### Method 1: Pre-Built Image (Recommended)
 
-#### Step 1: Download Helm-OS Image
+#### Step 1: Download d3kOS Image
 
-1. Visit GitHub releases: `https://github.com/SkipperDon/Helm-OS/releases/latest`
-2. Download `helm-os-v2.0.0.img.gz` (~4GB compressed)
-3. Download `helm-os-v2.0.0.img.gz.sha256` (checksum file)
+1. Visit GitHub releases: `https://github.com/SkipperDon/d3kOS/releases/latest`
+2. Download `d3kos-v2.0.0.img.gz` (~4GB compressed)
+3. Download `d3kos-v2.0.0.img.gz.sha256` (checksum file)
 
 #### Step 2: Verify Download
 
 **On Linux/Mac:**
 ```bash
-sha256sum -c helm-os-v2.0.0.img.gz.sha256
+sha256sum -c d3kos-v2.0.0.img.gz.sha256
 ```
 
 **On Windows:**
 ```powershell
-certutil -hashfile helm-os-v2.0.0.img.gz SHA256
+certutil -hashfile d3kos-v2.0.0.img.gz SHA256
 # Compare output with contents of .sha256 file
 ```
 
@@ -243,10 +243,10 @@ certutil -hashfile helm-os-v2.0.0.img.gz SHA256
 
 ```bash
 # Decompress image
-gunzip helm-os-v2.0.0.img.gz
+gunzip d3kos-v2.0.0.img.gz
 
 # Flash to SD card (replace /dev/sdX with your SD card device)
-sudo dd if=helm-os-v2.0.0.img of=/dev/sdX bs=4M status=progress conv=fsync
+sudo dd if=d3kos-v2.0.0.img of=/dev/sdX bs=4M status=progress conv=fsync
 
 # Sync to ensure all data is written
 sync
@@ -272,17 +272,17 @@ sync
 
 ### Step 1: Connect to WiFi Network
 
-1. Raspberry Pi creates WiFi access point: **Helm-OS**
+1. Raspberry Pi creates WiFi access point: **d3kOS**
 2. From your laptop/tablet/phone:
-   - Connect to WiFi network: **Helm-OS**
-   - Password: **helm-os-2026**
+   - Connect to WiFi network: **d3kOS**
+   - Password: **d3kos-2026**
    - Wait for connection (10-15 seconds)
 
 ### Step 2: Access Web Interface
 
 1. Open web browser
 2. Navigate to one of:
-   - `http://helm-os.local` (preferred, uses mDNS)
+   - `http://d3kos.local` (preferred, uses mDNS)
    - `http://10.42.0.1` (fallback, direct IP)
 
 3. Main menu should load within 5 seconds
@@ -303,12 +303,12 @@ The onboarding wizard will launch automatically on first boot. See [ONBOARDING.m
 
 ### WiFi Access Point Configuration
 
-Helm-OS creates a WiFi access point by default:
+d3kOS creates a WiFi access point by default:
 
 | Setting | Value |
 |---------|-------|
-| SSID | Helm-OS |
-| Password | helm-os-2026 |
+| SSID | d3kOS |
+| Password | d3kos-2026 |
 | IP Address | 10.42.0.1 |
 | DHCP Range | 10.42.0.2 - 10.42.0.254 |
 | Subnet Mask | 255.255.255.0 |
@@ -332,17 +332,17 @@ If you connect an ethernet cable to the Raspberry Pi:
 ssh pi@10.42.0.1
 
 # Edit WiFi configuration
-sudo nmcli connection modify Helm-OS-AP wifi.ssid "YourBoatName"
-sudo nmcli connection modify Helm-OS-AP wifi-sec.psk "YourPassword"
+sudo nmcli connection modify d3kOS-AP wifi.ssid "YourBoatName"
+sudo nmcli connection modify d3kOS-AP wifi-sec.psk "YourPassword"
 
 # Restart network
-sudo nmcli connection down Helm-OS-AP
-sudo nmcli connection up Helm-OS-AP
+sudo nmcli connection down d3kOS-AP
+sudo nmcli connection up d3kOS-AP
 ```
 
 ### Firewall Configuration
 
-Helm-OS uses UFW (Uncomplicated Firewall) with the following rules:
+d3kOS uses UFW (Uncomplicated Firewall) with the following rules:
 
 | Port | Service | Access |
 |------|---------|--------|
@@ -440,8 +440,8 @@ sudo systemctl status nodered.service
 # GPS Daemon
 sudo systemctl status gpsd.service
 
-# Helm-OS Health Monitor
-sudo systemctl status helm-health.service
+# d3kOS Health Monitor
+sudo systemctl status d3kos-health.service
 ```
 
 All services should show **active (running)** in green.
@@ -528,10 +528,10 @@ Automated daily backups are enabled by default at 2 AM. To verify:
 sudo crontab -l | grep backup
 
 # Should show:
-# 0 2 * * * /opt/helm-os/scripts/backup.sh
+# 0 2 * * * /opt/d3kos/scripts/backup.sh
 ```
 
-Backups are stored in `/opt/helm-os/backups/` and retained for 30 days.
+Backups are stored in `/opt/d3kos/backups/` and retained for 30 days.
 
 ### 6. Update System (Optional)
 
@@ -568,7 +568,7 @@ Check for system updates:
 
 ### Issue: Cannot Connect to WiFi Network
 
-**Symptoms**: "Helm-OS" WiFi network not visible
+**Symptoms**: "d3kOS" WiFi network not visible
 
 **Solutions**:
 1. Wait 2-3 minutes after boot for WiFi to start
@@ -649,7 +649,7 @@ Check for system updates:
 If you encounter issues not covered here:
 
 1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions
-2. Search GitHub Issues: `https://github.com/SkipperDon/Helm-OS/issues`
+2. Search GitHub Issues: `https://github.com/SkipperDon/d3kOS/issues`
 3. Post new issue with:
    - Hardware configuration
    - Software version (from main menu)
@@ -670,4 +670,4 @@ After successful installation:
 
 ---
 
-**Installation Complete!** Welcome to Helm-OS.
+**Installation Complete!** Welcome to d3kOS.
