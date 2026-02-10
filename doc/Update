@@ -1,0 +1,436 @@
+# d3kOS Updates - February 9, 2026
+
+## Summary
+Three major enhancements completed today:
+1. Fixed QR code generation in onboarding wizard
+2. Replaced Raspberry Pi boot splash screen with custom d3kOS splash
+3. Added AtMyBoat.com logo to main menu header
+
+---
+
+## 1. QR Code Generation Fix
+
+### Issue
+Onboarding wizard Step 18 (QR Code page) displayed placeholder SVG instead of generating actual QR code.
+
+### Solution
+Integrated QRCode.js library and generation functions from `qrcode.html` into `onboarding.html`.
+
+### Files Modified
+- `/var/www/html/onboarding.html` (58KB)
+- `/home/boatiq/Helm-OS/onboarding.html` (source)
+
+### Changes Made
+
+#### 1. Added QRCode.js Library (before `</head>`)
+```html
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+```
+
+#### 2. Updated Step 18 HTML Structure
+**Before:**
+```html
+<div class="qr-code" id="qr-code-display">
+  <svg viewBox="0 0 100 100" width="250" height="250">
+    <rect width="100" height="100" fill="white"/>
+    <text x="50" y="50" text-anchor="middle" font-size="8" fill="black">QR Code</text>
+  </svg>
+</div>
+```
+
+**After:**
+```html
+<div class="qr-code-container">
+  <div id="qrcode"></div>
+</div>
+```
+
+#### 3. Added CSS Styles
+```css
+.qr-code-container {
+  background-color: #FFFFFF;
+  padding: 20px;
+  border-radius: var(--button-radius);
+  display: inline-block;
+  margin: 20px auto;
+}
+
+#qrcode {
+  display: inline-block;
+}
+```
+
+#### 4. Added JavaScript Functions
+
+**generateInstallationId()** - Creates/retrieves persistent installation ID
+```javascript
+function generateInstallationId() {
+  const saved = localStorage.getItem('d3kos-installation-id');
+  if (saved) {
+    return saved;
+  }
+  // Generate new ID: XXXX-XXXX-XXXX format
+  const segment = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+  const newId = `${segment()}-${segment()}-${segment()}`;
+  localStorage.setItem('d3kos-installation-id', newId);
+  return newId;
+}
+```
+
+**generateQRData()** - Creates JSON payload with system info
+```javascript
+function generateQRData() {
+  const systemIp = '192.168.1.237';
+  const installationId = generateInstallationId();
+  const data = {
+    type: 'd3kos-system',
+    version: '2.0',
+    host: systemIp,
+    installationId: installationId,
+    urls: {
+      web: `http://${systemIp}/`,
+      signalk: `http://${systemIp}:3000`,
+      nodered: `http://${systemIp}:1880`,
+      ws: `ws://${systemIp}:3000/signalk/v1/stream`
+    },
+    name: 'd3kOS Marine System',
+    timestamp: new Date().toISOString()
+  };
+  return JSON.stringify(data);
+}
+```
+
+**generateQRCode()** - Generates visual QR code
+```javascript
+function generateQRCode() {
+  const installationId = generateInstallationId();
+  document.getElementById('installation-id').textContent = installationId;
+
+  const qrContainer = document.getElementById('qrcode');
+  qrContainer.innerHTML = ''; // Clear existing
+
+  const qrData = generateQRData();
+
+  try {
+    new QRCode(qrContainer, {
+      text: qrData,
+      width: 300,
+      height: 300,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch (error) {
+    console.error('QR Code generation error:', error);
+    qrContainer.innerHTML = '<div style="width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; background: #f0f0f0; color: #000; font-size: 16px; text-align: center; padding: 20px;">QR Code generation failed<br>Check console for errors</div>';
+  }
+}
+```
+
+### Features
+- **Persistent Installation ID**: Stored in localStorage as `d3kos-installation-id`
+- **QR Code Data**: Contains system type, version, IP, all service URLs (web, Signal K, Node-RED, WebSocket)
+- **Error Handling**: Shows error message if generation fails
+- **Auto-generation**: QR code creates automatically when Step 18 displays
+
+### Testing
+✅ QR code generates successfully
+✅ Installation ID persists across sessions
+✅ QR code contains correct system information
+✅ Scannable with mobile devices
+
+---
+
+## 2. Custom Boot Splash Screen
+
+### Issue
+Need to replace default Raspberry Pi boot logo with custom d3kOS splash screen.
+
+### Solution
+Replaced Plymouth theme splash image with custom 1024x1024 PNG.
+
+### Source File
+- `/home/boatiq/splash .png` (1.5MB, 1024x1024 PNG)
+- Note: Filename has space before `.png`
+
+### System Details
+- **Boot Splash System**: Plymouth (installed)
+- **Current Theme**: pix (Raspberry Pi theme)
+- **Theme Location**: `/usr/share/plymouth/themes/pix/`
+- **Config File**: `/etc/plymouth/plymouthd.conf`
+
+### Changes Made
+
+#### 1. Backed Up Original Splash
+```bash
+sudo cp /usr/share/plymouth/themes/pix/splash.png \
+        /usr/share/plymouth/themes/pix/splash.png.backup
+```
+
+#### 2. Installed Custom Splash
+```bash
+sudo cp /tmp/splash.png /usr/share/plymouth/themes/pix/splash.png
+```
+
+#### 3. Updated Initramfs
+```bash
+sudo update-initramfs -u
+```
+Output:
+```
+update-initramfs: Generating /boot/initrd.img-6.12.62+rpt-rpi-v8
+update-initramfs: Generating /boot/initrd.img-6.12.62+rpt-rpi-2712
+'/boot/initrd.img-6.12.62+rpt-rpi-v8' -> '/boot/firmware/initramfs8'
+'/boot/initrd.img-6.12.62+rpt-rpi-2712' -> '/boot/firmware/initramfs_2712'
+```
+
+### File Details
+| File | Size | Description |
+|------|------|-------------|
+| `splash.png` | 1.5MB | Custom d3kOS splash (1024x1024) |
+| `splash.png.backup` | 58KB | Original Raspberry Pi splash |
+
+### Testing
+Custom splash screen will display on next system reboot.
+
+### Rollback Instructions
+If needed to restore original splash:
+```bash
+sudo cp /usr/share/plymouth/themes/pix/splash.png.backup \
+        /usr/share/plymouth/themes/pix/splash.png
+sudo update-initramfs -u
+sudo reboot
+```
+
+---
+
+## 3. AtMyBoat.com Logo Integration
+
+### Requirement
+Add AtMyBoat.com logo to main menu header with:
+- Position: Top-left corner of page
+- Size: Large enough for touchscreen visibility
+- Hyperlink: https://atmyboat.com
+- Opens in new tab
+
+### Files Modified
+- `/var/www/html/index.html` (20KB)
+- `/var/www/html/atmyboat.png` (1.5MB, 1024x1024 PNG with transparency)
+- `/home/boatiq/Helm-OS/index.html` (source)
+
+### Source File
+- `/home/boatiq/atmyboat.png` (1.5MB, 1024x1024 RGBA PNG)
+
+### Changes Made
+
+#### 1. Added Logo Image
+Deployed to: `/var/www/html/atmyboat.png`
+- Permissions: `644` (www-data:www-data)
+- Format: PNG with alpha channel
+
+#### 2. Updated Header CSS
+
+**Before:**
+```css
+header {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--color-accent);
+}
+```
+
+**After:**
+```css
+header {
+  padding: 30px 20px;
+  border-bottom: 2px solid var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 220px;
+}
+
+.header-logo {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  height: 180px;
+  width: auto;
+  transition: opacity 0.2s ease;
+}
+
+.header-logo:hover {
+  opacity: 0.8;
+}
+
+.header-content {
+  text-align: center;
+}
+```
+
+#### 3. Updated Header HTML
+
+**Before:**
+```html
+<header>
+  <h1>d3kOS</h1>
+  <p class="subtitle">Marine Electronics System</p>
+</header>
+```
+
+**After:**
+```html
+<header>
+  <a href="https://atmyboat.com" target="_blank" rel="noopener noreferrer" aria-label="Visit AtMyBoat.com">
+    <img src="atmyboat.png" alt="AtMyBoat.com" class="header-logo">
+  </a>
+  <div class="header-content">
+    <h1>d3kOS</h1>
+    <p class="subtitle">Marine Electronics System</p>
+  </div>
+</header>
+```
+
+### Logo Specifications
+- **Size**: 180px height (auto width maintains aspect ratio)
+- **Position**: Top-left (20px from top, 20px from left)
+- **Link Target**: `https://atmyboat.com` (opens in new tab)
+- **Security**: `rel="noopener noreferrer"` prevents window.opener access
+- **Accessibility**: `aria-label` for screen readers
+- **Hover Effect**: Logo opacity reduces to 0.8 on hover
+
+### Size Iterations
+1. **Initial**: 60px height
+2. **First increase**: User requested 3x larger → 180px height
+3. **Position adjustment**: Moved to top of page with `top: 20px`
+
+### Testing
+✅ Logo displays in main menu header
+✅ Positioned at top-left corner
+✅ Clickable link to atmyboat.com works
+✅ Opens in new tab
+✅ Size appropriate for touchscreen use
+✅ Hover effect works
+
+---
+
+## Deployment Summary
+
+### Files Deployed to d3kOS (192.168.1.237)
+
+| File | Location | Size | Permissions |
+|------|----------|------|-------------|
+| `onboarding.html` | `/var/www/html/` | 58KB | 644 (www-data) |
+| `index.html` | `/var/www/html/` | 20KB | 644 (www-data) |
+| `atmyboat.png` | `/var/www/html/` | 1.5MB | 644 (www-data) |
+| `splash.png` | `/usr/share/plymouth/themes/pix/` | 1.5MB | 644 (root) |
+
+### Access URLs
+- **Main Menu**: http://192.168.1.237/
+- **Onboarding**: http://192.168.1.237/onboarding.html
+- **QR Code**: http://192.168.1.237/qrcode.html
+- **Dashboard**: http://192.168.1.237/dashboard.html
+
+### Deployment Commands Used
+
+```bash
+# QR Code - onboarding.html
+scp -i ~/.ssh/d3kos_key /home/boatiq/Helm-OS/onboarding.html d3kos@192.168.1.237:/tmp/
+ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237 \
+  "sudo mv /tmp/onboarding.html /var/www/html/onboarding.html && \
+   sudo chown www-data:www-data /var/www/html/onboarding.html && \
+   sudo chmod 644 /var/www/html/onboarding.html"
+
+# Boot Splash - splash.png
+scp -i ~/.ssh/d3kos_key "/home/boatiq/splash .png" d3kos@192.168.1.237:/tmp/splash.png
+ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237 \
+  "sudo cp /usr/share/plymouth/themes/pix/splash.png \
+           /usr/share/plymouth/themes/pix/splash.png.backup && \
+   sudo cp /tmp/splash.png /usr/share/plymouth/themes/pix/splash.png && \
+   sudo update-initramfs -u"
+
+# Logo - atmyboat.png
+scp -i ~/.ssh/d3kos_key /home/boatiq/atmyboat.png d3kos@192.168.1.237:/tmp/
+ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237 \
+  "sudo mv /tmp/atmyboat.png /var/www/html/atmyboat.png && \
+   sudo chown www-data:www-data /var/www/html/atmyboat.png && \
+   sudo chmod 644 /var/www/html/atmyboat.png"
+
+# Main Menu - index.html
+scp -i ~/.ssh/d3kos_key /home/boatiq/Helm-OS/index.html d3kos@192.168.1.237:/tmp/
+ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237 \
+  "sudo mv /tmp/index.html /var/www/html/index.html && \
+   sudo chown www-data:www-data /var/www/html/index.html && \
+   sudo chmod 644 /var/www/html/index.html"
+```
+
+---
+
+## Testing Results
+
+### QR Code Generation
+- ✅ Step 18 displays actual QR code (not placeholder)
+- ✅ Installation ID generates in XXXX-XXXX-XXXX format
+- ✅ Installation ID persists across sessions
+- ✅ QR code contains system info JSON
+- ✅ QR code scannable with mobile devices
+- ✅ Error handling works if library fails to load
+
+### Boot Splash Screen
+- ⏳ Pending: Requires system reboot to verify
+- ✅ Custom splash.png installed (1.5MB, 1024x1024)
+- ✅ Original backed up (splash.png.backup)
+- ✅ Initramfs updated successfully
+- ✅ Files verified in place
+
+### AtMyBoat.com Logo
+- ✅ Logo displays in main menu header
+- ✅ Positioned at top-left corner (20px from edges)
+- ✅ Size appropriate (180px height)
+- ✅ Hyperlink works (opens atmyboat.com)
+- ✅ Opens in new tab
+- ✅ Hover effect functional
+- ✅ Touchscreen friendly
+
+---
+
+## Known Issues
+None identified.
+
+---
+
+## Future Enhancements
+
+### From Previous Sessions
+1. **Chartplotter PGN Conversion**: Map NMEA2000 PGNs to proprietary chartplotter formats based on wizard selection (Step 4)
+2. **o-charts Plugin**: Wait for Debian 13 (Trixie) compatible build
+
+### Potential Improvements
+1. Add logo to other pages (dashboard, navigation, helm, boatlog)
+2. Create mobile app for QR code scanning
+3. Add download/share button for QR code
+4. Optimize boot splash for different screen sizes
+5. Add animation to boot splash (Plymouth script theme)
+
+---
+
+## Version History
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-02-09 | 2.0.3 | QR code generation, boot splash, AtMyBoat logo |
+| 2026-02-09 | 2.0.2 | Chartplotter selection wizard step added |
+| 2026-02-09 | 2.0.1 | Wizard navigation bug fixes |
+| 2026-02-09 | 2.0.0 | Initial deployment with all core features |
+
+---
+
+## Contact & Support
+- **System IP**: 192.168.1.237
+- **SSH Access**: `ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237`
+- **Documentation**: `/home/boatiq/Helm-OS/doc/`
+- **GitHub**: (Push disabled per user preference)
+
+
