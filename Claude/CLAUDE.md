@@ -1,7 +1,8 @@
 # CLAUDE.md - AI Assistant Guidelines for d3kOS Development
-## Version 2.5
+## Version 2.6
 
 **Last Updated**: February 12, 2026
+**Changes from v2.5**: Updated wake words to "Helm", "Advisor", "Counsel" (changed Navigator→Counsel), added "Aye Aye Captain" acknowledgment response
 **Changes from v2.4**: Added hybrid AI assistant system (online Perplexity + onboard Phi-2), skills.md context management, automatic document retrieval, learning/memory features, text input interface
 **Changes from v2.3**: Added implementation details for Step 4 (WebSocket proxy, detection JavaScript, fullscreen toggle)
 **Changes from v2.2**: Added Step 4 (Chartplotter Detection) to onboarding wizard, clarified standard PGN compatibility (no vendor-specific translation needed)
@@ -374,8 +375,11 @@ d3kOS implements a **hybrid AI assistant system** that intelligently routes quer
 - Natural conversation flow
 
 **Wake Words**:
-- "Navigator" - Force online AI
+- "Counsel" - Force online AI
 - General queries default to online if internet available
+
+**Acknowledgment Response**:
+- "Aye Aye Captain" (spoken when wake word detected)
 
 **Configuration** (`/opt/d3kos/config/ai-config.json`):
 ```json
@@ -694,15 +698,15 @@ async function checkInternetConnection() {
 wake_words = {
     "helm": {
         "ai": "auto",           # Use online if available, else onboard
-        "response": "Yes, how can I help?"
+        "response": "Aye Aye Captain"
     },
     "advisor": {
         "ai": "onboard",        # Force onboard AI (Phi-2)
-        "response": "Onboard assistant ready"
+        "response": "Aye Aye Captain"
     },
-    "navigator": {
+    "counsel": {
         "ai": "online",         # Force online AI (Perplexity)
-        "response": "Online navigator ready",
+        "response": "Aye Aye Captain",
         "fallback": "Internet unavailable, using onboard assistant"
     }
 }
@@ -713,7 +717,7 @@ wake_words = {
 # /opt/d3kos/config/sphinx/keywords.list
 helm /1e-3/
 advisor /1e-3/
-navigator /1e-3/
+counsel /1e-3/
 ```
 
 ### Text Input Interface
@@ -976,7 +980,8 @@ function queryWithAudioUpdates(question) {
 
 **Phase 4: Hybrid Routing**
 - [ ] Implement automatic AI selection logic
-- [ ] Add voice wake word routing ("Helm", "Advisor", "Navigator")
+- [ ] Add voice wake word routing ("Helm", "Advisor", "Counsel")
+- [ ] Add "Aye Aye Captain" acknowledgment responses
 - [ ] Implement fallback behavior
 - [ ] Add visual indicators (online vs onboard)
 

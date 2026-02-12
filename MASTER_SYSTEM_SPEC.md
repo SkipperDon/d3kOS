@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 2.3
+**Version**: 2.4
 **Date**: February 12, 2026
-**Status**: APPROVED - Hybrid AI Assistant System Added
-**Previous Version**: 2.2 (February 11, 2026)
+**Status**: APPROVED - Wake Words Updated
+**Previous Version**: 2.3 (February 12, 2026)
 
 ---
 
@@ -16,6 +16,7 @@
 | 2.1 | 2026-02-11 | d3kOS Team | Added Step 4 (Chartplotter Detection) to onboarding wizard, clarified standard PGN compatibility |
 | 2.2 | 2026-02-11 | d3kOS Team | Implemented Step 4 with nginx proxy, WebSocket detection, and fullscreen toggle |
 | 2.3 | 2026-02-12 | d3kOS Team | Added hybrid AI assistant system (Perplexity + Phi-2), skills.md context management, automatic document retrieval, text input interface, learning/memory features |
+| 2.4 | 2026-02-12 | d3kOS Team | Updated wake words: Navigator→Counsel, added "Aye Aye Captain" acknowledgment response |
 
 ---
 
@@ -977,7 +978,7 @@ async function evaluateAndLearn(question, answer, aiUsed) {
 # /opt/d3kos/config/sphinx/wake-words.dict
 HELM        HH EH L M
 ADVISOR     AE D V AY Z ER
-NAVIGATOR   N AE V IH G EY T ER
+COUNSEL     K AW N S AH L
 ```
 
 **Routing Logic**:
@@ -985,15 +986,15 @@ NAVIGATOR   N AE V IH G EY T ER
 const wakeWordRouting = {
   'helm': {
     ai: 'auto',             // Use online if available, else onboard
-    response: 'Yes, how can I help?'
+    response: 'Aye Aye Captain'
   },
   'advisor': {
     ai: 'onboard',          // Force onboard AI (Phi-2)
-    response: 'Onboard advisor ready'
+    response: 'Aye Aye Captain'
   },
-  'navigator': {
+  'counsel': {
     ai: 'online',           // Force online AI (Perplexity)
-    response: 'Online navigator ready',
+    response: 'Aye Aye Captain',
     fallback: 'Internet unavailable, using onboard advisor'
   }
 };
@@ -2920,6 +2921,13 @@ This specification has been reviewed and approved by:
 ---
 
 ## CHANGE LOG
+
+### Version 2.4 (2026-02-12)
+- **Updated wake words** from "Navigator" to "Counsel" for online AI selection
+- **Changed all acknowledgment responses** to "Aye Aye Captain" for nautical authenticity
+- **Updated PocketSphinx dictionary** with COUNSEL phonetic pronunciation (K AW N S AH L)
+- **Updated wake word routing logic** in Section 4.5.7
+- **Updated implementation checklist** to reflect new wake words
 
 ### Version 2.3 (2026-02-12)
 - **Added hybrid AI assistant system** with online (Perplexity) and onboard (Phi-2) backends
