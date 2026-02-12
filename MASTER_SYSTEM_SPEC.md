@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 2.0  
-**Date**: February 6, 2026  
-**Status**: APPROVED - All Recommendations Integrated  
-**Previous Version**: 1.0 (February 4, 2026)
+**Version**: 2.3
+**Date**: February 12, 2026
+**Status**: APPROVED - Hybrid AI Assistant System Added
+**Previous Version**: 2.2 (February 11, 2026)
 
 ---
 
@@ -13,6 +13,9 @@
 |---------|------|--------|---------|
 | 1.0 | 2026-02-04 | d3kOS Team | Initial specification |
 | 2.0 | 2026-02-06 | d3kOS Team | Integrated approved recommendations from gap analysis |
+| 2.1 | 2026-02-11 | d3kOS Team | Added Step 4 (Chartplotter Detection) to onboarding wizard, clarified standard PGN compatibility |
+| 2.2 | 2026-02-11 | d3kOS Team | Implemented Step 4 with nginx proxy, WebSocket detection, and fullscreen toggle |
+| 2.3 | 2026-02-12 | d3kOS Team | Added hybrid AI assistant system (Perplexity + Phi-2), skills.md context management, automatic document retrieval, text input interface, learning/memory features |
 
 ---
 
@@ -152,7 +155,10 @@ d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, desi
 | Voice (Wake) | PocketSphinx | Latest | Wake word detection |
 | Voice (STT) | Vosk | 0.15 | Speech-to-text |
 | Voice (TTS) | Piper | Latest | Text-to-speech |
-| Voice (LLM) | Phi-2 | 2.7B | Local AI reasoning |
+| AI (Onboard) | Phi-2 | 2.7B | Local AI reasoning (offline) |
+| AI (Online) | Perplexity API | llama-3.1-sonar | Online AI (internet required) |
+| AI Context | skills.md | Custom | Unified knowledge base |
+| AI Memory | SQLite | 3.x | Conversation history database |
 | Camera | VLC (libvlc) | Latest | RTSP stream viewer |
 | UI | Chromium | Latest | Browser-based interface |
 | Gestures | Touchégg | Latest | Touchscreen gestures |
@@ -457,6 +463,637 @@ const commands = {
 - Threshold: 80% similarity
 - Fallback: If no match, pass to LLM for interpretation
 
+### 4.5 Hybrid AI Assistant System Architecture
+
+#### 4.5.1 System Overview
+
+d3kOS implements a hybrid AI system that intelligently routes queries between two AI backends:
+
+- **Online AI** (Perplexity API): Fast, powerful, requires internet
+- **Onboard AI** (Phi-2 via llama.cpp): Offline, slower (~60s), fully local
+
+**Routing Logic**:
+```
+User Query (Voice OR Text)
+         ↓
+    Check Internet
+    ┌────────┴────────┐
+    │                 │
+Internet              No Internet
+Available             ↓
+    ↓              Onboard AI
+Online AI           (Phi-2)
+(Perplexity)           ↓
+    ↓              Response
+Response               ↓
+    ↓            Store in DB
+Store in DB            ↓
+    ↓            Evaluate &
+Evaluate &         Learn
+Learn
+```
+
+#### 4.5.2 Online AI Configuration (Perplexity)
+
+**API Configuration** (`/opt/d3kos/config/ai-config.json`):
+```json
+{
+  "online_ai": {
+    "provider": "perplexity",
+    "api_key": "pplx-xxxxx",
+    "api_endpoint": "https://api.perplexity.ai/chat/completions",
+    "model": "llama-3.1-sonar-small-128k-online",
+    "enabled": true,
+    "max_tokens": 500,
+    "temperature": 0.7,
+    "timeout": 10000
+  },
+  "fallback": {
+    "provider": "onboard",
+    "model": "phi-2"
+  }
+}
+```
+
+**API Request Format**:
+```javascript
+async function queryPerplexity(question, context) {
+  const config = loadAIConfig();
+
+  const response = await fetch(config.online_ai.api_endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${config.online_ai.api_key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: config.online_ai.model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a marine assistant for d3kOS. Context:\n${context.skills}\n\nCurrent boat data:\n${JSON.stringify(context.currentData)}`
+        },
+        {
+          role: 'user',
+          content: question
+        }
+      ],
+      max_tokens: config.online_ai.max_tokens,
+      temperature: config.online_ai.temperature
+    })
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+```
+
+**Rate Limiting**:
+- Free tier: 5 requests/minute
+- Handle 429 (rate limit) errors gracefully
+- Queue requests if rate limited
+- Display estimated wait time to user
+
+**Error Handling**:
+```javascript
+async function queryOnlineAI(question) {
+  try {
+    return await queryPerplexity(question, context);
+  } catch (error) {
+    if (error.status === 429) {
+      speak("API rate limit reached. Switching to onboard AI.");
+      return await queryPhi2(question, context);
+    } else if (error.status === 401) {
+      speak("API key invalid. Please check settings. Using onboard AI.");
+      return await queryPhi2(question, context);
+    } else {
+      speak("Online AI unavailable. Using onboard AI.");
+      return await queryPhi2(question, context);
+    }
+  }
+}
+```
+
+#### 4.5.3 Internet Detection
+
+**Method 1: HTTP HEAD Request**:
+```javascript
+async function checkInternetConnection() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch('https://www.google.com/favicon.ico', {
+      method: 'HEAD',
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+```
+
+**Method 2: DNS Resolution**:
+```javascript
+const dns = require('dns');
+
+function checkInternetDNS() {
+  return new Promise((resolve) => {
+    dns.resolve('google.com', (err) => {
+      resolve(!err);
+    });
+  });
+}
+```
+
+**Cache Result** (avoid checking on every query):
+```javascript
+let internetCache = {
+  available: false,
+  lastCheck: 0,
+  ttl: 30000  // 30 seconds
+};
+
+async function hasInternet() {
+  const now = Date.now();
+  if (now - internetCache.lastCheck < internetCache.ttl) {
+    return internetCache.available;
+  }
+
+  internetCache.available = await checkInternetConnection();
+  internetCache.lastCheck = now;
+  return internetCache.available;
+}
+```
+
+#### 4.5.4 Skills.md Context Management
+
+**File Location**: `/opt/d3kos/config/skills.md`
+
+**Structure**:
+```markdown
+# d3kOS Skills Database
+
+## System Information
+- Installation ID: XXXX-XXXX-XXXX
+- Installation Date: 2026-02-12
+- Last Updated: 2026-02-12 08:00:00
+- Skills Version: 1.0
+
+## Boat Information
+[Boat details from onboarding]
+
+## Engine Information
+[Engine specs from onboarding]
+
+## Engine Manual (Text Extracted)
+[Compressed text from engine PDF manual]
+
+## Boat Owner's Manual (Text Extracted)
+[Compressed text from boat PDF manual]
+
+## Regional Regulations
+[Local boating regulations]
+
+## Best Practices
+[BoatUS.org best practices]
+
+## Conversation History (Recent)
+[Last 50 Q&A pairs]
+```
+
+**Loading Context**:
+```javascript
+async function loadContext() {
+  const skills = fs.readFileSync('/opt/d3kos/config/skills.md', 'utf-8');
+  const onboarding = JSON.parse(fs.readFileSync('/opt/d3kos/config/onboarding.json'));
+  const recentData = await getRecentEngineData();
+
+  return {
+    skills,
+    onboarding,
+    currentData: {
+      rpm: recentData.rpm,
+      oilPressure: recentData.oilPressure,
+      temperature: recentData.temperature,
+      fuelLevel: recentData.fuelLevel,
+      voltage: recentData.voltage
+    }
+  };
+}
+```
+
+**Context Size Management**:
+- Perplexity: 128K token context window (can send full skills.md)
+- Phi-2: 2K token context window (must compress/summarize skills.md)
+
+```javascript
+function compressContextForPhi2(skills) {
+  // Extract only essential information
+  const sections = [
+    'System Information',
+    'Boat Information',
+    'Engine Information',
+    'Normal Operating Parameters'
+  ];
+
+  let compressed = '';
+  sections.forEach(section => {
+    const match = skills.match(new RegExp(`## ${section}[\\s\\S]*?(?=##|$)`));
+    if (match) {
+      compressed += match[0] + '\n\n';
+    }
+  });
+
+  // Add last 5 Q&A entries only
+  const conversationMatch = skills.match(/## Conversation History[\s\S]*$/);
+  if (conversationMatch) {
+    const entries = conversationMatch[0].match(/\*\*Q\*\*:[\s\S]*?\*\*Date\*\*:.*$/gm);
+    if (entries && entries.length > 0) {
+      compressed += '## Recent Conversations\n';
+      compressed += entries.slice(-5).join('\n\n');
+    }
+  }
+
+  return compressed;
+}
+```
+
+#### 4.5.5 Document Retrieval System
+
+**Automatic Retrieval During Onboarding**:
+
+During onboarding wizard (Step 19-20), if internet is available:
+
+1. **Boat Manual Retrieval**:
+```javascript
+async function searchBoatManual(make, model, year) {
+  // Search manualslib.com
+  const searchUrl = `https://www.manualslib.com/search.html?q=${make}+${model}+${year}+boat`;
+  const searchResults = await fetch(searchUrl);
+  const html = await searchResults.text();
+
+  // Parse results for PDF links
+  const pdfLinks = extractPDFLinks(html);
+
+  if (pdfLinks.length > 0) {
+    // Download first result
+    const pdfUrl = pdfLinks[0];
+    const pdfBuffer = await downloadPDF(pdfUrl);
+
+    // Extract text
+    const text = await extractPDFText(pdfBuffer);
+
+    return text;
+  }
+
+  return null;
+}
+```
+
+2. **Engine Manual Retrieval**:
+```javascript
+async function searchEngineManual(manufacturer, model, year) {
+  const sources = [
+    'manualslib.com',
+    'boats.net/manuals',
+    manufacturer.toLowerCase() + '.com/manuals'
+  ];
+
+  for (const source of sources) {
+    try {
+      const manual = await searchManualOnSite(source, manufacturer, model, year);
+      if (manual) return manual;
+    } catch (error) {
+      console.log(`Failed to retrieve from ${source}, trying next...`);
+    }
+  }
+
+  return null;
+}
+```
+
+3. **Regulations Retrieval**:
+```javascript
+async function fetchRegulations(country, state) {
+  const sources = {
+    'US': 'https://www.uscgboating.org/regulations/',
+    'Canada': 'https://tc.canada.ca/en/marine-transportation/marine-safety/boating-safety',
+    'UK': 'https://www.rya.org.uk/knowledge/regulations'
+  };
+
+  const baseUrl = sources[country];
+  if (!baseUrl) return 'No regulations available for this region';
+
+  // Fetch and parse regulations page
+  const response = await fetch(baseUrl);
+  const html = await response.text();
+
+  // Extract relevant sections
+  const regulations = parseRegulationsHTML(html, state);
+
+  return regulations;
+}
+```
+
+4. **BoatUS Best Practices**:
+```javascript
+async function fetchBoatUSPractices() {
+  const topics = [
+    'pre-departure-checklist',
+    'float-plan',
+    'fuel-management',
+    'anchoring',
+    'storm-preparation'
+  ];
+
+  let practices = '## Best Practices from BoatUS.org\n\n';
+
+  for (const topic of topics) {
+    const url = `https://www.boatus.org/study-guide/${topic}`;
+    const response = await fetch(url);
+    const html = await response.text();
+    const content = extractMainContent(html);
+
+    practices += `### ${topic.replace(/-/g, ' ').toUpperCase()}\n${content}\n\n`;
+  }
+
+  return practices;
+}
+```
+
+**PDF Processing**:
+```javascript
+const pdfParse = require('pdf-parse');
+
+async function extractPDFText(pdfBuffer) {
+  const data = await pdfParse(pdfBuffer);
+
+  let text = data.text
+    .replace(/\s+/g, ' ')           // Collapse whitespace
+    .replace(/Page \d+/gi, '')      // Remove page numbers
+    .replace(/\f/g, '\n\n')         // Form feed to paragraph break
+    .trim();
+
+  // Limit size (50KB per document)
+  if (text.length > 50000) {
+    text = text.substring(0, 50000) + '\n\n[Document truncated for space...]';
+  }
+
+  return text;
+}
+```
+
+**Progress UI During Retrieval**:
+```html
+<div class="document-retrieval-progress">
+  <h3>Building Your AI Knowledge Base</h3>
+
+  <div class="progress-item">
+    <span class="status">⏳</span> Searching for boat manual...
+    <div class="progress-bar"><div class="progress" style="width: 20%"></div></div>
+  </div>
+
+  <div class="progress-item">
+    <span class="status">⏳</span> Searching for engine manual...
+    <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+  </div>
+
+  <div class="progress-item">
+    <span class="status">⏳</span> Fetching marine best practices...
+    <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+  </div>
+
+  <div class="progress-item">
+    <span class="status">⏳</span> Fetching regional regulations...
+    <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+  </div>
+</div>
+```
+
+#### 4.5.6 Conversation History Database
+
+**Schema** (`/opt/d3kos/data/conversation-history.db`):
+```sql
+CREATE TABLE conversations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  ai_used TEXT NOT NULL CHECK(ai_used IN ('online', 'onboard')),
+  context_size INTEGER,
+  response_time_ms INTEGER,
+  user_rating INTEGER CHECK(user_rating BETWEEN 1 AND 5),
+  important BOOLEAN DEFAULT 0,
+  added_to_skills BOOLEAN DEFAULT 0
+);
+
+CREATE INDEX idx_timestamp ON conversations(timestamp);
+CREATE INDEX idx_important ON conversations(important);
+CREATE INDEX idx_ai_used ON conversations(ai_used);
+```
+
+**Storage Operations**:
+```javascript
+const sqlite3 = require('sqlite3');
+const db = new sqlite3.Database('/opt/d3kos/data/conversation-history.db');
+
+async function storeConversation(question, answer, aiUsed, responseTime) {
+  const query = `
+    INSERT INTO conversations
+    (question, answer, ai_used, response_time_ms)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  await db.run(query, [question, answer, aiUsed, responseTime]);
+}
+
+async function getRecentConversations(limit = 50) {
+  const query = `
+    SELECT * FROM conversations
+    ORDER BY timestamp DESC
+    LIMIT ?
+  `;
+
+  return await db.all(query, [limit]);
+}
+
+async function getImportantConversations() {
+  const query = `
+    SELECT * FROM conversations
+    WHERE important = 1
+    ORDER BY timestamp DESC
+  `;
+
+  return await db.all(query);
+}
+```
+
+**Automatic Learning**:
+```javascript
+async function evaluateAndLearn(question, answer, aiUsed) {
+  // Criteria for marking as important:
+  // 1. Technical questions about boat/engine
+  // 2. Procedural questions (how to, what is, procedure for)
+  // 3. Not already in skills.md
+
+  const importanceKeywords = [
+    'how to', 'what is', 'normal', 'procedure', 'regulation',
+    'requirement', 'specification', 'temperature', 'pressure',
+    'maintenance', 'troubleshoot', 'problem'
+  ];
+
+  const isImportant = importanceKeywords.some(keyword =>
+    question.toLowerCase().includes(keyword)
+  );
+
+  if (isImportant) {
+    // Add to skills.md conversation history
+    const entry = `
+**Q**: ${question}
+**A**: ${answer}
+**Date**: ${new Date().toISOString()}
+**Source**: ${aiUsed === 'online' ? 'Online AI' : 'Onboard AI'}
+
+`;
+
+    appendToSkillsFile(entry);
+
+    // Mark in database
+    await db.run(
+      'UPDATE conversations SET important = 1, added_to_skills = 1 WHERE id = last_insert_rowid()'
+    );
+  }
+}
+```
+
+#### 4.5.7 Wake Word Routing
+
+**Extended Wake Words**:
+```python
+# /opt/d3kos/config/sphinx/wake-words.dict
+HELM        HH EH L M
+ADVISOR     AE D V AY Z ER
+NAVIGATOR   N AE V IH G EY T ER
+```
+
+**Routing Logic**:
+```javascript
+const wakeWordRouting = {
+  'helm': {
+    ai: 'auto',             // Use online if available, else onboard
+    response: 'Yes, how can I help?'
+  },
+  'advisor': {
+    ai: 'onboard',          // Force onboard AI (Phi-2)
+    response: 'Onboard advisor ready'
+  },
+  'navigator': {
+    ai: 'online',           // Force online AI (Perplexity)
+    response: 'Online navigator ready',
+    fallback: 'Internet unavailable, using onboard advisor'
+  }
+};
+
+async function processWakeWord(wakeWord, spokenCommand) {
+  const routing = wakeWordRouting[wakeWord];
+
+  if (routing.ai === 'auto') {
+    const hasInternet = await checkInternetConnection();
+    if (hasInternet) {
+      return await queryPerplexity(spokenCommand, context);
+    } else {
+      return await queryPhi2(spokenCommand, context);
+    }
+  } else if (routing.ai === 'online') {
+    const hasInternet = await checkInternetConnection();
+    if (hasInternet) {
+      speak(routing.response);
+      return await queryPerplexity(spokenCommand, context);
+    } else {
+      speak(routing.fallback);
+      return await queryPhi2(spokenCommand, context);
+    }
+  } else if (routing.ai === 'onboard') {
+    speak(routing.response);
+    return await queryPhi2(spokenCommand, context);
+  }
+}
+```
+
+#### 4.5.8 Status Updates for Slow Onboard AI
+
+**Audio Progress Updates** (every 40 seconds):
+```javascript
+function queryPhi2WithStatusUpdates(question, context) {
+  const statusMessages = [
+    "AI is working on your question, please stand by",
+    "Still processing your request, just a moment",
+    "Almost there, working on the answer",
+    "Just a bit longer, analyzing your question"
+  ];
+
+  let messageIndex = 0;
+  const statusInterval = setInterval(() => {
+    speak(statusMessages[messageIndex % statusMessages.length]);
+    messageIndex++;
+  }, 40000);  // Every 40 seconds
+
+  // Start timer
+  const startTime = Date.now();
+
+  // Query Phi-2 (slow, ~60 seconds)
+  const answer = await queryPhi2(question, compressContextForPhi2(context.skills));
+
+  // Stop status updates
+  clearInterval(statusInterval);
+
+  // Calculate response time
+  const responseTime = Date.now() - startTime;
+
+  return { answer, responseTime };
+}
+```
+
+**Visual Progress Indicator**:
+```html
+<div class="ai-processing-indicator onboard">
+  <div class="spinner"></div>
+  <div class="status-text">
+    Onboard AI processing... (this may take up to 60 seconds)
+  </div>
+  <div class="progress-bar">
+    <div class="progress" style="width: 0%"></div>
+  </div>
+</div>
+
+<style>
+.ai-processing-indicator.onboard {
+  background: #1a1a1a;
+  border: 2px solid #ff9800;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.spinner {
+  border: 4px solid #333;
+  border-top: 4px solid #ff9800;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+```
+
 ---
 
 ## 5. USER INTERFACE SPECIFICATIONS
@@ -691,14 +1328,25 @@ const thresholds = {
 
 #### 5.3.1 Wizard Flow
 
-**13-Step Process**:
+**Complete Onboarding Process**:
 ```
-Welcome → Q1 → Q2 → ... → Q13 → CX5106 Config → QR Code → Complete
+Welcome → Operator Setup → Boat Identity → Chartplotter Detection →
+Engine Q1-15 → CX5106 Config → QR Code → Complete
 ```
 
+**Step Breakdown**:
+- Step 1: Welcome & Operator Setup
+- Step 2: Boat Identity
+- Step 3: Multi-Boat Configuration (if applicable)
+- **Step 4: Chartplotter Detection** (NEW)
+- Steps 5-19: Engine Configuration (15 questions)
+- Step 20: CX5106 DIP Switch Configuration
+- Step 21: QR Code Generation
+- Step 22: Completion Summary
+
 **Progress Indicator**:
-- Visual: Progress bar (Step X of 13)
-- Text: "Step 5 of 13: Engine Displacement"
+- Visual: Progress bar (Step X of 22)
+- Text: "Step 4 of 22: Chartplotter Detection"
 - Navigation: Back, Next, Save & Exit
 
 #### 5.3.2 Question Specifications
@@ -786,6 +1434,240 @@ Welcome → Q1 → Q2 → ... → Q13 → CX5106 Config → QR Code → Complete
 - AI assist: Suggest 10 PSI @ idle, 40 PSI @ cruise
 - Validation: Cruise > Idle, reasonable range
 - Default: 10 PSI idle, 40 PSI cruise
+
+#### 5.3.2a Step 4: Chartplotter Detection (NEW)
+
+**Purpose**: Determine if a third-party chartplotter is installed on the NMEA2000 network to decide whether to install OpenCPN.
+
+**UI Layout**:
+```
+┌──────────────────────────────────────────────────────┐
+│  Step 4 of 22: Navigation Display                    │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  How will you view charts and navigation?           │
+│                                                      │
+│  ○ I have a chartplotter installed                  │
+│    (Garmin, Simrad, Raymarine, Lowrance, etc.)     │
+│    → d3kOS will NOT install OpenCPN                 │
+│                                                      │
+│  ○ I don't have a chartplotter                      │
+│    → d3kOS will install OpenCPN for navigation      │
+│                                                      │
+│  ○ I'm not sure - Auto-detect                       │
+│    → d3kOS will scan the NMEA2000 network           │
+│                                                      │
+│  ℹ️ Note: Your chartplotter will automatically       │
+│     display engine data from the CX5106 gateway.    │
+│     No special configuration needed.                │
+│                                                      │
+│  [< Back]          [Detect Now]          [Next >]   │
+└──────────────────────────────────────────────────────┘
+```
+
+**Auto-Detection Logic** (IMPLEMENTED 2026-02-11):
+
+**Prerequisites - Nginx Proxy Configuration**:
+Signal K Server runs on port 3000 (IPv6 only), so nginx proxy is required for browser WebSocket connections:
+
+```nginx
+# /etc/nginx/sites-enabled/default
+# Signal K WebSocket Proxy
+location /signalk/ {
+    proxy_pass http://localhost:3000/signalk/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 86400;
+}
+```
+
+**JavaScript Implementation** (`/var/www/html/onboarding.html`):
+```javascript
+function detectChartplotter() {
+  // Connect to Signal K via nginx proxy on port 80
+  const wsUrl = 'ws://' + window.location.hostname + '/signalk/v1/stream?subscribe=none';
+  const navigationPGNs = [
+    129025,  // Position, Rapid Update
+    129026,  // COG & SOG, Rapid Update
+    129029   // GNSS Position Data
+  ];
+  const detectedNavPGNs = new Set();
+  let detectionComplete = false;
+
+  console.log("Connecting to Signal K:", wsUrl);
+
+  const ws = new WebSocket(wsUrl);
+  const wsTimeout = setTimeout(() => {
+    ws.close();
+    displayResult(false, "Signal K unavailable");
+  }, 10000); // 10-second connection timeout
+
+  ws.onopen = function() {
+    clearTimeout(wsTimeout);
+    console.log('✓ Connected to Signal K successfully');
+
+    // Subscribe to all updates
+    ws.send(JSON.stringify({
+      context: 'vessels.self',
+      subscribe: [{ path: '*', period: 1000 }]
+    }));
+
+    // Start 5-second detection timer
+    startDetectionTimer(ws, navigationPGNs, detectedNavPGNs);
+  };
+
+  ws.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+
+    // Check for PGNs in Signal K updates
+    if (data.updates) {
+      data.updates.forEach(update => {
+        if (update.$source && update.$source.pgn) {
+          const pgn = update.$source.pgn;
+
+          // Display all detected PGNs in real-time
+          displayPGN(pgn);
+
+          // Check if it's a navigation PGN
+          if (navigationPGNs.includes(pgn)) {
+            detectedNavPGNs.add(pgn);
+            console.log('✓ Navigation PGN detected:', pgn);
+          }
+        }
+      });
+    }
+  };
+
+  ws.onerror = function(error) {
+    console.error('WebSocket error:', error);
+  };
+
+  ws.onclose = function() {
+    console.log('WebSocket closed');
+  };
+}
+
+function startDetectionTimer(ws, navigationPGNs, detectedNavPGNs) {
+  const detectionDuration = 5000; // 5 seconds
+  const startTime = Date.now();
+
+  const timer = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = (elapsed / detectionDuration) * 100;
+
+    // Update progress bar
+    updateProgressBar(progress);
+
+    if (elapsed >= detectionDuration) {
+      clearInterval(timer);
+      ws.close();
+
+      // Determine result
+      const hasChartplotter = detectedNavPGNs.size > 0;
+      displayResult(hasChartplotter, detectedNavPGNs);
+
+      // Auto-select appropriate radio option
+      if (hasChartplotter) {
+        document.getElementById('has-chartplotter').checked = true;
+      } else {
+        document.getElementById('no-chartplotter').checked = true;
+      }
+    }
+  }, 100); // Update every 100ms
+}
+```
+
+**Detection Display**:
+```
+┌──────────────────────────────────────────────────────┐
+│  Scanning NMEA2000 Network...                        │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  🔍 Listening for navigation PGNs                    │
+│  ▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ 50% (2.5s / 5.0s)            │
+│                                                      │
+│  Detected PGNs:                                      │
+│  • 127488 - Engine Parameters (CX5106)              │
+│  • 127505 - Fluid Level (CX5106)                    │
+│  • 129026 - COG & SOG (Chartplotter) ✓              │
+│  • 129029 - GNSS Position (Chartplotter) ✓          │
+│                                                      │
+│  Result: Chartplotter detected!                      │
+│                                                      │
+│  [Continue]                                          │
+└──────────────────────────────────────────────────────┘
+```
+
+**Data Storage** (`/opt/d3kos/config/onboarding.json`):
+```json
+{
+  "chartplotter": {
+    "present": true,
+    "detected_pgns": [129026, 129029],
+    "detection_method": "auto",
+    "install_opencpn": false,
+    "timestamp": "2026-02-11T10:30:00Z"
+  }
+}
+```
+
+**Important Notes**:
+- **Standard NMEA2000 PGNs**: CX5106 outputs standard PGNs (127488, 127489, 127505, 127508) that ALL chartplotters can read automatically
+- **No Vendor-Specific Handling**: Chartplotters from Garmin, Simrad, Raymarine, Lowrance, Furuno, and Humminbird all support standard PGNs
+- **No PGN Translation Required**: d3kOS does NOT need to translate or convert PGNs for chartplotter compatibility
+- **Bi-Directional Not Required**: d3kOS receives data from NMEA2000; chartplotter also receives the same data
+- **Engine Gauge Display**: Third-party chartplotters will display CX5106 engine data on their built-in engine gauge pages without any d3kOS configuration
+
+**Why This Step Matters**:
+- Avoids installing OpenCPN when user already has a chartplotter
+- Saves disk space (~500MB)
+- Prevents duplicate navigation displays
+- Informs user that chartplotter will automatically see engine data
+
+**Fullscreen Toggle on Wizard Completion** (IMPLEMENTED 2026-02-11):
+
+When the onboarding wizard completes, it automatically restores kiosk mode (fullscreen) before redirecting to the main menu. This is necessary because the wizard exits fullscreen to allow on-screen keyboard access.
+
+**Implementation** (`/var/www/html/onboarding.html`):
+```javascript
+function goToMainMenu() {
+  // Increment wizard run counter
+  let wizardRuns = parseInt(localStorage.getItem('d3kos-wizard-runs') || '0');
+  wizardRuns++;
+  localStorage.setItem('d3kos-wizard-runs', wizardRuns.toString());
+
+  // Mark onboarding as complete
+  localStorage.setItem('d3kos-onboarding-complete', 'true');
+
+  // Alert user
+  alert('Onboarding complete! You will be redirected to the main menu.');
+
+  // Toggle fullscreen (return to kiosk mode)
+  fetch('http://localhost:1880/toggle-fullscreen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  }).then(() => {
+    console.log('✓ Toggled to fullscreen/kiosk mode');
+  }).catch(err => {
+    console.warn('Could not toggle fullscreen:', err);
+  });
+
+  // Wait for fullscreen toggle, then redirect
+  setTimeout(() => {
+    window.location.href = '/';
+  }, 500);
+}
+```
+
+**Node-RED Endpoint**: `POST http://localhost:1880/toggle-fullscreen`
+- Executes `/usr/local/bin/toggle-fullscreen.sh` script
+- Script uses `wtype -k F11` (Wayland keyboard input tool)
+- F11 toggles fullscreen mode in Chromium
 
 #### 5.3.3 CX5106 DIP Switch Configuration
 
@@ -2038,6 +2920,37 @@ This specification has been reviewed and approved by:
 ---
 
 ## CHANGE LOG
+
+### Version 2.3 (2026-02-12)
+- **Added hybrid AI assistant system** with online (Perplexity) and onboard (Phi-2) backends
+- **Implemented intelligent AI routing** based on internet connectivity
+- **Added skills.md context management system** for unified knowledge base
+- **Implemented automatic document retrieval** during onboarding (boat manuals, engine manuals, regulations, best practices)
+- **Added text input interface** in main menu for AI queries
+- **Implemented conversation history database** with SQLite for learning and memory
+- **Added multiple wake words** ("Helm", "Advisor", "Navigator") for AI selection
+- **Implemented status updates** for slow onboard AI processing (every 40 seconds)
+- **Updated software stack** with Perplexity API, SQLite conversation database
+- **Added Section 4.5** Hybrid AI Assistant System Architecture with complete technical specifications
+- **Updated onboarding wizard** to include document retrieval with progress indicators
+
+### Version 2.2 (2026-02-11)
+- **Implemented Step 4 (Chartplotter Detection)** with working code
+- **Added nginx proxy configuration** for Signal K WebSocket on port 80
+- **Implemented JavaScript detection code** with real-time PGN display and 5-second timer
+- **Added fullscreen toggle** on wizard completion to restore kiosk mode
+- **Tested and verified** detection correctly identifies navigation vs engine PGNs
+- **Fixed WebSocket connection** issues (IPv4/IPv6, localhost vs network IP)
+- **Documented** complete implementation in Section 5.3.2a
+
+### Version 2.1 (2026-02-11)
+- **Added Step 4 (Chartplotter Detection)** to onboarding wizard
+- Clarified that CX5106 outputs standard NMEA2000 PGNs
+- Documented universal chartplotter compatibility (Garmin, Simrad, Raymarine, Lowrance, Furuno, Humminbird)
+- Confirmed no vendor-specific PGN translation required
+- Added auto-detection logic for navigation PGNs (129025, 129026, 129029)
+- Updated wizard flow from 13 steps to 22 steps total
+- Added detailed UI specification for chartplotter detection step
 
 ### Version 2.0 (2026-02-06)
 - Integrated all recommendations from gap analysis
