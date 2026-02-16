@@ -1,7 +1,10 @@
 # CLAUDE.md - AI Assistant Guidelines for d3kOS Development
-## Version 2.6
+## Version 2.9
 
-**Last Updated**: February 12, 2026
+**Last Updated**: February 13, 2026
+**Changes from v2.8**: Added Marine Vision System specification (fish capture mode, forward watch mode, species ID, fishing regulations)
+**Changes from v2.7**: Added large touch-friendly map controls to Weather Radar (80px buttons: Zoom In/Out, Recenter, overlay toggle)
+**Changes from v2.6**: Added Weather Radar feature (GPS-based, animated radar, marine conditions, auto-logging to boatlog every 30 minutes)
 **Changes from v2.5**: Updated wake words to "Helm", "Advisor", "Counsel" (changed Navigator→Counsel), added "Aye Aye Captain" acknowledgment response
 **Changes from v2.4**: Added hybrid AI assistant system (online Perplexity + onboard Phi-2), skills.md context management, automatic document retrieval, learning/memory features, text input interface
 **Changes from v2.3**: Added implementation details for Step 4 (WebSocket proxy, detection JavaScript, fullscreen toggle)
@@ -103,7 +106,8 @@ This document provides guidelines for AI assistants (like Claude, ChatGPT, Copil
   - Recording with disk management (stops at 18% remaining)
 
 ### Storage & Power
-- **MicroSD Card**: 32GB minimum, 128GB recommended
+- **MicroSD Card**: 32GB minimum, 128GB recommended (currently 16GB OS card)
+- **USB Storage**: 128GB USB drive installed at `/media/d3kos/6233-3338` (119.2GB usable)
 - **Power**: 5V 3A minimum (official Raspberry Pi power supply)
 
 ---
@@ -949,9 +953,11 @@ function queryWithAudioUpdates(question) {
 - Camera recordings: ~10GB (auto-managed)
 - **Total**: ~24GB used on 64GB SD card
 
-**Recommended**: 64GB SD card is sufficient with text-only extraction
+**Current System**: 128GB USB drive installed for additional storage (119.2GB usable)
 
-**Upgrade Path**: 128GB SD card recommended for:
+**Recommended**: 64GB SD card is sufficient for OS, 128GB USB drive provides expansion storage
+
+**Storage Configuration**:
 - Multiple boat profiles
 - Extended conversation history (> 3 years)
 - Full PDF storage (not just text)
@@ -1271,6 +1277,58 @@ Tier 3 (Paid Annual)
   - Signal K data integration
   - GPS/AIS passthrough
   - Chart management
+
+- **Weather Radar** (NEW - 2026-02-13)
+  - GPS-based weather display
+  - Animated weather radar (Windy.com embed)
+  - Real-time marine conditions
+  - Open-Meteo Marine API & Weather API
+  - **Large Touch-Friendly Map Controls** (80px × 80px):
+    - Zoom In (+) / Zoom Out (−) buttons
+    - Recenter on Position (⊙) button
+    - Wind/Clouds/Radar overlay toggle
+    - Positioned right side of map, vertically centered
+    - Full touchscreen support with visual feedback
+  - **Essential Marine Data**:
+    - Wind speed, direction, gusts (knots)
+    - Wave height, direction, period (meters/seconds)
+    - Sea state description (Calm/Smooth/Slight/Moderate/Rough/etc.)
+    - Visibility (kilometers)
+    - Precipitation (mm/hr)
+    - Barometric pressure (hPa)
+    - Temperature & humidity
+    - Weather alerts (High Wind, High Seas, Heavy Precipitation)
+  - **Auto-Logging to Boatlog** (every 30 minutes)
+  - Split-screen layout: Radar (2/3) + Conditions Panel (1/3)
+  - See: `/home/boatiq/Helm-OS/doc/WEATHER_2026-02-13.md`
+
+- **Marine Vision System** (PLANNED - 2026-02-14)
+  - IP67 camera integration (Reolink RLC-810A)
+  - Two operating modes: Fish Capture + Forward Watch
+  - **Fish Capture Mode**:
+    - Person + fish detection (YOLOv8)
+    - Auto-capture photo when holding fish
+    - Species identification (pretrained + fine-tuned model)
+    - Fishing regulations check (size/bag limits by location/date)
+    - Notification to phone (Telegram/Signal/email)
+    - Event logging with timestamp, species, GPS location
+  - **Forward Watch Mode**:
+    - Marine object detection (boats, kayaks, buoys, logs, debris)
+    - Distance estimation (monocular depth - MiDaS/ZoeDepth)
+    - Real-time alerts (visual + audible)
+    - Detection logging
+  - **Camera**:
+    - Model: Reolink RLC-810A (IP67, night vision)
+    - Stream: RTSP (rtsp://d3kos:d3kos2026@CAMERA_IP:554/h264Preview_01_main)
+    - Recording: VLC integration, stored on 128GB USB drive
+    - Mounted on 360° motorized searchlight
+  - **Orientation Detection**: Camera angle determines mode (Fish: 135-225°, Forward: 315-45°)
+  - **APIs**: FishBase, GBIF, iNaturalist, Ontario MNR regulations
+  - **Models**: YOLOv8 (detection), ResNet50 (species ID), MiDaS (depth)
+  - **Services**: camera-stream, vision-core, fish-detector, forward-watch, marine-vision-api
+  - **Storage**: ~250MB models, ~1GB/hour video recordings
+  - **Performance**: 10+ FPS detection, 5+ FPS depth estimation
+  - See: `/home/boatiq/Helm-OS/doc/MARINE_VISION.md`
 
 ### Dashboard Gauges
 **Line 1 - Engine**:
