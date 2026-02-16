@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 2.7
-**Date**: February 13, 2026
-**Status**: APPROVED - Marine Vision System Specification Added
-**Previous Version**: 2.6 (February 13, 2026)
+**Version**: 3.1
+**Date**: February 16, 2026
+**Status**: APPROVED - E-commerce Integration Added
+**Previous Version**: 3.0 (February 16, 2026)
 
 ---
 
@@ -13,13 +13,17 @@
 |---------|------|--------|---------|
 | 1.0 | 2026-02-04 | d3kOS Team | Initial specification |
 | 2.0 | 2026-02-06 | d3kOS Team | Integrated approved recommendations from gap analysis |
-| 2.1 | 2026-02-11 | d3kOS Team | Added Step 4 (Chartplotter Detection) to onboarding wizard, clarified standard PGN compatibility |
+| 2.1 | 2026-02-11 | d3kOS Team | Added Step 4 (Chartplotter Detection) to Initial Setup wizard, clarified standard PGN compatibility |
 | 2.2 | 2026-02-11 | d3kOS Team | Implemented Step 4 with nginx proxy, WebSocket detection, and fullscreen toggle |
 | 2.3 | 2026-02-12 | d3kOS Team | Added hybrid AI assistant system (Perplexity + Phi-2), skills.md context management, automatic document retrieval, text input interface, learning/memory features |
 | 2.4 | 2026-02-12 | d3kOS Team | Updated wake words: Navigator→Counsel, added "Aye Aye Captain" acknowledgment response |
 | 2.5 | 2026-02-13 | d3kOS Team | Added Weather Radar feature (Section 5.5): GPS-based animated radar, marine conditions panel, auto-logging to boatlog every 30 minutes |
 | 2.6 | 2026-02-13 | d3kOS Team | Added large touch-friendly map controls (80px buttons): Zoom In/Out, Recenter on Position, Wind/Clouds/Radar overlay toggle |
 | 2.7 | 2026-02-13 | d3kOS Team | Added Marine Vision System (Section 5.6): IP67 camera integration, fish capture mode, forward watch mode, species ID, fishing regulations |
+| 2.8 | 2026-02-16 | d3kOS Team | Completely rewrote Section 8.3 Data Export: Added central database sync, export formats (JSON with installation_id), automatic boot-time upload, export queue system, Tier 1+ requirement, API endpoints, 7 export categories (benchmark, boatlog, marine vision, QR code, settings, alerts, snapshots) |
+| 2.9 | 2026-02-16 | d3kOS Team | Updated Section 6.3.2: Added tier-based update restrictions (Tier 0/1: image-only updates, Tier 2/3: OTA updates), added Tier 1 configuration preservation via mobile app, added onboarding export (8th category) with reset counter tracking, renamed all "Onboarding Wizard" references to "Initial Setup" |
+| 3.0 | 2026-02-16 | d3kOS Team | Added Section 8.3.1 Category #9: Comprehensive telemetry & analytics export (system performance, user interaction, AI metrics, device environment, business intelligence) - background collection via d3kos-telemetry.service, Tier 1+ only with user consent, 30-day local retention, SQLite storage |
+| 3.1 | 2026-02-16 | d3kOS Team | Added Section 6.3.4: E-commerce Integration & Mobile App In-App Purchases - Stripe (primary), Apple App Store IAP (iOS), Google Play Billing (Android), PayPal (alternative), subscription management APIs, payment webhooks, failed payment grace period (3/7/14/24 days), updated Tier 2 pricing to $9.99/month and Tier 3 to $99.99/year (17% annual discount) |
 
 ---
 
@@ -731,7 +735,7 @@ function compressContextForPhi2(skills) {
 
 **Automatic Retrieval During Onboarding**:
 
-During onboarding wizard (Step 19-20), if internet is available:
+During Initial Setup wizard (Step 19-20), if internet is available:
 
 1. **Boat Manual Retrieval**:
 ```javascript
@@ -1636,7 +1640,7 @@ function startDetectionTimer(ws, navigationPGNs, detectedNavPGNs) {
 
 **Fullscreen Toggle on Wizard Completion** (IMPLEMENTED 2026-02-11):
 
-When the onboarding wizard completes, it automatically restores kiosk mode (fullscreen) before redirecting to the main menu. This is necessary because the wizard exits fullscreen to allow on-screen keyboard access.
+When the Initial Setup wizard completes, it automatically restores kiosk mode (fullscreen) before redirecting to the main menu. This is necessary because the wizard exits fullscreen to allow on-screen keyboard access.
 
 **Implementation** (`/var/www/html/onboarding.html`):
 ```javascript
@@ -2434,37 +2438,77 @@ function detectTier() {
 }
 ```
 
-#### 6.3.2 Feature Restrictions
+#### 6.3.2 Feature Restrictions & Update Capabilities
 
 **Tier 0 (Opensource)**:
-- ✓ Onboarding wizard (10 resets max)
+- ✓ Initial Setup wizard (10 resets max)
 - ✓ Dashboard (basic gauges)
 - ✓ Engine health monitoring
 - ✓ Pi health monitoring
 - ✗ Voice assistant (disabled)
 - ✗ Camera integration (disabled)
+- ✗ Data export (disabled)
 - ✓ Boat log (30 days retention)
 - ✓ OpenCPN (can install to upgrade to Tier 2)
+- **Updates:** ✗ Cannot incrementally update - must download new image
+- **Config Preservation:** ✗ No configuration backup - must re-run Initial Setup after update
 
-**Tier 2 (App-based)**:
+**Tier 1 (Mobile App Integration)** (Free):
 - ✓ All Tier 0 features
-- ✓ Unlimited onboarding resets
+- ✓ Mobile app (iOS/Android)
+- ✓ QR code pairing
+- ✓ Cloud database synchronization
+- ✓ Data export (enabled)
+- ✓ Push notifications
+- ✓ Remote monitoring
+- **Updates:** ✗ Cannot incrementally update - must download new image
+- **Config Preservation:** ✓ Mobile app stores onboarding + settings with installation_id
+- **Config Restore:** ✓ After update, mobile app restores configuration automatically
+
+**Tier 2 (Premium Subscription)** (Paid):
+- ✓ All Tier 1 features
 - ✓ Voice assistant (enabled)
 - ✓ Camera integration (enabled)
-- ✓ Boat log (unlimited retention)
+- ✓ AI-powered analysis
+- ✓ Predictive maintenance recommendations
 - ✓ Historical graphs (90 days)
-- ✗ Cloud sync (Tier 3 only)
+- **Updates:** ✓ CAN incrementally update via OTA (apt/dpkg)
+- **Config Preservation:** ✓ Automatic (no reinstall needed)
 
-**Tier 3 (Subscription)** (Future):
+**Tier 3 (Enterprise/Fleet)** (Paid Annual):
 - ✓ All Tier 2 features
+- ✓ Unlimited resets
 - ✓ Cloud sync
 - ✓ Remote monitoring
-- ✓ Multi-device access
+- ✓ Multi-boat support
+- ✓ Fleet management
 - ✓ Priority support
+- **Updates:** ✓ CAN incrementally update via OTA (apt/dpkg)
+- **Config Preservation:** ✓ Automatic (no reinstall needed)
+- **Fleet Updates:** ✓ Centralized update management
 
-#### 6.3.3 Version Management
+#### 6.3.3 Version Management & Updates
 
-**GitHub API Check**:
+**Update Capabilities by Tier:**
+
+**Tier 0 & 1: Image-Only Updates**
+- Cannot incrementally update
+- Must download new d3kOS image (.img file)
+- Flash SD card with Raspberry Pi Imager
+- Reboot into new version
+- Tier 0: Must re-run Initial Setup wizard (configuration lost)
+- Tier 1: Mobile app restores configuration automatically
+
+**Tier 2 & 3: OTA (Over-the-Air) Updates**
+- Can incrementally update via apt/dpkg
+- No SD card reflashing required
+- Configuration automatically preserved
+- Update check: Settings → System → Check for Updates
+- Automatic or manual update installation
+
+---
+
+**GitHub API Check** (for Tier 0/1):
 ```javascript
 async function checkForUpdates() {
   try {
@@ -2507,7 +2551,75 @@ Release Notes:
 [Download] [View on GitHub] [Close]
 ```
 
-#### 6.3.4 QR Code Pairing
+#### 6.3.4 E-commerce Integration & Mobile App In-App Purchases
+
+**Purpose**: Enable users to purchase Tier 2 ($9.99/month) and Tier 3 ($99.99/year) subscriptions directly within the mobile app, with seamless integration to central database for automatic tier upgrades.
+
+---
+
+##### Supported Payment Platforms
+
+| Platform | Use Case | Commission | Required For |
+|----------|----------|------------|--------------|
+| **Stripe** | Web checkout, cross-platform | 2.9% + $0.30 | Primary payment processor |
+| **Apple App Store IAP** | iOS app subscriptions | 15-30% | iOS apps (mandatory) |
+| **Google Play Billing** | Android app subscriptions | 15-30% | Android apps (mandatory) |
+| **PayPal** | Alternative payment method | 2.9% + $0.30 | Optional (user preference) |
+
+**Recommended Architecture**:
+- **Primary**: Stripe (lowest fees, works across web + mobile)
+- **iOS**: Apple In-App Purchase (IAP) - mandatory per App Store guidelines
+- **Android**: Google Play Billing - mandatory per Play Store guidelines
+- **Alternative**: PayPal for users without credit cards
+
+---
+
+##### Subscription Data Structure & API Endpoints
+
+**Database Table: `subscriptions`**:
+```json
+{
+  "subscription_id": "sub_abc123def456",
+  "installation_id": "550e8400e29b41d4",
+  "tier": 2,
+  "status": "active",
+  "payment_provider": "stripe",
+  "provider_subscription_id": "sub_1234567890",
+  "amount_cents": 999,
+  "currency": "USD",
+  "billing_interval": "month",
+  "current_period_end": "2026-03-16T10:00:00Z"
+}
+```
+
+**API Endpoints**:
+- `POST /api/v1/stripe/checkout/session` - Create Stripe checkout session
+- `POST /api/v1/webhooks/stripe` - Receive Stripe webhooks
+- `POST /api/v1/apple/verify-receipt` - Validate Apple IAP receipt
+- `POST /api/v1/google/verify-purchase` - Validate Google Play purchase
+- `GET /api/v1/tier/status` - Get current tier and subscription status
+- `POST /api/v1/subscription/cancel` - Cancel active subscription
+- `GET /api/v1/subscription/history` - Get payment history
+
+**Mobile App Purchase Flow** (Stripe):
+1. App calls: `POST /api/v1/stripe/checkout/session` with installation_id + tier
+2. Backend creates Stripe Checkout Session, returns URL
+3. App opens URL in in-app browser
+4. User completes payment on Stripe-hosted page
+5. Stripe webhook fires: `customer.subscription.created`
+6. Backend updates database: tier=2, is_paid_tier=TRUE
+7. App polls: `GET /api/v1/tier/status` and unlocks Tier 2 features
+8. Pi polls cloud on next boot, detects upgrade, enables Tier 2 features
+
+**Failed Payment Handling**:
+- Day 0: 1st failure → Retry in 3 days, send email
+- Day 3: 2nd failure → Retry in 7 days, send warning
+- Day 10: 3rd failure → Retry in 14 days, final warning
+- Day 24: 4th failure → Subscription expires, downgrade tier
+
+---
+
+#### 6.3.5 QR Code Pairing
 
 **QR Code Content**:
 ```
@@ -2679,39 +2791,966 @@ sudo systemctl start signalk nodered
 echo "Restore completed from: $BACKUP_FILE"
 ```
 
-### 8.3 Data Export
+### 8.3 Data Export & Central Database Sync
 
-**CSV Export** (for logs and historical data):
-```javascript
-// /opt/d3kos/services/export/csv-exporter.js
+**Tier Requirement**: Tier 1, 2, and 3 only (Tier 0 does NOT have export capability)
 
-function exportToCSV(data, filename) {
-  const csv = data.map(row => Object.values(row).join(',')).join('\n');
-  const header = Object.keys(data[0]).join(',');
-  const fullCSV = header + '\n' + csv;
-  
-  fs.writeFileSync(`/opt/d3kos/data/exports/${filename}`, fullCSV);
-  
-  return `/opt/d3kos/data/exports/${filename}`;
+**Purpose**: Export all boat data in format suitable for central database import, enabling cloud sync, mobile app features, fleet management, and remote monitoring.
+
+---
+
+#### 8.3.1 Export Data Categories
+
+All exports must include:
+- **installation_id** (16-char hex from `/opt/d3kos/config/license.json`)
+- **export_timestamp** (ISO-8601 format)
+- **tier** (1, 2, or 3)
+- **format_version** (e.g., "1.0")
+
+**Data Types Requiring Export**:
+
+1. **Engine Benchmark Data**
+   - Baseline RPM values (idle, cruise, max)
+   - Oil pressure ranges (min, normal, max)
+   - Coolant temperature ranges
+   - Performance metrics
+   - Anomaly thresholds
+   - Last benchmark timestamp
+
+2. **Boatlog Entries**
+   - Entry ID (unique per entry)
+   - Timestamp
+   - Entry type (voice, text, auto, weather)
+   - Content/transcription
+   - GPS coordinates (latitude, longitude)
+   - Weather conditions (if weather auto-log)
+
+3. **Marine Vision Captures** (Metadata Only - NO Files)
+   - Installation ID (system_id)
+   - Capture ID (unique per photo)
+   - Timestamp (when photo was taken)
+   - File size (bytes)
+   - File path (local storage path on Pi)
+   - Image metadata (resolution, format)
+   - Detection results (species, confidence score)
+   - Size measurements (if applicable)
+   - Legal compliance (size/bag limit check)
+   - GPS coordinates
+   - **NOTE:** Actual image files are NOT exported to central database. Files are transferred via Tier 1/2/3 mobile app only.
+
+4. **Marine Vision Snapshots** (Metadata Only - NO Files)
+   - Installation ID (system_id)
+   - Snapshot ID (unique per snapshot)
+   - Timestamp (when snapshot was taken)
+   - File size (bytes)
+   - File path (local storage path on Pi)
+   - Camera orientation (degrees)
+   - Detection events (object type, count, distance estimate)
+   - GPS coordinates
+   - **NOTE:** Actual video/snapshot files are NOT exported to central database. Files are transferred via Tier 1/2/3 mobile app only.
+
+5. **QR Code Data**
+   - Installation UUID
+   - Pairing token (one-time use)
+   - Generation timestamp
+   - Tier level at generation
+   - API endpoint
+
+6. **Settings Configuration**
+   - User preferences (voice enabled, camera enabled, etc.)
+   - Feature toggles
+   - Network configuration (WiFi SSID, AP mode)
+   - Alert thresholds (oil pressure min, temp max, etc.)
+
+7. **System Alerts**
+   - Alert ID (unique per alert)
+   - Timestamp (when alert triggered)
+   - Alert type (health, anomaly, system, network)
+   - Severity level (info, warning, critical)
+   - Message/description
+   - Resolved status (true/false)
+   - Resolved timestamp (if resolved)
+   - Related sensor values
+
+8. **Onboarding/Initial Setup Configuration**
+   - Installation ID (system_id)
+   - All Initial Setup wizard answers (20 steps)
+   - Boat information (manufacturer, year, model, chartplotter)
+   - Engine information (make, model, year, cylinders, displacement, power, compression, RPM ranges, type)
+   - Regional settings (tank sensor standard, engine position)
+   - Reset counter (resets_used, resets_remaining)
+   - Max resets allowed (10 for Tier 0/1, unlimited for Tier 3)
+   - Last reset timestamp
+   - Completion status and timestamp
+   - **Purpose:** Enables Tier 1 mobile app to restore configuration after d3kOS image update
+
+9. **Telemetry & Analytics** (Background Collection)
+   - **Tier Requirement:** Tier 1, 2, and 3 only (user consent required)
+   - **Collection Method:** Automatic background service (`d3kos-telemetry.service`)
+   - **Privacy:** Anonymized, no personally identifiable information
+   - **Retention:** 30 days local storage, unlimited in central database
+   - **User Control:** Can disable via Settings → Privacy → Telemetry
+
+   **System Performance Metrics:**
+   - Boot time (power-on to fully operational, seconds)
+   - Memory usage (RAM consumption: average MB, peak MB)
+   - CPU usage patterns (average %, peak %, idle %)
+   - Network connectivity (WiFi/ethernet uptime %, latency ms)
+   - Error/crash logs (count, frequency, error types)
+   - System uptime between reboots (hours)
+   - Battery level (if applicable - future UPS integration)
+   - Storage usage (SD card usage %, growth rate)
+   - Service restart counts (per service: d3kos-voice, d3kos-ai-api, etc.)
+
+   **User Interaction Data:**
+   - Menu navigation patterns (click counts per menu/button)
+   - Feature usage frequency (which features used most/least)
+   - User flow paths (which menus lead to which actions)
+   - Abandoned actions (started but not completed, count)
+   - Settings changes (frequency and types)
+   - Voice command success/failure rates (percentage)
+   - Time spent per page/screen (average session duration per page)
+   - Onboarding completion time (first boot to wizard done, minutes)
+
+   **AI Assistance Metrics:**
+   - Number of AI queries per session (total, average per session)
+   - AI response time/latency (average ms, p95 ms, p99 ms)
+   - Query types/categories (simple patterns vs complex, onboard vs online)
+   - Provider usage distribution (OpenRouter vs onboard rules, percentage)
+   - Cache hit rate (Signal K data caching effectiveness, percentage)
+   - Follow-up question patterns (chains of related queries, count)
+   - Query abandonment rate (user closes page before response, percentage)
+
+   **Device & Environment Data:**
+   - Connected device count (other devices on 10.42.0.0/24 network)
+   - Camera connection status and uptime (percentage)
+   - Time of day usage patterns (hourly heatmap: 00-06, 06-12, 12-18, 18-24)
+   - d3kOS software version (e.g., "2.9")
+   - Raspberry Pi model and RAM size (e.g., "Pi 4B 8GB")
+   - SD card size and type (GB)
+   - Network mode (AP mode vs client mode, WiFi vs ethernet)
+
+   **Business Intelligence Metrics:**
+   - Days since installation (installation age)
+   - Days since last use (user retention indicator)
+   - First-time vs returning user patterns
+   - Feature adoption rate over time
+   - Session duration and frequency (daily, weekly, monthly averages)
+   - Current tier and tier upgrade history (0→1, 1→2, 2→3)
+   - Reset counter trends (approaching limit? retention risk)
+   - Retention score (calculated metric: 0.0-1.0)
+
+   **Collection Service:**
+   - Service: `d3kos-telemetry.service` (systemd)
+   - Frequency: Every 5 minutes (collects metrics)
+   - Local storage: `/opt/d3kos/data/telemetry/telemetry.db` (SQLite)
+   - Export frequency: Daily export (Tier 2+) or manual export (Tier 1)
+   - Aggregation: Metrics aggregated to hourly/daily summaries before export
+
+---
+
+#### 8.3.2 Export File Format
+
+**Primary Format**: JSON (structured for database import)
+
+**File Location**: `/opt/d3kos/data/exports/`
+
+**File Naming Convention**: `d3kos_export_{installation_id}_{timestamp}.json`
+
+**Example**: `d3kos_export_abc123def456_20260216143000.json`
+
+**JSON Structure**:
+
+```json
+{
+  "export_metadata": {
+    "installation_id": "abc123def456",
+    "export_timestamp": "2026-02-16T14:30:00.000Z",
+    "tier": 2,
+    "format_version": "1.0",
+    "export_type": "full",
+    "software_version": "2.7.0"
+  },
+  "boat_info": {
+    "manufacturer": "Sea Ray",
+    "year": 2018,
+    "model": "Sundancer 320",
+    "chartplotter": "Garmin GPSMAP 7412xsv",
+    "engine_make": "Mercury",
+    "engine_model": "8.2L Mag HO",
+    "engine_year": 2018,
+    "engine_position": "single"
+  },
+  "benchmark_data": {
+    "baseline_rpm": {
+      "idle": 700,
+      "cruise": 3200,
+      "max": 4800
+    },
+    "oil_pressure": {
+      "min": 10,
+      "normal": 45,
+      "max": 65
+    },
+    "coolant_temp": {
+      "min": 160,
+      "normal": 180,
+      "max": 195
+    },
+    "last_benchmark": "2026-02-10T10:00:00.000Z",
+    "benchmark_count": 3
+  },
+  "boatlog_entries": [
+    {
+      "entry_id": "log_20260216_143000_001",
+      "timestamp": "2026-02-16T14:30:00.000Z",
+      "type": "voice",
+      "content": "Engine running smooth, heading to marina",
+      "gps": {
+        "latitude": 43.6817,
+        "longitude": -79.5214
+      },
+      "weather": null
+    },
+    {
+      "entry_id": "log_20260216_150000_002",
+      "timestamp": "2026-02-16T15:00:00.000Z",
+      "type": "weather_auto",
+      "content": "Wind: 12 kts NW, Waves: 0.5m, Temp: 22°C",
+      "gps": {
+        "latitude": 43.6850,
+        "longitude": -79.5300
+      },
+      "weather": {
+        "wind_speed": 12,
+        "wind_direction": "NW",
+        "wave_height": 0.5,
+        "temperature": 22
+      }
+    }
+  ],
+  "marine_vision_captures": [
+    {
+      "installation_id": "abc123def456",
+      "capture_id": "capture_20260216_120000_001",
+      "timestamp": "2026-02-16T12:00:00.000Z",
+      "file_size_bytes": 524288,
+      "file_path_local": "/home/d3kos/camera-recordings/captures/capture_20260216_120000_001.jpg",
+      "resolution": "1920x1080",
+      "format": "JPEG",
+      "species": "Largemouth Bass",
+      "confidence": 0.92,
+      "size_cm": 38,
+      "legal_size": true,
+      "bag_limit_check": "within_limit",
+      "gps": {
+        "latitude": 43.6817,
+        "longitude": -79.5214
+      }
+    }
+  ],
+  "marine_vision_snapshots": [
+    {
+      "installation_id": "abc123def456",
+      "snapshot_id": "snapshot_20260216_130000_001",
+      "timestamp": "2026-02-16T13:00:00.000Z",
+      "file_size_bytes": 102400,
+      "file_path_local": "/home/d3kos/camera-recordings/snapshots/snapshot_20260216_130000_001.jpg",
+      "camera_orientation": 45,
+      "detection_events": [
+        {
+          "object_type": "boat",
+          "count": 1,
+          "distance_estimate": 150
+        }
+      ],
+      "gps": {
+        "latitude": 43.6830,
+        "longitude": -79.5250
+      }
+    }
+  ],
+  "qr_code_data": {
+    "installation_uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "pairing_token": "TOKEN_1_TIME_USE_XYZ",
+    "generation_timestamp": "2026-02-16T10:00:00.000Z",
+    "tier": 2,
+    "api_endpoint": "https://d3kos-cloud/api/v1"
+  },
+  "settings": {
+    "voice_enabled": true,
+    "camera_enabled": true,
+    "auto_logging": true,
+    "wifi_ssid": "d3kOS",
+    "alert_thresholds": {
+      "oil_pressure_min": 10,
+      "coolant_temp_max": 195,
+      "rpm_max": 5000,
+      "voltage_min": 12.0
+    }
+  },
+  "onboarding_config": {
+    "installation_id": "abc123def456",
+    "completed": true,
+    "completion_timestamp": "2026-02-10T10:00:00.000Z",
+    "reset_count": 2,
+    "max_resets": 10,
+    "resets_remaining": 8,
+    "last_reset_timestamp": "2026-02-10T10:00:00.000Z",
+    "wizard_answers": {
+      "step_0": "Welcome",
+      "step_1": "Sea Ray",
+      "step_2": 2018,
+      "step_3": "Sundancer 320",
+      "step_4": "Garmin GPSMAP 7412xsv",
+      "step_5": "Mercury",
+      "step_6": "8.2L Mag HO",
+      "step_7": 2018,
+      "step_8": 8,
+      "step_9": "8.2",
+      "step_10": "425",
+      "step_11": "9.0:1",
+      "step_12": 700,
+      "step_13": 4800,
+      "step_14": "gasoline",
+      "step_15": "North America",
+      "step_16": "single"
+    }
+  },
+  "alerts": [
+    {
+      "alert_id": "alert_20260216_100000_001",
+      "timestamp": "2026-02-16T10:00:00.000Z",
+      "type": "anomaly",
+      "severity": "warning",
+      "message": "Oil pressure below normal range (8 PSI)",
+      "sensor_values": {
+        "oil_pressure": 8,
+        "rpm": 3200,
+        "coolant_temp": 175
+      },
+      "resolved": true,
+      "resolved_timestamp": "2026-02-16T10:15:00.000Z"
+    },
+    {
+      "alert_id": "alert_20260216_110000_002",
+      "timestamp": "2026-02-16T11:00:00.000Z",
+      "type": "system",
+      "severity": "info",
+      "message": "System reboot completed",
+      "resolved": true,
+      "resolved_timestamp": "2026-02-16T11:00:05.000Z"
+    }
+  ],
+  "telemetry_data": {
+    "collection_period": {
+      "start": "2026-02-15T00:00:00.000Z",
+      "end": "2026-02-16T14:30:00.000Z",
+      "duration_hours": 38.5
+    },
+    "system_performance": {
+      "boot_time_seconds": 45.2,
+      "average_ram_usage_mb": 1250,
+      "peak_ram_usage_mb": 1850,
+      "average_cpu_percent": 15.3,
+      "peak_cpu_percent": 78.5,
+      "network_uptime_percent": 98.2,
+      "average_latency_ms": 12,
+      "error_count": 3,
+      "crash_count": 0,
+      "system_uptime_hours": 168.5,
+      "reboot_count": 2,
+      "storage_used_percent": 85,
+      "service_restarts": {
+        "d3kos-voice": 0,
+        "d3kos-ai-api": 1,
+        "d3kos-camera-stream": 2
+      }
+    },
+    "user_interaction": {
+      "total_sessions": 15,
+      "average_session_duration_minutes": 8.5,
+      "menu_clicks": {
+        "dashboard": 45,
+        "boatlog": 12,
+        "navigation": 8,
+        "helm": 22,
+        "weather": 10,
+        "settings": 5,
+        "ai_assistant": 18
+      },
+      "feature_usage": {
+        "voice_commands": 5,
+        "ai_queries": 23,
+        "camera_access": 8,
+        "manual_upload": 2
+      },
+      "abandoned_actions": 3,
+      "settings_changes": 4,
+      "voice_command_success_rate": 0.80
+    },
+    "ai_assistance": {
+      "total_queries": 23,
+      "average_response_time_ms": 850,
+      "p95_response_time_ms": 18500,
+      "query_types": {
+        "simple_patterns": 18,
+        "complex_online": 5
+      },
+      "provider_usage": {
+        "rules": 18,
+        "openrouter": 5
+      },
+      "cache_hit_rate": 0.78,
+      "follow_up_chains": 4,
+      "query_abandonment_rate": 0.04
+    },
+    "device_environment": {
+      "connected_devices_count": 3,
+      "camera_uptime_percent": 95.5,
+      "usage_by_hour": {
+        "00-06": 0,
+        "06-12": 5,
+        "12-18": 8,
+        "18-24": 2
+      },
+      "software_version": "2.9",
+      "hardware": {
+        "model": "Raspberry Pi 4B",
+        "ram_gb": 8,
+        "sd_card_gb": 32
+      },
+      "network_mode": "ap"
+    },
+    "business_intelligence": {
+      "days_since_installation": 6,
+      "days_since_last_use": 0,
+      "current_tier": 1,
+      "tier_upgrade_history": [
+        {
+          "from": 0,
+          "to": 1,
+          "timestamp": "2026-02-11T10:00:00.000Z"
+        }
+      ],
+      "retention_score": 0.92
+    }
+  }
 }
-
-// Example usage
-const historicalData = queryDatabase('SELECT * FROM engine_metrics WHERE timestamp > ?', [startDate]);
-exportToCSV(historicalData, 'engine_data_2026-02.csv');
 ```
 
-**JSON Export** (for configurations):
+---
+
+#### 8.3.3 Export Triggers
+
+**1. Manual Export** (User-initiated)
+
+**Location**: Settings → Data Management → Export All Data
+
+**Process**:
+1. User taps "Export All Data Now" button
+2. System collects all data from databases and config files
+3. Generates JSON export file with timestamp
+4. Saves to `/opt/d3kos/data/exports/`
+5. Adds to export queue (`export_queue.json`)
+6. Attempts immediate upload to central database
+7. Displays result notification
+
+**UI Feedback**:
+- "Exporting data..." (spinner)
+- "Export complete. Uploading to cloud..." (progress)
+- "✓ Data synced successfully" (green, 3 seconds)
+- "✗ Upload failed. Will retry automatically." (red, 5 seconds)
+
+---
+
+**2. Automatic Export on Boot**
+
+**Process**:
+1. System boots and services start
+2. Export service (`d3kos-export.service`) runs after network is online
+3. Check for pending exports in `/opt/d3kos/data/exports/export_queue.json`
+4. If pending exports exist:
+   - Check internet connectivity
+   - Attempt upload to central database
+   - Retry failed uploads (max 3 attempts)
+   - Mark successful uploads in `export_history.json`
+5. No user notification (silent background sync)
+
+**Service Configuration**:
+```ini
+[Unit]
+Description=d3kOS Data Export Service
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/d3kos/services/export/export-manager.js --auto
+User=d3kos
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
+**3. Scheduled Export** (Tier 2+ only)
+
+**Schedule**: Daily at 3:00 AM (if online)
+
+**Process**:
+1. Cron job or systemd timer triggers export
+2. Incremental export (only new data since last successful export)
+3. Background process, no user notification
+4. Automatic upload attempt
+
+**Cron Configuration**:
+```bash
+# /etc/cron.d/d3kos-export
+0 3 * * * d3kos /opt/d3kos/services/export/export-manager.js --scheduled
+```
+
+---
+
+#### 8.3.4 Export Queue System
+
+**Queue File**: `/opt/d3kos/data/exports/export_queue.json`
+
+**Structure**:
+```json
+{
+  "pending_exports": [
+    {
+      "export_id": "export_20260216_143000",
+      "file_path": "/opt/d3kos/data/exports/d3kos_export_abc123def456_20260216143000.json",
+      "created": "2026-02-16T14:30:00.000Z",
+      "upload_attempts": 0,
+      "status": "pending",
+      "last_attempt": null,
+      "error_message": null
+    },
+    {
+      "export_id": "export_20260215_030000",
+      "file_path": "/opt/d3kos/data/exports/d3kos_export_abc123def456_20260215030000.json",
+      "created": "2026-02-15T03:00:00.000Z",
+      "upload_attempts": 2,
+      "status": "retrying",
+      "last_attempt": "2026-02-16T10:00:00.000Z",
+      "error_message": "Network timeout"
+    }
+  ]
+}
+```
+
+**Upload Process**:
+1. Check internet connectivity (`ping 8.8.8.8` or HTTP HEAD request)
+2. Read export JSON file
+3. POST to `https://d3kos-cloud/api/v1/data/import`
+4. Send JSON metadata only (NO media files - those are transferred via mobile app)
+5. Wait for 200 OK response with confirmation ID
+6. Update queue status to "completed"
+7. Move file to `/opt/d3kos/data/exports/archive/`
+8. Log success in `export_history.json`
+
+**Retry Logic**:
+- **Attempt 1**: Immediate (on boot, manual trigger, or scheduled time)
+- **Attempt 2**: 5 minutes after first failure
+- **Attempt 3**: 15 minutes after second failure
+- **After 3 failures**: Mark as "failed", require manual retry via Settings page
+
+**Error Handling**:
+- Network timeout: Retry
+- 4xx HTTP error (bad request): Mark as failed, notify user
+- 5xx HTTP error (server error): Retry
+- No internet: Skip, retry on next boot
+
+---
+
+#### 8.3.5 Central Database API
+
+**Base URL**: `https://d3kos-cloud/api/v1`
+
+**Authentication**: Installation ID in header
+
+---
+
+**POST /data/import** - Import full export to central database
+
+**NOTE:** This endpoint receives JSON metadata only. Marine vision media files (photos/videos) are NOT uploaded here. Actual media files are transferred via Tier 1/2/3 mobile app.
+
+**Headers**:
+```
+Authorization: Bearer abc123def456
+Content-Type: application/json
+```
+
+**Body**: Full JSON export object (see Section 8.3.2 for structure)
+
+**Response** (200 OK):
+```json
+{
+  "status": "success",
+  "import_id": "import_550e8400e29b41d4",
+  "records_imported": {
+    "boatlog_entries": 12,
+    "marine_vision_captures": 3,
+    "alerts": 5,
+    "settings": 1,
+    "benchmark_data": 1
+  },
+  "timestamp": "2026-02-16T14:30:15.000Z",
+  "storage_used_mb": 5.2
+}
+```
+
+**Response** (400 Bad Request):
+```json
+{
+  "status": "error",
+  "error_code": "INVALID_FORMAT",
+  "message": "Export format_version not supported",
+  "required_version": "1.0"
+}
+```
+
+**Response** (401 Unauthorized):
+```json
+{
+  "status": "error",
+  "error_code": "INVALID_INSTALLATION_ID",
+  "message": "Installation ID not found or tier insufficient"
+}
+```
+
+---
+
+**GET /data/export/status** - Check export sync status
+
+**Query Parameters**:
+- `installation_id`: Installation ID (required)
+
+**Response**:
+```json
+{
+  "installation_id": "abc123def456",
+  "tier": 2,
+  "last_export": "2026-02-16T14:30:00.000Z",
+  "records_synced": 1247,
+  "pending_records": 3,
+  "storage_used_mb": 142.5,
+  "next_scheduled_export": "2026-02-17T03:00:00.000Z"
+}
+```
+
+---
+
+#### 8.3.6 UI Implementation
+
+**Settings → Data Management Page**
+
+**File**: `/var/www/html/settings-data.html`
+
+**Layout**:
+```
+┌────────────────────────────────────────────────┐
+│ ← Settings          Data Management            │
+├────────────────────────────────────────────────┤
+│                                                 │
+│ Export & Cloud Sync (Tier 2)                   │
+│                                                 │
+│ Last Export: Feb 16, 2026 2:30 PM              │
+│ Status: ✓ Synced to cloud                      │
+│ Records synced: 1,247                           │
+│                                                 │
+│ ┌──────────────────────────────────────────┐  │
+│ │   [Export All Data Now]                  │  │
+│ └──────────────────────────────────────────┘  │
+│                                                 │
+│ Export History:                                 │
+│ • Feb 16, 2026 2:30 PM - 47 records ✓          │
+│ • Feb 15, 2026 3:00 AM - 23 records ✓          │
+│ • Feb 14, 2026 3:00 AM - 15 records ✓          │
+│ • Feb 13, 2026 3:00 AM - Failed (retry)        │
+│                                                 │
+│ Pending Uploads: 0                              │
+│ Storage Used: 142.5 MB                          │
+│                                                 │
+│ ┌──────────────────────────────────────────┐  │
+│ │   [View Export Files]                    │  │
+│ │   [Retry Failed Exports]                 │  │
+│ │   [Clear Export Archive]                 │  │
+│ └──────────────────────────────────────────┘  │
+│                                                 │
+│ Automatic Export: ✓ Enabled (Daily 3:00 AM)    │
+│                                                 │
+└────────────────────────────────────────────────┘
+```
+
+**Boot-time Notification** (only if export fails):
+- Small banner at top: "Unable to sync data to cloud. Will retry later."
+- Auto-dismiss after 5 seconds
+- Tap for details
+
+---
+
+#### 8.3.7 Storage Management
+
+**Directory Structure**:
+```
+/opt/d3kos/data/exports/
+├── export_queue.json           # Pending uploads queue
+├── export_history.json         # Successful uploads log (last 100)
+├── d3kos_export_*.json         # Current pending export files
+└── archive/                    # Completed/failed exports
+    ├── 2026-02/
+    │   ├── d3kos_export_abc123def456_20260216143000.json
+    │   └── d3kos_export_abc123def456_20260215030000.json
+    └── 2026-01/
+        └── d3kos_export_*.json
+```
+
+**Cleanup Policy**:
+- **Archive exports**: Delete after 30 days
+- **Failed exports**: Delete after 7 days (user notified first)
+- **Successful exports**: Move to archive immediately after upload confirmation
+- **Export queue**: Maintain last 50 entries, purge older
+
+**Disk Space Management**:
+- If `/opt/d3kos/data/` exceeds 90% full:
+  - Delete oldest archived exports first
+  - Alert user: "Storage nearly full. Older exports deleted."
+- Reserve 500MB minimum free space
+
+**Marine Vision Media File Management**:
+
+**IMPORTANT:** Marine vision media files (photos, videos, snapshots) are NOT exported to the central database. Only metadata is exported. Actual media files are transferred via the Tier 1/2/3 mobile app.
+
+**Media Storage Locations:**
+- Captures (photos): `/home/d3kos/camera-recordings/captures/`
+- Snapshots: `/home/d3kos/camera-recordings/snapshots/`
+- Recordings (videos): `/home/d3kos/camera-recordings/`
+
+**Automatic Deletion Policy:**
+- **Default:** Media files are deleted after 7 days
+- **Low Storage:** Files may be deleted sooner if storage exceeds 90% full
+- **Priority:** Oldest files deleted first (by timestamp)
+- **Notification:** User is notified when automatic deletion occurs
+
+**Storage Management Service:**
+- Service: `d3kos-media-cleanup.service`
+- Schedule: Daily at 4:00 AM (systemd timer)
+- Cleanup Logic:
+  1. Files older than 7 days → Delete
+  2. If storage still > 90% full → Delete files older than 5 days
+  3. If storage still > 90% full → Delete files older than 3 days
+  4. If storage still > 95% full → Alert user (critical storage warning)
+
+**Systemd Timer Configuration:**
+```ini
+# /etc/systemd/system/d3kos-media-cleanup.timer
+[Unit]
+Description=d3kOS Media Cleanup Timer
+Requires=d3kos-media-cleanup.service
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+Unit=d3kos-media-cleanup.service
+
+[Install]
+WantedBy=timers.target
+```
+
+**Cleanup Service:**
+```bash
+#!/bin/bash
+# /opt/d3kos/scripts/media-cleanup.sh
+
+CAPTURES_DIR="/home/d3kos/camera-recordings/captures"
+SNAPSHOTS_DIR="/home/d3kos/camera-recordings/snapshots"
+RECORDINGS_DIR="/home/d3kos/camera-recordings"
+
+# Get storage usage percentage
+STORAGE_USAGE=$(df /home/d3kos | tail -1 | awk '{print $5}' | sed 's/%//')
+
+# Function to delete files older than N days
+delete_old_files() {
+  local dir=$1
+  local days=$2
+  find "$dir" -type f -mtime +$days -delete
+  echo "Deleted files older than $days days in $dir"
+}
+
+# Default cleanup: 7 days
+delete_old_files "$CAPTURES_DIR" 7
+delete_old_files "$SNAPSHOTS_DIR" 7
+delete_old_files "$RECORDINGS_DIR" 7
+
+# If storage > 90%, more aggressive cleanup
+if [ $STORAGE_USAGE -gt 90 ]; then
+  logger "d3kOS: Storage at ${STORAGE_USAGE}%, deleting files older than 5 days"
+  delete_old_files "$CAPTURES_DIR" 5
+  delete_old_files "$SNAPSHOTS_DIR" 5
+  delete_old_files "$RECORDINGS_DIR" 5
+
+  # Notify user
+  echo "Media files older than 5 days deleted due to limited storage (${STORAGE_USAGE}% full)." > /tmp/d3kos-media-cleanup-notification.txt
+fi
+
+# Update storage usage
+STORAGE_USAGE=$(df /home/d3kos | tail -1 | awk '{print $5}' | sed 's/%//')
+
+# If still > 90%, delete 3-day-old files
+if [ $STORAGE_USAGE -gt 90 ]; then
+  logger "d3kOS: Storage still at ${STORAGE_USAGE}%, deleting files older than 3 days"
+  delete_old_files "$CAPTURES_DIR" 3
+  delete_old_files "$SNAPSHOTS_DIR" 3
+  delete_old_files "$RECORDINGS_DIR" 3
+
+  # Notify user
+  echo "Media files older than 3 days deleted due to limited storage (${STORAGE_USAGE}% full)." > /tmp/d3kos-media-cleanup-notification.txt
+fi
+
+# Update storage usage again
+STORAGE_USAGE=$(df /home/d3kos | tail -1 | awk '{print $5}' | sed 's/%//')
+
+# If still > 95%, critical warning
+if [ $STORAGE_USAGE -gt 95 ]; then
+  logger "d3kOS: CRITICAL - Storage at ${STORAGE_USAGE}%"
+  echo "CRITICAL: Storage critically low (${STORAGE_USAGE}% full). Please transfer media to mobile app or expand SD card." > /tmp/d3kos-storage-critical.txt
+fi
+```
+
+**User Notifications:**
+- **Daily cleanup (7 days):** No notification (silent cleanup)
+- **Low storage cleanup (5/3 days):** Yellow banner: "Media files older than X days deleted due to limited storage (XX% full)."
+- **Critical storage (>95%):** Red banner: "CRITICAL: Storage critically low. Please transfer media to mobile app or expand SD card."
+- Notifications displayed on main menu for 10 seconds
+
+**Mobile App Transfer:**
+- Tier 1/2/3 mobile app can browse and download media files from Pi
+- App connects via local network (WiFi) using installation_id authentication
+- HTTPS file transfer (GET `/media/captures/{capture_id}.jpg`)
+- After successful transfer to mobile app, user can manually delete from Pi via app
+- App shows storage usage and recommends cleanup
+
+**Storage Expansion Recommendations:**
+- **Minimum:** 32GB SD card (current testing setup)
+- **Recommended:** 128GB SD card (8-10 days of continuous recording)
+- **Optimal:** 256GB SD card (15-20 days of continuous recording)
+- User can adjust retention period in Settings → Data Management (3, 7, 14, 30 days)
+
+---
+
+#### 8.3.8 Export Service Implementation
+
+**Service**: `/opt/d3kos/services/export/export-manager.js`
+
+**Key Functions**:
+
 ```javascript
-function exportConfig() {
-  const config = {
-    onboarding: JSON.parse(fs.readFileSync('/opt/d3kos/config/onboarding.json')),
-    baseline: JSON.parse(fs.readFileSync('/opt/d3kos/config/benchmark-results.json')),
-    license: JSON.parse(fs.readFileSync('/opt/d3kos/config/license.json'))
+// Collect all data for export
+async function collectExportData() {
+  const license = JSON.parse(fs.readFileSync('/opt/d3kos/config/license.json'));
+
+  return {
+    export_metadata: {
+      installation_id: license.installation_id,
+      export_timestamp: new Date().toISOString(),
+      tier: license.tier,
+      format_version: "1.0",
+      export_type: "full"
+    },
+    boat_info: getBoatInfo(),
+    benchmark_data: getBenchmarkData(),
+    boatlog_entries: getBoatlogEntries(),
+    marine_vision_captures: getMarineVisionCaptures(),
+    marine_vision_snapshots: getMarineVisionSnapshots(),
+    qr_code_data: getQRCodeData(),
+    settings: getSettings(),
+    alerts: getAlerts()
   };
-  
-  fs.writeFileSync('/opt/d3kos/data/exports/d3kos-config.json', JSON.stringify(config, null, 2));
-  
-  return '/opt/d3kos/data/exports/d3kos-config.json';
+}
+
+// Create export file
+async function createExportFile() {
+  const data = await collectExportData();
+  const filename = `d3kos_export_${data.export_metadata.installation_id}_${Date.now()}.json`;
+  const filepath = `/opt/d3kos/data/exports/${filename}`;
+
+  fs.writeFileSync(filepath, JSON.stringify(data, null, 2));
+
+  return { filename, filepath };
+}
+
+// Upload to central database (JSON metadata only - NO media files)
+async function uploadExport(filepath) {
+  const exportData = JSON.parse(fs.readFileSync(filepath));
+
+  // NOTE: Marine vision media files (photos/videos) are NOT uploaded here
+  // Only metadata is sent to central database
+  // Actual media files are transferred via Tier 1/2/3 mobile app
+
+  const response = await fetch('https://d3kos-cloud/api/v1/data/import', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${exportData.export_metadata.installation_id}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(exportData)
+  });
+
+  if (response.ok) {
+    const result = await response.json();
+    return { success: true, result };
+  } else {
+    const error = await response.json();
+    return { success: false, error };
+  }
+}
+
+// Add to export queue
+async function queueExport(filepath) {
+  const queue = JSON.parse(fs.readFileSync('/opt/d3kos/data/exports/export_queue.json'));
+
+  queue.pending_exports.push({
+    export_id: path.basename(filepath, '.json'),
+    file_path: filepath,
+    created: new Date().toISOString(),
+    upload_attempts: 0,
+    status: 'pending',
+    last_attempt: null,
+    error_message: null
+  });
+
+  fs.writeFileSync('/opt/d3kos/data/exports/export_queue.json', JSON.stringify(queue, null, 2));
+}
+
+// Process export queue (run on boot)
+async function processQueue() {
+  const queue = JSON.parse(fs.readFileSync('/opt/d3kos/data/exports/export_queue.json'));
+
+  for (const exportItem of queue.pending_exports) {
+    if (exportItem.status === 'pending' || exportItem.status === 'retrying') {
+      if (exportItem.upload_attempts < 3) {
+        const result = await uploadExport(exportItem.file_path);
+
+        if (result.success) {
+          exportItem.status = 'completed';
+          archiveExport(exportItem.file_path);
+          logExportHistory(exportItem, result.result);
+        } else {
+          exportItem.upload_attempts++;
+          exportItem.last_attempt = new Date().toISOString();
+          exportItem.error_message = result.error.message;
+          exportItem.status = exportItem.upload_attempts < 3 ? 'retrying' : 'failed';
+        }
+      }
+    }
+  }
+
+  fs.writeFileSync('/opt/d3kos/data/exports/export_queue.json', JSON.stringify(queue, null, 2));
 }
 ```
 
@@ -3007,7 +4046,7 @@ sha256sum /mnt/usb/d3kos-v1.0.3.img.gz > /mnt/usb/d3kos-v1.0.3.img.gz.sha256
 8. Power on → Wait for first boot (2-3 minutes)
 9. Connect to WiFi "d3kOS" (password: d3kos-2026)
 10. Open browser → `http://d3kos.local` or `http://10.42.0.1`
-11. Complete onboarding wizard
+11. Complete Initial Setup wizard
 
 ### 12.3 First Boot Configuration
 
@@ -3017,7 +4056,7 @@ sha256sum /mnt/usb/d3kos-v1.0.3.img.gz > /mnt/usb/d3kos-v1.0.3.img.gz.sha256
 3. Create default license.json (Tier 0)
 4. Start Signal K, Node-RED, gpsd
 5. Launch Chromium in maximized mode
-6. Display onboarding wizard
+6. Display Initial Setup wizard
 
 **First-Time Setup**:
 - Onboarding wizard auto-launches
@@ -3166,7 +4205,7 @@ GET  /api/engine/baseline         # Engine baseline data
 GET  /api/engine/current          # Current engine metrics
 POST /api/engine/benchmark/start  # Start benchmarking
 POST /api/voice/enable            # Enable voice assistant
-POST /api/onboarding/reset        # Reset onboarding wizard
+POST /api/onboarding/reset        # Reset Initial Setup wizard
 GET  /api/license                 # License information
 ```
 
@@ -3275,7 +4314,7 @@ This specification has been reviewed and approved by:
 - **Implemented status updates** for slow onboard AI processing (every 40 seconds)
 - **Updated software stack** with Perplexity API, SQLite conversation database
 - **Added Section 4.5** Hybrid AI Assistant System Architecture with complete technical specifications
-- **Updated onboarding wizard** to include document retrieval with progress indicators
+- **Updated Initial Setup wizard** to include document retrieval with progress indicators
 
 ### Version 2.2 (2026-02-11)
 - **Implemented Step 4 (Chartplotter Detection)** with working code
@@ -3287,7 +4326,7 @@ This specification has been reviewed and approved by:
 - **Documented** complete implementation in Section 5.3.2a
 
 ### Version 2.1 (2026-02-11)
-- **Added Step 4 (Chartplotter Detection)** to onboarding wizard
+- **Added Step 4 (Chartplotter Detection)** to Initial Setup wizard
 - Clarified that CX5106 outputs standard NMEA2000 PGNs
 - Documented universal chartplotter compatibility (Garmin, Simrad, Raymarine, Lowrance, Furuno, Humminbird)
 - Confirmed no vendor-specific PGN translation required
