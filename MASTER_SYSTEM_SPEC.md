@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 2.4
-**Date**: February 12, 2026
-**Status**: APPROVED - Wake Words Updated
-**Previous Version**: 2.3 (February 12, 2026)
+**Version**: 2.7
+**Date**: February 13, 2026
+**Status**: APPROVED - Marine Vision System Specification Added
+**Previous Version**: 2.6 (February 13, 2026)
 
 ---
 
@@ -17,6 +17,9 @@
 | 2.2 | 2026-02-11 | d3kOS Team | Implemented Step 4 with nginx proxy, WebSocket detection, and fullscreen toggle |
 | 2.3 | 2026-02-12 | d3kOS Team | Added hybrid AI assistant system (Perplexity + Phi-2), skills.md context management, automatic document retrieval, text input interface, learning/memory features |
 | 2.4 | 2026-02-12 | d3kOS Team | Updated wake words: Navigator→Counsel, added "Aye Aye Captain" acknowledgment response |
+| 2.5 | 2026-02-13 | d3kOS Team | Added Weather Radar feature (Section 5.5): GPS-based animated radar, marine conditions panel, auto-logging to boatlog every 30 minutes |
+| 2.6 | 2026-02-13 | d3kOS Team | Added large touch-friendly map controls (80px buttons): Zoom In/Out, Recenter on Position, Wind/Clouds/Radar overlay toggle |
+| 2.7 | 2026-02-13 | d3kOS Team | Added Marine Vision System (Section 5.6): IP67 camera integration, fish capture mode, forward watch mode, species ID, fishing regulations |
 
 ---
 
@@ -175,6 +178,7 @@ d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, desi
 |-----------|---------------|-------|
 | **Raspberry Pi** | 4 Model B, 4GB RAM | 8GB recommended for voice features |
 | **SD Card** | 64GB Class 10 (A2) | 128GB recommended |
+| **USB Storage** | 128GB USB drive | Installed at `/media/d3kos/6233-3338` (119.2GB usable) |
 | **Power Supply** | 5V 3A USB-C | Official Raspberry Pi PSU required |
 | **HAT** | PiCAN-M with micro-fit | NMEA2000 interface |
 | **Display** | 10.1" 1920×1200 IPS | 1000 nit brightness, capacitive touch |
@@ -1866,6 +1870,337 @@ function deleteOldestRecordings(count) {
 - Select start/end time
 - Generate new MP4 segment
 - Save to exports folder
+
+---
+
+### 5.5 Weather Radar (NEW - 2026-02-13)
+
+#### 5.5.1 Overview
+
+The Weather Radar feature provides GPS-based real-time marine weather information with animated radar display and comprehensive conditions panel. Weather data is automatically logged to boatlog every 30 minutes.
+
+**Access**: Main Menu → Weather button (cloud + lightning icon)
+
+**URL**: `/weather.html`
+
+**Documentation**: `/home/boatiq/Helm-OS/doc/WEATHER_2026-02-13.md`
+
+#### 5.5.2 Data Sources & APIs
+
+**GPS Position**:
+- Source: Signal K WebSocket (`navigation.position`)
+- Update: Real-time (5-second subscription)
+
+**Marine Weather**:
+- API: Open-Meteo Marine API
+- Endpoint: `https://marine-api.open-meteo.com/v1/marine`
+- Data: Wave height, direction, period, wind waves
+- Update: Every 5 minutes
+
+**Atmospheric Weather**:
+- API: Open-Meteo Weather API
+- Endpoint: `https://api.open-meteo.com/v1/forecast`
+- Data: Wind, temp, humidity, pressure, precipitation, visibility
+- Update: Every 5 minutes
+
+**Animated Radar**:
+- Service: Windy.com Embedded Map
+- Overlay: Wind / Clouds / Radar (user-selectable toggle)
+- Model: ECMWF
+- Units: Knots (wind), Celsius (temp)
+- **Large Touch Controls** (80px × 80px buttons):
+  - Zoom In (+)
+  - Zoom Out (−)
+  - Recenter on Position (⊙)
+  - Wind/Clouds/Radar overlay toggle
+
+#### 5.5.3 Essential Marine Data
+
+**Wind**: Speed (kt), Direction (°), Gusts (kt)
+**Seas**: Wave height (m), Direction (°), Period (s), State description
+**Atmospheric**: Weather description, Visibility (km), Temp (°C), Humidity (%), Pressure (hPa), Precipitation (mm/hr)
+
+#### 5.5.4 Weather Alerts
+
+- High Wind: Orange (>25kt), Red (>35kt)
+- High Seas: Orange (>2.0m), Red (>3.5m)
+- Heavy Precipitation: Orange (>5mm/hr), Red (>10mm/hr)
+
+#### 5.5.5 Auto-Logging
+
+- Interval: Every 30 minutes
+- Destination: Boatlog (via POST /api/boatlog/entry)
+- Status: Bottom-right corner display
+- Feedback: "Saved ✓" (green) or "Failed ✗" (red)
+
+#### 5.5.6 User Interface
+
+**Layout**: Split-screen (Radar 2/3, Conditions 1/3)
+
+**Large Touch-Friendly Map Controls**:
+- **Size**: 80px × 80px (4x larger than standard)
+- **Position**: Right side of map, vertically centered
+- **Buttons**:
+  - Zoom In (+) - Increases map zoom level (3-15)
+  - Zoom Out (−) - Decreases map zoom level
+  - Recenter (⊙) - Recenters map on current GPS position
+- **Overlay Toggle** (top-left):
+  - Wind (default) - Wind speed and direction
+  - Clouds - Cloud coverage
+  - Radar - Precipitation radar
+- **Touch Support**: All buttons support both click and touchend events
+- **Visual Feedback**: Green border, dark background, scale animation on press
+
+#### 5.5.7 Implementation
+
+**Files**:
+- `/var/www/html/weather.html` (30KB standalone HTML with large controls)
+- `/var/www/html/index.html` (Weather button added)
+
+**Known Limitations**:
+1. Requires internet connection
+2. Missing: Tides, water temp, lightning
+3. Boatlog API not yet implemented (logs to console)
+4. Windy iframe play/pause button cannot be enlarged (CORS restriction)
+
+See `/home/boatiq/Helm-OS/doc/WEATHER_2026-02-13.md` for complete technical documentation.
+
+---
+
+### 5.6 Marine Vision System (PLANNED - 2026-02-14)
+
+#### 5.6.1 Overview
+
+The Marine Vision System provides AI-powered computer vision for two primary use cases: automatic fish capture with species identification and forward-watch marine hazard detection. The system uses an IP67-rated night-vision camera mounted on a 360° motorized searchlight and automatically switches modes based on camera orientation.
+
+**Access**: Main Menu → Marine Vision button
+
+**URL**: `/marine-vision.html`
+
+**Documentation**: `/home/boatiq/Helm-OS/doc/MARINE_VISION.md`
+
+#### 5.6.2 Operating Modes
+
+**Mode Selection**:
+- Automatic switching based on camera orientation
+- Manual mode override via web interface
+- Three states: Fish Capture, Forward Watch, Idle
+
+**Fish Capture Mode** (camera oriented toward user):
+- Person detection + fish-like object detection
+- Auto-capture high-resolution still image
+- Fish species identification (pretrained + fine-tuned model)
+- Fishing regulations check (size/bag limits by location/date)
+- Notification sent to user (Telegram/Signal/email)
+- Event logging with timestamp, species, location
+
+**Forward Watch Mode** (camera oriented toward bow):
+- Real-time marine object detection (boats, kayaks, buoys, logs, debris, docks)
+- Distance estimation using AI-based monocular depth
+- Visual and audible alerts
+- Object tracking with position/distance
+- Detection logging with timestamps
+
+#### 5.6.3 Camera Specifications
+
+**Hardware**:
+- IP67-rated marine camera with RTSP/ONVIF streaming
+- Integrated night vision / IR mode
+- Mounted on 360° motorized searchlight
+- 1080p or higher resolution
+- Network: 10.42.0.0/24 subnet (auto-discovery)
+
+**Streaming**:
+- Protocol: RTSP (rtsp://d3kos:d3kos2026@CAMERA_IP:554/h264Preview_01_main)
+- Recording: VLC integration for on-demand recording
+- Storage: 128GB USB drive at `/media/d3kos/6233-3338/camera-recordings/`
+- Format: H.264 MP4 (~1GB/hour at 1080p30fps)
+
+#### 5.6.4 AI Models & Detection
+
+**Fish Capture Mode**:
+- YOLOv8 (person + fish detection)
+- ResNet50 or EfficientNet (species classification)
+- Pretrained fish classification model (FishNet/FishID)
+- Optional fine-tuning with user-provided images (20-50 per species)
+
+**Forward Watch Mode**:
+- YOLOv8-Marine (boat/buoy/debris detection)
+- MiDaS v3.0 or ZoeDepth (monocular depth estimation)
+- Real-time processing: 10+ FPS object detection, 5+ FPS depth
+
+**Model Storage**: ~250MB total
+- YOLOv8n: ~6MB
+- ResNet50: ~100MB
+- YOLOv8-Marine: ~25MB
+- MiDaS: ~100MB
+
+#### 5.6.5 Fishing Regulations Integration
+
+**Data Sources**:
+- Ontario MNR regulations database (parsed from PDF)
+- FishBase API (https://fishbase.ropensci.org/) - species info
+- GBIF API (https://api.gbif.org/) - taxonomy, occurrence
+- iNaturalist API (https://api.inaturalist.org/) - photo-based ID
+
+**Regulation Features**:
+- Species → minimum/maximum size limits
+- Species → daily bag limits
+- Species → open/closed season dates
+- Zone-specific rules
+- Location-aware (GPS coordinates)
+- Date/time aware
+
+**Local Database**: `/opt/d3kos/data/fishing-regulations.db` (SQLite)
+
+#### 5.6.6 Camera Orientation Detection
+
+**Primary Method** (preferred):
+- Read orientation data from searchlight control interface
+- Protocols: RS-485, NMEA-0183, CAN, PWM feedback
+- Real-time angle (0-360°)
+
+**Secondary Method** (fallback):
+- Physical sensor (Hall effect + magnet)
+- Detects known reference positions
+- Simple, reliable, low-cost
+
+**Tertiary Method** (emergency fallback):
+- Computer vision cues (deck geometry, bow rail)
+- Less reliable in low light
+
+**Mode Thresholds**:
+- Fish Capture: 135° - 225° (camera toward stern/user)
+- Forward Watch: 315° - 45° (camera toward bow)
+- Idle: All other angles
+
+#### 5.6.7 Distance Estimation
+
+**Calibration Parameters**:
+- Camera height above waterline (meters)
+- Focal length and field of view
+- Optional reference objects (buoys, markers)
+
+**Output**:
+- Distance in meters
+- Confidence score (0.0 - 1.0)
+- Logged with each detection event
+
+**Accuracy**: ±20% at 10-50m, ±40% beyond 50m (typical for monocular depth)
+
+#### 5.6.8 Notification System
+
+**Supported Channels**:
+- Telegram bot (recommended - easiest API)
+- Signal API
+- Email (SMTP)
+- d3kOS notification bus (internal)
+
+**Fish Capture Notifications Include**:
+- Captured image (high-res)
+- Species name (common + scientific)
+- Confidence score
+- Fishing regulations (size/bag limits)
+- Timestamp
+- GPS location (if available)
+
+**Forward Watch Notifications Include**:
+- Detected object type
+- Estimated distance
+- Screenshot with bounding box
+- Timestamp
+- Threat level (info/warning/critical)
+
+#### 5.6.9 Performance Requirements
+
+- Minimum 10 FPS object detection (Forward Watch)
+- Minimum 5 FPS depth estimation
+- Fish Capture trigger within 1 second of detection
+- Notifications sent within 5 seconds of capture
+- Offline operation (except notifications)
+
+#### 5.6.10 Service Architecture
+
+**Multiple Services Approach**:
+
+1. **d3kos-camera-stream** (Port 8084)
+   - RTSP connection management
+   - VLC recording control
+   - Frame extraction
+   - Camera health monitoring
+
+2. **d3kos-vision-core** (Port 8085)
+   - Camera orientation tracking
+   - Mode selection and switching
+   - System health monitoring
+
+3. **d3kos-fish-detector** (Port 8086)
+   - Person + fish detection
+   - Species classification
+   - Regulations lookup
+   - Capture event logging
+
+4. **d3kos-forward-watch** (Port 8087)
+   - Marine object detection
+   - Distance estimation
+   - Alert generation
+   - Detection logging
+
+5. **d3kos-marine-vision-api** (Port 8089)
+   - Unified REST API
+   - Web UI interface
+   - Configuration management
+   - Historical data access
+
+#### 5.6.11 Implementation Phases
+
+**Phase 1: Camera Streaming** (1-2 days)
+- Camera discovery (10.42.0.0/24 network scan)
+- RTSP connection establishment
+- VLC recording integration
+- Web preview interface
+
+**Phase 2: Fish Capture Mode** (3-5 days)
+- Person + fish detection (YOLOv8)
+- Auto-capture functionality
+- Basic species classification
+- Telegram/Signal notifications
+
+**Phase 3: Regulations Integration** (2-3 days)
+- Parse Ontario MNR regulations PDF
+- Create species database
+- Size/bag limit checking
+- Location-aware rules
+
+**Phase 4: Forward Watch Mode** (4-6 days)
+- Marine object detection
+- Distance estimation
+- Alert system
+- Detection logging
+
+**Phase 5: Mode Switching** (1-2 days)
+- Orientation detection implementation
+- Automatic mode switching
+- Manual override controls
+
+#### 5.6.12 Known Limitations
+
+1. Requires internet for notifications (offline detection still works)
+2. Species ID accuracy depends on photo quality and lighting
+3. Distance estimation ±20-40% accuracy (monocular limitations)
+4. Night vision reduces detection accuracy
+5. Raspberry Pi 4B may achieve 5-10 FPS (consider Coral USB Accelerator for 5-10× boost)
+6. Fishing regulations require manual database updates (annual)
+
+#### 5.6.13 Safety & Reliability
+
+- System provides situational awareness only (not autopilot)
+- Does not control vessel movement
+- Fails gracefully: defaults to Forward Watch if orientation unknown
+- Continues processing if detection fails (logs error)
+- Adjusts thresholds automatically for night vision
+
+See `/home/boatiq/Helm-OS/doc/MARINE_VISION.md` for complete technical implementation guide.
 
 ---
 
