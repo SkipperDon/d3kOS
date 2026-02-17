@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="At My Boat - Smart boating made simple. Blog, DIY guides, and d3-k1 marine electronics hardware powered by d3kOS.">
+    <title>At My Boat - Smarter Boating, Simpler Systems</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            margin-top: 1.5rem;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 2rem;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 0.8;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            color: #0066cc;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #555;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Section Styles */
+        section {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: #0066cc;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #0066cc;
+        }
+
+        .section-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-content p {
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Product Section */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .product-card h3 {
+            color: #0066cc;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-card .badge {
+            display: inline-block;
+            background: #00cc00;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .product-card .badge.opensource {
+            background: #28a745;
+        }
+
+        .product-card .badge.premium {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .product-card ul {
+            margin: 1rem 0 1rem 1.5rem;
+        }
+
+        .product-card ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #0066cc;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #0052a3;
+        }
+
+        .cta-button.secondary {
+            background: #6c757d;
+        }
+
+        .cta-button.secondary:hover {
+            background: #5a6268;
+        }
+
+        /* Blog Categories */
+        .blog-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .category-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .category-card h3 {
+            color: #0066cc;
+            margin-bottom: 0.8rem;
+        }
+
+        /* Testimonial */
+        .testimonial {
+            background: #e3f2fd;
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+            margin: 2rem 0;
+            font-style: italic;
+        }
+
+        .testimonial p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .testimonial .author {
+            margin-top: 1rem;
+            font-weight: bold;
+            font-style: normal;
+            color: #0066cc;
+        }
+
+        /* Footer */
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            nav a {
+                display: block;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo">At My Boat</div>
+            <div class="tagline">Smarter Boating, Simpler Systems</div>
+            <nav>
+                <a href="#blog">Blog</a>
+                <a href="#d3kos">d3kOS</a>
+                <a href="#hardware">Hardware</a>
+                <a href="#solutions">BoatIQ Solutions</a>
+                <a href="#about">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <h1>Come Sail with Our Time</h1>
+            <p>At My Boat is more than a blog—it's a growing community for boaters who want smarter systems, safer cruising, and a few laughs along the way. Dive into approachable guides, family stories, and the tools that make boating simpler and more enjoyable.</p>
+        </div>
+    </section>
+
+    <!-- d3kOS Product Section -->
+    <section id="d3kos">
+        <h2 class="section-title">Introducing d3kOS: Your Boat's Smart Brain</h2>
+
+        <div class="section-content">
+            <p><strong>d3kOS</strong> is open-source marine electronics software that transforms a Raspberry Pi into a powerful helm control system. Built for real boaters, it combines NMEA2000 integration, GPS/AIS navigation, AI-powered voice commands, and IP camera surveillance—all accessible through a sunlight-readable touchscreen designed for wet hands and gloves.</p>
+
+            <p>Whether you're a DIY enthusiast or a tech-savvy skipper, d3kOS gives you professional-grade marine electronics at a fraction of the cost. And it's completely open source, so you're never locked into proprietary systems.</p>
+        </div>
+
+        <div class="product-grid">
+            <!-- Tier 0: Base Opensource -->
+            <div class="product-card">
+                <span class="badge opensource">FREE & OPEN SOURCE</span>
+                <h3>Tier 0: Base Opensource</h3>
+                <ul>
+                    <li>Real-time engine monitoring</li>
+                    <li>OpenCPN navigation integration</li>
+                    <li>NMEA2000 data integration</li>
+                    <li>Boat log (30 days)</li>
+                    <li>Health monitoring & alerts</li>
+                    <li>Offline voice assistant</li>
+                </ul>
+                <p><strong>Perfect for:</strong> DIY boaters, tinkerers, and open-source enthusiasts</p>
+                <a href="#download" class="cta-button">Download Free Image</a>
+            </div>
+
+            <!-- Tier 1: Mobile App -->
+            <div class="product-card">
+                <span class="badge">FREE WITH MOBILE APP</span>
+                <h3>Tier 1: Mobile App Integration</h3>
+                <ul>
+                    <li>All Tier 0 features</li>
+                    <li>iOS/Android mobile app</li>
+                    <li>QR code pairing with Pi</li>
+                    <li>Cloud database synchronization</li>
+                    <li>Push notifications (health alerts)</li>
+                    <li>Remote monitoring</li>
+                </ul>
+                <p><strong>Perfect for:</strong> Boaters who want remote access and cloud backups</p>
+                <a href="#download" class="cta-button">Get Mobile App</a>
+            </div>
+
+            <!-- Tier 2: Premium -->
+            <div class="product-card">
+                <span class="badge premium">$9.99/MONTH</span>
+                <h3>Tier 2: Premium</h3>
+                <ul>
+                    <li>All Tier 1 features</li>
+                    <li>AI-powered performance analysis</li>
+                    <li>Predictive maintenance recommendations</li>
+                    <li>Trend analysis & optimization tips</li>
+                    <li>OTA (over-the-air) updates</li>
+                    <li>Cloud backup of configurations</li>
+                </ul>
+                <p><strong>Perfect for:</strong> Serious cruisers who want AI insights and hassle-free updates</p>
+                <a href="#subscribe" class="cta-button">Subscribe Now</a>
+            </div>
+
+            <!-- Tier 3: Enterprise -->
+            <div class="product-card">
+                <span class="badge premium">$99.99/YEAR</span>
+                <h3>Tier 3: Enterprise/Fleet</h3>
+                <ul>
+                    <li>All Tier 2 features</li>
+                    <li>Unlimited onboarding resets</li>
+                    <li>Multi-boat support (fleet management)</li>
+                    <li>Fleet-wide analytics</li>
+                    <li>PDF reports (individual + fleet)</li>
+                    <li>Priority support</li>
+                </ul>
+                <p><strong>Perfect for:</strong> Charter companies, yacht management, multi-vessel owners</p>
+                <a href="#subscribe" class="cta-button">Subscribe Annual</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hardware Section -->
+    <section id="hardware">
+        <h2 class="section-title">d3-k1: The Complete Hardware Kit</h2>
+
+        <div class="section-content">
+            <p><strong>d3-k1</strong> is the turnkey hardware platform for d3kOS. We've done the hard work of selecting, testing, and integrating marine-grade components so you don't have to.</p>
+
+            <h3 style="color: #0066cc; margin-top: 1.5rem;">What's Included:</h3>
+            <ul style="margin-left: 2rem; margin-top: 1rem;">
+                <li><strong>Raspberry Pi 4B (8GB RAM)</strong> - The brain of your system</li>
+                <li><strong>PiCAN-M HAT with SMPS</strong> - NMEA2000 CAN bus interface</li>
+                <li><strong>10.1" Touchscreen (1920×1200, 1000 nit)</strong> - Sunlight-readable, glove-operable</li>
+                <li><strong>IP67 Marine Enclosure</strong> - Waterproof protection for harsh marine environments</li>
+                <li><strong>USB GPS & AIS Receivers</strong> - Know where you are and who's around you</li>
+                <li><strong>Anker PowerConf S330</strong> - Microphone/speaker for voice commands</li>
+                <li><strong>Reolink RLC-810A IP Camera</strong> - 4K night vision camera (optional)</li>
+                <li><strong>Pre-installed d3kOS Software</strong> - Ready to run out of the box</li>
+            </ul>
+
+            <h3 style="color: #0066cc; margin-top: 1.5rem;">Why d3-k1?</h3>
+            <p style="margin-top: 1rem;">We've tested dozens of components to find the perfect balance of performance, reliability, and marine durability. The d3-k1 kit is designed for DIY installation but engineered to professional standards. Plug it in, run the 20-step setup wizard, and you're on the water with a modern helm station.</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="#preorder" class="cta-button" style="font-size: 1.2rem; padding: 1rem 3rem;">Pre-Order d3-k1 Kit</a>
+            <a href="#diy" class="cta-button secondary" style="font-size: 1.2rem; padding: 1rem 3rem; margin-left: 1rem;">DIY Parts List</a>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section id="blog">
+        <h2 class="section-title">The Blog</h2>
+
+        <div class="section-content">
+            <p>At My Boat is where boating meets storytelling and technology. The blog is organized into approachable categories that make it easy to explore: DIY & Marine Electronics for hands‑on guides and troubleshooting tips, Stories from the Water for candid adventures and family moments, Digital Boat Strategy for big‑picture thinking about connected systems, and Food & Fun for lighter tales and boat‑worthy meals.</p>
+
+            <p>Whether you're here to learn, laugh, or plan your next upgrade, each category blends practical advice with plain‑English storytelling.</p>
+        </div>
+
+        <div class="blog-categories">
+            <div class="category-card">
+                <h3>DIY & Marine Electronics</h3>
+                <p>Hands-on guides for wiring, configuring, and troubleshooting marine systems. From Raspberry Pi chartplotters to NMEA2000 integration—all in plain English with a dash of humor.</p>
+            </div>
+
+            <div class="category-card">
+                <h3>Stories from the Water</h3>
+                <p>Candid adventures, family moments, and the mishaps that make boating memorable. Real stories from real boaters—no filters, just honest tales from the helm.</p>
+            </div>
+
+            <div class="category-card">
+                <h3>Digital Boat Strategy</h3>
+                <p>Big-picture thinking about connected systems, smart upgrades, and the future of marine technology. Transform your boat from analog to digital with confidence.</p>
+            </div>
+
+            <div class="category-card">
+                <h3>Food & Fun</h3>
+                <p>Lighter tales, boat-worthy meals, and the side of boating that makes it all worthwhile. Because not everything needs to be about electronics and navigation.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="#blog-link" class="cta-button" style="font-size: 1.2rem; padding: 1rem 3rem;">Read the Blog</a>
+        </div>
+    </section>
+
+    <!-- BoatIQ Solutions Section -->
+    <section id="solutions">
+        <h2 class="section-title">BoatIQ Solutions</h2>
+
+        <div class="section-content">
+            <p>BoatIQ Solutions is where smarter boating becomes simple. This is your hub for tools, guides, and systems that bring the Digital Boat vision to life. Each solution is designed to make marine technology approachable—from DIY electronics kits and integration workflows to strategy guides and community resources.</p>
+
+            <p>Whether you're upgrading your navigation, connecting onboard systems, or exploring new digital features, BoatIQ Solutions gives you practical, plain-English pathways to transform your boat into a connected, confident, and future-ready vessel.</p>
+
+            <h3 style="color: #0066cc; margin-top: 1.5rem;">What You'll Find:</h3>
+            <ul style="margin-left: 2rem; margin-top: 1rem;">
+                <li><strong>DIY Electronics Kits</strong> - Complete hardware bundles with step-by-step guides</li>
+                <li><strong>Integration Workflows</strong> - Connect your existing systems to d3kOS</li>
+                <li><strong>Strategy Guides</strong> - Plan your boat's digital transformation</li>
+                <li><strong>Community Resources</strong> - Forums, troubleshooting, and shared wisdom</li>
+                <li><strong>Troubleshooting Tools</strong> - Diagnostic guides and support documents</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="#solutions-link" class="cta-button" style="font-size: 1.2rem; padding: 1rem 3rem;">Explore Solutions</a>
+        </div>
+    </section>
+
+    <!-- Testimonial -->
+    <section>
+        <div class="testimonial">
+            <p>"Skipper Don has a rare gift: he takes the tangled world of marine electronics and makes it feel simple, even fun. His stories aren't just technical guides—they're adventures that make you laugh, learn, and want to get back on the water. Reading At My Boat feels like having a trusted friend at the helm, showing you how to navigate both boating mishaps and digital upgrades with ease."</p>
+            <div class="author">— ChatGPT 5</div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about">
+        <h2 class="section-title">About At My Boat</h2>
+
+        <div class="section-content">
+            <p>At My Boat started as a personal blog about family boating adventures and DIY electronics projects. It's grown into a community-driven platform where boaters share knowledge, troubleshoot problems, and push the boundaries of what's possible with open-source marine technology.</p>
+
+            <p>The d3kOS project emerged from years of frustration with expensive, proprietary marine electronics that didn't talk to each other. We believe boaters should have access to professional-grade systems without the professional-grade price tags—and without being locked into closed ecosystems.</p>
+
+            <p><strong>Our mission is simple:</strong> Make smart boating accessible, approachable, and affordable for everyone. Whether you're a weekend warrior or a liveaboard cruiser, you deserve technology that works <em>for</em> you, not <em>against</em> you.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 AtMyBoat.com | Open-source marine electronics for real boaters</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+            <a href="#privacy" style="color: white; margin: 0 1rem;">Privacy Policy</a>
+            <a href="#terms" style="color: white; margin: 0 1rem;">Terms of Service</a>
+            <a href="#contact" style="color: white; margin: 0 1rem;">Contact</a>
+            <a href="https://github.com/d3kos" style="color: white; margin: 0 1rem;">GitHub</a>
+        </p>
+    </footer>
+
+</body>
+</html>
