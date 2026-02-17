@@ -1,7 +1,8 @@
 # CLAUDE.md - AI Assistant Guidelines for d3kOS Development
-## Version 3.3
+## Version 3.4
 
 **Last Updated**: February 16, 2026
+**Changes from v3.3**: Added comprehensive Stripe Billing implementation documentation - 48KB implementation guide with 40-60 hour development breakdown, production-ready code examples (Python Flask webhook handler + subscription API, iOS StoreKit 2, Android Billing Library 5.0+, SQL database schema), complete testing procedures, deployment checklist, and cost analysis. Confirmed traditional e-commerce platforms (OpenCart, PrestaShop, osCommerce, Zen Cart) are NOT suitable for mobile app subscription billing.
 **Changes from v3.2**: Added comprehensive E-commerce Integration & Mobile App In-App Purchases section - Stripe (primary), Apple App Store IAP (iOS mandatory), Google Play Billing (Android mandatory), PayPal (alternative) - subscription management, payment webhooks, failed payment grace period, platform-specific purchase flows, updated Tier 2 pricing to $9.99/month and Tier 3 to $99.99/year
 **Changes from v3.1**: Added comprehensive telemetry & analytics export (#9 category) - system performance metrics, user interaction data, AI assistance metrics, device/environment data, business intelligence - collected in background via d3kos-telemetry.service (Tier 1+ only, user consent required)
 **Changes from v3.0**: Updated tier-based update restrictions (Tier 0/1: image-only, Tier 2/3: OTA updates), added Tier 1 configuration preservation via mobile app, added onboarding export (#8 category) with reset counter, renamed "Onboarding Wizard" to "Initial Setup" in all UI references
@@ -3116,7 +3117,8 @@ If you encounter:
 | 2.1 | 2026-02-06 | Added CX5106 second row DIP switch documentation (tank sensor standards, engine position), expanded wizard from 13 to 15 questions, added regional detection logic |
 | 2.2 | 2026-02-07 | Full rebrand from Helm-OS to d3kOS, added d3-k1 hardware designation |
 | 2.3 | 2026-02-11 | Added Step 4 (Chartplotter Detection) to Initial Setup wizard, clarified that CX5106 uses standard PGNs (no vendor-specific translation needed), documented chartplotter compatibility |
-| **2.4** | **2026-02-11** | **Added implementation details for Step 4: nginx proxy configuration for WebSocket, JavaScript detection code, fullscreen toggle on wizard completion** |
+| 2.4 | 2026-02-11 | Added implementation details for Step 4: nginx proxy configuration for WebSocket, JavaScript detection code, fullscreen toggle on wizard completion |
+| **3.3** | **2026-02-16** | **Added comprehensive Stripe Billing implementation documentation (40-60 hour development guide with production-ready code examples). See /doc/STRIPE_BILLING_IMPLEMENTATION_GUIDE.md for complete backend API, iOS StoreKit 2, and Android Billing Library integration. MASTER_SYSTEM_SPEC.md v3.2 Section 6.3.4 expanded with database schema (3 tables), 8 API endpoints, and cost breakdown. Confirmed traditional e-commerce platforms (OpenCart, PrestaShop, etc.) are NOT suitable for mobile app subscriptions due to Apple/Google IAP requirements.** |
 
 ---
 

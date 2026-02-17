@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 3.1
+**Version**: 3.2
 **Date**: February 16, 2026
-**Status**: APPROVED - E-commerce Integration Added
-**Previous Version**: 3.0 (February 16, 2026)
+**Status**: APPROVED - Stripe Billing Implementation Guide Added
+**Previous Version**: 3.1 (February 16, 2026)
 
 ---
 
@@ -24,6 +24,7 @@
 | 2.9 | 2026-02-16 | d3kOS Team | Updated Section 6.3.2: Added tier-based update restrictions (Tier 0/1: image-only updates, Tier 2/3: OTA updates), added Tier 1 configuration preservation via mobile app, added onboarding export (8th category) with reset counter tracking, renamed all "Onboarding Wizard" references to "Initial Setup" |
 | 3.0 | 2026-02-16 | d3kOS Team | Added Section 8.3.1 Category #9: Comprehensive telemetry & analytics export (system performance, user interaction, AI metrics, device environment, business intelligence) - background collection via d3kos-telemetry.service, Tier 1+ only with user consent, 30-day local retention, SQLite storage |
 | 3.1 | 2026-02-16 | d3kOS Team | Added Section 6.3.4: E-commerce Integration & Mobile App In-App Purchases - Stripe (primary), Apple App Store IAP (iOS), Google Play Billing (Android), PayPal (alternative), subscription management APIs, payment webhooks, failed payment grace period (3/7/14/24 days), updated Tier 2 pricing to $9.99/month and Tier 3 to $99.99/year (17% annual discount) |
+| 3.2 | 2026-02-16 | d3kOS Team | Expanded Section 6.3.4 with comprehensive Stripe Billing implementation details: complete database schema (3 new tables: subscriptions, payments, tier_upgrades), backend services architecture (webhook handler + subscription API), 8 API endpoints, iOS StoreKit 2 integration guide, Android Billing Library 5.0+ integration guide, detailed 40-60 hour development time breakdown, cost estimates, and complete implementation guide at /doc/STRIPE_BILLING_IMPLEMENTATION_GUIDE.md with working code examples |
 
 ---
 
@@ -2555,67 +2556,346 @@ Release Notes:
 
 **Purpose**: Enable users to purchase Tier 2 ($9.99/month) and Tier 3 ($99.99/year) subscriptions directly within the mobile app, with seamless integration to central database for automatic tier upgrades.
 
+**IMPORTANT**: Traditional e-commerce platforms (OpenCart, PrestaShop, osCommerce, Zen Cart, etc.) are **NOT suitable** for mobile app subscription billing. Apple and Google mandate use of their native payment systems (Apple IAP and Google Play Billing) for in-app subscriptions. Stripe Billing is used for web-based subscriptions and cross-platform management.
+
+**Implementation Guide**: See `/home/boatiq/Helm-OS/doc/STRIPE_BILLING_IMPLEMENTATION_GUIDE.md` for complete 40-60 hour development breakdown with code examples.
+
 ---
 
 ##### Supported Payment Platforms
 
 | Platform | Use Case | Commission | Required For |
 |----------|----------|------------|--------------|
-| **Stripe** | Web checkout, cross-platform | 2.9% + $0.30 | Primary payment processor |
-| **Apple App Store IAP** | iOS app subscriptions | 15-30% | iOS apps (mandatory) |
-| **Google Play Billing** | Android app subscriptions | 15-30% | Android apps (mandatory) |
+| **Stripe Billing** | Web checkout, subscription management, API | 2.9% + $0.30 | Primary payment processor (RECOMMENDED) |
+| **Apple App Store IAP** | iOS app subscriptions | 15-30% | iOS apps (mandatory per App Store rules) |
+| **Google Play Billing** | Android app subscriptions | 15-30% | Android apps (mandatory per Play Store rules) |
 | **PayPal** | Alternative payment method | 2.9% + $0.30 | Optional (user preference) |
 
 **Recommended Architecture**:
-- **Primary**: Stripe (lowest fees, works across web + mobile)
-- **iOS**: Apple In-App Purchase (IAP) - mandatory per App Store guidelines
-- **Android**: Google Play Billing - mandatory per Play Store guidelines
-- **Alternative**: PayPal for users without credit cards
+- **Primary**: Stripe Billing (lowest fees, best API, works cross-platform)
+- **iOS**: Apple In-App Purchase (StoreKit 2) - mandatory per App Store guidelines
+- **Android**: Google Play Billing Library 5.0+ - mandatory per Play Store guidelines
+- **Alternative**: PayPal Subscriptions API for users without credit cards
+
+**Why Not Traditional E-commerce Platforms?**
+- ❌ No native Apple IAP integration
+- ❌ No native Google Play Billing integration
+- ❌ Designed for product sales, not SaaS subscriptions
+- ❌ Poor API support for mobile apps
+- ❌ Complex to customize for webhook-based tier upgrades
+- ✅ Stripe Billing is specifically designed for subscription businesses
 
 ---
 
-##### Subscription Data Structure & API Endpoints
+##### Database Schema & Implementation
 
-**Database Table: `subscriptions`**:
-```json
-{
-  "subscription_id": "sub_abc123def456",
-  "installation_id": "550e8400e29b41d4",
-  "tier": 2,
-  "status": "active",
-  "payment_provider": "stripe",
-  "provider_subscription_id": "sub_1234567890",
-  "amount_cents": 999,
-  "currency": "USD",
-  "billing_interval": "month",
-  "current_period_end": "2026-03-16T10:00:00Z"
-}
+**Required Database Tables** (MySQL/PostgreSQL):
+
+**Table 1: `subscriptions`** (stores active subscriptions)
+```sql
+CREATE TABLE subscriptions (
+  subscription_id VARCHAR(50) PRIMARY KEY,
+  installation_id VARCHAR(16) NOT NULL,
+  tier INTEGER NOT NULL CHECK (tier IN (2, 3)),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'past_due', 'canceled', 'expired')),
+
+  payment_provider VARCHAR(20) NOT NULL CHECK (payment_provider IN ('stripe', 'apple_iap', 'google_play', 'paypal')),
+  provider_subscription_id VARCHAR(100) NOT NULL,
+  provider_customer_id VARCHAR(100),
+
+  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  current_period_start TIMESTAMP NOT NULL,
+  current_period_end TIMESTAMP NOT NULL,
+  canceled_at TIMESTAMP NULL,
+  expires_at TIMESTAMP NULL,
+
+  amount_cents INTEGER NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+  billing_interval VARCHAR(10) NOT NULL CHECK (billing_interval IN ('month', 'year')),
+
+  payment_failed_count INTEGER DEFAULT 0,
+  last_payment_at TIMESTAMP NULL,
+  next_payment_at TIMESTAMP NULL,
+
+  user_email VARCHAR(255),
+  user_name VARCHAR(255),
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX idx_installation_id (installation_id),
+  INDEX idx_status (status),
+  INDEX idx_provider_subscription_id (provider_subscription_id),
+  FOREIGN KEY (installation_id) REFERENCES installations(installation_id)
+);
 ```
 
+**Table 2: `payments`** (payment transaction history)
+```sql
+CREATE TABLE payments (
+  payment_id VARCHAR(50) PRIMARY KEY,
+  installation_id VARCHAR(16) NOT NULL,
+  subscription_id VARCHAR(50) NOT NULL,
+
+  provider_payment_id VARCHAR(100) NOT NULL,
+  amount_cents INTEGER NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+
+  status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'succeeded', 'failed', 'refunded')),
+  failure_reason TEXT NULL,
+
+  invoice_url TEXT NULL,
+  receipt_url TEXT NULL,
+
+  paid_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_installation_id (installation_id),
+  INDEX idx_subscription_id (subscription_id),
+  FOREIGN KEY (installation_id) REFERENCES installations(installation_id),
+  FOREIGN KEY (subscription_id) REFERENCES subscriptions(subscription_id)
+);
+```
+
+**Table 3: `tier_upgrades`** (audit log of tier changes)
+```sql
+CREATE TABLE tier_upgrades (
+  upgrade_id VARCHAR(50) PRIMARY KEY,
+  installation_id VARCHAR(16) NOT NULL,
+
+  from_tier INTEGER NOT NULL,
+  to_tier INTEGER NOT NULL,
+
+  upgrade_method VARCHAR(20) NOT NULL CHECK (upgrade_method IN ('payment', 'promo_code', 'manual', 'opencpn_detect')),
+  subscription_id VARCHAR(50) NULL,
+  payment_id VARCHAR(50) NULL,
+
+  user_email VARCHAR(255),
+  user_name VARCHAR(255),
+
+  upgraded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_installation_id (installation_id),
+  FOREIGN KEY (installation_id) REFERENCES installations(installation_id),
+  FOREIGN KEY (subscription_id) REFERENCES subscriptions(subscription_id)
+);
+```
+
+**Update existing `installations` table:**
+```sql
+ALTER TABLE installations
+ADD COLUMN is_paid_tier BOOLEAN DEFAULT FALSE,
+ADD COLUMN subscription_status VARCHAR(20) CHECK (subscription_status IN ('none', 'active', 'past_due', 'canceled', 'expired')),
+ADD COLUMN subscription_expires_at TIMESTAMP NULL;
+```
+
+---
+
+##### Backend Services Required
+
+**Service 1: Stripe Webhook Handler** (Python/Flask or Node.js/Express)
+- **File**: `/opt/d3kos/services/billing/stripe_webhook_handler.py`
+- **Port**: 5000 (proxied via nginx)
+- **Purpose**: Receives Stripe webhook events and updates database
+- **Events Handled**:
+  - `customer.subscription.created` → Create subscription, upgrade tier
+  - `customer.subscription.updated` → Update subscription status
+  - `customer.subscription.deleted` → Expire subscription, downgrade tier
+  - `invoice.payment_succeeded` → Record payment, reset failure counter
+  - `invoice.payment_failed` → Increment failure counter, start grace period
+  - `customer.subscription.trial_will_end` → Send reminder email
+
+**Service 2: Subscription Management API** (Python/Flask or Node.js/Express)
+- **File**: `/opt/d3kos/services/billing/subscription_api.py`
+- **Port**: 5001 (proxied via nginx)
+- **Purpose**: Mobile app endpoints for subscription management
+
 **API Endpoints**:
+
+**Stripe Integration:**
 - `POST /api/v1/stripe/checkout/session` - Create Stripe checkout session
-- `POST /api/v1/webhooks/stripe` - Receive Stripe webhooks
-- `POST /api/v1/apple/verify-receipt` - Validate Apple IAP receipt
+  ```json
+  Request: {
+    "installation_id": "550e8400e29b41d4",
+    "tier": 2,
+    "billing_interval": "month"
+  }
+  Response: {
+    "checkout_url": "https://checkout.stripe.com/...",
+    "session_id": "cs_test_abc123"
+  }
+  ```
+
+- `POST /api/v1/webhooks/stripe` - Receive Stripe webhooks (signature verified)
+- `GET /api/v1/stripe/customer-portal` - Get Stripe Customer Portal URL for subscription management
+
+**Apple IAP Integration:**
+- `POST /api/v1/apple/verify-receipt` - Validate App Store receipt
+  ```json
+  Request: {
+    "installation_id": "550e8400e29b41d4",
+    "receipt_data": "base64_encoded_receipt",
+    "transaction_id": "1000000123456789"
+  }
+  ```
+- `POST /api/v1/webhooks/apple` - Receive Apple server-to-server notifications
+
+**Google Play Integration:**
 - `POST /api/v1/google/verify-purchase` - Validate Google Play purchase
-- `GET /api/v1/tier/status` - Get current tier and subscription status
+  ```json
+  Request: {
+    "installation_id": "550e8400e29b41d4",
+    "purchase_token": "abc123...",
+    "product_id": "tier2_monthly"
+  }
+  ```
+- `POST /api/v1/webhooks/google` - Receive Google Real-Time Developer Notifications
+
+**Tier Management:**
+- `GET /api/v1/tier/status?installation_id=XXX` - Get current tier and subscription status
+  ```json
+  Response: {
+    "installation_id": "550e8400e29b41d4",
+    "tier": 2,
+    "is_paid_tier": true,
+    "subscription_status": "active",
+    "subscription_expires_at": "2026-03-16T10:00:00Z",
+    "subscription": {
+      "id": "sub_abc123",
+      "provider": "stripe",
+      "interval": "month",
+      "amount": 9.99,
+      "next_billing_date": "2026-03-16T10:00:00Z",
+      "canceled": false
+    }
+  }
+  ```
+
 - `POST /api/v1/subscription/cancel` - Cancel active subscription
-- `GET /api/v1/subscription/history` - Get payment history
+- `POST /api/v1/subscription/reactivate` - Reactivate canceled subscription (before expiration)
+- `GET /api/v1/subscription/history` - Get payment history (last 50 transactions)
 
-**Mobile App Purchase Flow** (Stripe):
+**Systemd Services:**
+```bash
+sudo systemctl enable d3kos-stripe-webhook.service
+sudo systemctl enable d3kos-subscription-api.service
+sudo systemctl start d3kos-stripe-webhook.service
+sudo systemctl start d3kos-subscription-api.service
+```
+
+---
+
+##### Mobile App Purchase Flow
+
+**Stripe Flow** (Web-based, works on iOS/Android/Web):
 1. App calls: `POST /api/v1/stripe/checkout/session` with installation_id + tier
-2. Backend creates Stripe Checkout Session, returns URL
-3. App opens URL in in-app browser
-4. User completes payment on Stripe-hosted page
-5. Stripe webhook fires: `customer.subscription.created`
-6. Backend updates database: tier=2, is_paid_tier=TRUE
-7. App polls: `GET /api/v1/tier/status` and unlocks Tier 2 features
-8. Pi polls cloud on next boot, detects upgrade, enables Tier 2 features
+2. Backend creates Stripe Checkout Session, returns checkout URL
+3. App opens URL in in-app browser (SafariViewController on iOS, Chrome Custom Tab on Android)
+4. User enters payment details on Stripe-hosted page (PCI compliant)
+5. Stripe processes payment
+6. Stripe webhook fires: `customer.subscription.created`
+7. Backend webhook handler:
+   - Verifies signature
+   - Creates subscription record
+   - Updates `installations.tier = 2`, `is_paid_tier = TRUE`
+   - Logs tier upgrade in `tier_upgrades` table
+8. App polls: `GET /api/v1/tier/status` every 2 seconds for 30 seconds
+9. App receives `{"tier": 2, "status": "active"}` and unlocks Tier 2 features
+10. Pi polls cloud on next boot (24-hour interval), detects upgrade, enables Tier 2 features
 
-**Failed Payment Handling**:
-- Day 0: 1st failure → Retry in 3 days, send email
-- Day 3: 2nd failure → Retry in 7 days, send warning
-- Day 10: 3rd failure → Retry in 14 days, final warning
-- Day 24: 4th failure → Subscription expires, downgrade tier
+**Apple IAP Flow** (iOS only):
+1. App requests product info: `Product.products(for: ["com.d3kos.tier2.monthly"])`
+2. App displays localized price from App Store
+3. User taps "Subscribe", triggers: `product.purchase()`
+4. iOS shows native payment sheet (Face ID/Touch ID)
+5. User confirms purchase
+6. App receives transaction: `Transaction.updates` stream
+7. App sends receipt to backend: `POST /api/v1/apple/verify-receipt`
+8. Backend validates receipt with Apple server
+9. Backend creates subscription record, updates tier
+10. Backend returns success to app
+11. App unlocks Tier 2 features immediately
+12. Apple sends server-to-server notifications for renewals/cancellations
+
+**Google Play Flow** (Android only):
+1. App queries product details: `billingClient.queryProductDetailsAsync()`
+2. App displays localized price from Play Store
+3. User taps "Subscribe", triggers: `billingClient.launchBillingFlow()`
+4. Android shows native payment sheet (Google Pay)
+5. User confirms purchase
+6. App receives purchase token: `onPurchasesUpdated()`
+7. App sends token to backend: `POST /api/v1/google/verify-purchase`
+8. Backend verifies purchase with Google Play Developer API
+9. Backend creates subscription record, updates tier
+10. Backend returns success to app
+11. App acknowledges purchase: `billingClient.acknowledgePurchase()`
+12. App unlocks Tier 2 features immediately
+13. Google sends Real-Time Developer Notifications for renewals/cancellations
+
+---
+
+##### Failed Payment Handling (Grace Period)
+
+**Grace Period Logic:**
+- **Day 0**: 1st failure → Status = 'past_due', retry in 3 days, send email notification
+- **Day 3**: 2nd failure → Retry in 7 days (total: 10 days), send warning email
+- **Day 10**: 3rd failure → Retry in 14 days (total: 24 days), send final warning email
+- **Day 24**: 4th failure → Status = 'expired', downgrade tier to 1, disable Tier 2/3 features
+
+**During Grace Period** (status = 'past_due'):
+- ✅ Tier 2/3 features remain active
+- ⚠️ Mobile app shows persistent warning banner: "⚠️ Payment Issue - Update Payment Method"
+- 📧 Email notifications sent before each retry
+- 🔧 User can update payment method via:
+  - Stripe: Customer Portal (one-click link in email)
+  - Apple: iOS Settings → Subscriptions
+  - Google: Google Play → Subscriptions
+
+**After Grace Period Expiration:**
+- ❌ Subscription expires, status = 'expired'
+- ⬇️ Tier downgrade: Tier 2→1 or Tier 3→1
+- 🔒 Tier 2/3 features disabled on next Pi boot
+- 📱 Mobile app shows: "Subscription expired - Tap to reactivate"
+- 💳 User can reactivate by purchasing new subscription
+
+---
+
+##### Development Time & Cost Estimate
+
+**Total Development Time: 40-60 hours**
+
+| Phase | Hours | Tasks |
+|-------|-------|-------|
+| **Phase 1: Stripe Setup** | 4-6 | Account setup, product configuration, webhook setup, customer portal |
+| **Phase 2: Backend API** | 16-24 | Database schema, webhook handler, subscription API, systemd services, nginx config |
+| **Phase 3: Mobile App Integration** | 12-18 | iOS StoreKit 2 integration, Android Billing Library 5.0+, UI design |
+| **Phase 4: Testing & Deployment** | 8-12 | Local testing, iOS Sandbox, Android testing, production deployment |
+
+**Development Costs:**
+- Developer time: 40-60 hours × $50-150/hour = **$2,000 - $9,000**
+
+**Monthly Operational Costs:**
+- Stripe fees: 2.9% + $0.30 per transaction
+- Apple IAP fees: 15-30% (automatically deducted by Apple)
+- Google Play fees: 15-30% (automatically deducted by Google)
+- Server hosting: $10-50/month (VPS for API)
+- Email notifications: $0-10/month (SendGrid free tier: 100 emails/day)
+- Database: $0-20/month (included with VPS)
+
+**Revenue Example** (100 Tier 2 subscribers):
+- Gross revenue: $999/month
+- Stripe fees: ~$30/month (if 30% use Stripe)
+- Apple IAP fees: ~$200/month (if 40% use iOS, 30% commission)
+- Google Play fees: ~$100/month (if 30% use Android, 15-30% commission)
+- **Net revenue: $669/month**
+- **Break-even: 3-13 months** depending on development costs
+
+**Detailed Implementation Guide:**
+- See `/home/boatiq/Helm-OS/doc/STRIPE_BILLING_IMPLEMENTATION_GUIDE.md`
+- Complete code examples for webhook handler, subscription API, iOS StoreKit 2, Android Billing Library
+- Step-by-step setup instructions
+- Testing procedures
+- Deployment checklist
 
 ---
 
