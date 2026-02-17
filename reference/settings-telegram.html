@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Notifications - d3kOS Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 22px;
+            padding: 20px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background-color: #1a1a1a;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #00CC00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #00CC00;
+        }
+
+        .back-button {
+            background-color: #00CC00;
+            color: #000000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #00FF00;
+            transform: scale(1.05);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Status Card */
+        .status-card {
+            background-color: #1a1a1a;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            border: 2px solid #00CC00;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #FF0000;
+        }
+
+        .status-dot.connected {
+            background-color: #00CC00;
+        }
+
+        .status-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* Form Sections */
+        .form-section {
+            background-color: #1a1a1a;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            border: 1px solid #333333;
+        }
+
+        .form-section h2 {
+            color: #00CC00;
+            font-size: 28px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333333;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            background-color: #2a2a2a;
+            color: #FFFFFF;
+            border: 2px solid #333333;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00CC00;
+        }
+
+        .form-group input::placeholder {
+            color: #666666;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 80px;
+            height: 40px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #666666;
+            transition: 0.4s;
+            border-radius: 40px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 32px;
+            width: 32px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #00CC00;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(40px);
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 18px 35px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 180px;
+        }
+
+        .btn-primary {
+            background-color: #00CC00;
+            color: #000000;
+        }
+
+        .btn-primary:hover {
+            background-color: #00FF00;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background-color: #333333;
+            color: #FFFFFF;
+        }
+
+        .btn-secondary:hover {
+            background-color: #555555;
+        }
+
+        .btn-test {
+            background-color: #0066CC;
+            color: #FFFFFF;
+        }
+
+        .btn-test:hover {
+            background-color: #0088FF;
+        }
+
+        /* Instructions Box */
+        .instructions {
+            background-color: #1a1a1a;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            border: 2px solid #0066CC;
+        }
+
+        .instructions h3 {
+            color: #0066CC;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 25px;
+            line-height: 2;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .instructions code {
+            background-color: #2a2a2a;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 18px;
+            color: #00CC00;
+        }
+
+        /* Message Box */
+        .message {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #00330011;
+            border: 2px solid #00CC00;
+            color: #00FF00;
+        }
+
+        .message.error {
+            background-color: #33000011;
+            border: 2px solid #CC0000;
+            color: #FF0000;
+        }
+
+        .message.info {
+            background-color: #00003311;
+            border: 2px solid #0066CC;
+            color: #00AAFF;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid #333333;
+            border-top: 4px solid #00CC00;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 15px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                font-size: 20px;
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .form-section h2 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>📱 Telegram Notifications</h1>
+        <button class="back-button" onclick="goBack()">← Back to Settings</button>
+    </div>
+
+    <div class="container">
+        <!-- Message Box -->
+        <div id="messageBox" class="message"></div>
+
+        <!-- Status Card -->
+        <div class="status-card">
+            <div class="status-indicator">
+                <div id="statusDot" class="status-dot"></div>
+                <span id="statusText" class="status-text">Loading...</span>
+            </div>
+            <div style="font-size: 18px; color: #AAAAAA; margin-top: 10px;">
+                <div id="statusDetails">Checking notification service...</div>
+            </div>
+        </div>
+
+        <!-- Setup Instructions -->
+        <div class="instructions">
+            <h3>🔧 How to Set Up Telegram Bot</h3>
+            <ol>
+                <li>Open <strong>Telegram</strong> app on your phone</li>
+                <li>Search for <code>@BotFather</code></li>
+                <li>Send: <code>/newbot</code></li>
+                <li>Name your bot: <strong>d3kOS Fish Notifier</strong></li>
+                <li>Username: <strong>d3kos_fish_<em>yourname</em>_bot</strong></li>
+                <li>Copy the <strong>bot token</strong> (looks like: 110201543:AAHdqTcvCH1...)</li>
+                <li>Start a chat with your new bot</li>
+                <li>Send any message to your bot (e.g., <code>/start</code>)</li>
+                <li>Get your <strong>chat ID</strong>:
+                    <ul>
+                        <li>Visit: <code>https://api.telegram.org/bot<strong>&lt;TOKEN&gt;</strong>/getUpdates</code></li>
+                        <li>Look for: <code>"chat":{"id":123456789}</code></li>
+                        <li>Copy the chat ID number</li>
+                    </ul>
+                </li>
+                <li>Enter both values below and click <strong>Save</strong></li>
+            </ol>
+        </div>
+
+        <!-- Configuration Form -->
+        <div class="form-section">
+            <h2>⚙️ Configuration</h2>
+
+            <!-- Enable Toggle -->
+            <div class="form-group">
+                <div class="toggle-container">
+                    <label for="enableToggle">Enable Telegram Notifications:</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enableToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="enableStatus" style="font-weight: bold; color: #666666;">Disabled</span>
+                </div>
+            </div>
+
+            <!-- Bot Token -->
+            <div class="form-group">
+                <label for="botToken">Bot Token:</label>
+                <input
+                    type="text"
+                    id="botToken"
+                    placeholder="110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
+                    autocomplete="off"
+                >
+            </div>
+
+            <!-- Chat ID -->
+            <div class="form-group">
+                <label for="chatId">Chat ID:</label>
+                <input
+                    type="text"
+                    id="chatId"
+                    placeholder="123456789"
+                    autocomplete="off"
+                >
+            </div>
+
+            <!-- Buttons -->
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="saveConfig()">
+                    💾 Save Configuration
+                    <span id="saveSpinner" class="spinner"></span>
+                </button>
+                <button class="btn btn-test" onclick="sendTestNotification()">
+                    🧪 Send Test Notification
+                    <span id="testSpinner" class="spinner"></span>
+                </button>
+                <button class="btn btn-secondary" onclick="loadConfig()">
+                    🔄 Reload Configuration
+                </button>
+            </div>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="form-section">
+            <h2>🔬 Advanced Settings</h2>
+
+            <div class="form-group">
+                <label for="retryAttempts">Retry Attempts:</label>
+                <input
+                    type="number"
+                    id="retryAttempts"
+                    min="1"
+                    max="10"
+                    value="3"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="retryDelay">Retry Delay (seconds):</label>
+                <input
+                    type="number"
+                    id="retryDelay"
+                    min="1"
+                    max="60"
+                    value="5"
+                >
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_URL = '/notify';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            loadStatus();
+
+            // Auto-refresh status every 10 seconds
+            setInterval(loadStatus, 10000);
+
+            // Enable toggle handler
+            document.getElementById('enableToggle').addEventListener('change', (e) => {
+                updateEnableStatus(e.target.checked);
+            });
+        });
+
+        // Update enable status text
+        function updateEnableStatus(enabled) {
+            const statusElement = document.getElementById('enableStatus');
+            statusElement.textContent = enabled ? 'Enabled' : 'Disabled';
+            statusElement.style.color = enabled ? '#00CC00' : '#666666';
+        }
+
+        // Load current configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_URL}/config`);
+                const data = await response.json();
+
+                // Update UI
+                document.getElementById('enableToggle').checked = data.enabled || false;
+                updateEnableStatus(data.enabled || false);
+
+                // Don't show actual tokens for security
+                if (data.bot_token_set) {
+                    document.getElementById('botToken').placeholder = '••••••••••••••••••••';
+                }
+                if (data.chat_id_set) {
+                    document.getElementById('chatId').placeholder = '••••••••';
+                }
+
+                document.getElementById('retryAttempts').value = data.retry_attempts || 3;
+                document.getElementById('retryDelay').value = data.retry_delay || 5;
+
+                showMessage('Configuration loaded', 'success');
+
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                showMessage('Failed to load configuration: ' + error.message, 'error');
+            }
+        }
+
+        // Load service status
+        async function loadStatus() {
+            try {
+                const response = await fetch(`${API_URL}/status`);
+                const data = await response.json();
+
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                const statusDetails = document.getElementById('statusDetails');
+
+                if (data.enabled && data.configured) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Connected';
+                    statusText.style.color = '#00CC00';
+                    statusDetails.innerHTML = `
+                        ✅ Service running<br>
+                        📬 Queue size: ${data.queue_size}<br>
+                        ❌ Failed: ${data.failed_count}
+                    `;
+                } else if (data.configured) {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Disabled';
+                    statusText.style.color = '#FFA500';
+                    statusDetails.textContent = '⚠️ Notifications are disabled';
+                } else {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Not Configured';
+                    statusText.style.color = '#FF0000';
+                    statusDetails.textContent = '❌ Bot token and chat ID not set';
+                }
+
+            } catch (error) {
+                console.error('Failed to load status:', error);
+                const statusText = document.getElementById('statusText');
+                statusText.textContent = 'Service Unavailable';
+                statusText.style.color = '#FF0000';
+            }
+        }
+
+        // Save configuration
+        async function saveConfig() {
+            const saveBtn = document.querySelector('.btn-primary');
+            const saveSpinner = document.getElementById('saveSpinner');
+
+            try {
+                saveBtn.disabled = true;
+                saveSpinner.style.display = 'inline-block';
+
+                const config = {
+                    enabled: document.getElementById('enableToggle').checked,
+                    retry_attempts: parseInt(document.getElementById('retryAttempts').value),
+                    retry_delay: parseInt(document.getElementById('retryDelay').value)
+                };
+
+                // Only include token if it's not the placeholder
+                const botToken = document.getElementById('botToken').value;
+                if (botToken && !botToken.startsWith('••')) {
+                    config.bot_token = botToken;
+                }
+
+                // Only include chat ID if it's not the placeholder
+                const chatId = document.getElementById('chatId').value;
+                if (chatId && !chatId.startsWith('••')) {
+                    config.chat_id = chatId;
+                }
+
+                const response = await fetch(`${API_URL}/config`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Configuration saved successfully!', 'success');
+                    loadStatus(); // Refresh status
+
+                    // Clear sensitive fields
+                    document.getElementById('botToken').value = '';
+                    document.getElementById('chatId').value = '';
+                } else {
+                    showMessage('❌ Failed to save: ' + (data.error || 'Unknown error'), 'error');
+                }
+
+            } catch (error) {
+                showMessage('❌ Error saving configuration: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveSpinner.style.display = 'none';
+            }
+        }
+
+        // Send test notification
+        async function sendTestNotification() {
+            const testBtn = document.querySelector('.btn-test');
+            const testSpinner = document.getElementById('testSpinner');
+
+            try {
+                testBtn.disabled = true;
+                testSpinner.style.display = 'inline-block';
+
+                showMessage('📤 Sending test notification...', 'info');
+
+                const response = await fetch(`${API_URL}/test`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Test notification sent! Check your Telegram app.', 'success');
+                } else {
+                    showMessage('❌ Test failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+
+            } catch (error) {
+                showMessage('❌ Error sending test: ' + error.message, 'error');
+            } finally {
+                testBtn.disabled = false;
+                testSpinner.style.display = 'none';
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = 'message ' + type;
+            messageBox.style.display = 'block';
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // Go back to settings
+        function goBack() {
+            window.location.href = '/settings.html';
+        }
+    </script>
+</body>
+</html>

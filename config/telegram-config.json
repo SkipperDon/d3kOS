@@ -1,0 +1,28 @@
+{
+  "enabled": false,
+  "bot_token": "",
+  "chat_id": "",
+  "retry_attempts": 3,
+  "retry_delay": 5,
+  "_instructions": {
+    "how_to_setup": [
+      "1. Open Telegram app",
+      "2. Search for @BotFather",
+      "3. Send '/newbot' command",
+      "4. Follow prompts to name your bot (e.g., 'd3kOS Fish Notifier')",
+      "5. Copy the bot token provided (looks like: 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw)",
+      "6. Start a chat with your new bot by searching for it",
+      "7. Send a message to your bot (e.g., '/start')",
+      "8. Get your chat ID by visiting: https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates",
+      "9. Look for 'chat':{'id':123456789} in the response",
+      "10. Copy the chat ID number",
+      "11. Update this file with bot_token and chat_id",
+      "12. Set enabled to true",
+      "13. Restart d3kos-notifications service"
+    ],
+    "example": {
+      "bot_token": "110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw",
+      "chat_id": "123456789"
+    }
+  }
+}

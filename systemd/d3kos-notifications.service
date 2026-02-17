@@ -1,0 +1,32 @@
+[Unit]
+Description=d3kOS Marine Vision Notification Manager
+Documentation=https://github.com/d3kOS/marine-vision
+After=network-online.target
+Wants=network-online.target
+PartOf=d3kos-fish-detector.service
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/marine-vision
+Environment="TELEGRAM_CONFIG=/opt/d3kos/config/telegram-config.json"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 /opt/d3kos/services/marine-vision/notification_manager.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/d3kos/data/marine-vision /opt/d3kos/config
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target
