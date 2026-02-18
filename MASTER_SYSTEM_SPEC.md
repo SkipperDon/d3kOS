@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 3.2
-**Date**: February 16, 2026
-**Status**: APPROVED - Stripe Billing Implementation Guide Added
-**Previous Version**: 3.1 (February 16, 2026)
+**Version**: 3.5
+**Date**: February 17, 2026
+**Status**: APPROVED - Timezone Auto-Detection System Added
+**Previous Version**: 3.4 (February 17, 2026)
 
 ---
 
@@ -25,6 +25,9 @@
 | 3.0 | 2026-02-16 | d3kOS Team | Added Section 8.3.1 Category #9: Comprehensive telemetry & analytics export (system performance, user interaction, AI metrics, device environment, business intelligence) - background collection via d3kos-telemetry.service, Tier 1+ only with user consent, 30-day local retention, SQLite storage |
 | 3.1 | 2026-02-16 | d3kOS Team | Added Section 6.3.4: E-commerce Integration & Mobile App In-App Purchases - Stripe (primary), Apple App Store IAP (iOS), Google Play Billing (Android), PayPal (alternative), subscription management APIs, payment webhooks, failed payment grace period (3/7/14/24 days), updated Tier 2 pricing to $9.99/month and Tier 3 to $99.99/year (17% annual discount) |
 | 3.2 | 2026-02-16 | d3kOS Team | Expanded Section 6.3.4 with comprehensive Stripe Billing implementation details: complete database schema (3 new tables: subscriptions, payments, tier_upgrades), backend services architecture (webhook handler + subscription API), 8 API endpoints, iOS StoreKit 2 integration guide, Android Billing Library 5.0+ integration guide, detailed 40-60 hour development time breakdown, cost estimates, and complete implementation guide at /doc/STRIPE_BILLING_IMPLEMENTATION_GUIDE.md with working code examples |
+| 3.3 | 2026-02-17 | d3kOS Team | Completely rewrote Section 6.3.3 Version Management & Upgrade System: Added d3kOS version tracking (current: 0.9.1-beta), GitHub repository (SkipperDon/d3kos), tier-based upgrade capabilities (Tier 0: NO upgrades - new installation only, Tier 1: NO upgrades - new installation only with config restore, Tier 2/3: YES - curl-based OTA upgrades via mobile app), System Management API (port 8095, 4 endpoints), automated upgrade script with SHA-256 verification and backup, mobile app upgrade flow, and manual rollback process |
+| 3.4 | 2026-02-17 | d3kOS Team | Added Section 6.4 AI-Powered Self-Healing System: 5-tier architecture (detection, correlation, AI diagnosis, auto-remediation, user notification), engine anomaly detection with statistical process control, Pi system monitoring (CPU temp, memory, disk, services), pattern matching for common failures (failing SD card, overheating, low power, stuck processes), AI integration for root cause analysis, safe auto-remediation actions (restart services, kill stuck processes, clear temp files), user-friendly error translation, voice alerts (Tier 2+), remediation history tracking. Renamed "factory reset" to "Initial Setup Reset" throughout specification. |
+| 3.5 | 2026-02-17 | d3kOS Team | Added Section 4.1.4 Timezone Auto-Detection: 3-tier automatic detection (GPS coordinates → internet geolocation → UTC fallback), runs on first boot via d3kos-timezone-setup.service, detection script at /opt/d3kos/scripts/detect-timezone.sh, config file at /opt/d3kos/config/timezone.txt, manual override in Settings page (no onboarding wizard question). Prevents hardcoded Toronto timezone issue for worldwide deployment. Critical for accurate timestamps in boatlogs, health monitoring, GPS sync, and legal compliance (fishing regulations). |
 
 ---
 
@@ -256,6 +259,232 @@ iface can0 inet manual
     up /sbin/ifconfig can0 up
     down /sbin/ifconfig can0 down
 ```
+
+#### 4.1.4 Timezone Auto-Detection
+
+**Problem**: Base image has timezone hardcoded to America/Toronto (EST/EDT), causing incorrect timestamps for users worldwide.
+
+**Solution**: Automatic timezone detection on first boot using 3-tier fallback system.
+
+---
+
+##### Detection Flow (First Boot)
+
+**Execution**: Before onboarding wizard, via systemd service
+
+```
+d3kos-timezone-setup.service (oneshot, first boot)
+    ↓
+/opt/d3kos/scripts/detect-timezone.sh
+    ↓
+┌─────────────────────────────────────────┐
+│  Tier 1: GPS Coordinate Detection      │
+│  Wait up to 30 seconds for GPS fix     │
+│  Use lat/lon → timezone lookup          │
+└─────────────────────────────────────────┘
+    ↓ (if GPS unavailable)
+┌─────────────────────────────────────────┐
+│  Tier 2: Internet Geolocation          │
+│  Use IP address → timezone via API      │
+│  (worldtimeapi.org or ip-api.com)       │
+└─────────────────────────────────────────┘
+    ↓ (if internet unavailable)
+┌─────────────────────────────────────────┐
+│  Tier 3: Default to UTC                │
+│  Safe fallback, user can change later   │
+└─────────────────────────────────────────┘
+    ↓
+timedatectl set-timezone <detected_timezone>
+    ↓
+Save to /opt/d3kos/config/timezone.txt
+```
+
+---
+
+##### Detection Script
+
+**File**: `/opt/d3kos/scripts/detect-timezone.sh`
+
+**Method 1: GPS (Best)**
+```bash
+# Wait up to 30 seconds for GPS fix
+GPS_DATA=$(gpspipe -w -n 10 | grep -m 1 "TPV")
+LAT=$(echo "$GPS_DATA" | jq -r '.lat')
+LON=$(echo "$GPS_DATA" | jq -r '.lon')
+
+# Lookup timezone from coordinates (GeoNames API)
+TIMEZONE=$(curl -s "http://api.geonames.org/timezoneJSON?lat=$LAT&lng=$LON&username=d3kos" | jq -r '.timezoneId')
+
+# Example: lat=28.5383, lon=-81.3792 → "America/New_York"
+```
+
+**Method 2: Internet Geolocation (Fallback)**
+```bash
+# Use IP-based geolocation
+TIMEZONE=$(curl -s http://worldtimeapi.org/api/ip | jq -r '.timezone')
+
+# Example: User in Miami → "America/New_York"
+```
+
+**Method 3: UTC Default (Last Resort)**
+```bash
+TIMEZONE="UTC"
+```
+
+**Set System Timezone**:
+```bash
+timedatectl set-timezone "$TIMEZONE"
+
+# Save detection metadata
+cat > /opt/d3kos/config/timezone.txt <<EOF
+{
+  "timezone": "$TIMEZONE",
+  "detection_method": "GPS|Internet|Default",
+  "detected_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "latitude": "$LAT",
+  "longitude": "$LON"
+}
+EOF
+```
+
+---
+
+##### Systemd Service
+
+**File**: `/etc/systemd/system/d3kos-timezone-setup.service`
+
+```ini
+[Unit]
+Description=d3kOS Timezone Auto-Detection
+After=network.target gpsd.service
+Before=d3kos-first-boot.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/d3kos/scripts/detect-timezone.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
+##### Config File
+
+**File**: `/opt/d3kos/config/timezone.txt`
+
+```json
+{
+  "timezone": "America/New_York",
+  "detection_method": "GPS",
+  "detected_at": "2026-02-17T23:30:00Z",
+  "latitude": 28.5383,
+  "longitude": -81.3792
+}
+```
+
+---
+
+##### Manual Override (Settings Page)
+
+**Location**: Settings → System → Timezone
+
+**API Endpoint**: `POST /system/timezone` (port 8095)
+
+**Request**:
+```json
+{
+  "timezone": "America/Los_Angeles"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "timezone": "America/Los_Angeles",
+  "message": "Timezone updated successfully"
+}
+```
+
+**Common Timezones** (Settings UI dropdown):
+- America/New_York (Eastern Time - US/Canada)
+- America/Chicago (Central Time - US/Canada)
+- America/Denver (Mountain Time - US/Canada)
+- America/Los_Angeles (Pacific Time - US/Canada)
+- America/Halifax (Atlantic Time - Canada)
+- America/Anchorage (Alaska Time)
+- Pacific/Honolulu (Hawaii Time)
+- Europe/London (UK Time - GMT/BST)
+- Europe/Paris (Central Europe Time)
+- Australia/Sydney (Australian Eastern Time)
+- UTC (Universal Time)
+
+**Settings UI**:
+```
+┌─────────────────────────────────────────┐
+│  Timezone Configuration                 │
+├─────────────────────────────────────────┤
+│  Current Timezone:                      │
+│  America/New_York (Eastern Time)        │
+│                                         │
+│  Current Time: 6:30 PM                  │
+│  UTC Time: 11:30 PM                     │
+│                                         │
+│  Detection Method: GPS                  │
+│  Last Updated: Feb 17, 2026 11:30 PM    │
+│                                         │
+│  [ Change Timezone ]                    │
+└─────────────────────────────────────────┘
+```
+
+---
+
+##### Why This is Critical
+
+**Impacts**:
+- ❌ **Boatlog timestamps** - Wrong time in all log entries
+- ❌ **Health monitoring** - Incorrect anomaly detection times
+- ❌ **Data exports** - Wrong timestamps in cloud database
+- ❌ **GPS synchronization** - Time mismatch between GPS and system
+- ❌ **Legal compliance** - Fishing regulations are time-based (dawn/dusk, seasonal)
+- ❌ **User experience** - Confusing to see wrong time everywhere
+
+**Example Issue**:
+```
+User in California sees:
+  Boatlog entry: "Started engine at 10:00 AM" (Toronto time)
+  Actual local time: 7:00 AM (Pacific time)
+
+User confused: "I didn't start the engine at 10 AM!"
+```
+
+---
+
+##### Implementation Status
+
+**Status**: ⏳ NOT IMPLEMENTED (Specification Only)
+
+**Estimated Time**: 4-6 hours
+- Detection script: 2 hours
+- Systemd service: 1 hour
+- Settings UI: 1 hour
+- API endpoint: 1 hour
+- Testing: 1 hour
+
+**Priority**: High
+- Affects all timestamps system-wide
+- Critical for worldwide deployment
+- Legal compliance issue
+
+**Workaround Until Implemented**:
+- Users must manually run: `sudo timedatectl set-timezone <timezone>`
+- Or accept Toronto time and mentally adjust
+
+---
 
 ### 4.2 Signal K Server Configuration
 
@@ -2488,68 +2717,289 @@ function detectTier() {
 - **Config Preservation:** ✓ Automatic (no reinstall needed)
 - **Fleet Updates:** ✓ Centralized update management
 
-#### 6.3.3 Version Management & Updates
+#### 6.3.3 Version Management & Upgrade System
 
-**Update Capabilities by Tier:**
-
-**Tier 0 & 1: Image-Only Updates**
-- Cannot incrementally update
-- Must download new d3kOS image (.img file)
-- Flash SD card with Raspberry Pi Imager
-- Reboot into new version
-- Tier 0: Must re-run Initial Setup wizard (configuration lost)
-- Tier 1: Mobile app restores configuration automatically
-
-**Tier 2 & 3: OTA (Over-the-Air) Updates**
-- Can incrementally update via apt/dpkg
-- No SD card reflashing required
-- Configuration automatically preserved
-- Update check: Settings → System → Check for Updates
-- Automatic or manual update installation
+**Current d3kOS Version**: 0.9.1-beta
+**GitHub Repository**: https://github.com/SkipperDon/d3kos
+**Version Format**: `MAJOR.MINOR.PATCH-STAGE` (e.g., 0.9.1-beta, 1.0.0-stable)
 
 ---
 
-**GitHub API Check** (for Tier 0/1):
-```javascript
-async function checkForUpdates() {
-  try {
-    const response = await fetch('https://api.github.com/repos/d3kos/d3kos/releases/latest');
-    const data = await response.json();
-    const latestVersion = data.tag_name; // e.g., "v1.0.5"
-    const currentVersion = "v1.0.3"; // From config
-    
-    if (latestVersion > currentVersion) {
-      return {
-        update_available: true,
-        latest_version: latestVersion,
-        download_url: data.assets[0].browser_download_url,
-        release_notes: data.body
-      };
-    }
-  } catch (error) {
-    console.error('Failed to check for updates:', error);
-  }
-  
-  return { update_available: false };
+##### Version Tracking
+
+**Storage Locations**:
+
+1. **`/opt/d3kos/VERSION`** - Plain text version file
+   ```
+   0.9.1-beta
+   ```
+
+2. **`/opt/d3kos/config/license.json`** - Version metadata
+   ```json
+   {
+     "installation_id": "3861513b314c5ee7",
+     "version": "0.9.1-beta",
+     "version_installed_at": "2026-02-17T10:00:00Z",
+     "tier": 2,
+     "reset_count": 0,
+     "features": { ... }
+   }
+   ```
+
+---
+
+##### Tier-Based Upgrade Capabilities
+
+| Tier | Can Upgrade? | Method | User Action |
+|------|--------------|--------|-------------|
+| **Tier 0** | ❌ **NO** | New installation only | Download new image, re-flash SD card, re-run Initial Setup |
+| **Tier 1** | ❌ **NO** | New installation only | Download new image, re-flash SD card, restore config via mobile app |
+| **Tier 2** | ✅ **YES** | OTA curl-based upgrade | Approve in mobile app → automatic install |
+| **Tier 3** | ✅ **YES** | OTA curl-based upgrade | Approve in mobile app → automatic install |
+
+**Rationale**:
+- **Tier 0**: No mobile app = no upgrade trigger mechanism, prevents incremental updates
+- **Tier 1**: Free tier limitation to encourage Tier 2 upgrade for OTA convenience
+- **Tier 2/3**: Paid tiers receive OTA upgrade as premium feature
+
+**CRITICAL**: Tier 0 and Tier 1 **CANNOT** incrementally upgrade. Only Tier 2 and Tier 3 support over-the-air updates.
+
+---
+
+##### System Management API (Port 8095)
+
+**Service**: `d3kos-system-api.service`
+**File**: `/opt/d3kos/services/system/system-api.py`
+**Nginx Proxy**: `/system/` → `localhost:8095/system/`
+
+**API Endpoints**:
+
+###### GET /system/version
+Returns current d3kOS version and tier.
+
+**Response** (Success):
+```json
+{
+  "success": true,
+  "version": "0.9.1-beta",
+  "version_installed_at": "2026-02-17T10:00:00Z",
+  "tier": 2,
+  "installation_id": "3861513b314c5ee7"
 }
 ```
 
-**UI Display**:
+---
+
+###### GET /system/check-update
+Checks GitHub for latest release version.
+
+**Response** (Update Available):
+```json
+{
+  "success": true,
+  "current_version": "0.9.1-beta",
+  "latest_version": "0.9.2-beta",
+  "update_available": true,
+  "release_url": "https://github.com/SkipperDon/d3kos/releases/tag/v0.9.2-beta",
+  "release_notes": "## What's New\n- Bug fixes\n- Performance improvements",
+  "published_at": "2026-02-20T15:30:00Z",
+  "tier": 2
+}
 ```
-Main Menu Footer:
-Version 1.0.3 | Latest: 1.0.5 - Update Available [View]
 
-[Tap "View"]
+**Response** (Tier 0 - Forbidden):
+```json
+{
+  "success": false,
+  "error": "Updates require Tier 1 or higher",
+  "tier": 0
+}
+```
 
-Update Available: v1.0.5
-Released: 2026-02-05
+---
 
-Release Notes:
-- Fixed camera recording bug
-- Improved voice assistant accuracy
-- Updated dashboard gauges
+###### POST /system/upgrade
+Triggers upgrade process (Tier 2/3 only).
 
-[Download] [View on GitHub] [Close]
+**Request**:
+```json
+{
+  "installation_id": "3861513b314c5ee7"
+}
+```
+
+**Response** (Success):
+```json
+{
+  "success": true,
+  "message": "Upgrade started",
+  "log_file": "/opt/d3kos/logs/upgrade.log",
+  "note": "System will restart after upgrade completes"
+}
+```
+
+**Response** (Tier 0/1 - Forbidden):
+```json
+{
+  "success": false,
+  "error": "Upgrades require Tier 2 or higher",
+  "tier": 0
+}
+```
+
+---
+
+###### GET /system/upgrade-status
+Monitor upgrade progress.
+
+**Response**:
+```json
+{
+  "success": true,
+  "log_tail": "[2026-02-20 10:15:32] Downloading upgrade package...\n[2026-02-20 10:15:45] Verifying checksum...\n[2026-02-20 10:15:46] ✓ Checksum verified",
+  "log_file": "/opt/d3kos/logs/upgrade.log"
+}
+```
+
+---
+
+##### GitHub Release Structure
+
+**Release Tag Format**: `vMAJOR.MINOR.PATCH-STAGE` (e.g., `v0.9.1-beta`)
+
+**Required Release Assets**:
+1. `d3kos-upgrade.tar.gz` - Upgrade package
+2. `d3kos-upgrade.tar.gz.sha256` - SHA-256 checksum
+
+**Upgrade Package Contents**:
+```
+d3kos-upgrade/
+├── install.sh              # Main installation script
+├── pre-upgrade.sh          # Pre-upgrade checks (optional)
+├── post-upgrade.sh         # Post-upgrade tasks (optional)
+├── services/               # Updated service files
+├── scripts/                # Updated scripts
+├── html/                   # Updated web UI files
+└── etc/                    # Updated system configs
+```
+
+---
+
+##### Mobile App Upgrade Flow (Tier 2/3 Only)
+
+**Step-by-Step Process**:
+
+1. **Check Tier**
+   - Mobile app: GET `/tier/status`
+   - If Tier 0 or 1: Display "Upgrade to Tier 2 for automatic updates"
+   - If Tier 2 or 3: Continue to step 2
+
+2. **Check for Updates**
+   - Mobile app: GET `/system/check-update`
+   - Compare `current_version` vs `latest_version`
+
+3. **Display Update Prompt** (if available)
+   ```
+   ┌─────────────────────────────────────┐
+   │  Update Available                   │
+   │  Current: 0.9.1-beta                │
+   │  Latest:  0.9.2-beta                │
+   │                                     │
+   │  Release Notes:                     │
+   │  • Bug fixes                        │
+   │  • Performance improvements         │
+   │                                     │
+   │  [ View Details ]  [ Install Now ]  │
+   └─────────────────────────────────────┘
+   ```
+
+4. **User Approves Upgrade**
+   - Mobile app: POST `/system/upgrade` with `installation_id`
+   - Pi executes `/opt/d3kos/scripts/upgrade.sh` in background
+
+5. **Monitor Upgrade Progress**
+   - Mobile app: GET `/system/upgrade-status` every 5 seconds
+   - Display log tail and progress spinner to user
+
+6. **Upgrade Completes**
+   - Pi services restart automatically
+   - Mobile app detects version change via GET `/system/version`
+   - Display "Upgrade Complete!" success message
+
+---
+
+##### Upgrade Script Process
+
+**File**: `/opt/d3kos/scripts/upgrade.sh`
+
+**Automated Steps**:
+
+1. ✅ Check internet connection (ping 8.8.8.8)
+2. ✅ Fetch latest release from GitHub API
+3. ✅ Download `d3kos-upgrade.tar.gz`
+4. ✅ Download `d3kos-upgrade.tar.gz.sha256`
+5. ✅ **Verify SHA-256 checksum** (security)
+6. ✅ Create backup in `/opt/d3kos/backups/upgrade-YYYYMMDD-HHMMSS/`
+   - Config files (`/opt/d3kos/config/`)
+   - Data files (`/opt/d3kos/data/`)
+   - License file (`license.json`)
+7. ✅ Extract upgrade package
+8. ✅ Run `pre-upgrade.sh` (if exists)
+9. ✅ Stop d3kOS services (`d3kos-*.service`, `signalk`, `nodered`)
+10. ✅ Execute `install.sh` from upgrade package
+11. ✅ Update `version` and `version_installed_at` in `license.json`
+12. ✅ Run `post-upgrade.sh` (if exists)
+13. ✅ Restart services
+14. ✅ Verify critical services started successfully
+15. ✅ Cleanup temporary files
+16. ✅ Log completion to `/opt/d3kos/logs/upgrade.log`
+
+**Security**:
+- SHA-256 checksum verification prevents tampered packages
+- `installation_id` authentication prevents unauthorized upgrades
+- Automatic backup enables manual rollback if needed
+
+---
+
+##### Rollback Process (Manual)
+
+If upgrade fails, restore from backup:
+
+```bash
+# 1. Stop services
+sudo systemctl stop d3kos-*.service
+
+# 2. Restore config
+sudo cp -r /opt/d3kos/backups/upgrade-YYYYMMDD-HHMMSS/config/* /opt/d3kos/config/
+
+# 3. Restore data
+sudo cp -r /opt/d3kos/backups/upgrade-YYYYMMDD-HHMMSS/data/* /opt/d3kos/data/
+
+# 4. Restore license
+sudo cp /opt/d3kos/backups/upgrade-YYYYMMDD-HHMMSS/license.json /opt/d3kos/config/
+
+# 5. Restart services
+sudo systemctl restart d3kos-*.service
+```
+
+---
+
+##### First-Time Installation
+
+**During Initial Image Flash**:
+- Version set by `/opt/d3kos/scripts/generate-installation-id.sh` on first boot
+- Reads version from `/opt/d3kos/VERSION`
+- Writes to `license.json` with timestamp
+
+**Example**:
+```json
+{
+  "installation_id": "3861513b314c5ee7",
+  "version": "0.9.1-beta",
+  "version_installed_at": "2026-02-17T10:00:00Z",
+  "tier": 0,
+  "reset_count": 0
+}
 ```
 
 #### 6.3.4 E-commerce Integration & Mobile App In-App Purchases
@@ -2916,6 +3366,599 @@ d3kos://pair?id=abc123def456&version=1.0.3&tier=2&boat=MyBoat
 - Onboarding completion screen
 - Main menu: "QR Code" button
 - License info page
+
+---
+
+### 6.4 AI-Powered Self-Healing System
+
+**Purpose**: Automatically detect, diagnose, and remediate system issues with minimal user intervention. Critical for marine environments where technical support is limited and boat operators need reliable, self-maintaining systems.
+
+**Implementation Status**: ⏳ NOT IMPLEMENTED (Specification Only)
+
+---
+
+#### 6.4.1 Architecture Overview
+
+**5-Tier Self-Healing Architecture**:
+
+1. **Detection Layer** - Monitor system health (engine, Pi, services, network)
+2. **Correlation Engine** - Pattern match known failure modes
+3. **AI Diagnosis** - Root cause analysis via AI Assistant
+4. **Auto-Remediation** - Execute safe fixes automatically
+5. **User Notification** - Translate errors to plain English, voice alerts
+
+**Data Flow**:
+```
+Anomaly Detected → Correlate with Patterns → AI Diagnosis → Auto-Remediate → Notify User
+```
+
+---
+
+#### 6.4.2 Detection Layer (Tier 1)
+
+##### Engine Anomaly Detection
+
+**Baseline Comparison** (Statistical Process Control):
+
+Uses benchmark data from Section 6.1.1:
+```javascript
+function detectAnomaly(current, baseline) {
+  const deviation = Math.abs(current.value - baseline.mean);
+  const sigma = baseline.stddev;
+
+  if (deviation > 3 * sigma) {
+    return {
+      level: 'CRITICAL',
+      message: `${current.name} is ${deviation.toFixed(1)} units from baseline (>3σ)`,
+      type: 'ENGINE_ANOMALY',
+      timestamp: Date.now()
+    };
+  } else if (deviation > 2 * sigma) {
+    return { level: 'WARNING', type: 'ENGINE_ANOMALY' };
+  }
+
+  return { level: 'NORMAL', message: null };
+}
+```
+
+**Monitored Metrics**:
+- RPM (idle, cruise) - instability detection
+- Oil pressure - low pressure warnings
+- Coolant temperature - overheating detection
+- Fuel consumption - efficiency anomalies
+- Voltage - charging system issues
+
+##### Pi System Monitoring
+
+**Metrics Collection** (every 10 seconds):
+
+```javascript
+const systemMetrics = {
+  cpu_temp: vcgencmd('measure_temp'),     // °C
+  cpu_usage: top('-bn1'),                 // %
+  memory_usage: free(),                   // %
+  disk_free: df('-h /'),                  // % remaining
+  gpu_temp: vcgencmd('measure_temp core'),
+  throttled: vcgencmd('get_throttled')    // undervoltage/throttling
+};
+```
+
+**Thresholds**:
+```javascript
+const thresholds = {
+  cpu_temp: { warning: 70, critical: 80 },    // °C
+  cpu_usage: { warning: 70, critical: 90 },   // %
+  memory_usage: { warning: 70, critical: 90 }, // %
+  disk_free: { warning: 30, critical: 15 }     // % remaining
+};
+```
+
+**Storage**: `/opt/d3kos/state/health-metrics.json` (last 1000 samples, ~10 min history)
+
+##### Service Status Monitoring
+
+**Services Checked**:
+- CAN interface: `ifconfig can0` (up/down)
+- Signal K: `systemctl is-active signalk`
+- Node-RED: `systemctl is-active nodered`
+- d3kOS services: `systemctl is-active d3kos-*.service`
+- Network: `ping -c 1 8.8.8.8` (internet connectivity)
+
+**Anomaly Types**:
+- `SERVICE_DOWN` - Critical service stopped
+- `SERVICE_CRASHED` - Service exited with error
+- `NETWORK_LOST` - No internet connectivity
+- `CAN_DISCONNECTED` - NMEA2000 bus offline
+
+---
+
+#### 6.4.3 Correlation Engine (Tier 2)
+
+**Known Failure Patterns**:
+
+```javascript
+const failure_patterns = {
+  FAILING_SD_CARD: {
+    symptoms: ["DISK_IO_SPIKE", "NETWORK_DROPPED", "SERVICE_CRASHED"],
+    time_window: 10,  // seconds
+    confidence: 0.85,
+    root_cause: "SD card failure",
+    explanation: "Network dropped at same time disk I/O spiked - likely failing SD card",
+    recommended_action: "REPLACE_SD_CARD"
+  },
+
+  OVERHEATING: {
+    symptoms: ["CPU_TEMP_HIGH", "THROTTLED", "SLOW_RESPONSE"],
+    time_window: 60,
+    confidence: 0.90,
+    root_cause: "CPU overheating",
+    explanation: "CPU temperature above 80°C causing throttling",
+    recommended_action: "IMPROVE_COOLING"
+  },
+
+  LOW_POWER: {
+    symptoms: ["UNDERVOLTAGE", "USB_DEVICE_DISCONNECT", "RANDOM_REBOOT"],
+    time_window: 5,
+    confidence: 0.95,
+    root_cause: "Inadequate power supply",
+    explanation: "Power supply cannot provide 5V 3A required",
+    recommended_action: "REPLACE_POWER_SUPPLY"
+  },
+
+  STUCK_PROCESS: {
+    symptoms: ["CPU_100_PERCENT", "PROCESS_AGE_5MIN", "NO_USER_ACTIVITY"],
+    time_window: 300,  // 5 minutes
+    confidence: 0.85,
+    root_cause: "Process deadlock or infinite loop",
+    explanation: "Process consuming 100% CPU for extended period",
+    recommended_action: "KILL_RESTART_PROCESS"
+  },
+
+  OUT_OF_MEMORY: {
+    symptoms: ["MEMORY_90_PERCENT", "SERVICE_CRASHED", "OOM_KILLER"],
+    time_window: 30,
+    confidence: 0.95,
+    root_cause: "Insufficient memory",
+    explanation: "System ran out of memory and killed processes",
+    recommended_action: "RESTART_SERVICES"
+  }
+};
+```
+
+**Correlation Algorithm**:
+```javascript
+function correlateEvents(events, time_window_seconds) {
+  const matches = [];
+
+  for (const pattern_name in failure_patterns) {
+    const pattern = failure_patterns[pattern_name];
+
+    // Find events matching pattern symptoms within time window
+    const symptom_matches = events.filter(e =>
+      pattern.symptoms.includes(e.type) &&
+      e.timestamp > (Date.now() - pattern.time_window * 1000)
+    );
+
+    // Pattern matched if at least 2 symptoms present
+    if (symptom_matches.length >= 2) {
+      matches.push({
+        pattern: pattern_name,
+        confidence: pattern.confidence,
+        evidence: symptom_matches,
+        root_cause: pattern.root_cause,
+        explanation: pattern.explanation,
+        recommended_action: pattern.recommended_action
+      });
+    }
+  }
+
+  // Return highest confidence match
+  return matches.sort((a, b) => b.confidence - a.confidence)[0];
+}
+```
+
+---
+
+#### 6.4.4 AI Diagnosis (Tier 3)
+
+**Integration with AI Assistant**:
+
+Extends existing AI Assistant (Section 4.5) with diagnostic capabilities.
+
+**Diagnostic Request Format**:
+```json
+{
+  "query": "System health diagnostic needed",
+  "context": {
+    "system_state": {
+      "cpu_temp": 85,
+      "cpu_usage": 95,
+      "memory_free": 10,
+      "disk_free": 5,
+      "services": {
+        "signalk": "running",
+        "nodered": "crashed",
+        "camera": "running"
+      },
+      "engine_metrics": {
+        "rpm": 3200,
+        "oil_pressure": 35,
+        "coolant_temp": 178
+      }
+    },
+    "anomalies": [
+      {"type": "CPU_OVERHEATING", "severity": "WARNING"},
+      {"type": "NODERED_CRASHED", "severity": "CRITICAL"}
+    ],
+    "recent_events": [
+      "User started camera recording 2 minutes ago",
+      "Node-RED crashed 30 seconds ago"
+    ],
+    "correlation": {
+      "pattern": "STUCK_PROCESS",
+      "confidence": 0.85,
+      "root_cause": "Process deadlock"
+    }
+  }
+}
+```
+
+**AI Diagnostic Prompt** (added to skills.md):
+```markdown
+## System Diagnostics (Self-Healing)
+
+You are a marine system diagnostician. When given system health data:
+
+1. **Identify root cause** - Single most likely issue
+2. **Explain in plain English** - Non-technical, boat operator friendly
+3. **Suggest fixes** - Prioritized by confidence (0-1.0)
+4. **Indicate urgency** - Low/Medium/High/Critical
+5. **User action needed** - What operator should do (if any)
+
+Focus on marine safety and reliability. Be concise.
+```
+
+**AI Response Format**:
+```json
+{
+  "root_cause": "Camera recording consuming excessive CPU",
+  "explanation": "Node-RED crashed due to CPU starvation caused by camera process",
+  "urgency": "High",
+  "suggested_fixes": [
+    {
+      "action": "STOP_CAMERA_RECORDING",
+      "confidence": 0.90,
+      "user_message": "Stop camera recording to free up CPU resources",
+      "requires_approval": true
+    },
+    {
+      "action": "RESTART_NODERED",
+      "confidence": 0.95,
+      "user_message": "Restart Node-RED to restore dashboard functionality",
+      "requires_approval": false
+    }
+  ],
+  "user_action_needed": "Consider stopping camera recording during critical operations"
+}
+```
+
+---
+
+#### 6.4.5 Auto-Remediation Engine (Tier 4)
+
+**Remediation Actions** (safe, reversible):
+
+```javascript
+const remediation_actions = {
+  RESTART_SERVICE: {
+    severity_threshold: "CRITICAL",
+    requires_approval: false,  // Auto-execute
+    command: "systemctl restart {service_name}",
+    rollback: "systemctl stop {service_name}",
+    timeout: 30,  // seconds
+    verification: "systemctl is-active {service_name}"
+  },
+
+  KILL_STUCK_PROCESS: {
+    severity_threshold: "CRITICAL",
+    requires_approval: false,  // Auto-execute
+    command: "kill -9 {pid}",
+    conditions: ["cpu_usage > 90%", "process_age > 5min"],
+    timeout: 5,
+    verification: "! ps -p {pid}"
+  },
+
+  CLEAR_TEMP_FILES: {
+    severity_threshold: "WARNING",
+    requires_approval: false,  // Auto-execute
+    command: "find /tmp -type f -atime +7 -delete",
+    timeout: 60,
+    verification: "df -h /tmp | awk '{print $5}'"
+  },
+
+  STOP_CAMERA_RECORDING: {
+    severity_threshold: "WARNING",
+    requires_approval: true,  // Ask user first
+    command: "curl -X POST http://localhost:8084/camera/record/stop",
+    timeout: 10
+  },
+
+  INITIAL_SETUP_RESET: {
+    severity_threshold: "CRITICAL",
+    requires_approval: true,  // ALWAYS ask user
+    command: "/opt/d3kos/scripts/initial-setup-reset.sh",
+    timeout: 30
+  }
+};
+```
+
+**Remediation Flow**:
+```javascript
+async function executeRemediation(action_name, params) {
+  const action = remediation_actions[action_name];
+
+  // Step 1: Check if approval required
+  if (action.requires_approval) {
+    const approved = await askUserApproval(action_name, params);
+    if (!approved) {
+      logRemediation({ action: action_name, status: "declined", timestamp: Date.now() });
+      return { success: false, reason: "User declined" };
+    }
+  }
+
+  // Step 2: Log remediation attempt
+  logRemediation({
+    action: action_name,
+    params: params,
+    timestamp: Date.now(),
+    auto_executed: !action.requires_approval
+  });
+
+  // Step 3: Execute command
+  try {
+    const result = await executeCommand(action.command, params, action.timeout);
+
+    // Step 4: Verify remediation worked
+    const verified = await verifySuccess(action.verification, params);
+
+    if (verified) {
+      logRemediation({ action: action_name, status: "success", result: result });
+      notifyUser(`✅ Issue resolved: ${action_name}`, "success");
+      return { success: true, result: result };
+    } else {
+      // Step 5: Rollback if verification failed
+      if (action.rollback) {
+        await executeCommand(action.rollback, params, action.timeout);
+      }
+      logRemediation({ action: action_name, status: "failed", reason: "Verification failed" });
+      notifyUser(`⚠️ Remediation failed: ${action_name}`, "warning");
+      return { success: false, reason: "Verification failed" };
+    }
+
+  } catch (error) {
+    logRemediation({ action: action_name, status: "error", error: error.message });
+    notifyUser(`❌ Remediation error: ${action_name}`, "error");
+    return { success: false, reason: error.message };
+  }
+}
+```
+
+**Remediation Log** (`/var/log/d3kos-remediation.log`):
+```
+[2026-02-17 14:30:15] ACTION: RESTART_SERVICE (nodered), AUTO: true, RESULT: success
+[2026-02-17 14:31:22] ACTION: STOP_CAMERA_RECORDING, AUTO: false, APPROVED: yes, RESULT: success
+[2026-02-17 15:45:10] ACTION: CLEAR_TEMP_FILES, AUTO: true, RESULT: success, FREED: 1.2GB
+```
+
+---
+
+#### 6.4.6 User Notification (Tier 5)
+
+##### Error Translation (Technical → Plain English)
+
+**Translation Database** (`/opt/d3kos/config/error-translations.json`):
+```json
+{
+  "systemd[1]: your-app.service: Main process exited, code=killed, status=9/KILL":
+    "The main program crashed and had to be stopped. Restarting now.",
+
+  "vcgencmd: throttled=0x50000":
+    "Power supply issue detected. Use official 5V 3A power adapter.",
+
+  "can0: No such device":
+    "NMEA2000 connection lost. Check CAN bus wiring.",
+
+  "Out of memory: Killed process 1234 (node)":
+    "System ran out of memory and stopped Node-RED. Try closing other programs.",
+
+  "SD card I/O error":
+    "SD card may be failing. Back up data and replace card soon.",
+
+  "CPU temperature 85°C (expected 45°C)":
+    "System is overheating. Improve ventilation or reduce workload."
+}
+```
+
+**Translation Function**:
+```javascript
+function translateForUser(technical_error) {
+  const translations = loadErrorTranslations();
+  const plain_english = translations[technical_error] ||
+                        "Something went wrong with the system.";
+
+  return {
+    display: plain_english,
+    voice: plain_english,
+    action_taken: "System automatically fixed the issue.",
+    user_action_needed: "None - monitoring for repeat issues."
+  };
+}
+```
+
+##### Voice Alerts (Tier 2+ Only)
+
+**Alert Trigger**:
+```javascript
+async function voiceAlert(message, severity) {
+  const tier = getTier();
+  if (tier < 2) return;  // Voice requires Tier 2+
+
+  const voice_message = `Helm alert: ${message}`;
+
+  // Text-to-speech via Piper (from Section 4.3.3)
+  await textToSpeech(voice_message);
+
+  // Log alert
+  logAlert({
+    message: message,
+    severity: severity,
+    voice_alert_sent: true,
+    timestamp: Date.now()
+  });
+}
+```
+
+**Alert Examples**:
+- INFO: No voice alert (log only)
+- WARNING: Visual alert only
+- CRITICAL: Visual + voice alert every 5 minutes until acknowledged
+
+##### Dashboard Notifications
+
+**Banner Display** (top of dashboard):
+```html
+<div id="healing-banner" class="banner banner-success" style="display: none;">
+  <span id="healing-message">✅ Issue resolved: Node-RED restarted</span>
+  <button onclick="viewRemediationHistory()">View Details</button>
+  <button onclick="closeBanner()">×</button>
+</div>
+```
+
+**Banner Types**:
+- `banner-success` - Green: Issue resolved automatically
+- `banner-warning` - Yellow: Issue detected, awaiting user approval
+- `banner-error` - Red: Remediation failed, manual intervention needed
+
+##### Remediation History Page
+
+**Location**: `/var/www/html/remediation-history.html`
+
+**UI Layout**:
+```
+┌─────────────────────────────────────────┐
+│  Self-Healing History                   │
+│  [ Last 7 Days ▼ ]  [ Export CSV ]      │
+├─────────────────────────────────────────┤
+│  Feb 17, 2026 2:15 PM                   │
+│  ✅ Node-RED Restarted                  │
+│  Issue: Process stuck (100% CPU)        │
+│  Root Cause: Infinite loop detected     │
+│  Action: Automatic restart              │
+│  Result: Successful (verified)          │
+│  [ View Technical Details ]             │
+├─────────────────────────────────────────┤
+│  Feb 17, 2026 11:30 AM                  │
+│  ✅ Disk Space Cleared                  │
+│  Issue: Disk 92% full                   │
+│  Root Cause: Temp files accumulation    │
+│  Action: Deleted files older than 7 days│
+│  Result: 78% full (14% freed)           │
+│  [ View Technical Details ]             │
+├─────────────────────────────────────────┤
+│  Feb 16, 2026 6:45 PM                   │
+│  ⚠️ User Declined Action                │
+│  Issue: Camera using excessive CPU      │
+│  Suggested: Stop camera recording       │
+│  User Response: Declined                │
+│  Result: Issue persists, monitoring     │
+│  [ View Technical Details ]             │
+└─────────────────────────────────────────┘
+```
+
+**Data Storage**: `/opt/d3kos/data/remediation-history.json`
+
+**Retention**:
+- Tier 0/1: 30 days
+- Tier 2: 1 year
+- Tier 3: Unlimited (with export to cloud)
+
+---
+
+#### 6.4.7 Tier-Based Feature Matrix
+
+| Feature | Tier 0 | Tier 1 | Tier 2 | Tier 3 |
+|---------|--------|--------|--------|--------|
+| **Detection** | ✅ Basic | ✅ Full | ✅ Full | ✅ Full |
+| **Correlation** | ✅ Local | ✅ Local | ✅ Local + Cloud | ✅ Local + Cloud |
+| **AI Diagnosis** | ❌ No | ⚠️ Limited (cached) | ✅ Full | ✅ Full + Priority |
+| **Auto-Remediation** | ⚠️ Manual only | ⚠️ Manual only | ✅ Safe actions auto | ✅ All actions auto |
+| **Voice Alerts** | ❌ No | ❌ No | ✅ Yes | ✅ Yes |
+| **History Tracking** | ✅ 30 days | ✅ 90 days | ✅ 1 year | ✅ Unlimited |
+| **Predictive Maintenance** | ❌ No | ❌ No | ✅ Basic | ✅ Advanced |
+| **Cloud Logging** | ❌ No | ⚠️ Manual export | ✅ Auto-sync | ✅ Auto-sync + alerts |
+
+---
+
+#### 6.4.8 Implementation Roadmap
+
+**Phase 1: Enhanced Health Monitoring** (8-10 hours)
+- Expand `/usr/local/bin/d3kos-health.sh` to monitor CPU temp, memory, disk
+- Add engine metrics monitoring (RPM, temp, pressure from Signal K)
+- Store metrics in `/opt/d3kos/state/health-metrics.json`
+- Implement threshold-based alerting
+
+**Phase 2: Anomaly Detection** (6-8 hours)
+- Implement statistical anomaly detection (SPC) for engine metrics
+- Add pattern matching for common failures
+- Severity classification (INFO/WARNING/CRITICAL)
+- Event logging to `/var/log/d3kos-anomalies.log`
+
+**Phase 3: AI Integration** (8-10 hours)
+- Extend AI Assistant with `diagnose()` function
+- Add system health context to AI queries
+- Create error translation database
+- Implement confidence scoring
+
+**Phase 4: Auto-Remediation** (6-8 hours)
+- Implement safe remediation actions (restart services, kill processes)
+- Create approval workflow for risky actions
+- Add remediation logging to `/var/log/d3kos-remediation.log`
+- Implement rollback mechanism
+
+**Phase 5: User Interface** (6-8 hours)
+- Create health dashboard page (`/health-dashboard.html`)
+- Create remediation history page (`/remediation-history.html`)
+- Add voice alerts integration (Tier 2+)
+- Add dashboard banner notifications
+
+**Total Estimated Effort**: 30-40 hours
+
+**Files to Create**:
+- `/opt/d3kos/services/health/health-monitor.py` - Detection layer
+- `/opt/d3kos/services/health/correlation-engine.py` - Pattern matching
+- `/opt/d3kos/services/health/remediation-engine.py` - Auto-fix actions
+- `/opt/d3kos/services/ai/ai_diagnostic.py` - AI diagnosis integration
+- `/var/www/html/remediation-history.html` - User interface
+- `/opt/d3kos/config/error-translations.json` - Error translation database
+- `/var/log/d3kos-remediation.log` - Action log
+- `/var/log/d3kos-anomalies.log` - Anomaly detection log
+
+---
+
+#### 6.4.9 Why This is Critical for d3kOS
+
+**Marine Environment Challenges**:
+1. ✅ Limited technical support availability
+2. ✅ Non-technical boat operators need simple, reliable systems
+3. ✅ Safety-critical - engine/system failures at sea are dangerous
+4. ✅ Often operates offline or with limited connectivity
+5. ✅ Harsh environment (heat, vibration, moisture) increases failure rates
+
+**Unique Differentiator**:
+- No other marine system offers AI-powered self-healing
+- Proactive issue resolution vs. reactive troubleshooting
+- Reduces reliance on technical expertise
+- Improves safety and reliability at sea
 
 ---
 
@@ -4398,7 +5441,7 @@ sudo systemctl restart helm-*
 **In-Place Updates** (Future):
 ```bash
 # /opt/d3kos/scripts/update.sh
-wget https://github.com/d3kos/d3kos/releases/latest/download/d3kos-update.tar.gz
+wget https://github.com/SkipperDon/d3kos/releases/latest/download/d3kos-update.tar.gz
 tar -xzf d3kos-update.tar.gz
 ./install.sh
 sudo systemctl restart helm-*
