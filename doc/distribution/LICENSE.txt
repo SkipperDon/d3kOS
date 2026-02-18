@@ -1,0 +1,499 @@
+d3kOS SOFTWARE LICENSE
+=======================
+
+Version: 1.0.3
+Date: February 18, 2026
+Repository: https://github.com/SkipperDon/d3kos
+
+---
+
+MIT LICENSE - d3kOS Core Software
+==================================
+
+Copyright (c) 2026 SkipperDon (At My Boat)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+THIRD-PARTY LICENSES
+====================
+
+d3kOS integrates numerous open-source components, each with their own license.
+The following is a comprehensive list of third-party software included in the
+d3kOS distribution and their respective licenses.
+
+---
+
+1. DEBIAN OPERATING SYSTEM
+License: Debian Free Software Guidelines (DFSG)
+Source: https://www.debian.org/
+Version: Debian 13 (Trixie)
+
+Debian is a free operating system composed of free software packages released
+under various DFSG-compatible licenses (GPL, BSD, MIT, Apache, etc.).
+
+---
+
+2. RASPBERRY PI FIRMWARE
+License: Raspberry Pi Trading Ltd proprietary license
+Source: https://github.com/raspberrypi/firmware
+
+The Raspberry Pi firmware is provided by Raspberry Pi Trading Ltd under their
+standard license for use with Raspberry Pi hardware.
+
+---
+
+3. SIGNAL K SERVER
+License: Apache License 2.0
+Source: https://github.com/SignalK/signalk-server
+Version: Latest
+
+Signal K Server is licensed under the Apache License 2.0.
+Full license: http://www.apache.org/licenses/LICENSE-2.0
+
+---
+
+4. NODE-RED
+License: Apache License 2.0
+Source: https://github.com/node-red/node-red
+Version: 4.1.4
+
+Node-RED is licensed under the Apache License 2.0.
+Full license: http://www.apache.org/licenses/LICENSE-2.0
+
+---
+
+5. NODE-RED DASHBOARD 2.0
+License: Apache License 2.0
+Source: https://github.com/FlowFuse/node-red-dashboard
+Version: @flowfuse/node-red-dashboard v1.30.2
+
+Node-RED Dashboard 2.0 is licensed under the Apache License 2.0.
+Copyright (c) FlowFuse Inc.
+
+---
+
+6. NODE.JS
+License: MIT License
+Source: https://github.com/nodejs/node
+Version: v20.20.0
+
+Node.js is licensed under the MIT License.
+
+---
+
+7. GPSD (GPS DAEMON)
+License: BSD License (3-Clause)
+Source: https://gitlab.com/gpsd/gpsd
+Version: Latest
+
+gpsd is licensed under the BSD 3-Clause License.
+
+---
+
+8. OPENCPN (CHART PLOTTING SOFTWARE)
+License: GNU General Public License v2.0 (GPL-2.0)
+Source: https://github.com/OpenCPN/OpenCPN
+Version: 5.8.x
+
+OpenCPN is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 2 of the License, or (at your option) any later
+version.
+
+Full license: https://www.gnu.org/licenses/gpl-2.0.html
+
+---
+
+9. CHROMIUM BROWSER
+License: BSD License (3-Clause) and others
+Source: https://www.chromium.org/
+Version: Latest
+
+Chromium is released under a BSD-style license. The Chromium source code
+contains portions licensed under various open-source licenses including BSD,
+MIT, LGPL, and others.
+
+Full license: https://chromium.googlesource.com/chromium/src/+/main/LICENSE
+
+---
+
+10. NGINX WEB SERVER
+License: BSD License (2-Clause)
+Source: https://nginx.org/
+Version: 1.26.3
+
+Nginx is licensed under the BSD 2-Clause License.
+
+Copyright (C) 2011-2023 Nginx, Inc.
+Copyright (C) 2002-2023 Igor Sysoev
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+[Standard BSD 2-Clause License text applies]
+
+---
+
+11. LABWC (WAYLAND COMPOSITOR)
+License: GNU General Public License v2.0 (GPL-2.0)
+Source: https://github.com/labwc/labwc
+Version: Latest
+
+labwc is licensed under the GNU General Public License v2.0.
+
+---
+
+12. SQUEEKBOARD (ON-SCREEN KEYBOARD)
+License: GNU General Public License v3.0 (GPL-3.0)
+Source: https://gitlab.gnome.org/World/Phosh/squeekboard
+Version: Latest
+
+Squeekboard is licensed under the GNU General Public License v3.0.
+
+---
+
+13. POCKETSPHINX (WAKE WORD DETECTION)
+License: BSD License (2-Clause)
+Source: https://github.com/cmusphinx/pocketsphinx
+Version: Latest
+
+PocketSphinx is licensed under the BSD 2-Clause License.
+
+Copyright (c) 1999-2023 Carnegie Mellon University
+
+---
+
+14. VOSK (SPEECH-TO-TEXT)
+License: Apache License 2.0
+Source: https://github.com/alphacep/vosk-api
+Version: 0.15 (vosk-model-small-en-us-0.15)
+
+Vosk is licensed under the Apache License 2.0.
+Acoustic models are released under Apache License 2.0.
+
+---
+
+15. PIPER (TEXT-TO-SPEECH)
+License: MIT License
+Source: https://github.com/rhasspy/piper
+Version: Latest (en_US-amy-medium voice)
+
+Piper is licensed under the MIT License.
+Voice models are licensed under Creative Commons licenses (see model-specific
+licenses).
+
+---
+
+16. LLAMA.CPP
+License: MIT License
+Source: https://github.com/ggerganov/llama.cpp
+Version: Latest
+
+llama.cpp is licensed under the MIT License.
+
+Copyright (c) 2023 Georgi Gerganov
+
+---
+
+17. PHI-2 MODEL (REMOVED IN v1.0.3)
+License: Microsoft Research License
+Source: https://huggingface.co/microsoft/phi-2
+
+Phi-2 was licensed under the Microsoft Research License Agreement.
+Note: Phi-2 was removed in d3kOS v1.0.3 due to performance issues.
+
+---
+
+18. ONNX RUNTIME
+License: MIT License
+Source: https://github.com/microsoft/onnxruntime
+Version: 1.24.1
+
+ONNX Runtime is licensed under the MIT License.
+
+Copyright (c) Microsoft Corporation
+
+---
+
+19. YOLOV8 (ULTRALYTICS)
+License: GNU Affero General Public License v3.0 (AGPL-3.0)
+Source: https://github.com/ultralytics/ultralytics
+Version: 8.4.14 (YOLOv8n model)
+
+Ultralytics YOLOv8 is dual-licensed:
+- AGPL-3.0 License for open-source use
+- Commercial License for proprietary use
+
+d3kOS uses YOLOv8 under the AGPL-3.0 License for non-commercial marine
+monitoring purposes.
+
+Full AGPL-3.0 license: https://www.gnu.org/licenses/agpl-3.0.html
+
+IMPORTANT AGPL-3.0 NOTICE:
+If you modify d3kOS and provide it as a network service (e.g., SaaS), you must
+release your modified source code under AGPL-3.0. This requirement comes from
+the YOLOv8 AGPL-3.0 license.
+
+For commercial use or proprietary modifications, contact Ultralytics for a
+commercial license: https://ultralytics.com/license
+
+---
+
+20. QRCODE.JS
+License: MIT License
+Source: https://github.com/davidshimjs/qrcodejs
+Version: 1.0.0
+
+QRCode.js is licensed under the MIT License.
+
+Copyright (c) 2012 davidshimjs
+
+---
+
+21. PYTHON 3
+License: Python Software Foundation License (PSF)
+Source: https://www.python.org/
+Version: 3.11+
+
+Python is licensed under the Python Software Foundation License, which is
+GPL-compatible.
+
+Full license: https://docs.python.org/3/license.html
+
+---
+
+22. FLASK (PYTHON WEB FRAMEWORK)
+License: BSD License (3-Clause)
+Source: https://github.com/pallets/flask
+Version: Latest
+
+Flask is licensed under the BSD 3-Clause License.
+
+Copyright 2010 Pallets
+
+---
+
+23. NETWORKMANAGER
+License: GNU General Public License v2.0 (GPL-2.0)
+Source: https://gitlab.freedesktop.org/NetworkManager/NetworkManager
+Version: Latest
+
+NetworkManager is licensed under the GNU General Public License v2.0.
+
+---
+
+24. DNSMASQ
+License: GNU General Public License v2.0 (GPL-2.0) or v3.0 (GPL-3.0)
+Source: http://www.thekelleys.org.uk/dnsmasq/
+Version: Latest
+
+Dnsmasq is dual-licensed under GPL-2.0 or GPL-3.0 (user's choice).
+
+---
+
+25. CAN-UTILS
+License: GNU General Public License v2.0 (GPL-2.0)
+Source: https://github.com/linux-can/can-utils
+Version: Latest
+
+can-utils is licensed under the GNU General Public License v2.0.
+
+---
+
+26. PIPEWIRE
+License: MIT License
+Source: https://gitlab.freedesktop.org/pipewire/pipewire
+Version: Latest
+
+PipeWire is licensed under the MIT License.
+
+---
+
+27. VLC MEDIA PLAYER
+License: GNU General Public License v2.0 (GPL-2.0)
+Source: https://www.videolan.org/vlc/
+Version: Latest
+
+VLC is licensed under the GNU General Public License v2.0.
+
+Copyright (C) 1996-2023 the VideoLAN team
+
+---
+
+28. SQLITE
+License: Public Domain (Unlicense)
+Source: https://www.sqlite.org/
+Version: Latest
+
+SQLite is released into the public domain. No license required.
+
+---
+
+29. OPENROUTER AI API
+License: Commercial API Service (API key required)
+Source: https://openrouter.ai/
+Version: API v1
+
+OpenRouter is a commercial API service. d3kOS uses OpenRouter for online AI
+queries. Users must obtain their own API key or use the default d3kOS API key
+(rate-limited, shared among all users).
+
+API Terms: https://openrouter.ai/terms
+
+---
+
+30. REOLINK CAMERA FIRMWARE
+License: Reolink proprietary license
+Source: https://reolink.com/
+Version: RLC-810A firmware
+
+Reolink camera firmware is proprietary software provided by Reolink for use
+with Reolink hardware.
+
+---
+
+31. CX5106 ENGINE GATEWAY
+License: Actisense proprietary license
+Source: https://actisense.com/
+Version: CX5106
+
+Actisense CX5106 firmware is proprietary software provided by Actisense for
+use with CX5106 hardware.
+
+---
+
+32. PICAN-M HAT
+License: SKPANG proprietary license / open hardware
+Source: https://skpang.co.uk/
+Version: PiCAN-M
+
+The PiCAN-M HAT is an open hardware design with schematic and PCB files
+available. Firmware (if any) is provided under SKPANG license.
+
+---
+
+ATTRIBUTION REQUIREMENTS
+=========================
+
+When redistributing or modifying d3kOS, you must:
+
+1. **Preserve all copyright notices** in source code and documentation
+2. **Include this LICENSE.txt file** in all distributions
+3. **Display "Powered by d3kOS"** credit in About page or documentation
+4. **Link to d3kOS repository**: https://github.com/SkipperDon/d3kOS
+5. **Comply with third-party licenses** (especially AGPL-3.0 for YOLOv8)
+
+AGPL-3.0 COMPLIANCE (YOLOv8):
+If you provide d3kOS as a network service, you MUST release your modifications
+under AGPL-3.0. This is a requirement of the YOLOv8 license.
+
+---
+
+DISCLAIMER OF WARRANTY
+======================
+
+d3kOS IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR
+OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+MARINE USE DISCLAIMER:
+d3kOS is intended as a supplementary monitoring and convenience system. It is
+NOT a replacement for:
+- Dedicated marine electronics (chartplotter, radar, depth sounder)
+- Required safety equipment (VHF radio, EPIRBs, life jackets, flares)
+- Professional marine navigation and seamanship skills
+
+Always maintain proper lookout, follow navigation rules, and use redundant
+systems for critical navigation and safety functions.
+
+ENGINE MONITORING DISCLAIMER:
+d3kOS engine monitoring is for informational purposes only. Always:
+- Follow manufacturer's recommended engine maintenance schedules
+- Use certified marine mechanics for engine repairs
+- Monitor engine health with multiple methods (visual, auditory, instrument)
+- Do not rely solely on d3kOS for engine health assessment
+
+---
+
+SUPPORT AND COMMUNITY
+=====================
+
+d3kOS is developed and maintained by SkipperDon (At My Boat).
+
+- Website: https://atmyboat.com
+- Repository: https://github.com/SkipperDon/d3kOS
+- Issues: https://github.com/SkipperDon/d3kOS/issues
+- Discussions: https://github.com/SkipperDon/d3kOS/discussions
+
+Commercial support available for Tier 3 subscribers.
+
+---
+
+CONTACT
+=======
+
+For licensing questions or commercial inquiries:
+- GitHub: @SkipperDon
+- Website: https://atmyboat.com
+- Email: Contact via At My Boat website
+
+---
+
+LICENSE VERSION HISTORY
+========================
+
+v1.0.3 (2026-02-18):
+- Added ONNX Runtime (MIT)
+- Added YOLOv8/Ultralytics (AGPL-3.0) - IMPORTANT: Network service provision
+  requires releasing modifications under AGPL-3.0
+- Removed Phi-2 (was Microsoft Research License)
+- Updated disclaimer with AGPL-3.0 compliance notice
+
+v1.0.2 (2026-02-14):
+- Added VLC (GPL-2.0)
+- Added Piper TTS (MIT)
+- Added ONNX Runtime (MIT)
+
+v1.0.1 (2026-02-13):
+- Added OpenRouter AI API (commercial service)
+- Added Vosk (Apache 2.0)
+- Added PocketSphinx (BSD 2-Clause)
+- Added llama.cpp (MIT)
+- Added Phi-2 (Microsoft Research License)
+
+v1.0.0 (2026-02-09):
+- Initial license file
+- Core system licenses documented
+
+---
+
+END OF LICENSE FILE
+
+This file was last updated: February 18, 2026
+d3kOS Version: 1.0.3
+Repository: https://github.com/SkipperDon/d3kOS
+
+For the most up-to-date license information, always refer to the LICENSE.txt
+file in the official d3kOS repository.
