@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 3.5
-**Date**: February 17, 2026
-**Status**: APPROVED - Timezone Auto-Detection System Added
-**Previous Version**: 3.4 (February 17, 2026)
+**Version**: 3.6
+**Date**: February 20, 2026
+**Status**: APPROVED - Session A Complete: v0.9.1.2, Tier 3, Timezone API, Voice Enabled
+**Previous Version**: 3.5 (February 17, 2026)
 
 ---
 
@@ -28,6 +28,7 @@
 | 3.3 | 2026-02-17 | d3kOS Team | Completely rewrote Section 6.3.3 Version Management & Upgrade System: Added d3kOS version tracking (current: 0.9.1-beta), GitHub repository (SkipperDon/d3kos), tier-based upgrade capabilities (Tier 0: NO upgrades - new installation only, Tier 1: NO upgrades - new installation only with config restore, Tier 2/3: YES - curl-based OTA upgrades via mobile app), System Management API (port 8095, 4 endpoints), automated upgrade script with SHA-256 verification and backup, mobile app upgrade flow, and manual rollback process |
 | 3.4 | 2026-02-17 | d3kOS Team | Added Section 6.4 AI-Powered Self-Healing System: 5-tier architecture (detection, correlation, AI diagnosis, auto-remediation, user notification), engine anomaly detection with statistical process control, Pi system monitoring (CPU temp, memory, disk, services), pattern matching for common failures (failing SD card, overheating, low power, stuck processes), AI integration for root cause analysis, safe auto-remediation actions (restart services, kill stuck processes, clear temp files), user-friendly error translation, voice alerts (Tier 2+), remediation history tracking. Renamed "factory reset" to "Initial Setup Reset" throughout specification. |
 | 3.5 | 2026-02-17 | d3kOS Team | Added Section 4.1.4 Timezone Auto-Detection: 3-tier automatic detection (GPS coordinates → internet geolocation → UTC fallback), runs on first boot via d3kos-timezone-setup.service, detection script at /opt/d3kos/scripts/detect-timezone.sh, config file at /opt/d3kos/config/timezone.txt, manual override in Settings page (no onboarding wizard question). Prevents hardcoded Toronto timezone issue for worldwide deployment. Critical for accurate timestamps in boatlogs, health monitoring, GPS sync, and legal compliance (fishing regulations). |
+| 3.6 | 2026-02-20 | d3kOS Team | **Session A Implementation for v0.9.1.2**: Updated system version from 1.0.3 to 0.9.1.2, set tier from 2 to 3 for testing mode with all features enabled, implemented complete timezone auto-detection system (GPS→Internet→UTC with timezonefinder library), created timezone API service on port 8098 with nginx proxy (/api/timezone), enabled and verified voice assistant service with Vosk wake word detection (helm/advisor/counsel), Anker S330 microphone at plughw:2,0. All Session A changes verified, tested, and documented in doc/SESSION_A_FOUNDATION_COMPLETE.md. Foundation ready for Sessions B/C/D. |
 
 ---
 
