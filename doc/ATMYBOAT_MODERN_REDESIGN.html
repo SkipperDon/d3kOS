@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="At My Boat - Smart marine electronics, DIY guides, and boating blog. Featuring d3-k1 hardware and d3kOS software.">
+    <title>At My Boat | Smart Marine Electronics & Boating Blog</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --color-dark: #1a1a1a;
+            --color-darker: #0d0d0d;
+            --color-neon: #BFFF00;
+            --color-white: #ffffff;
+            --color-gray: #888888;
+            --color-light-gray: #e5e5e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-dark);
+            color: var(--color-white);
+            line-height: 1.6;
+        }
+
+        /* Header / Navigation */
+        header {
+            background: var(--color-darker);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text .at {
+            color: var(--color-neon);
+        }
+
+        nav {
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        nav a {
+            color: var(--color-white);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--color-neon);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: var(--color-darker);
+            padding: 6rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(191, 255, 0, 0.05) 0%, transparent 50%);
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--color-neon);
+            color: var(--color-darker);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 .highlight {
+            color: var(--color-neon);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: var(--color-gray);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--color-neon);
+            color: var(--color-darker);
+        }
+
+        .btn-primary:hover {
+            background: transparent;
+            border-color: var(--color-neon);
+            color: var(--color-neon);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border-color: var(--color-white);
+            color: var(--color-white);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-white);
+            color: var(--color-darker);
+        }
+
+        /* Section Styles */
+        section {
+            padding: 5rem 2rem;
+        }
+
+        .section-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-label {
+            color: var(--color-neon);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--color-gray);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* d3kOS Product Section */
+        .d3kos-section {
+            background: var(--color-darker);
+        }
+
+        .tiers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .tier-card {
+            background: var(--color-dark);
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+        }
+
+        .tier-card:hover {
+            border-color: var(--color-neon);
+            transform: translateY(-5px);
+        }
+
+        .tier-card.featured {
+            border-color: var(--color-neon);
+            position: relative;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+        }
+
+        .tier-badge.free {
+            background: #00cc00;
+            color: var(--color-white);
+        }
+
+        .tier-badge.premium {
+            background: var(--color-neon);
+            color: var(--color-darker);
+        }
+
+        .tier-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .tier-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--color-neon);
+            margin-bottom: 0.5rem;
+        }
+
+        .tier-price small {
+            font-size: 1rem;
+            color: var(--color-gray);
+            font-weight: 400;
+        }
+
+        .tier-description {
+            color: var(--color-gray);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .tier-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .tier-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .tier-features li:last-child {
+            border-bottom: none;
+        }
+
+        .tier-features li i {
+            color: var(--color-neon);
+            font-size: 1.1rem;
+        }
+
+        /* Hardware Section */
+        .hardware-section {
+            background: var(--color-dark);
+        }
+
+        .hardware-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hardware-image {
+            background: #222;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .hardware-image i {
+            font-size: 8rem;
+            color: var(--color-neon);
+        }
+
+        .hardware-content h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .hardware-features {
+            list-style: none;
+            margin: 2rem 0;
+        }
+
+        .hardware-features li {
+            padding: 1rem 0;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .hardware-features li i {
+            color: var(--color-neon);
+            margin-top: 0.25rem;
+        }
+
+        /* Blog Section */
+        .blog-section {
+            background: var(--color-darker);
+        }
+
+        .blog-categories {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .blog-category {
+            padding: 0.75rem 1.5rem;
+            background: var(--color-dark);
+            border: 2px solid #333;
+            border-radius: 50px;
+            color: var(--color-white);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .blog-category:hover,
+        .blog-category.active {
+            border-color: var(--color-neon);
+            background: var(--color-neon);
+            color: var(--color-darker);
+        }
+
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .blog-card {
+            background: var(--color-dark);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .blog-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .blog-image {
+            height: 220px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-neon);
+            font-size: 3rem;
+        }
+
+        .blog-content {
+            padding: 2rem;
+        }
+
+        .blog-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: var(--color-gray);
+        }
+
+        .blog-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .blog-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .blog-card h3 a {
+            color: var(--color-white);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .blog-card h3 a:hover {
+            color: var(--color-neon);
+        }
+
+        .blog-excerpt {
+            color: var(--color-gray);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .read-more {
+            color: var(--color-neon);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: gap 0.3s;
+        }
+
+        .read-more:hover {
+            gap: 1rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: var(--color-neon);
+            color: var(--color-darker);
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+
+        .cta-section h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+
+        .cta-section .btn {
+            background: var(--color-darker);
+            color: var(--color-white);
+            border-color: var(--color-darker);
+        }
+
+        .cta-section .btn:hover {
+            background: transparent;
+            color: var(--color-darker);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--color-darker);
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-about h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-about p {
+            color: var(--color-gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: var(--color-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-white);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--color-neon);
+            color: var(--color-darker);
+        }
+
+        .footer-links h4 {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: var(--color-gray);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--color-neon);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #333;
+            padding-top: 2rem;
+            text-align: center;
+            color: var(--color-gray);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .hardware-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            nav {
+                display: none; /* Add mobile menu here */
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .blog-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo-container">
+                <!-- Logo will go here - you'll upload logo with better lines.png -->
+                <div class="logo-text">
+                    <span class="at">@</span>MyBoat
+                </div>
+            </div>
+            <nav>
+                <a href="#home">Home</a>
+                <a href="#products">Products</a>
+                <a href="#blog">Blog</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-badge">Smart Marine Electronics</div>
+            <h1>
+                Smarter Boating,<br>
+                <span class="highlight">Simpler Systems</span>
+            </h1>
+            <p>
+                Open-source marine electronics, DIY guides, and boating stories.
+                Featuring d3-k1 hardware and d3kOS software for your perfect helm.
+            </p>
+            <div class="hero-buttons">
+                <a href="#products" class="btn btn-primary">Explore Products</a>
+                <a href="#blog" class="btn btn-secondary">Read Blog</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- d3kOS Product Section -->
+    <section class="d3kos-section" id="products">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-label">d3kOS Software</div>
+                <h2 class="section-title">Choose Your Tier</h2>
+                <p class="section-subtitle">
+                    From free open-source to enterprise fleet management,
+                    there's a tier for every boater.
+                </p>
+            </div>
+
+            <div class="tiers-grid">
+                <!-- Tier 0 -->
+                <div class="tier-card">
+                    <span class="tier-badge free">Free</span>
+                    <h3 class="tier-name">Tier 0</h3>
+                    <div class="tier-price">$0<small>/forever</small></div>
+                    <p class="tier-description">Open-source base system with essential monitoring</p>
+                    <ul class="tier-features">
+                        <li><i class="fas fa-check"></i> Dashboard & health monitoring</li>
+                        <li><i class="fas fa-check"></i> Boat log (30 days)</li>
+                        <li><i class="fas fa-check"></i> Onboarding wizard (10 resets)</li>
+                        <li><i class="fas fa-times" style="color: #666"></i> Voice assistant</li>
+                        <li><i class="fas fa-times" style="color: #666"></i> Camera integration</li>
+                    </ul>
+                    <a href="https://github.com/SkipperDon/d3kOS" class="btn btn-secondary" style="width: 100%; text-align: center;">Download Free</a>
+                </div>
+
+                <!-- Tier 1 -->
+                <div class="tier-card">
+                    <span class="tier-badge free">Free</span>
+                    <h3 class="tier-name">Tier 1</h3>
+                    <div class="tier-price">$0<small>/forever</small></div>
+                    <p class="tier-description">Mobile app integration and cloud data sync</p>
+                    <ul class="tier-features">
+                        <li><i class="fas fa-check"></i> All Tier 0 features</li>
+                        <li><i class="fas fa-check"></i> Mobile app (iOS/Android)</li>
+                        <li><i class="fas fa-check"></i> Cloud data sync</li>
+                        <li><i class="fas fa-check"></i> Export all data</li>
+                        <li><i class="fas fa-times" style="color: #666"></i> Voice assistant</li>
+                    </ul>
+                    <a href="#contact" class="btn btn-secondary" style="width: 100%; text-align: center;">Coming Soon</a>
+                </div>
+
+                <!-- Tier 2 - Featured -->
+                <div class="tier-card featured">
+                    <span class="tier-badge premium">Most Popular</span>
+                    <h3 class="tier-name">Tier 2 Premium</h3>
+                    <div class="tier-price">$9.99<small>/month</small></div>
+                    <p class="tier-description">Full AI assistant and marine vision features</p>
+                    <ul class="tier-features">
+                        <li><i class="fas fa-check"></i> All Tier 1 features</li>
+                        <li><i class="fas fa-check"></i> Voice assistant (AI-powered)</li>
+                        <li><i class="fas fa-check"></i> Camera integration</li>
+                        <li><i class="fas fa-check"></i> Fish detection & ID</li>
+                        <li><i class="fas fa-check"></i> Unlimited resets</li>
+                    </ul>
+                    <!-- Stripe Payment Link will go here -->
+                    <a href="#" class="btn btn-primary" style="width: 100%; text-align: center;">Subscribe Now</a>
+                </div>
+
+                <!-- Tier 3 -->
+                <div class="tier-card">
+                    <span class="tier-badge premium">Enterprise</span>
+                    <h3 class="tier-name">Tier 3 Enterprise</h3>
+                    <div class="tier-price">$99.99<small>/year</small></div>
+                    <p class="tier-description">Fleet management and advanced analytics</p>
+                    <ul class="tier-features">
+                        <li><i class="fas fa-check"></i> All Tier 2 features</li>
+                        <li><i class="fas fa-check"></i> Multi-boat fleet management</li>
+                        <li><i class="fas fa-check"></i> Advanced analytics</li>
+                        <li><i class="fas fa-check"></i> Priority support</li>
+                        <li><i class="fas fa-check"></i> Save 17% vs monthly</li>
+                    </ul>
+                    <!-- Stripe Payment Link will go here -->
+                    <a href="#" class="btn btn-primary" style="width: 100%; text-align: center;">Subscribe Annually</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hardware Section -->
+    <section class="hardware-section">
+        <div class="section-container">
+            <div class="hardware-grid">
+                <div class="hardware-image">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="hardware-content">
+                    <div class="section-label">Hardware Kit</div>
+                    <h2>d3-k1 Complete Marine Electronics Kit</h2>
+                    <p style="color: var(--color-gray); margin: 1rem 0 2rem;">
+                        Everything you need to transform your boat's helm with
+                        modern marine electronics powered by open-source d3kOS.
+                    </p>
+                    <ul class="hardware-features">
+                        <li>
+                            <i class="fas fa-microchip"></i>
+                            <div>
+                                <strong>Raspberry Pi 4B (8GB)</strong><br>
+                                <span style="color: var(--color-gray); font-size: 0.9rem;">
+                                    Powerful processor for AI and real-time monitoring
+                                </span>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-camera"></i>
+                            <div>
+                                <strong>Reolink RLC-810A Camera</strong><br>
+                                <span style="color: var(--color-gray); font-size: 0.9rem;">
+                                    4K marine camera with night vision (IP67)
+                                </span>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-network-wired"></i>
+                            <div>
+                                <strong>NMEA2000 Gateway</strong><br>
+                                <span style="color: var(--color-gray); font-size: 0.9rem;">
+                                    Connect to existing marine electronics
+                                </span>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-box"></i>
+                            <div>
+                                <strong>All Cables & Mounting</strong><br>
+                                <span style="color: var(--color-gray); font-size: 0.9rem;">
+                                    Complete kit ready to install
+                                </span>
+                            </div>
+                        </li>
+                    </ul>
+                    <!-- Ecwid store embed will go here -->
+                    <a href="#" class="btn btn-primary" style="margin-top: 2rem;">Pre-Order Now</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section class="blog-section" id="blog">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-label">Blog & Guides</div>
+                <h2 class="section-title">Stories from the Water</h2>
+                <p class="section-subtitle">
+                    DIY projects, marine electronics guides, boating adventures, and recipes from the galley
+                </p>
+            </div>
+
+            <!-- Blog Categories -->
+            <div class="blog-categories">
+                <a href="#" class="blog-category active">All Posts</a>
+                <a href="#" class="blog-category">DIY & Marine Electronics</a>
+                <a href="#" class="blog-category">Stories from the Water</a>
+                <a href="#" class="blog-category">Digital Boat Strategy</a>
+                <a href="#" class="blog-category">Food & Fun</a>
+            </div>
+
+            <!-- Blog Grid -->
+            <div class="blog-grid">
+                <!-- Sample Blog Card 1 -->
+                <div class="blog-card">
+                    <div class="blog-image">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span><i class="fas fa-calendar"></i> Feb 15, 2026</span>
+                            <span><i class="fas fa-tag"></i> DIY</span>
+                        </div>
+                        <h3><a href="#">Building Your Own Marine Helm Display</a></h3>
+                        <p class="blog-excerpt">
+                            Step-by-step guide to creating a modern touchscreen helm
+                            using d3kOS and open-source hardware...
+                        </p>
+                        <a href="#" class="read-more">
+                            Read More <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Sample Blog Card 2 -->
+                <div class="blog-card">
+                    <div class="blog-image">
+                        <i class="fas fa-ship"></i>
+                    </div>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span><i class="fas fa-calendar"></i> Feb 12, 2026</span>
+                            <span><i class="fas fa-tag"></i> Stories</span>
+                        </div>
+                        <h3><a href="#">First Ice-Out Trip on Lake Simcoe</a></h3>
+                        <p class="blog-excerpt">
+                            The ice finally cleared and we ventured out for the first
+                            boating trip of the season...
+                        </p>
+                        <a href="#" class="read-more">
+                            Read More <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Sample Blog Card 3 -->
+                <div class="blog-card">
+                    <div class="blog-image">
+                        <i class="fas fa-fish"></i>
+                    </div>
+                    <div class="blog-content">
+                        <div class="blog-meta">
+                            <span><i class="fas fa-calendar"></i> Feb 8, 2026</span>
+                            <span><i class="fas fa-tag"></i> Tech</span>
+                        </div>
+                        <h3><a href="#">AI Fish Detection with Marine Vision</a></h3>
+                        <p class="blog-excerpt">
+                            How we built an AI-powered fish detection system using
+                            YOLOv8 and a marine camera...
+                        </p>
+                        <a href="#" class="read-more">
+                            Read More <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Note: Your 50+ blog entries will populate here -->
+                <!-- This is just sample layout -->
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="#" class="btn btn-secondary">View All Posts (50+)</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="section-container">
+            <h2>LET'S DISCUSS YOUR IDEAS</h2>
+            <p>Ready to upgrade your boat's electronics? Have questions about d3kOS?</p>
+            <a href="mailto:contact@atmyboat.com" class="btn">Get In Touch</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <h3><span style="color: var(--color-neon)">@</span>MyBoat</h3>
+                    <p>
+                        Smart marine electronics and boating guides.
+                        Open-source d3kOS software for modern helm systems.
+                    </p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="https://github.com/SkipperDon/d3kOS"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Products</h4>
+                    <ul>
+                        <li><a href="#products">d3kOS Software</a></li>
+                        <li><a href="#hardware">d3-k1 Hardware Kit</a></li>
+                        <li><a href="#">Pricing</a></li>
+                        <li><a href="https://github.com/SkipperDon/d3kOS">Documentation</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Blog</h4>
+                    <ul>
+                        <li><a href="#">DIY & Marine Electronics</a></li>
+                        <li><a href="#">Stories from the Water</a></li>
+                        <li><a href="#">Digital Boat Strategy</a></li>
+                        <li><a href="#">Food & Fun</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 At My Boat. All rights reserved.
+                   <span style="color: var(--color-neon)">🚤</span> Built with ❤️ for boaters.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Ecwid Store Embed (will add here) -->
+    <!-- <script src="https://app.ecwid.com/script.js?YOUR_STORE_ID"></script> -->
+
+</body>
+</html>
