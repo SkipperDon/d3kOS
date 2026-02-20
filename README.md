@@ -4,10 +4,10 @@
 
 d3kOS is marine electronics software that runs on the d3-k1 hardware platform. The d3-k1 is a comprehensive marine electronics system that integrates NMEA2000 data, GPS/AIS information, camera surveillance, and AI-powered voice assistance into a unified, touchscreen-optimized interface for boat owners.
 
-**Version**: 2.0
-**Date**: February 6, 2026
-**OS**: Raspberry Pi OS Bookworm (Debian 12, 64-bit)
-**Status**: APPROVED - Production Ready
+**Version**: 0.9.1.2
+**Date**: February 20, 2026
+**OS**: Debian GNU/Linux 13 (Trixie)
+**Status**: Tier 0 Installation Complete - Testing Build
 
 ---
 
@@ -22,6 +22,30 @@ d3kOS is marine electronics software that runs on the d3-k1 hardware platform. T
 - [Documentation](#documentation)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+
+---
+
+## What's New in v0.9.1.2
+
+**Released**: February 20, 2026
+
+### Session A: Foundation
+- ✅ **Timezone Auto-Detection**: 3-tier fallback system (GPS → Internet → UTC)
+- ✅ **Voice Assistant Enabled**: Vosk wake word detection (helm, advisor, counsel)
+- ✅ **System Version**: Updated to 0.9.1.2
+- ✅ **Testing Mode**: Tier 3 enabled for feature testing
+
+### Session B: Self-Healing System
+- ✅ **Issue Detection**: CPU temp, memory, disk space, service monitoring
+- ✅ **Auto-Remediation**: Service restarts, temp file cleanup
+- ✅ **Self-Healing UI**: Real-time status and issue tracking
+- ✅ **API**: Port 8099 for programmatic access
+
+### Session C: Data Export & Backup
+- ✅ **Export Queue**: Retry logic with 3 attempts
+- ✅ **Boatlog CSV Export**: Download boat log as CSV
+- ✅ **Backup System**: Automated 36MB compressed backups
+- ✅ **Backup API**: Port 8100 for backup management
 
 ---
 
