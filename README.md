@@ -47,6 +47,19 @@ d3kOS is marine electronics software that runs on the d3-k1 hardware platform. T
 - ✅ **Backup System**: Automated 36MB compressed backups
 - ✅ **Backup API**: Port 8100 for backup management
 
+### Session E: Chromium Fix & Network Investigation
+- ✅ **Chromium Session Reset**: Prevents "Restore pages?" prompt after reboot
+- ✅ **Network Investigation**: Identified BCM4345/6 hotspot hardware limitation
+- ❌ **Hotspot Mode**: Not supported (firmware error -52: EOPNOTSUPP)
+- ✅ **Documentation**: Workaround via manual WiFi connection
+
+### Session F: Network Settings UI
+- ✅ **Network Management API**: Flask backend (port 8101) for WiFi control
+- ✅ **Touch-Optimized UI**: WiFi scan, connect/disconnect, status display
+- ✅ **PolicyKit Authorization**: NetworkManager control without sudo
+- ✅ **On-Screen Keyboard Compatible**: Password entry works with touchscreen
+- ✅ **Auto-Refresh**: 10-second status updates
+
 ---
 
 ## Features
@@ -201,9 +214,17 @@ sudo dd if=d3kos-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
    - Username: `d3kos`
    - Password: `d3kos2026`
    - ⚠️ **Change password after first login**: `passwd`
-3. Touchscreen shows Chromium with onboarding wizard
-4. Connect to WiFi network: **"d3kOS"** (password: `d3kos-2026`)
-5. From mobile device, navigate to: `http://d3kos.local` or `http://10.42.0.1`
+3. **Connect to WiFi** (if not already connected):
+   - Touchscreen shows Chromium with main menu
+   - Navigate to: **Settings → Network Settings**
+   - Tap **"Scan for Networks"**
+   - Select your WiFi network (home WiFi, phone hotspot, Starlink, etc.)
+   - Enter password using on-screen keyboard
+   - Tap **"Connect"**
+   - Wait for connection confirmation
+4. **Access from other devices** (optional):
+   - Once connected, note the IP address shown in Network Settings
+   - From mobile/laptop on same network: `http://[IP-ADDRESS]` or `http://d3kos.local`
 
 ### 5. Complete Onboarding Wizard
 
@@ -465,20 +486,32 @@ Speaker
 
 ### Network Configuration
 
-**WiFi Access Point**:
-- **SSID**: d3kOS
-- **Password**: d3kos-2026 (default)
-- **IP Address**: 10.42.0.1/24
-- **DHCP Range**: 10.42.0.2 - 10.42.0.254
-- **Security**: WPA2-PSK
+**WiFi Client Mode**:
+- **Connection Method**: Manual connection to existing WiFi networks
+- **Supported Networks**: Home WiFi, phone hotspots, Starlink, marina WiFi, etc.
+- **Management**: Touch-optimized Network Settings UI (Settings → Network Settings)
+- **Features**:
+  - WiFi network scanning
+  - WPA2/WPA3 password authentication
+  - Saved network profiles with auto-reconnect
+  - Real-time signal strength monitoring
+  - On-screen keyboard for password entry
 
-**Services**:
-- Main Menu: `http://d3kos.local` or `http://10.42.0.1`
+**Network Settings UI** (Session F):
+- Path: Settings → Network Settings
+- API: Port 8101 (Flask backend)
+- Features: Scan, connect, disconnect, status display
+- Touch-optimized: 60px buttons, 22px+ fonts
+
+**Services** (when connected to WiFi):
+- Main Menu: `http://d3kos.local` or `http://[IP-ADDRESS]`
 - Dashboard: `http://d3kos.local:1880/dashboard`
 - Signal K: `http://d3kos.local:3000`
 - Camera: `rtsp://d3kos.local:554/camera` (Tier 2+)
 
-**Ethernet Sharing**: Internet sharing enabled if ethernet connected
+**Hotspot Mode**: ❌ Not supported (BCM4345/6 hardware limitation - see Session E notes)
+
+**Ethernet**: Wired connection supported via RJ45 port
 
 ---
 

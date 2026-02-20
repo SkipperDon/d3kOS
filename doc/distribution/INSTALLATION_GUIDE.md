@@ -343,27 +343,48 @@ Verifying... 100%
 4. ✅ Signal K server starts
 5. ✅ Node-RED starts
 6. ✅ gpsd starts (GPS processing)
-7. ✅ WiFi Access Point created (SSID: `d3kOS`)
-8. ✅ Ethernet sharing enabled (10.42.0.0/24 network)
+7. ✅ Network services initialized
+8. ✅ Ethernet enabled (if connected)
 9. ✅ Chromium launches in kiosk mode
 10. ✅ Initial Setup wizard auto-loads
 
-### Step 6.2: WiFi Connection
+### Step 6.2: Connect to WiFi Network
 
-**From Laptop or Phone**:
-1. Open WiFi settings
-2. Look for network: **d3kOS**
-3. Connect with password: **d3kos-2026**
-4. Wait for "Connected" confirmation
-5. Your device IP: 10.42.0.xxx (DHCP assigned)
+**⚠️ Note**: d3kOS connects TO WiFi networks (client mode), not AS a WiFi hotspot. BCM4345/6 hardware limitation prevents AP mode.
 
-**Network Information**:
-- **SSID**: d3kOS
-- **Password**: d3kos-2026
-- **Pi IP Address**: 10.42.0.1
-- **Gateway**: 10.42.0.1
-- **DNS**: 10.42.0.1
-- **DHCP Range**: 10.42.0.2 - 10.42.0.254
+**Using Touchscreen** (Primary Method):
+1. Touchscreen shows d3kOS main menu in Chromium
+2. Navigate to: **Settings → Network Settings**
+3. Tap **"Scan for Networks"**
+4. Select your WiFi network from the list:
+   - Home WiFi
+   - Phone hotspot (iPhone/Android)
+   - Starlink
+   - Marina WiFi
+   - Mobile hotspot
+5. Tap network name to connect
+6. Enter password using **on-screen keyboard**
+7. Tap **"Connect"**
+8. Wait for "Connected" confirmation
+9. Note the IP address displayed (e.g., 192.168.1.237)
+
+**Using SSH** (Alternative Method):
+```bash
+# From laptop on same network as your WiFi router
+ssh d3kos@d3kos.local
+
+# Scan for networks
+nmcli device wifi list
+
+# Connect to network
+nmcli device wifi connect "Your-Network-Name" password "your-password"
+```
+
+**Network Information** (after connection):
+- **IP Address**: Assigned by your WiFi router (DHCP)
+- **Gateway**: Your router's IP
+- **DNS**: Provided by your network
+- **Access**: d3kOS is now accessible from any device on the same WiFi network
 
 ### Step 6.3: Access Web Interface
 
@@ -372,14 +393,16 @@ Verifying... 100%
 http://d3kos.local
 ```
 
-**Option 2: IP Address**:
+**Option 2: IP Address** (shown in Network Settings):
 ```
-http://10.42.0.1
+http://[IP-ADDRESS]
 ```
+Example: `http://192.168.1.237`
 
-**Option 3: Touchscreen** (if visible):
+**Option 3: Touchscreen** (Direct):
 - Interface loads automatically on touchscreen
 - No keyboard/mouse needed
+- Fully touch-optimized
 
 **Browser Compatibility**:
 - ✅ Chrome/Chromium (recommended)
@@ -578,22 +601,41 @@ passwd
 - Mix of letters, numbers, symbols recommended
 - Write down password - no password recovery!
 
-### Step 8.2: Change WiFi Password
+### Step 8.2: Manage WiFi Networks
 
-**From Web Interface**:
-1. Navigate to Settings → Network
-2. Click "Change WiFi Password"
-3. Enter current password: `d3kos-2026`
-4. Enter new password (8-63 characters)
-5. Confirm new password
-6. Click [Save]
-7. Reconnect to WiFi with new password
+**Add Additional Networks**:
+1. Navigate to Settings → Network Settings
+2. Tap **"Scan for Networks"**
+3. Select new network
+4. Enter password using on-screen keyboard
+5. Tap **"Connect"**
+6. d3kOS will remember this network
 
-**Or via SSH**:
-```bash
-sudo nmcli connection modify d3kOS wifi-sec.psk "YourNewPassword"
-sudo nmcli connection up d3kOS
-```
+**Switch Between Networks**:
+1. Navigate to Settings → Network Settings
+2. View current connection status
+3. Tap **"Disconnect"** to disconnect from current network
+4. Tap **"Scan for Networks"**
+5. Select different saved or new network
+6. Tap **"Connect"**
+
+**Saved Networks**:
+- d3kOS remembers all networks you've connected to
+- Auto-reconnects to known networks when in range
+- No need to re-enter passwords for saved networks
+
+**Common Use Cases**:
+- **Home**: Connect to home WiFi
+- **Boat Launch**: Connect to phone hotspot for updates
+- **On Water**: Connect to Starlink or cellular hotspot
+- **Marina**: Connect to marina WiFi
+
+**Network Settings Features** (Session F):
+- Real-time signal strength display
+- Connection status monitoring
+- Saved network management
+- Touch-optimized interface
+- On-screen keyboard for passwords
 
 ### Step 8.3: Configure CX5106 Engine Gateway
 
