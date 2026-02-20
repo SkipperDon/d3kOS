@@ -1,0 +1,13 @@
+[Unit]
+Description=d3kOS Daily Scheduled Export
+After=network-online.target d3kos-export-manager.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=d3kos
+ExecStart=/opt/d3kos/scripts/export-daily.sh
+StandardOutput=journal
+StandardError=journal
+
+# No [Install] section - triggered by timer only
