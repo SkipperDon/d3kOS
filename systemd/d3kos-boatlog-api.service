@@ -1,0 +1,26 @@
+[Unit]
+Description=d3kOS Boatlog Export API
+Documentation=https://github.com/SkipperDon/d3kOS
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/boatlog
+ExecStart=/usr/bin/python3 /opt/d3kos/services/boatlog/boatlog-export-api.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits
+MemoryLimit=256M
+CPUQuota=20%
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
