@@ -163,33 +163,45 @@ d3kOS is marine electronics software that runs on the d3-k1 hardware platform. T
 
 ### 1. Download Pre-Built Image
 
+**Latest Release**: v0.9.1.2 (February 20, 2026)
+
+**Image Specifications**:
+- **Compressed Size**: ~3.2 GB (.img.gz)
+- **Uncompressed Size**: ~14.5 GB (.img)
+- **Required SD Card**: 16GB minimum, 32GB+ recommended
+- **Includes**: All services, voice assistant, camera support, testing mode (Tier 3)
+
 ```bash
 # Download latest release from GitHub
-wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v2.0.img.gz
+wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v0.9.1.2.img.gz
 
 # Download checksum
-wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v2.0.img.gz.sha256
+wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v0.9.1.2.img.gz.sha256
 
 # Verify integrity
-sha256sum -c d3kos-v2.0.img.gz.sha256
+sha256sum -c d3kos-v0.9.1.2.img.gz.sha256
 ```
+
+**Alternative Download** (Google Drive):
+- Direct Link: [d3kos-v0.9.1.2.img.gz](https://drive.google.com/PLACEHOLDER)
+- Size: ~3.2 GB compressed
 
 ### 2. Flash to SD Card
 
 #### Raspberry Pi Imager (Recommended)
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Launch Imager
-3. **Choose OS** → **Use custom** → Select downloaded `.img.gz` file
-4. **Choose Storage** → Select SD card (64GB minimum)
-5. **Write** → Wait for completion (~10-15 minutes)
+3. **Choose OS** → **Use custom** → Select `d3kos-v0.9.1.2.img.gz`
+4. **Choose Storage** → Select SD card (16GB minimum, 32GB+ recommended)
+5. **Write** → Wait for completion (~8-12 minutes for 3.2GB compressed image)
 
 #### Command Line (Linux/Mac)
 ```bash
 # Decompress
-gunzip d3kos-v2.0.img.gz
+gunzip d3kos-v0.9.1.2.img.gz
 
 # Flash (replace /dev/sdX with your SD card)
-sudo dd if=d3kos-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
+sudo dd if=d3kos-v0.9.1.2.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
 ### 3. Hardware Assembly
@@ -214,7 +226,7 @@ sudo dd if=d3kos-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
    - Username: `d3kos`
    - Password: `d3kos2026`
    - ⚠️ **Change password after first login**: `passwd`
-3. **Connect to WiFi** (if not already connected):
+3. **Connect to WiFi** (Client Mode Only - ~~Hotspot Not Supported~~):
    - Touchscreen shows Chromium with main menu
    - Navigate to: **Settings → Network Settings**
    - Tap **"Scan for Networks"**
@@ -222,6 +234,7 @@ sudo dd if=d3kos-v2.0.img of=/dev/sdX bs=4M status=progress conv=fsync
    - Enter password using on-screen keyboard
    - Tap **"Connect"**
    - Wait for connection confirmation
+   - ⚠️ **Note**: Built-in WiFi is **client-only** (BCM4345/6 firmware limitation). ~~Cannot act as WiFi hotspot/AP~~
 4. **Access from other devices** (optional):
    - Once connected, note the IP address shown in Network Settings
    - From mobile/laptop on same network: `http://[IP-ADDRESS]` or `http://d3kos.local`
@@ -509,7 +522,7 @@ Speaker
 - Signal K: `http://d3kos.local:3000`
 - Camera: `rtsp://d3kos.local:554/camera` (Tier 2+)
 
-**Hotspot Mode**: ❌ Not supported (BCM4345/6 hardware limitation - see Session E notes)
+**~~Hotspot Mode~~**: ❌ **NOT SUPPORTED** - Built-in WiFi (BCM4345/6) cannot operate as Access Point due to firmware limitation (error -52: EOPNOTSUPP). Use external WiFi adapter or connect to existing network. See `doc/SESSION_E_F_FINAL_STATUS.md` for technical details.
 
 **Ethernet**: Wired connection supported via RJ45 port
 
