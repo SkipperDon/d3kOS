@@ -33,11 +33,12 @@ This is a **BETA/TESTING release** for early adopters and testers. The system is
 ## How d3kOS Works
 
 ### Analogue Dashboard Conversion
-Your boat's existing analogue gauges remain in place. The CX5106 NMEA2000 gateway connects to gauge senders (oil pressure sender, temperature sender, fuel sender, etc.) and converts analogue signals to digital NMEA2000 data. d3kOS reads this NMEA2000 data via PiCAN-M HAT and provides:
-- Real-time monitoring dashboard
+The CX5106 NMEA2000 gateway connects to your engine's gauge senders (oil pressure sender, temperature sender, fuel sender, etc.) and converts analogue signals to digital NMEA2000 data. **Note:** CX5106 operates in either analogue OR digital mode, not both simultaneously. d3kOS reads this NMEA2000 data via PiCAN-M HAT and provides:
+- Real-time digital monitoring dashboard
 - Performance analytics and diagnostics
 - AI-powered recommendations based on sensor data + uploaded manuals
 - Data export for maintenance records
+- Shore-side testing via built-in NMEA2000 simulator (test before deployment)
 
 ### Integration, Not Replacement
 **d3kOS is NOT an OpenPlotter replacement.** It's designed to work *alongside* your existing marine electronics:
@@ -49,7 +50,10 @@ Your boat's existing analogue gauges remain in place. The CX5106 NMEA2000 gatewa
 ### The d3kOS Advantage
 Traditional chartplotters display engine data on basic gauge pages. d3kOS goes further:
 - **Analytics:** Trend analysis, anomaly detection, baseline learning
-- **AI Assistant:** Reads your engine manual, answers technical questions
+- **AI Assistant:** Reads your engine manual, answers technical questions (online OR offline)
+- **Document Management:** Upload and organize all boat/engine documentation, automatic manual search
+- **Conversation History:** Review past troubleshooting sessions, learn from historical AI interactions
+- **Shore-Side Testing:** NMEA2000 simulator validates system before boat installation
 - **Diagnostics:** Export data for mechanics, track maintenance history
 - **Enhancements:** Weather radar, camera surveillance, fish identification (coming soon)
 
@@ -76,19 +80,33 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 
 ### 🤖 AI-Powered Manual Reading & Recommendations
 **Your engine expert at the helm**
-- Upload PDF manuals: engine service manual, boat owner's manual, CX5106 manual
-- AI reads and understands technical documentation
-- Provides recommendations based on sensor data + manual knowledge
-- Troubleshooting assistance: "Why is my oil pressure low?"
-- Both online (OpenRouter GPT) and onboard AI available
-- Voice or text interface for hands-free operation
+- **PDF Manual Management:** Upload, organize, and manage technical documentation library
+- **Automatic Manual Search:** System searches for boat, engine, and CX5106 manuals online
+- **AI Document Reading:** AI reads and understands technical documentation
+- **Sensor + Manual Integration:** Recommendations based on real-time sensor data + uploaded manuals
+- **Conversation History:** Stored chat history with both online and onboard AI responses
+- **Online AI (OpenRouter GPT):** Complex queries, 6-8 second response time
+- **Onboard AI:** Simple queries instant (0.17-0.22s), complex queries slow (60-180s) but valuable for diagnostics when offline
+- **Patient Diagnostics:** "Waiting a minute might help diagnose problems" - onboard AI works offline, perfect for troubleshooting
+- **Voice or Text Interface:** Hands-free operation at the helm
+- **Example:** "Why is my oil pressure low?" → AI references manual specs + current sensor readings
+
+### 🧪 NMEA2000 Simulator
+**Test your system before deploying on the boat**
+- Built-in virtual CAN interface (vcan0) for shore-side testing
+- Generates realistic engine data (RPM varies 800-2400, boost pressure, trim)
+- Test dashboard, alerts, AI assistant without real engine
+- Verify configuration before installation
+- Toggle on/off via dashboard or systemd service
+- Perfect for system validation and troubleshooting
 
 ### 🧭 Onboarding Wizard
 **Captain-assisted system configuration**
 - 20-step guided setup process
 - Engine specifications (make, model, cylinders, compression ratio, idle/max RPM)
 - CX5106 DIP switch configuration helper with visual diagram
-- PDF manual upload integration
+- PDF manual upload integration with automatic search
+- Manual management system (view, organize, delete)
 - QR code generation for mobile app pairing
 - Takes 10-20 minutes to complete
 
@@ -183,12 +201,22 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 ✅ CSV data export for maintenance records
 
 ### AI Manual Reading & Recommendations
-✅ Upload PDF manuals via onboarding wizard
+✅ PDF manual management system (upload, organize, search, delete)
+✅ Automatic manual search (boat, engine, CX5106 documentation)
 ✅ AI reads and understands technical documentation
+✅ Conversation history stored (online and onboard AI responses)
 ✅ Ask questions: "Why is my oil pressure low?" → AI references manual + sensor data
 ✅ Online AI (OpenRouter GPT) for complex queries (6-8 seconds)
-✅ Onboard AI for simple queries (0.17-0.22 seconds, 13 patterns)
+✅ Onboard AI for simple queries (0.17-0.22s instant, 60-180s complex but offline-capable)
+✅ Patient diagnostics: Onboard AI works offline, valuable for troubleshooting
 ✅ Voice or text interface for hands-free operation
+
+### NMEA2000 Simulator & Testing
+✅ Built-in virtual CAN interface for shore-side testing
+✅ Realistic engine data generation (RPM, boost, trim)
+✅ Test system before boat deployment
+✅ Verify configuration without real engine
+✅ Toggle on/off via dashboard or systemd
 
 ### Voice Control (Tier 2+)
 ✅ Three wake words: "helm", "advisor", "counsel"
@@ -331,8 +359,10 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 - **Performance Tracking:** Historical data shows engine health trends over time
 
 ### For DIY Boaters
-- **AI Mechanic Assistant:** Upload your engine manual, ask questions, get expert advice
-- **Non-Invasive Install:** CX5106 reads gauges, no engine wiring changes required
+- **AI Mechanic Assistant:** Upload your engine manual, ask questions, get expert advice (even offline!)
+- **Document Library:** Automatic manual search + management system for all your boat documentation
+- **Shore-Side Testing:** Built-in NMEA2000 simulator - verify everything works before installing on boat
+- **Non-Invasive Install:** CX5106 reads sensor signals, no engine wiring changes required
 - **Integration Ready:** Works with your existing chartplotter and fishfinder
 - **Open Source:** Modify and customize as needed
 
@@ -340,6 +370,9 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 - **Baseline Learning:** System learns normal engine behavior during break-in
 - **Anomaly Detection:** 95%+ accuracy identifying unusual sensor readings
 - **Trend Analysis:** Graph historical data to spot gradual degradation
+- **Conversation History:** Review past AI troubleshooting sessions (online and onboard)
+- **Offline Diagnostics:** Onboard AI works without internet - patient troubleshooting (1-2 minutes) when needed
+- **Manual Integration:** AI cross-references sensor data with uploaded engine manuals
 - **Export Data:** CSV export for spreadsheet analysis and record keeping
 
 ### For Developers
