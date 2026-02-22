@@ -63,100 +63,182 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 
 ### 🔌 CX5106 Analogue Dashboard Conversion
 **Transform legacy gauges into NMEA2000 digital data**
-- Reads analogue gauges: RPM, oil pressure, coolant temperature, fuel level, voltage, boost pressure
+- Reads analogue sensor signals: RPM, oil pressure, coolant temperature, fuel level, voltage, boost pressure
 - Broadcasts on NMEA2000 network for integration with modern electronics
 - Real-time data capture at 1Hz update rate
 - No engine modifications required - non-invasive installation
-- Works with existing analogue-equipped engines
+- **Note:** CX5106 operates in either analogue OR digital mode, not both simultaneously
 
-### 📊 Engine Performance Analytics & Diagnostics
-**Intelligent monitoring and trend analysis**
-- Baseline establishment during break-in period
+### 📊 Digital Dashboard
+**Real-time engine monitoring display**
+- Live digital gauges for all engine parameters
+- 4 rows: Engine Metrics, Tank Levels, System Status, Network Status
+- Updates every second via Signal K WebSocket
+- Touch-optimized interface with large fonts (48px gauge values)
+- Dark theme (#000000 background, #00CC00 accents)
+- Accessible via main menu or browser at port 80
+
+### 📈 Benchmark System
+**Engine performance baseline and trending**
+- Establishes normal operating parameters during break-in period
 - Anomaly detection with >95% accuracy
 - Historical performance graphing and trend analysis
+- Compares current readings against established baseline
 - High/low threshold alerts for critical parameters
 - 30-day data retention (Tier 0), unlimited (Tier 2+)
-- Export data for spreadsheet analysis
 
-### 🤖 AI-Powered Manual Reading & Recommendations
-**Your engine expert at the helm**
-- **PDF Manual Management:** Upload, organize, and manage technical documentation library
-- **Automatic Manual Search:** System searches for boat, engine, and CX5106 manuals online
-- **AI Document Reading:** AI reads and understands technical documentation
-- **Sensor + Manual Integration:** Recommendations based on real-time sensor data + uploaded manuals
-- **Conversation History:** Stored chat history with both online and onboard AI responses
-- **Online AI (OpenRouter GPT):** Complex queries, 6-8 second response time
-- **Onboard AI:** Simple queries instant (0.17-0.22s), complex queries slow (60-180s) but valuable for diagnostics when offline
-- **Patient Diagnostics:** "Waiting a minute might help diagnose problems" - onboard AI works offline, perfect for troubleshooting
-- **Voice or Text Interface:** Hands-free operation at the helm
-- **Example:** "Why is my oil pressure low?" → AI references manual specs + current sensor readings
+### 🧭 Navigation
+**GPS/AIS position tracking and display**
+- Real-time GPS position, speed, heading
+- Satellite count and HDOP (signal quality)
+- WebSocket connection to Signal K for live data
+- Touch-optimized map display
+- Integration with NMEA2000 bus for vessel traffic (AIS)
 
-### 🧪 NMEA2000 Simulator
-**Test your system before deploying on the boat**
-- Built-in virtual CAN interface (vcan0) for shore-side testing
-- Generates realistic engine data (RPM varies 800-2400, boost pressure, trim)
-- Test dashboard, alerts, AI assistant without real engine
-- Verify configuration before installation
-- Toggle on/off via dashboard or systemd service
-- Perfect for system validation and troubleshooting
+### 📓 Boatlog
+**Voice and text boat log entries**
+- Voice-to-text entry (Tier 2+)
+- Manual text entry via on-screen keyboard
+- Automatic weather logging
+- CSV export for spreadsheet analysis
+- 30-day retention (Tier 0), unlimited (Tier 2+)
+- Timestamped entries with GPS coordinates
 
-### 🧭 Onboarding Wizard
-**Captain-assisted system configuration**
-- 20-step guided setup process
-- Engine specifications (make, model, cylinders, compression ratio, idle/max RPM)
-- CX5106 DIP switch configuration helper with visual diagram
-- PDF manual upload integration with automatic search
-- Manual management system (view, organize, delete)
-- QR code generation for mobile app pairing
-- Takes 10-20 minutes to complete
+### ☁️ Weather Radar
+**Real-time weather overlay and forecasts**
+- Windy.com integration with live radar
+- Touch-friendly zoom controls (80px buttons)
+- Current GPS position centering
+- Wind, clouds, rain, temperature overlays
+- Auto-updates based on boat position
 
-### 📹 Marine Vision System (Phase 2.1 Complete)
+### 📹 Marine Vision
 **AI-powered camera surveillance**
 - Reolink 4K IP67 waterproof camera support
-- Live 8 FPS video streaming (720p/1080p)
+- Live 8 FPS video streaming (720p/1080p sub-stream)
 - Video recording and photo capture
 - YOLOv8 object detection (person detection working)
 - Fish identification (Phase 2.2 - in development)
+- Telegram notifications (backend ready)
+- Storage management with 7-day retention
 
-### 🗺️ Navigation & Chartplotter Integration
-**Works with your existing electronics**
-- **NOT an OpenPlotter replacement** - d3kOS integrates alongside your existing systems
-- Broadcasts NMEA2000 data for proprietary chartplotters (Garmin, Simrad, Raymarine, Lowrance, Furuno, Humminbird)
-- Broadcasts NMEA2000 data for fishfinders (all major brands read standard PGNs)
-- Optional OpenCPN installation available (open-source chartplotter)
-- GPS/AIS data integration
-- Weather radar overlay (Windy.com) with touch-friendly controls
+### 🗺️ Charts (OpenCPN)
+**Optional open-source chartplotter**
+- OpenCPN auto-installation and configuration
+- NMEA2000 data integration
+- GPS/AIS display on charts
+- Touch-friendly navigation controls
+- **Optional** - d3kOS works with proprietary chartplotters too
+
+### 📱 QR Code & Mobile Pairing
+**Installation ID for mobile app integration**
+- 16-character hex installation ID (file-based, persistent)
+- QR code generation in onboarding wizard (Step 19)
+- Simplified format for easy mobile scanning (400x400px, black on white)
+- Used for mobile app pairing and cloud sync
+
+### ⚙️ Settings
+**System configuration and management**
+- Network Settings (WiFi scan, connect, status)
+- Data Management (export, backup, installation ID)
+- Telegram Configuration (notifications setup)
+- System Information (tier, version, services)
+- Manual Management (view, upload, delete PDFs)
+- Touch-optimized interface with on-screen keyboard
+
+### 🎛️ Helm
+**Voice and text AI assistant interface**
+- Text-based chat interface for AI queries
+- Voice command support (Tier 2+: "helm", "advisor", "counsel")
+- Real-time sensor data display
+- Emergency voice reboot capability
+- Fullscreen toggle for on-screen keyboard access
+
+### 🤖 AI Assistant
+**Text-based AI chat interface**
+- Dedicated chat page at /ai-assistant.html
+- Provider selector (Auto, Online, Onboard)
+- Real-time response with metadata display
+- Newest messages at top, scroll down for history
+- Input field at bottom with on-screen keyboard
+- 13 instant-answer patterns (0.17-0.22s cached)
+
+### 📚 Manual Management
+**PDF documentation library**
+- Upload engine service manuals, boat owner's manuals, CX5106 manual
+- Automatic search for manuals online (DuckDuckGo + manufacturer links)
+- View, organize, delete uploaded PDFs
+- AI reads manuals for recommendations
+- Validation (PDF format check)
+- Accessible via Settings → Manual Management
+
+### 💬 History
+**AI conversation tracking**
+- Stored chat history with both online and onboard AI responses
+- Review past troubleshooting sessions
+- SQLite database: `/opt/d3kos/data/conversation-history.db`
+- Learn from historical AI interactions
+- Useful for tracking diagnostic patterns over time
+
+### 🧪 NMEA2000 Simulator
+**Shore-side testing before deployment**
+- Built-in virtual CAN interface (vcan0)
+- Generates realistic engine data (RPM varies 800-2400, boost, trim)
+- Test dashboard, alerts, AI without real engine
+- Toggle on/off via dashboard or systemd service
+- Perfect for system validation before boat installation
+
+### 🧭 Onboarding Wizard
+**Captain-assisted 20-step configuration**
+- Engine specifications (make, model, year, cylinders, compression ratio, idle/max RPM)
+- Regional and position information
+- CX5106 DIP switch configuration with visual diagram
+- PDF manual upload integration
+- Configuration review (Step 17)
+- QR code generation (Step 19)
+- Takes 10-20 minutes to complete
+
+### 🌐 Remote Access Methods
+**Multiple ways to connect to d3kOS**
+- **Web Browser:** http://192.168.1.237/ (any device on network)
+- **RealVNC:** Remote desktop access (graphical interface)
+- **SSH:** Terminal access via `ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237`
+- **Raspberry Pi Connect:** Cloud-based remote access (optional)
+- All methods work from shore or remote locations
 
 ### 🖥️ Touchscreen Interface
 **Designed for wet hands and rough seas**
 - 7" touch-optimized display (1024×600 minimum)
-- Large buttons (60px+ height)
-- On-screen keyboard for all inputs
-- Dark theme optimized for night vision
+- Large buttons (60px+ height), 22-24px fonts
+- On-screen keyboard (Squeekboard) for all inputs
+- Dark theme optimized for night vision (#000000 bg, #00CC00 green, #FFFFFF white)
 - Fullscreen kiosk mode
+- Auto-focus on input fields for keyboard activation
 
 ### 🔧 Self-Healing System
 **Automated monitoring and recovery**
 - CPU temperature, memory, disk space monitoring
-- Service health checks (12 microservices)
+- Service health checks (12 microservices on ports 8080-8101)
 - Automatic service restarts on failure
 - Temp file cleanup and log rotation
-- Real-time status dashboard
+- Real-time status dashboard at port 8099
 
-### 💾 Data Management
-**Export and backup automation**
+### 💾 Data Management & Export
+**Backup and data export automation**
 - Boatlog CSV export (spreadsheet download)
-- Queue-based export with 3 retry attempts
-- 8 export categories (engine data, logs, settings)
-- Automated 36MB compressed backups
+- Queue-based export with 3 retry attempts (5s delay)
+- 8 export categories (engine data, boatlog, marine vision metadata, QR code, settings, alerts, onboarding)
+- Automated 36MB compressed backups (Backup API port 8100)
 - Installation ID and license tracking
+- Export API at port 8094
 
 ### 📡 Network Management
 **Touch-optimized WiFi control**
-- WiFi network scan and connect
+- WiFi network scan and connect (Network API port 8101)
 - Password entry via on-screen keyboard
-- Real-time connection status
-- Client mode only (no AP/hotspot due to hardware)
+- Real-time connection status with auto-refresh
+- PolicyKit authorization (no sudo required)
+- Client mode only (no AP/hotspot - hardware limitation BCM4345/6)
 
 ---
 
@@ -185,66 +267,131 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 
 ## Key Features by Category
 
-### CX5106 Analogue Dashboard Integration
-✅ Reads analogue gauge senders (oil pressure, temperature, fuel, RPM, voltage, boost)
-✅ Broadcasts NMEA2000 data to entire network
-✅ Real-time 1Hz update rate
-✅ Non-invasive installation (no engine modifications)
-✅ Works with legacy analogue-equipped engines
+### Main Menu Pages (Touch-Optimized Interface)
+✅ **Digital Dashboard** - Real-time engine gauges, 4-row layout
+✅ **Onboarding** - 20-step wizard with QR code generation
+✅ **Boatlog** - Voice/text entries with CSV export
+✅ **Navigation** - GPS/AIS position tracking
+✅ **Helm** - Voice and text AI assistant
+✅ **Weather** - Windy.com radar with touch controls
+✅ **AI Assistant** - Dedicated chat interface
+✅ **Settings** - Network, data, manual, Telegram config
+✅ **Charts** - OpenCPN chartplotter (optional)
+✅ **Marine Vision** - Camera surveillance and AI detection
 
-### Engine Diagnostics & Analytics
-✅ Real-time monitoring dashboard with digital gauges
+### CX5106 Integration & Data Flow
+✅ Reads analogue sensor signals (oil, temp, fuel, RPM, voltage, boost)
+✅ Broadcasts NMEA2000 data to entire network
+✅ Real-time 1Hz update rate via Signal K
+✅ Non-invasive installation (no engine modifications)
+✅ Digital OR analogue mode (not both simultaneously)
+
+### Engine Diagnostics & Benchmarking
+✅ Digital dashboard with real-time gauges (48px values)
+✅ Benchmark system with baseline establishment
 ✅ Anomaly detection with >95% accuracy
-✅ Baseline establishment during engine break-in
 ✅ Trend analysis with historical graphing
 ✅ High/low threshold alerts for critical parameters
 ✅ CSV data export for maintenance records
 
-### AI Manual Reading & Recommendations
-✅ PDF manual management system (upload, organize, search, delete)
-✅ Automatic manual search (boat, engine, CX5106 documentation)
-✅ AI reads and understands technical documentation
-✅ Conversation history stored (online and onboard AI responses)
-✅ Ask questions: "Why is my oil pressure low?" → AI references manual + sensor data
-✅ Online AI (OpenRouter GPT) for complex queries (6-8 seconds)
-✅ Onboard AI for simple queries (0.17-0.22s instant, 60-180s complex but offline-capable)
-✅ Patient diagnostics: Onboard AI works offline, valuable for troubleshooting
-✅ Voice or text interface for hands-free operation
-
-### NMEA2000 Simulator & Testing
-✅ Built-in virtual CAN interface for shore-side testing
-✅ Realistic engine data generation (RPM, boost, trim)
-✅ Test system before boat deployment
-✅ Verify configuration without real engine
-✅ Toggle on/off via dashboard or systemd
+### AI System (Online + Onboard)
+✅ **PDF Manual Management:** Upload, organize, search, delete
+✅ **Automatic Manual Search:** DuckDuckGo + manufacturer links
+✅ **Conversation History:** SQLite database, review past sessions
+✅ **Online AI:** OpenRouter GPT, 6-8s response time
+✅ **Onboard AI:** 13 instant patterns (0.17-0.22s), complex queries (60-180s offline-capable)
+✅ **Patient Diagnostics:** Offline troubleshooting, references manuals + sensor data
+✅ **Voice or Text:** Hands-free operation at helm
+✅ **Example:** "Why is my oil pressure low?" → AI checks manual specs + current readings
 
 ### Voice Control (Tier 2+)
-✅ Three wake words: "helm", "advisor", "counsel"
+✅ Three wake words: "helm" (auto), "advisor" (onboard), "counsel" (online)
 ✅ 13 instant-answer patterns (RPM, oil, temp, fuel, battery, speed, heading, boost, hours, location, time, help, status)
-✅ Emergency voice reboot command when touchscreen fails
+✅ Emergency voice reboot: "HELM, reboot" when touchscreen fails
 ✅ 100% offline operation for simple queries
-✅ Response caching (100× speed boost)
+✅ Response caching (100× speed boost: 18s → 0.17s)
+✅ PocketSphinx wake word + Vosk transcription + Piper TTS
+
+### Navigation & Positioning
+✅ GPS position, speed, heading display
+✅ Satellite count and HDOP (signal quality)
+✅ WebSocket connection to Signal K
+✅ AIS vessel traffic integration (NMEA2000 bus)
+✅ Weather radar overlay (Windy.com)
+✅ Touch-friendly zoom controls (80px buttons)
+
+### Boatlog & Data Logging
+✅ Voice-to-text entry (Tier 2+)
+✅ Manual text entry via on-screen keyboard
+✅ Automatic weather logging
+✅ CSV export for spreadsheet analysis
+✅ 30-day retention (Tier 0), unlimited (Tier 2+)
+✅ Timestamped entries with GPS coordinates
+
+### Marine Vision (Camera System)
+✅ Reolink RLC-810A 4K IP67 support
+✅ Live 8 FPS video streaming (720p/1080p)
+✅ Video recording and photo capture
+✅ YOLOv8n object detection (person detection working)
+✅ Fish identification (Phase 2.2 - in development)
+✅ Telegram notifications (backend ready, needs config)
+✅ Storage management with 7-day retention
+
+### Charts & Chartplotter Integration
+✅ **NOT OpenPlotter replacement** - works alongside existing chartplotters
+✅ Broadcasts NMEA2000 data (Garmin, Simrad, Raymarine, Lowrance, Furuno, Humminbird)
+✅ Fishfinders read NMEA2000 data (all major brands)
+✅ Optional OpenCPN installation (open-source chartplotter)
+✅ GPS/AIS integration, touch-friendly controls
+
+### Settings & Configuration
+✅ Network Settings: WiFi scan, connect, password entry (on-screen keyboard)
+✅ Data Management: Export, backup, installation ID display
+✅ Telegram Configuration: Bot token, chat ID, test notifications
+✅ Manual Management: View, upload, delete PDFs
+✅ System Information: Tier, version, services status
+✅ Touch-optimized interface, auto-refresh status
+
+### QR Code & Mobile Pairing
+✅ 16-character hex installation ID (file-based: `/opt/d3kos/config/license.json`)
+✅ QR code generation in onboarding (Step 19)
+✅ Simplified format (400x400px, black on white, plain text)
+✅ Used for mobile app pairing and cloud sync
+✅ Persistent across reboots (not browser cache)
+
+### NMEA2000 Simulator
+✅ Built-in virtual CAN interface (vcan0)
+✅ Realistic engine data (RPM 800-2400, boost, trim)
+✅ Shore-side testing before deployment
+✅ Toggle on/off via dashboard or systemd
+✅ Test all features without real engine
+
+### Remote Access
+✅ **Web Browser:** http://[IP]/ (any device on network)
+✅ **RealVNC:** Remote desktop (graphical)
+✅ **SSH:** Terminal access (key-based auth)
+✅ **Pi Connect:** Cloud-based remote access (optional)
+
+### Self-Healing & Monitoring
+✅ CPU temperature, memory, disk space monitoring
+✅ Service health checks (12 microservices, ports 8080-8101)
+✅ Automatic service restarts on failure
+✅ Temp file cleanup and log rotation
+✅ Real-time status dashboard (port 8099)
+
+### Data Export & Backup
+✅ Boatlog CSV export (spreadsheet download)
+✅ Queue-based export with 3 retry attempts (5s delay)
+✅ 8 export categories (engine, boatlog, marine vision metadata, QR, settings, alerts, onboarding)
+✅ Automated 36MB compressed backups (port 8100)
+✅ Export API (port 8094)
 
 ### Safety Features
-✅ Emergency reboot via voice when touchscreen fails
-✅ Self-healing system (auto-recovery from failures)
-✅ Thermal protection (automatic throttling at 80°C)
-✅ Low storage alerts (warnings at 90%, critical at 95%)
+✅ Emergency voice reboot when touchscreen fails
+✅ Self-healing auto-recovery from failures
+✅ Thermal protection (throttling at 80°C)
+✅ Low storage alerts (90% warning, 95% critical)
 ✅ Service health monitoring (auto-restart on crash)
-
-### Data & Logs
-✅ Boat log with voice-to-text entry
-✅ 30-day data retention (Tier 0), unlimited (Tier 2+)
-✅ CSV export for spreadsheet analysis
-✅ Automated backups (36MB compressed)
-✅ Installation ID for multi-device pairing
-
-### Connectivity
-✅ WiFi client mode (connect to existing networks)
-✅ Ethernet support (wired connection)
-✅ Signal K WebSocket streaming
-✅ RESTful APIs (11 endpoints across 12 services)
-✅ Node-RED integration (flow-based automation)
 
 ---
 
