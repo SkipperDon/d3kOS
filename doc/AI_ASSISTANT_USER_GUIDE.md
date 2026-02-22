@@ -395,6 +395,18 @@ Voice assistant uses minimal power, but for extended offline use:
 - **Verify:** Dashboard shows live data
 - **Report:** Note exact question and answer for debugging
 
+**Problem: Touchscreen becomes unresponsive while voice is speaking**
+- **Behavior:** Touch input pauses during voice assistant audio playback
+- **Duration:** 2-5 seconds (while TTS is speaking)
+- **This is normal!** Audio subsystem temporarily locks input during playback
+- **What happens:**
+  - Touchscreen pauses when voice starts speaking
+  - Resumes immediately after voice finishes
+  - Visual display remains responsive
+  - Touch input is queued (not lost)
+- **Workaround:** Wait for voice response to finish before tapping screen
+- **Note:** This prevents audio/input conflicts, not a bug
+
 ### Connection Issues
 
 **Problem: "Internet connection required" for simple queries**
