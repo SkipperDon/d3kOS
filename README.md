@@ -976,15 +976,22 @@ Special thanks to the marine open-source community and all contributors.
 
 ---
 
-## License
+## Licensing
 
-**Tiered Open-Source Model**:
-- **Tier 0**: GNU General Public License v3.0 (GPL-3.0)
-- **Tier 2+**: Commercial features with open-source core
+d3kOS is dual licensed:
 
-Core system remains fully open-source. Premium features (voice, camera) are enablements, not restrictions.
+**Open Source — GPL v3**
+Free to use, modify, and distribute under the terms of the 
+GNU General Public License v3.0. Any derivative works must 
+also be released under GPL v3. See [LICENSE](./LICENSE).
 
-See [LICENSE](LICENSE) for details.
+**Commercial License**
+Commercial use — including bundling with hardware for resale 
+or distribution in paid products — requires a separate 
+commercial license agreement.
+Contact: skipperdont@atmyboat.com | https://atmyboat.com
+See [LICENSE-COMMERCIAL](./LICENSE-COMMERCIAL).
+
 
 ---
 
