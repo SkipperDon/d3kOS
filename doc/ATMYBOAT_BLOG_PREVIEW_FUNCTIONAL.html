@@ -1,0 +1,158 @@
+<!-- Functional Blog Preview Section - Replace existing blog section in homepage -->
+
+<!-- Blog Preview -->
+<section class="blog-preview">
+    <div class="container">
+        <h2>Latest from the Blog</h2>
+        <div class="blog-grid" id="blog-posts-container">
+            <!-- Blog posts will be dynamically loaded here -->
+            <div class="blog-card">
+                <div class="blog-card-image">Loading...</div>
+                <div class="blog-card-content">
+                    <h3>Loading posts...</h3>
+                    <p>Please wait while we fetch the latest articles.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- JavaScript to fetch and display real blog posts -->
+<script>
+(function() {
+    // Function to strip HTML tags and get plain text excerpt
+    function stripHtml(html) {
+        const tmp = document.createElement('DIV');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+    }
+
+    // Function to truncate text to specified length
+    function truncate(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substr(0, maxLength).trim() + '...';
+    }
+
+    // Function to fetch and display blog posts
+    async function loadBlogPosts() {
+        const container = document.getElementById('blog-posts-container');
+
+        try {
+            // Fetch latest 3 posts from WordPress REST API
+            const response = await fetch('/wp-json/wp/v2/posts?per_page=3&_embed');
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch posts');
+            }
+
+            const posts = await response.json();
+
+            // Clear loading message
+            container.innerHTML = '';
+
+            // Check if we have posts
+            if (posts.length === 0) {
+                container.innerHTML = `
+                    <div class="blog-card">
+                        <div class="blog-card-content">
+                            <h3>No posts yet</h3>
+                            <p>Check back soon for updates!</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Display each post
+            posts.forEach(post => {
+                // Get featured image URL if available
+                let imageUrl = '';
+                if (post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0]) {
+                    imageUrl = post._embedded['wp:featuredmedia'][0].source_url;
+                }
+
+                // Get excerpt (strip HTML tags)
+                let excerpt = '';
+                if (post.excerpt && post.excerpt.rendered) {
+                    excerpt = stripHtml(post.excerpt.rendered);
+                } else if (post.content && post.content.rendered) {
+                    excerpt = stripHtml(post.content.rendered);
+                }
+                excerpt = truncate(excerpt, 150);
+
+                // Get post title
+                const title = post.title.rendered;
+
+                // Get post link
+                const link = post.link;
+
+                // Create blog card HTML
+                const cardHtml = `
+                    <div class="blog-card">
+                        <div class="blog-card-image" style="${imageUrl ? `background-image: url('${imageUrl}'); background-size: cover; background-position: center;` : ''}">
+                            ${imageUrl ? '' : 'Blog Image'}
+                        </div>
+                        <div class="blog-card-content">
+                            <h3>${title}</h3>
+                            <p>${excerpt}</p>
+                            <a href="${link}">Read More →</a>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML += cardHtml;
+            });
+
+        } catch (error) {
+            console.error('Error loading blog posts:', error);
+
+            // Display error message
+            container.innerHTML = `
+                <div class="blog-card">
+                    <div class="blog-card-content">
+                        <h3>Unable to load posts</h3>
+                        <p>Please check back later or visit our <a href="/blog">blog page</a> directly.</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Load posts when page is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadBlogPosts);
+    } else {
+        loadBlogPosts();
+    }
+})();
+</script>
+
+<!--
+IMPLEMENTATION NOTES:
+
+1. This script uses the WordPress REST API to fetch the latest 3 blog posts
+2. It automatically extracts:
+   - Post title
+   - Post excerpt (or truncated content if no excerpt)
+   - Featured image (if set)
+   - Post link
+3. It handles errors gracefully with fallback messages
+4. It strips HTML tags from excerpts for clean display
+5. It truncates long excerpts to 150 characters
+
+To implement:
+1. Find the existing "Blog Preview" section in your homepage HTML
+2. Replace the entire section (from <section class="blog-preview"> to </section>)
+3. Make sure this code is included in the homepage
+4. The blog posts will load automatically when the page loads
+
+Requirements:
+- WordPress REST API must be enabled (enabled by default in WordPress 5.0+)
+- Posts must exist in your WordPress blog
+- For featured images to show, posts must have featured images set
+
+Troubleshooting:
+- If images don't show: Make sure featured images are set in WordPress posts
+- If no posts show: Check that you have published posts (not drafts)
+- If error message: Check browser console for details (F12 → Console tab)
+-->

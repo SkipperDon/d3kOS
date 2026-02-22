@@ -1,0 +1,114 @@
+<!-- Unsubscribe Page Content - Create as new WordPress page: /unsubscribe -->
+
+<section class="unsubscribe-hero" style="background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); padding: 80px 20px; text-align: center;">
+    <div class="container" style="max-width: 1200px; margin: 0 auto;">
+        <h1 style="font-size: 48px; font-weight: 700; margin-bottom: 20px; color: #BFFF00;">Unsubscribe from Blog Updates</h1>
+        <p style="font-size: 20px; color: #cccccc; max-width: 800px; margin: 0 auto;">We're sorry to see you go!</p>
+    </div>
+</section>
+
+<section class="unsubscribe-content" style="background-color: #1a1a1a; padding: 80px 20px;">
+    <div class="container" style="max-width: 700px; margin: 0 auto; text-align: center;">
+
+        <div id="unsubscribe-form-container">
+            <p style="font-size: 18px; color: #ffffff; margin-bottom: 30px; line-height: 1.8;">
+                Enter your email address below to unsubscribe from our blog updates. You will no longer receive newsletters about d3kOS updates, marine electronics tips, or DIY guides.
+            </p>
+
+            <form id="unsubscribe-form" style="margin-bottom: 40px;">
+                <input type="email" id="unsubscribe-email" placeholder="Enter your email address" required style="width: 100%; max-width: 500px; padding: 15px; font-size: 16px; border: 2px solid #3a3a3a; background: #0d0d0d; color: #ffffff; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box;">
+
+                <br>
+
+                <button type="submit" style="background: #BFFF00; color: #000000; padding: 15px 40px; font-size: 18px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s ease;">Unsubscribe</button>
+            </form>
+
+            <p style="font-size: 14px; color: #888888; line-height: 1.6;">
+                Changed your mind? You can always <a href="/#blog-subscribe" style="color: #BFFF00; text-decoration: none;">resubscribe</a> anytime by visiting our homepage.
+            </p>
+        </div>
+
+        <div id="unsubscribe-success" style="display: none;">
+            <div style="font-size: 64px; color: #BFFF00; margin-bottom: 20px;">✓</div>
+            <h2 style="font-size: 32px; color: #BFFF00; margin-bottom: 20px;">You've Been Unsubscribed</h2>
+            <p style="font-size: 18px; color: #ffffff; margin-bottom: 30px; line-height: 1.8;">
+                Your email has been removed from our mailing list. You will no longer receive blog updates from At My Boat.
+            </p>
+            <p style="font-size: 16px; color: #cccccc; margin-bottom: 30px;">
+                We'd love to have you back! You can resubscribe anytime by visiting our <a href="/" style="color: #BFFF00; text-decoration: none;">homepage</a>.
+            </p>
+            <a href="/" style="display: inline-block; background: #BFFF00; color: #000000; padding: 12px 30px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; text-decoration: none;">Return to Homepage</a>
+        </div>
+
+    </div>
+</section>
+
+<!-- Unsubscribe JavaScript -->
+<script>
+(function() {
+    const form = document.getElementById('unsubscribe-form');
+    const formContainer = document.getElementById('unsubscribe-form-container');
+    const successContainer = document.getElementById('unsubscribe-success');
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const emailInput = document.getElementById('unsubscribe-email');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                alert('Please enter a valid email address.');
+                return;
+            }
+
+            // TODO: Integrate with your email service (MailChimp, ConvertKit, etc.)
+            // This is where you would call your email service's unsubscribe API
+            //
+            // Example MailChimp unsubscribe:
+            // fetch('YOUR_MAILCHIMP_UNSUBSCRIBE_ENDPOINT', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ email: email })
+            // });
+
+            // For now: Remove from localStorage
+            const subscribers = JSON.parse(localStorage.getItem('blog_subscribers') || '[]');
+            const index = subscribers.indexOf(email);
+            if (index > -1) {
+                subscribers.splice(index, 1);
+                localStorage.setItem('blog_subscribers', JSON.stringify(subscribers));
+            }
+
+            // Show success message
+            formContainer.style.display = 'none';
+            successContainer.style.display = 'block';
+        });
+    }
+})();
+</script>
+
+<!--
+IMPLEMENTATION NOTES:
+
+1. Create a new WordPress page: Pages → Add New
+2. Title: "Unsubscribe"
+3. URL slug: /unsubscribe
+4. Paste this HTML into Code editor
+5. Template: Default Template
+6. Publish
+
+Integration with Email Service:
+- Replace the TODO section with your actual email service API call
+- MailChimp: Use their unsubscribe API
+- ConvertKit: Use their unsubscribe endpoint
+- Sendinblue: Use their contact deletion API
+- Most services provide a simple unsubscribe API
+
+This page:
+- Accepts email input
+- Removes email from subscription list
+- Shows success confirmation
+- Provides link to resubscribe (homepage)
+- Works with localStorage (temporary) or real email service (production)
+-->

@@ -1,4 +1,13 @@
 #!/bin/bash
+# d3kOS - Marine Intelligence Operating System
+# Copyright (C) 2026 Donald Moskaluk / AtMyBoat.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# For commercial licensing contact: skipperdon@atmyboat.com
+
 # first-boot-setup.sh - First boot initialization for d3kOS
 # Part of d3kOS Distribution Preparation
 # Session-Dist-2
