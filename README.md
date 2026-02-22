@@ -614,6 +614,52 @@ d3kOS calculates correct CX5106 settings from onboarding answers.
 
 ---
 
+## Known Issues & Important Notes
+
+### System Boot Behavior
+
+**Keyring Password Prompt**
+- **Issue**: On boot, system prompts for keyring password
+- **Password**: `pi` (default keyring password)
+- **When**: Appears once per boot session
+- **Why**: Required for secure credential storage (WiFi passwords, SSH keys)
+- **Workaround**: Enter `pi` when prompted, then system continues boot
+- **Note**: This is expected behavior for secure credential management
+
+### WiFi Connection Behavior
+
+**Default Network Selection**
+- **Issue**: System may default to incorrect WiFi network after reboot
+- **Example**: May connect to neighbor's WiFi instead of intended network
+- **Workaround**:
+  1. Navigate to **Settings → Network Settings**
+  2. Disconnect from incorrect network
+  3. Connect to correct network manually
+  4. System remembers correct network for future boots
+- **Note**: This occurs when multiple WiFi networks with saved credentials are in range
+- **Permanent Fix**: Delete unwanted saved networks in Network Settings
+
+### Voice Assistant & Touchscreen Interaction
+
+**Touchscreen Pause During Voice Response (Tier 2+ Only)**
+- **Issue**: Touchscreen becomes unresponsive while voice assistant is speaking
+- **Duration**: Pauses until voice response finishes playing (typically 2-5 seconds)
+- **When**: Only occurs during active voice assistant audio output
+- **Why**: Audio subsystem temporarily locks input during TTS (text-to-speech) playback
+- **Behavior**:
+  - Touch input queued while voice is speaking
+  - Touchscreen resumes immediately after audio completes
+  - Visual display remains responsive
+- **Workaround**: Wait for voice response to finish before tapping screen
+- **Note**: This is expected behavior, not a bug - prevents audio/input conflicts
+
+**Summary**:
+- ✅ **Keyring password**: Enter `pi` on boot
+- ✅ **WiFi defaults**: Manually select correct network if needed
+- ✅ **Touchscreen pause**: Wait for voice to finish speaking
+
+---
+
 ## Troubleshooting
 
 ### Power Issues
