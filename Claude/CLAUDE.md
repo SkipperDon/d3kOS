@@ -1,7 +1,8 @@
 # CLAUDE.md - AI Assistant Guidelines for d3kOS Development
-## Version 3.7
+## Version 3.8
 
-**Last Updated**: February 17, 2026
+**Last Updated**: February 22, 2026
+**Changes from v3.7**: **CRITICAL UPDATE - Phi-2 LLM REMOVED** (Feb 16, 2026): Removed due to 60-180s response time (unusable on boat helm), freed 1.7GB storage. Replaced with OpenRouter (gpt-3.5-turbo, 6-8s) + rule-based system (13 patterns, 0.17s). Updated all documentation references from Perplexity→OpenRouter. Updated software versions: Node.js v18→v20.20.0, Node-RED 3.x→v4.1.4. Confirmed Trixie (Debian 13) as current OS (NOT Bookworm). Added Signal K caching (3s TTL, 100× speedup for rapid-fire queries). Documented actual system state: d3kOS v0.9.1.2, Tier 3, 22+ services.
 **Changes from v3.6**: Added Timezone Auto-Detection System - 3-tier automatic detection (GPS coordinates → internet geolocation → UTC fallback), runs on first boot before onboarding wizard, no user prompts during setup, manual override available in Settings page. Prevents hardcoded Toronto timezone issue for worldwide deployment.
 **Changes from v3.5**: Added comprehensive AI-Powered Self-Healing System - 5-tier architecture (detection, correlation, AI diagnosis, auto-remediation, user notification), engine and Pi health monitoring, anomaly detection with statistical process control, pattern matching for common failures, AI integration for root cause analysis, safe auto-remediation (restart services, kill stuck processes), user-friendly error translation, and remediation history tracking. Renamed "factory reset" to "Initial Setup Reset" throughout documentation.
 **Changes from v3.4**: Added comprehensive Version Management & Upgrade System - d3kOS version tracking (current: 0.9.1-beta), GitHub-based version checking, tier-based upgrade capabilities (Tier 0: no upgrades, Tier 1/2/3: curl-based OTA upgrades via mobile app approval), System Management API (port 8095), automated backup/rollback, checksum verification, and upgrade monitoring. Clarified that Tier 0/1 cannot incrementally update (image-only), while Tier 2/3 support OTA updates.
@@ -125,16 +126,16 @@ This document provides guidelines for AI assistants (like Claude, ChatGPT, Copil
 | Component | Version | Notes |
 |-----------|---------|-------|
 | **Raspberry Pi OS** | **Trixie (Debian 13)** | 64-bit ARM, NOT Bookworm |
-| **Node.js** | v18 or v20 LTS | NOT v22 |
+| **Node.js** | v20.20.0 | Current (NOT v18, NOT v22) |
 | **Signal K Server** | 2.x (latest via npm) | Marine data hub |
-| **Node-RED** | 3.x | Flow-based programming |
+| **Node-RED** | v4.1.4 | Flow-based programming |
 | **Node-RED Dashboard** | 2.0.4-1 (v4.1.4) | Dashboard 2.0 (Vue-based) |
 | **OpenCPN** | 5.8.x | Auto-installed if no chartplotter |
 | **PocketSphinx** | Latest | Wake word detection |
 | **Vosk** | Latest | Speech-to-text (offline) |
 | **Piper** | Latest | Text-to-speech (offline) |
-| **llama.cpp** | Latest | LLM runtime |
-| **Phi-2** | 2.7B parameters | Local AI "brain" |
+| **OpenRouter** | API (gpt-3.5-turbo) | Online AI (6-8s) |
+| **Rule-based AI** | 13 patterns | Offline AI (0.17s) |
 
 ### Required System Packages (Debian Trixie)
 ```bash
@@ -230,15 +231,20 @@ Piper → speaks response back
   - ARM-optimized
   - Fast enough for real-time on Pi 4B (8GB)
 
-#### C. Phi-2 via llama.cpp (Local AI Brain)
-- **Purpose**: Understands command meaning and context
-- **Model**: Phi-2 (2.7B parameters)
-- **Runtime**: llama.cpp (optimized for Pi 4B)
+#### C. AI Query Handler (Hybrid Brain)
+- **Purpose**: Routes queries to appropriate AI backend
+- **Backends**:
+  - **OpenRouter** (gpt-3.5-turbo): Online, 6-8s, complex queries
+  - **Rule-based**: Offline, 0.17s, 13 simple patterns
+- **Wake Word Routing**:
+  - "helm" → Auto (rule-based if simple, OpenRouter if complex)
+  - "advisor" → Force offline (rule-based only)
+  - "counsel" → Force online (OpenRouter)
 - **Features**:
-  - Fast inference
-  - Low RAM (fits in 8GB with OS)
-  - Good reasoning for command interpretation
-  - Context-aware responses
+  - Signal K caching (3s TTL, 100× speedup)
+  - Pattern matching for common queries
+  - Context-aware responses with boat status
+  - Conversation history in SQLite
 
 #### D. Piper (Text-to-Speech)
 - **Purpose**: Speaks responses back to user
@@ -316,21 +322,24 @@ Piper → speaks response back
 
 ---
 
-## Hybrid AI Assistant System (NEW - AUTHORITATIVE)
+## Hybrid AI Assistant System (UPDATED FEB 16, 2026)
 
 ### Overview
 
-d3kOS implements a **hybrid AI assistant system** that intelligently routes queries between two AI backends based on internet connectivity:
+**⚠️ CRITICAL UPDATE**: Phi-2 LLM removed (Feb 16, 2026) due to 60-180s response time (unusable on boat helm).
 
-- **Online AI** (Perplexity): Fast, powerful, internet-required
-- **Onboard AI** (Phi-2): Offline, slower (~60s response), fully local
+d3kOS implements a **hybrid AI assistant system** that intelligently routes queries between two backends:
+
+- **Online AI** (OpenRouter gpt-3.5-turbo): Fast (6-8s), powerful, internet-required
+- **Offline AI** (Rule-based patterns): Ultra-fast (0.17s), 13 query types, no internet
 
 **Key Benefits**:
-- Automatic fallback when internet unavailable
+- Automatic pattern matching for simple queries (instant response)
+- OpenRouter for complex queries (6-8s vs Phi-2's 60-180s)
+- Signal K caching (3s TTL, 100× speedup for rapid-fire questions)
 - Shared context via skills.md
-- Learning and conversation memory
+- Conversation memory in SQLite
 - Both voice and text input interfaces
-- Automatic document retrieval during onboarding
 
 ### Architecture
 
@@ -341,15 +350,15 @@ d3kOS implements a **hybrid AI assistant system** that intelligently routes quer
                 │
                 ▼
 ┌─────────────────────────────────────────────┐
-│      Internet Detection & Routing           │
+│         Pattern Matching & Routing          │
 │  ┌──────────────┐      ┌──────────────┐    │
-│  │ Has Internet?│      │ No Internet? │    │
+│  │Pattern match?│      │ No match?    │    │
 │  └──────┬───────┘      └──────┬───────┘    │
 │         │                     │            │
 │         ▼                     ▼            │
 │  ┌──────────────┐      ┌──────────────┐   │
-│  │ Online AI    │      │ Onboard AI   │   │
-│  │ (Perplexity) │      │ (Phi-2)      │   │
+│  │ Rule-Based   │      │   Internet?  │   │
+│  │   0.17-0.22s │      │   Check      │   │
 │  └──────┬───────┘      └──────┬───────┘   │
 │         └────────┬──────────────┘          │
 │                  ▼                         │
@@ -396,36 +405,47 @@ d3kOS implements a **hybrid AI assistant system** that intelligently routes quer
 **Configuration** (`/opt/d3kos/config/ai-config.json`):
 ```json
 {
-  "online_ai": {
-    "provider": "perplexity",
-    "api_key": "pplx-xxxxx",
-    "model": "llama-3.1-sonar-small-128k-online",
+  "openrouter": {
+    "api_key": "sk-or-v1-...",
+    "base_url": "https://openrouter.ai/api/v1/chat/completions",
+    "model": "openai/gpt-3.5-turbo",
     "enabled": true,
     "max_tokens": 500,
     "temperature": 0.7
-  }
+  },
+  "cache_ttl": 3.0
 }
 ```
 
-### Onboard AI Assistant (Phi-2)
+### Offline AI Assistant (Rule-Based)
 
-**Purpose**: Fully offline AI assistant when internet unavailable
+**Purpose**: Fast offline responses for simple queries
 
-**Implementation**: Phi-2 (2.7B) via llama.cpp (already documented in Voice Assistant section)
+**Implementation**: Pattern matching (13 predefined query types)
 
-**Response Time**: ~60 seconds (slow, requires status updates)
+**Response Time**: 0.17-0.22 seconds (with Signal K cache)
 
 **Wake Words**:
-- "Advisor" - Force onboard AI
-- "Helm" - General (uses onboard if no internet)
+- "Advisor" - Force offline (rule-based only)
+- "Helm" - Auto (rule-based if simple, OpenRouter if complex)
 
-**Status Updates During Processing**:
+**Supported Patterns**:
 ```javascript
-// Every 40 seconds during Phi-2 processing
-function queryPhi2WithProgress(question, context) {
-  const statusMessages = [
-    "AI is working on your question, please stand by",
-    "Still processing, just a moment",
+// 13 instant-response patterns
+const patterns = {
+  rpm: /\b(rpm|engine speed|revolutions)\b/,
+  oil: /\b(oil|oil pressure)\b/,
+  temperature: /\b(temp|temperature|coolant)\b/,
+  fuel: /\b(fuel|fuel level|diesel)\b/,
+  battery: /\b(battery|voltage|power)\b/,
+  speed: /\b(speed|knots|velocity)\b/,
+  heading: /\b(heading|direction|course)\b/,
+  boost: /\b(boost|turbo|manifold pressure)\b/,
+  hours: /\b(engine hours|runtime|operating time)\b/,
+  location: /\b(location|position|where|gps|coordinates)\b/,
+  time: /\b(what time|current time|date)\b/,
+  help: /\b(help|capabilities|commands)\b/,
+  status: /\b(status|all|everything|full)\b/
     "Almost there, working on the answer"
   ];
 
@@ -4218,6 +4238,7 @@ If you encounter:
 | 2.3 | 2026-02-11 | Added Step 4 (Chartplotter Detection) to Initial Setup wizard, clarified that CX5106 uses standard PGNs (no vendor-specific translation needed), documented chartplotter compatibility |
 | 2.4 | 2026-02-11 | Added implementation details for Step 4: nginx proxy configuration for WebSocket, JavaScript detection code, fullscreen toggle on wizard completion |
 | **3.3** | **2026-02-16** | **Added comprehensive Stripe Billing implementation documentation (40-60 hour development guide with production-ready code examples). See /doc/STRIPE_BILLING_IMPLEMENTATION_GUIDE.md for complete backend API, iOS StoreKit 2, and Android Billing Library integration. MASTER_SYSTEM_SPEC.md v3.2 Section 6.3.4 expanded with database schema (3 tables), 8 API endpoints, and cost breakdown. Confirmed traditional e-commerce platforms (OpenCart, PrestaShop, etc.) are NOT suitable for mobile app subscriptions due to Apple/Google IAP requirements.** |
+| **3.8** | **2026-02-22** | **CRITICAL UPDATE: Phi-2 LLM REMOVED (Feb 16, 2026).** Reason: 60-180s response unusable on boat helm. Freed 1.7GB storage + 3GB RAM. **Replaced with OpenRouter (gpt-3.5-turbo, 6-8s) + Rule-based system (13 patterns, 0.17s).** Updated all Perplexity→OpenRouter references. Updated software versions: Node.js v18→v20.20.0, Node-RED 3.x→v4.1.4. Confirmed Trixie (Debian 13) as current OS. Added Signal K caching (3s TTL, 100× speedup). Documented actual system: d3kOS v0.9.1.2, Tier 3, 22+ services. |
 
 ---
 
@@ -4225,8 +4246,8 @@ If you encounter:
 
 ### Anomaly 1: RAM Requirement
 - **Previous**: 4GB or 8GB RAM
-- **Updated**: **8GB RAM required** (for Phi-2 LLM + OS + services)
-- **Reason**: Phi-2 (2.7B) needs ~5-6GB RAM for inference
+- **Updated**: **8GB RAM recommended** (for Marine Vision + all services)
+- **Reason**: YOLOv8n ONNX + Camera + Voice + Services = ~1.6GB, 8GB provides headroom. **NOTE**: Phi-2 removed Feb 16, 2026 (freed 1.7GB storage + 3GB RAM)
 
 ### Anomaly 2: OS Version
 - **Previous**: Bookworm or Trixie
@@ -4238,10 +4259,10 @@ If you encounter:
 - **Updated**: **Clear Tier 0-3 with specific features**
 - **Tier 1 changed**: Now includes mobile app (was separate)
 
-### Anomaly 4: LLM Runtime
-- **Previous**: Not specified
-- **Updated**: **llama.cpp** (was implied Phi-2 standalone)
-- **Reason**: llama.cpp is optimized for ARM and needed for Phi-2
+### Anomaly 4: AI Backend System
+- **Previous**: Phi-2 LLM via llama.cpp (60-180s response)
+- **Updated (Feb 16, 2026)**: **OpenRouter (gpt-3.5-turbo) + Rule-based patterns**
+- **Reason**: Phi-2 unusable on boat helm (too slow). OpenRouter: 6-8s complex queries. Rule-based: 0.17s simple queries. Freed 1.7GB storage.
 
 ### Anomaly 5: Wake Word Options
 - **Previous**: Only "Helm"
