@@ -890,9 +890,10 @@ fi
    - Status: Documented as NOT SUPPORTED
    - Workaround: Connect to phone/Starlink/marina WiFi
 
-3. **Chromium "Restore pages?" prompt** - Fix deployed, pending reboot test
-   - Script: `/opt/d3kos/scripts/reset-chromium-session.sh`
-   - Service: `chromium-session-reset.service`
+3. **Chromium "Restore pages?" prompt** - ✅ FIXED (deployed Feb 22, 2026)
+   - Script: `/opt/d3kos/scripts/reset-chromium-session.sh` (modifies Preferences JSON)
+   - Service: `chromium-session-reset.service` (runs on boot before graphical.target)
+   - Status: Service enabled, manual test successful, awaiting user reboot test
 
 4. **Storage 85% full** - 16GB SD card needs upgrade to 32GB+ or cleanup
    - Freed: 1.7GB by removing Phi-2 (Feb 16)
