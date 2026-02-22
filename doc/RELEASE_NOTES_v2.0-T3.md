@@ -25,7 +25,7 @@ This is a **testing build** (T3) with Tier 3 features enabled for evaluation pur
 - Filename: `d3kOS-v2.0-tier3-full.zip`
 - Size: 9.2 GB
 - SHA256: `51f5a3115c24f77b0998d06d7e4b31ca8b54418cb3791531d8e18538e53ec368`
-- Download: [Google Drive Link](TBD)
+- Download: [Google Drive](https://drive.google.com/file/d/1pGdv_EGTI4CZ5JDrbiIRJYr09Dz5dvIS/view?usp=sharing)
 
 **System Requirements:**
 - Raspberry Pi 4B (8GB RAM recommended)
