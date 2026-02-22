@@ -318,7 +318,6 @@ d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, prov
 | **d3kos-health.service** | - | Yes | All | System health monitoring |
 | **d3kos-telemetry.service** | - | Yes | Tier 1+ | Analytics collection (user consent) |
 | **d3kos-media-cleanup.service** | - | Daily | Tier 2+ | Delete old camera recordings (7 days) |
-| **chromium-session-reset.service** | - | Boot | All | Fix "Restore pages?" prompt |
 | **d3kos-self-healing.service** | - | Yes | All | AI-powered anomaly detection & auto-remediation |
 
 ### 5.2 Service Dependency Tree
@@ -890,10 +889,14 @@ fi
    - Status: Documented as NOT SUPPORTED
    - Workaround: Connect to phone/Starlink/marina WiFi
 
-3. **Chromium "Restore pages?" prompt** - ✅ FIXED (deployed Feb 22, 2026)
-   - Script: `/opt/d3kos/scripts/reset-chromium-session.sh` (modifies Preferences JSON)
-   - Service: `chromium-session-reset.service` (runs on boot before graphical.target)
-   - Status: Service enabled, manual test successful, awaiting user reboot test
+3. **Chromium "Restore pages?" prompt** - ✅ FIXED (deployed & tested Feb 22, 2026)
+   - **Solution**: Delete session files + Chromium flags in autostart
+   - **Location**: `/home/d3kos/.config/autostart/d3kos-browser.desktop`
+   - **Method**:
+     - Deletes `Sessions/*`, `Current*`, `Last*` files before Chromium launch
+     - Chromium flags: `--disable-restore-session-state --disable-session-crashed-bubble --hide-crash-restore-bubble`
+   - **Status**: ✅ Tested and working (no prompt after reboot)
+   - **Note**: Initial Preferences modification approach didn't work; session file deletion is more reliable
 
 4. **Storage 85% full** - 16GB SD card needs upgrade to 32GB+ or cleanup
    - Freed: 1.7GB by removing Phi-2 (Feb 16)
