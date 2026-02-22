@@ -1,0 +1,112 @@
+d3kOS v2.0-T3 Testing Build
+Release Information
+===============================================
+
+Release Date: February 22, 2026
+Version: 2.0-T3 (Testing/Pre-release)
+Status: Testing Build - Tier 3 Enabled
+
+===============================================
+Download Information
+===============================================
+
+Filename: d3kOS-v2.0-tier3-full.zip
+Size: 9.2 GB (9,884,213,248 bytes)
+Format: ZIP compressed image
+
+SHA256 Checksum:
+51f5a3115c24f77b0998d06d7e4b31ca8b54418cb3791531d8e18538e53ec368
+
+Download Link:
+https://drive.google.com/file/d/1pGdv_EGTI4CZ5JDrbiIRJYr09Dz5dvIS/view?usp=sharing
+
+===============================================
+Verification
+===============================================
+
+After download, verify the SHA256 checksum:
+
+Linux/macOS:
+  sha256sum d3kOS-v2.0-tier3-full.zip
+
+Windows (PowerShell):
+  Get-FileHash d3kOS-v2.0-tier3-full.zip -Algorithm SHA256
+
+Expected Output:
+  51f5a3115c24f77b0998d06d7e4b31ca8b54418cb3791531d8e18538e53ec368
+
+===============================================
+Installation
+===============================================
+
+1. Extract the ZIP file:
+   unzip d3kOS-v2.0-tier3-full.zip
+
+2. Flash to SD card:
+   sudo dd if=d3kOS-v2.0-tier3-full.img of=/dev/sdX bs=4M status=progress conv=fsync
+
+   Or use Win32DiskImager/Balena Etcher
+
+3. Insert SD card into Raspberry Pi 4B and power on
+
+4. Default credentials:
+   Username: d3kos
+   Password: d3kos2026
+
+   ⚠️ Change password after first login: passwd
+
+5. Complete onboarding wizard (13 questions, 10-20 minutes)
+
+===============================================
+System Requirements
+===============================================
+
+Hardware:
+- Raspberry Pi 4B (8GB RAM recommended)
+- 16GB+ microSD card (32GB+ recommended)
+- PiCAN-M HAT or compatible NMEA2000 interface
+- 7" touchscreen (1024×600 minimum)
+- Anker S330 speakerphone (Tier 2+ voice features)
+
+Optional:
+- Reolink RLC-810A camera (Marine Vision features)
+- GPS/AIS receiver (navigation features)
+
+===============================================
+Documentation
+===============================================
+
+- Release Notes: doc/RELEASE_NOTES_v2.0-T3.md
+- README: README.md
+- AI Assistant Guide: doc/AI_ASSISTANT_USER_GUIDE.md
+- Marine Vision API: doc/MARINE_VISION_API.md
+- Emergency Reboot: doc/SESSION_VOICE_EMERGENCY_REBOOT_COMPLETE.md
+
+===============================================
+Support
+===============================================
+
+GitHub: https://github.com/YOUR-REPO/Helm-OS
+Email: support@atmyboat.com
+Website: https://atmyboat.com
+
+===============================================
+⚠️ Testing Build Notice
+===============================================
+
+This is a PRE-RELEASE testing build (T3) with Tier 3 features
+enabled for evaluation purposes. Not recommended for production use.
+
+Features included:
+✅ Emergency voice reboot
+✅ Marine Vision system (camera + object detection)
+✅ Installation ID & license system
+✅ Network management UI
+✅ Self-healing system
+✅ Data export & backup
+✅ Voice assistant improvements
+✅ AI response caching
+
+Known issues and limitations documented in release notes.
+
+===============================================
