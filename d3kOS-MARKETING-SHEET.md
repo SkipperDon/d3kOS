@@ -204,6 +204,7 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 - **RealVNC:** Remote desktop access (graphical interface)
 - **SSH:** Terminal access via `ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237`
 - **Raspberry Pi Connect:** Cloud-based remote access (optional)
+- **Mobile Phone Access:** via QR Code reader
 - All methods work from shore or remote locations
 
 ### 🖥️ Touchscreen Interface
@@ -268,7 +269,7 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 ## Key Features by Category
 
 ### Main Menu Pages (Touch-Optimized Interface)
-✅ **Digital Dashboard** - Real-time engine gauges, 4-row layout
+✅ **Digital Dashboard** - Real-time engine gauges, pi monitoring, 4-row layout
 ✅ **Onboarding** - 20-step wizard with QR code generation
 ✅ **Boatlog** - Voice/text entries with CSV export
 ✅ **Navigation** - GPS/AIS position tracking
@@ -427,6 +428,7 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
    - Connect to NMEA2000 bus (12V, GND, CAN-H, CAN-L)
    - CX5106 gateway already on NMEA2000 bus reading analogue gauges
 5. **Boot:** Default login `d3kos` / `d3kos2026` (change password!)
+   **Boot:** Keyring password `pi` / `pi` (change keyring!)
 6. **Connect WiFi:** Settings → Network Settings
 7. **Onboarding Wizard:** Captain-assisted 20-step configuration (10-20 minutes)
    - Engine specifications (make, model, year, cylinders, RPM range, compression ratio)
@@ -439,7 +441,9 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 - **Username:** `d3kos`
 - **Password:** `d3kos2026`
 - **⚠️ CRITICAL:** Change password immediately after first login!
-
+### KeyRing
+- **Username:** `pi`
+- **Password:** `pi`
 ---
 
 ## Licensing & Tiers
@@ -454,7 +458,13 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 ❌ Voice assistant (disabled)
 ❌ Camera integration (disabled)
 
-### Tier 2: Premium (Mobile App - FREE)
+### Tier 1: Premium (Mobile App - FREE)
+✅ All Tier 0 features
+✅ Unlimited boat log retention
+✅ Unlimited onboarding resets
+✅ Data retention (30 days)
+
+### Tier 2: Premium (Subscription - $9.99/month planned)
 ✅ All Tier 0 features
 ✅ **Voice assistant enabled**
 ✅ **Camera integration enabled**
@@ -462,7 +472,7 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 ✅ Unlimited onboarding resets
 ✅ Extended data retention (90 days)
 
-### Tier 3: Enterprise (Subscription - $9.99/mo planned)
+### Tier 3: Enterprise (Subscription - $99.99/yr planned)
 ✅ All Tier 2 features
 ✅ Cloud sync (not implemented yet)
 ✅ Remote monitoring (not implemented yet)
@@ -500,7 +510,7 @@ Traditional chartplotters display engine data on basic gauge pages. d3kOS goes f
 ## Why d3kOS?
 
 ### For Analogue Engine Owners
-- **Preserve Legacy Gauges:** No need to replace working analogue dashboard
+- **Modernize Legacy Gauges with Digital gauges:** For boats that need gauges replaced
 - **Digital Diagnostics:** Get modern analytics without engine modifications
 - **Predictive Maintenance:** Catch problems before they become failures
 - **Performance Tracking:** Historical data shows engine health trends over time
@@ -557,7 +567,7 @@ d3kOS v2.0-T3 is BETA/TESTING software not suitable for production marine use. B
 
 ## Credits
 
-**Developed by:** Skipper Don (donmo) @ AtMyBoat.com
+**Developed by:** Skipper Don SkipperDon@AtMyBoat.com
 **AI Development Partner:** Claude Sonnet 4.5 (Anthropic)
 **Open Source Components:** Debian, Signal K, Node-RED, Vosk, Piper, YOLOv8, OpenCPN
 

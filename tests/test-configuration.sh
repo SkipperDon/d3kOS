@@ -1,4 +1,13 @@
 #!/bin/bash
+# d3kOS - Marine Intelligence Operating System
+# Copyright (C) 2026 Donald Moskaluk / AtMyBoat.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# For commercial licensing contact: skipperdon@atmyboat.com
+
 # test-configuration.sh - d3kOS Configuration Validation
 # Part of Distribution Prep Session 3: Testing & QA
 # Tests installation ID, license.json structure, tier detection, nginx proxy

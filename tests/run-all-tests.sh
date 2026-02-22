@@ -1,4 +1,13 @@
 #!/bin/bash
+# d3kOS - Marine Intelligence Operating System
+# Copyright (C) 2026 Donald Moskaluk / AtMyBoat.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# For commercial licensing contact: skipperdon@atmyboat.com
+
 # run-all-tests.sh - d3kOS Master Test Runner
 # Part of Distribution Prep Session 3: Testing & QA
 # Executes all test scripts and generates HTML + JSON reports

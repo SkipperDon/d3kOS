@@ -1,0 +1,55 @@
+=== COMPLETE FIX FOR ATMYBOAT.COM ===
+
+PROBLEM: WordPress Astra theme is interfering with custom HTML homepage
+SOLUTION: Fix all issues at once
+
+=== FIX 1: Hero Title Spacing ===
+
+WordPress is removing spaces. Fix with proper spacing:
+
+Go to: Pages → Home → Edit → Code editor
+
+Find line 3:
+<h1>SMART MARINE MONITORING FOR MODERN BOATERS</h1>
+
+Replace with (using letter-spacing CSS):
+<h1 style="letter-spacing: 0.05em;">SMART MARINE MONITORING FOR MODERN BOATERS</h1>
+
+=== FIX 2: Wrong Menu ===
+
+The Astra theme header is overriding your menu.
+
+Go to: Appearance → Customize → Header Builder → Primary Header → Primary Menu
+
+OR
+
+Go to: Astra Settings → disable theme header, use custom menu
+
+OR SIMPLEST:
+
+Go to: Appearance → Menus → Manage Locations
+Set "Primary Menu" to your menu (with Home, Blog, Shop, etc.)
+
+=== FIX 3: Remove "HOME" Text ===
+
+This is the Astra theme site title.
+
+Go to: Appearance → Customize → Site Identity
+- Uncheck "Display Site Title"
+- Keep only logo
+
+=== FIX 4: Make Sure Full Content Shows ===
+
+The tiers section should be visible.
+
+Check: Settings → Reading → Homepage displays: "A static page" → Home
+
+If still not showing, the page template might be wrong:
+Pages → Home → Edit → Look for "Template" in right sidebar → Set to "Default Template"
+
+=== ALL FIXES SUMMARY ===
+
+1. Fix hero title spacing (add style="letter-spacing: 0.05em;")
+2. Fix menu (Manage Locations → set Primary Menu)
+3. Remove "HOME" text (Site Identity → uncheck Display Site Title)
+4. Verify homepage template is "Default Template"
