@@ -1,4 +1,13 @@
 #!/bin/bash
+# d3kOS - Marine Intelligence Operating System
+# Copyright (C) 2026 Donald Moskaluk / AtMyBoat.com
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# For commercial licensing contact: skipperdon@atmyboat.com
+
 #
 # Pre-Image Cleanup Script for d3kOS
 # Cleans up temporary files, caches, and logs before creating SD card image

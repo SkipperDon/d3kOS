@@ -1,0 +1,209 @@
+<!-- Blog Subscription Popup - Add to homepage (before closing </body> tag) -->
+
+<!-- Popup HTML -->
+<div id="blog-subscribe-popup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #2a2a2a; border: 3px solid #BFFF00; border-radius: 12px; padding: 40px; max-width: 500px; width: 90%; position: relative; box-shadow: 0 10px 40px rgba(191, 255, 0, 0.3);">
+
+        <!-- Close button -->
+        <button id="popup-close" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: #BFFF00; font-size: 28px; cursor: pointer; line-height: 1; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;" aria-label="Close">×</button>
+
+        <!-- Popup content -->
+        <div style="text-align: center;">
+            <h3 style="font-size: 28px; color: #BFFF00; margin-bottom: 15px; font-weight: 600;">Stay Updated on Marine Electronics</h3>
+            <p style="font-size: 16px; color: #ffffff; margin-bottom: 25px; line-height: 1.6;">Get DIY guides, d3kOS updates, and boating tips delivered to your inbox. Join our community of modern boaters!</p>
+
+            <!-- Email subscription form -->
+            <form id="blog-subscribe-form" style="margin-bottom: 20px;">
+                <input type="email" id="subscriber-email" placeholder="Enter your email address" required style="width: 100%; padding: 15px; font-size: 16px; border: 2px solid #3a3a3a; background: #1a1a1a; color: #ffffff; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box;">
+
+                <button type="submit" style="width: 100%; background: #BFFF00; color: #000000; padding: 15px; font-size: 18px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s ease;">Subscribe to Blog Updates</button>
+            </form>
+
+            <p style="font-size: 13px; color: #cccccc; line-height: 1.5;">We respect your privacy. <a href="/unsubscribe" style="color: #BFFF00; text-decoration: none;">Unsubscribe</a> anytime. No spam, just quality marine electronics content.</p>
+        </div>
+
+    </div>
+</div>
+
+<!-- Popup JavaScript -->
+<script>
+(function() {
+    // Configuration
+    const POPUP_DELAY = 5000; // Show popup after 5 seconds
+    const COOKIE_NAME = 'blog_popup_dismissed';
+    const COOKIE_DAYS = 30; // Don't show again for 30 days
+
+    // Cookie functions
+    function setCookie(name, value, days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const expires = 'expires=' + date.toUTCString();
+        document.cookie = name + '=' + value + ';' + expires + ';path=/';
+    }
+
+    function getCookie(name) {
+        const nameEQ = name + '=';
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    // Check if user has already dismissed popup
+    function hasUserDismissed() {
+        return getCookie(COOKIE_NAME) === 'true';
+    }
+
+    // Show popup
+    function showPopup() {
+        const popup = document.getElementById('blog-subscribe-popup');
+        if (popup) {
+            popup.style.display = 'flex';
+        }
+    }
+
+    // Hide popup
+    function hidePopup() {
+        const popup = document.getElementById('blog-subscribe-popup');
+        if (popup) {
+            popup.style.display = 'none';
+        }
+    }
+
+    // Dismiss popup and set cookie
+    function dismissPopup() {
+        hidePopup();
+        setCookie(COOKIE_NAME, 'true', COOKIE_DAYS);
+    }
+
+    // Handle form submission
+    function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const emailInput = document.getElementById('subscriber-email');
+        const email = emailInput.value.trim();
+
+        if (!email) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+
+        // TODO: Replace with your actual email subscription service
+        // Options: MailChimp, ConvertKit, Sendinblue, EmailOctopus, etc.
+        //
+        // Example MailChimp integration:
+        // fetch('https://YOUR_DOMAIN.us1.list-manage.com/subscribe/post-json?u=YOUR_USER_ID&id=YOUR_LIST_ID&EMAIL=' + encodeURIComponent(email) + '&c=?', {
+        //     method: 'GET',
+        //     mode: 'no-cors'
+        // });
+        //
+        // For now, we'll just show a success message
+
+        // Temporary: Store email in localStorage (replace with actual service)
+        const subscribers = JSON.parse(localStorage.getItem('blog_subscribers') || '[]');
+        if (!subscribers.includes(email)) {
+            subscribers.push(email);
+            localStorage.setItem('blog_subscribers', JSON.stringify(subscribers));
+        }
+
+        // Show success message
+        const popup = document.getElementById('blog-subscribe-popup');
+        const popupContent = popup.querySelector('div > div');
+        popupContent.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <div style="font-size: 48px; color: #BFFF00; margin-bottom: 20px;">✓</div>
+                <h3 style="font-size: 28px; color: #BFFF00; margin-bottom: 15px;">Thanks for Subscribing!</h3>
+                <p style="font-size: 16px; color: #ffffff; margin-bottom: 25px;">You'll receive our latest marine electronics content and d3kOS updates.</p>
+                <button onclick="document.getElementById('blog-subscribe-popup').style.display='none'" style="background: #BFFF00; color: #000000; padding: 12px 30px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Close</button>
+            </div>
+        `;
+
+        // Dismiss popup after 3 seconds
+        setTimeout(dismissPopup, 3000);
+    }
+
+    // Initialize popup
+    function initPopup() {
+        // Don't show if user already dismissed
+        if (hasUserDismissed()) {
+            return;
+        }
+
+        // Show popup after delay
+        setTimeout(showPopup, POPUP_DELAY);
+
+        // Close button click handler
+        const closeBtn = document.getElementById('popup-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', dismissPopup);
+        }
+
+        // Click outside popup to close
+        const popup = document.getElementById('blog-subscribe-popup');
+        if (popup) {
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    dismissPopup();
+                }
+            });
+        }
+
+        // Form submit handler
+        const form = document.getElementById('blog-subscribe-form');
+        if (form) {
+            form.addEventListener('submit', handleFormSubmit);
+        }
+    }
+
+    // Run when page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPopup);
+    } else {
+        initPopup();
+    }
+})();
+</script>
+
+<!--
+IMPLEMENTATION NOTES:
+
+Design Features:
+- Lighter color scheme (#2a2a2a background vs. #1a1a1a site background)
+- Neon green border and accents (#BFFF00) matching site
+- Semi-transparent dark overlay (80% black)
+- Smooth transitions and hover effects
+- Mobile responsive (90% width on small screens)
+
+Behavior:
+- Appears after 5 seconds on page load
+- Dismissible with X button or clicking outside
+- Sets 30-day cookie to not show again
+- Shows success message after subscription
+
+Email Integration:
+- Currently stores emails in localStorage (temporary)
+- REPLACE with actual email service in handleFormSubmit():
+  * MailChimp - Best for email marketing, 500 subscribers free
+  * ConvertKit - Great for content creators, 1,000 subscribers free
+  * Sendinblue - 300 emails/day free
+  * EmailOctopus - 2,500 subscribers free
+
+To Implement:
+1. Paste this code at the END of your homepage HTML (before </body> tag)
+2. Sign up for an email service (MailChimp recommended)
+3. Replace the TODO comment in handleFormSubmit() with your service API call
+4. Test popup appearance and form submission
+
+Customization:
+- Delay: Change POPUP_DELAY (default: 5000ms = 5 seconds)
+- Cookie duration: Change COOKIE_DAYS (default: 30 days)
+- Colors: Adjust inline styles to match your theme
+- Text: Update heading and description as needed
+
+Testing:
+- Clear cookies to see popup again: document.cookie = 'blog_popup_dismissed=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+- Check localStorage for test emails: console.log(localStorage.getItem('blog_subscribers'))
+-->
