@@ -29,6 +29,7 @@
 | 3.4 | 2026-02-17 | d3kOS Team | Added Section 6.4 AI-Powered Self-Healing System: 5-tier architecture (detection, correlation, AI diagnosis, auto-remediation, user notification), engine anomaly detection with statistical process control, Pi system monitoring (CPU temp, memory, disk, services), pattern matching for common failures (failing SD card, overheating, low power, stuck processes), AI integration for root cause analysis, safe auto-remediation actions (restart services, kill stuck processes, clear temp files), user-friendly error translation, voice alerts (Tier 2+), remediation history tracking. Renamed "factory reset" to "Initial Setup Reset" throughout specification. |
 | 3.5 | 2026-02-17 | d3kOS Team | Added Section 4.1.4 Timezone Auto-Detection: 3-tier automatic detection (GPS coordinates → internet geolocation → UTC fallback), runs on first boot via d3kos-timezone-setup.service, detection script at /opt/d3kos/scripts/detect-timezone.sh, config file at /opt/d3kos/config/timezone.txt, manual override in Settings page (no onboarding wizard question). Prevents hardcoded Toronto timezone issue for worldwide deployment. Critical for accurate timestamps in boatlogs, health monitoring, GPS sync, and legal compliance (fishing regulations). |
 | 3.6 | 2026-02-20 | d3kOS Team | **Session A Implementation for v0.9.1.2**: Updated system version from 1.0.3 to 0.9.1.2, set tier from 2 to 3 for testing mode with all features enabled, implemented complete timezone auto-detection system (GPS→Internet→UTC with timezonefinder library), created timezone API service on port 8098 with nginx proxy (/api/timezone), enabled and verified voice assistant service with Vosk wake word detection (helm/advisor/counsel), Anker S330 microphone at plughw:2,0. All Session A changes verified, tested, and documented in doc/SESSION_A_FOUNDATION_COMPLETE.md. Foundation ready for Sessions B/C/D. |
+| 3.7 | 2026-02-22 | d3kOS Team | **CRITICAL UPDATE - OS Version Corrected**: Updated all OS references from Bookworm to Trixie (Debian 13), kernel from 6.1.x to 6.12.x, window manager from Openbox to Labwc (Wayland compositor). **Phi-2 LLM REMOVED** (Feb 16, 2026): Removed due to 60-180s response time (unusable on boat helm), freed 1.7GB storage. Replaced with OpenRouter (gpt-3.5-turbo, 6-8s) for online queries + rule-based system (13 patterns, 0.17s) for offline simple queries. Updated Node-RED from 3.x to v4.1.4. Documented actual system state: d3kOS v0.9.1.2, Tier 3, 22+ services running. Complete architecture audit performed, architecture.md v3.0 created. |
 
 ---
 
@@ -160,16 +161,16 @@ d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, desi
 
 | Layer | Component | Version | Purpose |
 |-------|-----------|---------|---------|
-| OS | Raspberry Pi OS (64-bit) | Bookworm | Base operating system |
+| OS | Raspberry Pi OS (64-bit) | Trixie (Debian 13) | Base operating system |
 | NMEA | Signal K Server | Latest | Marine data aggregation |
-| Automation | Node-RED | 3.x | Data flow and dashboard |
+| Automation | Node-RED | v4.1.4 | Data flow and dashboard |
 | Navigation | OpenCPN | 5.8.x | Chart plotting (auto-install) |
 | GPS | gpsd | Latest | GPS data processing |
 | Voice (Wake) | PocketSphinx | Latest | Wake word detection |
 | Voice (STT) | Vosk | 0.15 | Speech-to-text |
 | Voice (TTS) | Piper | Latest | Text-to-speech |
-| AI (Onboard) | Phi-2 | 2.7B | Local AI reasoning (offline) |
-| AI (Online) | Perplexity API | llama-3.1-sonar | Online AI (internet required) |
+| AI (Onboard) | Rule-based | 13 patterns | Fast responses for simple queries (0.17s) |
+| AI (Online) | OpenRouter | gpt-3.5-turbo | Online AI (6-8s response, internet required) |
 | AI Context | skills.md | Custom | Unified knowledge base |
 | AI Memory | SQLite | 3.x | Conversation history database |
 | Camera | VLC (libvlc) | Latest | RTSP stream viewer |
@@ -232,10 +233,10 @@ d3kOS is a comprehensive marine electronics system built on Raspberry Pi 4, desi
 ### 4.1 Operating System Configuration
 
 #### 4.1.1 Base OS
-- **Distribution**: Raspberry Pi OS (64-bit) Bookworm
-- **Kernel**: 6.1.x or later
+- **Distribution**: Raspberry Pi OS (64-bit) Trixie (Debian 13)
+- **Kernel**: 6.12.x or later
 - **Boot Mode**: Console auto-login → startx (no display manager)
-- **Window Manager**: Openbox (lightweight)
+- **Window Manager**: Labwc (Wayland compositor)
 - **Auto-start**: Chromium in maximized mode (NOT kiosk mode - preserve Pi menu access)
 
 #### 4.1.2 System Services (systemd)
@@ -608,22 +609,31 @@ Page 3: Health Reports
 #### 4.4.1 Voice Pipeline
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ Microphone  │ --> │ PocketSphinx│ --> │    Vosk     │ --> │   Phi-2     │
-│   (Audio)   │     │ (Wake Word) │     │    (STT)    │     │   (LLM)     │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌──────────────────┐
+│ Microphone  │ --> │ PocketSphinx│ --> │    Vosk     │ --> │  Query Handler   │
+│   (Audio)   │     │ (Wake Word) │     │    (STT)    │     │  (AI Router)     │
+└─────────────┘     └─────────────┘     └─────────────┘     └──────────────────┘
                            │                   │                   │
-                           ▼                   ▼                   ▼
-                    "Helm" detected    Transcription        AI Response
-                           │                   │                   │
-                           └───────────────────┴───────────────────┘
-                                              ▼
-                                       ┌─────────────┐
-                                       │    Piper    │
-                                       │    (TTS)    │
-                                       └─────────────┘
-                                              ▼
-                                         Speaker
+                           ▼                   ▼                   │
+                    "Helm" detected    Transcription               │
+                                                                    ▼
+                                              ┌─────────────────────┴─────────────┐
+                                              │                                   │
+                                              ▼                                   ▼
+                                    ┌──────────────────┐              ┌──────────────────┐
+                                    │   Rule-Based     │              │   OpenRouter     │
+                                    │  (13 patterns)   │              │ (gpt-3.5-turbo)  │
+                                    │   0.17-0.22s     │              │      6-8s        │
+                                    └──────────────────┘              └──────────────────┘
+                                              │                                   │
+                                              └─────────────┬─────────────────────┘
+                                                            ▼
+                                                     ┌─────────────┐
+                                                     │    Piper    │
+                                                     │    (TTS)    │
+                                                     └─────────────┘
+                                                            ▼
+                                                        Speaker
 ```
 
 #### 4.4.2 Wake Word Training
@@ -659,28 +669,45 @@ HELM    HH EH L M
 - Sample rate: 22050Hz
 - Speed: 1.0x (adjustable 0.8x - 1.5x)
 
-#### 4.4.5 LLM Configuration
+#### 4.4.5 AI Backend Configuration
 
-**Phi-2 (2.7B parameters)**:
-- Quantization: Q4_K_M (5GB disk, 3GB RAM)
-- Inference: llama.cpp (optimized for ARM)
-- Context window: 2048 tokens
-- Temperature: 0.7
-- Max tokens: 100 (concise responses)
+**⚠️ IMPORTANT: Phi-2 LLM REMOVED (February 16, 2026)**
+- **Reason**: 60-180 second response time unusable on boat helm
+- **Storage Freed**: 1.7GB (model file removed)
+- **Replacement**: Hybrid online/offline system
 
-**Prompt Template**:
+**Current AI Architecture**:
+
+**Online AI (OpenRouter - Primary)**:
+- Provider: OpenRouter API (https://openrouter.ai)
+- Model: openai/gpt-3.5-turbo
+- Response Time: 6-8 seconds
+- Requirements: Internet connection
+- Use Case: Complex queries, natural language understanding
+
+**Offline AI (Rule-Based - Fallback)**:
+- Pattern Matching: 13 predefined query types
+- Response Time: 0.17-0.22 seconds (with Signal K cache)
+- Supported Queries: rpm, oil, temperature, fuel, battery, speed, heading, boost, hours, location, time, help, status
+- Use Case: Simple sensor queries when offline
+
+**AI Configuration File** (`/opt/d3kos/config/ai-config.json`):
+```json
+{
+  "openrouter": {
+    "api_key": "sk-or-v1-...",
+    "model": "openai/gpt-3.5-turbo",
+    "base_url": "https://openrouter.ai/api/v1/chat/completions"
+  },
+  "cache_ttl": 3.0,
+  "default_provider": "auto"
+}
 ```
-System: You are Helm, a concise marine assistant. Current boat status:
-- Engine RPM: {rpm}
-- Oil Pressure: {oil_psi} PSI
-- Coolant Temperature: {coolant_temp}°F
-- Fuel Level: {fuel_percent}%
-- Battery Voltage: {voltage}V
 
-User: {user_query}
-
-Helm: [Respond in 1-2 sentences with actionable information]
-```
+**Wake Word Routing**:
+- **"helm"** → Auto-select (online if available, offline if not)
+- **"advisor"** → Force offline (rule-based only)
+- **"counsel"** → Force online (OpenRouter)
 
 #### 4.4.6 Command Parser
 
@@ -707,67 +734,74 @@ const commands = {
 
 #### 4.5.1 System Overview
 
-d3kOS implements a hybrid AI system that intelligently routes queries between two AI backends:
+**⚠️ UPDATED (February 16, 2026)**: Phi-2 LLM removed, replaced with rule-based + OpenRouter system.
 
-- **Online AI** (Perplexity API): Fast, powerful, requires internet
-- **Onboard AI** (Phi-2 via llama.cpp): Offline, slower (~60s), fully local
+d3kOS implements a hybrid AI system that intelligently routes queries between two backends:
+
+- **Online AI** (OpenRouter gpt-3.5-turbo): Fast (6-8s), powerful, requires internet
+- **Offline AI** (Rule-based patterns): Ultra-fast (0.17s), 13 query types, no internet
 
 **Routing Logic**:
 ```
 User Query (Voice OR Text)
          ↓
-    Check Internet
+    Pattern Match?
     ┌────────┴────────┐
     │                 │
-Internet              No Internet
-Available             ↓
-    ↓              Onboard AI
-Online AI           (Phi-2)
-(Perplexity)           ↓
-    ↓              Response
-Response               ↓
-    ↓            Store in DB
-Store in DB            ↓
-    ↓            Evaluate &
-Evaluate &         Learn
-Learn
+ Match            No Match
+ Found               ↓
+    ↓          Check Internet
+Rule-Based          │
+Response       ┌────┴────┐
+0.17-0.22s     │         │
+    ↓        Online   Offline
+Store in DB    │         │
+    ↓     OpenRouter  Message
+Response  gpt-3.5     "Need
+    │      6-8s    internet"
+    └────┬───┘         │
+         ↓             │
+    Store in DB       │
+         │            │
+         └─────┬──────┘
+               ▼
+          Response
 ```
 
-#### 4.5.2 Online AI Configuration (Perplexity)
+#### 4.5.2 Online AI Configuration (OpenRouter)
 
 **API Configuration** (`/opt/d3kos/config/ai-config.json`):
 ```json
 {
-  "online_ai": {
-    "provider": "perplexity",
-    "api_key": "pplx-xxxxx",
-    "api_endpoint": "https://api.perplexity.ai/chat/completions",
-    "model": "llama-3.1-sonar-small-128k-online",
+  "openrouter": {
+    "api_key": "sk-or-v1-...",
+    "base_url": "https://openrouter.ai/api/v1/chat/completions",
+    "model": "openai/gpt-3.5-turbo",
     "enabled": true,
     "max_tokens": 500,
     "temperature": 0.7,
-    "timeout": 10000
+    "timeout": 30
   },
-  "fallback": {
-    "provider": "onboard",
-    "model": "phi-2"
-  }
+  "cache_ttl": 3.0,
+  "default_provider": "auto"
 }
 ```
 
 **API Request Format**:
 ```javascript
-async function queryPerplexity(question, context) {
+async function queryOpenRouter(question, context) {
   const config = loadAIConfig();
 
-  const response = await fetch(config.online_ai.api_endpoint, {
+  const response = await fetch(config.openrouter.base_url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${config.online_ai.api_key}`,
-      'Content-Type': 'application/json'
+      'Authorization': `Bearer ${config.openrouter.api_key}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://d3kos.local',
+      'X-Title': 'd3kOS Marine Assistant'
     },
     body: JSON.stringify({
-      model: config.online_ai.model,
+      model: config.openrouter.model,
       messages: [
         {
           role: 'system',
@@ -778,8 +812,8 @@ async function queryPerplexity(question, context) {
           content: question
         }
       ],
-      max_tokens: config.online_ai.max_tokens,
-      temperature: config.online_ai.temperature
+      max_tokens: config.openrouter.max_tokens,
+      temperature: config.openrouter.temperature
     })
   });
 
@@ -789,26 +823,26 @@ async function queryPerplexity(question, context) {
 ```
 
 **Rate Limiting**:
-- Free tier: 5 requests/minute
+- OpenRouter: Varies by model (gpt-3.5-turbo: generous limits)
 - Handle 429 (rate limit) errors gracefully
-- Queue requests if rate limited
 - Display estimated wait time to user
+- Fallback to rule-based responses
 
 **Error Handling**:
 ```javascript
 async function queryOnlineAI(question) {
   try {
-    return await queryPerplexity(question, context);
+    return await queryOpenRouter(question, context);
   } catch (error) {
     if (error.status === 429) {
-      speak("API rate limit reached. Switching to onboard AI.");
-      return await queryPhi2(question, context);
+      speak("API rate limit reached. Using offline mode.");
+      return ruleBasedResponse(question);
     } else if (error.status === 401) {
-      speak("API key invalid. Please check settings. Using onboard AI.");
-      return await queryPhi2(question, context);
+      speak("API key invalid. Please check settings. Using offline mode.");
+      return ruleBasedResponse(question);
     } else {
-      speak("Online AI unavailable. Using onboard AI.");
-      return await queryPhi2(question, context);
+      speak("Online AI unavailable. Using offline mode.");
+      return ruleBasedResponse(question);
     }
   }
 }
@@ -927,40 +961,35 @@ async function loadContext() {
 ```
 
 **Context Size Management**:
-- Perplexity: 128K token context window (can send full skills.md)
-- Phi-2: 2K token context window (must compress/summarize skills.md)
+- OpenRouter (gpt-3.5-turbo): 16K token context window (can send full skills.md)
+- Rule-based: No context window (uses pattern matching only)
 
+**Signal K Data Caching**:
 ```javascript
-function compressContextForPhi2(skills) {
-  // Extract only essential information
-  const sections = [
-    'System Information',
-    'Boat Information',
-    'Engine Information',
-    'Normal Operating Parameters'
-  ];
+// Cache Signal K data for 3 seconds to speed up responses
+let signalKCache = {
+  data: null,
+  timestamp: 0,
+  ttl: 3000  // 3 seconds
+};
 
-  let compressed = '';
-  sections.forEach(section => {
-    const match = skills.match(new RegExp(`## ${section}[\\s\\S]*?(?=##|$)`));
-    if (match) {
-      compressed += match[0] + '\n\n';
-    }
-  });
-
-  // Add last 5 Q&A entries only
-  const conversationMatch = skills.match(/## Conversation History[\s\S]*$/);
-  if (conversationMatch) {
-    const entries = conversationMatch[0].match(/\*\*Q\*\*:[\s\S]*?\*\*Date\*\*:.*$/gm);
-    if (entries && entries.length > 0) {
-      compressed += '## Recent Conversations\n';
-      compressed += entries.slice(-5).join('\n\n');
-    }
+async function getBoatStatus() {
+  const now = Date.now();
+  if (now - signalKCache.timestamp < signalKCache.ttl) {
+    return signalKCache.data;  // Return cached data (0.001s)
   }
 
-  return compressed;
+  // Fetch fresh data from Signal K (18s)
+  signalKCache.data = await fetchSignalKData();
+  signalKCache.timestamp = now;
+  return signalKCache.data;
 }
 ```
+
+**Performance Optimization**:
+- First query: 18s (fetch Signal K data + AI response)
+- Subsequent queries (within 3s): 0.17s (cached data + rule-based) or 6s (cached data + OpenRouter)
+- Result: 100× speedup for rapid-fire questions
 
 #### 4.5.5 Document Retrieval System
 
@@ -1228,13 +1257,13 @@ const wakeWordRouting = {
     response: 'Aye Aye Captain'
   },
   'advisor': {
-    ai: 'onboard',          // Force onboard AI (Phi-2)
+    ai: 'onboard',          // Force offline (rule-based patterns only)
     response: 'Aye Aye Captain'
   },
   'counsel': {
-    ai: 'online',           // Force online AI (Perplexity)
+    ai: 'online',           // Force online AI (OpenRouter)
     response: 'Aye Aye Captain',
-    fallback: 'Internet unavailable, using onboard advisor'
+    fallback: 'Internet unavailable, using offline mode'
   }
 };
 
@@ -1243,56 +1272,60 @@ async function processWakeWord(wakeWord, spokenCommand) {
 
   if (routing.ai === 'auto') {
     const hasInternet = await checkInternetConnection();
+    // Try rule-based first (always fast)
+    const ruleResponse = ruleBasedResponse(spokenCommand);
+    if (ruleResponse) {
+      return ruleResponse;
+    }
+
+    // Complex query: check internet for OpenRouter
+    const hasInternet = await checkInternetConnection();
     if (hasInternet) {
-      return await queryPerplexity(spokenCommand, context);
+      return await queryOpenRouter(spokenCommand, context);
     } else {
-      return await queryPhi2(spokenCommand, context);
+      speak("That's a complex question. I can only answer simple queries offline. Please connect to internet.");
+      return null;
     }
   } else if (routing.ai === 'online') {
     const hasInternet = await checkInternetConnection();
     if (hasInternet) {
       speak(routing.response);
-      return await queryPerplexity(spokenCommand, context);
+      return await queryOpenRouter(spokenCommand, context);
     } else {
       speak(routing.fallback);
-      return await queryPhi2(spokenCommand, context);
+      return ruleBasedResponse(spokenCommand) || "Sorry, I need internet for complex questions.";
     }
   } else if (routing.ai === 'onboard') {
     speak(routing.response);
-    return await queryPhi2(spokenCommand, context);
+    return ruleBasedResponse(spokenCommand) || "I can only answer simple questions offline: rpm, oil, temperature, fuel, battery, speed, heading, boost, hours, location, time, help, status.";
   }
 }
 ```
 
-#### 4.5.8 Status Updates for Slow Onboard AI
+#### 4.5.8 Rule-Based Response Patterns
 
-**Audio Progress Updates** (every 40 seconds):
+**Pattern Matching System** (13 predefined patterns):
 ```javascript
-function queryPhi2WithStatusUpdates(question, context) {
-  const statusMessages = [
-    "AI is working on your question, please stand by",
-    "Still processing your request, just a moment",
-    "Almost there, working on the answer",
-    "Just a bit longer, analyzing your question"
-  ];
+function ruleBasedResponse(question) {
+  const q = question.toLowerCase();
+  const boatStatus = getBoatStatus();  // Cached 3s TTL
 
-  let messageIndex = 0;
-  const statusInterval = setInterval(() => {
-    speak(statusMessages[messageIndex % statusMessages.length]);
-    messageIndex++;
-  }, 40000);  // Every 40 seconds
+  // Pattern: RPM
+  if (/\b(rpm|engine speed|revolutions)\b/.test(q)) {
+    return `Engine RPM is ${boatStatus.rpm || 0}`;
+  }
 
-  // Start timer
-  const startTime = Date.now();
+  // Pattern: Oil Pressure
+  if (/\b(oil|oil pressure)\b/.test(q)) {
+    return `Oil pressure is ${boatStatus.oil_pressure || 'not available'}`;
+  }
 
-  // Query Phi-2 (slow, ~60 seconds)
-  const answer = await queryPhi2(question, compressContextForPhi2(context.skills));
+  // Pattern: Temperature
+  if (/\b(temp|temperature|coolant|engine temp)\b/.test(q)) {
+    return `Coolant temperature is ${boatStatus.coolant_temp || 'not available'}`;
+  }
 
-  // Stop status updates
-  clearInterval(statusInterval);
-
-  // Calculate response time
-  const responseTime = Date.now() - startTime;
+  // ... 10 more patterns (fuel, battery, speed, heading, boost, hours, location, time, help, status)
 
   return { answer, responseTime };
 }
@@ -5155,9 +5188,10 @@ systemd-analyze critical-chain
 **Voice Response Time**:
 - Wake word detection: < 500ms
 - STT transcription: < 1 second
-- LLM inference: < 1 second
+- Query classification: < 50ms
+- AI inference: 0.17s (rule-based, cached) OR 6-8s (OpenRouter)
 - TTS generation: < 500ms
-- **Total**: < 2 seconds from "Helm" to response start
+- **Total**: 2-3 seconds (simple queries) OR 8-10 seconds (complex queries)
 
 **Camera Latency**:
 - RTSP stream: < 500ms from camera to display
@@ -5175,9 +5209,10 @@ systemd-analyze critical-chain
 **Memory**:
 - Base OS: 500MB
 - Signal K + Node-RED: 300MB
-- Voice (Phi-2 loaded): 3GB
-- Camera buffering: 200MB
-- **Total**: < 4GB (fits in 4GB Pi)
+- Voice (PocketSphinx + Vosk + Piper): 350MB
+- AI (rule-based + OpenRouter API calls): 50MB
+- Camera + Marine Vision (YOLOv8n ONNX): 350MB
+- **Total**: < 1.6GB (8GB Pi recommended, 4GB minimum)
 
 **Disk I/O**:
 - Historical logging: < 1 MB/min
@@ -5491,7 +5526,6 @@ sudo systemctl restart helm-*
 | pocketsphinx | Latest | BSD | Wake word detection |
 | vosk | 0.15 | Apache 2.0 | Speech-to-text |
 | piper | Latest | MIT | Text-to-speech |
-| llama.cpp | Latest | MIT | LLM inference |
 | opencpn | 5.8.x | GPL | Chart plotting |
 | chromium | Latest | BSD | Web browser |
 | touchegg | Latest | GPL | Gesture support |
@@ -5563,10 +5597,12 @@ GET  /api/license                 # License information
 ├── models/
 │   ├── vosk/
 │   ├── piper/
-│   └── phi2/
+│   └── marine-vision/
+│       └── yolov8n.onnx
 └── logs/
     ├── onboarding.log
     ├── voice.log
+    ├── ai-api.log
     └── health.log
 ```
 
