@@ -387,6 +387,7 @@ Speaker
 **System**:
 - "Helm, query system status"
 - "Helm, restart services"
+- **"Helm, reboot"** (Emergency reboot - use when touchscreen fails)
 
 ### Technology Stack
 

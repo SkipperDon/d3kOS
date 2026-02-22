@@ -358,6 +358,102 @@ Voice assistant uses minimal power, but for extended offline use:
 
 ---
 
+## Emergency Voice Reboot
+
+### When to Use
+
+**Emergency reboot is for recovering from touchscreen failures** caused by voice service issues.
+
+**Symptoms that require emergency reboot:**
+- Touchscreen stopped responding to touch
+- Cannot tap buttons on screen
+- Onboard keyboard doesn't appear
+- Voice service broke touch input (known issue)
+
+**When NOT needed:**
+- Normal system operations (use Settings → System → Reboot)
+- Voice assistant not responding (check microphone, wait 8 seconds)
+- Screen is black (power issue, not software)
+
+### How to Perform Emergency Reboot
+
+**Step-by-Step:**
+
+1. **Say the wake word:** "HELM" (loud and clear)
+2. **Listen for response:** "Aye Aye Captain" (~3 seconds)
+3. **Wait 8 seconds** for listening mode to fully activate
+4. **Say one command:**
+   - "reboot" (recommended - simple)
+   - "restart"
+   - "shutdown"
+   - "reboot system"
+   - "power cycle"
+5. **Listen for confirmation:** "Rebooting system now. Please wait 60 seconds."
+6. **System reboots immediately** (wait ~60 seconds for full restart)
+
+### Example Session
+
+```
+You: "HELM"
+Assistant: "Aye Aye Captain" ✓
+[Wait 8 seconds - system is now listening]
+You: "reboot"
+Assistant: "Rebooting system now. Please wait 60 seconds." ✓
+[System reboots immediately]
+```
+
+### Important Notes
+
+**Timing is Critical:**
+- Wait full 8 seconds after "Aye Aye Captain" before speaking
+- If you speak too soon, command won't be heard
+- If no response after 10 seconds, try again
+
+**Voice Must Be Clear:**
+- Speak at normal volume (not whisper, not shout)
+- Say one word: "reboot" (simplest)
+- Background noise can interfere - reduce if possible
+
+**What Happens:**
+- System saves all data automatically before reboot
+- All services restart cleanly
+- Touchscreen functionality restored after reboot
+- No data loss or corruption
+
+### If Emergency Reboot Doesn't Work
+
+1. **Physical Power Cycle:**
+   - Disconnect 12V power from NMEA2000 bus
+   - Wait 10 seconds
+   - Reconnect power
+   - System will boot normally (~60 seconds)
+
+2. **Check Voice Service:**
+   - Use SSH from laptop: `ssh d3kos@192.168.1.237`
+   - Check status: `systemctl status d3kos-voice.service`
+   - If stopped: `sudo systemctl start d3kos-voice.service`
+
+3. **Contact Support:**
+   - Document issue (photos, description)
+   - Email support@atmyboat.com
+   - Include installation ID from Settings page
+
+### Technical Details
+
+**Implementation:** Industry-standard D-Bus + Polkit
+- No password required for d3kos user
+- Direct communication with systemd-logind
+- Secure, auditable, reliable
+
+**Voice Pipeline:**
+```
+Microphone → "HELM" → Vosk STT → Pattern Match → D-Bus → Systemd → Reboot
+```
+
+**Total Time:** ~12 seconds from wake word to reboot initiation
+
+---
+
 ## Troubleshooting
 
 ### Text Interface Issues
