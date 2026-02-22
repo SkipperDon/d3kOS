@@ -29,7 +29,7 @@ d3kOS is an open-source operating system specifically engineered for marine envi
 - **Image File**: `d3kOS-v2.0-tier3-full.zip`
 - **Size**: 9.2 GB (compressed)
 - **SHA256**: `51f5a3115c24f77b0998d06d7e4b31ca8b54418cb3791531d8e18538e53ec368`
-- **Download**: [Google Drive](https://drive.google.com/YOUR-LINK-HERE)
+- **Download**: [Google Drive](https://drive.google.com/file/d/1pGdv_EGTI4CZ5JDrbiIRJYr09Dz5dvIS/view?usp=sharing)
 - **Release Notes**: [v2.0-T3 Release Notes](doc/RELEASE_NOTES_v2.0-T3.md)
 
 **System Requirements:**
