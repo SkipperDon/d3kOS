@@ -1,13 +1,46 @@
-# d3kOS
+# d3kOS - Marine Intelligence Operating System
 
-**Marine Intelligence Platform - d3-k1 Hardware**
+**Intelligent Marine Electronics Platform for Modern Boaters**
 
-d3kOS is marine electronics software that runs on the d3-k1 hardware platform. The d3-k1 is a comprehensive marine electronics system that integrates NMEA2000 data, GPS/AIS information, camera surveillance, and AI-powered voice assistance into a unified, touchscreen-optimized interface for boat owners.
+d3kOS (d3k Operating System) is a comprehensive, AI-powered marine electronics platform designed for the d3-k1 hardware system. Built on Debian Linux, d3kOS transforms a Raspberry Pi into a professional-grade marine helm control system with real-time engine monitoring, voice-controlled AI assistance, GPS/AIS navigation, IP camera surveillance, and intelligent anomaly detection.
 
-**Version**: 0.9.1.2
-**Date**: February 20, 2026
+**What is d3kOS?**
+d3kOS is an open-source operating system specifically engineered for marine environments. It provides boat owners with enterprise-level monitoring and control capabilities at a fraction of traditional marine electronics costs. The system integrates seamlessly with NMEA2000 networks, processes sensor data in real-time, and delivers actionable intelligence through voice commands, touchscreen interfaces, and automated alerts.
+
+**Key Differentiators:**
+- **100% Offline Operation:** All core features work without internet connectivity
+- **Voice-First Interface:** Hands-free control via natural language ("Helm, what's the engine status?")
+- **AI-Powered Analysis:** Real-time anomaly detection with >95% accuracy
+- **Open Architecture:** Standard web technologies, RESTful APIs, Signal K integration
+- **Touch-Optimized:** Large buttons, on-screen keyboard, designed for wet hands and rough seas
+- **Cost-Effective:** ~$500 hardware vs $5,000+ traditional systems
+
+**Version**: 2.0-T3 (Testing Build)
+**Release Date**: February 22, 2026
 **OS**: Debian GNU/Linux 13 (Trixie)
-**Status**: Tier 0 Installation Complete - Testing Build
+**Status**: Pre-release - Tier 3 Enabled for Testing
+
+---
+
+## 📥 Download
+
+**Latest Release: v2.0-T3** (Testing Build)
+
+- **Image File**: `d3kOS-v2.0-tier3-full.zip`
+- **Size**: 9.2 GB (compressed)
+- **SHA256**: `51f5a3115c24f77b0998d06d7e4b31ca8b54418cb3791531d8e18538e53ec368`
+- **Download**: [Google Drive](https://drive.google.com/YOUR-LINK-HERE)
+- **Release Notes**: [v2.0-T3 Release Notes](doc/RELEASE_NOTES_v2.0-T3.md)
+
+**System Requirements:**
+- Raspberry Pi 4B (8GB RAM recommended)
+- 16GB+ microSD card (32GB+ recommended for camera recordings)
+- PiCAN-M HAT or compatible NMEA2000 interface
+- 7" touchscreen (1024×600 minimum resolution)
+- Anker S330 speakerphone (for Tier 2+ voice features)
+
+**⚠️ Testing Build Notice:**
+This is a pre-release testing build (T3) with all Tier 3 features enabled for evaluation. Not recommended for production use yet.
 
 ---
 
@@ -25,9 +58,10 @@ d3kOS is marine electronics software that runs on the d3-k1 hardware platform. T
 
 ---
 
-## What's New in v0.9.1.2
+## What's New in v2.0-T3
 
-**Released**: February 20, 2026
+**Released**: February 22, 2026
+**Status**: Testing/Pre-release Build
 
 ### Session A: Foundation
 - ✅ **Timezone Auto-Detection**: 3-tier fallback system (GPS → Internet → UTC)
@@ -59,6 +93,40 @@ d3kOS is marine electronics software that runs on the d3-k1 hardware platform. T
 - ✅ **PolicyKit Authorization**: NetworkManager control without sudo
 - ✅ **On-Screen Keyboard Compatible**: Password entry works with touchscreen
 - ✅ **Auto-Refresh**: 10-second status updates
+
+### Session G: Emergency Voice Reboot
+- ✅ **Voice-Triggered System Reboot**: Emergency recovery via voice command
+- ✅ **D-Bus + Polkit Implementation**: Industry-standard system command execution
+- ✅ **Touchscreen Recovery**: Reboot system when touch input fails
+- ✅ **Single-Word Commands**: "reboot", "restart", "shutdown", "power cycle"
+- ✅ **12-Second Response**: Wake word → reboot initiation in ~12 seconds
+- ✅ **Security**: Fine-grained authorization (reboot only, not all sudo commands)
+
+### Session H: Marine Vision System
+- ✅ **Camera Integration**: Reolink RLC-810A (4K, IP67, night vision)
+- ✅ **Live Feed**: 8 FPS streaming (720p/1080p sub-stream optimized)
+- ✅ **Video Recording**: VLC backend with start/stop control
+- ✅ **Photo Capture**: High-resolution JPEG snapshots
+- ✅ **Object Detection**: YOLOv8n via ONNX Runtime (person detection working)
+- ✅ **Storage Management**: Auto-cleanup after 7 days
+- ✅ **APIs**: Camera (8084), Detection (8086), Unified (8089)
+
+### Session I: Installation ID & License System
+- ✅ **16-Character Installation ID**: SHA-256 hex format (persistent)
+- ✅ **File-Based Storage**: `/opt/d3kos/config/license.json`
+- ✅ **Tier Detection**: Auto-upgrade to Tier 2 when OpenCPN installed
+- ✅ **Feature Restrictions**: Tier-based access control
+- ✅ **Reset Counter**: Track onboarding resets (10 max for Tier 0)
+- ✅ **QR Code Generation**: Simplified format for mobile app pairing
+- ✅ **APIs**: License (8091), Tier (8093)
+
+### Session J: Voice & AI Improvements
+- ✅ **AI Response Caching**: Signal K data cached (3s TTL) for 100× speed boost
+- ✅ **Pattern Expansion**: 8 → 13 instant-answer query types
+- ✅ **Phi-2 Removal**: Removed slow LLM (60-180s), improved reliability
+- ✅ **OpenRouter Integration**: Complex queries use online AI (6-8s)
+- ✅ **Response Times**: 0.17-0.22s (cached), 6-8s (online), instant (time/help)
+- ✅ **Logo Update**: Transparent background AtMyBoat.com logo
 
 ---
 
