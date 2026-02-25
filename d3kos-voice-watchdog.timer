@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Voice Assistant Watchdog Timer
+Documentation=https://github.com/d3kos/d3kos
+
+[Timer]
+# Run every 2 minutes
+OnBootSec=2min
+OnUnitActiveSec=2min
+
+# Don't pile up if system suspended
+Persistent=false
+
+[Install]
+WantedBy=timers.target
