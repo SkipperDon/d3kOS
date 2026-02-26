@@ -1,9 +1,9 @@
 # d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 3.6
-**Date**: February 20, 2026
-**Status**: APPROVED - Session A Complete: v0.9.1.2, Tier 3, Timezone API, Voice Enabled
-**Previous Version**: 3.5 (February 17, 2026)
+**Version**: 3.8
+**Date**: February 26, 2026
+**Status**: APPROVED - Bug Fix: Added sysstat dependency
+**Previous Version**: 3.7 (February 22, 2026)
 
 ---
 
@@ -30,6 +30,7 @@
 | 3.5 | 2026-02-17 | d3kOS Team | Added Section 4.1.4 Timezone Auto-Detection: 3-tier automatic detection (GPS coordinates → internet geolocation → UTC fallback), runs on first boot via d3kos-timezone-setup.service, detection script at /opt/d3kos/scripts/detect-timezone.sh, config file at /opt/d3kos/config/timezone.txt, manual override in Settings page (no onboarding wizard question). Prevents hardcoded Toronto timezone issue for worldwide deployment. Critical for accurate timestamps in boatlogs, health monitoring, GPS sync, and legal compliance (fishing regulations). |
 | 3.6 | 2026-02-20 | d3kOS Team | **Session A Implementation for v0.9.1.2**: Updated system version from 1.0.3 to 0.9.1.2, set tier from 2 to 3 for testing mode with all features enabled, implemented complete timezone auto-detection system (GPS→Internet→UTC with timezonefinder library), created timezone API service on port 8098 with nginx proxy (/api/timezone), enabled and verified voice assistant service with Vosk wake word detection (helm/advisor/counsel), Anker S330 microphone at plughw:2,0. All Session A changes verified, tested, and documented in doc/SESSION_A_FOUNDATION_COMPLETE.md. Foundation ready for Sessions B/C/D. |
 | 3.7 | 2026-02-22 | d3kOS Team | **CRITICAL UPDATE - OS Version Corrected**: Updated all OS references from Bookworm to Trixie (Debian 13), kernel from 6.1.x to 6.12.x, window manager from Openbox to Labwc (Wayland compositor). **Phi-2 LLM REMOVED** (Feb 16, 2026): Removed due to 60-180s response time (unusable on boat helm), freed 1.7GB storage. Replaced with OpenRouter (gpt-3.5-turbo, 6-8s) for online queries + rule-based system (13 patterns, 0.17s) for offline simple queries. Updated Node-RED from 3.x to v4.1.4. Documented actual system state: d3kOS v0.9.1.2, Tier 3, 22+ services running. Complete architecture audit performed, architecture.md v3.0 created. |
+| 3.8 | 2026-02-26 | d3kOS Team | **Bug Fix**: Added `sysstat` package to Appendix B Software Dependencies. Signal K's rpi-monitor plugin requires `mpstat` command for CPU core utilization monitoring. Missing package caused recurring "mpstat: not found" errors every 30 seconds in Signal K logs. Reported by Holger (Linz/Danube) during field testing. Fix: `sudo apt install sysstat`. Also documented UART GPIO configuration for Moitessier HAT GPS/AIS and MCP2515 oscillator frequency configuration (12MHz vs 16MHz). |
 
 ---
 
@@ -2263,7 +2264,7 @@ The Marine Vision System provides AI-powered computer vision for two primary use
 - Event logging with timestamp, species, location
 
 **Forward Watch Mode** (camera oriented toward bow):
-- Real-time marine object detection (boats, kayaks, buoys, logs, debris, docks)
+- Real-time marine object detection (people, boats, kayaks, buoys, logs, debris, docks)
 - Distance estimation using AI-based monocular depth
 - Visual and audible alerts
 - Object tracking with position/distance
@@ -2293,7 +2294,7 @@ The Marine Vision System provides AI-powered computer vision for two primary use
 - Optional fine-tuning with user-provided images (20-50 per species)
 
 **Forward Watch Mode**:
-- YOLOv8-Marine (boat/buoy/debris detection)
+- YOLOv8-Marine (person/boat/kayak/buoy/debris detection)
 - MiDaS v3.0 or ZoeDepth (monocular depth estimation)
 - Real-time processing: 10+ FPS object detection, 5+ FPS depth
 
@@ -2408,11 +2409,15 @@ The Marine Vision System provides AI-powered computer vision for two primary use
    - Regulations lookup
    - Capture event logging
 
-4. **d3kos-forward-watch** (Port 8087)
-   - Marine object detection
-   - Distance estimation
+4. **d3kos-forward-watch** (Port 8087) **[SEE FORWARD WATCH SUB-PROJECT]**
+   - Marine object detection (people, boats, kayaks, buoys, logs, debris, docks)
+   - Distance estimation (monocular depth)
+   - GPS coordinate mapping for chartplotter integration
    - Alert generation
    - Detection logging
+   - **Note:** Forward Watch is implemented as Signal K plugin (`signalk-forward-watch`)
+   - **Documentation:** `/home/boatiq/Helm-OS/doc/FORWARD_WATCH_SPECIFICATION.md`
+   - **See Section 5.6.12** for chartplotter integration details
 
 5. **d3kos-marine-vision-api** (Port 8089)
    - Unified REST API
@@ -2451,7 +2456,41 @@ The Marine Vision System provides AI-powered computer vision for two primary use
 - Automatic mode switching
 - Manual override controls
 
-#### 5.6.12 Known Limitations
+#### 5.6.12 Chartplotter Integration (Forward Watch Sub-Project)
+
+**Implementation:** Signal K Plugin (`signalk-forward-watch`)
+
+**Purpose:** Display Forward Watch detections as targets on NMEA2000 chartplotters
+
+**Architecture:**
+```
+Camera Detection → GPS Calculation → Signal K Delta → NMEA2000 PGN → Chartplotter Display
+```
+
+**Key Features:**
+- **Object GPS Mapping:** Converts camera detections to latitude/longitude coordinates
+- **Distance Estimation:** MiDaS monocular depth AI (±20% accuracy @ 50m)
+- **Bearing Calculation:** Uses boat heading + camera field of view
+- **Signal K Output:** Delta messages in standard vessels format
+- **NMEA2000 Conversion:** PGN 129038 (AIS-like targets) or PGN 129285 (waypoints)
+- **Universal Compatibility:** Works with Garmin, Raymarine, Simrad, Lowrance, Furuno, OpenCPN
+
+**Training Requirements:**
+- **YOLOv8-Marine:** Custom training on marine datasets (SeaShips, floating debris)
+- **MiDaS Depth:** Pre-trained, no custom training needed
+- **Training Time:** 12-16 hours on RTX 3060 Ti GPU
+- **Datasets Available:** SeaShips (31,455 images), Marine Surveillance (Roboflow), Floating Debris
+
+**Documentation:**
+- **Technical Spec:** `/home/boatiq/Helm-OS/doc/FORWARD_WATCH_SPECIFICATION.md`
+- **One-Pager:** `/home/boatiq/Helm-OS/doc/FORWARD_WATCH_ONEPAGER.md`
+- **README:** `/home/boatiq/Helm-OS/signalk-forward-watch-README.md`
+
+**Development Status:** Specification complete, ready for implementation
+
+**Repository:** https://github.com/d3kOS/signalk-forward-watch (planned)
+
+#### 5.6.13 Known Limitations
 
 1. Requires internet for notifications (offline detection still works)
 2. Species ID accuracy depends on photo quality and lighting
@@ -5523,6 +5562,7 @@ sudo systemctl restart helm-*
 | signalk-server | Latest | Apache 2.0 | Marine data aggregation |
 | node-red | 3.x | Apache 2.0 | Automation and dashboard |
 | gpsd | Latest | BSD | GPS data processing |
+| sysstat | Latest | GPL | System performance monitoring (mpstat, iostat) |
 | pocketsphinx | Latest | BSD | Wake word detection |
 | vosk | 0.15 | Apache 2.0 | Speech-to-text |
 | piper | Latest | MIT | Text-to-speech |
