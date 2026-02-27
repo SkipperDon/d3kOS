@@ -169,6 +169,87 @@ sudo systemctl restart signalk
 
 ---
 
+### ✅ ISSUE-016: Signal K Server Overflow from GPS/AIS Inputs (2026-02-26) - FIXED
+
+**Problem:** Signal K server overflow when GPS (gpsd) and AIS (port 10110) inputs are both enabled
+**Reported By:** Holger (Linz/Danube, Austria) via email
+**Symptoms:**
+- vcan0 simulator errors repeating every 6 seconds
+- Potential data processing backlog
+- Unnecessary data providers competing for resources
+
+**Root Cause:** Multiple concurrent data providers overwhelming Signal K:
+- can0: Real NMEA2000 data (needed) ✓
+- gps: gpsd on port 2947 (redundant - using can0 GPS instead) ❌
+- ais: TCP port 10110 (not configured/not in use) ❌
+- vcan0-simulator: Virtual CAN (testing only, re-enabled after reboot) ❌
+
+**Resolution:** ✅ FIXED - Disabled redundant/unused providers
+```bash
+# Backup current settings
+cp ~/.signalk/settings.json ~/.signalk/settings.json.bak.holger-fix
+
+# Disable GPS, AIS, and vcan0-simulator
+python3 << 'EOF'
+import json
+with open("/home/d3kos/.signalk/settings.json", "r") as f:
+    settings = json.load(f)
+for provider in settings.get("pipedProviders", []):
+    if provider["id"] in ["gps", "ais", "vcan0-simulator"]:
+        provider["enabled"] = False
+with open("/home/d3kos/.signalk/settings.json", "w") as f:
+    json.dump(settings, f, indent=2)
+EOF
+
+# Restart Signal K
+sudo systemctl restart signalk
+```
+
+**Before:**
+```
+can0: ENABLED           ✓ (Real NMEA2000 - keep)
+gps: ENABLED            ✗ (Redundant)
+ais: ENABLED            ✗ (Not in use)
+vcan0-simulator: ENABLED ✗ (Testing only)
+```
+
+**After:**
+```
+can0: ENABLED           ✓ (NMEA2000 engine + GPS data)
+gps: DISABLED           ✓
+ais: DISABLED           ✓
+vcan0-simulator: DISABLED ✓
+```
+
+**Testing:**
+```bash
+# Verify NMEA2000 still working
+curl -s http://localhost:3000/signalk/v1/api/vessels/self/propulsion/port/revolutions
+# Result: RPM data flowing from can0.64, PGN 127488 ✓
+
+# Check for errors
+journalctl -u signalk --since "1 minute ago" | grep -i error
+# Result: No vcan0 errors, no overflow ✓
+```
+
+**Result:**
+- ✅ vcan0 error spam stopped (was every 6 seconds)
+- ✅ Signal K running cleanly with single data source
+- ✅ NMEA2000 engine data still flowing perfectly
+- ✅ Reduced resource usage and data processing overhead
+
+**Lesson Learned:**
+- Only enable Signal K data providers that are actively in use
+- GPS data from NMEA2000 network (via CX5106) is sufficient - no need for separate gpsd provider
+- Check provider configuration after system updates/reboots
+
+**Status:** CLOSED - Fixed
+**Date Resolved:** 2026-02-26
+**Reported By:** Holger (Linz/Danube, Austria)
+**Documentation:** This log entry
+
+---
+
 ## Hardware Compatibility Issues
 
 ### ✅ ISSUE-005: Missing sysstat Package (2026-02-26) - FIXED
@@ -486,21 +567,21 @@ location /export/ {
 
 ## 📊 Statistics Summary
 
-**Total Issues:** 15
+**Total Issues:** 16
 **Critical:** 2 (1 unfixable, 1 open)
 **High Priority:** 3 (all fixed)
-**Medium Priority:** 7 (all fixed)
+**Medium Priority:** 8 (all fixed)
 **Low Priority:** 3 (all documented)
 
 **By Status:**
-- ✅ CLOSED (Fixed): 11
+- ✅ CLOSED (Fixed): 12
 - ⏳ OPEN (In Progress): 1
 - ❌ CLOSED (Won't Fix): 1
 - ℹ️ DOCUMENTED: 2
 
 **By Category:**
 - Critical Issues: 2
-- System Integration: 2
+- System Integration: 3
 - Hardware Compatibility: 3
 - Software Dependencies: 1
 - User Interface: 3
