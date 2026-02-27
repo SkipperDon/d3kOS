@@ -26,7 +26,7 @@
 
 The Marine Vision System provides AI-powered computer vision for recreational boating:
 - **Fish Capture Mode**: Automatically photograph fish catches, identify species, check fishing regulations
-- **Forward Watch Mode**: Detect marine hazards (boats, debris, buoys) and estimate distances
+- **Forward Watch Mode**: Detect marine hazards (people, boats, kayaks, buoys, logs, debris, docks) and estimate distances
 
 ### 1.2 Key Features
 
@@ -1451,19 +1451,44 @@ curl http://localhost:8086/fish/captures
 - Species → limits lookup
 - Zone → rules mapping
 
-### 8.2 Phase 4: Forward Watch Mode (4-6 days)
+### 8.2 Phase 4: Forward Watch Mode (4-6 days) **[SIGNAL K PLUGIN SUB-PROJECT]**
+
+**⚠️ IMPORTANT:** Forward Watch is implemented as a separate Signal K plugin for wider community distribution and chartplotter integration.
+
+**Plugin:** `signalk-forward-watch`
+**Repository:** https://github.com/d3kOS/signalk-forward-watch (planned)
 
 **Objectives:**
-- Marine object detection (boats, buoys, debris)
-- Distance estimation (MiDaS depth)
-- Alert system (visual + audible)
+- Marine object detection (people, boats, kayaks, buoys, logs, debris, docks)
+- Distance estimation (MiDaS monocular depth)
+- GPS coordinate mapping (bearing + distance → lat/lon)
+- Chartplotter integration (NMEA2000 PGN 129038 - AIS-like targets)
+- Alert system (visual + audible + chartplotter display)
 - Detection logging
 
 **Deliverables:**
-- `d3kos-forward-watch.service`
-- YOLOv8-Marine model
-- MiDaS depth model
+- Signal K plugin package (`signalk-forward-watch`)
+- YOLOv8-Marine model (ONNX format)
+- MiDaS depth model (ONNX format)
+- Geodesy coordinate calculation
+- Signal K delta output
+- NMEA2000 PGN conversion
+- Web UI configuration interface
 - Alert API endpoints
+
+**Documentation:**
+- **Technical Specification:** `FORWARD_WATCH_SPECIFICATION.md` (48KB, complete architecture)
+- **One-Page Overview:** `FORWARD_WATCH_ONEPAGER.md` (user-friendly introduction)
+- **README:** `signalk-forward-watch-README.md` (GitHub repository)
+
+**Training Requirements:**
+- **YOLOv8-Marine:** Custom training on SeaShips dataset (31,455 images) + floating debris
+- **Training Time:** 12-16 hours on RTX 3060 Ti GPU
+- **MiDaS Depth:** Pre-trained (no training needed)
+
+**Chartplotter Compatibility:**
+- Garmin, Raymarine, Simrad, Lowrance, Furuno (via NMEA2000)
+- OpenCPN (native Signal K support)
 
 ### 8.3 Phase 5: Mode Switching (1-2 days)
 

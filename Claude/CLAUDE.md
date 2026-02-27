@@ -3430,7 +3430,7 @@ All exports must include:
     - Notification to phone (Telegram/Signal/email)
     - Event logging with timestamp, species, GPS location
   - **Forward Watch Mode**:
-    - Marine object detection (boats, kayaks, buoys, logs, debris)
+    - Marine object detection (people, boats, kayaks, buoys, logs, debris, docks)
     - Distance estimation (monocular depth - MiDaS/ZoeDepth)
     - Real-time alerts (visual + audible)
     - Detection logging
