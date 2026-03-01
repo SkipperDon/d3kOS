@@ -377,20 +377,22 @@ The complete d3kOS development roadmap has been created that integrates:
 | Version | Target | Focus | AI Tier |
 |---------|--------|-------|---------|
 | **v0.9.2** | **March 2026** | **Metric/Imperial (3 weeks)** | - |
-| v0.9.3 | April 2026 | Gemini API Integration | **TIER 1: CHAT** |
-| v0.9.4 | June 2026 | Mobile Apps + Cloud | Tier 1 activated |
-| v0.9.5 | August 2026 | Remote Access | Tier 2 activated |
-| v0.10.0 | October 2026 | Predictive Maintenance | **TIER 2: AUTOMATION** |
-| v0.10.1 | November 2026 | Fleet Management | Tier 3 activated |
-| **v0.10.2** | **December 2026** | **4-Camera System (8-9 weeks)** | - |
-| v0.11.0 | February 2027 | Diagnostic Console | - |
-| v0.12.0 | April 2027 | Autonomous Agents | **TIER 3: AGENTS** |
-| v0.12.1 | June 2027 | AI Action Layer | Controlled autonomy |
-| v0.13.0 | August 2027 | Failure Intelligence | Community learning |
-| v0.14.0 | October 2027 | Community Features | - |
-| **v1.0.0** | **December 2027** | **Incremental Updates** | **PRODUCTION** |
+| **v0.9.3** | **April 2026** | **4-Camera System (8-9 weeks)** | - |
+| v0.9.4 | June 2026 | Gemini API Integration | **TIER 1: CHAT** |
+| v0.9.5 | July 2026 | Mobile Apps + Cloud | Tier 1 activated |
+| v0.9.6 | September 2026 | Remote Access | Tier 2 activated |
+| v0.10.0 | November 2026 | Predictive Maintenance | **TIER 2: AUTOMATION** |
+| v0.10.1 | December 2026 | Fleet Management | Tier 3 activated |
+| v0.11.0 | March 2027 | Diagnostic Console | - |
+| v0.12.0 | May 2027 | Autonomous Agents | **TIER 3: AGENTS** |
+| v0.12.1 | July 2027 | AI Action Layer | Controlled autonomy |
+| v0.13.0 | September 2027 | Failure Intelligence | Community learning |
+| v0.14.0 | November 2027 | Community Features | - |
+| **v0.15.0** | **December 2027** | **Multi-Language (8 languages)** | - |
+| **v0.16.0** | **January 2028** | **Security Audit (4 weeks)** | - |
+| **v1.0.0** | **February 2028** | **Incremental Updates** | **PRODUCTION** |
 
-**Total Timeline:** 110 weeks (~25 months from current state)
+**Total Timeline:** 122 weeks (~28 months from current state)
 
 ---
 

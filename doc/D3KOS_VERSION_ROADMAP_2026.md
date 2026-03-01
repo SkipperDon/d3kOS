@@ -69,7 +69,130 @@ This roadmap integrates:
 
 ## VERSION ROADMAP
 
-### v0.9.3 - Gemini API Integration (TIER 1 AI - CHAT LAYER)
+### v0.9.2 - Metric/Imperial Conversion System
+**Target:** March 2026 (3 weeks)
+**Focus:** International distribution - measurement system support
+**Priority:** HIGH - "American boaters vs the world"
+**Status:** ✅ NEXT - Ready to implement
+
+**What's New:**
+1. **Units Conversion System**
+   - JavaScript utility library (`/var/www/html/js/units.js`)
+   - Client-side conversion (temperature, pressure, speed, distance, depth, fuel, length, weight, displacement)
+   - Real-time conversion (no page reload)
+
+2. **Preferences API Extension** (Port 8107 - existing service)
+   - Store measurement_system preference ("imperial" or "metric")
+   - GET /preferences - Retrieve user preferences
+   - POST /preferences - Update preferences
+   - Persistent storage in `/opt/d3kos/config/user-preferences.json`
+
+3. **Auto-Default Logic** (Onboarding Step 15 - Boat Origin)
+   - USA/Canada → Imperial (default)
+   - Europe/Asia/Oceania/Africa/South America → Metric (default)
+   - User can override anytime in Settings
+
+4. **UI Updates** (All pages support unit conversion)
+   - Dashboard: Engine metrics displayed in user's preferred units
+   - Onboarding: Form inputs show correct unit dropdowns
+   - Navigation: Speed, altitude in preferred units
+   - Weather: Temperature, wind in preferred units
+   - Boatlog: Display only (stored data unchanged)
+   - Voice Assistant: Responses use preferred units
+
+5. **Settings Toggle**
+   - Settings → Measurement System (toggle switch)
+   - Changes take effect immediately
+   - Live update across all pages
+
+**Conversions Supported:**
+- Temperature: °F ↔ °C
+- Pressure: PSI ↔ bar
+- Speed: Knots+MPH ↔ Knots+km/h
+- Distance: Nautical miles ↔ Kilometers
+- Depth: Feet ↔ Meters
+- Fuel: Gallons ↔ Liters
+- Length: Feet ↔ Meters
+- Weight: Pounds ↔ Kilograms
+- Displacement: Cubic inches ↔ Liters
+
+**Implementation Time:** 3 weeks (120 hours)
+- Week 1: Units.js library, preferences API, Settings UI
+- Week 2: Dashboard, onboarding, navigation, weather updates
+- Week 3: Voice assistant integration, testing
+
+**Deliverable:** d3kOS v0.9.2 with full metric/imperial support
+
+**Documentation:** `METRIC_IMPERIAL_IMPLEMENTATION_PLAN.md` (42KB complete plan)
+
+---
+
+### v0.9.3 - Multi-Camera System (4 Cameras)
+**Target:** April 2026 (8-9 weeks after v0.9.2)
+**Focus:** Multiple camera support with Forward Watch integration
+**Priority:** HIGH - Safety and security
+**Status:** ✅ APPROVED - 4 cameras confirmed
+
+**What's New:**
+1. **Camera Registry System**
+   - JSON-based camera configuration (`/opt/d3kos/config/cameras.json`)
+   - Auto-discovery on 10.42.0.0/24 subnet
+   - DHCP reservations (10.42.0.100-103)
+   - Per-camera settings (RTSP URLs, purpose, detection mode)
+
+2. **Four Camera Layout**
+   - **Bow Camera (10.42.0.100)** - Forward Watch obstacle avoidance with YOLOv8 detection
+   - **Stern Camera (10.42.0.101)** - Docking assistance, wake monitoring
+   - **Interior Camera (10.42.0.102)** - Security when boat unattended
+   - **Port/Starboard Camera (10.42.0.103)** - Side coverage
+
+3. **Hybrid UI Implementation**
+   - **Single View Page** (`/marine-vision.html`) - Full-screen 1080p @ 25 FPS, dropdown camera selector
+   - **Grid View Page** (`/marine-vision-grid.html`) - 2×2 grid, 720p @ 1 FPS all cameras, click to enlarge
+   - Forward Watch detection overlay (bow camera only when active)
+
+4. **Resource Optimization**
+   - Sub-streams (720p) for grid view - reduces bandwidth/CPU
+   - Main stream (1080p) for single view - full quality
+   - Priority queue for AI detection (bow camera always first)
+   - Motion-triggered recording (7-day retention, 28 GB storage)
+
+5. **Camera Management API** (Port 8084 expanded)
+   - `/camera/list` - Get all registered cameras
+   - `/camera/status/{id}` - Connection status per camera
+   - `/camera/switch/{id}` - Switch active camera in single view
+   - `/camera/grid` - Get all frames for grid view
+
+6. **Forward Watch Integration**
+   - YOLOv8 marine object detection (boats, kayaks, buoys, logs, debris, docks, ice)
+   - Distance estimation (monocular depth)
+   - Real-time alerts (visual + audio)
+   - Object tracking and logging
+   - Only processes bow camera frames (resource efficient)
+
+**Resource Requirements:**
+- Memory: 970 MB total (12% of 8GB RAM)
+- CPU: 25-35% average
+- Bandwidth: 8-12 Mbps for grid view, 4 Mbps single view
+- Storage: 28 GB for 7-day retention (motion-triggered)
+
+**Hardware Cost:** $800-1,200 (3 additional Reolink RLC-810A cameras)
+
+**Implementation Time:** 8-9 weeks
+- Week 1: Camera registry system and auto-discovery
+- Week 2-3: Multi-camera backend API
+- Week 4-5: Single View + Grid View UI
+- Week 6-7: Forward Watch integration (bow camera)
+- Week 8: Testing and optimization
+- Week 9: Documentation and deployment
+
+**Deliverable:** d3kOS v0.9.3 with 4-camera support and Forward Watch obstacle avoidance
+
+**Documentation:** `MULTI_CAMERA_IMPLEMENTATION_PLAN.md` (50KB complete specification)
+
+---
+
+### v0.9.4 - Gemini API Integration (TIER 1 AI - CHAT LAYER)
 **Target:** April 2026 (5-7 weeks)
 **Focus:** Conversational AI with Google Gemini API
 
@@ -116,12 +239,12 @@ This roadmap integrates:
 - Week 5: Settings UI updates
 - Week 6-7: Testing and beta rollout
 
-**Deliverable:** d3kOS v0.9.3 with conversational AI
+**Deliverable:** d3kOS v0.9.4 with conversational AI
 
 ---
 
-### v0.9.4 - Mobile Apps (iOS/Android)
-**Target:** June 2026 (8-10 weeks after v0.9.3)
+### v0.9.5 - Mobile Apps (iOS/Android)
+**Target:** July 2026 (8-10 weeks after v0.9.4)
 **Focus:** Tier 1 activation - Mobile app access
 
 **What's New:**
@@ -160,12 +283,12 @@ This roadmap integrates:
 - Week 9-10: Pi integration (Tailscale, MQTT publisher)
 - Testing: Beta group (10-20 users)
 
-**Deliverable:** d3kOS v0.9.4 + AtMyBoat.com cloud platform
+**Deliverable:** d3kOS v0.9.5 + AtMyBoat.com cloud platform
 
 ---
 
-### v0.9.5 - Remote Access & Camera Streaming
-**Target:** August 2026 (6-8 weeks after v0.9.4)
+### v0.9.6 - Remote Access & Camera Streaming
+**Target:** September 2026 (6-8 weeks after v0.9.5)
 **Focus:** Tier 2 activation - Full remote access
 
 **What's New:**
@@ -200,7 +323,7 @@ This roadmap integrates:
 - Week 6: Stripe integration
 - Week 7-8: Testing and Tier 2 rollout
 
-**Deliverable:** d3kOS v0.9.5 with full Tier 2 remote access
+**Deliverable:** d3kOS v0.9.6 with full Tier 2 remote access
 
 ---
 
@@ -282,72 +405,6 @@ This roadmap integrates:
 **Implementation Time:** 8 weeks (parallel with v0.10.0)
 
 **Deliverable:** d3kOS v0.10.1 with fleet management
-
----
-
-### v0.10.2 - Multi-Camera System (4 Cameras)
-**Target:** December 2026 (8-9 weeks after v0.10.1)
-**Focus:** Multiple camera support with Forward Watch integration
-**Status:** ✅ APPROVED - 4 cameras confirmed
-
-**What's New:**
-1. **Camera Registry System**
-   - JSON-based camera configuration (`/opt/d3kos/config/cameras.json`)
-   - Auto-discovery on 10.42.0.0/24 subnet
-   - DHCP reservations (10.42.0.100-103)
-   - Per-camera settings (RTSP URLs, purpose, detection mode)
-
-2. **Four Camera Layout**
-   - **Bow Camera (10.42.0.100)** - Forward Watch obstacle avoidance with YOLOv8 detection
-   - **Stern Camera (10.42.0.101)** - Docking assistance, wake monitoring
-   - **Interior Camera (10.42.0.102)** - Security when boat unattended
-   - **Port/Starboard Camera (10.42.0.103)** - Side coverage
-
-3. **Hybrid UI Implementation**
-   - **Single View Page** - Full-screen 1080p @ 25 FPS, dropdown camera selector
-   - **Grid View Page** - 2×2 grid, 720p @ 1 FPS all cameras, click to enlarge
-   - Forward Watch detection overlay (bow camera only when active)
-
-4. **Resource Optimization**
-   - Sub-streams (720p) for grid view - reduces bandwidth/CPU
-   - Main stream (1080p) for single view - full quality
-   - Priority queue for AI detection (bow camera always first)
-   - Motion-triggered recording (7-day retention, 28 GB storage)
-
-5. **Camera Management API** (Port 8084 expanded)
-   - `/camera/list` - Get all registered cameras
-   - `/camera/status/{id}` - Connection status per camera
-   - `/camera/switch/{id}` - Switch active camera in single view
-   - `/camera/grid` - Get all frames for grid view
-
-6. **Forward Watch Integration**
-   - YOLOv8 marine object detection (boats, kayaks, buoys, logs, debris, docks, ice)
-   - Distance estimation (monocular depth)
-   - Real-time alerts (visual + audio)
-   - Object tracking and logging
-   - Only processes bow camera frames (resource efficient)
-
-**Resource Requirements:**
-- Memory: 970 MB total (12% of 8GB RAM)
-- CPU: 25-35% average
-- Bandwidth: 8-12 Mbps for grid view, 4 Mbps single view
-- Storage: 28 GB for 7-day retention (motion-triggered)
-
-**Hardware Cost:** $800-1,200 (3 additional Reolink RLC-810A cameras)
-
-**Implementation Time:** 8-9 weeks
-- Week 1: Camera registry system and auto-discovery
-- Week 2-3: Multi-camera backend API
-- Week 4-5: Single View + Grid View UI
-- Week 6-7: Forward Watch integration (bow camera)
-- Week 8: Testing and optimization
-- Week 9: Documentation and deployment
-
-**Deliverable:** d3kOS v0.10.2 with 4-camera support and Forward Watch obstacle avoidance
-
-**Documentation:**
-- `MULTI_CAMERA_IMPLEMENTATION_PLAN.md` (50KB - complete specification)
-- `FORWARD_WATCH_SPECIFICATION.md` (48KB - YOLOv8 detection system)
 
 ---
 
@@ -713,8 +770,123 @@ This roadmap integrates:
 
 ---
 
+### v0.16.0 - Security Audit & Penetration Testing
+**Target:** November 2027 (4 weeks after v0.15.0)
+**Focus:** Production security readiness
+**Priority:** CRITICAL - Required before v1.0 launch
+**Status:** Pre-v1.0 requirement
+
+**What's New:**
+1. **Comprehensive Security Audit**
+   - Full codebase security review
+   - Dependency vulnerability scan (npm audit, pip-audit)
+   - OWASP Top 10 compliance check
+   - SQL injection testing (all database queries)
+   - XSS/CSRF vulnerability testing (all web endpoints)
+   - Authentication/authorization review (JWT, session management)
+
+2. **Penetration Testing**
+   - External penetration test (network-level attacks)
+   - Internal penetration test (privilege escalation)
+   - API endpoint fuzzing (all 20+ services)
+   - WireGuard VPN security review
+   - MQTT broker security audit (TLS, authentication)
+   - Signal K server security review
+
+3. **Privacy Compliance**
+   - GDPR compliance verification (EU users)
+   - CCPA compliance verification (California users)
+   - Data retention policy implementation
+   - User data export functionality (GDPR Article 20)
+   - Data deletion functionality (GDPR Article 17)
+   - Privacy policy review and update
+
+4. **Infrastructure Security**
+   - Pi hardening review (SSH, firewall, fail2ban)
+   - Certificate management audit (SSL/TLS)
+   - Secrets management review (API keys, passwords)
+   - Backup security (encrypted backups)
+   - Update system security (signature verification)
+   - Rate limiting implementation (DDoS protection)
+
+5. **Third-Party Service Security**
+   - Stripe webhook signature verification
+   - Apple IAP receipt validation
+   - Google Play purchase verification
+   - Gemini API key protection
+   - OpenRouter API security
+   - Headscale mesh security
+
+6. **Documentation**
+   - Security best practices guide
+   - Incident response plan
+   - Vulnerability disclosure policy
+   - Security update process
+   - User security recommendations
+
+7. **Security Testing Tools**
+   - OWASP ZAP automated scan
+   - Burp Suite professional testing
+   - SQLMap injection testing
+   - Nmap network scanning
+   - Metasploit framework testing (authorized)
+
+**Critical Issues to Address:**
+- [ ] Ensure all API endpoints require authentication
+- [ ] Verify all database queries use parameterized statements
+- [ ] Check all file uploads for malicious content
+- [ ] Validate all user inputs (XSS prevention)
+- [ ] Implement rate limiting on all public endpoints
+- [ ] Secure all MQTT topics with ACLs
+- [ ] Verify all passwords hashed with bcrypt/scrypt
+- [ ] Check for hardcoded secrets in code
+- [ ] Ensure all external APIs use HTTPS
+- [ ] Verify all sessions expire properly
+- [ ] Test for session hijacking vulnerabilities
+- [ ] Check for command injection vulnerabilities
+- [ ] Verify file permissions on sensitive files
+- [ ] Test for directory traversal attacks
+- [ ] Verify all webhooks validate signatures
+
+**Compliance Requirements:**
+- OWASP Application Security Verification Standard (ASVS) Level 2
+- CIS Raspberry Pi Benchmark
+- NIST Cybersecurity Framework
+- PCI DSS (if storing payment info - should not)
+- ISO 27001 controls (relevant sections)
+
+**Implementation Time:** 4 weeks
+- Week 1: Automated security scanning, dependency audit
+- Week 2: Manual code review, OWASP Top 10 testing
+- Week 3: Penetration testing (external firm recommended)
+- Week 4: Fix critical/high vulnerabilities, retest
+
+**External Service (Recommended):**
+- Professional penetration testing firm
+- Cost: $5,000-15,000 (one-time)
+- Deliverable: Security audit report with findings
+- Certification: Penetration test certificate
+
+**Internal Effort:** 40-60 hours
+- Security review: 16 hours
+- Vulnerability fixes: 24-32 hours
+- Documentation: 8 hours
+- Retesting: 8 hours
+
+**Deliverable:** d3kOS v0.16.0 - Security certified, production ready
+
+**Success Criteria:**
+- Zero critical vulnerabilities
+- Zero high vulnerabilities
+- Medium/low vulnerabilities documented with mitigation plans
+- Penetration test certificate obtained
+- GDPR/CCPA compliant
+- Security documentation complete
+
+---
+
 ### v1.0.0 - Incremental Update System (PRODUCTION READY)
-**Target:** October 2027 (8 weeks after v0.14.0)
+**Target:** December 2027 (4 weeks after v0.16.0)
 **Focus:** Professional OTA update system
 
 **What's New:**
@@ -779,23 +951,25 @@ This roadmap integrates:
 | Version | Target Date | Focus | Duration | Cumulative Time |
 |---------|-------------|-------|----------|-----------------|
 | **v0.9.2** | **March 2026** | **Metric/Imperial** | **3 weeks** | **3 weeks** |
-| v0.9.3 | April 2026 | Gemini API (Chat AI) | 5-7 weeks | 10 weeks |
-| v0.9.4 | June 2026 | Mobile Apps + Cloud | 8-10 weeks | 20 weeks |
-| v0.9.5 | August 2026 | Remote Access (Tier 2) | 6-8 weeks | 28 weeks |
-| v0.10.0 | October 2026 | Predictive Maintenance | 16 weeks | 44 weeks |
-| v0.10.1 | November 2026 | Fleet Management | 8 weeks (parallel) | 36 weeks |
-| **v0.10.2** | **December 2026** | **4-Camera System** | **8-9 weeks** | **53 weeks** |
-| v0.11.0 | February 2027 | Diagnostic Console | 8-10 weeks | 63 weeks |
-| v0.12.0 | April 2027 | Autonomous Agents | 15 weeks | 78 weeks |
-| v0.12.1 | June 2027 | AI Action Layer | 8 weeks | 86 weeks |
-| v0.13.0 | August 2027 | Failure Intelligence | 8 weeks | 94 weeks |
-| v0.14.0 | October 2027 | Community Features | 8 weeks | 102 weeks |
-| **v0.15.0** | **September 2027** | **Multi-Language (i18n)** | **6-8 weeks** | **110 weeks** |
-| **v1.0.0** | **December 2027** | **Incremental Updates** | 8 weeks | **118 weeks** |
+| **v0.9.3** | **April 2026** | **4-Camera System** | **8-9 weeks** | **12 weeks** |
+| v0.9.4 | June 2026 | Gemini API (Chat AI) | 5-7 weeks | 19 weeks |
+| v0.9.5 | July 2026 | Mobile Apps + Cloud | 8-10 weeks | 29 weeks |
+| v0.9.6 | September 2026 | Remote Access (Tier 2) | 6-8 weeks | 37 weeks |
+| v0.10.0 | November 2026 | Predictive Maintenance | 16 weeks | 53 weeks |
+| v0.10.1 | December 2026 | Fleet Management | 8 weeks (parallel) | 45 weeks |
+| v0.11.0 | March 2027 | Diagnostic Console | 8-10 weeks | 63 weeks |
+| v0.12.0 | May 2027 | Autonomous Agents | 15 weeks | 78 weeks |
+| v0.12.1 | July 2027 | AI Action Layer | 8 weeks | 86 weeks |
+| v0.13.0 | September 2027 | Failure Intelligence | 8 weeks | 94 weeks |
+| v0.14.0 | November 2027 | Community Features | 8 weeks | 102 weeks |
+| **v0.15.0** | **December 2027** | **Multi-Language (i18n)** | **6-8 weeks** | **110 weeks** |
+| **v0.16.0** | **January 2028** | **Security Audit** | **4 weeks** | **114 weeks** |
+| **v1.0.0** | **February 2028** | **Incremental Updates** | 8 weeks | **122 weeks** |
 
-**Total Development Time:** 118 weeks (~27 months from March 2026)
-**Production Launch:** Q4 2027 (December 2027)
-**International Ready:** v0.15.0 (September 2027) - 8 languages supported
+**Total Development Time:** 122 weeks (~28 months from March 2026)
+**Production Launch:** Q1 2028 (February 2028)
+**International Ready:** v0.15.0 (December 2027) - 8 languages supported
+**Security Certified:** v0.16.0 (January 2028) - Production security audit complete
 
 ---
 
@@ -1053,10 +1227,10 @@ See Master Integration Reference Section 12 (Release History)
 
 ## DOCUMENT CONTROL
 
-**Version:** 1.2
+**Version:** 1.3
 **Date:** March 1, 2026
 **Author:** Claude Code (Anthropic) + Donald Moskaluk
-**Status:** Updated with v0.15.0 (Multi-Language) before v1.0
+**Status:** Updated with 4-camera moved to v0.9.3, security audit added
 **Next Review:** After v0.9.2 completion
 
 **Related Documents:**
@@ -1072,6 +1246,7 @@ See Master Integration Reference Section 12 (Release History)
 - March 1, 2026 (v1.0): Initial version created, integrated Master Reference with three-tier AI proposal
 - March 1, 2026 (v1.1): Added v0.9.2 (Metric/Imperial - 3 weeks) as immediate priority, added v0.10.2 (4-Camera System - 8-9 weeks) after Fleet Management, updated timeline to 110 weeks total
 - March 1, 2026 (v1.2): Added v0.15.0 (Multi-Language Support - 6-8 weeks) before v1.0, required for international distribution, updated timeline to 118 weeks total (~27 months)
+- March 1, 2026 (v1.3): **MAJOR UPDATE** - Moved 4-camera system from v0.10.2 to v0.9.3 (immediate priority after metric/imperial), renumbered all subsequent 0.9.x versions, added v0.16.0 Security Audit (4 weeks) before v1.0, updated timeline to 122 weeks total (~28 months), production launch now Q1 2028 (February 2028)
 
 ---
 
