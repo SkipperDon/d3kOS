@@ -133,6 +133,37 @@ def add_note():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+@app.route('/remote/config', methods=['GET'])
+def config():
+    """
+    Local-only endpoint — returns Tailscale IP and API key for the
+    Remote Access settings page. No auth required (local dashboard use).
+    """
+    import subprocess
+
+    tailscale_ip = None
+    tailscale_connected = False
+    try:
+        r = subprocess.run(['tailscale', 'ip', '-4'],
+                           capture_output=True, text=True, timeout=3)
+        if r.returncode == 0:
+            tailscale_ip = r.stdout.strip()
+            tailscale_connected = bool(tailscale_ip)
+    except Exception:
+        pass
+
+    api_key = _configured_key()
+
+    return jsonify({
+        'tailscale_connected': tailscale_connected,
+        'tailscale_ip':        tailscale_ip,
+        'tailscale_url':       f'http://{tailscale_ip}' if tailscale_ip else None,
+        'local_ip':            '192.168.1.237',
+        'local_url':           'http://192.168.1.237',
+        'api_key':             api_key,
+    })
+
+
 if __name__ == '__main__':
     print('d3kOS Remote Status API starting on port 8111...', flush=True)
     app.run(host='0.0.0.0', port=8111, debug=False)
