@@ -30,11 +30,14 @@ Phases: settings, dashboard, onboarding, navigation, weather, query_handler
 import sys
 import re
 import json
+import time
 import pathlib
 import tempfile
 import subprocess
+import threading
 import urllib.request
 import urllib.error
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 # Script lives at: deployment/v0.9.2/scripts/ollama_execute.py
@@ -50,6 +53,16 @@ OUTPUT_DIR   = VERSION_DIR / "ollama_output"
 OLLAMA_URL = "http://192.168.1.36:11434/api/generate"
 MODEL      = "qwen3-coder:30b"
 TIMEOUT    = 300
+
+# ── Runtime stats (accumulated across all calls this run) ─────────────────────
+_stats_lock  = threading.Lock()
+_print_lock  = threading.Lock()
+_ollama_calls = []   # list of {phase, type, prompt_chars, response_chars, elapsed_s}
+
+def tprint(*args, **kwargs):
+    """Thread-safe print — keeps output readable during parallel runs."""
+    with _print_lock:
+        print(*args, **kwargs)
 
 # ── Known globals: valid identifiers that won't appear in pi_source files ─────
 KNOWN_GLOBALS = {
@@ -610,26 +623,25 @@ CODE:
 <corrected code>
 END_CODE"""
 
-    print(f"      → Asking Ollama to correct block...")
-    raw = call_ollama(prompt)
+    tprint(f"      → Asking Ollama to correct block...")
+    raw = call_ollama(prompt, label=f"{source_filename}:correction")
 
     corrected_blocks = parse_instruction_blocks(raw)
     if not corrected_blocks:
-        print(f"      ✗ Ollama returned no parseable block in correction response")
+        tprint(f"      ✗ Ollama returned no parseable block in correction response")
         block['correction_attempted'] = True
         return block
 
     corrected = corrected_blocks[0]
-    # Preserve action if Ollama changed it
     corrected['action'] = block['action']
     corrected['correction_attempted'] = True
 
     corrected = validate_blocks([corrected], source_text, source_filename)[0]
 
     if corrected['valid']:
-        print(f"      ✓ Ollama corrected the block — will apply")
+        tprint(f"      ✓ Ollama corrected the block — will apply")
     else:
-        print(f"      ✗ Still invalid after correction: {corrected['issues']}")
+        tprint(f"      ✗ Still invalid after correction: {corrected['issues']}")
 
     return corrected
 
@@ -686,7 +698,8 @@ def apply_blocks(blocks: list, source_text: str) -> tuple:
 
 # ── Ollama call ────────────────────────────────────────────────────────────────
 
-def call_ollama(prompt: str) -> str:
+def call_ollama(prompt: str, label: str = "?") -> str:
+    """Send prompt to Ollama, record call stats, return response text."""
     payload = json.dumps({
         "model":   MODEL,
         "prompt":  prompt,
@@ -695,12 +708,22 @@ def call_ollama(prompt: str) -> str:
     }).encode()
     req = urllib.request.Request(
         OLLAMA_URL, data=payload, headers={"Content-Type": "application/json"})
+    t0 = time.time()
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-            return json.loads(resp.read()).get("response", "")
+            response = json.loads(resp.read()).get("response", "")
     except urllib.error.URLError as e:
-        print(f"[ERROR] Ollama unreachable: {e}")
+        tprint(f"[ERROR] Ollama unreachable: {e}")
         sys.exit(1)
+    elapsed = time.time() - t0
+    with _stats_lock:
+        _ollama_calls.append({
+            'label':          label,
+            'prompt_chars':   len(prompt),
+            'response_chars': len(response),
+            'elapsed_s':      round(elapsed, 1),
+        })
+    return response
 
 
 # ── Spec extraction ────────────────────────────────────────────────────────────
@@ -791,23 +814,23 @@ END_CODE
 Multiple blocks allowed. Every FIND_LINE must exist verbatim in the file above.
 """
 
-        print(f"\n[{phase_name}] Sending to Ollama ({len(prompt.splitlines())} lines)...")
-        raw_output = call_ollama(prompt)
+        tprint(f"\n[{phase_name}] Sending to Ollama ({len(prompt.splitlines())} lines)...")
+        raw_output = call_ollama(prompt, label=f"{phase_name}:initial")
 
         if not raw_output.strip():
-            print(f"[ERROR] Empty response from Ollama for phase: {phase_name}")
+            tprint(f"[ERROR] Empty response from Ollama for phase: {phase_name}")
             return {'phase': phase_name, 'file': source_filename,
                     'blocks': [], 'auto_applied': 0, 'corrected': 0, 'flagged': 0,
                     'output_path': None}
 
         out_path.write_text(raw_output)
-        print(f"  Instructions saved → {out_path.name}")
+        tprint(f"  Instructions saved → {out_path.name}")
 
     # ── Parse and initial validation ───────────────────────────────────────────
     blocks = parse_instruction_blocks(raw_output)
     if not blocks:
-        print(f"  [WARN] No FIND_LINE/ACTION/CODE blocks parsed")
-        print(f"  Raw output preview: {raw_output[:200]}")
+        tprint(f"  [WARN] No FIND_LINE/ACTION/CODE blocks parsed")
+        tprint(f"  Raw output preview: {raw_output[:200]}")
         return {'phase': phase_name, 'file': source_filename,
                 'blocks': [], 'auto_applied': 0, 'corrected': 0, 'flagged': 0,
                 'output_path': out_path}
@@ -815,33 +838,32 @@ Multiple blocks allowed. Every FIND_LINE must exist verbatim in the file above.
     blocks = validate_blocks(blocks, source_text, source_filename)
 
     initial_invalid = sum(1 for b in blocks if not b['valid'])
-    print(f"  Parsed {len(blocks)} block(s): "
-          f"{len(blocks) - initial_invalid} valid, {initial_invalid} flagged")
+    tprint(f"  Parsed {len(blocks)} block(s): "
+           f"{len(blocks) - initial_invalid} valid, {initial_invalid} flagged")
 
     for i, b in enumerate(blocks):
         status = "OK " if b['valid'] else "ERR"
-        print(f"    [{status}] Block {i+1}: {b['action']} @ '{b['find_line'][:50]}'")
+        tprint(f"    [{status}] Block {i+1}: {b['action']} @ '{b['find_line'][:50]}'")
         for issue in b['issues']:
-            print(f"          ^ {issue}")
+            tprint(f"          ^ {issue}")
 
     # ── Correction loop (live Ollama runs only) ────────────────────────────────
     corrected_count = 0
     if not skip_ollama and initial_invalid > 0:
-        print(f"\n  [CORRECT] {initial_invalid} block(s) failed — sending back to Ollama with advice...")
+        tprint(f"\n  [CORRECT] {initial_invalid} block(s) failed — sending back to Ollama with advice...")
         for i, block in enumerate(blocks):
             if not block['valid']:
-                print(f"    Block {i+1}: {block['action']} @ '{block['find_line'][:50]}'")
+                tprint(f"    Block {i+1}: {block['action']} @ '{block['find_line'][:50]}'")
                 corrected = run_correction(block, source_text, source_filename, scope_vars)
                 blocks[i] = corrected
                 if corrected['valid']:
                     corrected_count += 1
 
-        # Report post-correction state
         still_invalid = sum(1 for b in blocks if not b['valid'])
         if corrected_count > 0:
-            print(f"\n  After correction: {corrected_count} fixed, {still_invalid} still flagged")
+            tprint(f"\n  After correction: {corrected_count} fixed, {still_invalid} still flagged")
         if still_invalid > 0:
-            print(f"  {still_invalid} block(s) need manual review")
+            tprint(f"  {still_invalid} block(s) need manual review")
 
     final_invalid = sum(1 for b in blocks if not b['valid'])
 
@@ -854,9 +876,9 @@ Multiple blocks allowed. Every FIND_LINE must exist verbatim in the file above.
             source_text = source_path.read_text()
             modified, auto_applied, skipped = apply_blocks(blocks, source_text)
             source_path.write_text(modified)
-            print(f"  Applied {auto_applied} block(s) to {source_filename}")
+            tprint(f"  Applied {auto_applied} block(s) to {source_filename}")
             if skipped:
-                print(f"  Skipped {skipped} block(s)")
+                tprint(f"  Skipped {skipped} block(s)")
 
     return {
         'phase':        phase_name,
@@ -904,34 +926,88 @@ def print_report(results: list):
         print("  Check ollama_output/<file>.instructions for raw output.")
     else:
         print("\n  All blocks handled — none require manual review.")
+
+    # ── Ollama call stats (for cost log) ──────────────────────────────────────
+    if _ollama_calls:
+        total_calls     = len(_ollama_calls)
+        total_prompt_k  = sum(c['prompt_chars'] for c in _ollama_calls) // 1000
+        total_resp_k    = sum(c['response_chars'] for c in _ollama_calls) // 1000
+        total_time_s    = sum(c['elapsed_s'] for c in _ollama_calls)
+        initial_calls   = sum(1 for c in _ollama_calls if c['label'].endswith(':initial'))
+        correction_calls = total_calls - initial_calls
+        print(f"\n  Ollama calls this run:")
+        print(f"    {initial_calls} initial  +  {correction_calls} corrections  =  {total_calls} total")
+        print(f"    ~{total_prompt_k}k chars prompt  +  ~{total_resp_k}k chars response")
+        print(f"    {total_time_s:.0f}s total inference time  |  cost: $0 (local GPU)")
+        print(f"\n  Claude API cost: check console.anthropic.com → Usage → filter by today")
+        print(f"  Tip: copy these stats to SESSION_LOG.md Costs section")
+
     print("═" * 68 + "\n")
 
 
 def main():
-    args      = sys.argv[1:]
-    do_apply  = '--apply' in args
-    skip_oll  = '--skip-ollama' in args
-    phases_arg = [a for a in args if not a.startswith('--')]
+    args       = sys.argv[1:]
+    do_apply   = '--apply' in args
+    skip_oll   = '--skip-ollama' in args
 
-    if not phases_arg or phases_arg[0] not in list(PHASES.keys()) + ['all']:
-        print(f"Usage: python3 {sys.argv[0]} <phase|all> [--apply] [--skip-ollama]")
+    # --parallel N  (default 1 = sequential)
+    parallel = 1
+    for i, a in enumerate(args):
+        if a == '--parallel' and i + 1 < len(args):
+            try:
+                parallel = max(1, int(args[i + 1]))
+            except ValueError:
+                pass
+
+    phases_arg = [a for a in args if not a.startswith('--')
+                  and not (args[max(0, args.index(a)-1):args.index(a)] == ['--parallel']
+                           if '--parallel' in args else False)]
+    # Simpler: just strip --parallel and its value
+    clean_args = []
+    skip_next = False
+    for a in args:
+        if skip_next:
+            skip_next = False
+            continue
+        if a == '--parallel':
+            skip_next = True
+            continue
+        if not a.startswith('--'):
+            clean_args.append(a)
+
+    if not clean_args or clean_args[0] not in list(PHASES.keys()) + ['all']:
+        print(f"Usage: python3 {sys.argv[0]} <phase|all> [--apply] [--skip-ollama] [--parallel N]")
         print(f"Phases: {', '.join(PHASES.keys())}, all")
+        print(f"  --parallel N  run N phases concurrently (Ollama queues them; default 1)")
         sys.exit(1)
 
-    if phases_arg[0] == 'all':
-        phase_list = list(PHASES.keys())
-    else:
-        phase_list = [phases_arg[0]]
+    phase_list = list(PHASES.keys()) if clean_args[0] == 'all' else [clean_args[0]]
 
     print(f"\nd3kOS Ollama Executor v2")
-    print(f"  Model   : {MODEL}")
-    print(f"  Phases  : {', '.join(phase_list)}")
-    print(f"  Apply   : {'yes' if do_apply else 'no — dry run (add --apply to write changes)'}")
-    print(f"  Context : {CONTEXT_FILE.name} ({'found' if CONTEXT_FILE.exists() else 'MISSING'})")
+    print(f"  Model    : {MODEL}")
+    print(f"  Phases   : {', '.join(phase_list)}")
+    print(f"  Apply    : {'yes' if do_apply else 'no — dry run (add --apply to write changes)'}")
+    print(f"  Parallel : {parallel} worker(s)")
+    print(f"  Context  : {CONTEXT_FILE.name} ({'found' if CONTEXT_FILE.exists() else 'MISSING'})")
 
-    results = []
-    for phase in phase_list:
-        results.append(run_phase(phase, do_apply=do_apply, skip_ollama=skip_oll))
+    if parallel > 1 and len(phase_list) > 1:
+        # Parallel run — each phase modifies a different file, safe to parallelise
+        # Note: Ollama queues requests server-side (single GPU), but validation /
+        # context extraction / correction loops overlap with each other's GPU wait
+        print(f"  [PARALLEL] Submitting {len(phase_list)} phases to {parallel} workers...")
+        results_map = {}
+        with ThreadPoolExecutor(max_workers=parallel) as executor:
+            futures = {
+                executor.submit(run_phase, phase, do_apply, skip_oll): phase
+                for phase in phase_list
+            }
+            for future in as_completed(futures):
+                phase = futures[future]
+                results_map[phase] = future.result()
+        # Restore original phase order in report
+        results = [results_map[p] for p in phase_list]
+    else:
+        results = [run_phase(p, do_apply=do_apply, skip_ollama=skip_oll) for p in phase_list]
 
     print_report(results)
 

@@ -2,7 +2,41 @@
 
 ---
 
-## Session 2026-03-03
+## Session 2026-03-03 (Part 2)
+**Goal:** Ollama workflow improvements + auto-approval setup
+
+**Completed:**
+- Auto-approval configured: `~/.claude/settings.json` + `Helm-OS/.claude/settings.json`
+- `CLAUDE.md` at project root: autonomous operation, no questions policy, session report format
+- `ollama_execute.py` v2: enclosing-function context, validation, auto-apply
+- `deployment/docs/helm_os_context.md`: knowledge file injected into every Ollama prompt
+- Ollama correction loop: flagged blocks sent back with targeted advice, one retry per block
+- Parallel execution: `--parallel N` flag (phases run concurrently, Ollama queues server-side)
+- Ollama call stats tracked per run (calls, chars, time) — printed in report
+- Cost tracking added to session log format and CLAUDE.md
+
+**Decisions:**
+- Correction loop retries once per block — if still invalid, flag for manual review
+- `tprint()` thread-safe print for parallel runs keeps output readable
+- `--parallel N` default 1 (sequential); N=2-3 practical max since Ollama is single-GPU
+- Cost section added to SESSION_LOG.md; Ollama = $0 always; Claude = check console
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (this session) | check console.anthropic.com → Usage → 2026-03-03 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls this session (no feature work done) | $0.00 |
+| **Session total** | | **TBD** |
+
+**Pending:**
+- Test improved Ollama workflow on next major feature (v0.9.3 or v0.9.4)
+- Browser verify: settings.html toggle → dashboard.html shows matching units
+- v0.9.3 Multi-Camera System
+- v0.9.4 Gemini API Integration
+
+---
+
+## Session 2026-03-03 (Part 1)
 **Goal:** Complete and deploy v0.9.2 Metric/Imperial unit conversion system
 
 **Completed:**
@@ -30,8 +64,9 @@
 - Rejected entirely: settings.html 1st attempt (hallucinated license/tier code), index.html (wrong file — spec error)
 
 **Pending:**
-- ollama_execute.py v2: better context extraction, helm_os_context.md, validation pass, auto-apply
+- Test improved Ollama workflow on next major feature (v0.9.3 or v0.9.4)
 - Browser verify: settings.html toggle → dashboard.html shows matching units
+- Cost tracking for Claude API usage across sessions
 - v0.9.3 Multi-Camera System
 - v0.9.4 Gemini API Integration
 

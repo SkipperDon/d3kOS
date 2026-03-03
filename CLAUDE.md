@@ -48,13 +48,7 @@ If genuinely blocked with two meaningfully different paths that produce differen
 At the end of every session (user says "done", "that's it", "end", "wrap up", "commit and close"):
 
 1. Write an entry to `SESSION_LOG.md` in the project root
-2. Present a concise summary in chat covering:
-   - What was built / changed
-   - Key decisions made and why
-   - What Ollama handled vs what required manual correction
-   - Any issues encountered and how resolved
-   - Files committed, tags created
-   - What's pending for next session
+2. Present a concise summary in chat
 
 Format for SESSION_LOG.md entry:
 ```
@@ -62,10 +56,22 @@ Format for SESSION_LOG.md entry:
 **Goal:** <one line>
 **Completed:** <bullet list>
 **Decisions:** <bullet list — each decision with brief rationale>
-**Ollama:** <auto-applied X files, corrected Y files, list what was wrong>
+**Ollama:** <N initial calls + N corrections; auto-applied X, corrected Y, flagged Z>
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → YYYY-MM-DD | TBD |
+| Ollama (qwen3-coder:30b) | N calls (copy from executor report) | $0.00 |
+| Session total | | TBD |
 **Pending:** <bullet list>
 ---
 ```
+
+Cost notes:
+- Ollama is always $0 (local GPU at 192.168.1.36)
+- Claude API cost: log into console.anthropic.com, go to Usage, filter by date
+- Executor prints Ollama stats at end of run — copy the call count into the log
+- Over time this builds a cost-per-feature baseline for planning
 
 ---
 
