@@ -1,0 +1,27 @@
+FIND_LINE: <title>d3kOS - Navigation</title>
+ACTION: INSERT_AFTER
+CODE:
+<script src="/js/units.js"></script>
+END_CODE
+
+FIND_LINE: function updateSOG() {
+ACTION: INSERT_AFTER
+CODE:
+  // Add after units.js loads
+  function updateNavUnits() {
+    // Speed
+    const speedEl = document.getElementById('nav-speed') ||
+                    document.querySelector('[data-field="speed"]');
+    if (speedEl && window.navSpeedKnots !== undefined) {
+      speedEl.textContent = Units.speed.toDisplay(window.navSpeedKnots);
+    }
+    // Altitude
+    const altEl = document.getElementById('nav-altitude') ||
+                  document.querySelector('[data-field="altitude"]');
+    if (altEl && window.navAltitudeFt !== undefined) {
+      altEl.textContent = Units.length.toDisplay(window.navAltitudeFt);
+    }
+  }
+  window.addEventListener('measurementSystemChanged', updateNavUnits);
+  document.addEventListener('DOMContentLoaded', updateNavUnits);
+END_CODE

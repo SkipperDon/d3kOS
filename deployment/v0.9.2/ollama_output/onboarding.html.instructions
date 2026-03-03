@@ -1,0 +1,53 @@
+FIND_LINE: `<head>`
+ACTION: INSERT_AFTER
+CODE:
+    <script src="/js/units.js"></script>
+END_CODE
+
+FIND_LINE: `<option value="us">US</option>`
+ACTION: INSERT_AFTER
+CODE:
+    <option value="metric">Metric</option>
+END_CODE
+
+FIND_LINE: `function generateDIP() {`
+ACTION: INSERT_BEFORE
+CODE:
+// Auto-set measurement system based on boat origin
+document.addEventListener('DOMContentLoaded', function() {
+  const originSelect = document.getElementById('boat-origin') ||
+                       document.querySelector('[name="boat_origin"]') ||
+                       document.querySelector('[data-step="15"] select');
+
+  if (originSelect) {
+    originSelect.addEventListener('change', function() {
+      const origin = this.value.toLowerCase();
+      const metricRegions = [
+        'europe', 'germany', 'france', 'spain', 'italy', 'netherlands',
+        'sweden', 'norway', 'denmark', 'finland', 'australia', 'new zealand',
+        'japan', 'china', 'south korea', 'brazil', 'argentina', 'chile',
+        'south africa', 'india', 'singapore', 'asia', 'oceania', 'africa',
+        'south america', 'united kingdom', 'uk'
+      ];
+      const isMetric = metricRegions.some(r => origin.includes(r));
+      const system = isMetric ? 'metric' : 'imperial';
+      Units.setPreference(system);
+      console.log('Boat origin: ' + origin + ' → ' + system);
+    });
+  }
+});
+
+// Step 9: Engine size unit dropdown default
+// Find engine size input and add unit selector if not present
+document.addEventListener('DOMContentLoaded', function() {
+  const engineSizeInput = document.getElementById('engine-size') ||
+                          document.querySelector('[name="engine_size"]');
+  if (engineSizeInput && !document.getElementById('engine-size-unit')) {
+    const unitSel = document.createElement('select');
+    unitSel.id = 'engine-size-unit';
+    unitSel.innerHTML = '<option value="ci">ci</option><option value="L">L</option>';
+    unitSel.value = Units.getPreference() === 'metric' ? 'L' : 'ci';
+    engineSizeInput.parentNode.insertBefore(unitSel, engineSizeInput.nextSibling);
+  }
+});
+END_CODE

@@ -1,0 +1,75 @@
+--- settings.html
++++ settings.html
+@@ -1,5 +1,6 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
++  <script src="/js/units.js"></script>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>d3kOS Settings</title>
+@@ -635,6 +638,49 @@
+         </div>
+
+       </div>
++      <!-- Measurement System Section -->
++      <div class="settings-section" id="measurement-section">
++        <h2>Measurement System</h2>
++        <div class="setting-row">
++          <div class="setting-label">
++            <strong>Units</strong>
++            <p class="setting-description">Imperial (°F, PSI, gal, ft) or Metric (°C, bar, L, m)</p>
++          </div>
++          <div class="setting-control">
++            <label class="toggle-switch">
++              <input type="checkbox" id="measurement-toggle" onchange="handleMeasurementToggle()">
++              <span class="toggle-slider"></span>
++            </label>
++            <span id="measurement-label" class="toggle-label">Imperial</span>
++          </div>
++        </div>
++        <div class="setting-info">
++          <p><strong>Affects:</strong> Dashboard gauges, voice responses, navigation, weather, boatlog display</p>
++          <p><strong>Note:</strong> Data is always stored in imperial units. Metric is display-only.</p>
++        </div>
++      </div>
++
++      <script>
++      document.addEventListener('DOMContentLoaded', function() {
++        const system = Units.getPreference();
++        document.getElementById('measurement-toggle').checked = (system === 'metric');
++        document.getElementById('measurement-label').textContent =
++          system === 'metric' ? 'Metric' : 'Imperial';
++      });
++
++      function handleMeasurementToggle() {
++        const isMetric = document.getElementById('measurement-toggle').checked;
++        const system = isMetric ? 'metric' : 'imperial';
++        Units.setPreference(system);
++        document.getElementById('measurement-label').textContent =
++          isMetric ? 'Metric' : 'Imperial';
++        // Show feedback
++        const info = document.querySelector('#measurement-section .setting-info');
++        info.innerHTML += '<p style="color:#00CC00;font-weight:bold;">✓ Updated to ' + system + '</p>';
++        setTimeout(() => location.reload(), 1500);
++      }
++      </script>
++
++      <style>
++      .toggle-switch { position:relative; display:inline-block; width:60px; height:34px; }
++      .toggle-switch input { opacity:0; width:0; height:0; }
++      .toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
++        background:#666; transition:.3s; border-radius:34px; }
++      .toggle-slider:before { position:absolute; content:""; height:26px; width:26px;
++        left:4px; bottom:4px; background:white; transition:.3s; border-radius:50%; }
++      input:checked + .toggle-slider { background:#00CC00; }
++      input:checked + .toggle-slider:before { transform:translateX(26px); }
++      .toggle-label { margin-left:10px; font-weight:bold; color:#fff; font-size:16px; }
++      .setting-description { color:#ccc; font-size:14px; margin:4px 0 0; }
++      .setting-info { background:#222; border:1px solid #00CC00; padding:12px;
++        margin-top:12px; border-radius:5px; font-size:13px; color:#ccc; }
++      </style>
++
+     </main>
+
+   </div>

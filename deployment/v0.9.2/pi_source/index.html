@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Marine Electronics System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* === MASTER_SYSTEM_SPEC.md Section 5.1.2 Visual Design === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors - MASTER_SYSTEM_SPEC.md Section 5.1.2 */
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+
+      /* Typography */
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-button: 24px;
+      --font-heading: 32px;
+      --line-height: 1.5;
+
+      /* Button Dimensions */
+      --button-width: 200px;
+      --button-height: 110px;
+      --button-padding: 16px;
+      --button-radius: 8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      padding: 30px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 220px;
+    }
+
+    .header-logo {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      height: 180px;
+      width: auto;
+      transition: opacity 0.2s ease;
+    }
+
+    .header-logo:hover {
+      opacity: 0.8;
+    }
+
+    .voice-toggle-header {
+      display: none !important;  /* Hidden to prevent touchscreen conflicts */
+      position: fixed;
+      right: 20px;
+      top: 100px;
+      padding: 14px 24px;
+      height: 60px;
+      width: 240px;
+      border: 3px solid;
+      border-radius: var(--button-radius);
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 9998;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .voice-toggle-header.voice-on {
+      background-color: #00CC00;
+      border-color: #00FF00;
+      color: #000000;
+    }
+
+    .voice-toggle-header.voice-off {
+      background-color: #333333;
+      border-color: #666666;
+      color: #FFFFFF;
+    }
+
+    .voice-toggle-header:hover {
+      transform: scale(1.05);
+    }
+
+    .voice-icon {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .header-content {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    /* Main Menu Grid */
+    main {
+      flex: 1;
+      padding: 30px 20px;
+      overflow-y: auto;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Button Styling */
+    .menu-button {
+      min-width: var(--button-width);
+      min-height: var(--button-height);
+      padding: var(--button-padding);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-button);
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .menu-button:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      border-color: var(--color-accent);
+      transform: translateY(-2px);
+    }
+
+    .menu-button:active {
+      transform: translateY(0);
+    }
+
+    .menu-button:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 4px;
+    }
+
+    .menu-button:disabled {
+      border-color: var(--color-disabled);
+      color: var(--color-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .menu-button:disabled:hover {
+      transform: none;
+      background-color: var(--color-bg);
+    }
+
+    .menu-button svg {
+      width: 48px;
+      height: 48px;
+      fill: var(--color-text);
+      flex-shrink: 0;
+    }
+
+    .menu-button:hover svg {
+      fill: var(--color-accent);
+    }
+
+    .menu-button:disabled svg {
+      fill: var(--color-disabled);
+    }
+
+    .button-label {
+      font-size: var(--font-button);
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* Empty space for future button */
+    .empty-space {
+      border: 2px dashed var(--color-disabled);
+      opacity: 0.3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--color-disabled);
+    }
+
+    /* Footer */
+    footer {
+      padding: 16px 20px;
+      border-top: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .footer-button {
+      padding: 12px 24px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .footer-button:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+    }
+
+    .footer-button:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .status-text {
+      font-size: 18px;
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Responsive */
+    @media (max-width: 1280px) {
+      .menu-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Screen Reader Only */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Ripple Effect */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background-color: rgba(0, 204, 0, 0.5);
+      width: 100px;
+      height: 100px;
+      margin-top: -50px;
+      margin-left: -50px;
+      animation: ripple-animation 0.6s;
+      pointer-events: none;
+    }
+
+    @keyframes ripple-animation {
+      from {
+        opacity: 1;
+        transform: scale(0);
+      }
+      to {
+        opacity: 0;
+        transform: scale(3);
+      }
+    }
+
+    /* Exit Fullscreen Button */
+    .exit-fullscreen-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 14px 24px;
+      height: 60px;
+      width: 240px;
+      background-color: rgba(0, 204, 0, 0.9);
+      border: 3px solid #00FF00;
+      border-radius: var(--button-radius);
+      color: #000000;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 9999;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .exit-fullscreen-btn:hover,
+    .exit-fullscreen-btn:active {
+      background-color: #00FF00;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <!-- Toggle Fullscreen Button -->
+  <button class="exit-fullscreen-btn" id="exit-fullscreen-btn" onclick="toggleFullscreen()" aria-label="Toggle fullscreen mode">
+    Toggle Fullscreen
+  </button>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <a href="#" onclick="event.preventDefault(); fetch('http://localhost:1880/toggle-fullscreen', {method: 'POST', mode: 'no-cors'}).then(() => setTimeout(() => window.open('https://atmyboat.com', '_blank', 'noopener,noreferrer'), 500)); return false;" aria-label="Visit AtMyBoat.com">
+        <img src="atmyboat.png?v=1771775334" alt="AtMyBoat.com" class="header-logo">
+      </a>
+      <button class="voice-toggle-header voice-on" id="voice-toggle" aria-label="Toggle voice assistant" style="display: none;">
+        <svg class="voice-icon" viewBox="0 0 24 24">
+          <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
+        </svg>
+        <span id="voice-status-text">VOICE ON</span>
+      </button>
+      <div class="header-content">
+        <h1>d3kOS</h1>
+        <p class="subtitle">Marine Electronics System</p>
+      </div>
+    </header>
+
+    <!-- Main Menu Grid - USER REQUESTED LAYOUT -->
+    <main>
+      <nav class="menu-grid" role="navigation" aria-label="Main menu">
+
+        <!-- ROW 1: Dashboard, Benchmark, Navigation, Boat Log, OpenCPN -->
+
+        <!-- Dashboard -->
+        <button
+          class="menu-button"
+          id="btn-dashboard"
+          aria-label="Dashboard - View engine gauges and system status"
+          data-page="dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3,13A9,9 0 0,0 12,22C15.86,22 19.14,19.61 20.54,16.25L18.4,15.3C17.35,17.8 14.88,19.5 12,19.5C7.5,19.5 3.91,15.91 3.91,11.41C3.91,9.58 4.58,7.91 5.69,6.62L4.06,5.06C2.56,6.83 1.5,9.11 1.5,11.59C1.5,12.14 1.54,12.68 1.62,13.21L3,13M12,2A9,9 0 0,0 3,11H0L4,15L8,11H5A7,7 0 0,1 12,4A7,7 0 0,1 19,11A7,7 0 0,1 12,18C10.5,18 9.09,17.5 7.94,16.61L6.5,18.3C8.08,19.42 10,20 12,20A9,9 0 0,0 21,11A9,9 0 0,0 12,2Z"/>
+          </svg>
+          <span class="button-label">Dashboard</span>
+        </button>
+
+        <!-- Benchmark -->
+        <button
+          class="menu-button"
+          id="btn-benchmark"
+          aria-label="Engine Benchmark - Establish performance baseline"
+          data-page="benchmark">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16,6L18.29,8.29L13.41,13.17L9.41,9.17L2,16.59L3.41,18L9.41,12L13.41,16L19.71,9.71L22,12V6H16Z"/>
+          </svg>
+          <span class="button-label">Benchmark</span>
+        </button>
+
+        <!-- Navigation -->
+        <button
+          class="menu-button"
+          id="btn-navigation"
+          aria-label="Navigation - GPS position and AIS targets"
+          data-page="navigation">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z"/>
+          </svg>
+          <span class="button-label">Navigation</span>
+        </button>
+
+        <!-- Boat Log -->
+        <button
+          class="menu-button"
+          id="btn-boatlog"
+          aria-label="Boat Log - Voice recordings and log entries"
+          data-page="boatlog">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,10.5A2.5,2.5 0 0,0 9.5,13A2.5,2.5 0 0,0 12,15.5A2.5,2.5 0 0,0 14.5,13A2.5,2.5 0 0,0 12,10.5Z"/>
+          </svg>
+          <span class="button-label">Boat Log</span>
+        </button>
+
+        <!-- Weather Radar -->
+        <button
+          class="menu-button"
+          id="btn-weather"
+          aria-label="Weather - Real-time weather radar and marine conditions"
+          data-page="weather">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6,19A5,5 0 0,1 1,14A5,5 0 0,1 6,9C7,6.65 9.3,5 12,5C15.43,5 18.24,7.66 18.5,11.03L19,11A4,4 0 0,1 23,15A4,4 0 0,1 19,19H6M19,13H17V12A5,5 0 0,0 12,7C9.5,7 7.45,8.82 7.06,11.19C6.73,11.07 6.37,11 6,11A3,3 0 0,0 3,14A3,3 0 0,0 6,17H19A2,2 0 0,0 21,15A2,2 0 0,0 19,13M16.5,17L14,13H16L13,8L11,12.5H9L11.5,17H16.5Z"/>
+          </svg>
+          <span class="button-label">Weather</span>
+        </button>
+        <!-- Marine Vision -->
+        <button
+          class="menu-button"
+          id="btn-marine-vision"
+          aria-label="Marine Vision - Camera streaming and AI vision"
+          data-page="marine-vision" onclick="window.location.href='/marine-vision.html'">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/>
+          </svg>
+          <span class="button-label">Marine Vision</span>
+        </button>
+
+
+        <!-- Charts (OpenCPN) -->
+        <button
+          class="menu-button"
+          id="btn-charts"
+          aria-label="Charts - Marine navigation charts and chartplotter"
+          data-page="charts">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.5,3L20.34,3.03L15,5.1L9,3L3.36,4.9C3.15,4.97 3,5.15 3,5.38V20.5A0.5,0.5 0 0,0 3.5,21L3.66,20.97L9,18.9L15,21L20.64,19.1C20.85,19.03 21,18.85 21,18.62V3.5A0.5,0.5 0 0,0 20.5,3M10,5.47L14,6.87V18.53L10,17.13V5.47M5,6.46L8,5.45V17.15L5,18.31V6.46M19,17.54L16,18.55V6.86L19,5.7V17.54Z"/>
+          </svg>
+          <span class="button-label">Charts</span>
+        </button>
+
+        <!-- ROW 2: Engine Setup, QR Code, Settings, Helm -->
+
+        <!-- Initial Setup -->
+        <button
+          class="menu-button"
+          id="btn-onboarding"
+          aria-label="Initial Setup - Configure your boat and systems"
+          data-page="onboarding">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+          </svg>
+          <span class="button-label">Initial Setup</span>
+        </button>
+
+        <!-- QR Code -->
+        <button
+          class="menu-button"
+          id="btn-qrcode"
+          aria-label="QR Code - Installation ID and mobile app pairing"
+          data-page="qrcode">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3,11H5V13H3V11M11,5H13V9H11V5M9,11H13V15H11V13H9V11M15,11H17V13H19V11H21V13H19V15H21V19H19V21H17V19H13V21H11V17H15V15H17V13H15V11M19,19V15H17V19H19M15,3H21V9H15V3M17,5V7H19V5H17M3,3H9V9H3V3M5,5V7H7V5H5M3,15H9V21H3V15M5,17V19H7V17H5Z"/>
+          </svg>
+          <span class="button-label">QR Code</span>
+        </button>
+
+        <!-- Settings -->
+        <button
+          class="menu-button"
+          id="btn-settings"
+          aria-label="Settings - System configuration and preferences"
+          data-page="settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M10,22C9.75,22 9.54,21.82 9.5,21.58L9.13,18.93C8.5,18.68 7.96,18.34 7.44,17.94L4.95,18.95C4.73,19.03 4.46,18.95 4.34,18.73L2.34,15.27C2.21,15.05 2.27,14.78 2.46,14.63L4.57,12.97L4.5,12L4.57,11L2.46,9.37C2.27,9.22 2.21,8.95 2.34,8.73L4.34,5.27C4.46,5.05 4.73,4.96 4.95,5.05L7.44,6.05C7.96,5.66 8.5,5.32 9.13,5.07L9.5,2.42C9.54,2.18 9.75,2 10,2H14C14.25,2 14.46,2.18 14.5,2.42L14.87,5.07C15.5,5.32 16.04,5.66 16.56,6.05L19.05,5.05C19.27,4.96 19.54,5.05 19.66,5.27L21.66,8.73C21.79,8.95 21.73,9.22 21.54,9.37L19.43,11L19.5,12L19.43,13L21.54,14.63C21.73,14.78 21.79,15.05 21.66,15.27L19.66,18.73C19.54,18.95 19.27,19.04 19.05,18.95L16.56,17.95C16.04,18.34 15.5,18.68 14.87,18.93L14.5,21.58C14.46,21.82 14.25,22 14,22H10M11.25,4L10.88,6.61C9.68,6.86 8.62,7.5 7.85,8.39L5.44,7.35L4.69,8.65L6.8,10.2C6.4,11.37 6.4,12.64 6.8,13.8L4.68,15.36L5.43,16.66L7.86,15.62C8.63,16.5 9.68,17.14 10.87,17.38L11.24,20H12.76L13.13,17.39C14.32,17.14 15.37,16.5 16.14,15.62L18.57,16.66L19.32,15.36L17.2,13.81C17.6,12.64 17.6,11.37 17.2,10.2L19.31,8.65L18.56,7.35L16.15,8.39C15.38,7.5 14.32,6.86 13.12,6.62L12.75,4H11.25Z"/>
+          </svg>
+          <span class="button-label">Settings</span>
+        </button>
+
+        <!-- Helm - AI Assistant -->
+        <button
+          class="menu-button"
+          id="btn-helm"
+          aria-label="Helm - AI Assistant for voice dialogue"
+          data-page="helm">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M7.5,13A0.5,0.5 0 0,0 7,13.5A0.5,0.5 0 0,0 7.5,14A0.5,0.5 0 0,0 8,13.5A0.5,0.5 0 0,0 7.5,13M16.5,13A0.5,0.5 0 0,0 16,13.5A0.5,0.5 0 0,0 16.5,14A0.5,0.5 0 0,0 17,13.5A0.5,0.5 0 0,0 16.5,13Z"/>
+          </svg>
+          <span class="button-label">Helm</span>
+        </button>
+
+        <!-- AI Assistant -->
+        <button
+          class="menu-button"
+          id="btn-ai-assistant"
+          aria-label="AI Assistant - Chat with marine AI assistant"
+          data-page="ai-assistant">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M17.753,14C19.219,14 20.753,15.534 20.753,17C20.753,18.466 19.219,20 17.753,20C16.287,20 14.753,18.466 14.753,17C14.753,15.534 16.287,14 17.753,14M6.247,14C7.713,14 9.247,15.534 9.247,17C9.247,18.466 7.713,20 6.247,20C4.781,20 3.247,18.466 3.247,17C3.247,15.534 4.781,14 6.247,14M17.753,11C16.582,11 15.418,11.191 14.332,11.556C14.553,10.953 14.671,10.298 14.671,9.617C14.671,6.988 12.539,4.856 9.91,4.856C7.281,4.856 5.149,6.988 5.149,9.617C5.149,10.298 5.267,10.953 5.488,11.556C4.402,11.191 3.238,11 2.067,11C0.925,11 0,11.925 0,13.067V16.933C0,18.075 0.925,19 2.067,19H2.2C2.634,16.531 4.744,14.667 7.285,14.667C9.826,14.667 11.936,16.531 12.37,19H12.5C12.934,16.531 15.044,14.667 17.585,14.667C20.126,14.667 22.236,16.531 22.67,19H22.8C23.942,19 24.867,18.075 24.867,16.933V13.067C24.867,11.925 23.942,11 22.8,11H17.753M9.91,7C11.458,7 12.71,8.252 12.71,9.8C12.71,11.348 11.458,12.6 9.91,12.6C8.362,12.6 7.11,11.348 7.11,9.8C7.11,8.252 8.362,7 9.91,7Z"/>
+          </svg>
+          <span class="button-label">AI Assistant</span>
+        </button>
+
+        <!-- Upload Manual -->
+        <button
+          class="menu-button"
+          id="btn-upload-manual"
+          aria-label="Upload Manual - Add boat and equipment manuals"
+          data-page="upload-manual">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,11L15,14H13V17H11V14H9L12,11Z"/>
+          </svg>
+          <span class="button-label">Upload Manual</span>
+        </button>
+
+        <!-- Manage Manuals -->
+        <button
+          class="menu-button"
+          id="btn-manuals"
+          aria-label="Manage Manuals - View and delete uploaded manuals"
+          data-page="manuals">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19,2L14,6.5V17.5L19,13V2M6.5,5C4.55,5 2.45,5.4 1,6.5V21.16C1,21.41 1.25,21.66 1.5,21.66C1.6,21.66 1.65,21.59 1.75,21.59C3.1,20.94 5.05,20.5 6.5,20.5C8.45,20.5 10.55,20.9 12,22C13.35,21.15 15.8,20.5 17.5,20.5C19.15,20.5 20.85,20.81 22.25,21.56C22.35,21.61 22.4,21.59 22.5,21.59C22.75,21.59 23,21.34 23,21.09V6.5C22.4,6.05 21.75,5.75 21,5.5V17.5C20.15,17.25 19.35,17.13 18.5,17.13C16.85,17.13 15.2,17.43 13.75,18.05V6.5C13.75,5.96 13.59,5.45 13.31,5.02C12.62,3.92 11.35,3.25 10,3.25C8.5,3.25 7.13,3.88 6.41,4.97C6.18,5.28 6.04,5.63 6.03,6H6.5Z"/>
+          </svg>
+          <span class="button-label">Manage Manuals</span>
+        </button>
+
+        <!-- Conversation History -->
+        <button
+          class="menu-button"
+          id="btn-history"
+          aria-label="Conversation History - View past AI conversations"
+          data-page="history">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13.5,8H12V13L16.28,15.54L17,14.33L13.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3"/>
+          </svg>
+          <span class="button-label">History</span>
+        </button>
+
+      </nav>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <button class="footer-button" id="btn-back" aria-label="Go back" style="visibility: hidden;">
+        ← Back
+      </button>
+
+      <span class="status-text">d3kOS v2.0 | All Systems Ready</span>
+
+      <button class="footer-button" id="btn-home" aria-label="Return to main menu" style="visibility: hidden;">
+        Main Menu
+      </button>
+    </footer>
+  </div>
+
+  <script>
+    // === Navigation ===
+    function navigateToPage(page) {
+      localStorage.setItem('d3kos-last-page', page);
+
+      switch(page) {
+        case 'dashboard':
+          window.location.href = '/dashboard.html';
+          break;
+        case 'onboarding':
+          // Toggle out of fullscreen first so keyboard is accessible
+          fetch('http://localhost:1880/toggle-fullscreen', {
+            method: 'POST',
+            mode: 'no-cors'
+          }).then(() => {
+            // Wait for fullscreen to toggle before navigating
+            setTimeout(() => {
+              window.location.href = '/onboarding.html';
+            }, 500);
+          }).catch(() => {
+            // If toggle fails, navigate anyway
+            window.location.href = '/onboarding.html';
+          });
+          break;
+        case 'benchmark':
+          window.location.href = '/benchmark.html';
+          break;
+        case 'navigation':
+          window.location.href = '/navigation.html';
+          break;
+        case 'boatlog':
+          window.location.href = '/boatlog.html';
+          break;
+        case 'weather':
+          window.location.href = '/weather.html';
+          break;
+        case 'marine-vision':
+          window.location.href = '/marine-vision.html';
+          break;
+        case 'qrcode':
+          window.location.href = '/qrcode.html';
+          break;
+        case 'settings':
+          window.location.href = '/settings.html';
+          break;
+        case 'helm':
+          window.location.href = '/helm.html';
+          break;
+        case 'ai-assistant':
+          window.location.href = '/ai-assistant.html';
+          break;
+        case 'upload-manual':
+          window.location.href = '/upload-manual.html';
+          break;
+        case 'manuals':
+          window.location.href = '/manuals.html';
+          break;
+        case 'history':
+          window.location.href = '/history.html';
+          break;
+        case 'charts':
+          // Launch OpenCPN (auto-install if needed)
+          alert('Launching Charts...\n\nOpenCPN will open in a moment.\nFirst time may take 30-60 seconds to install.');
+          fetch('http://localhost:1880/launch-opencpn', {
+            method: 'POST',
+            mode: 'no-cors'
+          }).catch((error) => {
+            console.error('Failed to launch Charts:', error);
+            alert('Failed to launch Charts. Please check the system.');
+          });
+          break;
+        default:
+          console.error('Unknown page:', page);
+      }
+    }
+
+    // === Ripple Effect ===
+    function createRipple(event) {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple');
+
+      const rect = button.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = event.clientX - rect.left - size / 2 + 'px';
+      ripple.style.top = event.clientY - rect.top - size / 2 + 'px';
+
+      button.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    }
+
+    // === Keyboard Navigation ===
+    let currentFocusIndex = 0;
+    const menuButtons = Array.from(document.querySelectorAll('.menu-button:not(:disabled):not(.empty-space)'));
+
+    document.addEventListener('keydown', (e) => {
+      switch(e.key) {
+        case 'Enter':
+          if (document.activeElement.classList.contains('menu-button')) {
+            document.activeElement.click();
+          }
+          break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          currentFocusIndex = (currentFocusIndex + 1) % menuButtons.length;
+          menuButtons[currentFocusIndex].focus();
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          currentFocusIndex = (currentFocusIndex - 1 + menuButtons.length) % menuButtons.length;
+          menuButtons[currentFocusIndex].focus();
+          break;
+      }
+    });
+
+    // === Voice Assistant Toggle ===
+    let voiceStatus = { running: false };
+
+    async function checkVoiceStatus() {
+      try {
+        const response = await fetch('http://localhost:1880/voice/status');
+        voiceStatus = await response.json();
+        updateVoiceButton();
+      } catch (error) {
+        console.error('Failed to check voice status:', error);
+      }
+    }
+
+    function updateVoiceButton() {
+      const btn = document.getElementById('voice-toggle');
+      const statusText = document.getElementById('voice-status-text');
+
+      if (voiceStatus.running) {
+        btn.classList.remove('voice-off');
+        btn.classList.add('voice-on');
+        statusText.textContent = 'VOICE ON';
+      } else {
+        btn.classList.remove('voice-on');
+        btn.classList.add('voice-off');
+        statusText.textContent = 'VOICE OFF';
+      }
+    }
+
+    async function toggleVoice() {
+      const btn = document.getElementById('voice-toggle');
+      btn.style.opacity = '0.6';
+
+      try {
+        await fetch('http://localhost:1880/voice/toggle', {
+          method: 'POST',
+          mode: 'no-cors'
+        });
+
+        setTimeout(async () => {
+          await checkVoiceStatus();
+          btn.style.opacity = '1';
+        }, 1000);
+      } catch (error) {
+        console.error('Failed to toggle voice:', error);
+        btn.style.opacity = '1';
+      }
+    }
+
+    // === Event Listeners ===
+    document.addEventListener('DOMContentLoaded', () => {
+      // Voice toggle button with touch support
+      const voiceBtn = document.getElementById('voice-toggle');
+      voiceBtn.addEventListener('click', toggleVoice);
+      voiceBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        toggleVoice();
+      });
+      checkVoiceStatus();
+
+      // Add ripple effect
+      document.querySelectorAll('.menu-button').forEach(button => {
+        button.addEventListener('click', createRipple);
+      });
+
+      // Add navigation handlers
+      document.querySelectorAll('.menu-button').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const page = e.currentTarget.dataset.page;
+          if (page) {
+            navigateToPage(page);
+          }
+        });
+      });
+
+      // Check license tier for disabled features
+      const licenseTier = parseInt(localStorage.getItem('d3kos-license-tier') || '0');
+      // Currently all features enabled for testing
+    });
+
+    // Toggle Fullscreen Function
+    function toggleFullscreen() {
+      console.log('Toggle button clicked');
+
+      // Call Node-RED endpoint to toggle fullscreen
+      fetch('http://localhost:1880/toggle-fullscreen', {
+        method: 'POST',
+        mode: 'no-cors'
+      })
+      .then(response => {
+        console.log('Fullscreen toggle request sent');
+        return response;
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Toggle failed: ' + error.message);
+      });
+    }
+  </script>
+
+  <!-- Background Navigation Preloader - Loads navigation.html in background for instant access -->
+  <iframe
+    id="nav-preloader"
+    src="/navigation.html"
+    style="display: none; position: absolute; width: 0; height: 0; border: none;"
+    aria-hidden="true"
+    title="Navigation data preloader">
+  </iframe>
+
+<script>// Check tier and disable locked featuresfetch("/tier/status").then(r=>r.json()).then(d=>{  if(!d.features.voice_assistant){    const voiceBtns=document.querySelectorAll("[onclick*=047voice047]");    voiceBtns.forEach(btn=>{btn.style.opacity="0.3";btn.onclick=()=>alert("Voice requires Tier 2+");});  }  if(!d.features.camera){    const camBtns=document.querySelectorAll("[onclick*=047marine-vision047]");    camBtns.forEach(btn=>{btn.style.opacity="0.3";btn.onclick=()=>alert("Camera requires Tier 2+");});  }});</script>
+</body>
+</html>
