@@ -248,10 +248,28 @@ Provide concise, accurate answers based on this boat's specific configuration an
 
     def classify_simple_query(self, question):
         """Check if this is a simple query that can be answered with rules"""
-        """Check if this is a simple query that can be answered with rules"""
         q_lower = question.lower()
 
-        # FIRST: Check if this is a procedure/how-to question - these should search RAG
+        # FIRST: Diagnostic intent — these questions need Gemini, not rule-based answers
+        # "what causes white smoke at high speed" contains 'speed' but is NOT a speed query
+        diagnostic_intents = [
+            'why ', 'why is', 'why does', 'why am i',
+            'what causes', 'what could cause', 'what would cause',
+            'what is wrong', 'what might be wrong',
+            'is it normal', 'should i be concerned', 'should i worry',
+            'explain ', 'tell me about', 'what does it mean',
+            'could it be', 'what happens when', 'what happens if',
+            'white smoke', 'black smoke', 'blue smoke', 'grey smoke',
+            'strange noise', 'weird noise', 'unusual noise', 'knocking', 'banging',
+            'vibrat', 'shaking', 'rough idle',
+            'overheating', 'running hot', 'too hot',
+            'diagnos', 'what should i do', 'is this bad',
+        ]
+        for intent in diagnostic_intents:
+            if intent in q_lower:
+                return None  # Send to Gemini
+
+        # SECOND: Procedure/how-to questions — send to RAG
         procedure_keywords = [
             'procedure', 'how to', 'what type', 'which', 'what kind', 'how do i', 'steps', 'instructions',
             'change', 'replace', 'install', 'maintenance', 'service',
@@ -260,23 +278,32 @@ Provide concise, accurate answers based on this boat's specific configuration an
         for keyword in procedure_keywords:
             if keyword in q_lower:
                 return None  # Force RAG search for procedures
-        
 
+        # THIRD: Simple status queries — tightened to avoid false positives
         simple_patterns = {
-            'rpm': ['rpm', 'revolution', 'engine speed', 'how fast is the engine'],
+            'rpm': ['what is the rpm', 'current rpm', 'engine rpm', 'rpm is', 'rpm reading',
+                    'revolution', 'how fast is the engine'],
             'oil': ['oil pressure', 'oil psi', 'lubrication pressure'],
-            'temperature': ['temperature', 'temp', 'coolant', 'how hot', 'overheating'],
-            'fuel': ['fuel', 'gas', 'how much fuel', 'fuel remaining', 'fuel left'],
-            'battery': ['battery', 'voltage', 'electrical', 'power'],
-            'speed': ['speed', 'how fast', 'knots', 'velocity', 'sog'],
-            'heading': ['heading', 'direction', 'course', 'which way', 'bearing'],
-            'boost': ['boost', 'boost pressure', 'turbo', 'manifold pressure'],
-            'hours': ['engine hours', 'runtime', 'hours', 'operating time', 'run time'],
-            'location': ['location', 'position', 'where am i', 'coordinates', 'gps', 'latitude', 'longitude'],
-            'time': ['what time', 'current time', 'time is it', 'date'],
-            'help': ['what can you do', 'help', 'capabilities', 'commands', 'how to use'],
-            'status': ['status', 'how is', 'everything', 'all systems', 'overview'],
-            'reboot': ['reboot', 'restart', 'reboot system', 'restart system', 'power cycle', 'shut down', 'shutdown']
+            'temperature': ['coolant temperature', 'engine temperature', 'coolant temp', 'engine temp',
+                            'how hot is the engine', 'how hot is the coolant', 'what is the temperature'],
+            'fuel': ['fuel level', 'fuel remaining', 'fuel left', 'how much fuel', 'how much gas',
+                     'fuel percentage', 'tank level'],
+            'battery': ['battery level', 'battery voltage', 'battery charge', 'battery status',
+                        'what is the voltage', 'current voltage', 'system voltage'],
+            'speed': ['what is my speed', 'current speed', 'how fast am i', 'speed over ground',
+                      'boat speed', 'sog', 'speed in knots', 'knots right now'],
+            'heading': ['what is my heading', 'current heading', 'what direction am i', 'which way am i',
+                        'bearing to', 'course over ground'],
+            'boost': ['boost pressure', 'turbo pressure', 'manifold pressure', 'boost level'],
+            'hours': ['engine hours', 'how many hours', 'operating hours', 'run time', 'runtime',
+                      'how long has the engine'],
+            'location': ['where am i', 'my location', 'my position', 'current position',
+                         'coordinates', 'latitude', 'longitude', 'gps position'],
+            'time': ['what time is it', 'current time', 'time is it', 'what is the date', 'current date'],
+            'help': ['what can you do', 'help me', 'your capabilities', 'list commands', 'how to use you'],
+            'status': ['system status', 'all systems', 'overall status', 'boat status', 'engine status',
+                       'how is everything', 'status report', 'give me an overview'],
+            'reboot': ['reboot', 'restart', 'power cycle', 'shut down', 'shutdown']
         }
 
         for category, patterns in simple_patterns.items():
