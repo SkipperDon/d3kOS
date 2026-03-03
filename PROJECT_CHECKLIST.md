@@ -1,14 +1,6 @@
 # d3kOS Project Implementation Checklist
 
-**Version:** 1.0
-**Date:** March 1, 2026
-**Status:** Active Development
-**Current Version:** v0.9.1.2 → Target: v1.0.0 (February 2028)
-
-**Total Timeline:** 122 weeks (~28 months)
-**Completion:** 0% (0/122 weeks completed)
-
----
+**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.1.2 → Target: v1.0.0
 
 ## 📋 LEGEND
 
@@ -23,13 +15,12 @@
 
 ---
 
-## v0.9.2 - Metric/Imperial Conversion System (3 weeks)
+## v0.9.2 — Metric/Imperial Conversion System `[MEDIUM]`
 
-**Target:** March 2026
-**Status:** [ ] Not Started
-**Priority:** HIGH - Next immediate task
+**Status:** [ ] Not Started | **Priority:** HIGH
 
-### Week 1: Foundation (16 hours)
+### Foundation
+
 - [ ] Create `/var/www/html/js/units.js` conversion utility
   - [ ] Temperature conversion (°F ↔ °C)
   - [ ] Pressure conversion (PSI ↔ bar)
@@ -50,7 +41,8 @@
   - [ ] Toggle switch (Imperial/Metric)
   - [ ] Real-time page update without reload
 
-### Week 2: UI Updates (24 hours)
+### UI Updates
+
 - [ ] Update Dashboard (`/var/www/html/index.html`)
   - [ ] Engine temperature display (°F/°C)
   - [ ] Oil pressure display (PSI/bar)
@@ -73,9 +65,10 @@
   - [ ] Wind speed display (knots+MPH/knots+km/h)
 - [ ] Update Boatlog display
   - [ ] Display entries in user's preferred units
-  - [ ] Note: Stored data remains in imperial (no conversion on storage)
+  - [ ] Stored data remains in imperial (no conversion on storage)
 
-### Week 3: Voice Assistant & Testing (24 hours)
+### Voice Assistant & Testing
+
 - [ ] Update Voice Assistant (`/opt/d3kos/services/ai/query_handler.py`)
   - [ ] Load user preferences on query
   - [ ] Convert RPM responses (no conversion needed, display only)
@@ -94,35 +87,35 @@
   - [ ] Test voice responses in both units
   - [ ] Test data export (includes unit metadata)
 - [ ] Accuracy Verification
-  - [ ] Temperature: 185°F = 85°C (±0.1°C) <!-- VERIFY: -->
-  - [ ] Pressure: 45 PSI = 3.10 bar (±0.01 bar) <!-- VERIFY: -->
-  - [ ] Speed: 10 knots = 18.52 km/h (±0.1 km/h) <!-- VERIFY: -->
-  - [ ] Fuel: 50 gal = 189.3 L (±0.1 L) <!-- VERIFY: -->
-  - [ ] Performance: < 1ms conversion time <!-- VERIFY: -->
+  - [ ] Temperature: 185°F = 85°C (±0.1°C)
+  - [ ] Pressure: 45 PSI = 3.10 bar (±0.01 bar)
+  - [ ] Speed: 10 knots = 18.52 km/h (±0.1 km/h)
+  - [ ] Fuel: 50 gal = 189.3 L (±0.1 L)
+  - [ ] Performance: < 1ms conversion time
 - [ ] User Acceptance Testing
   - [ ] Test with 5 metric users
   - [ ] Test with 5 imperial users
   - [ ] Collect feedback and iterate
 
 ### Deployment
+
 - [ ] Git commit with detailed changes
 - [ ] Tag release as v0.9.2
 - [ ] Update CHANGELOG.md
 - [ ] Deploy to production Pi
-- [ ] Verify all features working on live system <!-- VERIFY: -->
+- [ ] Verify all features working on live system
 - [ ] Update documentation
 
 **Deliverable:** d3kOS v0.9.2 with full metric/imperial support
 
 ---
 
-## v0.9.3 - Multi-Camera System (8-9 weeks)
+## v0.9.2 — Multi-Camera System `[LARGE]`
 
-**Target:** April 2026 (after v0.9.2)
-**Status:** [ ] Not Started
-**Priority:** HIGH - Safety and security
+**Status:** [ ] Not Started | **Priority:** HIGH
 
-### Week 1: Camera Registry System (40 hours)
+### Camera Registry System
+
 - [ ] Create camera configuration schema
   - [ ] Design `/opt/d3kos/config/cameras.json` structure
   - [ ] Define camera object properties (id, name, location, purpose, ip, rtsp_urls, detection_enabled)
@@ -144,18 +137,19 @@
   - [ ] Test RTSP streams (main + sub)
   - [ ] Verify DHCP reservations persist across reboots
 
-### Week 2-3: Multi-Camera Backend API (80 hours)
+### Multi-Camera Backend API
+
 - [ ] Extend Camera Stream Manager (`/opt/d3kos/services/marine-vision/camera_stream_manager.py`)
   - [ ] Add multi-camera support (currently single camera)
   - [ ] Create camera switching logic
   - [ ] Implement concurrent stream management
   - [ ] Add frame buffering per camera
 - [ ] Create new API endpoints (Port 8084)
-  - [ ] GET `/camera/list` - Get all registered cameras
-  - [ ] GET `/camera/status/{id}` - Connection status per camera
-  - [ ] POST `/camera/switch/{id}` - Switch active camera
-  - [ ] GET `/camera/grid` - Get all frames for grid view (4 cameras)
-  - [ ] GET `/camera/frame/{id}` - Get frame from specific camera
+  - [ ] GET `/camera/list` — Get all registered cameras
+  - [ ] GET `/camera/status/{id}` — Connection status per camera
+  - [ ] POST `/camera/switch/{id}` — Switch active camera
+  - [ ] GET `/camera/grid` — Get all frames for grid view (4 cameras)
+  - [ ] GET `/camera/frame/{id}` — Get frame from specific camera
 - [ ] Implement resource optimization
   - [ ] Use sub-streams (720p) for grid view
   - [ ] Use main stream (1080p) for single view
@@ -166,14 +160,15 @@
   - [ ] Verify performance (CPU/memory/bandwidth)
   - [ ] Load test with all 4 cameras active
 
-### Week 4-5: UI Implementation (80 hours)
-- [ ] Create Single View Page (`/marine-vision.html` - update existing)
+### UI Implementation
+
+- [ ] Create Single View Page (`/marine-vision.html` — update existing)
   - [ ] Add camera dropdown selector (4 cameras)
   - [ ] Implement camera switching (no page reload)
   - [ ] Maintain 1080p @ 25 FPS display
   - [ ] Show camera name and status
   - [ ] Add "Grid View" button
-- [ ] Create Grid View Page (`/marine-vision-grid.html` - new)
+- [ ] Create Grid View Page (`/marine-vision-grid.html` — new)
   - [ ] 2×2 grid layout (responsive)
   - [ ] Display all 4 cameras simultaneously
   - [ ] 720p @ 1 FPS per camera
@@ -192,36 +187,8 @@
   - [ ] Mobile phone
   - [ ] 10.1" touchscreen (Pi display)
 
-### Week 6-7: Forward Watch Integration (80 hours)
-- [ ] Configure bow camera for Forward Watch
-  - [ ] Set camera purpose: "forward_watch" in registry
-  - [ ] Enable detection_enabled flag
-  - [ ] Configure detection_type: "forward_watch"
-- [ ] Implement priority detection queue
-  - [ ] Bow camera always processed first
-  - [ ] Other cameras queued if bow is busy
-  - [ ] Skip detection if queue full (drop frames)
-- [ ] Update Fish Detector service (`/opt/d3kos/services/marine-vision/fish_detector.py`)
-  - [ ] Add marine object detection mode (boats, kayaks, buoys, logs, debris, docks, ice)
-  - [ ] Load YOLOv8 marine model (if available) or use COCO proxy
-  - [ ] Implement detection mode switching (fish vs marine objects)
-- [ ] Add Forward Watch overlay to Single View
-  - [ ] Show detection bounding boxes (only when bow camera active)
-  - [ ] Display object labels and confidence
-  - [ ] Add distance estimation (monocular depth - future enhancement)
-  - [ ] Highlight detected hazards (red boxes)
-- [ ] Implement alerts
-  - [ ] Visual alert (red border flash on detection)
-  - [ ] Audio alert (browser beep on hazard detection)
-  - [ ] Alert threshold (confidence > 70%)
-- [ ] Test Forward Watch
-  - [ ] Test with boats (real or video)
-  - [ ] Test with buoys
-  - [ ] Test with logs/debris
-  - [ ] Verify alerts trigger correctly
-  - [ ] Check false positive rate <!-- VERIFY: -->
+### Testing & Optimization
 
-### Week 8: Testing & Optimization (40 hours)
 - [ ] Performance testing
   - [ ] Measure CPU usage (target: < 35%)
   - [ ] Measure memory usage (target: < 970 MB total)
@@ -245,14 +212,15 @@
   - [ ] Fix any issues found in testing
   - [ ] Retest after fixes
 
-### Week 9: Documentation & Deployment (40 hours)
+### Documentation & Deployment
+
 - [ ] Update documentation
   - [ ] User guide for multi-camera system
   - [ ] Setup instructions for additional cameras
   - [ ] Troubleshooting guide
   - [ ] API documentation updates
 - [ ] Hardware setup
-  - [ ] Purchase 3 additional Reolink RLC-810A cameras ($800-1,200)
+  - [ ] Purchase 3 additional Reolink RLC-810A cameras
   - [ ] Mount stern camera
   - [ ] Mount interior camera
   - [ ] Mount port/starboard camera
@@ -263,7 +231,7 @@
   - [ ] Tag release as v0.9.3
   - [ ] Update CHANGELOG.md
   - [ ] Deploy to production Pi
-  - [ ] Verify all 4 cameras working <!-- VERIFY: -->
+  - [ ] Verify all 4 cameras working
   - [ ] Test Forward Watch in real conditions
 - [ ] User training
   - [ ] Create video tutorial
@@ -274,187 +242,51 @@
 
 ---
 
-## v0.9.4 - Gemini API Integration (5-7 weeks)
+## v0.9.2 — Gemini API Integration `[SMALL]`
 
-**Target:** June 2026
-**Status:** [ ] Not Started
-**Priority:** Medium - Tier 1 AI (Chat Layer)
+**Status:** [ ] Not Started | **Priority:** MEDIUM
 
 ### Tasks
-- [ ] Week 1-2: Backend Gemini proxy service (Port 8099)
-- [ ] Week 3-4: Onboarding wizard integration (Steps 17.x)
-- [ ] Week 5: Settings UI updates
-- [ ] Week 6-7: Testing and beta rollout
+
+- [ ] Backend Gemini proxy service (Port 8099)
+- [ ] Onboarding wizard integration (Steps 17.x)
+- [ ] Settings UI updates
+- [ ] Testing and beta rollout
 
 **Deliverable:** d3kOS v0.9.4 with conversational AI
 
 ---
 
-## v0.9.5 - Mobile Apps (iOS/Android) (8-10 weeks)
+## v0.9.2 — Remote Access & Camera Streaming `[MEDIUM]`
 
-**Target:** July 2026
-**Status:** [ ] Not Started
-**Priority:** High - Tier 1 activation
+**Status:** [ ] Not Started | **Priority:** HIGH
 
 ### Tasks
-- [ ] Week 1-3: AtMyBoat.com VPS setup (Headscale, MQTT, PostgreSQL)
-- [ ] Week 4-6: REST API + web dashboard
-- [ ] Week 7-8: React Native mobile app
-- [ ] Week 9-10: Pi integration (Tailscale, MQTT publisher)
 
-**Deliverable:** d3kOS v0.9.5 + AtMyBoat.com cloud platform
+- [ ] WebSocket real-time data push
+- [ ] Camera stream relay (RTSP → HLS)
+- [ ] Device management and settings sync
+- [ ] Testing and optimization
+
+**Deliverable:** d3kOS v0.9.6 with full remote access
 
 ---
 
-## v0.9.6 - Remote Access & Camera Streaming (6-8 weeks)
+## v0.9.2 — Multi-Language Support `[LARGE]`
 
-**Target:** September 2026
-**Status:** [ ] Not Started
-**Priority:** High - Tier 2 activation
+**Status:** [ ] Not Started | **Priority:** REQUIRED for v1.0
 
 ### Tasks
-- [ ] Week 1-2: WebSocket real-time data push
-- [ ] Week 3-4: Camera stream relay (RTSP → HLS)
-- [ ] Week 5-6: Device management and settings sync
-- [ ] Week 7-8: Testing and optimization
 
-**Deliverable:** d3kOS v0.9.6 with full Tier 2 remote access
+- [ ] i18n system foundation and preferences API extension
+- [ ] UI translation (all pages with data-i18n attributes)
+- [ ] Professional translation service (French, Spanish, German, Italian, Dutch, Swedish, Norwegian)
+- [ ] Voice assistant integration (Piper TTS models)
+- [ ] Native speaker testing and QA
 
----
+### Languages
 
-## v0.10.0 - Predictive Maintenance (16 weeks)
-
-**Target:** November 2026
-**Status:** [ ] Not Started
-**Priority:** High - Tier 2 AI (Automation Layer)
-
-### Tasks
-- [ ] Week 1-4: Data collection (30-day baseline)
-- [ ] Week 5-7: Anomaly detection algorithms
-- [ ] Week 8-11: ML models (5 models: overheating, oil, battery, SD card, GPS)
-- [ ] Week 12-13: Alert system integration
-- [ ] Week 14-16: Additional automation (weather, fuel, maintenance scheduling)
-
-**Deliverable:** d3kOS v0.10.0 with predictive maintenance
-
----
-
-## v0.10.1 - Fleet Management (8 weeks, parallel with v0.10.0)
-
-**Target:** December 2026
-**Status:** [ ] Not Started
-**Priority:** Medium - Tier 3 activation
-
-### Tasks
-- [ ] Week 1-2: Fleet creation and invitation system
-- [ ] Week 3-4: Fleet map with live vessel positions
-- [ ] Week 5-6: Fleet analytics (engine hours, fuel, alerts)
-- [ ] Week 7-8: Testing and Tier 3 activation
-
-**Deliverable:** d3kOS v0.10.1 with fleet management
-
----
-
-## v0.11.0 - Remote Diagnostic Console (8-10 weeks)
-
-**Target:** March 2027
-**Status:** [ ] Not Started
-**Priority:** Medium - Professional support
-
-### Tasks
-- [ ] Week 1-2: Support ticket system + consent flow
-- [ ] Week 3-4: Diagnostic agent (log collection)
-- [ ] Week 5-6: Claude API + AI diagnosis
-- [ ] Week 7: Fix delivery + user approval
-- [ ] Week 8-10: Knowledge base and admin console
-
-**Deliverable:** d3kOS v0.11.0 with remote diagnostics
-
----
-
-## v0.12.0 - Autonomous Agents (15 weeks)
-
-**Target:** May 2027
-**Status:** [ ] Not Started
-**Priority:** High - Tier 3 AI (Agent Layer)
-
-### Tasks
-- [ ] Week 1-3: Agent framework (base class, scheduler, communication bus)
-- [ ] Week 4-5: Update agent (GitHub integration, backup/restore, auto-rollback)
-- [ ] Week 6-7: Performance agent (CPU/memory/disk monitoring, auto-remediation)
-- [ ] Week 8-9: Storage agent (cleanup automation, predictive warnings)
-- [ ] Week 10-11: Health check agent (daily reports, weekly scans)
-- [ ] Week 12-13: Backup agent (incremental backups, cloud sync)
-- [ ] Week 14-15: Testing (reliability, failure modes, UAT)
-
-**Deliverable:** d3kOS v0.12.0 with autonomous agents
-
----
-
-## v0.12.1 - AI Action Layer (8 weeks)
-
-**Target:** July 2027
-**Status:** [ ] Not Started
-**Priority:** Medium - Controlled autonomy
-
-### Tasks
-- [ ] Week 1-2: Whitelisted action system
-- [ ] Week 3-4: User approval workflows
-- [ ] Week 5-6: Action execution engine
-- [ ] Week 7-8: Testing and safety verification
-
-**Deliverable:** d3kOS v0.12.1 with AI action layer
-
----
-
-## v0.13.0 - Failure Intelligence & Recovery (8 weeks)
-
-**Target:** September 2027
-**Status:** [ ] Not Started
-**Priority:** Medium - Community learning
-
-### Tasks
-- [ ] Week 1-2: Failure pattern recognition
-- [ ] Week 3-4: Community data aggregation
-- [ ] Week 5-6: Recovery playbook system
-- [ ] Week 7-8: Testing and knowledge base integration
-
-**Deliverable:** d3kOS v0.13.0 with failure intelligence
-
----
-
-## v0.14.0 - Community Features (8 weeks)
-
-**Target:** November 2027
-**Status:** [ ] Not Started
-**Priority:** Low - Community engagement
-
-### Tasks
-- [ ] Week 1-2: Anonymous engine benchmark service
-- [ ] Week 3-4: Anonymizer service (position randomization, ID hashing)
-- [ ] Week 5-6: Community boat map (opt-in, privacy-first)
-- [ ] Week 7: Hazard/POI marker system (user-submitted, vote system)
-- [ ] Week 8: Knowledge base to pattern sync
-
-**Deliverable:** d3kOS v0.14.0 with community features
-
----
-
-## v0.15.0 - Multi-Language Support (6-8 weeks)
-
-**Target:** December 2027
-**Status:** [ ] Not Started
-**Priority:** REQUIRED for v1.0 - International distribution
-
-### Tasks
-- [ ] Week 1-2: i18n system foundation, preferences API extension
-- [ ] Week 3-4: UI translation (all pages with data-i18n attributes)
-- [ ] Week 5-6: Professional translation service (7 languages: French, Spanish, German, Italian, Dutch, Swedish, Norwegian)
-- [ ] Week 7: Voice assistant integration (Piper TTS models)
-- [ ] Week 8: Native speaker testing and QA
-
-**8 Languages:**
-- [ ] English (en) - Default
+- [ ] English (en) — Default
 - [ ] French (fr)
 - [ ] Spanish (es)
 - [ ] German (de)
@@ -467,13 +299,177 @@
 
 ---
 
-## v0.16.0 - Security Audit & Penetration Testing (4 weeks)
+## v0.9.2 — Forward Watch Obstacle Avoidance (SignalK Plugin) `[MEDIUM]`
 
-**Target:** January 2028
-**Status:** [ ] Not Started
-**Priority:** CRITICAL - Required before v1.0 launch
+**Status:** [ ] Not Started | **Priority:** HIGH
 
-### Week 1: Automated Security Scanning
+### Tasks
+
+- [ ] Configure bow camera for Forward Watch
+  - [ ] Set camera purpose: "forward_watch" in registry
+  - [ ] Enable detection_enabled flag
+  - [ ] Configure detection_type: "forward_watch"
+- [ ] Implement priority detection queue
+  - [ ] Bow camera always processed first
+  - [ ] Other cameras queued if bow is busy
+  - [ ] Skip detection if queue full (drop frames)
+- [ ] Update Fish Detector service (`/opt/d3kos/services/marine-vision/fish_detector.py`)
+  - [ ] Add marine object detection mode (boats, kayaks, buoys, logs, debris, docks, ice)
+  - [ ] Load YOLOv8 marine model (if available) or use COCO proxy
+  - [ ] Implement detection mode switching (fish vs marine objects)
+- [ ] Add Forward Watch overlay to Single View
+  - [ ] Show detection bounding boxes (only when bow camera active)
+  - [ ] Display object labels and confidence
+  - [ ] Add distance estimation (monocular depth — future enhancement)
+  - [ ] Highlight detected hazards (red boxes)
+- [ ] Implement alerts
+  - [ ] Visual alert (red border flash on detection)
+  - [ ] Audio alert (browser beep on hazard detection)
+  - [ ] Alert threshold (confidence > 70%)
+- [ ] Package as SignalK plugin/addon
+- [ ] Test Forward Watch
+  - [ ] Test with boats (real or video)
+  - [ ] Test with buoys
+  - [ ] Test with logs/debris
+  - [ ] Verify alerts trigger correctly
+  - [ ] Check false positive rate
+
+**Deliverable:** d3kOS v0.9.2 Forward Watch as standalone SignalK plugin
+
+---
+
+## v0.9.3 — Community Features `[SMALL]`
+
+**Status:** [ ] Not Started | **Priority:** LOW
+
+### Tasks
+
+- [ ] Anonymous engine benchmark service
+- [ ] Anonymizer service (position randomization, ID hashing)
+- [ ] Community boat map (opt-in, privacy-first)
+- [ ] Hazard/POI marker system (user-submitted, vote system)
+- [ ] Knowledge base to pattern sync
+
+**Deliverable:** d3kOS v0.14.0 with community features
+
+---
+
+## v0.9.4 — Mobile Apps (iOS/Android) `[LARGE]`
+
+**Status:** [ ] Not Started | **Priority:** HIGH
+
+### Tasks
+
+- [ ] AtMyBoat.com VPS setup (Headscale, MQTT, PostgreSQL)
+- [ ] REST API + web dashboard
+- [ ] React Native mobile app
+- [ ] Pi integration (Tailscale, MQTT publisher)
+
+**Deliverable:** d3kOS v0.9.5 + AtMyBoat.com cloud platform
+
+---
+
+## v0.9.5 — Predictive Maintenance `[LARGE]`
+
+**Status:** [ ] Not Started | **Priority:** HIGH
+
+### Tasks
+
+- [ ] Data collection (30-day baseline)
+- [ ] Anomaly detection algorithms
+- [ ] ML models (5 models: overheating, oil, battery, SD card, GPS)
+- [ ] Alert system integration
+- [ ] Additional automation (weather, fuel, maintenance scheduling)
+
+**Deliverable:** d3kOS v0.10.0 with predictive maintenance
+
+---
+
+## v0.9.6 — Fleet Management `[MEDIUM]`
+
+**Status:** [ ] Not Started | **Priority:** MEDIUM
+
+### Tasks
+
+- [ ] Fleet creation and invitation system
+- [ ] Fleet map with live vessel positions
+- [ ] Fleet analytics (engine hours, fuel, alerts)
+- [ ] Testing and Tier 3 activation
+
+**Deliverable:** d3kOS v0.10.1 with fleet management
+
+---
+
+## v0.9.6 — Remote Diagnostic Console `[MEDIUM]`
+
+**Status:** [ ] Not Started | **Priority:** MEDIUM
+
+### Tasks
+
+- [ ] Support ticket system + consent flow
+- [ ] Diagnostic agent (log collection)
+- [ ] Claude API + AI diagnosis
+- [ ] Fix delivery + user approval
+- [ ] Knowledge base and admin console
+
+**Deliverable:** d3kOS v0.11.0 with remote diagnostics
+
+---
+
+## v0.9.7 — Autonomous Agents `[LARGE]`
+
+**Status:** [ ] Not Started | **Priority:** HIGH
+
+### Tasks
+
+- [ ] Agent framework (base class, scheduler, communication bus)
+- [ ] Update agent (GitHub integration, backup/restore, auto-rollback)
+- [ ] Performance agent (CPU/memory/disk monitoring, auto-remediation)
+- [ ] Storage agent (cleanup automation, predictive warnings)
+- [ ] Health check agent (daily reports, weekly scans)
+- [ ] Backup agent (incremental backups, cloud sync)
+- [ ] Testing (reliability, failure modes, UAT)
+
+**Deliverable:** d3kOS v0.12.0 with autonomous agents
+
+---
+
+## v0.9.7 — AI Action Layer `[SMALL]`
+
+**Status:** [ ] Not Started | **Priority:** MEDIUM
+
+### Tasks
+
+- [ ] Whitelisted action system
+- [ ] User approval workflows
+- [ ] Action execution engine
+- [ ] Testing and safety verification
+
+**Deliverable:** d3kOS v0.12.1 with AI action layer
+
+---
+
+## v0.9.7 — Failure Intelligence & Recovery `[SMALL]`
+
+**Status:** [ ] Not Started | **Priority:** MEDIUM
+
+### Tasks
+
+- [ ] Failure pattern recognition
+- [ ] Community data aggregation
+- [ ] Recovery playbook system
+- [ ] Testing and knowledge base integration
+
+**Deliverable:** d3kOS v0.13.0 with failure intelligence
+
+---
+
+## v0.9.8 — Security Audit & Penetration Testing `[LARGE]`
+
+**Status:** [ ] Not Started | **Priority:** CRITICAL — Required before v1.0 launch
+
+### Automated Security Scanning
+
 - [ ] Run npm audit (Node.js dependencies)
 - [ ] Run pip-audit (Python dependencies)
 - [ ] OWASP ZAP automated scan (all web endpoints)
@@ -482,7 +478,8 @@
 - [ ] Scan for hardcoded secrets in codebase
 - [ ] Check file permissions on sensitive files
 
-### Week 2: Manual Code Review
+### Manual Code Review
+
 - [ ] Authentication/authorization review
   - [ ] Verify all API endpoints require auth
   - [ ] Check JWT token validation
@@ -500,8 +497,9 @@
   - [ ] Certificate management
   - [ ] Webhook signature verification
 
-### Week 3: Penetration Testing (External Firm)
-- [ ] Contract professional penetration testing firm ($5,000-15,000)
+### Penetration Testing (External Firm)
+
+- [ ] Contract professional penetration testing firm
 - [ ] External penetration test (network-level attacks)
 - [ ] Internal penetration test (privilege escalation)
 - [ ] API endpoint fuzzing (all 20+ services)
@@ -510,7 +508,8 @@
 - [ ] Signal K server security review
 - [ ] Rate limiting and DDoS protection testing
 
-### Week 4: Fixes & Privacy Compliance
+### Fixes & Privacy Compliance
+
 - [ ] Fix all critical vulnerabilities (must be zero)
 - [ ] Fix all high vulnerabilities (must be zero)
 - [ ] Document medium/low vulnerabilities with mitigation plans
@@ -524,6 +523,7 @@
 - [ ] Obtain penetration test certificate
 
 ### Critical Checklist (Must Pass)
+
 - [ ] Zero critical vulnerabilities
 - [ ] Zero high vulnerabilities
 - [ ] All API endpoints require authentication
@@ -539,25 +539,24 @@
 - [ ] GDPR/CCPA compliant
 - [ ] Penetration test certificate obtained
 
-**Deliverable:** d3kOS v0.16.0 - Security certified, production ready
+**Deliverable:** d3kOS v0.16.0 — Security certified, production ready
 
 ---
 
-## v1.0.0 - Incremental Update System (8 weeks)
+## v1.0.0 — Incremental Update System & Production Launch `[LARGE]`
 
-**Target:** February 2028
-**Status:** [ ] Not Started
-**Priority:** HIGH - Production release
+**Status:** [ ] Not Started | **Priority:** HIGH
 
-### Tasks
-- [ ] Week 1-2: Enhanced update service (signature verification, checksum)
-- [ ] Week 3-4: Pre-update snapshot system
-- [ ] Week 5-6: Post-update health check and auto-rollback
-- [ ] Week 7: Update package storage (AtMyBoat.com)
-- [ ] Week 8: Admin console update manager
+### Incremental Update System
+
+- [ ] Enhanced update service (signature verification, checksum)
+- [ ] Pre-update snapshot system
+- [ ] Post-update health check and auto-rollback
+- [ ] Update package storage (AtMyBoat.com)
+- [ ] Admin console update manager
 
 ### Production Launch Checklist
-- [ ] All 122 weeks of development complete
+
 - [ ] All v0.x versions deployed and stable
 - [ ] Security audit passed (v0.16.0)
 - [ ] Multi-language support active (v0.15.0)
@@ -574,15 +573,21 @@
 - [ ] Press release prepared
 - [ ] Launch date announced
 
-**Deliverable:** d3kOS v1.0.0 - Production ready, international marine electronics platform
+**Deliverable:** d3kOS v1.0.0 — Production ready, international marine electronics platform
 
 ---
 
 ## 📊 OVERALL PROGRESS TRACKING
 
 ### Milestones
+
 - [ ] v0.9.2 Complete (Metric/Imperial)
-- [ ] v0.9.3 Complete (4-Camera System)
+- [ ] v0.9.2 Complete (Multi-Camera System)
+- [ ] v0.9.2 Complete (Gemini API Integration)
+- [ ] v0.9.2 Complete (Remote Access & Camera Streaming)
+- [ ] v0.9.2 Complete (Multi-Language Support)
+- [ ] v0.9.2 Complete (Forward Watch Obstacle Avoidance)
+- [ ] v0.9.3 Complete (Community Features)
 - [ ] v0.9.4 Complete (Gemini AI)
 - [ ] v0.9.5 Complete (Mobile Apps)
 - [ ] v0.9.6 Complete (Remote Access)
@@ -598,12 +603,14 @@
 - [ ] v1.0.0 LAUNCHED (Production Release)
 
 ### Critical Path
-1. ✅ v0.9.2 (Metric/Imperial) - NEXT
-2. ✅ v0.9.3 (4-Camera) - HIGH PRIORITY
-3. ✅ v0.15.0 (Multi-Language) - REQUIRED for v1.0
-4. ✅ v0.16.0 (Security Audit) - REQUIRED for v1.0
+
+- [ ] v0.9.2 (Metric/Imperial) — NEXT
+- [ ] v0.9.3 (4-Camera) — HIGH PRIORITY
+- [ ] v0.15.0 (Multi-Language) — REQUIRED for v1.0
+- [ ] v0.16.0 (Security Audit) — REQUIRED for v1.0
 
 ### Risk Areas (Monitor Closely)
+
 - [ ] Security vulnerabilities (must be zero critical/high at v1.0)
 - [ ] Performance degradation (monitor CPU/memory/bandwidth)
 - [ ] Third-party API dependencies (Google Gemini, Stripe, Apple, Google Play)
@@ -616,6 +623,7 @@
 ## 📝 NOTES & CONVENTIONS
 
 ### Checklist Update Protocol
+
 1. When starting a task: Change `[ ]` to `[🔄]`
 2. When completing a task: Change `[🔄]` to `[✅]`
 3. When blocked: Change to `[⚠️]` and add comment explaining blocker
@@ -623,23 +631,15 @@
 5. When something doesn't work: Change to `[❌]` and add `<!-- NOT WORKING: description -->`
 
 ### Commit Protocol
-- Every commit should update this checklist
-- Mark completed tasks as `[✅]`
-- Update progress percentages
-- Add verification comments if testing reveals issues
-- Tag commits with version number (e.g., v0.9.2)
+
+Every commit should update this checklist — mark completed tasks as `[✅]`, add verification comments if testing reveals issues, and tag commits with the version number (e.g., v0.9.2).
 
 ### Verification Protocol
-- All `[🔍]` items must be retested before considering version complete
-- Add `<!-- VERIFY: description -->` comments for issues found
-- Retest after fixes and update status
-- Do not proceed to next version until all verifications pass
+
+All `[🔍]` items must be retested before considering a version complete. Add `<!-- VERIFY: description -->` comments for issues found. Do not proceed to next version until all verifications pass.
 
 ---
 
-**Last Updated:** March 1, 2026
-**Next Update:** When v0.9.2 work begins
-**Maintained By:** Development team + Claude Code
+**Last Updated:** March 1, 2026 | **Maintained By:** Development team + Claude Code
 
-**© 2026 AtMyBoat.com | d3kOS - AI-Powered Marine Electronics**
-*"Smarter Boating, Simpler Systems"*
+**© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*

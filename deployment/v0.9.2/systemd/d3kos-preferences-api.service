@@ -1,0 +1,17 @@
+[Unit]
+Description=d3kOS User Preferences API
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/config
+ExecStart=/usr/bin/python3 /opt/d3kos/services/config/preferences-api.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

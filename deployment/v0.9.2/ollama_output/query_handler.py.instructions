@@ -1,0 +1,39 @@
+FIND_LINE: 270
+ACTION: INSERT_BEFORE
+CODE:
+    def _load_units_preference(self) -> str:
+        """Returns 'imperial' or 'metric'"""
+        try:
+            import json
+            with open('/opt/d3kos/config/user-preferences.json') as f:
+                return json.load(f).get('measurement_system', 'imperial')
+        except Exception:
+            return 'imperial'
+
+    def _format_temperature(self, fahrenheit: float, system: str) -> str:
+        if system == 'metric':
+            c = round((fahrenheit - 32) * 5 / 9, 1)
+            return f"{c} degrees Celsius"
+        return f"{round(fahrenheit, 1)} degrees Fahrenheit"
+
+    def _format_pressure(self, psi: float, system: str) -> str:
+        if system == 'metric':
+            bar = round(psi * 0.0689476, 2)
+            return f"{bar} bar"
+        return f"{round(psi, 1)} PSI"
+
+    def _format_fuel(self, gallons: float, system: str) -> str:
+        if system == 'metric':
+            liters = round(gallons * 3.78541, 1)
+            return f"{liters} liters"
+        return f"{round(gallons, 1)} gallons"
+
+    def _format_speed(self, knots: float, system: str) -> str:
+        if system == 'metric':
+            kmh = round(knots * 1.852, 1)
+            return f"{round(knots, 1)} knots, which is {kmh} kilometers per hour"
+        mph = round(knots * 1.15078, 1)
+        return f"{round(knots, 1)} knots, which is {mph} miles per hour"
+
+    def simple_response(self, category):
+END_CODE

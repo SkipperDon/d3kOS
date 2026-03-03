@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Boat Setup Wizard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      padding: 0;
+      margin: 0;
+      font-size: 22px;
+      font-family: Arial, sans-serif;
+    }
+    .nav-bar {
+      background: #000;
+      border-bottom: 2px solid #0C0;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-btn {
+      background: #0C0;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .title {
+      font-size: 28px;
+      color: #0C0;
+      font-weight: bold;
+    }
+    .progress {
+      background: rgba(0,204,0,0.1);
+      padding: 15px 20px;
+      border-bottom: 1px solid #0C0;
+      text-align: center;
+    }
+    .progress-text {
+      color: #0C0;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #0C0;
+      transition: width 0.3s;
+    }
+    .content {
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      padding-bottom: 120px;
+    }
+    .step {
+      display: none;
+    }
+    .step.active {
+      display: block;
+    }
+    h2 {
+      color: #0C0;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    p {
+      color: #fff;
+      opacity: 0.8;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+    input, select {
+      width: 100%;
+      max-width: 600px;
+      height: 60px;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 22px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0C0;
+    }
+    .nav-bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #000;
+      border-top: 2px solid #0C0;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .nav-bottom button {
+      background: #0C0;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-size: 22px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      min-width: 140px;
+    }
+    .nav-bottom button:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+    .btn-start {
+      background: #0C0;
+      color: #000;
+      border: none;
+      padding: 20px 60px;
+      font-size: 28px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 30px;
+    }
+    .config-box {
+      background: #1a1a1a;
+      border: 2px solid #0C0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .config-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #333;
+    }
+    .config-item:last-child {
+      border-bottom: none;
+    }
+    .config-label {
+      color: #0C0;
+      font-weight: bold;
+    }
+    .config-value {
+      color: #fff;
+    }
+    .dip-switch {
+      display: inline-block;
+      width: 40px;
+      height: 60px;
+      background: #333;
+      border: 2px solid #0C0;
+      margin: 0 5px;
+      text-align: center;
+      line-height: 60px;
+      font-size: 32px;
+      font-weight: bold;
+      border-radius: 4px;
+    }
+    .dip-switch.on {
+      background: #0C0;
+      color: #000;
+    }
+    .dip-switch.off {
+      background: #1a1a1a;
+      color: #666;
+    }
+    .dip-row {
+      margin: 30px 0;
+      text-align: center;
+    }
+    .dip-label {
+      font-size: 18px;
+      color: #0C0;
+      margin-top: 10px;
+    }
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="location.href='/'">← Main Menu</button>
+    <div class="title">Boat Setup Wizard</div>
+    <div style="width:150px"></div>
+  </div>
+
+  <div class="progress" id="progress" style="display:none">
+    <div class="progress-text" id="progressText">Step 1 of 20</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:5%"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="step active" id="step0">
+      <h2>Welcome to d3kOS Setup</h2>
+      <p>This wizard configures your marine engine monitoring system (10-15 minutes).</p>
+      <p><strong>You'll need:</strong> Engine manual, propeller specs, CX5106 gateway</p>
+      <button class="btn-start" onclick="start()">Start Setup →</button>
+    </div>
+
+    <div class="step" id="step1">
+      <h2>What boat manufacturer do you have?</h2>
+      <p>Start typing or select from suggestions</p>
+      <input type="text" id="q1" placeholder="e.g., Sea Ray, Bayliner">
+    </div>
+
+    <div class="step" id="step2">
+      <h2>What year is your boat?</h2>
+      <p>Enter 4-digit year</p>
+      <input type="number" id="q2" min="1950" max="2026" placeholder="e.g., 2018">
+    </div>
+
+    <div class="step" id="step3">
+      <h2>What's your boat model?</h2>
+      <p>Enter boat model designation</p>
+      <input type="text" id="q3" placeholder="e.g., Sundancer 320">
+    </div>
+
+    <div class="step" id="step4">
+      <h2>Do you have a chartplotter?</h2>
+      <p>Select if you have third-party chartplotter</p>
+      <select id="q4">
+        <option value="">Select...</option>
+        <option value="yes">Yes, I have a chartplotter</option>
+        <option value="no">No chartplotter</option>
+      </select>
+    </div>
+
+    <div class="step" id="step5">
+      <h2>Who makes your engine?</h2>
+      <p>Enter engine manufacturer</p>
+      <input type="text" id="q5" placeholder="e.g., Mercury Marine, Yamaha">
+    </div>
+
+    <div class="step" id="step6">
+      <h2>What's your engine model?</h2>
+      <p>Enter specific engine model</p>
+      <input type="text" id="q6" placeholder="e.g., 5.0L MPI Alpha">
+    </div>
+
+    <div class="step" id="step7">
+      <h2>What year is your engine?</h2>
+      <p>Enter 4-digit year</p>
+      <input type="number" id="q7" min="1950" max="2026" placeholder="e.g., 2018">
+    </div>
+
+    <div class="step" id="step8">
+      <h2>How many cylinders?</h2>
+      <p>Select number of cylinders</p>
+      <select id="q8">
+        <option value="">Select...</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="6">6</option>
+        <option value="8">8</option>
+        <option value="12">12</option>
+      </select>
+    </div>
+
+    <div class="step" id="step9">
+      <h2>What's your engine size?</h2>
+      <p>Enter in liters OR cubic inches</p>
+      <input type="number" id="q9" step="0.1" placeholder="e.g., 5.0 liters or 305 CID">
+    </div>
+
+    <div class="step" id="step10">
+      <h2>How powerful is your engine?</h2>
+      <p>Enter horsepower OR kilowatts</p>
+      <input type="number" id="q10" placeholder="e.g., 220 HP or 164 kW">
+    </div>
+
+    <div class="step" id="step11">
+      <h2>What's your engine's compression?</h2>
+      <p>Enter compression ratio (e.g., 9.5 for 9.5:1)</p>
+      <input type="number" id="q11" step="0.1" placeholder="e.g., 9.5">
+    </div>
+
+    <div class="step" id="step12">
+      <h2>What RPM does your engine idle at?</h2>
+      <p>Enter specified idle RPM</p>
+      <input type="number" id="q12" placeholder="e.g., 700">
+    </div>
+
+    <div class="step" id="step13">
+      <h2>What's your max RPM range?</h2>
+      <p>Enter WOT RPM range (e.g., 4800-5200)</p>
+      <input type="text" id="q13" placeholder="e.g., 4800-5200">
+    </div>
+
+    <div class="step" id="step14">
+      <h2>What type of engine do you have?</h2>
+      <p>Select induction type</p>
+      <select id="q14">
+        <option value="">Select...</option>
+        <option value="na">Naturally Aspirated</option>
+        <option value="turbo">Turbocharged</option>
+        <option value="super">Supercharged</option>
+      </select>
+    </div>
+
+    <div class="step" id="step15">
+      <h2>Where was your boat made?</h2>
+      <p>Select region for tank sensor configuration</p>
+      <select id="q15">
+        <option value="">Select...</option>
+        <option value="us">North America</option>
+        <option value="euro">Europe</option>
+        <option value="unknown">I don't know</option>
+      </select>
+    </div>
+
+    <div class="step" id="step16">
+      <h2>Which engine is this?</h2>
+      <p>Select engine position</p>
+      <select id="q16">
+        <option value="">Select...</option>
+        <option value="primary">Primary/Single Engine</option>
+        <option value="port">Port (Left)</option>
+        <option value="starboard">Starboard (Right)</option>
+      </select>
+    </div>
+
+    <div class="step" id="step17">
+      <h2>Review Your Configuration</h2>
+      <p>Please verify all information is correct</p>
+      <div class="config-box" id="reviewSummary"></div>
+    </div>
+
+    <div class="step" id="step18">
+      <h2>CX5106 DIP Switch Configuration</h2>
+      <p>Configure your CX5106 gateway with these settings</p>
+      <div class="config-box">
+        <h3 style="color:#0C0;margin-bottom:20px">First Row (Engine Configuration)</h3>
+        <div class="dip-row" id="dipRow1"></div>
+        <div id="dipExplanation1" style="margin-top:20px;font-size:18px;line-height:1.6"></div>
+
+        <h3 style="color:#0C0;margin:30px 0 20px 0">Second Row (Regional Settings)</h3>
+        <div class="dip-row" id="dipRow2"></div>
+        <div id="dipExplanation2" style="margin-top:20px;font-size:18px;line-height:1.6"></div>
+      </div>
+    </div>
+
+    <div class="step" id="step19">
+      <h2>Installation Complete!</h2>
+      <p>Scan this QR code with the d3kOS mobile app to pair your device</p>
+      <div id="qrcode"></div>
+      <p style="text-align:center;margin-top:20px;font-size:24px">
+        Installation ID: <span id="installId" style="color:#0C0;font-weight:bold"></span>
+      </p>
+    </div>
+
+    <div class="step" id="step20">
+      <h2>Setup Complete! 🎉</h2>
+      <p>Your d3kOS is configured and ready to use.</p>
+      <p><strong>Next steps:</strong></p>
+      <ul style="margin-left:25px">
+        <li>Configure CX5106 DIP switches (review Step 18)</li>
+        <li>Verify NMEA2000 data in Signal K</li>
+        <li>Run engine baseline (30 minutes)</li>
+        <li>Test dashboard gauges</li>
+      </ul>
+      <button class="btn-start" onclick="complete()">Go to Main Menu</button>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <button id="back" onclick="back()" disabled>← Back</button>
+    <button id="next" onclick="next()">Next →</button>
+  </div>
+
+  <script>
+    let step = 0;
+    const total = 20;
+    let config = {};
+
+    function start() {
+      step = 1;
+      show();
+      document.getElementById('progress').style.display = 'block';
+    }
+
+    function show() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('step' + step).classList.add('active');
+      
+      if (step > 0) {
+        document.getElementById('progressText').textContent = 'Step ' + step + ' of ' + total;
+        document.getElementById('progressFill').style.width = (step / total * 100) + '%';
+      }
+      
+      document.getElementById('back').disabled = (step <= 1);
+      document.getElementById('next').textContent = (step >= total) ? 'Complete' : 'Next →';
+      document.getElementById('next').style.display = (step >= total) ? 'none' : 'block';
+
+      // Generate content for special steps
+      if (step === 17) generateReview();
+      if (step === 18) generateDIP();
+      if (step === 19) generateQR();
+      
+      // Auto-focus first input in active step to trigger keyboard
+      setTimeout(() => {
+        const activeStep = document.getElementById("step" + step);
+        const firstInput = activeStep?.querySelector("input, select, textarea");
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
+
+    function next() {
+      if (step < total) {
+        // Save current answer
+        saveAnswer();
+        step++;
+        show();
+      }
+    }
+
+    function back() {
+      if (step > 1) {
+        step--;
+        show();
+      } else if (step === 1) {
+        step = 0;
+        show();
+        document.getElementById('progress').style.display = 'none';
+      }
+    }
+
+    function saveAnswer() {
+      const input = document.getElementById('q' + step);
+      if (input) {
+        config['q' + step] = input.value;
+      }
+    }
+
+    function generateReview() {
+      const labels = {
+        q1: 'Boat Manufacturer',
+        q2: 'Boat Year',
+        q3: 'Boat Model',
+        q4: 'Chartplotter',
+        q5: 'Engine Manufacturer',
+        q6: 'Engine Model',
+        q7: 'Engine Year',
+        q8: 'Cylinders',
+        q9: 'Engine Size',
+        q10: 'Engine Power',
+        q11: 'Compression Ratio',
+        q12: 'Idle RPM',
+        q13: 'Max RPM Range',
+        q14: 'Engine Type',
+        q15: 'Boat Origin',
+        q16: 'Engine Position'
+      };
+
+      let html = '';
+      for (let i = 1; i <= 16; i++) {
+        const key = 'q' + i;
+        const value = config[key] || '(not set)';
+        html += `<div class="config-item">
+          <span class="config-label">${labels[key]}:</span>
+          <span class="config-value">${value}</span>
+        </div>`;
+      }
+      document.getElementById('reviewSummary').innerHTML = html;
+    }
+
+    function generateDIP() {
+      // Get configuration values
+      const cylinders = config.q8 || '4';
+      const tankSensor = config.q15 || 'us';
+      const enginePos = config.q16 || 'primary';
+
+      // First row - 8 switches (Engine Configuration)
+      // SW1-2: Instance (00 = single/primary, 01 = port, 10 = starboard)
+      // SW3-4: RPM sensor type (00 = alternator W-terminal)
+      // SW5-6: Cylinder count
+      // SW7: Stroke (0 = 4-stroke, 1 = 2-stroke)
+      // SW8: Gear ratio (0 = 1:1 direct drive)
+      
+      const cylinderMap = {
+        '1': [0,0], '2': [1,0], '3': [0,1], '4': [0,0],
+        '6': [1,0], '8': [0,1], '12': [1,1]
+      };
+      const cylConfig = cylinderMap[cylinders] || [0,0];
+      
+      const row1 = [0,0,0,0, cylConfig[0],cylConfig[1], 0,0]; // Default 4-cyl config
+      
+      let html1 = '';
+      for (let i = 0; i < 8; i++) {
+        const state = row1[i] ? 'on' : 'off';
+        const symbol = row1[i] ? '█' : '░';
+        html1 += `<div class="dip-switch ${state}">${symbol}</div>`;
+      }
+      document.getElementById('dipRow1').innerHTML = html1;
+      
+      document.getElementById('dipExplanation1').innerHTML = `
+        <strong>Switch Settings:</strong><br>
+        • SW1-2: OFF/OFF - Single engine (Instance 0)<br>
+        • SW3-4: OFF/OFF - Alternator W-terminal for RPM<br>
+        • SW5-6: ${cylConfig[0]?'ON':'OFF'}/${cylConfig[1]?'ON':'OFF'} - ${cylinders} cylinders<br>
+        • SW7: OFF - 4-stroke engine<br>
+        • SW8: OFF - 1:1 gear ratio (direct drive)
+      `;
+
+      // Second row - 2 switches
+      // SW "1": Tank sensor (1 = North America 240-33Ω, 0 = Europe 0-190Ω)
+      // SW "2": Engine position (0 = Primary/Port, 1 = Starboard)
+      
+      const tankSwitch = (tankSensor === 'us') ? 1 : 0;
+      const posSwitch = (enginePos === 'starboard') ? 1 : 0;
+      const row2 = [tankSwitch, posSwitch];
+      
+      let html2 = '';
+      for (let i = 0; i < 2; i++) {
+        const state = row2[i] ? 'on' : 'off';
+        const symbol = row2[i] ? '█' : '░';
+        html2 += `<div class="dip-switch ${state}" style="width:60px">${symbol}</div>`;
+      }
+      document.getElementById('dipRow2').innerHTML = html2;
+      
+      const tankLabel = tankSwitch ? 'North America (240-33Ω)' : 'Europe (0-190Ω)';
+      const posLabel = posSwitch ? 'Starboard' : 'Primary/Port';
+      document.getElementById('dipExplanation2').innerHTML = `
+        <strong>Switch Settings:</strong><br>
+        • SW "1": ${tankSwitch?'ON':'OFF'} - ${tankLabel} tank senders<br>
+        • SW "2": ${posSwitch?'ON':'OFF'} - ${posLabel} engine
+      `;
+    }
+
+    async function generateQR() {
+      // Generate installation ID
+      const id = await getInstallationId();
+      document.getElementById("installId").textContent = id;
+      
+      // Simple QR code - just URL with installation ID
+      const qrData = id;  // Just the installation ID
+      
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), {
+        text: qrData,
+        width: 400,
+        height: 400,
+        colorDark: "#000000",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    async function getInstallationId() {
+      try {
+        const response = await fetch('/license/info');
+        const data = await response.json();
+        
+        if (data.success && data.installation_id) {
+          return data.installation_id;
+        } else {
+          console.error('Failed to get installation ID from license API');
+          return 'unknown';
+        }
+      } catch (error) {
+        console.error('Error fetching installation ID:', error);
+        return 'unknown';
+      }
+    }
+
+    async function complete() {
+      // Toggle fullscreen to restore kiosk mode
+      try {
+        await fetch('http://localhost:1880/toggle-fullscreen', {
+          method: 'POST',
+          mode: 'no-cors'
+        });
+      } catch (e) {
+        console.error('Fullscreen toggle failed:', e);
+      }
+      
+      // Wait for F11 to process
+      setTimeout(() => {
+        // Save config for manual search
+        localStorage.setItem("onboarding-config", JSON.stringify(config));
+        window.location.href = '/manual-search.html';
+      }, 500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+FIND_LINE: <head>
+ACTION: INSERT_AFTER
+CODE:
+<script src="/js/units.js"></script>
+END_CODE
+
+FIND_LINE:     function updateGauge(name, value, min, max) {
+ACTION: REPLACE
+CODE:
+    function updateGauge(name, value, min, max) {
+      const valueEl = document.getElementById(`${name}-value`);
+      const barEl = document.getElementById(`${name}-bar`);
+
+      if (valueEl) {
+        if (name === 'voltage') {
+          valueEl.textContent = value.toFixed(1);
+        } else if (name === 'temp') {
+          if (typeof Units !== 'undefined') {
+            const tempDisplay = Units.temperature.toDisplay(value);
+            valueEl.textContent = tempDisplay.value;
+            const unitEl = valueEl.nextElementSibling.nextElementSibling; // Get the .gauge-unit element
+            if (unitEl && unitEl.classList.contains('gauge-unit')) {
+              unitEl.textContent = tempDisplay.unit;
+            }
+          } else {
+            valueEl.textContent = value;
+          }
+        } else if (name === 'oil') {
+          if (typeof Units !== 'undefined') {
+            const pressureDisplay = Units.pressure.toDisplay(value);
+            valueEl.textContent = pressureDisplay.value;
+            const unitEl = valueEl.nextElementSibling.nextElementSibling; // Get the .gauge-unit element
+            if (unitEl && unitEl.classList.contains('gauge-unit')) {
+              unitEl.textContent = pressureDisplay.unit;
+            }
+          } else {
+            valueEl.textContent = value;
+          }
+        } else {
+          valueEl.textContent = value;
+        }
+      }
+
+      if (barEl) {
+        const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+        barEl.style.width = percent + '%';
+
+        // Color coding based on thresholds
+        barEl.className = 'gauge-bar-fill';
+
+        // Engine-specific thresholds
+        if (name === 'rpm' && value > 3500) barEl.classList.add('critical');
+        else if (name === 'rpm' && value > 3000) barEl.classList.add('warning');
+        else if (name === 'temp' && value > 220) barEl.classList.add('critical');
+        else if (name === 'temp' && value > 200) barEl.classList.add('warning');
+        else if (name === 'oil' && value < 30) barEl.classList.add('critical');
+        else if (name === 'voltage' && (value < 11.5 || value > 14.5)) barEl.classList.add('warning');
+
+        // Tank thresholds (low is bad except black water)
+        else if (name !== 'black' && value < 25) barEl.classList.add('critical');
+        else if (name !== 'black' && value < 50) barEl.classList.add('warning');
+        else if (name === 'black' && value > 90) barEl.classList.add('critical');
+        else if (name === 'black' && value > 75) barEl.classList.add('warning');
+      }
+    }
+END_CODE
+
+FIND_LINE:     }
+ACTION: INSERT_AFTER
+CODE:
+    window.addEventListener('measurementSystemChanged', function() { refreshData(); });
+END_CODE

@@ -1,0 +1,26 @@
+FIND_LINE: <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ACTION: INSERT_AFTER
+CODE:
+<code>
+  <script src="/js/units.js"></script>
+</code>
+END_CODE
+
+FIND_LINE:                      `Oil Pressure: ${oil} PSI\n` +
+ACTION: REPLACE
+CODE:
+<code>
+      const oilPressureDisplay = typeof Units !== 'undefined' && Units.pressure ? Units.pressure.toDisplay(oil) : `${oil} PSI`;
+      const tempDisplay = typeof Units !== 'undefined' && Units.temperature ? Units.temperature.toDisplay(temp) : `${temp}°F`;
+
+      `Oil Pressure: ${oilPressureDisplay}\n` +
+</code>
+END_CODE
+
+FIND_LINE:                      `Coolant Temperature: ${temp}°F\n` +
+ACTION: REPLACE
+CODE:
+<code>
+      `Coolant Temperature: ${tempDisplay}\n` +
+</code>
+END_CODE

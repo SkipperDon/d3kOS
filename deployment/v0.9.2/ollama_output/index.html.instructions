@@ -1,0 +1,55 @@
+FIND_LINE: `<title>d3kOS - Marine Electronics System</title>`
+ACTION: INSERT_AFTER
+CODE:
+```html
+    <script src="/js/units.js"></script>
+```
+END_CODE
+
+FIND_LINE: `document.addEventListener('DOMContentLoaded', updateAllGauges);`
+ACTION: REPLACE
+CODE:
+```javascript
+// After Units.js is loaded, add this listener
+window.addEventListener('measurementSystemChanged', function() {
+  updateAllGauges();
+});
+
+// In your existing gauge update function, replace raw values with:
+function updateAllGauges() {
+  // Engine temperature (stored as °F from Signal K)
+  if (window.engineTemp !== undefined) {
+    document.getElementById('engine-temp-display').textContent =
+      Units.temperature.toDisplay(window.engineTemp);
+  }
+  // Oil pressure (stored as PSI)
+  if (window.oilPressure !== undefined) {
+    document.getElementById('oil-pressure-display').textContent =
+      Units.pressure.toDisplay(window.oilPressure);
+  }
+  // Coolant temperature
+  if (window.coolantTemp !== undefined) {
+    document.getElementById('coolant-temp-display').textContent =
+      Units.temperature.toDisplay(window.coolantTemp);
+  }
+  // Fuel level (stored as gallons)
+  if (window.fuelLevel !== undefined) {
+    document.getElementById('fuel-level-display').textContent =
+      Units.fuel.toDisplay(window.fuelLevel);
+  }
+  // Boost pressure (stored as PSI)
+  if (window.boostPressure !== undefined) {
+    document.getElementById('boost-pressure-display').textContent =
+      Units.pressure.toDisplay(window.boostPressure);
+  }
+  // Speed (stored as knots)
+  if (window.speedKnots !== undefined) {
+    document.getElementById('speed-display').textContent =
+      Units.speed.toDisplay(window.speedKnots);
+  }
+}
+
+// Call on load
+document.addEventListener('DOMContentLoaded', updateAllGauges);
+```
+END_CODE
