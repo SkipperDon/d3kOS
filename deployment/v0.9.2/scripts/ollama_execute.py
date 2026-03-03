@@ -1,99 +1,518 @@
 #!/usr/bin/env python3
 """
-d3kOS v0.9.2 — Ollama Phase Executor
-Feeds spec sections + focused file context to Ollama.
-Ollama returns structured INSERT/MODIFY instructions. Claude applies them.
+d3kOS Ollama Phase Executor v2
+
+Improvements over v1:
+  - Injects helm_os_context.md into every prompt (prevents variable/type hallucination)
+  - Extracts enclosing function context instead of ±N lines
+  - Extracts in-scope variable names and includes them in the prompt
+  - Validates each output block before apply:
+      * FIND_LINE text must exist in the source file
+      * Invented variable names check (vars not in source or known globals)
+      * Syntax check on generated code (node --check / py_compile)
+  - Auto-applies validated blocks to pi_source file with --apply flag
+  - Flags invalid blocks for manual review with reasons
+  - Generates a report: auto-applied vs flagged
 
 Usage:
-  python3 ollama_execute.py <phase>
+  python3 ollama_execute.py <phase>           # run one phase, show validation report
+  python3 ollama_execute.py <phase> --apply   # run + auto-apply validated blocks
+  python3 ollama_execute.py all               # run all phases
+  python3 ollama_execute.py all --apply       # run all + auto-apply all validated
+  python3 ollama_execute.py all --apply --skip-ollama  # apply saved instructions (no API call)
 
-Phases: settings, index, onboarding, navigation, weather, query_handler
+Phases: settings, dashboard, onboarding, navigation, weather, query_handler
 """
 
 import sys
+import re
 import json
 import pathlib
+import tempfile
+import subprocess
 import urllib.request
 import urllib.error
 
-OLLAMA_URL  = "http://192.168.1.36:11434/api/generate"
-MODEL       = "qwen3-coder:30b"
-SPEC_FILE   = pathlib.Path(__file__).resolve().parents[3] / "doc/v0.9.2_METRIC_IMPERIAL_CONVERSION_OLLAMA_SPEC.md"
-SOURCE_DIR  = pathlib.Path(__file__).resolve().parent.parent / "pi_source"
-OUTPUT_DIR  = pathlib.Path(__file__).resolve().parent.parent / "ollama_output"
-TIMEOUT     = 300
+# ── Paths ─────────────────────────────────────────────────────────────────────
+# Script lives at: deployment/v0.9.2/scripts/ollama_execute.py
+# parents[0] = scripts/   parents[1] = v0.9.2/   parents[2] = deployment/   parents[3] = Helm-OS/
+VERSION_DIR  = pathlib.Path(__file__).resolve().parent.parent   # deployment/v0.9.2/
+PROJECT_ROOT = VERSION_DIR.parent.parent                         # Helm-OS/
+SPEC_FILE    = PROJECT_ROOT / "doc/v0.9.2_METRIC_IMPERIAL_CONVERSION_OLLAMA_SPEC.md"
+CONTEXT_FILE = PROJECT_ROOT / "deployment/docs/helm_os_context.md"
+SOURCE_DIR   = VERSION_DIR / "pi_source"
+OUTPUT_DIR   = VERSION_DIR / "ollama_output"
 
-# phase → (spec section header, source file, context keywords to find insertion points)
+# ── Ollama config ──────────────────────────────────────────────────────────────
+OLLAMA_URL = "http://192.168.1.36:11434/api/generate"
+MODEL      = "qwen3-coder:30b"
+TIMEOUT    = 300
+
+# ── Known globals: valid identifiers that won't appear in pi_source files ─────
+KNOWN_GLOBALS = {
+    # JS language
+    'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while',
+    'do', 'switch', 'case', 'break', 'continue', 'new', 'this', 'typeof',
+    'instanceof', 'class', 'import', 'export', 'default', 'from', 'async',
+    'await', 'try', 'catch', 'finally', 'throw', 'in', 'of', 'delete', 'void',
+    'true', 'false', 'null', 'undefined', 'NaN', 'Infinity',
+    # JS built-ins
+    'JSON', 'Math', 'Date', 'parseInt', 'parseFloat', 'isNaN', 'isFinite',
+    'Promise', 'Error', 'Object', 'Array', 'String', 'Number', 'Boolean',
+    'Symbol', 'Map', 'Set', 'WeakMap', 'RegExp', 'Proxy', 'Reflect',
+    # Browser globals
+    'Units', 'window', 'document', 'navigator', 'location', 'history',
+    'localStorage', 'sessionStorage', 'console', 'alert', 'confirm', 'prompt',
+    'fetch', 'WebSocket', 'XMLHttpRequest', 'FormData', 'URLSearchParams',
+    'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval',
+    'requestAnimationFrame', 'cancelAnimationFrame', 'performance',
+    'CustomEvent', 'Event', 'MutationObserver', 'IntersectionObserver',
+    # DOM element properties (appear after . but also used standalone in destructuring)
+    'nextElementSibling', 'previousElementSibling', 'parentElement', 'children',
+    'firstChild', 'lastChild', 'childNodes', 'nodeType', 'nodeName',
+    'classList', 'className', 'textContent', 'innerHTML', 'innerText',
+    'style', 'dataset', 'attributes', 'offsetWidth', 'offsetHeight',
+    'scrollTop', 'scrollLeft', 'clientWidth', 'clientHeight',
+    'getElementById', 'querySelector', 'querySelectorAll',
+    'getElementsByClassName', 'getElementsByTagName',
+    'addEventListener', 'removeEventListener', 'dispatchEvent',
+    'getAttribute', 'setAttribute', 'removeAttribute', 'hasAttribute',
+    'appendChild', 'removeChild', 'insertBefore', 'replaceChild', 'cloneNode',
+    'contains', 'closest', 'matches', 'focus', 'blur', 'click', 'submit',
+    # Common short names that appear frequently in generated code
+    'add', 'remove', 'toggle', 'replace', 'trim', 'split', 'join', 'push',
+    'pop', 'shift', 'unshift', 'slice', 'splice', 'sort', 'filter', 'map',
+    'forEach', 'find', 'findIndex', 'includes', 'some', 'every', 'reduce',
+    'keys', 'values', 'entries', 'assign', 'create', 'freeze', 'keys',
+    'parse', 'stringify', 'floor', 'ceil', 'round', 'abs', 'max', 'min',
+    'toFixed', 'toString', 'valueOf', 'hasOwnProperty', 'call', 'apply', 'bind',
+    # Common variable names used in generated code
+    'event', 'data', 'value', 'values', 'error', 'errors', 'result', 'results',
+    'callback', 'response', 'request', 'options', 'config', 'settings',
+    'item', 'items', 'index', 'element', 'elements', 'target', 'source',
+    'input', 'output', 'name', 'type', 'path', 'url', 'href', 'src',
+    'text', 'html', 'node', 'body', 'head', 'form', 'link',
+    # d3kOS specific globals (in units.js, always available)
+    'temperature', 'pressure', 'speed', 'depth', 'fuel', 'distance',
+    'length', 'weight', 'displacement', 'getPreference', 'setPreference',
+    'toDisplay', 'toC', 'toF', 'toBar', 'toPSI', 'toKmh', 'toMph',
+    'toKm', 'toNm', 'toMeters', 'toFeet', 'toLiters', 'toGallons',
+    'toKg', 'toLb', 'toCi', 'unit', 'measurementSystemChanged',
+    # Python language
+    'self', 'cls', 'None', 'True', 'False',
+    'def', 'return', 'import', 'from', 'class', 'if', 'elif', 'else',
+    'for', 'while', 'try', 'except', 'finally', 'with', 'as', 'pass',
+    'raise', 'yield', 'lambda', 'global', 'nonlocal', 'assert', 'del',
+    # Python built-ins
+    'print', 'len', 'str', 'int', 'float', 'bool', 'list', 'dict', 'tuple',
+    'set', 'type', 'open', 'range', 'enumerate', 'zip', 'map', 'filter',
+    'sorted', 'reversed', 'sum', 'min', 'max', 'abs', 'round', 'repr',
+    'isinstance', 'issubclass', 'hasattr', 'getattr', 'setattr', 'delattr',
+    'callable', 'iter', 'next', 'super', 'property', 'staticmethod',
+    'classmethod', 'format', 'input', 'vars', 'dir', 'help', 'id',
+    # Python common names in generated code
+    'system', 'metric', 'imperial', 'psi', 'bar', 'fahrenheit', 'celsius',
+    'knots', 'kmh', 'mph', 'status', 'parts', 'response', 'formatted',
+    'preference', 'category', 'message', 'content', 'body', 'headers',
+    # json module (commonly imported in generated Python)
+    'json', 'load', 'loads', 'dump', 'dumps',
+}
+
+# ── Phase definitions ──────────────────────────────────────────────────────────
+# phase → (spec section header, source file, context keywords)
 PHASES = {
     "settings": (
         "PHASE 3: SETTINGS UI",
         "settings.html",
-        ["</main>", "settings-section", "setting-card"]
+        ["</main>", "settings-section", "setting-card", "setting-row"]
     ),
-    "index": (
+    "dashboard": (
         "PHASE 4: DASHBOARD",
-        "index.html",
-        ["engine-temp", "oil-press", "coolant", "fuel", "speed", "gauge", "updateGauge", "signalk", "ws.onmessage"]
+        "dashboard.html",
+        ["updateGauge", "function updateGauge", "gauge-value", "temp-value", "oil-value"]
     ),
     "onboarding": (
         "PHASE 5: ONBOARDING",
         "onboarding.html",
-        ["boat-origin", "boat_origin", "origin", "engine-size", "engine_size", "step-15", "data-step"]
+        ["q15", "boat.*origin", "origin", "step15", "step16", "engine.*size", "q9"]
     ),
     "navigation": (
         "PHASE 6: NAVIGATION",
         "navigation.html",
-        ["nav-speed", "speed", "altitude", "data-field", "knots", "updateNav"]
+        ["updateSOG", "updateDepth", "speedOverGround", "navData.depth", "function updateSOG"]
     ),
     "weather": (
         "PHASE 7: WEATHER",
         "weather.html",
-        ["weather-temp", "temperature", "wind", "weather-wind", "updateWeather"]
+        ["updateRadar", "function updateRadar", "metricTemp", "windyUrl", "radarFrame"]
     ),
     "query_handler": (
         "PHASE 8: VOICE ASSISTANT",
         "query_handler.py",
-        ["format_quick_answer", "format_response", "fahrenheit", "psi", "gallons", "def _format", "quick_answer"]
+        ["def simple_response", "format_quick_answer", "oil_pressure", "coolant_temp"]
     ),
 }
 
 
-def extract_spec_section(spec_text: str, header: str) -> str:
-    lines = spec_text.splitlines()
-    start = next((i for i, l in enumerate(lines) if header in l and l.startswith("##")), None)
-    if start is None:
-        return f"[Section '{header}' not found]"
-    section = []
-    for line in lines[start + 1:]:
-        if line.startswith("## ") and section:
+# ── Context extraction ─────────────────────────────────────────────────────────
+
+def extract_enclosing_function_js(lines: list, hit_line: int) -> tuple:
+    """
+    Walk backwards from hit_line to find the enclosing JS function declaration.
+    Walk forwards from there to find the closing brace.
+    Returns (start_line, end_line).
+    """
+    # Walk back up to 80 lines to find a function declaration
+    func_start = None
+    for i in range(hit_line, max(-1, hit_line - 80), -1):
+        if re.search(r'\bfunction\s+\w+\s*\(|^\s*(async\s+)?function\b|=\s*(async\s+)?\(.*\)\s*=>', lines[i]):
+            func_start = i
             break
-        section.append(line)
-    return "\n".join(section).strip()
+
+    if func_start is None:
+        # No function found — return ±50 lines around hit
+        return max(0, hit_line - 50), min(len(lines) - 1, hit_line + 50)
+
+    # Walk forward from func_start, count braces to find closing }
+    depth = 0
+    func_end = hit_line
+    found_open = False
+    for i in range(func_start, min(len(lines), func_start + 200)):
+        for ch in lines[i]:
+            if ch == '{':
+                depth += 1
+                found_open = True
+            elif ch == '}':
+                depth -= 1
+        if found_open and depth == 0:
+            func_end = i
+            break
+
+    return func_start, func_end
 
 
-def extract_context(source_text: str, keywords: list, context_lines: int = 40) -> str:
-    """Find lines matching keywords and return surrounding context."""
+def extract_enclosing_function_py(lines: list, hit_line: int) -> tuple:
+    """
+    Walk backwards from hit_line to find the enclosing Python def/class.
+    Returns (start_line, end_line).
+    """
+    # Find enclosing def
+    func_start = None
+    hit_indent = len(lines[hit_line]) - len(lines[hit_line].lstrip())
+    for i in range(hit_line, max(-1, hit_line - 100), -1):
+        stripped = lines[i].lstrip()
+        indent = len(lines[i]) - len(stripped)
+        if stripped.startswith('def ') and indent < hit_indent:
+            func_start = i
+            break
+        if stripped.startswith('def ') and indent == 0:
+            func_start = i
+            break
+
+    if func_start is None:
+        return max(0, hit_line - 50), min(len(lines) - 1, hit_line + 60)
+
+    # Walk forward — function ends when we hit a line with same or less indentation
+    base_indent = len(lines[func_start]) - len(lines[func_start].lstrip())
+    func_end = func_start
+    for i in range(func_start + 1, min(len(lines), func_start + 200)):
+        line = lines[i]
+        stripped = line.lstrip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        indent = len(line) - len(stripped)
+        if indent <= base_indent and stripped and not stripped.startswith('#'):
+            func_end = i - 1
+            break
+        func_end = i
+
+    return func_start, func_end
+
+
+def extract_context(source_text: str, keywords: list, file_type: str) -> tuple:
+    """
+    Find the first keyword hit, extract the enclosing function.
+    Also extract a list of variable names in scope.
+    Returns (context_str, scope_vars_list).
+    """
     lines = source_text.splitlines()
-    hit_lines = set()
+
+    # Prioritise finding a FUNCTION DEFINITION matching a keyword
+    # e.g. "function updateSOG" beats a random call to updateSOG() three files up
+    hit_line = None
     for i, line in enumerate(lines):
-        if any(kw.lower() in line.lower() for kw in keywords):
-            for j in range(max(0, i - context_lines), min(len(lines), i + context_lines)):
-                hit_lines.add(j)
+        for kw in keywords:
+            bare_kw = kw.split('.')[-1]  # 'navData.depth' → 'depth' for function search
+            if re.search(rf'\bfunction\s+{re.escape(bare_kw)}\s*\(', line):
+                hit_line = i
+                break
+        if hit_line is not None:
+            break
 
-    if not hit_lines:
-        # Fall back to last 60 lines (likely where </main> is)
-        return "\n".join(f"{i+1}: {l}" for i, l in enumerate(lines[-60:], len(lines) - 60))
+    # Fall back to any keyword match (calls, assignments, element IDs, etc.)
+    if hit_line is None:
+        for i, line in enumerate(lines):
+            for kw in keywords:
+                if re.search(kw, line, re.IGNORECASE):
+                    hit_line = i
+                    break
+            if hit_line is not None:
+                break
 
-    # Return contiguous blocks with line numbers
-    result = []
-    prev = -2
-    for i in sorted(hit_lines):
-        if i > prev + 1:
-            result.append(f"\n... (lines {prev+2}–{i}) ...\n")
-        result.append(f"{i+1}: {lines[i]}")
-        prev = i
-    return "\n".join(result)
+    if hit_line is None:
+        # Fallback: last 80 lines (where most insertions happen)
+        start = max(0, len(lines) - 80)
+        block = lines[start:]
+        context = '\n'.join(f"{i+start+1}: {l}" for i, l in enumerate(block))
+        return context, []
 
+    # Extract enclosing function
+    if file_type == 'py':
+        start, end = extract_enclosing_function_py(lines, hit_line)
+    else:
+        start, end = extract_enclosing_function_js(lines, hit_line)
+
+    func_lines = lines[start:end + 1]
+    context = '\n'.join(f"{i+start+1}: {lines[i]}" for i in range(start, end + 1))
+
+    # Also include first 15 lines (imports/globals/declarations)
+    preamble = '\n'.join(f"{i+1}: {lines[i]}" for i in range(min(15, start)))
+    if preamble:
+        context = preamble + '\n\n... (intervening lines omitted) ...\n\n' + context
+
+    # Extract scope variables from the function
+    scope_vars = extract_scope_vars('\n'.join(func_lines), file_type)
+
+    return context, scope_vars
+
+
+def extract_scope_vars(text: str, file_type: str) -> list:
+    """Extract variable/function names declared in the given code block."""
+    vars_found = set()
+    if file_type == 'py':
+        # def method_name, self.attr, local = value
+        for m in re.finditer(r'\bdef\s+(\w+)\b', text):
+            vars_found.add(m.group(1))
+        for m in re.finditer(r'\bself\.(\w+)\b', text):
+            vars_found.add(m.group(1))
+        for m in re.finditer(r'^(\s*)(\w+)\s*=\s*', text, re.MULTILINE):
+            if m.group(2) not in ('True', 'False', 'None'):
+                vars_found.add(m.group(2))
+    else:
+        # const/let/var name, function name, obj.prop
+        for m in re.finditer(r'\b(?:const|let|var)\s+(\w+)\b', text):
+            vars_found.add(m.group(1))
+        for m in re.finditer(r'\bfunction\s+(\w+)\b', text):
+            vars_found.add(m.group(1))
+        for m in re.finditer(r'\b(\w+)\s*:\s*{', text):
+            vars_found.add(m.group(1))
+        # object property accesses: obj.prop
+        for m in re.finditer(r'\b(\w+)\.(\w+)\b', text):
+            vars_found.add(m.group(1))
+            vars_found.add(m.group(2))
+
+    return sorted(vars_found - KNOWN_GLOBALS)
+
+
+# ── Validation ─────────────────────────────────────────────────────────────────
+
+def parse_instruction_blocks(text: str) -> list:
+    """Parse FIND_LINE/ACTION/CODE blocks from Ollama output."""
+    blocks = []
+    # Strip markdown fences if present
+    text = re.sub(r'^```[^\n]*\n?', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^```\s*$', '', text, flags=re.MULTILINE)
+
+    pattern = re.compile(
+        r'FIND_LINE:\s*(.+?)\n'
+        r'ACTION:\s*(INSERT_BEFORE|INSERT_AFTER|REPLACE)\s*\n'
+        r'CODE:\s*\n(.*?)END_CODE',
+        re.DOTALL
+    )
+    for m in pattern.finditer(text):
+        # Strip backtick wrapping from FIND_LINE (old Ollama outputs wrapped in markdown)
+        find_line = m.group(1).strip().strip('`')
+        blocks.append({
+            'find_line': find_line,
+            'action':    m.group(2).strip(),
+            'code':      m.group(3).rstrip('\n'),
+            'valid':     True,
+            'issues':    []
+        })
+    return blocks
+
+
+def check_find_line(find_line: str, source_text: str) -> bool:
+    """Check that FIND_LINE text exists verbatim in the source."""
+    return find_line in source_text
+
+
+def check_invented_vars(code: str, source_text: str, file_type: str) -> list:
+    """
+    Find identifiers used in generated code that:
+      - Are not in source_text (so they'd be undefined at runtime)
+      - Are not in KNOWN_GLOBALS
+      - Are not declared within the generated code itself
+    Returns list of suspicious names (likely invented variable names).
+    """
+    # Find identifiers declared WITHIN the generated code — these are fine to use
+    declared_in_code = set()
+    if file_type == 'py':
+        for m in re.finditer(r'\bdef\s+(\w+)\b', code):
+            declared_in_code.add(m.group(1))
+        for m in re.finditer(r'^\s*(\w+)\s*=\s*', code, re.MULTILINE):
+            declared_in_code.add(m.group(1))
+        for m in re.finditer(r'\bfor\s+(\w+)\b', code):
+            declared_in_code.add(m.group(1))
+    else:
+        for m in re.finditer(r'\b(?:const|let|var)\s+(\w+)\b', code):
+            declared_in_code.add(m.group(1))
+        for m in re.finditer(r'\bfunction\s+(\w+)\b', code):
+            declared_in_code.add(m.group(1))
+        for m in re.finditer(r'\bfor\s*\([^)]*\b(\w+)\b', code):
+            declared_in_code.add(m.group(1))
+
+    # Strip strings and comments before checking (prevents false positives on comment words)
+    clean_code = re.sub(r'"[^"\n]*"|\'[^\'\\n]*\'|`[^`]*`', '""', code)
+    clean_code = re.sub(r'//[^\n]*', '', clean_code)           # JS single-line comments
+    clean_code = re.sub(r'/\*.*?\*/', '', clean_code, flags=re.DOTALL)  # JS block comments
+    clean_code = re.sub(r'#[^\n]*', '', clean_code)            # Python comments
+
+    suspicious = []
+
+    # 1. Standalone identifiers NOT preceded by '.' (variable refs, function calls)
+    candidates = set()
+    for m in re.finditer(r'(?<![.\w])([a-zA-Z_$][a-zA-Z0-9_$]{4,})\b(?!\s*:)(?!\s*\()', clean_code):
+        candidates.add(m.group(1))
+    for m in re.finditer(r'(?<![.\w])([a-zA-Z_$][a-zA-Z0-9_$]{4,})\b\s*\(', clean_code):
+        candidates.add(m.group(1))
+
+    for name in candidates:
+        if name in KNOWN_GLOBALS or name in declared_in_code or name in source_text:
+            continue
+        suspicious.append(name)
+
+    # 2. window.IDENTIFIER accesses — Ollama commonly invents these
+    #    e.g. window.navSpeedKnots when the real var is navData.speedOverGround
+    for m in re.finditer(r'\bwindow\.([a-zA-Z_$][a-zA-Z0-9_$]{4,})\b', clean_code):
+        prop = m.group(1)
+        if prop in KNOWN_GLOBALS or prop in declared_in_code:
+            continue
+        if prop in source_text:
+            continue
+        suspicious.append(f'window.{prop}')
+
+    return sorted(set(suspicious))
+
+
+def syntax_check_js(code: str) -> tuple:
+    """Run node --check on generated JS code. Returns (ok, error_msg)."""
+    with tempfile.NamedTemporaryFile(suffix='.js', mode='w', delete=False) as f:
+        f.write(code)
+        tmp = f.name
+    r = subprocess.run(['node', '--check', tmp], capture_output=True, text=True)
+    pathlib.Path(tmp).unlink(missing_ok=True)
+    return r.returncode == 0, r.stderr.strip()
+
+
+def syntax_check_py(code: str) -> tuple:
+    """Run py_compile on generated Python code. Returns (ok, error_msg)."""
+    with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
+        f.write(code)
+        tmp = f.name
+    r = subprocess.run(['python3', '-m', 'py_compile', tmp], capture_output=True, text=True)
+    pathlib.Path(tmp).unlink(missing_ok=True)
+    return r.returncode == 0, r.stderr.strip()
+
+
+def validate_blocks(blocks: list, source_text: str, source_file: str) -> list:
+    """
+    Validate each parsed block. Mutates block['valid'] and block['issues'].
+    Returns the same list with validation results filled in.
+    """
+    file_type = 'py' if source_file.endswith('.py') else 'js'
+
+    for block in blocks:
+        issues = []
+
+        # 1. FIND_LINE must exist in source
+        if not check_find_line(block['find_line'], source_text):
+            issues.append(f"FIND_LINE not found in file: '{block['find_line'][:70]}'")
+
+        # 2. Invented variable check
+        invented = check_invented_vars(block['code'], source_text, file_type)
+        if invented:
+            issues.append(f"Possible invented identifiers: {', '.join(invented[:8])}")
+
+        # 3. Syntax check on generated code (only for REPLACE blocks — insert code
+        #    may be incomplete fragments)
+        if block['action'] == 'REPLACE':
+            if file_type == 'py':
+                ok, err = syntax_check_py(block['code'])
+            else:
+                ok, err = syntax_check_js(block['code'])
+            if not ok and err:
+                # Only fail on definite syntax errors, not incomplete fragment warnings
+                if 'SyntaxError' in err or 'Unexpected token' in err:
+                    issues.append(f"Syntax error: {err[:120]}")
+
+        block['valid'] = len(issues) == 0
+        block['issues'] = issues
+
+    return blocks
+
+
+# ── Apply ──────────────────────────────────────────────────────────────────────
+
+def apply_blocks(blocks: list, source_text: str) -> tuple:
+    """
+    Apply valid blocks to source text.
+    Returns (modified_text, applied_count, skipped_count).
+    """
+    lines = source_text.splitlines(keepends=True)
+    applied = 0
+    skipped = 0
+
+    for block in blocks:
+        if not block['valid']:
+            skipped += 1
+            continue
+
+        find_line = block['find_line']
+        action    = block['action']
+        code      = block['code']
+
+        # Find the line
+        target_idx = None
+        for i, line in enumerate(lines):
+            if find_line in line:
+                target_idx = i
+                break
+
+        if target_idx is None:
+            block['issues'].append("FIND_LINE disappeared during multi-block apply")
+            block['valid'] = False
+            skipped += 1
+            continue
+
+        code_lines = [l + '\n' for l in code.splitlines()]
+        if not code_lines:
+            code_lines = [code + '\n']
+
+        if action == 'INSERT_AFTER':
+            lines[target_idx + 1:target_idx + 1] = code_lines
+            applied += 1
+        elif action == 'INSERT_BEFORE':
+            lines[target_idx:target_idx] = code_lines
+            applied += 1
+        elif action == 'REPLACE':
+            lines[target_idx:target_idx + 1] = code_lines
+            applied += 1
+
+    return ''.join(lines), applied, skipped
+
+
+# ── Ollama call ────────────────────────────────────────────────────────────────
 
 def call_ollama(prompt: str) -> str:
     payload = json.dumps({
@@ -102,8 +521,8 @@ def call_ollama(prompt: str) -> str:
         "stream":  False,
         "options": {"temperature": 0.1, "num_predict": 8192}
     }).encode()
-    req = urllib.request.Request(OLLAMA_URL, data=payload,
-                                  headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(
+        OLLAMA_URL, data=payload, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             return json.loads(resp.read()).get("response", "")
@@ -112,67 +531,200 @@ def call_ollama(prompt: str) -> str:
         sys.exit(1)
 
 
-def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in PHASES:
-        print(f"Usage: python3 {sys.argv[0]} <phase>")
-        print(f"Phases: {', '.join(PHASES)}")
-        sys.exit(1)
+# ── Spec extraction ────────────────────────────────────────────────────────────
 
-    phase_name = sys.argv[1]
+def extract_spec_section(spec_text: str, header: str) -> str:
+    lines = spec_text.splitlines()
+    start = next((i for i, l in enumerate(lines)
+                  if header in l and l.startswith("##")), None)
+    if start is None:
+        return f"[Section '{header}' not found in spec]"
+    section = []
+    for line in lines[start + 1:]:
+        if line.startswith("## ") and section:
+            break
+        section.append(line)
+    return "\n".join(section).strip()
+
+
+# ── Main phase runner ──────────────────────────────────────────────────────────
+
+def run_phase(phase_name: str, do_apply: bool = False, skip_ollama: bool = False) -> dict:
+    """
+    Run one phase. Returns a result dict:
+      {'phase', 'file', 'blocks', 'auto_applied', 'flagged', 'output_path'}
+    """
     spec_header, source_filename, keywords = PHASES[phase_name]
 
-    spec_text    = SPEC_FILE.read_text()
-    spec_section = extract_spec_section(spec_text, spec_header)
-    source_path  = SOURCE_DIR / source_filename
+    source_path = SOURCE_DIR / source_filename
+    if not source_path.exists():
+        print(f"[WARN] Source file not found: {source_path}")
+        return {'phase': phase_name, 'file': source_filename,
+                'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': None}
+
     source_text  = source_path.read_text()
-    context      = extract_context(source_text, keywords)
+    file_type    = 'py' if source_filename.endswith('.py') else 'js'
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     out_path = OUTPUT_DIR / (source_filename + ".instructions")
 
-    prompt = f"""You are the d3kOS build system. Execute the following spec section.
+    # ── Get Ollama output ──────────────────────────────────────────────────────
+    if skip_ollama and out_path.exists():
+        print(f"\n  [SKIP-OLLAMA] Using saved: {out_path.name}")
+        raw_output = out_path.read_text()
+    elif skip_ollama and not out_path.exists():
+        print(f"\n  [SKIP-OLLAMA] No saved instructions for {phase_name} — skipping")
+        return {'phase': phase_name, 'file': source_filename,
+                'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': None}
+    else:
+        # Load context
+        context_md = CONTEXT_FILE.read_text() if CONTEXT_FILE.exists() else ""
+        spec_text  = SPEC_FILE.read_text() if SPEC_FILE.exists() else ""
+        spec_section = extract_spec_section(spec_text, spec_header)
 
-## SPEC SECTION
+        context_str, scope_vars = extract_context(source_text, keywords, file_type)
+
+        scope_note = ""
+        if scope_vars:
+            scope_note = (
+                "\n\n## VARIABLES IN SCOPE (from the function shown above)\n"
+                + ', '.join(scope_vars[:40])
+                + "\nOnly use variables from this list or standard globals. "
+                  "Do NOT invent new variable names."
+            )
+
+        prompt = f"""{context_md}
+
+---
+
+## TASK: Execute the following spec section for {source_filename}
+
 {spec_section}
 
-## RELEVANT SECTIONS OF {source_filename} (with line numbers)
-{context}
+## RELEVANT CODE FROM {source_filename} (with line numbers)
+{context_str}{scope_note}
 
 ## YOUR OUTPUT FORMAT
-Return a series of change instructions in EXACTLY this format — nothing else:
+Return ONLY structured change blocks in EXACTLY this format.
+No explanation. No markdown fences. No other text.
 
-FIND_LINE: <exact text of an existing line in the file to anchor the change>
+FIND_LINE: <exact verbatim text of an existing line in the file>
 ACTION: INSERT_BEFORE | INSERT_AFTER | REPLACE
 CODE:
-<the exact code to insert or use as replacement>
+<exact code — preserve indentation>
 END_CODE
 
-Rules:
-- FIND_LINE must be a line that exists verbatim in the file
-- Use multiple FIND_LINE/ACTION/CODE blocks if multiple changes are needed
-- For adding <script src="/js/units.js"></script> to <head>: FIND_LINE the first line after <head>
-- Keep indentation consistent with surrounding code
-- No explanation outside the structured blocks
+Multiple blocks allowed. Every FIND_LINE must exist verbatim in the file above.
 """
 
-    print(f"\n[d3kOS Ollama Executor]")
-    print(f"  Phase    : {phase_name} ({spec_header})")
-    print(f"  Source   : {source_filename} ({len(source_text.splitlines())} lines)")
-    print(f"  Context  : {len(context.splitlines())} lines sent to Ollama")
-    print(f"  Model    : {MODEL}")
-    print(f"  Output   : {out_path.name}")
-    print(f"\nSending to Ollama...")
+        print(f"\n[{phase_name}] Sending to Ollama ({len(prompt.splitlines())} lines)...")
+        raw_output = call_ollama(prompt)
 
-    result = call_ollama(prompt)
+        if not raw_output.strip():
+            print(f"[ERROR] Empty response from Ollama for phase: {phase_name}")
+            return {'phase': phase_name, 'file': source_filename,
+                    'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': None}
 
-    if not result.strip():
-        print("[ERROR] Ollama returned empty response")
+        out_path.write_text(raw_output)
+        print(f"  Instructions saved → {out_path.name}")
+
+    # ── Parse and validate ─────────────────────────────────────────────────────
+    blocks = parse_instruction_blocks(raw_output)
+    if not blocks:
+        print(f"  [WARN] No valid FIND_LINE/ACTION/CODE blocks parsed from output")
+        print(f"  Raw output preview: {raw_output[:200]}")
+        return {'phase': phase_name, 'file': source_filename,
+                'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': out_path}
+
+    blocks = validate_blocks(blocks, source_text, source_filename)
+
+    valid_count   = sum(1 for b in blocks if b['valid'])
+    invalid_count = sum(1 for b in blocks if not b['valid'])
+
+    print(f"  Parsed {len(blocks)} block(s): {valid_count} valid, {invalid_count} flagged")
+
+    for i, b in enumerate(blocks):
+        status = "OK " if b['valid'] else "ERR"
+        print(f"    [{status}] Block {i+1}: {b['action']} after '{b['find_line'][:50]}'")
+        for issue in b['issues']:
+            print(f"          ^ {issue}")
+
+    # ── Auto-apply ─────────────────────────────────────────────────────────────
+    auto_applied = 0
+    if do_apply and valid_count > 0:
+        modified, auto_applied, skipped = apply_blocks(blocks, source_text)
+        source_path.write_text(modified)
+        print(f"  Applied {auto_applied} block(s) to {source_filename}")
+        if skipped:
+            print(f"  Skipped {skipped} flagged block(s) — review manually")
+
+    return {
+        'phase':        phase_name,
+        'file':         source_filename,
+        'blocks':       blocks,
+        'auto_applied': auto_applied,
+        'flagged':      invalid_count,
+        'output_path':  out_path,
+    }
+
+
+def print_report(results: list):
+    """Print end-of-run summary."""
+    print("\n" + "═" * 60)
+    print("  d3kOS Ollama Executor — Run Report")
+    print("═" * 60)
+    total_blocks   = sum(len(r['blocks']) for r in results)
+    total_applied  = sum(r['auto_applied'] for r in results)
+    total_flagged  = sum(r['flagged'] for r in results)
+
+    for r in results:
+        mark = "✓" if r['flagged'] == 0 else "⚠"
+        print(f"  {mark} {r['phase']:15s} {r['file']:25s} "
+              f"blocks={len(r['blocks'])}  applied={r['auto_applied']}  flagged={r['flagged']}")
+        for b in r['blocks']:
+            if not b['valid']:
+                print(f"      FLAGGED: {b['action']} @ '{b['find_line'][:50]}'")
+                for issue in b['issues']:
+                    print(f"               → {issue}")
+
+    print("─" * 60)
+    print(f"  Total blocks: {total_blocks}  |  Auto-applied: {total_applied}"
+          f"  |  Flagged: {total_flagged}")
+    if total_flagged > 0:
+        print(f"\n  {total_flagged} block(s) need manual review.")
+        print("  Check ollama_output/<file>.instructions for raw output.")
+    else:
+        print("\n  All blocks validated and applied cleanly.")
+    print("═" * 60 + "\n")
+
+
+def main():
+    args      = sys.argv[1:]
+    do_apply  = '--apply' in args
+    skip_oll  = '--skip-ollama' in args
+    phases_arg = [a for a in args if not a.startswith('--')]
+
+    if not phases_arg or phases_arg[0] not in list(PHASES.keys()) + ['all']:
+        print(f"Usage: python3 {sys.argv[0]} <phase|all> [--apply] [--skip-ollama]")
+        print(f"Phases: {', '.join(PHASES.keys())}, all")
         sys.exit(1)
 
-    out_path.write_text(result)
-    print(f"Done. Instructions saved ({len(result.splitlines())} lines)\n")
-    print(result)
-    print(f"\nSaved to: {out_path}")
+    if phases_arg[0] == 'all':
+        phase_list = list(PHASES.keys())
+    else:
+        phase_list = [phases_arg[0]]
+
+    print(f"\nd3kOS Ollama Executor v2")
+    print(f"  Model   : {MODEL}")
+    print(f"  Phases  : {', '.join(phase_list)}")
+    print(f"  Apply   : {'yes' if do_apply else 'no — dry run (add --apply to write changes)'}")
+    print(f"  Context : {CONTEXT_FILE.name} ({'found' if CONTEXT_FILE.exists() else 'MISSING'})")
+
+    results = []
+    for phase in phase_list:
+        results.append(run_phase(phase, do_apply=do_apply, skip_ollama=skip_oll))
+
+    print_report(results)
 
 
 if __name__ == "__main__":
