@@ -35,6 +35,8 @@ except ImportError:
 CONFIG_PATH = "/opt/d3kos/config/ai-config.json"
 SKILLS_PATH = "/opt/d3kos/config/skills.md"
 DB_PATH = "/opt/d3kos/data/conversation-history.db"
+MAINTENANCE_LOG_PATH = "/opt/d3kos/data/maintenance-log.json"
+PREFS_PATH = "/opt/d3kos/config/user-preferences.json"
 
 # Fallback simulated boat status (used if Signal K unavailable)
 SIMULATED_STATUS = {
@@ -245,6 +247,115 @@ Provide concise, accurate answers based on this boat's specific configuration an
                 return result["choices"][0]["message"]["content"], model
         except Exception as e:
             raise Exception(f"OpenRouter API error: {str(e)}")
+
+    def classify_action_query(self, question):
+        """
+        Detect voice commands that perform an action (write/change something).
+        Returns (action_type, payload) tuple, or None if not an action command.
+        Only whitelisted, reversible actions are matched.
+        """
+        import re
+        q_lower = question.lower().strip()
+
+        # ── Log maintenance note ──────────────────────────────────────────────
+        note_triggers = [
+            'log a note', 'add a note', 'log note', 'add note',
+            'add maintenance note', 'log maintenance note', 'maintenance note',
+            'record that', 'note that', 'make a note', 'write a note',
+            'log that', 'remember that',
+        ]
+        for trigger in note_triggers:
+            if q_lower.startswith(trigger) or (' ' + trigger) in q_lower:
+                idx = q_lower.find(trigger)
+                payload = question[idx + len(trigger):].strip(' .,')
+                return ('log_note', payload or 'Maintenance check performed')
+
+        # ── Log engine hours ──────────────────────────────────────────────────
+        hours_triggers = [
+            'log engine hours', 'record engine hours', 'update engine hours',
+            'set engine hours', 'engine hours are', 'engine hours is',
+        ]
+        for trigger in hours_triggers:
+            if trigger in q_lower:
+                idx = q_lower.find(trigger)
+                after = question[idx + len(trigger):].strip()
+                m = re.search(r'[\d.]+', after)
+                if m:
+                    return ('log_hours', m.group(0))
+
+        # ── Set fuel alarm threshold ──────────────────────────────────────────
+        fuel_triggers = [
+            'set fuel alarm', 'set low fuel alarm', 'fuel alarm at',
+            'fuel warning at', 'low fuel warning', 'set fuel warning',
+        ]
+        for trigger in fuel_triggers:
+            if trigger in q_lower:
+                idx = q_lower.find(trigger)
+                after = question[idx + len(trigger):].strip()
+                m = re.search(r'\d+', after)
+                if m:
+                    return ('set_fuel_alarm', m.group(0))
+
+        return None
+
+    def execute_action(self, action_type, payload):
+        """
+        Execute a whitelisted action. Returns a spoken confirmation string.
+        All actions are append-only or write to controlled config paths.
+        """
+        timestamp = datetime.now().isoformat()
+
+        if action_type == 'log_note':
+            entry = {'timestamp': timestamp, 'type': 'note', 'content': payload}
+            self._append_maintenance_log(entry)
+            short = payload[:80] + ('...' if len(payload) > 80 else '')
+            return f"Maintenance note logged: {short}"
+
+        if action_type == 'log_hours':
+            try:
+                hours = float(payload)
+                entry = {'timestamp': timestamp, 'type': 'engine_hours', 'value': hours}
+                self._append_maintenance_log(entry)
+                return f"Engine hours logged as {hours:.1f}."
+            except ValueError:
+                return "Sorry, I could not understand the engine hours value."
+
+        if action_type == 'set_fuel_alarm':
+            try:
+                level = int(payload)
+                if not 5 <= level <= 50:
+                    return "Fuel alarm level must be between 5 and 50 percent."
+                self._set_pref('fuel_alarm_threshold', level)
+                entry = {'timestamp': timestamp, 'type': 'config_change',
+                         'key': 'fuel_alarm_threshold', 'value': level}
+                self._append_maintenance_log(entry)
+                return f"Fuel alarm set to {level} percent."
+            except ValueError:
+                return "Sorry, I could not understand the fuel alarm level."
+
+        return "Action completed."
+
+    def _append_maintenance_log(self, entry):
+        """Append a JSON entry to the maintenance log file."""
+        try:
+            p = Path(MAINTENANCE_LOG_PATH)
+            log = json.loads(p.read_text()) if p.exists() else []
+            log.append(entry)
+            p.write_text(json.dumps(log, indent=2))
+            print(f"  ✓ Maintenance log: {entry['type']}", flush=True)
+        except Exception as e:
+            print(f"  ⚠ Maintenance log write failed: {e}", flush=True)
+
+    def _set_pref(self, key, value):
+        """Write a single key into user-preferences.json."""
+        try:
+            p = Path(PREFS_PATH)
+            prefs = json.loads(p.read_text()) if p.exists() else {}
+            prefs[key] = value
+            p.write_text(json.dumps(prefs, indent=2))
+            print(f"  ✓ Preference updated: {key}={value}", flush=True)
+        except Exception as e:
+            print(f"  ⚠ Preference write failed: {e}", flush=True)
 
     def classify_simple_query(self, question):
         """Check if this is a simple query that can be answered with rules"""
@@ -544,7 +655,27 @@ Provide concise, accurate answers based on this boat's specific configuration an
         manual_context = None
         manual_used = False
         
-        # Check if simple query FIRST (rule-based patterns)
+        # Check for action commands FIRST (log note, set alarm, etc.)
+        action = self.classify_action_query(question)
+        if action:
+            action_type, payload = action
+            print(f"  ⚡ Action command: {action_type}", flush=True)
+            answer = self.execute_action(action_type, payload)
+            elapsed = time.time() - start_time
+            response_time = int(elapsed * 1000)
+            self.store_conversation(question, answer, 'onboard', 'action', 'rules', response_time)
+            return {
+                'question': question,
+                'answer': answer,
+                'provider': 'action',
+                'model': 'rules',
+                'ai_used': 'onboard',
+                'response_time_ms': response_time,
+                'timestamp': datetime.now().isoformat(),
+                'manual_used': False
+            }
+
+        # Check if simple query (rule-based patterns)
         simple_category = self.classify_simple_query(question)
         if simple_category:
             # Use rule-based response immediately (RPM, oil, temp, etc.)
