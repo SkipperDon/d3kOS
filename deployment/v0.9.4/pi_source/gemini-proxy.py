@@ -55,7 +55,7 @@ def get_gemini_key() -> str:
 
 
 def get_gemini_model() -> str:
-    return load_api_keys().get('gemini_model', 'gemini-1.5-flash')
+    return load_api_keys().get('gemini_model', 'gemini-2.5-flash')
 
 
 @app.route('/gemini/chat', methods=['POST'])
@@ -89,7 +89,7 @@ def gemini_chat():
         'contents': contents,
         'systemInstruction': {'parts': [{'text': system_prompt}]},
         'generationConfig': {
-            'maxOutputTokens': 256,
+            'maxOutputTokens': 512,
             'temperature': 0.4,
             'topP': 0.8
         }
@@ -113,7 +113,10 @@ def gemini_chat():
         if not candidates:
             return jsonify({'error': 'No response from Gemini'}), 502
 
-        response_text = candidates[0]['content']['parts'][0]['text']
+        parts = candidates[0].get('content', {}).get('parts', [])
+        if not parts:
+            return jsonify({'error': 'Gemini returned no text (thinking used all tokens — try again)'}), 502
+        response_text = parts[0]['text']
         return jsonify({
             'response': response_text,
             'model': model,
@@ -152,10 +155,12 @@ def gemini_test():
     try:
         r = requests.post(url, json={
             'contents': [{'role': 'user', 'parts': [{'text': 'Say "Gemini connected" and nothing else.'}]}],
-            'generationConfig': {'maxOutputTokens': 20}
-        }, timeout=10)
+            'generationConfig': {'maxOutputTokens': 200}
+        }, timeout=15)
         if r.status_code == 200:
-            text = r.json()['candidates'][0]['content']['parts'][0]['text']
+            candidate = r.json().get('candidates', [{}])[0]
+            parts = candidate.get('content', {}).get('parts', [])
+            text = parts[0]['text'].strip() if parts else 'Connected (no text — increase token limit)'
             return jsonify({'success': True, 'response': text, 'model': model})
         return jsonify({'success': False, 'error': r.text[:200]}), 502
     except Exception as e:
@@ -180,7 +185,7 @@ def set_config():
     if 'gemini_api_key' in data:
         updates['gemini_api_key'] = data['gemini_api_key']
     if 'gemini_model' in data:
-        if data['gemini_model'] not in ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash']:
+        if data['gemini_model'] not in ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro']:
             return jsonify({'error': 'Invalid model name'}), 400
         updates['gemini_model'] = data['gemini_model']
     if updates:
