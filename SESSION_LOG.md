@@ -3,7 +3,7 @@
 ---
 
 ## Session 2026-03-03 (Part 5)
-**Goal:** Fix voice rule overmatch + build AI Action Layer + Remote Access API
+**Goal:** Fix voice rule overmatch + build AI Action Layer + Remote Access API + Tailscale
 
 **Completed:**
 - Fix: `classify_simple_query()` rule overmatch — "what causes white smoke at high speed" was routing to 'speed' rule
@@ -31,14 +31,20 @@
   - API key generated and stored in `api-keys.json`
   - `REMOTE_ACCESS_SETUP.md` written (Tailscale, LAN, port-forward options)
   - Committed `f93f312`
-- PROJECT_CHECKLIST.md updated: v0.9.5 entries for Action Layer + Remote Access, overmatch fix ticked
+- Tailscale installed on Pi (v1.94.2) and authenticated — IP: `100.88.112.63`
+  - Full d3kOS web UI accessible remotely at `http://100.88.112.63`
+  - Tested and confirmed working on phone over cellular
+  - Committed `97c90f0`
+- `helm_os_source` RAG collection re-ingested (57 chunks — includes new `remote_api.py`)
+- PROJECT_CHECKLIST.md updated throughout
 
 **Decisions:**
 - Diagnostic intent guard approach (not just pattern tightening) — catches open-ended questions reliably regardless of which sensor keywords appear
 - Action Layer uses append-only JSON (not SQLite) for maintenance log — simpler, human-readable, easy to inspect
 - Remote API auth: key required for /status and /maintenance; health is open — phone can test connectivity without key
 - Remote API nulls when engine off — correct behavior, sensors unavailable at dock
-- Tailscale is the recommended remote access path (no port forwarding, works on cellular); setup left to user (requires their account)
+- Tailscale chosen for remote access — no port forwarding required, works on cellular
+- **UX note:** Tailscale setup has friction — requires separate app install, must be running in background, and URL syntax (`http://` prefix) is not obvious to non-technical users. Acceptable for a single-owner boat but worth revisiting if d3kOS is ever distributed. A simpler alternative for future consideration: a cloud-hosted status page that the Pi pushes data to (no VPN needed on phone).
 
 **Ollama:** 0 calls (all code written directly)
 
@@ -50,10 +56,9 @@
 | **Session total** | | **TBD** |
 
 **Pending:**
-- Install Tailscale on Pi (user step — needs Tailscale account auth, see REMOTE_ACCESS_SETUP.md)
-- Re-ingest `helm_os_source` RAG collection (source files changed this session)
 - v0.9.3 Multi-Camera System (hardware blocked: cameras not purchased)
-- WebSocket real-time data push (lower priority — polling /remote/status is adequate)
+- WebSocket real-time data push (low priority — polling /remote/status is adequate for now)
+- Consider push-based remote status (Pi POSTs to cloud endpoint) as simpler phone alternative to Tailscale
 
 ---
 

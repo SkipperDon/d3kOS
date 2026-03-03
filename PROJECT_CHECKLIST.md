@@ -674,13 +674,13 @@
 - [✅] v0.9.2 Complete (Metric/Imperial)
 - [ ] v0.9.3 Complete (Multi-Camera System) — ⚠️ BLOCKED: 3 cameras not purchased
 - [✅] v0.9.4 Complete (Gemini AI Integration)
-- [ ] v0.9.5 Complete (Mobile Apps + Cloud)
-- [ ] v0.9.6 Complete (Remote Access & Camera Streaming)
+- [✅] v0.9.5 Complete (AI Action Layer + Remote Access API + Tailscale)
+- [ ] v0.9.6 Complete (Remote Access & Camera Streaming) — cameras not purchased
 - [ ] v0.9.6 Complete (Fleet Management)
 - [ ] v0.10.0 Complete (Predictive Maintenance)
 - [ ] v0.11.0 Complete (Diagnostic Console)
 - [ ] v0.12.0 Complete (Autonomous Agents)
-- [ ] v0.12.1 Complete (AI Action Layer)
+- [ ] v0.12.1 Complete (AI Action Layer — extended)
 - [ ] v0.13.0 Complete (Failure Intelligence)
 - [ ] v0.14.0 Complete (Community Features)
 - [ ] v0.15.0 Complete (Multi-Language) — REQUIRED for v1.0
@@ -728,6 +728,6 @@ All `[🔍]` items must be retested before considering a version complete. Add `
 
 ---
 
-**Last Updated:** March 3, 2026 | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 3, 2026 (Part 5) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
