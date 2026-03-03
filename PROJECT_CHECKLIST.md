@@ -175,9 +175,17 @@
 
 ---
 
-## v0.9.2 — Multi-Camera System `[LARGE]`
+## v0.9.3 — Multi-Camera System `[LARGE]`
 
-**Status:** [ ] Not Started | **Priority:** HIGH
+**Status:** [🔄] In Progress — 2 of 2 cameras on network | **Priority:** HIGH
+
+**Hardware:** 2 cameras currently available:
+- Camera 1 (existing bow camera) — already integrated
+- Camera 2 (new) — **Reolink RLC-820A** — on network, not yet configured in d3kOS
+
+**Note:** Original plan was 4 cameras (3× RLC-820A). Updated to 2× RLC-820A.
+RLC-820A is 4K + colour night vision (better than RLC-820A). Multi-camera system
+can be built and tested with the 2 cameras on hand now.
 
 ### Camera Registry System
 
@@ -192,14 +200,12 @@
   - [ ] Add discovered cameras to registry
 - [ ] Configure DHCP reservations
   - [ ] Update `/etc/NetworkManager/dnsmasq-shared.d/camera-reservations.conf`
-  - [ ] Reserve 10.42.0.100 (Bow - existing)
-  - [ ] Reserve 10.42.0.101 (Stern)
-  - [ ] Reserve 10.42.0.102 (Interior)
-  - [ ] Reserve 10.42.0.103 (Port/Starboard)
+  - [ ] Reserve 10.42.0.100 (Bow — existing camera)
+  - [ ] Reserve 10.42.0.101 (RLC-820A — location TBD)
   - [ ] Restart NetworkManager
 - [ ] Test camera connectivity
-  - [ ] Verify all 4 cameras connect
-  - [ ] Test RTSP streams (main + sub)
+  - [ ] Verify both cameras connect (bow + RLC-820A)
+  - [ ] Test RTSP streams (main + sub) on both
   - [ ] Verify DHCP reservations persist across reboots
 
 ### Multi-Camera Backend API
@@ -213,7 +219,7 @@
   - [ ] GET `/camera/list` — Get all registered cameras
   - [ ] GET `/camera/status/{id}` — Connection status per camera
   - [ ] POST `/camera/switch/{id}` — Switch active camera
-  - [ ] GET `/camera/grid` — Get all frames for grid view (4 cameras)
+  - [ ] GET `/camera/grid` — Get all frames for grid view (2 cameras)
   - [ ] GET `/camera/frame/{id}` — Get frame from specific camera
 - [ ] Implement resource optimization
   - [ ] Use sub-streams (720p) for grid view
@@ -223,19 +229,19 @@
 - [ ] Test API endpoints
   - [ ] Test all endpoints with curl
   - [ ] Verify performance (CPU/memory/bandwidth)
-  - [ ] Load test with all 4 cameras active
+  - [ ] Load test with both cameras active
 
 ### UI Implementation
 
 - [ ] Create Single View Page (`/marine-vision.html` — update existing)
-  - [ ] Add camera dropdown selector (4 cameras)
+  - [ ] Add camera dropdown selector (2 cameras: Bow, RLC-820A)
   - [ ] Implement camera switching (no page reload)
   - [ ] Maintain 1080p @ 25 FPS display
   - [ ] Show camera name and status
   - [ ] Add "Grid View" button
 - [ ] Create Grid View Page (`/marine-vision-grid.html` — new)
-  - [ ] 2×2 grid layout (responsive)
-  - [ ] Display all 4 cameras simultaneously
+  - [ ] 1×2 grid layout (side-by-side on desktop, stacked on mobile)
+  - [ ] Display both cameras simultaneously (1×2 layout)
   - [ ] 720p @ 1 FPS per camera
   - [ ] Click any camera to jump to Single View
   - [ ] Show camera names on each grid cell
@@ -245,7 +251,7 @@
   - [ ] Update marine-vision.html with grid view link
 - [ ] Mobile responsive design
   - [ ] Single view: Full-screen on mobile
-  - [ ] Grid view: 2×2 on desktop, 2×1 stacked on mobile
+  - [ ] Grid view: 1×2 side-by-side on desktop, stacked on mobile
 - [ ] Test UI on multiple devices
   - [ ] Desktop browser
   - [ ] Tablet (landscape + portrait)
@@ -258,7 +264,7 @@
   - [ ] Measure CPU usage (target: < 35%)
   - [ ] Measure memory usage (target: < 970 MB total)
   - [ ] Measure bandwidth (grid: < 12 Mbps, single: < 4 Mbps)
-  - [ ] Test with all 4 cameras for 24 hours continuous
+  - [ ] Test with both cameras for 24 hours continuous
 - [ ] Resource optimization
   - [ ] Tune frame rates if needed
   - [ ] Optimize detection frequency
@@ -285,12 +291,12 @@
   - [ ] Troubleshooting guide
   - [ ] API documentation updates
 - [ ] Hardware setup
-  - [ ] Purchase 3 additional Reolink RLC-810A cameras
-  - [ ] Mount stern camera
-  - [ ] Mount interior camera
-  - [ ] Mount port/starboard camera
-  - [ ] Configure all cameras (static IP, admin password)
-  - [ ] Test physical installations
+  - [✅] Camera 1 (existing bow camera) — on network
+  - [✅] Camera 2 — Reolink RLC-820A purchased, on network
+  - [ ] Configure RLC-820A in d3kOS (static IP, RTSP credentials, add to registry)
+  - [ ] Decide on mounting location for RLC-820A (stern, interior, or port/starboard)
+  - [ ] Mount and cable RLC-820A at chosen location
+  - [ ] Verify both cameras accessible via RTSP
 - [ ] Deployment
   - [ ] Git commit with detailed changes
   - [ ] Tag release as v0.9.3
@@ -679,7 +685,7 @@
 
 - [✅] v0.9.1 Complete (Voice AI Assistant)
 - [✅] v0.9.2 Complete (Metric/Imperial)
-- [ ] v0.9.3 Complete (Multi-Camera System) — ⚠️ BLOCKED: 3 cameras not purchased
+- [🔄] v0.9.3 In Progress (Multi-Camera System) — 2× RLC-820A on network, build underway
 - [✅] v0.9.4 Complete (Gemini AI Integration)
 - [✅] v0.9.5 Complete (AI Action Layer + Remote Access API + Tailscale)
 - [ ] v0.9.6 Complete (Remote Access & Camera Streaming) — cameras not purchased
@@ -699,7 +705,7 @@
 - [✅] v0.9.1 (Voice AI) — DONE
 - [✅] v0.9.2 (Metric/Imperial) — DONE
 - [✅] v0.9.4 (Gemini AI) — DONE
-- [ ] v0.9.3 (4-Camera) — BLOCKED on hardware purchase
+- [🔄] v0.9.3 (Multi-Camera) — 2× RLC-820A on network, ready to build
 - [ ] Fix: voice rule overmatch ("speed" pattern) — SMALL, active bug
 - [ ] v0.15.0 (Multi-Language) — REQUIRED for v1.0
 - [ ] v0.16.0 (Security Audit) — REQUIRED for v1.0
