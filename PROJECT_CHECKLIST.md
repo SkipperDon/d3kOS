@@ -1,6 +1,6 @@
 # d3kOS Project Implementation Checklist
 
-**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.4 → Target: v1.0.0
+**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.5 → Target: v1.0.0
 
 ## 📋 LEGEND
 
@@ -68,7 +68,7 @@
 - [✅] RAG search for manual/technical questions
 - [✅] Gemini 2.5 Flash for complex conversational queries (v0.9.4)
 - [✅] Fallback chain: Gemini → RAG → rule-based
-- [⚠️] Rule overmatch: "speed" pattern catches diagnostic questions containing "speed" — needs tighter matching
+- [✅] Rule overmatch fixed (v0.9.5): diagnostic intent guard added + all patterns tightened to multi-word phrases
 
 ### Voice Assistant Service
 
@@ -326,18 +326,26 @@
 
 ---
 
-## v0.9.2 — Remote Access & Camera Streaming `[MEDIUM]`
+## v0.9.5 — Remote Access API `[SMALL]`
 
-**Status:** [ ] Not Started | **Priority:** HIGH
+**Status:** [✅] Phase 1 Complete | **Shipped:** v0.9.5 | **Priority:** HIGH
 
 ### Tasks
 
-- [ ] WebSocket real-time data push
-- [ ] Camera stream relay (RTSP → HLS)
-- [ ] Device management and settings sync
-- [ ] Testing and optimization
+- [✅] `remote_api.py` — Flask service on port 8111 with API key auth
+- [✅] `GET /remote/health` — unauthenticated health check
+- [✅] `GET /remote/status` — all boat metrics from SignalK (engine, nav, systems)
+- [✅] `GET /remote/maintenance` — last 20 maintenance log entries
+- [✅] `POST /remote/note` — add maintenance note from phone
+- [✅] Systemd service `d3kos-remote-api.service` (enabled, active)
+- [✅] Nginx proxy `/remote/` → `localhost:8111`
+- [✅] API key generated and stored in `api-keys.json`
+- [✅] `REMOTE_ACCESS_SETUP.md` with Tailscale + LAN + port-forward options
+- [ ] Tailscale install on Pi (requires user auth — see REMOTE_ACCESS_SETUP.md)
+- [ ] Camera stream relay RTSP → HLS (blocked: cameras not purchased)
+- [ ] WebSocket real-time push (future — polling via /remote/status is sufficient for now)
 
-**Deliverable:** d3kOS v0.9.6 with full remote access
+**Deliverable:** d3kOS v0.9.5 — Remote status readable from phone anywhere via Tailscale
 
 ---
 
@@ -503,18 +511,30 @@
 
 ---
 
-## v0.9.7 — AI Action Layer `[SMALL]`
+## v0.9.5 — AI Action Layer `[SMALL]`
 
-**Status:** [ ] Not Started | **Priority:** MEDIUM
+**Status:** [✅] Complete | **Shipped:** v0.9.5 (commit `c68d8c6`) | **Priority:** MEDIUM
 
 ### Tasks
 
-- [ ] Whitelisted action system
-- [ ] User approval workflows
-- [ ] Action execution engine
-- [ ] Testing and safety verification
+- [✅] `classify_action_query()` — detect action intent before simple/Gemini routing
+- [✅] `execute_action()` — whitelist dispatcher (log_note, log_hours, set_fuel_alarm)
+- [✅] `_append_maintenance_log()` — append-only JSON log at `/opt/d3kos/data/maintenance-log.json`
+- [✅] `_set_pref()` — write to `user-preferences.json` for config changes
+- [✅] Wired into `query()` — action check runs before all other routing
+- [✅] 10/10 classification tests pass
+- [✅] Deployed to Pi, services restarted
 
-**Deliverable:** d3kOS v0.12.1 with AI action layer
+### Supported Actions
+
+| Phrase | Action | Output |
+|--------|--------|--------|
+| "log a note [text]" | log_note | Appends note to maintenance-log.json |
+| "note that [text]" | log_note | Same |
+| "log engine hours [N]" | log_hours | Logs engine hours entry |
+| "set fuel alarm to [N] percent" | set_fuel_alarm | Updates user-preferences.json |
+
+**Deliverable:** d3kOS v0.9.5 with voice-triggered maintenance logging and config actions
 
 ---
 

@@ -2,6 +2,61 @@
 
 ---
 
+## Session 2026-03-03 (Part 5)
+**Goal:** Fix voice rule overmatch + build AI Action Layer + Remote Access API
+
+**Completed:**
+- Fix: `classify_simple_query()` rule overmatch — "what causes white smoke at high speed" was routing to 'speed' rule
+  - Added `diagnostic_intents` guard (why/what causes/explain/smoke/vibrat/overheating/etc.) before any pattern check
+  - Tightened all patterns from single-word to multi-word phrases:
+    - `'speed'` → `['what is my speed', 'current speed', 'how fast am i', 'sog', ...]`
+    - `'temperature'` → `['coolant temp', 'engine temp', 'what is the temperature', ...]`
+    - `'battery'` → `['battery voltage', 'battery level', 'system voltage', ...]`
+    - all other categories similarly tightened
+  - 15/15 classification tests pass. Committed `680a795`
+- AI Action Layer (v0.9.5): three whitelisted voice actions in `query_handler.py`
+  - `classify_action_query()` — detects action intent before simple/Gemini routing
+  - `execute_action()` — dispatcher for 3 actions
+  - `log_note`: "log a note [text]" / "note that [text]" → appends to `maintenance-log.json`
+  - `log_hours`: "log engine hours [N]" → logs hours entry to maintenance-log.json
+  - `set_fuel_alarm`: "set fuel alarm to [N] percent" → updates `user-preferences.json`
+  - 10/10 tests pass. Deployed to Pi. Committed `c68d8c6`
+- Remote Access API (v0.9.5): `remote_api.py` Flask service on port 8111
+  - `GET /remote/health` — unauthenticated
+  - `GET /remote/status` — all SignalK metrics (engine, nav, systems) with API key auth
+  - `GET /remote/maintenance` — last 20 maintenance log entries
+  - `POST /remote/note` — add maintenance note from phone
+  - Systemd service `d3kos-remote-api.service` enabled and active
+  - Nginx proxy `/remote/` → `localhost:8111`
+  - API key generated and stored in `api-keys.json`
+  - `REMOTE_ACCESS_SETUP.md` written (Tailscale, LAN, port-forward options)
+  - Committed `f93f312`
+- PROJECT_CHECKLIST.md updated: v0.9.5 entries for Action Layer + Remote Access, overmatch fix ticked
+
+**Decisions:**
+- Diagnostic intent guard approach (not just pattern tightening) — catches open-ended questions reliably regardless of which sensor keywords appear
+- Action Layer uses append-only JSON (not SQLite) for maintenance log — simpler, human-readable, easy to inspect
+- Remote API auth: key required for /status and /maintenance; health is open — phone can test connectivity without key
+- Remote API nulls when engine off — correct behavior, sensors unavailable at dock
+- Tailscale is the recommended remote access path (no port forwarding, works on cellular); setup left to user (requires their account)
+
+**Ollama:** 0 calls (all code written directly)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (this session) | check console.anthropic.com → Usage → 2026-03-03 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| **Session total** | | **TBD** |
+
+**Pending:**
+- Install Tailscale on Pi (user step — needs Tailscale account auth, see REMOTE_ACCESS_SETUP.md)
+- Re-ingest `helm_os_source` RAG collection (source files changed this session)
+- v0.9.3 Multi-Camera System (hardware blocked: cameras not purchased)
+- WebSocket real-time data push (lower priority — polling /remote/status is adequate)
+
+---
+
 ## Session 2026-03-03 (Part 4)
 **Goal:** Ollama executor improvements + build project RAG knowledge base
 
