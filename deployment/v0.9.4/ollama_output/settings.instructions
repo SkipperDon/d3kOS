@@ -1,0 +1,149 @@
+```
+FIND_LINE:       function handleMeasurementToggle() {
+ACTION: REPLACE
+CODE:
+       function handleMeasurementToggle() {
+        var isMetric = document.getElementById('measurement-toggle').checked;
+        var system = isMetric ? 'metric' : 'imperial';
+        // Set localStorage immediately
+        localStorage.setItem('d3kos-measurement-system', system);
+        document.getElementById('measurement-label').textContent =
+          isMetric ? 'Metric' : 'Imperial';
+        var info = document.querySelector('#measurement-section .setting-info');
+        info.innerHTML += '<p style="color:#00CC00;font-weight:bold;">\u2713 Updated to ' + system + '</p>';
+        // POST to backend first, then reload — eliminates the race condition
+        fetch('/api/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ measurement_system: system })
+        })
+        .then(function() { location.reload(); })
+        .catch(function() { setTimeout(function(){ location.reload(); }, 500); });
+      }
+
+      // Gemini AI Configuration Section
+      const geminiSection = document.createElement('div');
+      geminiSection.className = 'settings-section';
+      geminiSection.id = 'gemini-section';
+      geminiSection.innerHTML = `
+        <h2>AI Assistant — Gemini API</h2>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Gemini API Key</strong>
+            <p class="setting-description">Get a free key at aistudio.google.com</p>
+          </div>
+          <div class="setting-control" style="flex:1;">
+            <div style="display:flex;gap:8px;">
+              <input type="password" id="gemini-key-input"
+                     placeholder="AIzaSy..."
+                     style="flex:1;padding:8px;background:#333;color:#fff;border:1px solid #555;
+                            border-radius:4px;font-size:14px;font-family:monospace;">
+              <button onclick="toggleKeyVisibility()" class="btn-marine">Show</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Model</strong>
+            <p class="setting-description">Flash = faster, Pro = smarter</p>
+          </div>
+          <div class="setting-control">
+            <select id="gemini-model-select"
+                    style="padding:8px;background:#333;color:#fff;border:1px solid #555;border-radius:4px;">
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Recommended)</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Latest)</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Most Capable)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button onclick="saveGeminiConfig()" class="btn-marine">Save Configuration</button>
+          <button onclick="testGeminiConnection()" class="btn-marine">Test Connection</button>
+        </div>
+
+        <div id="gemini-status" style="margin-top:10px;padding:8px;border-radius:4px;
+             font-size:13px;font-family:monospace;display:none;"></div>
+      `;
+
+      // Insert the Gemini section after the measurement section
+      const measurementSection = document.getElementById('measurement-section');
+      if (measurementSection) {
+        measurementSection.parentNode.insertBefore(geminiSection, measurementSection.nextSibling);
+      }
+
+      // Load current Gemini config
+      fetch('/gemini/config')
+        .then(r => r.json())
+        .then(data => {
+          if (data.key_set) {
+            document.getElementById('gemini-key-input').placeholder = 'Key configured (hidden)';
+          }
+          document.getElementById('gemini-model-select').value =
+            data.gemini_model || 'gemini-1.5-flash';
+        })
+        .catch(() => {});
+
+      function toggleKeyVisibility() {
+        const input = document.getElementById('gemini-key-input');
+        const btn = event.target;
+        if (input.type === 'password') {
+          input.type = 'text';
+          btn.textContent = 'Hide';
+        } else {
+          input.type = 'password';
+          btn.textContent = 'Show';
+        }
+      }
+
+      function showGeminiStatus(msg, isError) {
+        const el = document.getElementById('gemini-status');
+        el.style.display = 'block';
+        el.style.background = isError ? '#400' : '#040';
+        el.style.border = '1px solid ' + (isError ? '#f00' : '#0f0');
+        el.style.color = isError ? '#f88' : '#8f8';
+        el.textContent = msg;
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+      }
+
+      async function saveGeminiConfig() {
+        const key = document.getElementById('gemini-key-input').value.trim();
+        const model = document.getElementById('gemini-model-select').value;
+        const payload = { gemini_model: model };
+        if (key) payload.gemini_api_key = key;
+        try {
+          const r = await fetch('/gemini/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (r.ok) {
+            showGeminiStatus('✓ Configuration saved', false);
+            document.getElementById('gemini-key-input').value = '';
+            document.getElementById('gemini-key-input').placeholder = 'Key configured (hidden)';
+          } else {
+            showGeminiStatus('✗ Save failed: ' + (await r.text()), true);
+          }
+        } catch(e) {
+          showGeminiStatus('✗ Error: ' + e.message, true);
+        }
+      }
+
+      async function testGeminiConnection() {
+        showGeminiStatus('Testing connection...', false);
+        try {
+          const r = await fetch('/gemini/test');
+          const data = await r.json();
+          if (data.success) {
+            showGeminiStatus('✓ Connected! Response: "' + data.response + '" (Model: ' + data.model + ')', false);
+          } else {
+            showGeminiStatus('✗ Test failed: ' + (data.error || 'Unknown error'), true);
+          }
+        } catch(e) {
+          showGeminiStatus('✗ Connection error: ' + e.message, true);
+        }
+      }
+END_CODE
+```
