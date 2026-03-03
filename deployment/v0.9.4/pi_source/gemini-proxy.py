@@ -2,7 +2,7 @@
 """
 d3kOS Gemini API Proxy
 Version: 0.9.4
-Port: 8099
+Port: 8097
 Proxies requests to Google Gemini API with d3kOS-specific system context.
 Keeps API key on Pi (never exposed to browser).
 """
