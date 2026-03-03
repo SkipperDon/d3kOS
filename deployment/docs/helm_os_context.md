@@ -232,6 +232,55 @@ class AIQueryHandler:
 
 ---
 
+## AI Services: Ports and Endpoints
+
+```
+Port 8097 — Gemini API proxy (d3kos-gemini-proxy.service)
+  POST http://localhost:8097/gemini/chat      — conversational AI
+  GET  http://localhost:8097/gemini/health    — health check
+  GET  http://localhost:8097/gemini/test      — connectivity test
+  GET  http://localhost:8097/gemini/config    — read Gemini config
+  POST http://localhost:8097/gemini/config    — save API key / model
+
+Port 8099 — Self-healing / issue detector (d3kos-issue-detector.service)
+  GET  http://localhost:8099/healing/status   — system health
+  POST http://localhost:8099/healing/detect   — run detection
+
+Port 8107 — Preferences API (d3kos-preferences-api.service)
+  GET/POST http://localhost:8107/api/preferences — measurement units
+```
+
+IMPORTANT: Gemini proxy is port 8097 (NOT 8099).
+In query_handler.py, use: requests.post('http://localhost:8097/gemini/chat', ...)
+In nginx config, use:    proxy_pass http://127.0.0.1:8097/gemini/;
+
+---
+
+## Variable Names: gemini-proxy.py (query_handler.py Gemini integration)
+
+```python
+# In query_handler.py, the Gemini integration method:
+def _query_gemini(self, text: str, boat_status: dict = None) -> str | None:
+    """Query Gemini API proxy. Returns response text or None on failure."""
+    import requests
+    try:
+        payload = {'message': text}
+        if boat_status:
+            payload['context'] = boat_status
+        r = requests.post('http://localhost:8097/gemini/chat', json=payload, timeout=15)
+        if r.status_code == 200:
+            data = r.json()
+            return data.get('response', '').strip()
+    except Exception as e:
+        print(f"  Gemini query failed: {e}", flush=True)
+    return None
+
+# In query() method, the ai_used field must be 'online' or 'onboard' (not 'gemini')
+ai_used = 'online' if provider == 'gemini' else 'onboard'
+```
+
+---
+
 ## FIND_LINE / ACTION / CODE Format
 
 Your output MUST use EXACTLY this format. No explanation outside these blocks.

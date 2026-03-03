@@ -339,18 +339,28 @@ def parse_instruction_blocks(text: str) -> list:
     text = re.sub(r'^```[^\n]*\n?', '', text, flags=re.MULTILINE)
     text = re.sub(r'^```\s*$', '', text, flags=re.MULTILINE)
 
+    # Accept short aliases Ollama commonly produces: AFTER→INSERT_AFTER, BEFORE→INSERT_BEFORE
+    ACTION_ALIASES = {
+        'AFTER':         'INSERT_AFTER',
+        'INSERT_AFTER':  'INSERT_AFTER',
+        'BEFORE':        'INSERT_BEFORE',
+        'INSERT_BEFORE': 'INSERT_BEFORE',
+        'REPLACE':       'REPLACE',
+    }
+
     pattern = re.compile(
         r'FIND_LINE:\s*(.+?)\n'
-        r'ACTION:\s*(INSERT_BEFORE|INSERT_AFTER|REPLACE)\s*\n'
+        r'ACTION:\s*(INSERT_BEFORE|INSERT_AFTER|REPLACE|BEFORE|AFTER)\s*\n'
         r'CODE:\s*\n(.*?)END_CODE',
         re.DOTALL
     )
     for m in pattern.finditer(text):
         # Strip backtick wrapping from FIND_LINE (old Ollama outputs wrapped in markdown)
         find_line = m.group(1).strip().strip('`')
+        action    = ACTION_ALIASES.get(m.group(2).strip(), m.group(2).strip())
         blocks.append({
             'find_line': find_line,
-            'action':    m.group(2).strip(),
+            'action':    action,
             'code':      m.group(3).rstrip('\n'),
             'valid':     True,
             'issues':    []
@@ -376,6 +386,12 @@ def check_invented_vars(code: str, source_text: str, file_type: str) -> list:
     if file_type == 'py':
         for m in re.finditer(r'\bdef\s+(\w+)\b', code):
             declared_in_code.add(m.group(1))
+        # Function parameters: def foo(self, param1, param2=default, *args, **kwargs)
+        for m in re.finditer(r'\bdef\s+\w+\s*\(([^)]*)\)', code):
+            for param in m.group(1).split(','):
+                p = param.strip().lstrip('*').split('=')[0].strip()
+                if p and p.isidentifier():
+                    declared_in_code.add(p)
         for m in re.finditer(r'^\s*(\w+)\s*=\s*', code, re.MULTILINE):
             declared_in_code.add(m.group(1))
         for m in re.finditer(r'\bfor\s+(\w+)\b', code):
@@ -385,6 +401,17 @@ def check_invented_vars(code: str, source_text: str, file_type: str) -> list:
             declared_in_code.add(m.group(1))
         for m in re.finditer(r'\bfunction\s+(\w+)\b', code):
             declared_in_code.add(m.group(1))
+        # Function parameters: function foo(a, b, c) and arrow (a, b) =>
+        for m in re.finditer(r'\bfunction\s*\w*\s*\(([^)]*)\)', code):
+            for param in m.group(1).split(','):
+                p = param.strip().lstrip('.').split('=')[0].strip()
+                if p and p.isidentifier():
+                    declared_in_code.add(p)
+        for m in re.finditer(r'\(([^)]*)\)\s*=>', code):
+            for param in m.group(1).split(','):
+                p = param.strip().lstrip('.').split('=')[0].strip()
+                if p and p.isidentifier():
+                    declared_in_code.add(p)
         for m in re.finditer(r'\bfor\s*\([^)]*\b(\w+)\b', code):
             declared_in_code.add(m.group(1))
 
@@ -812,6 +839,8 @@ CODE:
 END_CODE
 
 Multiple blocks allowed. Every FIND_LINE must exist verbatim in the file above.
+FIND_LINE must not be a comment line (no lines starting with //, #, or <!--).
+FIND_LINE must not be a line containing only {{ or }} — pick a more unique anchor line.
 """
 
         tprint(f"\n[{phase_name}] Sending to Ollama ({len(prompt.splitlines())} lines)...")
