@@ -344,6 +344,11 @@
 - [✅] Tailscale install on Pi — connected, IP: `100.88.112.63` (networkdon89@ account)
 - [ ] Camera stream relay RTSP → HLS (blocked: cameras not purchased)
 - [ ] WebSocket real-time push (future — polling via /remote/status is sufficient for now)
+- [ ] **"My Remote Access" settings page** — required before distributing to other users
+  - [ ] Display Tailscale IP (read from `tailscale ip -4`)
+  - [ ] Display API key
+  - [ ] Generate QR code linking to `http://<tailscale-ip>` — user scans with phone, no typing
+  - [ ] "Add to Home Screen" instructions shown alongside QR code
 
 **Deliverable:** d3kOS v0.9.5 — Remote status readable from phone anywhere via Tailscale
 
