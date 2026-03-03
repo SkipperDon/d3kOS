@@ -35,9 +35,14 @@ SOURCE_DIR   = VERSION_DIR / "pi_source"
 OUTPUT_DIR   = VERSION_DIR / "ollama_output"
 
 # ── Ollama config ──────────────────────────────────────────────────────────────
-OLLAMA_URL = "http://192.168.1.36:11434/api/generate"
-MODEL      = "qwen3-coder:30b"
-TIMEOUT    = 300
+OLLAMA_URL       = "http://192.168.1.36:11434/api/generate"
+OLLAMA_EMBED_URL = "http://192.168.1.36:11434/api/embed"
+MODEL            = "qwen3-coder:30b"
+TIMEOUT          = 300
+
+# ── RAG config ─────────────────────────────────────────────────────────────────
+RAG_CHROMA_PATH = str(pathlib.Path.home() / "rag-stack/chroma_data")
+RAG_VENV_SITE   = str(pathlib.Path.home() / "rag-stack/.venv/lib/python3.12/site-packages")
 
 # ── Runtime stats ─────────────────────────────────────────────────────────────
 _stats_lock  = threading.Lock()
@@ -137,6 +142,64 @@ PHASES = {
          "Measurement System", "handleMeasurementToggle"]
     ),
 }
+
+
+# ── RAG retrieval ──────────────────────────────────────────────────────────────
+
+def query_rag_context(source_filename: str, keywords: list, n_results: int = 4) -> str:
+    """
+    Query helm_os_source for code context relevant to the file being modified.
+    Returns formatted string for prompt injection, or '' if RAG is unavailable.
+    Gracefully degrades — never blocks a phase run.
+    """
+    try:
+        import chromadb
+        from chromadb.config import Settings as ChromaSettings
+    except ImportError:
+        import sys
+        sys.path.insert(0, RAG_VENV_SITE)
+        try:
+            import chromadb
+            from chromadb.config import Settings as ChromaSettings
+        except ImportError:
+            return ""
+
+    try:
+        client = chromadb.PersistentClient(
+            path=RAG_CHROMA_PATH,
+            settings=ChromaSettings(anonymized_telemetry=False)
+        )
+        collection = client.get_collection("helm_os_source")
+
+        query = f"functions variables {source_filename} {' '.join(keywords[:4])}"
+        payload = json.dumps({"model": "nomic-embed-text", "input": query}).encode()
+        req = urllib.request.Request(
+            OLLAMA_EMBED_URL, data=payload,
+            headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            embedding = json.loads(resp.read())["embeddings"][0]
+
+        results = collection.query(
+            query_embeddings=[embedding],
+            n_results=n_results,
+            include=["documents", "metadatas"]
+        )
+
+        docs  = results["documents"][0]
+        metas = results["metadatas"][0]
+        if not docs:
+            return ""
+
+        chunks = []
+        for doc, meta in zip(docs, metas):
+            fname = pathlib.Path(meta.get("source", "?")).name
+            chunks.append(f"[{fname}]\n{doc}")
+        tprint(f"  [RAG] Retrieved {len(chunks)} chunk(s) for {source_filename}")
+        return "\n\n---\n\n".join(chunks)
+
+    except Exception as e:
+        tprint(f"  [RAG] Unavailable: {e}")
+        return ""
 
 
 # ── Context extraction ─────────────────────────────────────────────────────────
@@ -555,6 +618,16 @@ def run_phase(phase_name, apply=False, skip_ollama=False):
     else:
         spec_section = load_spec_section(section_header)
         context_file = load_context_file()
+
+        rag_context = query_rag_context(source_filename, keywords)
+        rag_section = ""
+        if rag_context:
+            rag_section = (
+                "\n\n## RETRIEVED CODE CONTEXT (real code from this project — "
+                "use these exact variable names and function signatures)\n"
+                + rag_context
+            )
+
         prompt = f"""{context_file}
 
 ---
@@ -562,7 +635,7 @@ def run_phase(phase_name, apply=False, skip_ollama=False):
 ## TASK: {phase_name.upper()} — {source_filename}
 
 ## SPEC — What to implement:
-{spec_section}
+{spec_section}{rag_section}
 
 ## CURRENT FILE CONTEXT (around the area to modify):
 {context}
