@@ -10,16 +10,19 @@ Improvements over v1:
       * FIND_LINE text must exist in the source file
       * Invented variable names check (vars not in source or known globals)
       * Syntax check on generated code (node --check / py_compile)
-  - Auto-applies validated blocks to pi_source file with --apply flag
-  - Flags invalid blocks for manual review with reasons
-  - Generates a report: auto-applied vs flagged
+  - Correction loop: flagged blocks are sent back to Ollama with targeted advice
+      * Finds the closest real line for FIND_LINE misses
+      * Identifies the correct in-scope variable to replace invented ones
+      * One retry per block — if still invalid, escalates to manual review
+  - Auto-applies validated (and corrected) blocks with --apply flag
+  - Generates a report: auto-applied vs corrected vs flagged
 
 Usage:
   python3 ollama_execute.py <phase>           # run one phase, show validation report
   python3 ollama_execute.py <phase> --apply   # run + auto-apply validated blocks
   python3 ollama_execute.py all               # run all phases
   python3 ollama_execute.py all --apply       # run all + auto-apply all validated
-  python3 ollama_execute.py all --apply --skip-ollama  # apply saved instructions (no API call)
+  python3 ollama_execute.py all --skip-ollama # validate saved instructions (no API call)
 
 Phases: settings, dashboard, onboarding, navigation, weather, query_handler
 """
@@ -462,6 +465,175 @@ def validate_blocks(blocks: list, source_text: str, source_file: str) -> list:
     return blocks
 
 
+# ── Correction loop ────────────────────────────────────────────────────────────
+
+def find_similar_lines(find_line: str, source_text: str) -> list:
+    """Find source lines with the most word overlap to a failed FIND_LINE."""
+    words = set(find_line.strip().lower().split())
+    if not words:
+        return []
+    scored = []
+    for line in source_text.splitlines():
+        stripped = line.strip()
+        if not stripped or len(stripped) < 5:
+            continue
+        line_words = set(stripped.lower().split())
+        overlap = len(words & line_words) / max(len(words), 1)
+        if overlap >= 0.4:
+            scored.append((overlap, stripped))
+    scored.sort(key=lambda x: (-x[0], len(x[1])))
+    return [l for _, l in scored[:3]]
+
+
+def find_context_for_correction(block: dict, source_text: str) -> str:
+    """
+    Return ±15 lines of source around the best-guess location for the change.
+    For FIND_LINE failures: find the closest matching line.
+    For invented var failures: find lines containing the action target.
+    """
+    lines = source_text.splitlines()
+    find_line = block['find_line']
+    words = find_line.strip().split()
+
+    best_idx, best_score = 0, 0
+    for i, line in enumerate(lines):
+        score = sum(1 for w in words if w in line)
+        if score > best_score:
+            best_score = score
+            best_idx = i
+
+    start = max(0, best_idx - 10)
+    end   = min(len(lines), best_idx + 20)
+    return '\n'.join(f"{i+1}: {lines[i]}" for i in range(start, end))
+
+
+def generate_correction_advice(block: dict, source_text: str, scope_vars: list) -> str:
+    """
+    Build targeted, specific advice for each validation failure in the block.
+    This is sent to Ollama so it knows exactly what to fix.
+    """
+    advice = []
+
+    for issue in block['issues']:
+
+        if 'FIND_LINE not found' in issue:
+            find_line = block['find_line']
+            similar = find_similar_lines(find_line, source_text)
+            if similar:
+                advice.append(
+                    f"FIND_LINE '{find_line}' does not exist verbatim in the file.\n"
+                    f"  These are the closest real lines — use one of them instead:\n"
+                    + '\n'.join(f"    {l}" for l in similar)
+                )
+            else:
+                advice.append(
+                    f"FIND_LINE '{find_line}' does not exist in the file. "
+                    "Look at the file context below and choose a line that IS there."
+                )
+
+        elif 'Possible invented identifiers' in issue or 'window.' in issue:
+            names_str = re.sub(r'Possible invented identifiers:\s*', '', issue)
+            invented_names = [n.strip() for n in names_str.split(',') if n.strip()]
+
+            for inv in invented_names:
+                bare = inv.replace('window.', '')
+
+                # Find candidates in scope vars first
+                scope_matches = [v for v in scope_vars
+                                 if bare.lower() in v.lower() or v.lower() in bare.lower()]
+
+                # Also search source text for similarly-named identifiers
+                source_idents = re.findall(r'\b[a-z][a-zA-Z0-9]{4,}\b', source_text)
+                source_matches = [v for v in dict.fromkeys(source_idents)
+                                  if (bare.lower()[:5] in v.lower()
+                                      or v.lower()[:5] in bare.lower())
+                                  and v not in scope_matches][:3]
+
+                all_suggestions = scope_matches[:3] + source_matches[:2]
+
+                if all_suggestions:
+                    advice.append(
+                        f"'{inv}' does not exist in this file. "
+                        f"The correct identifier is likely: {', '.join(all_suggestions)}. "
+                        f"Use the exact name from the scope list."
+                    )
+                else:
+                    advice.append(
+                        f"'{inv}' does not exist. "
+                        f"Only use variables from scope: {', '.join(scope_vars[:12])}"
+                    )
+
+        elif 'Syntax error' in issue:
+            err = issue.replace('Syntax error:', '').strip()
+            advice.append(f"Fix this syntax error in your CODE block: {err}")
+
+    return '\n'.join(f"- {a}" for a in advice) if advice else "- Review the file context and correct the block."
+
+
+def run_correction(block: dict, source_text: str, source_filename: str,
+                   scope_vars: list) -> dict:
+    """
+    Send one failed block back to Ollama with specific advice.
+    Returns a corrected block dict — valid=True if fixed, valid=False if still broken.
+    """
+    advice     = generate_correction_advice(block, source_text, scope_vars)
+    nearby_ctx = find_context_for_correction(block, source_text)
+
+    prompt = f"""You generated an instruction block for {source_filename} that failed validation.
+
+## YOUR FAILED BLOCK
+FIND_LINE: {block['find_line']}
+ACTION: {block['action']}
+CODE:
+{block['code']}
+END_CODE
+
+## WHAT WENT WRONG
+{chr(10).join('- ' + e for e in block['issues'])}
+
+## HOW TO FIX IT
+{advice}
+
+## VARIABLES AVAILABLE IN SCOPE (use these — do not invent new names)
+{', '.join(scope_vars[:30]) if scope_vars else '(see file context below)'}
+
+## RELEVANT FILE CONTEXT (find the right FIND_LINE anchor here)
+{nearby_ctx}
+
+## YOUR TASK
+Return EXACTLY ONE corrected block. Fix what went wrong. Nothing else.
+No explanation. No markdown. No extra text.
+
+FIND_LINE: <exact verbatim line from the file above>
+ACTION: {block['action']}
+CODE:
+<corrected code>
+END_CODE"""
+
+    print(f"      → Asking Ollama to correct block...")
+    raw = call_ollama(prompt)
+
+    corrected_blocks = parse_instruction_blocks(raw)
+    if not corrected_blocks:
+        print(f"      ✗ Ollama returned no parseable block in correction response")
+        block['correction_attempted'] = True
+        return block
+
+    corrected = corrected_blocks[0]
+    # Preserve action if Ollama changed it
+    corrected['action'] = block['action']
+    corrected['correction_attempted'] = True
+
+    corrected = validate_blocks([corrected], source_text, source_filename)[0]
+
+    if corrected['valid']:
+        print(f"      ✓ Ollama corrected the block — will apply")
+    else:
+        print(f"      ✗ Still invalid after correction: {corrected['issues']}")
+
+    return corrected
+
+
 # ── Apply ──────────────────────────────────────────────────────────────────────
 
 def apply_blocks(blocks: list, source_text: str) -> tuple:
@@ -552,7 +724,7 @@ def extract_spec_section(spec_text: str, header: str) -> str:
 def run_phase(phase_name: str, do_apply: bool = False, skip_ollama: bool = False) -> dict:
     """
     Run one phase. Returns a result dict:
-      {'phase', 'file', 'blocks', 'auto_applied', 'flagged', 'output_path'}
+      {'phase', 'file', 'blocks', 'auto_applied', 'corrected', 'flagged', 'output_path'}
     """
     spec_header, source_filename, keywords = PHASES[phase_name]
 
@@ -560,13 +732,17 @@ def run_phase(phase_name: str, do_apply: bool = False, skip_ollama: bool = False
     if not source_path.exists():
         print(f"[WARN] Source file not found: {source_path}")
         return {'phase': phase_name, 'file': source_filename,
-                'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': None}
+                'blocks': [], 'auto_applied': 0, 'corrected': 0, 'flagged': 0,
+                'output_path': None}
 
-    source_text  = source_path.read_text()
-    file_type    = 'py' if source_filename.endswith('.py') else 'js'
+    source_text = source_path.read_text()
+    file_type   = 'py' if source_filename.endswith('.py') else 'js'
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     out_path = OUTPUT_DIR / (source_filename + ".instructions")
+
+    # Always extract context and scope vars — needed for both prompt and correction loop
+    context_str, scope_vars = extract_context(source_text, keywords, file_type)
 
     # ── Get Ollama output ──────────────────────────────────────────────────────
     if skip_ollama and out_path.exists():
@@ -575,14 +751,12 @@ def run_phase(phase_name: str, do_apply: bool = False, skip_ollama: bool = False
     elif skip_ollama and not out_path.exists():
         print(f"\n  [SKIP-OLLAMA] No saved instructions for {phase_name} — skipping")
         return {'phase': phase_name, 'file': source_filename,
-                'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': None}
+                'blocks': [], 'auto_applied': 0, 'corrected': 0, 'flagged': 0,
+                'output_path': None}
     else:
-        # Load context
-        context_md = CONTEXT_FILE.read_text() if CONTEXT_FILE.exists() else ""
-        spec_text  = SPEC_FILE.read_text() if SPEC_FILE.exists() else ""
+        context_md   = CONTEXT_FILE.read_text() if CONTEXT_FILE.exists() else ""
+        spec_text    = SPEC_FILE.read_text() if SPEC_FILE.exists() else ""
         spec_section = extract_spec_section(spec_text, spec_header)
-
-        context_str, scope_vars = extract_context(source_text, keywords, file_type)
 
         scope_note = ""
         if scope_vars:
@@ -623,79 +797,114 @@ Multiple blocks allowed. Every FIND_LINE must exist verbatim in the file above.
         if not raw_output.strip():
             print(f"[ERROR] Empty response from Ollama for phase: {phase_name}")
             return {'phase': phase_name, 'file': source_filename,
-                    'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': None}
+                    'blocks': [], 'auto_applied': 0, 'corrected': 0, 'flagged': 0,
+                    'output_path': None}
 
         out_path.write_text(raw_output)
         print(f"  Instructions saved → {out_path.name}")
 
-    # ── Parse and validate ─────────────────────────────────────────────────────
+    # ── Parse and initial validation ───────────────────────────────────────────
     blocks = parse_instruction_blocks(raw_output)
     if not blocks:
-        print(f"  [WARN] No valid FIND_LINE/ACTION/CODE blocks parsed from output")
+        print(f"  [WARN] No FIND_LINE/ACTION/CODE blocks parsed")
         print(f"  Raw output preview: {raw_output[:200]}")
         return {'phase': phase_name, 'file': source_filename,
-                'blocks': [], 'auto_applied': 0, 'flagged': 0, 'output_path': out_path}
+                'blocks': [], 'auto_applied': 0, 'corrected': 0, 'flagged': 0,
+                'output_path': out_path}
 
     blocks = validate_blocks(blocks, source_text, source_filename)
 
-    valid_count   = sum(1 for b in blocks if b['valid'])
-    invalid_count = sum(1 for b in blocks if not b['valid'])
-
-    print(f"  Parsed {len(blocks)} block(s): {valid_count} valid, {invalid_count} flagged")
+    initial_invalid = sum(1 for b in blocks if not b['valid'])
+    print(f"  Parsed {len(blocks)} block(s): "
+          f"{len(blocks) - initial_invalid} valid, {initial_invalid} flagged")
 
     for i, b in enumerate(blocks):
         status = "OK " if b['valid'] else "ERR"
-        print(f"    [{status}] Block {i+1}: {b['action']} after '{b['find_line'][:50]}'")
+        print(f"    [{status}] Block {i+1}: {b['action']} @ '{b['find_line'][:50]}'")
         for issue in b['issues']:
             print(f"          ^ {issue}")
 
+    # ── Correction loop (live Ollama runs only) ────────────────────────────────
+    corrected_count = 0
+    if not skip_ollama and initial_invalid > 0:
+        print(f"\n  [CORRECT] {initial_invalid} block(s) failed — sending back to Ollama with advice...")
+        for i, block in enumerate(blocks):
+            if not block['valid']:
+                print(f"    Block {i+1}: {block['action']} @ '{block['find_line'][:50]}'")
+                corrected = run_correction(block, source_text, source_filename, scope_vars)
+                blocks[i] = corrected
+                if corrected['valid']:
+                    corrected_count += 1
+
+        # Report post-correction state
+        still_invalid = sum(1 for b in blocks if not b['valid'])
+        if corrected_count > 0:
+            print(f"\n  After correction: {corrected_count} fixed, {still_invalid} still flagged")
+        if still_invalid > 0:
+            print(f"  {still_invalid} block(s) need manual review")
+
+    final_invalid = sum(1 for b in blocks if not b['valid'])
+
     # ── Auto-apply ─────────────────────────────────────────────────────────────
     auto_applied = 0
-    if do_apply and valid_count > 0:
-        modified, auto_applied, skipped = apply_blocks(blocks, source_text)
-        source_path.write_text(modified)
-        print(f"  Applied {auto_applied} block(s) to {source_filename}")
-        if skipped:
-            print(f"  Skipped {skipped} flagged block(s) — review manually")
+    if do_apply:
+        valid_blocks = [b for b in blocks if b['valid']]
+        if valid_blocks:
+            # Re-read source in case a previous phase in 'all' mode modified it
+            source_text = source_path.read_text()
+            modified, auto_applied, skipped = apply_blocks(blocks, source_text)
+            source_path.write_text(modified)
+            print(f"  Applied {auto_applied} block(s) to {source_filename}")
+            if skipped:
+                print(f"  Skipped {skipped} block(s)")
 
     return {
         'phase':        phase_name,
         'file':         source_filename,
         'blocks':       blocks,
         'auto_applied': auto_applied,
-        'flagged':      invalid_count,
+        'corrected':    corrected_count,
+        'flagged':      final_invalid,
         'output_path':  out_path,
     }
 
 
 def print_report(results: list):
     """Print end-of-run summary."""
-    print("\n" + "═" * 60)
+    print("\n" + "═" * 68)
     print("  d3kOS Ollama Executor — Run Report")
-    print("═" * 60)
-    total_blocks   = sum(len(r['blocks']) for r in results)
-    total_applied  = sum(r['auto_applied'] for r in results)
-    total_flagged  = sum(r['flagged'] for r in results)
+    print("═" * 68)
+    total_blocks    = sum(len(r['blocks']) for r in results)
+    total_applied   = sum(r['auto_applied'] for r in results)
+    total_corrected = sum(r.get('corrected', 0) for r in results)
+    total_flagged   = sum(r['flagged'] for r in results)
 
     for r in results:
         mark = "✓" if r['flagged'] == 0 else "⚠"
-        print(f"  {mark} {r['phase']:15s} {r['file']:25s} "
-              f"blocks={len(r['blocks'])}  applied={r['auto_applied']}  flagged={r['flagged']}")
+        corr = r.get('corrected', 0)
+        print(f"  {mark} {r['phase']:14s} {r['file']:24s} "
+              f"blocks={len(r['blocks'])}  "
+              f"applied={r['auto_applied']}  "
+              f"corrected={corr}  "
+              f"flagged={r['flagged']}")
         for b in r['blocks']:
             if not b['valid']:
-                print(f"      FLAGGED: {b['action']} @ '{b['find_line'][:50]}'")
+                attempt = " (correction attempted)" if b.get('correction_attempted') else ""
+                print(f"      FLAGGED{attempt}: {b['action']} @ '{b['find_line'][:45]}'")
                 for issue in b['issues']:
                     print(f"               → {issue}")
 
-    print("─" * 60)
-    print(f"  Total blocks: {total_blocks}  |  Auto-applied: {total_applied}"
-          f"  |  Flagged: {total_flagged}")
+    print("─" * 68)
+    print(f"  Total: {total_blocks} blocks  |  "
+          f"Applied: {total_applied}  |  "
+          f"Ollama-corrected: {total_corrected}  |  "
+          f"Manual review needed: {total_flagged}")
     if total_flagged > 0:
-        print(f"\n  {total_flagged} block(s) need manual review.")
+        print(f"\n  {total_flagged} block(s) still need manual review.")
         print("  Check ollama_output/<file>.instructions for raw output.")
     else:
-        print("\n  All blocks validated and applied cleanly.")
-    print("═" * 60 + "\n")
+        print("\n  All blocks handled — none require manual review.")
+    print("═" * 68 + "\n")
 
 
 def main():
