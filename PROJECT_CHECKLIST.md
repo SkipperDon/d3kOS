@@ -26,7 +26,7 @@
 - [✅] Fix 1: `ACTION: AFTER/BEFORE` aliases accepted (both executors)
 - [✅] Fix 2: function parameters recognised as declared in scope (both executors)
 - [✅] Fix 3: FIND_LINE prompt rules — no comment lines, no bare `{`/`}`
-- [ ] Wire RAG retrieval into executor: query `helm_os_source` before each phase
+- [✅] Wire RAG retrieval into executor: query `helm_os_source` before each phase
 
 ### Project RAG Knowledge Base (`/home/boatiq/rag-stack/`)
 
@@ -34,7 +34,7 @@
 - [✅] `helm_os_source` collection: 54 chunks — live Pi `.py` + `.html` source files
 - [✅] `helm_os_ingest.py`: smart filtered ingestion (excludes ATMYBOAT/fish/training noise)
 - [✅] `ingest.py`: extended to support `.py` and `.html` files
-- [ ] Integrate RAG retrieval into Ollama executor prompts
+- [✅] RAG retrieval wired into both executors — top-4 chunks injected before every Ollama call
 - [ ] Re-ingest `helm_os_source` after each Pi deployment (keeps code context current)
 
 ### `helm_os_context.md` (`deployment/docs/`)
@@ -47,96 +47,129 @@
 
 ---
 
+## v0.9.1 — Voice AI Assistant `[LARGE]`
+
+**Status:** [✅] Complete | **Shipped:** v0.9.1.x (multiple sessions) | **Priority:** HIGH
+
+### Wake Word & Speech Pipeline
+
+- [✅] Wake word detection — Vosk with constrained grammar (`["helm"]`)
+- [✅] TTS responses — Piper (`en_US-hfc_male`) with pre-rendered acknowledgement audio
+- [✅] "Aye Aye Captain" acknowledgement plays on wake word (~4s audio)
+- [✅] `voice-assistant-hybrid.py` — full pipeline (listen → STT → query → TTS)
+- [✅] Listen duration: 7s window after wake word (raised from 3s to allow TTS to finish)
+- [✅] USB microphone renumbering fix — persistent device assignment across reboots
+- [✅] Voice watchdog service — auto-restarts on crash
+- [✅] Emergency reboot voice command — "Helm, reboot" via dbus
+
+### Query Routing
+
+- [✅] Rule-based engine data responses (RPM, oil, temperature, fuel, battery, speed, boost)
+- [✅] RAG search for manual/technical questions
+- [✅] Gemini 2.5 Flash for complex conversational queries (v0.9.4)
+- [✅] Fallback chain: Gemini → RAG → rule-based
+- [⚠️] Rule overmatch: "speed" pattern catches diagnostic questions containing "speed" — needs tighter matching
+
+### Voice Assistant Service
+
+- [✅] `d3kos-voice-assistant.service` — systemd, enabled, auto-start
+- [✅] Integrated with SignalK for live engine data context
+- [✅] Conversations logged to SQLite (`ai_used`: online/onboard)
+
+**Deliverable:** d3kOS v0.9.1.x — fully operational hands-free voice AI
+
+---
+
 ## v0.9.2 — Metric/Imperial Conversion System `[MEDIUM]`
 
 **Status:** [✅] Complete | **Shipped:** v0.9.2 (commit `e3ddbef`) | **Priority:** HIGH
 
 ### Foundation
 
-- [ ] Create `/var/www/html/js/units.js` conversion utility
-  - [ ] Temperature conversion (°F ↔ °C)
-  - [ ] Pressure conversion (PSI ↔ bar)
-  - [ ] Speed conversion (knots+MPH ↔ knots+km/h)
-  - [ ] Distance conversion (nm ↔ km)
-  - [ ] Depth conversion (ft ↔ m)
-  - [ ] Fuel conversion (gal ↔ L)
-  - [ ] Length conversion (ft ↔ m)
-  - [ ] Weight conversion (lb ↔ kg)
-  - [ ] Displacement conversion (ci ↔ L)
-- [ ] Extend Preferences API (Port 8107)
-  - [ ] Add `measurement_system` field to user preferences
-  - [ ] GET /preferences endpoint
-  - [ ] POST /preferences endpoint
-  - [ ] Update `/opt/d3kos/config/user-preferences.json` schema
-- [ ] Create Settings UI toggle
-  - [ ] Add Measurement System section to settings.html
-  - [ ] Toggle switch (Imperial/Metric)
-  - [ ] Real-time page update without reload
+- [✅] Create `/var/www/html/js/units.js` conversion utility — 9 types, 25/25 unit tests
+  - [✅] Temperature conversion (°F ↔ °C)
+  - [✅] Pressure conversion (PSI ↔ bar)
+  - [✅] Speed conversion (knots+MPH ↔ knots+km/h)
+  - [✅] Distance conversion (nm ↔ km)
+  - [✅] Depth conversion (ft ↔ m)
+  - [✅] Fuel conversion (gal ↔ L)
+  - [✅] Length conversion (ft ↔ m)
+  - [✅] Weight conversion (lb ↔ kg)
+  - [✅] Displacement conversion (ci ↔ L)
+- [✅] Extend Preferences API (Port 8107) — `preferences-api.py`, Flask, systemd
+  - [✅] Add `measurement_system` field to user preferences
+  - [✅] GET /preferences endpoint
+  - [✅] POST /preferences endpoint
+  - [✅] Update `/opt/d3kos/config/user-preferences.json` schema
+- [✅] Create Settings UI toggle
+  - [✅] Add Measurement System section to settings.html
+  - [✅] Toggle switch (Imperial/Metric)
+  - [✅] Real-time page update without reload (waits for POST before reload)
 
 ### UI Updates
 
-- [ ] Update Dashboard (`/var/www/html/index.html`)
-  - [ ] Engine temperature display (°F/°C)
-  - [ ] Oil pressure display (PSI/bar)
-  - [ ] Fuel level display (gal/L)
-  - [ ] Boost pressure display (PSI/bar)
-  - [ ] Coolant temperature display (°F/°C)
-  - [ ] Speed display (knots+MPH/knots+km/h)
-- [ ] Update Onboarding Wizard (`/var/www/html/onboarding.html`)
-  - [ ] Step 15: Add auto-default logic based on boat origin
-    - [ ] USA/Canada → Imperial
-    - [ ] Europe/Asia/Oceania/Africa/South America → Metric
-  - [ ] Step 9: Engine size input (ci/L dropdown)
-  - [ ] Step 10: Engine power input (hp/kW dropdown)
-  - [ ] Set preference in localStorage on boat origin selection
-- [ ] Update Navigation page (`/var/www/html/navigation.html`)
-  - [ ] Speed display (knots+MPH/knots+km/h)
-  - [ ] Altitude display (ft/m)
-- [ ] Update Weather page (`/var/www/html/weather.html`)
-  - [ ] Temperature display (°F/°C)
-  - [ ] Wind speed display (knots+MPH/knots+km/h)
-- [ ] Update Boatlog display
+- [✅] Update Dashboard (`/var/www/html/dashboard.html` — index.html is launcher menu)
+  - [✅] Engine temperature display (°F/°C)
+  - [✅] Oil pressure display (PSI/bar)
+  - [✅] Fuel level display (gal/L)
+  - [✅] Boost pressure display (PSI/bar)
+  - [✅] Coolant temperature display (°F/°C)
+  - [✅] Speed display (knots+MPH/knots+km/h)
+- [✅] Update Onboarding Wizard (`/var/www/html/onboarding.html`)
+  - [✅] Step 15: Add auto-default logic based on boat origin
+    - [✅] USA/Canada → Imperial
+    - [✅] Europe/Asia/Oceania/Africa/South America → Metric
+  - [✅] Step 9: Engine size input (ci/L dropdown)
+  - [✅] Step 10: Engine power input (hp/kW dropdown)
+  - [✅] Set preference in localStorage on boat origin selection
+- [✅] Update Navigation page (`/var/www/html/navigation.html`)
+  - [✅] Speed display (knots+MPH/knots+km/h)
+  - [✅] Depth display (ft/m)
+- [✅] Update Weather page (`/var/www/html/weather.html`)
+  - [✅] Temperature display (°F/°C)
+  - [✅] Wind speed display (knots+MPH/knots+km/h)
+- [ ] Update Boatlog display — deferred (not in v0.9.2 scope)
   - [ ] Display entries in user's preferred units
   - [ ] Stored data remains in imperial (no conversion on storage)
 
 ### Voice Assistant & Testing
 
-- [ ] Update Voice Assistant (`/opt/d3kos/services/ai/query_handler.py`)
-  - [ ] Load user preferences on query
-  - [ ] Convert RPM responses (no conversion needed, display only)
-  - [ ] Convert oil pressure responses (PSI/bar)
-  - [ ] Convert temperature responses (°F/°C)
-  - [ ] Convert fuel responses (gal/L)
-  - [ ] Convert battery responses (V - no conversion)
-  - [ ] Convert speed responses (knots+MPH/knots+km/h)
-  - [ ] Convert heading responses (degrees - no conversion)
-  - [ ] Convert boost responses (PSI/bar)
-- [ ] Integration Testing
-  - [ ] Test Settings toggle (changes take effect immediately)
-  - [ ] Test auto-default logic (all 7 region options)
-  - [ ] Test dashboard live updates
-  - [ ] Test onboarding wizard dropdowns
-  - [ ] Test voice responses in both units
-  - [ ] Test data export (includes unit metadata)
-- [ ] Accuracy Verification
-  - [ ] Temperature: 185°F = 85°C (±0.1°C)
-  - [ ] Pressure: 45 PSI = 3.10 bar (±0.01 bar)
-  - [ ] Speed: 10 knots = 18.52 km/h (±0.1 km/h)
-  - [ ] Fuel: 50 gal = 189.3 L (±0.1 L)
-  - [ ] Performance: < 1ms conversion time
-- [ ] User Acceptance Testing
+- [✅] Update Voice Assistant (`/opt/d3kos/services/ai/query_handler.py`)
+  - [✅] Load user preferences on query
+  - [✅] Convert RPM responses (no conversion needed, display only)
+  - [✅] Convert oil pressure responses (PSI/bar)
+  - [✅] Convert temperature responses (°F/°C)
+  - [✅] Convert fuel responses (gal/L)
+  - [✅] Convert battery responses (V - no conversion)
+  - [✅] Convert speed responses (knots+MPH/knots+km/h)
+  - [✅] Convert heading responses (degrees - no conversion)
+  - [✅] Convert boost responses (PSI/bar)
+- [✅] Integration Testing — 15/15 passing
+  - [✅] Test Settings toggle (changes take effect immediately)
+  - [✅] Test auto-default logic (all 7 region options)
+  - [✅] Test dashboard live updates
+  - [✅] Test onboarding wizard dropdowns
+  - [✅] Test voice responses in both units
+  - [ ] Test data export (includes unit metadata) — deferred
+- [✅] Accuracy Verification — 25/25 unit tests passing
+  - [✅] Temperature: 185°F = 85°C (±0.1°C)
+  - [✅] Pressure: 45 PSI = 3.10 bar (±0.01 bar)
+  - [✅] Speed: 10 knots = 18.52 km/h (±0.1 km/h)
+  - [✅] Fuel: 50 gal = 189.3 L (±0.1 L)
+  - [✅] Performance: < 1ms conversion time
+- [ ] User Acceptance Testing — deferred to beta
   - [ ] Test with 5 metric users
   - [ ] Test with 5 imperial users
   - [ ] Collect feedback and iterate
 
 ### Deployment
 
-- [ ] Git commit with detailed changes
-- [ ] Tag release as v0.9.2
-- [ ] Update CHANGELOG.md
-- [ ] Deploy to production Pi
-- [ ] Verify all features working on live system
-- [ ] Update documentation
+- [✅] Git commit — `e3ddbef`
+- [✅] Tag release as v0.9.2
+- [ ] Update CHANGELOG.md — pending
+- [✅] Deploy to production Pi
+- [✅] Verify all features working on live system
+- [✅] Update documentation — UNITS_API_REFERENCE.md, UNITS_FEATURE_README.md
 
 **Deliverable:** d3kOS v0.9.2 with full metric/imperial support
 
@@ -617,31 +650,30 @@
 
 ### Milestones
 
-- [ ] v0.9.2 Complete (Metric/Imperial)
-- [ ] v0.9.2 Complete (Multi-Camera System)
-- [ ] v0.9.2 Complete (Gemini API Integration)
-- [ ] v0.9.2 Complete (Remote Access & Camera Streaming)
-- [ ] v0.9.2 Complete (Multi-Language Support)
-- [ ] v0.9.2 Complete (Forward Watch Obstacle Avoidance)
-- [ ] v0.9.3 Complete (Community Features)
-- [ ] v0.9.4 Complete (Gemini AI)
-- [ ] v0.9.5 Complete (Mobile Apps)
-- [ ] v0.9.6 Complete (Remote Access)
+- [✅] v0.9.1 Complete (Voice AI Assistant)
+- [✅] v0.9.2 Complete (Metric/Imperial)
+- [ ] v0.9.3 Complete (Multi-Camera System) — ⚠️ BLOCKED: 3 cameras not purchased
+- [✅] v0.9.4 Complete (Gemini AI Integration)
+- [ ] v0.9.5 Complete (Mobile Apps + Cloud)
+- [ ] v0.9.6 Complete (Remote Access & Camera Streaming)
+- [ ] v0.9.6 Complete (Fleet Management)
 - [ ] v0.10.0 Complete (Predictive Maintenance)
-- [ ] v0.10.1 Complete (Fleet Management)
 - [ ] v0.11.0 Complete (Diagnostic Console)
 - [ ] v0.12.0 Complete (Autonomous Agents)
 - [ ] v0.12.1 Complete (AI Action Layer)
 - [ ] v0.13.0 Complete (Failure Intelligence)
 - [ ] v0.14.0 Complete (Community Features)
-- [ ] v0.15.0 Complete (Multi-Language)
-- [ ] v0.16.0 Complete (Security Audit)
+- [ ] v0.15.0 Complete (Multi-Language) — REQUIRED for v1.0
+- [ ] v0.16.0 Complete (Security Audit) — REQUIRED for v1.0
 - [ ] v1.0.0 LAUNCHED (Production Release)
 
 ### Critical Path
 
-- [ ] v0.9.2 (Metric/Imperial) — NEXT
-- [ ] v0.9.3 (4-Camera) — HIGH PRIORITY
+- [✅] v0.9.1 (Voice AI) — DONE
+- [✅] v0.9.2 (Metric/Imperial) — DONE
+- [✅] v0.9.4 (Gemini AI) — DONE
+- [ ] v0.9.3 (4-Camera) — BLOCKED on hardware purchase
+- [ ] Fix: voice rule overmatch ("speed" pattern) — SMALL, active bug
 - [ ] v0.15.0 (Multi-Language) — REQUIRED for v1.0
 - [ ] v0.16.0 (Security Audit) — REQUIRED for v1.0
 
@@ -676,6 +708,6 @@ All `[🔍]` items must be retested before considering a version complete. Add `
 
 ---
 
-**Last Updated:** March 1, 2026 | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 3, 2026 | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
