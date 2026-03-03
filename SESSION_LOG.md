@@ -2,6 +2,50 @@
 
 ---
 
+## Session 2026-03-03 (Part 4)
+**Goal:** Ollama executor improvements + build project RAG knowledge base
+
+**Completed:**
+- Fix 1 applied to v0.9.4 executor: accept `ACTION: AFTER/BEFORE` as aliases (v0.9.2 had this from Part 3)
+- Fix 2 applied to both executors: function parameters added to `declared_in_code` in `check_invented_vars()`
+  - Python: `def foo(self, param1, param2=default, *args)` → all params added to declared set
+  - JS: `function foo(a, b, c)` and arrow `(a, b) =>` → params added to declared set
+  - Resolves `isError` false-positive from v0.9.4 settings phase
+- Fix 3 applied to both executors: tightened FIND_LINE rules in prompt
+  - "Must not be a comment line (no //, #, <!--)" and "must not be a line containing only { or }"
+- `helm_os_context.md`: new AI Services section — ports 8097/8099/8107, endpoint table, `_query_gemini()` pattern, `ai_used` constraint
+- `gemini-proxy.py` docstring: `Port: 8099` → `Port: 8097`
+- `ingest.py`: extended to support `.py` and `.html` files (was .md/.txt/.pdf only)
+- `helm_os_ingest.py`: created with smart filtering — excludes ATMYBOAT/fish/training noise
+- RAG ingestion complete (nomic-embed-text via Ollama workstation):
+  - `helm_os_docs`: 1,079 chunks from 209 files (docs, specs, session history, architecture)
+  - `helm_os_source`: 54 chunks from 11 files (live Pi .py + .html source)
+- Committed `5522565`
+
+**Decisions:**
+- RAG split: `helm_os_docs` (corpus) vs `helm_os_source` (live code) — source is smaller and more targeted for code-context retrieval
+- Chunk size 500 words; individual chunks that exceed nomic-embed-text token limit emit a 400 error but rest of file still ingests — non-fatal, acceptable
+- Excluded from docs ingest: `ATMYBOAT_*`, `FISH_*`, `FORWARD_WATCH_TRAINING_*`, `WINDOWS_TRAINING_*` — unrelated to d3kOS Pi project
+- Claude memory stores stable facts (IPs, ports, conventions); RAG stores searchable project corpus — complementary, not redundant
+
+**Ollama:** 0 calls (infrastructure and tooling only)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (this session) | check console.anthropic.com → Usage → 2026-03-03 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| **Session total** | | **TBD** |
+
+**Pending:**
+- Wire RAG retrieval into `ollama_execute.py`: query `helm_os_source` before each phase, prepend top-3 chunks to prompt
+- Re-run `helm_os_ingest.py --collection source` after any Pi source file changes
+- Rule-based pattern overmatch: "speed" in diagnostic questions triggers speed rule instead of Gemini
+- v0.9.3 Multi-Camera System (blocked: 3 Reolink RLC-810A cameras not yet purchased)
+- MCP filesystem server: give Claude live Pi file access without manual copy step
+
+---
+
 ## Session 2026-03-03 (Part 3)
 **Goal:** Build and deploy Gemini API integration (v0.9.4) as first real test of improved Ollama workflow
 
