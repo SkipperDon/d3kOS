@@ -1,0 +1,84 @@
+```
+FIND_LINE:         self.signalk = SignalKClient() if SIGNALK_AVAILABLE else None
+ACTION: REPLACE
+CODE:
+        self.signalk = SignalKClient() if SIGNALK_AVAILABLE else None
+
+        # Initialize logging
+        import logging
+        self.logger = logging.getLogger(__name__)
+END_CODE
+```
+
+```
+FIND_LINE:     def load_skills(self):
+ACTION: AFTER
+CODE:
+    def _query_gemini(self, text: str, boat_status: dict = None) -> str | None:
+        """Query Gemini API proxy. Returns response text or None on failure."""
+        import requests
+        try:
+            payload = {'message': text}
+            if boat_status:
+                payload['context'] = boat_status
+            r = requests.post(
+                'http://localhost:8097/gemini/chat',
+                json=payload,
+                timeout=15
+            )
+            if r.status_code == 200:
+                data = r.json()
+                return data.get('response', '').strip()
+        except Exception as e:
+            self.logger.warning(f'Gemini query failed: {e}')
+        return None
+
+    def _query_openrouter(self, text: str) -> str | None:
+        """Fallback to OpenRouter. Returns response text or None on failure."""
+        # Existing OpenRouter code here (unchanged)
+        import requests
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.config.get("openrouter_api_key", "")}',
+                'Content-Type': 'application/json'
+            }
+            payload = {
+                "model": "openai/gpt-4-turbo",
+                "messages": [{"role": "user", "content": text}],
+                "temperature": 0.7,
+                "max_tokens": 1024
+            }
+            r = requests.post(
+                'https://openrouter.ai/api/v1/chat/completions',
+                headers=headers,
+                json=payload,
+                timeout=15
+            )
+            if r.status_code == 200:
+                data = r.json()
+                return data['choices'][0]['message']['content'].strip()
+        except Exception as e:
+            self.logger.warning(f'OpenRouter query failed: {e}')
+        return None
+
+END_CODE
+```
+
+```
+FIND_LINE:         # Try OpenRouter (primary online)
+ACTION: REPLACE
+CODE:
+        # Try Gemini first (faster, better)
+        response = self._query_gemini(query_text, boat_status)
+        if response:
+            return response
+
+        # Fallback to OpenRouter
+        response = self._query_openrouter(query_text)
+        if response:
+            return response
+
+        # Last resort: offline response
+        return self._offline_fallback(query_text)
+END_CODE
+```
