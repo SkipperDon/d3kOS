@@ -699,12 +699,30 @@ n        <!-- Simulator Settings -->
 
       <!-- Gemini AI Configuration Section -->
       <div class="settings-section" id="gemini-section">
-        <h2>AI Assistant — Gemini API</h2>
+        <h2>🤖 AI Assistant — Gemini API</h2>
+
+        <div class="setting-info" style="margin-bottom:16px;">
+          <p style="font-size:15px;margin-bottom:8px;"><strong>What is Gemini?</strong><br>
+          Google Gemini is an AI that gives Helm smarter, conversational answers to complex questions —
+          engine diagnostics, navigation advice, marine regulations, and more.</p>
+          <p style="font-size:15px;margin-bottom:10px;"><strong>How to get a free API key (2 minutes):</strong></p>
+          <ol style="font-size:14px;color:#ccc;margin-left:20px;line-height:2;">
+            <li>Open a browser and go to <strong style="color:#00CC00;">aistudio.google.com</strong></li>
+            <li>Sign in with your Google account</li>
+            <li>Click <strong>"Get API key"</strong> in the left sidebar</li>
+            <li>Click <strong>"Create API key"</strong></li>
+            <li>Copy the key — it starts with <strong style="font-family:monospace;">AIza...</strong></li>
+            <li>Paste it in the field below and click <strong>Save Configuration</strong></li>
+          </ol>
+          <p style="font-size:13px;color:#aaa;margin-top:8px;">
+            ✓ Free tier is sufficient &nbsp;|&nbsp; ✓ Key stays on your Pi, never sent to any other server &nbsp;|&nbsp; ✓ Works offline for engine/sensor queries
+          </p>
+        </div>
 
         <div class="setting-row">
           <div class="setting-label">
             <strong>Gemini API Key</strong>
-            <p class="setting-description">Get a free key at aistudio.google.com</p>
+            <p class="setting-description">Paste your key from aistudio.google.com</p>
           </div>
           <div class="setting-control" style="flex:1;">
             <div style="display:flex;gap:8px;">
