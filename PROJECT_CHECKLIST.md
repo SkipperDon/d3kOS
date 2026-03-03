@@ -341,7 +341,7 @@
 - [✅] Nginx proxy `/remote/` → `localhost:8111`
 - [✅] API key generated and stored in `api-keys.json`
 - [✅] `REMOTE_ACCESS_SETUP.md` with Tailscale + LAN + port-forward options
-- [ ] Tailscale install on Pi (requires user auth — see REMOTE_ACCESS_SETUP.md)
+- [✅] Tailscale install on Pi — connected, IP: `100.88.112.63` (networkdon89@ account)
 - [ ] Camera stream relay RTSP → HLS (blocked: cameras not purchased)
 - [ ] WebSocket real-time push (future — polling via /remote/status is sufficient for now)
 

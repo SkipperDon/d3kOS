@@ -65,7 +65,7 @@ sudo tailscale up
 ### Step 2 — Get the Pi's Tailscale IP
 
 ```bash
-sudo tailscale ip -4   # e.g. 100.64.0.1
+sudo tailscale ip -4   # e.g. 100.88.112.63
 ```
 
 ### Step 3 — Install Tailscale on your phone
@@ -77,7 +77,7 @@ sudo tailscale ip -4   # e.g. 100.64.0.1
 ### Step 4 — Access from anywhere
 
 ```
-http://100.64.x.x/remote/status
+http://100.88.112.63/remote/status
 ```
 (Replace with your actual Tailscale IP)
 
