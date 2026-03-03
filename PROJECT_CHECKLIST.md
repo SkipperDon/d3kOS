@@ -1,6 +1,6 @@
 # d3kOS Project Implementation Checklist
 
-**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.1.2 → Target: v1.0.0
+**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.4 → Target: v1.0.0
 
 ## 📋 LEGEND
 
@@ -15,9 +15,41 @@
 
 ---
 
+## Developer Infrastructure
+
+### Ollama Executor (`deployment/v0.9.x/scripts/ollama_execute.py`)
+
+- [✅] v2: enclosing-function context extraction, validation, auto-apply
+- [✅] `helm_os_context.md` injected into every prompt
+- [✅] Correction loop: flagged blocks sent back with targeted advice (1 retry)
+- [✅] Parallel execution: `--parallel N` flag
+- [✅] Fix 1: `ACTION: AFTER/BEFORE` aliases accepted (both executors)
+- [✅] Fix 2: function parameters recognised as declared in scope (both executors)
+- [✅] Fix 3: FIND_LINE prompt rules — no comment lines, no bare `{`/`}`
+- [ ] Wire RAG retrieval into executor: query `helm_os_source` before each phase
+
+### Project RAG Knowledge Base (`/home/boatiq/rag-stack/`)
+
+- [✅] `helm_os_docs` collection: 1,079 chunks — docs, specs, session history, architecture
+- [✅] `helm_os_source` collection: 54 chunks — live Pi `.py` + `.html` source files
+- [✅] `helm_os_ingest.py`: smart filtered ingestion (excludes ATMYBOAT/fish/training noise)
+- [✅] `ingest.py`: extended to support `.py` and `.html` files
+- [ ] Integrate RAG retrieval into Ollama executor prompts
+- [ ] Re-ingest `helm_os_source` after each Pi deployment (keeps code context current)
+
+### `helm_os_context.md` (`deployment/docs/`)
+
+- [✅] Units.js return types and variable names
+- [✅] Variable names for all Pi pages (dashboard, navigation, helm, weather, onboarding)
+- [✅] query_handler.py class structure and method signatures
+- [✅] AI services: ports 8097/8099/8107, endpoints, `_query_gemini()` pattern, `ai_used` constraint
+- [✅] FIND_LINE / ACTION / CODE format rules and example
+
+---
+
 ## v0.9.2 — Metric/Imperial Conversion System `[MEDIUM]`
 
-**Status:** [ ] Not Started | **Priority:** HIGH
+**Status:** [✅] Complete | **Shipped:** v0.9.2 (commit `e3ddbef`) | **Priority:** HIGH
 
 ### Foundation
 
@@ -242,18 +274,22 @@
 
 ---
 
-## v0.9.2 — Gemini API Integration `[SMALL]`
+## v0.9.4 — Gemini API Integration `[SMALL]`
 
-**Status:** [ ] Not Started | **Priority:** MEDIUM
+**Status:** [✅] Complete | **Shipped:** v0.9.4 (commit `02d2694`) | **Priority:** MEDIUM
 
 ### Tasks
 
-- [ ] Backend Gemini proxy service (Port 8099)
-- [ ] Onboarding wizard integration (Steps 17.x)
-- [ ] Settings UI updates
-- [ ] Testing and beta rollout
+- [✅] Backend Gemini proxy service (Port 8097 — `d3kos-gemini-proxy.service`)
+- [✅] Settings UI: API key input, model selector, Save + Test Connection
+- [✅] `query_handler.py`: `_query_gemini()` method + routing (Gemini → RAG fallback)
+- [✅] `GEMINI_SETUP.md` setup guide with step-by-step API key instructions
+- [✅] End-to-end tested: "what causes white smoke from marine exhaust" → Gemini 8s ✓
+- [ ] Onboarding wizard integration (Steps 17.x) — deferred to future version
 
-**Deliverable:** d3kOS v0.9.4 with conversational AI
+**Note:** Port 8099 was occupied by `issue_detector.py` — Gemini proxy uses port 8097.
+
+**Deliverable:** d3kOS v0.9.4 with conversational AI via Gemini 2.5 Flash
 
 ---
 
