@@ -1,147 +1,32 @@
-FIND_LINE:   <title>d3kOS - Settings</title>
-END_LINE: 
-ACTION: REPLACE
-CODE:
-  <title>d3kOS - Settings</title>
-  <style>
-    /* === Design System - Consistent with Main Menu and Wizard === */
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #000;
-      color: #fff;
-      line-height: 1.6;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 32px;
-      font-weight: 700;
-      color: #00CC00;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .setting-group {
-      background-color: rgba(30, 30, 30, 0.8);
-      border: 2px solid #00CC00;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-
-    .setting-group h2 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #00CC00;
-      margin-bottom: 15px;
-    }
-
-    .setting-card {
-      background-color: rgba(40, 40, 40, 0.8);
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 12px;
-    }
-
-    .setting-card h3 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #00CC00;
-      margin-bottom: 10px;
-    }
-
-    .setting-card p {
-      font-size: 16px;
-      color: rgba(255, 255, 255, 0.8);
-      margin-bottom: 8px;
-    }
-
-    .setting-card button {
-      padding: 10px 20px;
-      background-color: #00CC00;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .setting-card button:hover {
-      background-color: #00FF00;
-    }
-
-    .camera-cards-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    .camera-card {
-      background-color: rgba(40, 40, 40, 0.8);
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 15px;
-    }
-
-    .camera-card h3 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #00CC00;
-      margin-bottom: 10px;
-    }
-
-    .camera-card p {
-      font-size: 16px;
-      color: rgba(255, 255, 255, 0.8);
-      margin-bottom: 8px;
-    }
-
-    .camera-card button {
-      padding: 10px 20px;
-      background-color: #00CC00;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .camera-card button:hover {
-      background-color: #00FF00;
-    }
-
-    .status-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-
-    .status-connected {
-      background-color: #00CC00;
-    }
-
-    .status-disconnected {
-      background-color: #FF0000;
-    }
-  </style>
-END_CODE
+function updateCameraStatus() {
+  fetch('/camera/list')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var container = document.getElementById('camera-cards-container');
+      if (!data.cameras || data.cameras.length === 0) {
+        container.innerHTML = '<div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">No cameras configured</div>';
+        return;
+      }
+      var html = '';
+      data.cameras.forEach(function(cam) {
+        var connColor = cam.connected ? '#00CC00' : '#FF0000';
+        var connText  = cam.connected ? '✓ Connected' : '✗ Offline';
+        var activeLabel = cam.active ? ' <span style="color:#FFD700;font-size:18px;">(Active)</span>' : '';
+        var switchBtn = cam.active ? '' :
+          '<button onclick="switchCamera(\'' + cam.id + '\')" style="margin-top:12px;padding:10px 20px;background:#00CC00;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;">Set Active</button>';
+        html += '<div class="setting-card" style="margin-bottom:12px;">' +
+          '<div style="font-size:20px;font-weight:700;color:#00CC00;margin-bottom:8px;">' + cam.name + activeLabel + '</div>' +
+          '<div style="font-size:17px;color:rgba(255,255,255,0.7);">Model: ' + (cam.model || 'Reolink') + '</div>' +
+          '<div style="font-size:17px;color:rgba(255,255,255,0.7);">IP: ' + cam.ip + '</div>' +
+          '<div style="font-size:17px;color:' + connColor + ';">' + connText + '</div>' +
+          switchBtn +
+          '</div>';
+      });
+      container.innerHTML = html;
+    })
+    .catch(function(err) {
+      console.error('Failed to get camera list:', err);
+      document.getElementById('camera-cards-container').innerHTML =
+        '<div class="setting-card" style="color:#FF0000;padding:20px;">Camera service unavailable</div>';
+    });
+}

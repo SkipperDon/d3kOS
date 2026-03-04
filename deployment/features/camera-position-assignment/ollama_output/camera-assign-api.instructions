@@ -1,40 +1,54 @@
-FIND_LINE: @app.route('/camera/switch/<id>', methods=['POST'])
-ACTION: REPLACE
-CODE:
-@app.route('/camera/switch/<id>', methods=['POST'])
-def switch_camera(id):
-    global active_id
-    if id not in cameras:
-        return jsonify({'error': 'Camera not found'}), 404
-    active_id = id
-    # Update config file
-    with open(CAMERAS_CONFIG, 'r') as f:
-        cfg = json.load(f)
-    cfg['active_camera'] = id
-    with open(CAMERAS_CONFIG, 'w') as f:
-        json.dump(cfg, f, indent=2)
-    return jsonify({'status': 'switched', 'camera_id': id})
+@app.route('/camera/grid', methods=['GET'])
+def get_camera_grid():
+    """Return a side-by-side JPEG of all cameras."""
+    if not cameras:
+        return jsonify({'error': 'No cameras configured'}), 400
 
-@app.route('/camera/position/<id>', methods=['POST'])
-def set_camera_position(id):
-    if id not in cameras:
-        return jsonify({'error': 'Camera not found'}), 404
-    data = request.get_json()
-    position = data.get('position')
-    if position not in ['top', 'bottom', 'left', 'right']:
-        return jsonify({'error': 'Invalid position'}), 400
+    # Get frames from all cameras
+    frames = []
+    for cam_id in cameras.keys():
+        state = cam_state.get(cam_id)
+        if not state or not state['frame'] is None:
+            # If no frame available, use a placeholder
+            frames.append(np.zeros((240, 320, 3), dtype=np.uint8))
+        else:
+            with state['lock']:
+                frame = state['frame'].copy()
+            frames.append(frame)
+
+    # Resize all frames to same size for grid
+    h, w = frames[0].shape[:2]
+    if len(frames) == 1:
+        # Single camera: return as-is
+        _, buf = cv2.imencode('.jpg', frames[0])
+        return send_file(io.BytesIO(buf), mimetype='image/jpeg')
     
-    # Update camera config
-    with open(CAMERAS_CONFIG, 'r') as f:
-        cfg = json.load(f)
-    
-    for cam in cfg['cameras']:
-        if cam['id'] == id:
-            cam['position'] = position
-            break
-    
-    with open(CAMERAS_CONFIG, 'w') as f:
-        json.dump(cfg, f, indent=2)
-    
-    return jsonify({'status': 'position updated', 'camera_id': id, 'position': position})
-END_CODE
+    # Multi-camera grid layout (2x2 or 1xN)
+    max_h, max_w = h, w
+    if len(frames) > 2:
+        # Use 2 rows for more than 2 cameras
+        grid_h = max_h * 2
+        grid_w = max_w * (len(frames) // 2 + (1 if len(frames) % 2 else 0))
+    else:
+        grid_h = max_h
+        grid_w = max_w * len(frames)
+
+    # Create empty grid image
+    grid = np.zeros((grid_h, grid_w, 3), dtype=np.uint8)
+
+    # Fill in frames
+    for i, frame in enumerate(frames):
+        row = i // (grid_w // max_w)
+        col = i % (grid_w // max_w)
+        y_start = row * max_h
+        x_start = col * max_w
+        try:
+            resized = cv2.resize(frame, (max_w, max_h))
+            grid[y_start:y_start+max_h, x_start:x_start+max_w] = resized
+        except Exception as e:
+            print(f"Error resizing frame {i}: {e}")
+            # Fill with black if error
+            grid[y_start:y_start+max_h, x_start:x_start+max_w] = 0
+
+    _, buf = cv2.imencode('.jpg', grid)
+    return send_file(io.BytesIO(buf), mimetype='image/jpeg')

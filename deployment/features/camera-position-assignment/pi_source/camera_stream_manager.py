@@ -199,51 +199,6 @@ def get_frame():
     return send_file(io.BytesIO(data), mimetype='image/jpeg')
 
 
-@app.route('/camera/switch/<id>', methods=['POST'])
-def switch_camera(id):
-    global active_id
-    if id not in cameras:
-        return jsonify({'error': 'Camera not found'}), 404
-    active_id = id
-    # Update config file
-    with open(CAMERAS_CONFIG, 'r') as f:
-        cfg = json.load(f)
-    cfg['active_camera'] = id
-    with open(CAMERAS_CONFIG, 'w') as f:
-        json.dump(cfg, f, indent=2)
-    return jsonify({'status': 'switched', 'camera_id': id})
-
-
-@app.route('/camera/position/<id>', methods=['POST'])
-def set_camera_position(id):
-    if id not in cameras:
-        return jsonify({'error': 'Camera not found'}), 404
-    data = request.get_json()
-    position = data.get('position')
-    if position not in ['top', 'bottom', 'left', 'right']:
-        return jsonify({'error': 'Invalid position'}), 400
-    
-    # Update camera config
-    with open(CAMERAS_CONFIG, 'r') as f:
-        cfg = json.load(f)
-    
-    for cam in cfg['cameras']:
-        if cam['id'] == id:
-            cam['position'] = position
-            break
-    
-    with open(CAMERAS_CONFIG, 'w') as f:
-        json.dump(cfg, f, indent=2)
-    
-    return jsonify({'status': 'position updated', 'camera_id': id, 'position': position})
-def get_frame():
-    """Return JPEG from active camera."""
-    data = _frame_or_placeholder(active_id)
-    if data is None:
-        return jsonify({'error': 'No frame available'}), 503
-    return send_file(io.BytesIO(data), mimetype='image/jpeg')
-
-
 @app.route('/camera/record/start', methods=['POST'])
 def start_recording():
     global recording_instance, recording_player, recording_active
