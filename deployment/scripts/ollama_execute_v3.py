@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 OLLAMA_URL       = "http://192.168.1.36:11434/api/generate"
 OLLAMA_EMBED_URL = "http://192.168.1.36:11434/api/embed"
-MODEL            = "qwen3-coder:30b"
+MODEL            = "deepseek-coder-v2:16b"
 TIMEOUT          = 300
 
 RAG_CHROMA_PATH  = str(pathlib.Path.home() / "rag-stack/chroma_data")
