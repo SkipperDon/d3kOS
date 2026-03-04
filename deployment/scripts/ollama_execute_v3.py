@@ -24,6 +24,10 @@ OLLAMA_EMBED_URL = "http://192.168.1.36:11434/api/embed"
 MODEL            = "qwen3-coder:30b"
 TIMEOUT          = 300
 
+VERIFY_URL       = "http://192.168.1.103:11436/verify"   # TrueNAS independent verifier
+VERIFY_TIMEOUT   = 120                                    # 1.5b model, short prompts ~60-90s
+VERIFY_ENABLED   = True                                   # set False to bypass verifier
+
 RAG_CHROMA_PATH  = str(pathlib.Path.home() / "rag-stack/chroma_data")
 RAG_VENV_SITE    = str(pathlib.Path.home() / "rag-stack/.venv/lib/python3.12/site-packages")
 CONTEXT_FILE     = pathlib.Path(__file__).parent.parent / "docs/helm_os_context.md"
@@ -360,6 +364,36 @@ END_CODE"""
     return corrected[0] if corrected else None
 
 
+# ── TrueNAS Verify call ───────────────────────────────────────────────────────
+
+def call_verify(code, instruction, context, filename, phase_name=''):
+    """
+    POST generated code to TrueNAS verify agent (qwen2.5-coder:1.5b).
+    Returns dict with keys: pass (bool|None), score (int), issue (str), suggestion (str).
+    Returns None if verifier is disabled or unreachable — caller must treat as non-blocking.
+    """
+    if not VERIFY_ENABLED:
+        return None
+    payload = json.dumps({
+        'code':        code,
+        'instruction': instruction,
+        'context':     context,
+        'filename':    filename,
+        'phase_name':  phase_name,
+    }).encode()
+    req = urllib.request.Request(VERIFY_URL, data=payload,
+                                  headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=VERIFY_TIMEOUT) as r:
+            result = json.loads(r.read().decode())
+        verdict = 'PASS' if result.get('pass') else ('FAIL' if result.get('pass') is False else 'ERROR')
+        tprint(f"  [Verify] {verdict} score={result.get('score','?')} issue={result.get('issue','')}")
+        return result
+    except Exception as e:
+        tprint(f"  [Verify] unreachable: {e} — continuing without verify")
+        return None
+
+
 # ── Ollama call ───────────────────────────────────────────────────────────────
 
 def call_ollama(prompt, label=''):
@@ -498,6 +532,19 @@ Do not wrap in markdown fences.
         source_text = source_path.read_text()
         [b] = validate([b], source_text, ft)
 
+        # ── TrueNAS independent verify ─────────────────────────────────────────
+        if b['valid'] and not skip_ollama:
+            vr = call_verify(code=b['code'],
+                             instruction=spec_section_text[:800],
+                             context=ctx[:800],
+                             filename=src_file,
+                             phase_name=name)
+            if vr and vr.get('pass') is False:
+                b['valid'] = False
+                issue_msg = f"Verify: {vr.get('issue','failed')} (score={vr.get('score',0)})"
+                b['issues'].append(issue_msg)
+                tprint(f"  [Verify] FAIL → adding to correction: {issue_msg}")
+
         if not b['valid'] and not skip_ollama:
             tprint(f"  [CORRECTION] {b['issues']}")
             corr_prompt = f"""Your code for {src_file} failed validation.
@@ -603,6 +650,21 @@ END_CODE
     blocks = validate(blocks, source_text, ft)
 
     if not skip_ollama:
+        # ── TrueNAS verify pass for each valid block ───────────────────────────
+        spec_text_for_verify = spec_path.read_text() if spec_path.exists() else ''
+        for b in blocks:
+            if b['valid']:
+                vr = call_verify(code=b['code'],
+                                 instruction=spec_text_for_verify[:800],
+                                 context=ctx[:800],
+                                 filename=src_file,
+                                 phase_name=name)
+                if vr and vr.get('pass') is False:
+                    b['valid'] = False
+                    issue_msg = f"Verify: {vr.get('issue','failed')} (score={vr.get('score',0)})"
+                    b['issues'].append(issue_msg)
+                    tprint(f"  [Verify] FAIL → adding to correction: {issue_msg}")
+
         for b in blocks:
             if not b['valid'] and not b['correction_attempted']:
                 tprint(f"  [CORRECTION] {b['issues']}")
@@ -649,7 +711,19 @@ def print_report():
         print(f"  {c['label']:35s} {c['prompt_chars']:6d}p → {c['response_chars']:6d}r  {c['elapsed_s']:.1f}s")
     print(f"  {'TOTAL':35s} {sum(c['prompt_chars'] for c in calls):6d}p → "
           f"{sum(c['response_chars'] for c in calls):6d}r  {sum(c['elapsed_s'] for c in calls):.1f}s")
-    print(f"\n  Ollama (qwen3-coder:30b @ 192.168.1.36): $0.00")
+    print(f"\n  Ollama generator  (qwen3-coder:30b  @ 192.168.1.36 workstation): $0.00")
+    print(f"  Ollama verifier   (qwen2.5-coder:1.5b @ 192.168.1.103 TrueNAS): $0.00")
+    # Fetch verify stats from TrueNAS
+    try:
+        with urllib.request.urlopen(
+            urllib.request.Request("http://192.168.1.103:11436/stats"), timeout=5
+        ) as r:
+            vs = json.loads(r.read().decode())
+        print(f"  Verify stats: {vs['total_calls']} calls | "
+              f"{vs['pass']} pass / {vs['fail']} fail / {vs['error']} error "
+              f"({vs['pass_rate_pct']}% pass rate)")
+    except Exception:
+        print(f"  Verify stats: unavailable (TrueNAS verify agent offline)")
     print(f"  Claude API: console.anthropic.com → Usage → today")
 
 
