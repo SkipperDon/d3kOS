@@ -177,7 +177,7 @@
 
 ## v0.9.2 — Multi-Camera System `[LARGE]`
 
-**Status:** [🔄] In Progress — core multi-camera backend + UI deployed | **Priority:** HIGH
+**Status:** [✅] Core complete — both cameras live, nginx fixed, fish detector running | **Priority:** HIGH
 
 **Hardware:** 2 cameras active, 2 more planned for later:
 - Camera 1 (bow, 10.42.0.100) — connected, live
@@ -195,7 +195,6 @@
   - [ ] Restart NetworkManager
 - [🔄] Test camera connectivity
   - [✅] Bow camera connects (10.42.0.100, RTSP working)
-  - [✅] Bow camera connects (10.42.0.100, RTSP working)
   - [✅] Stern RLC-820A (10.42.0.63) — RTSP connected (`d3kos2026$`, stored percent-encoded)
 
 ### Multi-Camera Backend API
@@ -207,7 +206,7 @@
   - [✅] GET `/camera/grid` — side-by-side JPEG of all cameras
   - [✅] GET `/camera/frame/<id>` — frame from specific camera
 - [✅] Backwards-compatible endpoints: `/camera/status`, `/camera/frame`, `/camera/record/*`, `/camera/capture`
-- [✅] All endpoints tested with curl — bow live, stern returns offline placeholder
+- [✅] All endpoints tested with curl — both cameras live
 - [ ] 24-hour stability test (once both cameras connected)
 
 ### UI Implementation
@@ -257,8 +256,8 @@
   - [✅] Camera 2 — Reolink RLC-820A (10.42.0.63) — on network
   - [✅] RLC-820A password confirmed (`d3kos2026$`), `cameras.json` updated, service restarted
   - [ ] Decide on mounting location for RLC-820A (stern confirmed in registry — verify physical mount)
-  - [ ] Verify both cameras accessible via RTSP once password set
-- [✅] Deployment — core deployed, commit `be236c5`
+  - [✅] Both cameras verified accessible via RTSP
+- [✅] Deployment — core deployed, commits `be236c5`, `9478f1d`
   - [✅] `cameras.json` → `/opt/d3kos/config/`
   - [✅] `camera_stream_manager.py` → `/opt/d3kos/services/marine-vision/`
   - [✅] `marine-vision.html` → `/var/www/html/`
@@ -269,7 +268,11 @@
   - [ ] Write quick start guide
   - [ ] Train user on camera switching and grid view
 
-**Deliverable:** d3kOS v0.9.3 with 4-camera support and Forward Watch obstacle avoidance
+**Deliverable:** d3kOS v0.9.2 — 2-camera system live (bow + stern). Cameras 3 & 4 deferred — no code changes needed when added, just update `cameras.json`.
+
+**Also fixed this session:**
+- [✅] nginx: all 18 service proxies restored (wiped during Part 5 nginx corruption fix)
+- [✅] Fish detector: restarted after dependency failure (camera stream was down Feb 28) — YOLOv8n + 483 species active
 
 ---
 
@@ -665,7 +668,7 @@
 - [✅] v0.9.1 (Voice AI) — DONE
 - [✅] v0.9.2 (Metric/Imperial) — DONE
 - [✅] v0.9.4 (Gemini AI) — DONE
-- [🔄] v0.9.2 (Multi-Camera) — backend + UI deployed; stern RTSP blocked on password
+- [✅] v0.9.2 (Multi-Camera) — both cameras live, nginx fixed, fish detector running
 - [✅] Fix: voice rule overmatch ("speed" pattern) — FIXED commit `680a795`
 - [ ] v0.15.0 (Multi-Language) — REQUIRED for v1.0
 - [ ] v0.16.0 (Security Audit) — REQUIRED for v1.0
@@ -701,6 +704,6 @@ All `[🔍]` items must be retested before considering a version complete. Add `
 
 ---
 
-**Last Updated:** March 3, 2026 (Part 5) | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 3, 2026 (Part 6) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*

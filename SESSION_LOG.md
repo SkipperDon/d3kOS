@@ -2,6 +2,49 @@
 
 ---
 
+## Session 2026-03-03 (Part 6)
+**Goal:** Build v0.9.2 Multi-Camera System + fix nginx + fix fish detector
+
+**Completed:**
+- v0.9.2 Multi-Camera System — full implementation deployed:
+  - `cameras.json` registry at `/opt/d3kos/config/` — bow (10.42.0.100) + stern RLC-820A (10.42.0.63)
+  - `camera_stream_manager.py` rewritten — per-camera frame-grabber threads, graceful offline handling, all original endpoints backwards-compatible
+  - New endpoints: `/camera/list`, `/camera/frame/<id>`, `/camera/switch/<id>`, `/camera/grid`
+  - `marine-vision.html` updated — camera selector buttons, Grid View toggle, all-cameras status cards
+  - Stern RLC-820A password: `d3kos2026$` — had to URL-encode as `%24` (RTSP URI parser treats `$@` as shell variable, dropping the `@`)
+  - Both cameras live: bow frame 48KB, stern frame confirmed streaming
+  - Commits: `be236c5`, `9478f1d`
+- Camera count decision: stay at 2 for now (bow + stern), add cameras 3 & 4 later — no code changes needed, just add to `cameras.json`
+- nginx: restored all 18 service proxy location blocks (commit `52ceee0`)
+  - Root cause: Part 5 nginx corruption fix restored a backup that only had `/remote/` — all other proxies were silently lost
+  - Every API call from every page was returning 404 from nginx
+  - Added proxies for: `/ai/` `/upload/` `/history/` `/manuals/` `/camera/` `/detect/` `/notify/` `/export/` `/license/` `/tier/` `/simulator/` `/healing/` `/network/` `/api/preferences` `/api/timezone` `/api/backup/` `/api/boatlog/` `/gemini/` `/remote/`
+  - `/network/` uses trailing-slash proxy_pass to strip prefix (service routes at `/status`, `/wifi/*`, `/hotspot/*`)
+- Fish detector: restarted manually — had been dead since Feb 28 due to dependency failure (camera stream was down when boot ran). Now active: YOLOv8n + 483-species EfficientNet classifier
+
+**Decisions:**
+- `$` in RTSP password must be percent-encoded as `%24` in URL — libav RTSP parser interprets `$@` as a variable substitution
+- `sites-enabled/default` on this Pi is a flat file copy, not a symlink to `sites-available/` — must write both or write directly to sites-enabled
+- Camera 3 & 4 deferred to future purchase — system designed to accommodate any number, zero code changes required
+- nginx proxy for `/network/` strips prefix (trailing `/` in proxy_pass) — network-api.py routes at `/status` not `/network/status`
+
+**Ollama:** 0 calls (all work done directly)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (this session) | check console.anthropic.com → Usage → 2026-03-03 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| **Session total** | | **TBD** |
+
+**Pending:**
+- DHCP reservations for camera IPs (dnsmasq — cameras currently on dynamic IPs, should be reserved)
+- 24-hour stability test with both cameras streaming
+- Physical mount decision for stern RLC-820A
+- Re-ingest `helm_os_source` RAG collection (camera_stream_manager.py changed significantly)
+
+---
+
 ## Session 2026-03-03 (Part 5)
 **Goal:** Fix voice rule overmatch + build AI Action Layer + Remote Access API + Tailscale
 
