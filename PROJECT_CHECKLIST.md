@@ -194,8 +194,8 @@
   - [ ] Restart NetworkManager
 - [🔄] Test camera connectivity
   - [✅] Bow camera connects (10.42.0.100, RTSP working)
-  - [⚠️] Stern RLC-820A on network — RTSP 401 Unauthorized (password unknown, set via `http://10.42.0.63`)
-  - [ ] Once stern password set: update `rtsp_url` in `cameras.json`, restart service
+  - [✅] Bow camera connects (10.42.0.100, RTSP working)
+  - [✅] Stern RLC-820A (10.42.0.63) — RTSP connected (`d3kos2026$`, stored percent-encoded)
 
 ### Multi-Camera Backend API
 
@@ -254,7 +254,7 @@
 - [ ] Hardware setup
   - [✅] Camera 1 — Bow camera (10.42.0.100) — on network, RTSP working
   - [✅] Camera 2 — Reolink RLC-820A (10.42.0.63) — on network
-  - [⚠️] Set RLC-820A admin password via `http://10.42.0.63`, update `cameras.json`, restart service
+  - [✅] RLC-820A password confirmed (`d3kos2026$`), `cameras.json` updated, service restarted
   - [ ] Decide on mounting location for RLC-820A (stern confirmed in registry — verify physical mount)
   - [ ] Verify both cameras accessible via RTSP once password set
 - [✅] Deployment — core deployed, commit `be236c5`
@@ -262,7 +262,7 @@
   - [✅] `camera_stream_manager.py` → `/opt/d3kos/services/marine-vision/`
   - [✅] `marine-vision.html` → `/var/www/html/`
   - [✅] Service restarted, bow camera live
-  - [ ] Final deployment after stern RTSP fixed
+  - [✅] Both cameras live — bow (10.42.0.100) + stern RLC-820A (10.42.0.63)
 - [ ] User training
   - [ ] Create video tutorial
   - [ ] Write quick start guide
@@ -644,7 +644,7 @@
 
 - [✅] v0.9.1 Complete (Voice AI Assistant)
 - [✅] v0.9.2 Complete (Metric/Imperial)
-- [🔄] v0.9.2 In Progress (Multi-Camera System) — backend + UI deployed, stern RTSP password needed
+- [🔄] v0.9.2 In Progress (Multi-Camera System) — both cameras live, pending DHCP reservations + 24h stability test
 - [✅] v0.9.4 Complete (Gemini AI Integration)
 - [✅] v0.9.5 Complete (AI Action Layer + Remote Access API + Tailscale)
 - [ ] v0.9.6 Complete (Remote Access & Camera Streaming) — cameras not purchased
