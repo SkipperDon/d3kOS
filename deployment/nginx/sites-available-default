@@ -1,0 +1,200 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html index.htm;
+    server_name _;
+
+    # Static files
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # ── AI / Voice ────────────────────────────────────────────────────────────
+    # AI query API (port 8080)
+    location /ai/ {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 60s;
+    }
+
+    # Upload API (port 8081)
+    location /upload/ {
+        proxy_pass http://localhost:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 60s;
+        client_max_body_size 50M;
+    }
+
+    # History API (port 8082)
+    location /history/ {
+        proxy_pass http://localhost:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # Manuals API (port 8083)
+    location /manuals/ {
+        proxy_pass http://localhost:8083;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # Gemini proxy (port 8097)
+    location /gemini/ {
+        proxy_pass http://localhost:8097;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 60s;
+    }
+
+    # ── Marine Vision ─────────────────────────────────────────────────────────
+    # Camera stream manager (port 8084)
+    location /camera/ {
+        proxy_pass http://localhost:8084;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # Fish detector (port 8086 — may be inactive)
+    location /detect/ {
+        proxy_pass http://localhost:8086;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # Notification manager (port 8088)
+    location /notify/ {
+        proxy_pass http://localhost:8088;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # ── System / Config ───────────────────────────────────────────────────────
+    # User Preferences API (port 8107)
+    location /api/preferences {
+        proxy_pass http://localhost:8107;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # Timezone API (port 8098)
+    location /api/timezone {
+        proxy_pass http://localhost:8098;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # Backup API (port 8100)
+    location /api/backup/ {
+        proxy_pass http://localhost:8100;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # Boatlog export API (port 8095)
+    location /api/boatlog/ {
+        proxy_pass http://localhost:8095;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # Network management API (port 8101) — routes at /, so strip /network prefix
+    location /network/ {
+        proxy_pass http://localhost:8101/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # ── Export ────────────────────────────────────────────────────────────────
+    # Boatlog raw export (port 8090, localhost only) — exact match first
+    location = /export/boatlog {
+        proxy_pass http://localhost:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # Export manager: generate, status, queue (port 8094, localhost only)
+    location /export/ {
+        proxy_pass http://localhost:8094;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 60s;
+    }
+
+    # ── License / Tier / Simulator ────────────────────────────────────────────
+    # License API (port 8091)
+    location /license/ {
+        proxy_pass http://localhost:8091;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # Tier API (port 8093, localhost only)
+    location /tier/ {
+        proxy_pass http://localhost:8093;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # Simulator API (port 8096)
+    location /simulator/ {
+        proxy_pass http://localhost:8096;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 10s;
+    }
+
+    # Self-healing / Issue detector (port 8099, localhost only)
+    location /healing/ {
+        proxy_pass http://localhost:8099;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 30s;
+    }
+
+    # ── Remote Status API ─────────────────────────────────────────────────────
+    location /remote/ {
+        proxy_pass http://localhost:8111/remote/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-API-Key $http_x_api_key;
+        proxy_read_timeout 30s;
+    }
+}
