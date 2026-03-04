@@ -14,7 +14,7 @@
       "name": "Stern Camera",
       "location": "Stern",
       "ip": "10.42.0.63",
-      "rtsp_url": "rtsp://admin:d3kos2026@10.42.0.63:554/h264Preview_01_sub",
+      "rtsp_url": "rtsp://admin:d3kos2026%24@10.42.0.63:554/h264Preview_01_sub",
       "model": "Reolink RLC-820A",
       "detection_enabled": false
     }
