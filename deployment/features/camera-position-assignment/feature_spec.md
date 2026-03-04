@@ -1,6 +1,15 @@
 # Feature: Camera Position Assignment
 # Files: camera_stream_manager.py, settings.html, marine-vision.html
 
+## OLLAMA SELF-CHECK RULES (apply to every phase)
+
+After writing your CODE block, do these checks before submitting:
+1. Copy your FIND_LINE. Search for it verbatim in the CURRENT FILE CONTEXT above. If it is not there exactly, rewrite FIND_LINE with a line that IS there.
+2. If ACTION is REPLACE, confirm the old code you are replacing exists in the file. If it does not, you have the wrong anchor — find the correct one.
+3. If ACTION is INSERT_AFTER, confirm the line you insert after exists in the file.
+4. Do not invent variable names, function names, or endpoints not shown in the spec or file context.
+5. Re-read your CODE and confirm it matches exactly what the spec asks for — no extra features, no renamed variables.
+
 ## Problem
 
 When a user physically mounts multiple cameras on the boat, the system discovers
@@ -91,22 +100,22 @@ what it returns (it already passes through all fields from cameras.json).
 ## PHASE 1: ADD /camera/assign ENDPOINT — camera-assign-api
 
 **File:** `camera_stream_manager.py`
-**Action:** `INSERT_AFTER`
-**FIND_LINE:** `@app.route('/camera/switch/<cam_id>', methods=['POST'])`
+**Action:** `INSERT_BEFORE`
+**FIND_LINE:** `@app.route('/camera/grid', methods=['GET'])`
 
-Insert a new Flask route immediately after the `camera/switch` route's closing `}`:
+Insert a new Flask route immediately before the `/camera/grid` route:
 
 ```python
 @app.route('/camera/assign', methods=['POST'])
 def assign_camera_position():
-    global cameras_config
     data = request.get_json()
     cam_id = data.get('camera_id')
     position = data.get('position')
     valid_positions = ['bow', 'stern', 'port', 'starboard', 'unassigned']
     if position not in valid_positions:
         return jsonify({'ok': False, 'error': 'invalid position'}), 400
-    config = load_cameras_config()
+    with open(CAMERAS_CONFIG) as f:
+        config = json.load(f)
     found = False
     for cam in config['cameras']:
         if cam['id'] == cam_id:
@@ -118,23 +127,21 @@ def assign_camera_position():
     for cam in config['cameras']:
         if cam['id'] == cam_id:
             cam['position'] = position
-    with open(CAMERAS_CONFIG_PATH, 'w') as f:
-        import json
+    with open(CAMERAS_CONFIG, 'w') as f:
         json.dump(config, f, indent=2)
-    cameras_config = config
     return jsonify({'ok': True, 'camera_id': cam_id, 'position': position})
+
 ```
 
-**Variables already in scope:**
-- `cameras_config` — global dict loaded from cameras.json
-- `load_cameras_config()` — function that reads cameras.json from disk
-- `CAMERAS_CONFIG_PATH` — path constant to cameras.json
+**Variables already in scope (exact names from the file):**
+- `CAMERAS_CONFIG` — path constant `'/opt/d3kos/config/cameras.json'`
+- `json` — already imported at top of file
 - `request`, `jsonify` — already imported (Flask)
 
 **Do NOT:**
-- Add new imports at the top of the file (json is stdlib, import inline is fine)
+- Add any new imports
 - Modify any other route
-- Change the cameras_config loading logic anywhere else
+- Add a global statement — none is needed
 
 ---
 
@@ -143,6 +150,9 @@ def assign_camera_position():
 **File:** `settings.html`
 **Action:** `REPLACE`
 **FIND_LINE:** `    // Camera Management Functions`
+
+> **MANDATORY:** Your FIND_LINE output MUST be exactly: `    // Camera Management Functions`
+> Do not use any other line. This line is in the CURRENT FILE CONTEXT. Do not use `<link>` tags, CSS, or any HTML — this phase modifies JavaScript only.
 
 Replace the entire Camera Management Functions block (from `// Camera Management
 Functions` through the closing `}` of `switchCamera`) with:
@@ -240,52 +250,64 @@ Functions` through the closing `}` of `switchCamera`) with:
 
 **File:** `marine-vision.html`
 **Action:** `REPLACE`
-**FIND_LINE:** `    function loadCameraList() {`
+**FIND_LINE:** `    function renderSelector(cams, activeId) {`
 
-Replace the `loadCameraList()` function body only (from `function loadCameraList() {`
-through its closing `}`) with:
+> **MANDATORY:** Your FIND_LINE output MUST be exactly: `    function renderSelector(cams, activeId) {`
+> Do not use `.catch`, `.then`, or any other line. Replace the entire `renderSelector` function from its opening `{` to its closing `}`.
+
+Replace the entire `renderSelector` function (from `function renderSelector(cams, activeId) {`
+through its closing `}`) with a version that shows direction labels (Bow/Stern/Port/Starboard)
+instead of camera names. The button label should come from `cam.position` if set,
+falling back to `cam.name` if position is missing or unassigned.
 
 ```javascript
-    function loadCameraList() {
-      fetch('/camera/list')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          var btnContainer = document.getElementById('camera-selector-btns');
-          if (!btnContainer || !data.cameras) return;
-          var positionOrder = ['bow', 'stern', 'port', 'starboard'];
-          var html = '';
-          positionOrder.forEach(function(pos) {
-            var cam = data.cameras.find(function(c) {
-              return (c.position || c.id) === pos;
-            });
-            if (!cam) return;
-            var label = pos.charAt(0).toUpperCase() + pos.slice(1);
-            var cls = cam.active ? 'cam-btn active' : 'cam-btn';
-            html += '<button class="' + cls + '" onclick="switchCamera(\'' + cam.id + '\')">' + label + '</button>';
-          });
-          if (!html) {
-            data.cameras.forEach(function(cam) {
-              var cls = cam.active ? 'cam-btn active' : 'cam-btn';
-              html += '<button class="' + cls + '" onclick="switchCamera(\'' + cam.id + '\')">' + cam.name + '</button>';
-            });
-          }
-          btnContainer.innerHTML = html;
-        })
-        .catch(function(err) { console.error('loadCameraList failed:', err); });
+    function renderSelector(cams, activeId) {
+      const sel = document.getElementById('cameraSelector');
+      let html = '';
+      const posOrder = ['bow', 'stern', 'port', 'starboard'];
+      posOrder.forEach(function(pos) {
+        const cam = cams.find(function(c) { return c.position === pos; });
+        if (!cam) return;
+        const isActive  = cam.id === activeId && !gridMode;
+        const isOffline = !cam.connected;
+        let cls = 'cam-btn';
+        if (isActive)  cls += ' active';
+        if (isOffline) cls += ' offline';
+        const label = pos.charAt(0).toUpperCase() + pos.slice(1);
+        html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${label}</button>`;
+      });
+      if (!html) {
+        cams.forEach(function(cam) {
+          const isActive  = cam.id === activeId && !gridMode;
+          const isOffline = !cam.connected;
+          let cls = 'cam-btn';
+          if (isActive)  cls += ' active';
+          if (isOffline) cls += ' offline';
+          html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
+        });
+      }
+      if (cams.length > 1) {
+        const gCls = 'grid-btn' + (gridMode ? ' active' : '');
+        html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
+      }
+      sel.innerHTML = html;
     }
 ```
 
-**Variables:**
-- `btnContainer` — `document.getElementById('camera-selector-btns')` (existing element in marine-vision.html)
-- `data.cameras` — array from `/camera/list`
-- `cam.position` — new field; falls back to `cam.id` for backwards compat
-- `cam.active`, `cam.id`, `cam.name` — same as before
-- `switchCamera(camId)` — existing function, unchanged
+**Variables (exact names from the file — use these only):**
+- `sel` — `document.getElementById('cameraSelector')`
+- `gridMode` — existing global boolean
+- `cams` — array of camera objects passed as argument
+- `activeId` — active camera id passed as argument
+- `cam.position` — new field from cameras.json (may be missing — treat as unassigned)
+- `cam.id`, `cam.name`, `cam.connected` — existing fields
+- `switchCamera(camId)` — existing function, do not modify
+- `toggleGrid()` — existing function, do not modify
 
 **Do NOT:**
-- Modify `switchCamera()`
-- Change the `<div id="camera-selector-btns">` HTML structure
-- Remove the fallback (the `if (!html)` block) — needed when cameras have no position set
+- Modify `loadCameraList()` or `switchCamera()`
+- Remove the Grid View button logic
+- Remove the fallback `if (!html)` block — needed when no cameras have positions set
 
 ---
 

@@ -1,0 +1,30 @@
+FIND_LINE: @app.route('/camera/assign/<cam_id>/<position>', methods=['POST'])
+ACTION: REPLACE
+CODE:
+@app.route('/camera/assign/<cam_id>/<position>', methods=['POST'])
+def assign_camera(cam_id, position):
+    """Assign a camera to a specific position (e.g., 'top-left', 'bottom-right')."""
+    # Validate position
+    valid_positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center']
+    if position not in valid_positions:
+        return jsonify({'error': 'Invalid position'}), 400
+    
+    if cam_id not in cameras:
+        return jsonify({'error': 'Camera not found'}), 404
+    
+    # Load current config
+    with open(CAMERAS_CONFIG) as f:
+        cfg = json.load(f)
+    
+    # Find the camera in the list and update its position
+    for cam in cfg.get('cameras', []):
+        if cam['id'] == cam_id:
+            cam['position'] = position
+            break
+    
+    # Save updated config
+    with open(CAMERAS_CONFIG, 'w') as f:
+        json.dump(cfg, f)
+    
+    return jsonify({'status': 'success', 'message': f'Camera {cam_id} assigned to {position}'})
+END_CODE

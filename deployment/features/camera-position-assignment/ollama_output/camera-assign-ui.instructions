@@ -1,0 +1,5 @@
+FIND_LINE: <div class="setting-card" style="margin-bottom:12px;">
+ACTION: REPLACE
+CODE:
+<div class="setting-card" style="margin-bottom:12px; padding:16px;">
+END_CODE
