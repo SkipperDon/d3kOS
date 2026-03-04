@@ -33,6 +33,8 @@
 - [✅] Fix 6: KNOWN_GLOBALS expanded — Python exceptions (TypeError/ValueError/etc), port/starboard, indent
 - [✅] Ollama REPLACE_EXACT mode — Claude provides FIND_LINE/END_LINE in phases.json, Ollama writes CODE only
 - [✅] `--skip-ollama` mode — loads pre-written `.instructions` files (spec code blocks), bypasses model when needed
+- [✅] `benchmark.py` — 3-test suite, 5-dimension scoring (syntax/keywords/forbidden/variables/similarity), results saved to `benchmark_results.json`
+- [✅] Model benchmark run: qwen3-coder:30b **97/100** vs deepseek-coder-v2:16b 70/100 — qwen3 is executor default
 
 ### Project RAG Knowledge Base (`/home/boatiq/rag-stack/`)
 
