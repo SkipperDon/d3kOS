@@ -17,7 +17,7 @@
 
 ## Developer Infrastructure
 
-### Ollama Executor (`deployment/v0.9.x/scripts/ollama_execute.py`)
+### Ollama Executor (`deployment/scripts/ollama_execute_v3.py`)
 
 - [✅] v2: enclosing-function context extraction, validation, auto-apply
 - [✅] `helm_os_context.md` injected into every prompt
@@ -27,6 +27,11 @@
 - [✅] Fix 2: function parameters recognised as declared in scope (both executors)
 - [✅] Fix 3: FIND_LINE prompt rules — no comment lines, no bare `{`/`}`
 - [✅] Wire RAG retrieval into executor: query `helm_os_source` before each phase
+- [✅] v3: Generic executor — reads `phases.json`, no per-feature Python edits needed
+- [✅] Fix 4: END_LINE support — multi-line block replacement (FIND_LINE → END_LINE)
+- [✅] Fix 5: RAG label changed to "BACKGROUND REFERENCE" — stops Ollama picking FIND_LINEs from RAG context
+- [✅] Fix 6: KNOWN_GLOBALS expanded — Python exceptions (TypeError/ValueError/etc), port/starboard, indent
+- [⚠️] Ollama semantic accuracy: model passes syntax validation but ignores spec endpoint names/valid values — needs `REPLACE_EXACT` mode where spec provides FIND_LINE/END_LINE and Ollama fills CODE only
 
 ### Project RAG Knowledge Base (`/home/boatiq/rag-stack/`)
 
@@ -216,6 +221,18 @@
   - [✅] Grid View toggle button — side-by-side via `/camera/grid`
   - [✅] Feed label shows active camera name
   - [✅] All-cameras status cards (shows connection state per camera)
+- [✅] `settings.html` camera section — dynamic multi-camera display via `/camera/list`
+  - [✅] Replaces hardcoded Camera 1 UI with live camera cards per camera
+  - [✅] "Set Active" button per camera (calls `/camera/switch/<id>`)
+  - [✅] "Open Marine Vision" button
+  - [✅] Deployed to Pi — commit `9e53dfa`
+- [⚠️] Camera position assignment (bow/stern/port/starboard per camera)
+  - [✅] Spec written: `deployment/features/camera-position-assignment/feature_spec.md`
+  - [✅] API spec: `POST /camera/assign` with bow/stern/port/starboard positions
+  - [✅] UI spec: assign buttons on each settings.html camera card
+  - [✅] marine-vision.html spec: direction labels (Bow/Stern/Port/Starboard) instead of names
+  - [⚠️] Blocked: Ollama not implementing spec correctly (wrong endpoint, wrong positions)
+  - [ ] Needs: executor `REPLACE_EXACT` mode (Claude provides FIND_LINE/END_LINE, Ollama writes CODE only)
 - [ ] DHCP / static IP confirmation (cameras should stay on same IPs)
 - [ ] Test UI on touchscreen + mobile
 
@@ -704,6 +721,6 @@ All `[🔍]` items must be retested before considering a version complete. Add `
 
 ---
 
-**Last Updated:** March 3, 2026 (Part 6) | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 4, 2026 (Part 7) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
