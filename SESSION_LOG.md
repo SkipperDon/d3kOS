@@ -2,6 +2,28 @@
 
 ---
 
+## Session 2026-03-04 (Part 11)
+**Goal:** Fix gnome-keyring password prompt on boot
+
+**Completed:**
+- Installed `libpam-gnome-keyring` (48.0-1) — was available in apt, not previously installed
+- Added PAM lines to `/etc/pam.d/lightdm-autologin`:
+  - `auth optional pam_gnome_keyring.so`
+  - `session optional pam_gnome_keyring.so auto_start`
+- Removed old password-protected `Default_Keyring.keyring` (backed up to `~/.local/share/keyrings/backup-20260304/`)
+- First reboot: gnome-keyring prompted to create new keyring — user set empty password (expected, one-time only)
+- Second reboot: no prompt — PAM auto-unlocked empty-password keyring silently at login
+- Updated `OLLAMA_SPEC.md` Fix 11 marked as COMPLETED
+
+**Decisions:**
+- Empty-password keyring is correct for a dedicated marine device with autologin — security is at OS/network level, not desktop keyring
+- PAM approach preferred over disabling keyring entirely — some system components (WiFi, stored creds) may use it
+
+**Pending:**
+- 13 remaining items in OLLAMA_SPEC.md for Ollama implementation
+
+---
+
 ## Session 2026-03-04 (Part 10)
 **Goal:** Fix Pi post-installation boot failures — SignalK, GPS, AIS, export services
 
