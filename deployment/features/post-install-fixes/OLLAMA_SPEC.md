@@ -546,48 +546,25 @@ cd /home/boatiq/rag-stack
 
 ---
 
-## Fix 11 — Boot: Keyring Auto-Unlock & Auto-Login
+## Fix 11 — Boot: Keyring Auto-Unlock & Auto-Login ✅ COMPLETED 2026-03-04
 
-**Files:**
-- `/etc/lightdm/lightdm.conf`
-- `/etc/pam.d/lightdm-autologin`
+**Status:** Applied directly on Pi — no Ollama work needed.
 
-### Step 1 — Configure LightDM auto-login
+**What was done:**
+1. LightDM already had `autologin-user=d3kos` configured — auto-login was working
+2. Installed `libpam-gnome-keyring` (was available in apt, version 48.0-1)
+3. Added PAM lines to `/etc/pam.d/lightdm-autologin`:
+   ```
+   auth     optional pam_gnome_keyring.so
+   session  optional pam_gnome_keyring.so auto_start
+   ```
+4. Removed password-protected keyring files from `~/.local/share/keyrings/`:
+   - `Default_Keyring.keyring` and `Default_Keyring.keyring.backup` deleted
+   - Backed up to `~/.local/share/keyrings/backup-20260304/`
+   - On next login, gnome-keyring will create a new keyring with no password
+   - PAM module will auto-unlock it with the empty autologin credential
 
-Edit `/etc/lightdm/lightdm.conf`. Find or add `[Seat:*]` section:
-```ini
-[Seat:*]
-autologin-user=d3kos
-autologin-user-timeout=0
-autologin-session=labwc
-```
-
-Note: The window manager is `labwc` (Wayland, Debian Trixie — confirmed from MASTER_SYSTEM_SPEC.md v3.7).
-
-### Step 2 — Configure PAM to auto-unlock keyring
-
-Add to `/etc/pam.d/lightdm-autologin` (append after existing lines):
-```
-auth     optional    pam_gnome_keyring.so
-session  optional    pam_gnome_keyring.so auto_start
-```
-
-### Step 3 — Set keyring to empty password
-
-Run once interactively (on Pi desktop):
-```bash
-# Remove existing keyring password
-echo "" | /usr/bin/gnome-keyring-daemon --unlock
-# Or use seahorse GUI: change login keyring password to empty string
-```
-
-### Step 4 — Verify
-
-After reboot:
-- Desktop appears without any login prompt
-- No keyring password dialog
-- All services running
-- SSH still requires password (untouched)
+**Result:** On next reboot, no keyring password dialog will appear.
 
 **Acceptance:** Reboot → desktop auto-starts → d3kOS UI accessible within 60s → no password prompts anywhere.
 
