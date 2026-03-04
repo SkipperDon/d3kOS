@@ -14,6 +14,7 @@
 set -e
 
 LOG_FILE="/var/log/d3kos-export-daily.log"
+touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/tmp/d3kos-export-daily.log"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"

@@ -2,6 +2,36 @@
 
 ---
 
+## Session 2026-03-04 (Part 10)
+**Goal:** Fix Pi post-installation boot failures — SignalK, GPS, AIS, export services
+
+**Completed:**
+- Fixed SignalK not starting on boot (root cause: systemd ordering cycle)
+  - `d3kos-timezone-setup.service` had `After=signalk.service` creating a circular dependency with `d3kos-first-boot.service` (`Before=signalk.service`)
+  - Systemd broke the cycle by deleting SignalK's start job — it never ran at boot
+  - Fix: removed `signalk.service` from timezone-setup `After=` line (only needs `network-online.target`)
+- Fixed GPS and AIS not working in SignalK
+  - Root cause: `gps` and `ais` pipedProviders in `~/.signalk/settings.json` both had `"enabled": false`
+  - Fix: set both to `"enabled": true`; confirmed `gps.GP`, `ais.GP`, `ais.II` all active
+- Fixed export services failing at boot (`d3kos-export-boot`, `d3kos-export-daily`)
+  - Root cause: `/var/log/d3kos-export-boot.log` and `d3kos-export-daily.log` did not exist; `d3kos` user has no write permission to create files in `/var/log/`
+  - Fix: created log files with correct ownership on Pi; updated source scripts to `touch "$LOG_FILE"` at startup with `/tmp/` fallback
+- Installed `chrony` to replace `systemd-timesyncd` for NTP time sync
+  - GPS time sync via gpsd SHM/SOCK left for future work (gpsd/chrony SHM permission model requires more investigation); chrony synced to internet NTP pool
+- Rebooted and verified clean boot: SignalK, gpsd, rtl-ais, export-boot all active; no ordering cycles
+
+**Decisions:**
+- Removed `signalk.service` from timezone-setup `After=` — timezone detection only needs network, not SignalK running
+- GPS pipedProviders were disabled (likely turned off during a previous troubleshooting session or install); re-enabled
+- Export log fallback to `/tmp/` if `/var/log/` write fails — makes scripts self-healing on fresh installs
+- Left chrony on internet NTP for now; GPS time sync deferred (offline-at-sea use case, not urgent)
+
+**Pending:**
+- GPS time sync via gpsd SHM → chrony (for offline-at-sea use; gpsd runs as `gpsd` user, SHM 0 owned by root/600 perms — needs permission resolution)
+- Export-daily race condition at boot: Persistent=true timer fires immediately if 3AM was missed; curl fails with code 7 if tier-api not fully listening yet — needs small retry loop in script
+
+---
+
 ## Session 2026-03-04 (Part 9)
 **Goal:** Fix TrueNAS Ollama agent restart loop + build independent verify agent pipeline
 
