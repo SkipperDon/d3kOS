@@ -2,6 +2,55 @@
 
 ---
 
+## Session 2026-03-04 (Part 8)
+**Goal:** Deploy camera-position-assignment feature + build Ollama model benchmark
+
+**Completed:**
+- camera-position-assignment deployed to Pi (all 3 phases):
+  - `POST /camera/assign` endpoint in `camera_stream_manager.py` — validates position, clears conflicts, writes cameras.json
+  - `settings.html` — each camera card shows position (color-coded orange=unassigned, green=assigned) + Bow/Stern/Port/Starboard/Clear buttons
+  - `marine-vision.html` — `renderSelector()` now shows direction labels (Bow/Stern/Port/Starboard); falls back to camera names if no positions set
+  - `/camera/list` updated to return `position` field for each camera
+  - cameras.json updated on Pi: `position: bow/stern` added to existing cameras
+  - cameras.json ownership fixed to `d3kos` user (was root — service couldn't write at runtime)
+  - Commits: `dbff06e`, `7508cdf`
+- Executor improvements committed:
+  - `REPLACE_EXACT` mode and `--skip-ollama` mode ticked off checklist
+  - Executor END_LINE substring match bug documented: `str.find("    }")` matches inside `      }` — phase 3 marine-vision applied manually with Edit tool instead
+- `benchmark.py` built (`deployment/scripts/benchmark.py`):
+  - 3 test cases: camera-assign-api (Python), camera-vision-buttons (JS), simple-instruction-follow
+  - 5 scoring dimensions: syntax (20), keywords (20), forbidden patterns (20), variable names (20), similarity to reference (20)
+  - Results saved to `benchmark_results.json` for tracking over time
+  - Commit: `35c386b`
+- Model benchmark run — deepseek-coder-v2:16b pulled, tested, removed:
+  - qwen3-coder:30b: **97/100** — executor default confirmed
+  - deepseek-coder-v2:16b: 70/100 — fails no-fences instruction, syntax drops to 0
+  - deepseek removed from workstation (freed 8GB)
+
+**Decisions:**
+- `--skip-ollama` with spec code blocks is the reliable path for complex multi-block JS — Ollama semantic drift not worth retrying
+- executor END_LINE must use line content unique enough not to appear as substring in indented lines; bare `    }` is unsafe — use the line before the closing brace instead
+- qwen3-coder:30b stays as executor model — 27pt quality gap over deepseek justifies the extra 13s/call and 9GB
+- cameras.json must be owned by `d3kos` (not root) for the Flask service to write position assignments at runtime
+- WSL2 172.x.x.x is the auto-created `vEthernet (WSL)` adapter — not a concern, not deployed by us
+
+**Ollama:** 0 live calls this session (all phases used --skip-ollama); benchmark: 6 calls total (3 tests × 2 models)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-04 | TBD |
+| Ollama (qwen3-coder:30b) | 3 benchmark calls | $0.00 |
+| Ollama (deepseek-coder-v2:16b) | 3 benchmark calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Re-ingest `helm_os_source` RAG collection (3 Pi files updated this session)
+- Test camera assign UI on Pi touchscreen
+- DHCP / static IP confirmation for cameras (stay on same IPs across reboots)
+
+---
+
 ## Session 2026-03-03 (Part 6)
 **Goal:** Build v0.9.2 Multi-Camera System + fix nginx + fix fish detector
 
