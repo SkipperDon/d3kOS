@@ -149,10 +149,12 @@ def assign_camera_position():
 
 **File:** `settings.html`
 **Action:** `REPLACE`
-**FIND_LINE:** `    // Camera Management Functions`
+**FIND_LINE:** `    function updateCameraStatus() {`
+**END_LINE:** `        .catch(function(err) { console.error('Switch failed:', err); });`
 
-> **MANDATORY:** Your FIND_LINE output MUST be exactly: `    // Camera Management Functions`
-> Do not use any other line. This line is in the CURRENT FILE CONTEXT. Do not use `<link>` tags, CSS, or any HTML — this phase modifies JavaScript only.
+> **MANDATORY:** Use FIND_LINE and END_LINE exactly as shown above — both are in CURRENT FILE CONTEXT.
+> This replaces the entire block from `updateCameraStatus` through the catch of `switchCamera`.
+> Do not use `<link>` tags, CSS, or HTML — this phase modifies JavaScript only.
 
 Replace the entire Camera Management Functions block (from `// Camera Management
 Functions` through the closing `}` of `switchCamera`) with:
@@ -251,9 +253,11 @@ Functions` through the closing `}` of `switchCamera`) with:
 **File:** `marine-vision.html`
 **Action:** `REPLACE`
 **FIND_LINE:** `    function renderSelector(cams, activeId) {`
+**END_LINE:** `      sel.innerHTML = html;`
 
-> **MANDATORY:** Your FIND_LINE output MUST be exactly: `    function renderSelector(cams, activeId) {`
-> Do not use `.catch`, `.then`, or any other line. Replace the entire `renderSelector` function from its opening `{` to its closing `}`.
+> **MANDATORY:** Use FIND_LINE and END_LINE exactly as shown. Both lines are in CURRENT FILE CONTEXT.
+> This replaces everything from the opening of `renderSelector` through `sel.innerHTML = html;`.
+> The closing `}` will remain — your CODE must NOT include it.
 
 Replace the entire `renderSelector` function (from `function renderSelector(cams, activeId) {`
 through its closing `}`) with a version that shows direction labels (Bow/Stern/Port/Starboard)
@@ -291,7 +295,6 @@ falling back to `cam.name` if position is missing or unassigned.
         html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
       }
       sel.innerHTML = html;
-    }
 ```
 
 **Variables (exact names from the file — use these only):**

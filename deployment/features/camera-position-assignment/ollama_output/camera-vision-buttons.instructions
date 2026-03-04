@@ -1,11 +1,33 @@
-FIND_LINE:         .catch(() => {});
-ACTION: INSERT_AFTER
+FIND_LINE:   fetch('/camera/list')
+        .then(r => r.json())
+        .then(data => {
+          allCameras  = data.cameras || [];
+          activeCamId = data.active_camera;
+          renderSelector(allCameras, activeCamId);
+          renderAllCamerasGrid(allCameras, activeCamId);
+        })
+        .catch(() => {});
+END_LINE: .catch(() => {});
+ACTION: REPLACE
 CODE:
-  fetch('/tier/status')
+  fetch('/camera/list')
     .then(r => r.json())
     .then(data => {
-      if (data.features && data.features.camera) {
-        loadCameraList();
-      }
+      allCameras  = data.cameras || [];
+      activeCamId = data.active_camera;
+      renderSelector(allCameras, activeCamId);
+      renderAllCamerasGrid(allCameras, activeCamId);
+    })
+    .catch(() => {
+      // Handle error silently or show message
     });
+ACTION: INSERT_AFTER
+CODE:
+  // Update camera status on page load
+  window.addEventListener('load', function() {
+    updateCameraStatus();
+    // Update every 10 seconds
+    setInterval(updateCameraStatus, 10000);
+  });
+
 END_CODE
