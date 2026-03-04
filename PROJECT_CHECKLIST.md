@@ -179,9 +179,10 @@
 
 **Status:** [🔄] In Progress — core multi-camera backend + UI deployed | **Priority:** HIGH
 
-**Hardware:** 2 cameras currently available:
+**Hardware:** 2 cameras active, 2 more planned for later:
 - Camera 1 (bow, 10.42.0.100) — connected, live
-- Camera 2 (stern, 10.42.0.63) — **Reolink RLC-820A** — on network, RTSP 401 (need password — set via `http://10.42.0.63` Reolink web UI)
+- Camera 2 (stern, 10.42.0.63) — Reolink RLC-820A — connected, live
+- Camera 3 & 4 — future purchase (RLC-820A × 2) — add to `cameras.json` when ready, no code changes needed
 
 **Commit:** `be236c5`
 
