@@ -2,6 +2,60 @@
 
 ---
 
+## Session 2026-03-04 (Part 9)
+**Goal:** Fix TrueNAS Ollama agent restart loop + build independent verify agent pipeline
+
+**Completed:**
+- Fixed `ollama-agent.py` restart loop on TrueNAS VM (`192.168.1.103`):
+  - Bug: hung detection fired when `inference_ok=False AND models non-empty` even when `PROBE_MODEL=""` (probing disabled)
+  - Fix: added `and PROBE_MODEL` guard — line 334 in `/opt/ollama-agent/ollama-agent.py`
+  - Result: `status: healthy`, `restart_count: 0`, stable
+- Benchmarked TrueNAS VM Ollama inference:
+  - `qwen2.5-coder:14b`: 0.02 t/s — "say hello" took 264s — unusable
+  - Root cause: bhyve VM memory bandwidth throttled by ZFS ARC; `cpu cores: 2` in VM
+  - `qwen2.5-coder:1.5b` pulled (986MB), 14b removed — RAM freed from 162MB to 12GB free
+  - `qwen2.5-coder:1.5b`: 0.03 t/s — still unusable; hardware constraint, not fixable with software
+- Built **TrueNAS Verify Agent** (`deployment/scripts/verify_agent.py`):
+  - Architecture: TrueNAS runs the HTTP service, inference routed to workstation GPU
+  - `d3kos-verify-agent.service` deployed on `192.168.1.103:11436`, enabled, auto-start
+  - `POST /verify` → sends code + instruction to `qwen3-coder:30b` (workstation) for independent review
+  - `GET /health`, `/report`, `/stats` — all reachable from laptop
+  - Two-role model: generator generates, verifier critiques (different prompt, different context, independent inference)
+- Wired verify agent into `ollama_execute_v3.py`:
+  - `VERIFY_URL`, `VERIFY_ENABLED`, `VERIFY_TIMEOUT` constants at top of file
+  - `call_verify()` called after structural validation in both REPLACE_EXACT and standard modes
+  - FAIL → `Verify:` issue added to block, enters correction loop
+  - Verifier offline → `None`, pipeline continues (non-blocking)
+  - Summary report now fetches verify stats from TrueNAS endpoint
+- `helm_os_context.md` updated with two-step pipeline section — Ollama now knows its GENERATOR role and that a verifier reviews its output
+- `PROJECT_CHECKLIST.md` updated — verify agent section added as complete
+- `MEMORY.md` updated with TrueNAS VM constraints and verify agent details
+- `deployment/docs/VERIFY_AGENT.md` written — full architecture, endpoints, configuration, management
+- Commits: `a607e04` (verify agent + executor), subsequent doc commits
+
+**Decisions:**
+- TrueNAS VM runs the verify SERVICE but not the model — bhyve + ZFS ARC memory contention is a permanent hardware constraint; routing inference to workstation GPU is the correct architecture
+- Same model (qwen3-coder:30b) for both roles is valid — generator and verifier are independent inference calls with different prompts and context windows; reviewer has no memory of generation
+- Verifier is non-blocking: if TrueNAS is offline the pipeline continues; prevents single point of failure
+- `VERIFY_ENABLED = True` at top of executor — can be toggled False to bypass globally
+
+**Ollama:** 0 executor calls (infrastructure session); 2 TrueNAS test calls (timed out); verify agent test calls via workstation GPU
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-04 | TBD |
+| Ollama (qwen3-coder:30b) | verify agent tests | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Re-ingest `helm_os_source` RAG collection (helm_os_context.md updated)
+- Test full executor run end-to-end with verify agent in the loop
+- Test camera assign UI on Pi touchscreen
+- DHCP / static IP confirmation for cameras
+
+---
+
 ## Session 2026-03-04 (Part 8)
 **Goal:** Deploy camera-position-assignment feature + build Ollama model benchmark
 
