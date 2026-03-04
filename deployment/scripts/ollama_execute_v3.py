@@ -382,11 +382,32 @@ def call_ollama(prompt, label=''):
 
 # ── Phase runner ──────────────────────────────────────────────────────────────
 
+def _apply_block(current, b):
+    """Apply a single validated block to source text. Returns updated text."""
+    if b['action'] == 'REPLACE' and b.get('end_line'):
+        fi = current.find(b['find_line'])
+        ei = current.find(b['end_line'], fi) + len(b['end_line'])
+        return current[:fi] + b['code'] + current[ei:]
+    elif b['action'] == 'REPLACE':
+        return current.replace(b['find_line'], b['code'], 1)
+    elif b['action'] == 'INSERT_AFTER':
+        return current.replace(b['find_line'], b['find_line'] + '\n' + b['code'], 1)
+    elif b['action'] == 'INSERT_BEFORE':
+        return current.replace(b['find_line'], b['code'] + '\n' + b['find_line'], 1)
+    return current
+
+
+def _strip_fences(text):
+    text = re.sub(r'^```[^\n]*\n?', '', text, flags=re.MULTILINE)
+    return re.sub(r'^```\s*$', '', text, flags=re.MULTILINE).strip()
+
+
 def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
     name        = phase_cfg['name']
     src_file    = phase_cfg['source_file']
     spec_section= phase_cfg['spec_section']
     keywords    = phase_cfg.get('keywords', [])
+    replace_exact = phase_cfg.get('replace_exact', False)
 
     feature_dir = pathlib.Path(feature_dir)
     source_path = feature_dir / 'pi_source' / src_file
@@ -394,7 +415,8 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
     out_path    = feature_dir / 'ollama_output' / f'{name}.instructions'
     ft          = 'py' if src_file.endswith('.py') else 'js'
 
-    tprint(f"\n{'='*60}\nPHASE: {name} | FILE: {src_file}\n{'='*60}")
+    tprint(f"\n{'='*60}\nPHASE: {name} | FILE: {src_file}"
+           f"{' [EXACT]' if replace_exact else ''}\n{'='*60}")
 
     if not source_path.exists():
         tprint(f"  [ERROR] Source not found: {source_path}"); return
@@ -405,6 +427,118 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
     ctx, scope_vars = extract_context(source_text, keywords, ft)
     tprint(f"  Context: {len(ctx)} chars | Scope vars: {scope_vars[:8]}")
 
+    # ── REPLACE_EXACT mode: anchors from phases.json, Ollama writes CODE only ──
+    if replace_exact:
+        exact_find   = phase_cfg.get('find_line', '')
+        exact_end    = phase_cfg.get('end_line', '')
+        exact_action = phase_cfg.get('action', 'REPLACE')
+
+        if exact_find not in source_text:
+            tprint(f"  [ERROR] phases.json find_line not in source: {exact_find!r}"); return
+        if exact_end and exact_end not in source_text:
+            tprint(f"  [ERROR] phases.json end_line not in source: {exact_end!r}"); return
+
+        if skip_ollama and out_path.exists():
+            tprint(f"  [SKIP-OLLAMA] Loading {out_path.name}")
+            code = _strip_fences(out_path.read_text())
+        elif skip_ollama:
+            tprint(f"  [SKIP-OLLAMA] No saved output for {name}"); return
+        else:
+            spec_text = spec_path.read_text()
+            pat = re.compile(rf'^## {re.escape(spec_section)}.*?(?=^## |\Z)', re.MULTILINE|re.DOTALL)
+            m   = pat.search(spec_text)
+            spec_section_text = m.group(0).strip() if m else f"[Section not found]"
+
+            context_file = CONTEXT_FILE.read_text() if CONTEXT_FILE.exists() else ''
+            rag = query_rag(src_file, keywords)
+            rag_block = ("\n\n## BACKGROUND REFERENCE\n" + rag) if rag else ""
+
+            if exact_action == 'INSERT_BEFORE':
+                anchor_desc = (f"Insert your code immediately BEFORE this line (do NOT include this line in your output — it is preserved automatically):\n`{exact_find}`")
+            elif exact_action == 'INSERT_AFTER':
+                anchor_desc = (f"Insert your code immediately AFTER this line (do NOT include this line in your output — it is preserved automatically):\n`{exact_find}`")
+            else:
+                anchor_desc = (f"Replace the block from:\n`{exact_find}`\nthrough:\n`{exact_end}`\nwith your code.")
+
+            prompt = f"""{context_file}
+
+---
+
+## TASK: {name.upper()} — {src_file}
+
+## SPEC:
+{spec_section_text}{rag_block}
+
+## CURRENT FILE CONTEXT (existing code for reference):
+{ctx}
+
+## VARIABLES IN SCOPE (use these exact names only):
+{', '.join(scope_vars[:30]) if scope_vars else '(see context above)'}
+
+## YOUR JOB:
+{anchor_desc}
+
+IMPORTANT: The SPEC section above contains a code block (between ``` markers) showing EXACTLY what to write. Write that code. Do not reproduce the existing code from CURRENT FILE CONTEXT — write the NEW code from the SPEC.
+
+Write ONLY the code — no FIND_LINE, no END_LINE, no ACTION, no END_CODE marker.
+Do not wrap in markdown fences.
+"""
+            tprint(f"  Calling Ollama ({len(prompt)} chars)...")
+            response = call_ollama(prompt, label=name)
+            if not response:
+                tprint(f"  [ERROR] No response"); return
+            code = _strip_fences(response)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(code)
+            tprint(f"  Saved → {out_path.name}")
+
+        b = {'find_line': exact_find, 'end_line': exact_end,
+             'action': exact_action, 'code': code,
+             'valid': True, 'issues': [], 'correction_attempted': False, 'corrected': False}
+        source_text = source_path.read_text()
+        [b] = validate([b], source_text, ft)
+
+        if not b['valid'] and not skip_ollama:
+            tprint(f"  [CORRECTION] {b['issues']}")
+            corr_prompt = f"""Your code for {src_file} failed validation.
+
+ISSUES:
+{chr(10).join('- ' + e for e in b['issues'])}
+
+ORIGINAL CODE:
+{b['code']}
+
+SCOPE VARIABLES:
+{', '.join(scope_vars[:30])}
+
+Rewrite ONLY the corrected code. No FIND_LINE, no markers, no fences.
+"""
+            resp2 = call_ollama(corr_prompt, label=f'correction:{src_file}')
+            if resp2:
+                b['code'] = _strip_fences(resp2)
+                b['correction_attempted'] = True
+                [b] = validate([b], source_text, ft)
+                if b['valid']:
+                    tprint(f"  [CORRECTION] Fixed!")
+                    b['corrected'] = True
+                else:
+                    tprint(f"  [CORRECTION] Still invalid: {b['issues']}")
+
+        valid_flag = '✓' if b['valid'] else '✗'
+        tprint(f"\n  RESULT: {valid_flag} | corrected: {b.get('corrected',False)}")
+        if not b['valid']:
+            for i in b['issues']: tprint(f"    → {i}")
+
+        if apply and b['valid']:
+            tprint(f"\n  Applying...")
+            current = source_path.read_text()
+            source_path.write_text(_apply_block(current, b))
+            tprint(f"  ✓ Written to {source_path}")
+        elif apply:
+            tprint(f"  No valid block to apply.")
+        return
+
+    # ── Standard mode ──────────────────────────────────────────────────────────
     if skip_ollama and out_path.exists():
         tprint(f"  [SKIP-OLLAMA] Loading {out_path.name}")
         response = out_path.read_text()
@@ -494,13 +628,7 @@ END_CODE
         tprint(f"\n  Applying {len(valid)} block(s)...")
         current = source_path.read_text()
         for b in valid:
-            if b['action']=='REPLACE' and b.get('end_line'):
-                fi = current.find(b['find_line'])
-                ei = current.find(b['end_line'], fi) + len(b['end_line'])
-                current = current[:fi] + b['code'] + current[ei:]
-            elif b['action']=='REPLACE':        current = current.replace(b['find_line'], b['code'], 1)
-            elif b['action']=='INSERT_AFTER':   current = current.replace(b['find_line'], b['find_line']+'\n'+b['code'], 1)
-            elif b['action']=='INSERT_BEFORE':  current = current.replace(b['find_line'], b['code']+'\n'+b['find_line'], 1)
+            current = _apply_block(current, b)
         source_path.write_text(current)
         tprint(f"  ✓ Written to {source_path}")
     elif apply:

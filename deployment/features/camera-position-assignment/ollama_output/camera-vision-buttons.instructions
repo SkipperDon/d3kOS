@@ -1,33 +1,21 @@
-FIND_LINE:   fetch('/camera/list')
-        .then(r => r.json())
-        .then(data => {
-          allCameras  = data.cameras || [];
-          activeCamId = data.active_camera;
-          renderSelector(allCameras, activeCamId);
-          renderAllCamerasGrid(allCameras, activeCamId);
-        })
-        .catch(() => {});
-END_LINE: .catch(() => {});
-ACTION: REPLACE
-CODE:
-  fetch('/camera/list')
-    .then(r => r.json())
-    .then(data => {
-      allCameras  = data.cameras || [];
-      activeCamId = data.active_camera;
-      renderSelector(allCameras, activeCamId);
-      renderAllCamerasGrid(allCameras, activeCamId);
-    })
-    .catch(() => {
-      // Handle error silently or show message
-    });
-ACTION: INSERT_AFTER
-CODE:
-  // Update camera status on page load
-  window.addEventListener('load', function() {
-    updateCameraStatus();
-    // Update every 10 seconds
-    setInterval(updateCameraStatus, 10000);
+function renderSelector(cams, activeId) {
+  const sel = document.getElementById('cameraSelector');
+  let html = '';
+
+  cams.forEach(cam => {
+    const isActive  = cam.id === activeId && !gridMode;
+    const isOffline = !cam.connected;
+    let cls = 'cam-btn';
+    if (isActive)  cls += ' active';
+    if (isOffline) cls += ' offline';
+    html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
   });
 
-END_CODE
+  // Grid button (only if > 1 camera)
+  if (cams.length > 1) {
+    const gCls = 'grid-btn' + (gridMode ? ' active' : '');
+    html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
+  }
+
+  sel.innerHTML = html;
+}
