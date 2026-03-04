@@ -1,0 +1,11 @@
+FIND_LINE:         .catch(() => {});
+ACTION: INSERT_AFTER
+CODE:
+  fetch('/tier/status')
+    .then(r => r.json())
+    .then(data => {
+      if (data.features && data.features.camera) {
+        loadCameraList();
+      }
+    });
+END_CODE

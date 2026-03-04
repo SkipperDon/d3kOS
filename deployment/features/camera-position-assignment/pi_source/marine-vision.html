@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marine Vision - d3kOS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Roboto", Arial, sans-serif;
+      background-color: #000000;
+      color: #FFFFFF;
+      font-size: 22px;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 12px 20px;
+      border-bottom: 2px solid #00CC00;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #000;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-button {
+      padding: 12px 24px;
+      background-color: rgba(0, 204, 0, 0.2);
+      border: 2px solid #00CC00;
+      border-radius: 8px;
+      color: #00CC00;
+      font-size: 22px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-button:hover { background-color: rgba(0, 204, 0, 0.3); }
+
+    h1 { font-size: 24px; color: #00CC00; }
+
+    .container {
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── Camera selector ── */
+    .camera-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .cam-btn {
+      padding: 14px 28px;
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid #00CC00;
+      border-radius: 8px;
+      color: #00CC00;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 60px;
+    }
+
+    .cam-btn:hover { background-color: rgba(0, 204, 0, 0.25); }
+
+    .cam-btn.active {
+      background-color: #00CC00;
+      color: #000;
+    }
+
+    .cam-btn.offline {
+      border-color: #666;
+      color: #666;
+      cursor: default;
+    }
+
+    .cam-btn.offline.active {
+      background-color: #444;
+      color: #aaa;
+    }
+
+    .grid-btn {
+      padding: 14px 28px;
+      background-color: rgba(0, 100, 200, 0.15);
+      border: 2px solid #0088FF;
+      border-radius: 8px;
+      color: #0088FF;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 60px;
+    }
+
+    .grid-btn:hover { background-color: rgba(0, 100, 200, 0.3); }
+    .grid-btn.active { background-color: #0088FF; color: #fff; }
+
+    /* ── Feed container ── */
+    .camera-container {
+      background-color: #111;
+      border: 2px solid #00CC00;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .feed-label {
+      font-size: 18px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 10px;
+    }
+
+    #cameraFeed {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      background-color: #000;
+      min-height: 300px;
+      object-fit: contain;
+    }
+
+    .loading-message {
+      text-align: center;
+      padding: 40px;
+      color: #00CC00;
+      font-size: 20px;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .control-btn {
+      padding: 20px 30px;
+      background-color: #00CC00;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 80px;
+    }
+
+    .control-btn:hover:not(:disabled) {
+      background-color: #00DD00;
+      transform: scale(1.02);
+    }
+
+    .control-btn:active:not(:disabled) { transform: scale(0.98); }
+
+    .control-btn:disabled {
+      background-color: #666;
+      color: #999;
+      cursor: not-allowed;
+    }
+
+    .control-btn.recording { background-color: #FF0000; color: #FFF; }
+    .control-btn.recording:hover { background-color: #DD0000; }
+
+    /* ── Status section ── */
+    .status {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 1px solid #00CC00;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .status h2 { color: #00CC00; font-size: 24px; margin-bottom: 15px; }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .status-row:last-child { border-bottom: none; }
+
+    .status-label { color: rgba(255,255,255,0.7); font-size: 20px; }
+
+    .status-value { font-weight: 700; color: #00CC00; font-size: 20px; }
+    .status-value.error { color: #FF0000; }
+    .status-value.warning { color: #FFAA00; }
+
+    /* ── All cameras status ── */
+    .cam-status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .cam-status-card {
+      background-color: rgba(255,255,255,0.04);
+      border: 1px solid rgba(0,204,0,0.3);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .cam-status-card.active-card { border-color: #00CC00; }
+
+    .cam-status-name {
+      font-size: 19px;
+      font-weight: 700;
+      color: #00CC00;
+      margin-bottom: 6px;
+    }
+
+    .cam-status-detail { font-size: 17px; color: rgba(255,255,255,0.6); }
+
+    /* ── Fish detection ── */
+    .recordings-section {
+      margin-top: 30px;
+      background-color: rgba(0, 204, 0, 0.05);
+      border: 1px solid #00CC00;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .recordings-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 15px;
+    }
+
+    .recording-item {
+      background-color: rgba(255,255,255,0.05);
+      border: 1px solid rgba(0, 204, 0, 0.3);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recording-name { font-size: 18px; color: #00CC00; }
+    .recording-size { font-size: 16px; color: rgba(255,255,255,0.6); }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="nav-button">← Main Menu</a>
+    <h1>Marine Vision</h1>
+    <div style="width: 160px;"></div>
+  </header>
+
+  <div class="container">
+
+    <!-- Camera selector -->
+    <div class="camera-selector" id="cameraSelector">
+      <!-- Populated by JS from /camera/list -->
+      <span style="color: rgba(255,255,255,0.4); font-size: 18px;">Loading cameras...</span>
+    </div>
+
+    <!-- Feed -->
+    <div class="camera-container">
+      <div class="feed-label" id="feedLabel">Active Camera</div>
+      <img id="cameraFeed" alt="Camera Feed">
+      <div id="loadingMessage" class="loading-message">Connecting to camera...</div>
+
+      <div class="controls">
+        <button class="control-btn" id="btnRecord" disabled>Start Recording</button>
+        <button class="control-btn" id="btnCapture" disabled>Capture Photo</button>
+        <button class="control-btn" id="btnRefresh">Refresh Feed</button>
+      </div>
+    </div>
+
+    <!-- Active camera status -->
+    <div class="status">
+      <h2>Active Camera Status</h2>
+      <div class="status-row">
+        <span class="status-label">Connection:</span>
+        <span class="status-value" id="statusConnection">Checking...</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Camera:</span>
+        <span class="status-value" id="statusName">--</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">IP:</span>
+        <span class="status-value" id="statusIP">--</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Recording:</span>
+        <span class="status-value" id="statusRecording">Stopped</span>
+      </div>
+    </div>
+
+    <!-- All cameras overview -->
+    <div class="status" id="allCamerasSection" style="display:none;">
+      <h2>All Cameras</h2>
+      <div class="cam-status-grid" id="allCamerasGrid"></div>
+    </div>
+
+    <!-- Fish detection -->
+    <div class="status">
+      <h2>Fish Detection</h2>
+      <div class="status-row">
+        <span class="status-label">Status:</span>
+        <span class="status-value" id="detectStatus">Checking...</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Model:</span>
+        <span class="status-value" id="detectModel">--</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Classes:</span>
+        <span class="status-value" id="detectClasses">--</span>
+      </div>
+      <div class="controls" style="grid-template-columns: 1fr; margin-top: 15px;">
+        <button class="control-btn" id="btnDetect" onclick="runDetection()">Run Detection Now</button>
+      </div>
+      <div id="detectionResults" style="margin-top: 15px; padding: 15px; background: rgba(0,204,0,0.05); border-radius: 8px; display: none;">
+        <div style="font-weight: bold; color: #00CC00; margin-bottom: 10px;">Detection Results:</div>
+        <div id="detectionData"></div>
+      </div>
+    </div>
+
+    <!-- Recordings -->
+    <div class="recordings-section">
+      <h2 style="color: #00CC00; font-size: 24px;">Recent Recordings</h2>
+      <div class="recordings-list" id="recordingsList">
+        <div style="color: rgba(255,255,255,0.5); text-align: center; padding: 20px;">No recordings yet</div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <script>
+    let isRecording  = false;
+    let feedInterval = null;
+    let gridMode     = false;
+    let activeCamId  = null;
+    let allCameras   = [];
+
+    const FEED_MS = 125; // 8 FPS
+
+    window.addEventListener('load', function() {
+      loadCameraList();
+      updateStatus();
+      updateDetectionStatus();
+      startLiveFeed();
+      loadRecordings();
+
+      setInterval(updateStatus,          5000);
+      setInterval(updateDetectionStatus, 5000);
+      setInterval(loadRecordings,       10000);
+      setInterval(loadCameraList,       15000);
+    });
+
+    // ── Camera list + selector buttons ──────────────────────────────────────
+
+    function loadCameraList() {
+      fetch('/camera/list')
+        .then(r => r.json())
+        .then(data => {
+          allCameras  = data.cameras || [];
+          activeCamId = data.active_camera;
+          renderSelector(allCameras, activeCamId);
+          renderAllCamerasGrid(allCameras, activeCamId);
+        })
+        .catch(() => {});
+  fetch('/tier/status')
+    .then(r => r.json())
+    .then(data => {
+      if (data.features && data.features.camera) {
+        loadCameraList();
+      }
+    });
+    }
+
+    function renderSelector(cams, activeId) {
+      const sel = document.getElementById('cameraSelector');
+      let html = '';
+
+      cams.forEach(cam => {
+        const isActive  = cam.id === activeId && !gridMode;
+        const isOffline = !cam.connected;
+        let cls = 'cam-btn';
+        if (isActive)  cls += ' active';
+        if (isOffline) cls += ' offline';
+        html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
+      });
+
+      // Grid button (only if > 1 camera)
+      if (cams.length > 1) {
+        const gCls = 'grid-btn' + (gridMode ? ' active' : '');
+        html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
+      }
+
+      sel.innerHTML = html;
+    }
+
+    function renderAllCamerasGrid(cams, activeId) {
+      if (cams.length < 2) { document.getElementById('allCamerasSection').style.display = 'none'; return; }
+      document.getElementById('allCamerasSection').style.display = 'block';
+      const grid = document.getElementById('allCamerasGrid');
+      grid.innerHTML = cams.map(cam => `
+        <div class="cam-status-card ${cam.id === activeId ? 'active-card' : ''}">
+          <div class="cam-status-name">${cam.name}${cam.id === activeId ? ' ★' : ''}</div>
+          <div class="cam-status-detail">IP: ${cam.ip}</div>
+          <div class="cam-status-detail">Model: ${cam.model || 'Reolink'}</div>
+          <div class="cam-status-detail" style="color: ${cam.connected ? '#00CC00' : '#FF4444'};">
+            ${cam.connected ? 'Connected' : 'Offline'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function switchCamera(camId) {
+      if (camId === activeCamId && !gridMode) return;
+      gridMode = false;
+      fetch('/camera/switch/' + camId, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          activeCamId = data.active_camera;
+          loadCameraList();
+          updateStatus();
+          restartFeed();
+        })
+        .catch(() => {});
+    }
+
+    function toggleGrid() {
+      gridMode = !gridMode;
+      loadCameraList();   // re-renders selector buttons
+      restartFeed();
+    }
+
+    // ── Live feed ─────────────────────────────────────────────────────────────
+
+    function startLiveFeed() {
+      if (feedInterval) clearInterval(feedInterval);
+      feedInterval = setInterval(function() {
+        const img     = document.getElementById('cameraFeed');
+        const loading = document.getElementById('loadingMessage');
+        const src     = gridMode
+          ? '/camera/grid?' + Date.now()
+          : '/camera/frame?' + Date.now();
+
+        img.src = src;
+        img.onload  = function() { loading.style.display = 'none';  img.style.display = 'block'; };
+        img.onerror = function() { loading.style.display = 'block'; loading.textContent = 'No camera feed available'; img.style.display = 'none'; };
+      }, FEED_MS);
+    }
+
+    function restartFeed() {
+      const label = document.getElementById('feedLabel');
+      if (gridMode) {
+        label.textContent = 'All Cameras — Grid View';
+      } else {
+        const cam = allCameras.find(c => c.id === activeCamId);
+        label.textContent = cam ? cam.name : 'Active Camera';
+      }
+      startLiveFeed();
+    }
+
+    // ── Status ────────────────────────────────────────────────────────────────
+
+    function updateStatus() {
+      fetch('/camera/status')
+        .then(r => r.json())
+        .then(data => {
+          const conn = document.getElementById('statusConnection');
+          if (data.connected && data.has_frame) {
+            conn.textContent = 'Connected';
+            conn.className   = 'status-value';
+            document.getElementById('btnRecord').disabled  = false;
+            document.getElementById('btnCapture').disabled = false;
+          } else if (data.connected) {
+            conn.textContent = 'Connected (No Frame)';
+            conn.className   = 'status-value warning';
+          } else {
+            conn.textContent = 'Disconnected';
+            conn.className   = 'status-value error';
+            document.getElementById('btnRecord').disabled  = true;
+            document.getElementById('btnCapture').disabled = true;
+          }
+
+          document.getElementById('statusName').textContent = data.camera_name || data.camera_id || '--';
+          document.getElementById('statusIP').textContent   = data.camera_ip || '--';
+
+          const rec = document.getElementById('statusRecording');
+          isRecording = data.recording;
+          if (data.recording) {
+            rec.textContent  = 'Recording';
+            rec.style.color  = '#FF0000';
+          } else {
+            rec.textContent  = 'Stopped';
+            rec.style.color  = '#00CC00';
+          }
+          updateRecordButton();
+        })
+        .catch(() => {
+          document.getElementById('statusConnection').textContent = 'Error';
+          document.getElementById('statusConnection').className   = 'status-value error';
+        });
+    }
+
+    // ── Fish detection ────────────────────────────────────────────────────────
+
+    function updateDetectionStatus() {
+      fetch('/detect/status')
+        .then(r => r.json())
+        .then(data => {
+          const ds = document.getElementById('detectStatus');
+          if (data.ready && data.status === 'active') {
+            ds.textContent = 'Ready';
+            ds.style.color = '#00CC00';
+            document.getElementById('btnDetect').disabled = false;
+          } else {
+            ds.textContent = 'Not Ready';
+            ds.style.color = '#FF6600';
+            document.getElementById('btnDetect').disabled = true;
+          }
+          document.getElementById('detectModel').textContent   = data.model   || '--';
+          document.getElementById('detectClasses').textContent = data.classes || '--';
+        })
+        .catch(() => {
+          document.getElementById('detectStatus').textContent = 'Error';
+          document.getElementById('detectStatus').style.color = '#FF0000';
+        });
+    }
+
+    function runDetection() {
+      const btn       = document.getElementById('btnDetect');
+      const resultsDiv = document.getElementById('detectionResults');
+      const dataDiv   = document.getElementById('detectionData');
+      btn.disabled    = true;
+      btn.textContent = 'Detecting...';
+      resultsDiv.style.display = 'block';
+      dataDiv.innerHTML = '<div style="color:#00CC00;">Running detection...</div>';
+
+      fetch('/detect/frame', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          let html  = `<div style="margin-bottom:10px;">`;
+          html += `<strong>Person:</strong> ${data.person_detected ? '✓ Detected (' + (data.person_confidence*100).toFixed(1) + '%)' : '✗ Not detected'}<br>`;
+          html += `<strong>Fish:</strong> ${data.fish_detected ? '✓ Detected (' + (data.fish_confidence*100).toFixed(1) + '%)' : '✗ Not detected'}<br>`;
+          if (data.capture_triggered) html += `<strong style="color:#00CC00;">📸 CAPTURE TRIGGERED!</strong> ID: ${data.capture_id}<br>`;
+          html += `</div>`;
+          if (data.detections && data.detections.length > 0) {
+            html += `<div style="font-size:18px;margin-top:10px;"><strong>Objects (${data.detections.length}):</strong></div>`;
+            html += '<div style="max-height:200px;overflow-y:auto;margin-top:5px;">';
+            data.detections.forEach(d => {
+              html += `<div style="padding:5px;border-bottom:1px solid rgba(255,255,255,0.1);">${d.class_name} (${(d.confidence*100).toFixed(1)}%)</div>`;
+            });
+            html += '</div>';
+          } else {
+            html += '<div style="color:rgba(255,255,255,0.5);">No objects detected</div>';
+          }
+          dataDiv.innerHTML   = html;
+          btn.textContent     = 'Run Detection Now';
+          btn.disabled        = false;
+        })
+        .catch(err => {
+          dataDiv.innerHTML = `<div style="color:#FF0000;">Detection failed: ${err.message}</div>`;
+          btn.textContent   = 'Run Detection Now';
+          btn.disabled      = false;
+        });
+    }
+
+    // ── Record / capture / recordings ────────────────────────────────────────
+
+    function updateRecordButton() {
+      const btn = document.getElementById('btnRecord');
+      if (isRecording) {
+        btn.textContent = 'Stop Recording';
+        btn.classList.add('recording');
+      } else {
+        btn.textContent = 'Start Recording';
+        btn.classList.remove('recording');
+      }
+    }
+
+    document.getElementById('btnRecord').addEventListener('click', function() {
+      const ep = isRecording ? '/camera/record/stop' : '/camera/record/start';
+      this.disabled = true;
+      fetch(ep, { method: 'POST' })
+        .then(r => r.json())
+        .then(() => {
+          updateStatus();
+          setTimeout(loadRecordings, isRecording ? 0 : 2000);
+        })
+        .catch(() => alert('Recording action failed'))
+        .finally(() => { this.disabled = false; });
+    });
+
+    document.getElementById('btnCapture').addEventListener('click', function() {
+      this.disabled = true;
+      fetch('/camera/capture', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => { alert('Photo captured: ' + data.filename); loadRecordings(); })
+        .catch(() => alert('Failed to capture photo'))
+        .finally(() => { this.disabled = false; });
+    });
+
+    document.getElementById('btnRefresh').addEventListener('click', function() {
+      loadCameraList();
+      updateStatus();
+      restartFeed();
+      loadRecordings();
+    });
+
+    function loadRecordings() {
+      fetch('/camera/recordings')
+        .then(r => r.json())
+        .then(data => {
+          const list = document.getElementById('recordingsList');
+          if (data.recordings && data.recordings.length > 0) {
+            list.innerHTML = data.recordings.map(rec =>
+              `<div class="recording-item">
+                <span class="recording-name">${rec.filename}</span>
+                <span class="recording-size">${rec.size_mb} MB</span>
+              </div>`
+            ).join('');
+          } else {
+            list.innerHTML = '<div style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">No recordings yet</div>';
+          }
+        })
+        .catch(() => {});
+    }
+  </script>
+</body>
+</html>
