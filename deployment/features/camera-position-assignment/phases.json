@@ -1,0 +1,20 @@
+[
+  {
+    "name": "camera-assign-api",
+    "source_file": "camera_stream_manager.py",
+    "spec_section": "PHASE 1: ADD /camera/assign ENDPOINT — camera-assign-api",
+    "keywords": ["/camera/switch", "/camera/assign", "assign_camera_position", "CAMERAS_CONFIG_PATH"]
+  },
+  {
+    "name": "camera-assign-ui",
+    "source_file": "settings.html",
+    "spec_section": "PHASE 2: UPDATE SETTINGS CAMERA CARDS — camera-assign-ui",
+    "keywords": ["updateCameraStatus", "switchCamera", "assignPosition", "renderAssignButtons", "POSITIONS"]
+  },
+  {
+    "name": "camera-vision-buttons",
+    "source_file": "marine-vision.html",
+    "spec_section": "PHASE 3: UPDATE MARINE VISION SELECTOR — camera-vision-buttons",
+    "keywords": ["loadCameraList", "positionOrder", "camera-selector-btns", "bow", "stern"]
+  }
+]
