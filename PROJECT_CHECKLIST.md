@@ -31,7 +31,8 @@
 - [✅] Fix 4: END_LINE support — multi-line block replacement (FIND_LINE → END_LINE)
 - [✅] Fix 5: RAG label changed to "BACKGROUND REFERENCE" — stops Ollama picking FIND_LINEs from RAG context
 - [✅] Fix 6: KNOWN_GLOBALS expanded — Python exceptions (TypeError/ValueError/etc), port/starboard, indent
-- [⚠️] Ollama semantic accuracy: model passes syntax validation but ignores spec endpoint names/valid values — needs `REPLACE_EXACT` mode where spec provides FIND_LINE/END_LINE and Ollama fills CODE only
+- [✅] Ollama REPLACE_EXACT mode — Claude provides FIND_LINE/END_LINE in phases.json, Ollama writes CODE only
+- [✅] `--skip-ollama` mode — loads pre-written `.instructions` files (spec code blocks), bypasses model when needed
 
 ### Project RAG Knowledge Base (`/home/boatiq/rag-stack/`)
 
@@ -226,13 +227,15 @@
   - [✅] "Set Active" button per camera (calls `/camera/switch/<id>`)
   - [✅] "Open Marine Vision" button
   - [✅] Deployed to Pi — commit `9e53dfa`
-- [⚠️] Camera position assignment (bow/stern/port/starboard per camera)
+- [✅] Camera position assignment (bow/stern/port/starboard per camera)
   - [✅] Spec written: `deployment/features/camera-position-assignment/feature_spec.md`
   - [✅] API spec: `POST /camera/assign` with bow/stern/port/starboard positions
   - [✅] UI spec: assign buttons on each settings.html camera card
   - [✅] marine-vision.html spec: direction labels (Bow/Stern/Port/Starboard) instead of names
-  - [⚠️] Blocked: Ollama not implementing spec correctly (wrong endpoint, wrong positions)
-  - [ ] Needs: executor `REPLACE_EXACT` mode (Claude provides FIND_LINE/END_LINE, Ollama writes CODE only)
+  - [✅] Applied via `--skip-ollama` with spec code blocks as instructions files
+  - [✅] `/camera/list` returns `position` field for each camera
+  - [✅] cameras.json updated with `position: bow/stern`, ownership fixed to d3kos
+  - [✅] Deployed to Pi — commit `dbff06e`
 - [ ] DHCP / static IP confirmation (cameras should stay on same IPs)
 - [ ] Test UI on touchscreen + mobile
 
