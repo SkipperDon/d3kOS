@@ -93,9 +93,14 @@ KNOWN_GLOBALS = {
     'gemini','proxy','requests','payload','elapsed','timeout',
     'manual_context','boat_status','query_text','api_key','model',
     'candidates','history','session_history','start_time','elapsed_ms',
+    # Python exceptions and keyword args
+    'TypeError','ValueError','KeyError','IndexError','AttributeError',
+    'RuntimeError','Exception','StopIteration','OSError','IOError',
+    'indent','encoding','errors','mode','newline',
     # Camera-specific
     'cameras','camera','cam','active','connected','has_frame','camera_id',
-    'camera_name','camera_ip','recording','bow','stern',
+    'camera_name','camera_ip','recording','bow','stern','port','starboard',
+    'position','assign','direction','unassigned',
 }
 
 
@@ -213,11 +218,12 @@ def parse_blocks(text):
                'BEFORE':'INSERT_BEFORE','INSERT_BEFORE':'INSERT_BEFORE','REPLACE':'REPLACE'}
     blocks = []
     for m in re.compile(
-            r'FIND_LINE:\s*(.+?)\nACTION:\s*(INSERT_BEFORE|INSERT_AFTER|REPLACE|BEFORE|AFTER)\s*\n'
+            r'FIND_LINE:\s*(.+?)\n(?:END_LINE:\s*(.+?)\n)?ACTION:\s*(INSERT_BEFORE|INSERT_AFTER|REPLACE|BEFORE|AFTER)\s*\n'
             r'CODE:\s*\n(.*?)END_CODE', re.DOTALL).finditer(text):
         blocks.append({'find_line': m.group(1).strip().strip('`'),
-                       'action': ALIASES.get(m.group(2).strip(), m.group(2).strip()),
-                       'code': m.group(3).rstrip('\n'),
+                       'end_line':  (m.group(2) or '').strip().strip('`'),
+                       'action': ALIASES.get(m.group(3).strip(), m.group(3).strip()),
+                       'code': m.group(4).rstrip('\n'),
                        'valid':True,'issues':[],'correction_attempted':False,'corrected':False})
     return blocks
 
@@ -274,6 +280,9 @@ def validate(blocks, source, ft):
         if b['find_line'] not in source:
             b['valid']=False
             b['issues'].append(f"FIND_LINE not found: {b['find_line']!r}")
+        if b.get('end_line') and b['end_line'] not in source:
+            b['valid']=False
+            b['issues'].append(f"END_LINE not found: {b['end_line']!r}")
         inv = check_invented(b['code'], source, ft)
         if inv:
             b['valid']=False
@@ -410,7 +419,7 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
 
         context_file = CONTEXT_FILE.read_text() if CONTEXT_FILE.exists() else ''
         rag = query_rag(src_file, keywords)
-        rag_block = ("\n\n## RETRIEVED CODE CONTEXT\n" + rag) if rag else ""
+        rag_block = ("\n\n## BACKGROUND REFERENCE (do NOT copy FIND_LINE or END_LINE from here — use CURRENT FILE CONTEXT only)\n" + rag) if rag else ""
 
         prompt = f"""{context_file}
 
@@ -428,12 +437,14 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
 {', '.join(scope_vars[:30]) if scope_vars else '(see context above)'}
 
 ## OUTPUT FORMAT — REQUIRED:
-FIND_LINE must be an exact verbatim line from the file shown above.
+FIND_LINE must be copied exactly from CURRENT FILE CONTEXT above (not from BACKGROUND REFERENCE).
 FIND_LINE must not be a comment (no //, #, <!--).
 FIND_LINE must not be a bare {{ or }}.
+For REPLACE of a multi-line block, add END_LINE with the last line of the block to remove.
 Do NOT wrap output in markdown code fences.
 
-FIND_LINE: <exact line>
+FIND_LINE: <exact line from CURRENT FILE CONTEXT>
+END_LINE: <last line of block to replace — omit if replacing single line>
 ACTION: INSERT_AFTER | INSERT_BEFORE | REPLACE
 CODE:
 <your code here>
@@ -483,7 +494,11 @@ END_CODE
         tprint(f"\n  Applying {len(valid)} block(s)...")
         current = source_path.read_text()
         for b in valid:
-            if   b['action']=='REPLACE':        current = current.replace(b['find_line'], b['code'], 1)
+            if b['action']=='REPLACE' and b.get('end_line'):
+                fi = current.find(b['find_line'])
+                ei = current.find(b['end_line'], fi) + len(b['end_line'])
+                current = current[:fi] + b['code'] + current[ei:]
+            elif b['action']=='REPLACE':        current = current.replace(b['find_line'], b['code'], 1)
             elif b['action']=='INSERT_AFTER':   current = current.replace(b['find_line'], b['find_line']+'\n'+b['code'], 1)
             elif b['action']=='INSERT_BEFORE':  current = current.replace(b['find_line'], b['code']+'\n'+b['find_line'], 1)
         source_path.write_text(current)

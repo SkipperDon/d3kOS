@@ -364,7 +364,13 @@
       setInterval(updateStatus,          5000);
       setInterval(updateDetectionStatus, 5000);
       setInterval(loadRecordings,       10000);
-      setInterval(loadCameraList,       15000);
+            setInterval(loadCameraList,       15000);
+      // Update camera status on page load
+      window.addEventListener('load', function() {
+        updateStatus();
+        // Update every 10 seconds
+        setInterval(updateStatus, 10000);
+      });
     });
 
     // ── Camera list + selector buttons ──────────────────────────────────────
@@ -379,13 +385,6 @@
           renderAllCamerasGrid(allCameras, activeCamId);
         })
         .catch(() => {});
-  fetch('/tier/status')
-    .then(r => r.json())
-    .then(data => {
-      if (data.features && data.features.camera) {
-        loadCameraList();
-      }
-    });
     }
 
     function renderSelector(cams, activeId) {
