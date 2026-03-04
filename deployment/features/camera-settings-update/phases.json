@@ -1,0 +1,14 @@
+[
+  {
+    "name": "camera-html",
+    "source_file": "settings.html",
+    "spec_section": "PHASE 1: UPDATE HTML — camera-html",
+    "keywords": ["camera-section-header", "camera1-status", "discoverNewCamera", "Camera Management"]
+  },
+  {
+    "name": "camera-js",
+    "source_file": "settings.html",
+    "spec_section": "PHASE 2: UPDATE JS — camera-js",
+    "keywords": ["updateCameraStatus", "discoverNewCamera", "viewCameraList", "camera1-status"]
+  }
+]
