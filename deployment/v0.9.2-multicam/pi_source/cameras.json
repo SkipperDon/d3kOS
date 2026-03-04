@@ -1,0 +1,23 @@
+{
+  "cameras": [
+    {
+      "id": "bow",
+      "name": "Bow Camera",
+      "location": "Bow",
+      "ip": "10.42.0.100",
+      "rtsp_url": "rtsp://admin:d3kos2026@10.42.0.100:554/h264Preview_01_sub",
+      "model": "Reolink",
+      "detection_enabled": true
+    },
+    {
+      "id": "stern",
+      "name": "Stern Camera",
+      "location": "Stern",
+      "ip": "10.42.0.63",
+      "rtsp_url": "rtsp://admin:d3kos2026@10.42.0.63:554/h264Preview_01_sub",
+      "model": "Reolink RLC-820A",
+      "detection_enabled": false
+    }
+  ],
+  "active_camera": "bow"
+}
