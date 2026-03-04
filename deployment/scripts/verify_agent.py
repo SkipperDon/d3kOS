@@ -31,7 +31,7 @@ from flask import Flask, request, jsonify
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-OLLAMA_URL    = "http://192.168.1.36:11434/api/generate"   # workstation GPU
+OLLAMA_URL    = "http://192.168.1.62:11434/api/generate"   # workstation GPU
 VERIFY_MODEL  = "qwen3-coder:30b"                          # same high-quality model, different role
 VERIFY_PORT   = 11436
 OLLAMA_TIMEOUT = 120   # workstation GPU: 80-token review ~30-40s
