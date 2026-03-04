@@ -1,21 +1,31 @@
-function renderSelector(cams, activeId) {
-  const sel = document.getElementById('cameraSelector');
-  let html = '';
-
-  cams.forEach(cam => {
-    const isActive  = cam.id === activeId && !gridMode;
-    const isOffline = !cam.connected;
-    let cls = 'cam-btn';
-    if (isActive)  cls += ' active';
-    if (isOffline) cls += ' offline';
-    html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
-  });
-
-  // Grid button (only if > 1 camera)
-  if (cams.length > 1) {
-    const gCls = 'grid-btn' + (gridMode ? ' active' : '');
-    html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
-  }
-
-  sel.innerHTML = html;
-}
+    function renderSelector(cams, activeId) {
+      const sel = document.getElementById('cameraSelector');
+      let html = '';
+      const posOrder = ['bow', 'stern', 'port', 'starboard'];
+      posOrder.forEach(function(pos) {
+        const cam = cams.find(function(c) { return c.position === pos; });
+        if (!cam) return;
+        const isActive  = cam.id === activeId && !gridMode;
+        const isOffline = !cam.connected;
+        let cls = 'cam-btn';
+        if (isActive)  cls += ' active';
+        if (isOffline) cls += ' offline';
+        const label = pos.charAt(0).toUpperCase() + pos.slice(1);
+        html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${label}</button>`;
+      });
+      if (!html) {
+        cams.forEach(function(cam) {
+          const isActive  = cam.id === activeId && !gridMode;
+          const isOffline = !cam.connected;
+          let cls = 'cam-btn';
+          if (isActive)  cls += ' active';
+          if (isOffline) cls += ' offline';
+          html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
+        });
+      }
+      if (cams.length > 1) {
+        const gCls = 'grid-btn' + (gridMode ? ' active' : '');
+        html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
+      }
+      sel.innerHTML = html;
+    }

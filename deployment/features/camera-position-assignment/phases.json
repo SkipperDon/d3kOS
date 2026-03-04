@@ -25,7 +25,7 @@
     "keywords": ["renderSelector", "posOrder", "cam.position", "cameraSelector"],
     "replace_exact": true,
     "find_line": "    function renderSelector(cams, activeId) {",
-    "end_line": "      sel.innerHTML = html;",
+    "end_line": "    }",
     "action": "REPLACE"
   }
 ]
