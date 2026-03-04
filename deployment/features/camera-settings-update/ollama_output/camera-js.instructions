@@ -1,0 +1,10 @@
+FIND_LINE:           ip.textContent = data.camera_ip || 'Not configured';
+ACTION: INSERT_AFTER
+CODE:
+
+          // Update the camera IP in the settings panel
+          const settingsIp = document.getElementById('camera1-ip-setting');
+          if (settingsIp) {
+            settingsIp.textContent = data.camera_ip || 'Not configured';
+          }
+END_CODE

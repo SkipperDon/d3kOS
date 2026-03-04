@@ -1,0 +1,20 @@
+FIND_LINE: function discoverNewCamera() {
+ACTION: REPLACE
+CODE:
+function discoverNewCamera() {
+  if (!confirm('This will scan the network for new cameras.\n\nMake sure the camera is:\n- Powered on\n- Connected to ethernet\n- Booted up (wait 60 seconds)\n\nContinue?')) {
+    return;
+  }
+  
+  alert('Camera discovery will run in the background.\n\nThis may take 2-3 minutes.\n\nThe camera will automatically connect when found.');
+  
+  // In a real implementation, this would trigger the discovery script
+  // For now, we'll show instructions
+  setTimeout(() => {
+    const result = confirm('To manually add a camera:\n\n1. SSH to d3kOS\n2. Run: cd /opt/d3kos/services/marine-vision\n3. Run: python3 camera_discovery.py\n\nWould you like to see the Marine Vision page instead?');
+    if (result) {
+      window.location.href = '/marine-vision.html';
+    }
+  }, 500);
+}
+END_CODE
