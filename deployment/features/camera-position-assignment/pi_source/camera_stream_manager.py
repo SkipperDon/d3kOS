@@ -305,6 +305,7 @@ def camera_list():
             'has_frame': state.get('frame') is not None,
             'active':    cam_id == active_id,
             'detection_enabled': cam.get('detection_enabled', False),
+            'position':          cam.get('position', 'unassigned'),
         })
     return jsonify({'cameras': result, 'active_camera': active_id})
 
@@ -329,6 +330,30 @@ def switch_camera(cam_id):
     return jsonify({'ok': True, 'active_camera': active_id})
 
 
+@app.route('/camera/assign', methods=['POST'])
+def assign_camera_position():
+    data = request.get_json()
+    cam_id = data.get('camera_id')
+    position = data.get('position')
+    valid_positions = ['bow', 'stern', 'port', 'starboard', 'unassigned']
+    if position not in valid_positions:
+        return jsonify({'ok': False, 'error': 'invalid position'}), 400
+    with open(CAMERAS_CONFIG) as f:
+        config = json.load(f)
+    found = False
+    for cam in config['cameras']:
+        if cam['id'] == cam_id:
+            found = True
+        if cam.get('position') == position and position != 'unassigned':
+            cam['position'] = 'unassigned'
+    if not found:
+        return jsonify({'ok': False, 'error': 'camera not found'}), 404
+    for cam in config['cameras']:
+        if cam['id'] == cam_id:
+            cam['position'] = position
+    with open(CAMERAS_CONFIG, 'w') as f:
+        json.dump(config, f, indent=2)
+    return jsonify({'ok': True, 'camera_id': cam_id, 'position': position})
 @app.route('/camera/grid', methods=['GET'])
 def camera_grid():
     """Return a side-by-side JPEG of all cameras (max 2 wide)."""
