@@ -175,88 +175,49 @@
 
 ---
 
-## v0.9.3 — Multi-Camera System `[LARGE]`
+## v0.9.2 — Multi-Camera System `[LARGE]`
 
-**Status:** [🔄] In Progress — 2 of 2 cameras on network | **Priority:** HIGH
+**Status:** [🔄] In Progress — core multi-camera backend + UI deployed | **Priority:** HIGH
 
 **Hardware:** 2 cameras currently available:
-- Camera 1 (existing bow camera) — already integrated
-- Camera 2 (new) — **Reolink RLC-820A** — on network, not yet configured in d3kOS
+- Camera 1 (bow, 10.42.0.100) — connected, live
+- Camera 2 (stern, 10.42.0.63) — **Reolink RLC-820A** — on network, RTSP 401 (need password — set via `http://10.42.0.63` Reolink web UI)
 
-**Note:** Original plan was 4 cameras (3× RLC-820A). Updated to 2× RLC-820A.
-RLC-820A is 4K + colour night vision (better than RLC-820A). Multi-camera system
-can be built and tested with the 2 cameras on hand now.
+**Commit:** `be236c5`
 
 ### Camera Registry System
 
-- [ ] Create camera configuration schema
-  - [ ] Design `/opt/d3kos/config/cameras.json` structure
-  - [ ] Define camera object properties (id, name, location, purpose, ip, rtsp_urls, detection_enabled)
-  - [ ] Create camera registry manager class
-- [ ] Implement camera auto-discovery
-  - [ ] Scan 10.42.0.0/24 subnet for Reolink cameras
-  - [ ] Detect RTSP endpoints (port 554)
-  - [ ] Verify camera model and capabilities
-  - [ ] Add discovered cameras to registry
+- [✅] Create camera configuration schema
+  - [✅] `/opt/d3kos/config/cameras.json` deployed (id, name, location, ip, rtsp_url, model, detection_enabled)
 - [ ] Configure DHCP reservations
-  - [ ] Update `/etc/NetworkManager/dnsmasq-shared.d/camera-reservations.conf`
-  - [ ] Reserve 10.42.0.100 (Bow — existing camera)
-  - [ ] Reserve 10.42.0.101 (RLC-820A — location TBD)
+  - [ ] Reserve 10.42.0.100 (Bow) and 10.42.0.63 (Stern) in dnsmasq
   - [ ] Restart NetworkManager
-- [ ] Test camera connectivity
-  - [ ] Verify both cameras connect (bow + RLC-820A)
-  - [ ] Test RTSP streams (main + sub) on both
-  - [ ] Verify DHCP reservations persist across reboots
+- [🔄] Test camera connectivity
+  - [✅] Bow camera connects (10.42.0.100, RTSP working)
+  - [⚠️] Stern RLC-820A on network — RTSP 401 Unauthorized (password unknown, set via `http://10.42.0.63`)
+  - [ ] Once stern password set: update `rtsp_url` in `cameras.json`, restart service
 
 ### Multi-Camera Backend API
 
-- [ ] Extend Camera Stream Manager (`/opt/d3kos/services/marine-vision/camera_stream_manager.py`)
-  - [ ] Add multi-camera support (currently single camera)
-  - [ ] Create camera switching logic
-  - [ ] Implement concurrent stream management
-  - [ ] Add frame buffering per camera
-- [ ] Create new API endpoints (Port 8084)
-  - [ ] GET `/camera/list` — Get all registered cameras
-  - [ ] GET `/camera/status/{id}` — Connection status per camera
-  - [ ] POST `/camera/switch/{id}` — Switch active camera
-  - [ ] GET `/camera/grid` — Get all frames for grid view (2 cameras)
-  - [ ] GET `/camera/frame/{id}` — Get frame from specific camera
-- [ ] Implement resource optimization
-  - [ ] Use sub-streams (720p) for grid view
-  - [ ] Use main stream (1080p) for single view
-  - [ ] Limit grid view to 1 FPS per camera
-  - [ ] Single view maintains 25 FPS
-- [ ] Test API endpoints
-  - [ ] Test all endpoints with curl
-  - [ ] Verify performance (CPU/memory/bandwidth)
-  - [ ] Load test with both cameras active
+- [✅] Extend Camera Stream Manager (per-camera frame-grabber threads, graceful offline handling)
+- [✅] Create new API endpoints (Port 8084)
+  - [✅] GET `/camera/list` — all cameras + status
+  - [✅] POST `/camera/switch/<id>` — switch active camera
+  - [✅] GET `/camera/grid` — side-by-side JPEG of all cameras
+  - [✅] GET `/camera/frame/<id>` — frame from specific camera
+- [✅] Backwards-compatible endpoints: `/camera/status`, `/camera/frame`, `/camera/record/*`, `/camera/capture`
+- [✅] All endpoints tested with curl — bow live, stern returns offline placeholder
+- [ ] 24-hour stability test (once both cameras connected)
 
 ### UI Implementation
 
-- [ ] Create Single View Page (`/marine-vision.html` — update existing)
-  - [ ] Add camera dropdown selector (2 cameras: Bow, RLC-820A)
-  - [ ] Implement camera switching (no page reload)
-  - [ ] Maintain 1080p @ 25 FPS display
-  - [ ] Show camera name and status
-  - [ ] Add "Grid View" button
-- [ ] Create Grid View Page (`/marine-vision-grid.html` — new)
-  - [ ] 1×2 grid layout (side-by-side on desktop, stacked on mobile)
-  - [ ] Display both cameras simultaneously (1×2 layout)
-  - [ ] 720p @ 1 FPS per camera
-  - [ ] Click any camera to jump to Single View
-  - [ ] Show camera names on each grid cell
-  - [ ] Add "Single View" button
-- [ ] Add navigation menu entries
-  - [ ] Update main menu with "Marine Vision Grid" button
-  - [ ] Update marine-vision.html with grid view link
-- [ ] Mobile responsive design
-  - [ ] Single view: Full-screen on mobile
-  - [ ] Grid view: 1×2 side-by-side on desktop, stacked on mobile
-- [ ] Test UI on multiple devices
-  - [ ] Desktop browser
-  - [ ] Tablet (landscape + portrait)
-  - [ ] Mobile phone
-  - [ ] 10.1" touchscreen (Pi display)
+- [✅] Update `/marine-vision.html`:
+  - [✅] Camera selector buttons (Bow Camera / Stern Camera) — switches without page reload
+  - [✅] Grid View toggle button — side-by-side via `/camera/grid`
+  - [✅] Feed label shows active camera name
+  - [✅] All-cameras status cards (shows connection state per camera)
+- [ ] DHCP / static IP confirmation (cameras should stay on same IPs)
+- [ ] Test UI on touchscreen + mobile
 
 ### Testing & Optimization
 
@@ -291,19 +252,17 @@ can be built and tested with the 2 cameras on hand now.
   - [ ] Troubleshooting guide
   - [ ] API documentation updates
 - [ ] Hardware setup
-  - [✅] Camera 1 (existing bow camera) — on network
-  - [✅] Camera 2 — Reolink RLC-820A purchased, on network
-  - [ ] Configure RLC-820A in d3kOS (static IP, RTSP credentials, add to registry)
-  - [ ] Decide on mounting location for RLC-820A (stern, interior, or port/starboard)
-  - [ ] Mount and cable RLC-820A at chosen location
-  - [ ] Verify both cameras accessible via RTSP
-- [ ] Deployment
-  - [ ] Git commit with detailed changes
-  - [ ] Tag release as v0.9.3
-  - [ ] Update CHANGELOG.md
-  - [ ] Deploy to production Pi
-  - [ ] Verify all 4 cameras working
-  - [ ] Test Forward Watch in real conditions
+  - [✅] Camera 1 — Bow camera (10.42.0.100) — on network, RTSP working
+  - [✅] Camera 2 — Reolink RLC-820A (10.42.0.63) — on network
+  - [⚠️] Set RLC-820A admin password via `http://10.42.0.63`, update `cameras.json`, restart service
+  - [ ] Decide on mounting location for RLC-820A (stern confirmed in registry — verify physical mount)
+  - [ ] Verify both cameras accessible via RTSP once password set
+- [✅] Deployment — core deployed, commit `be236c5`
+  - [✅] `cameras.json` → `/opt/d3kos/config/`
+  - [✅] `camera_stream_manager.py` → `/opt/d3kos/services/marine-vision/`
+  - [✅] `marine-vision.html` → `/var/www/html/`
+  - [✅] Service restarted, bow camera live
+  - [ ] Final deployment after stern RTSP fixed
 - [ ] User training
   - [ ] Create video tutorial
   - [ ] Write quick start guide
@@ -685,7 +644,7 @@ can be built and tested with the 2 cameras on hand now.
 
 - [✅] v0.9.1 Complete (Voice AI Assistant)
 - [✅] v0.9.2 Complete (Metric/Imperial)
-- [🔄] v0.9.3 In Progress (Multi-Camera System) — 2× RLC-820A on network, build underway
+- [🔄] v0.9.2 In Progress (Multi-Camera System) — backend + UI deployed, stern RTSP password needed
 - [✅] v0.9.4 Complete (Gemini AI Integration)
 - [✅] v0.9.5 Complete (AI Action Layer + Remote Access API + Tailscale)
 - [ ] v0.9.6 Complete (Remote Access & Camera Streaming) — cameras not purchased
@@ -705,8 +664,8 @@ can be built and tested with the 2 cameras on hand now.
 - [✅] v0.9.1 (Voice AI) — DONE
 - [✅] v0.9.2 (Metric/Imperial) — DONE
 - [✅] v0.9.4 (Gemini AI) — DONE
-- [🔄] v0.9.3 (Multi-Camera) — 2× RLC-820A on network, ready to build
-- [ ] Fix: voice rule overmatch ("speed" pattern) — SMALL, active bug
+- [🔄] v0.9.2 (Multi-Camera) — backend + UI deployed; stern RTSP blocked on password
+- [✅] Fix: voice rule overmatch ("speed" pattern) — FIXED commit `680a795`
 - [ ] v0.15.0 (Multi-Language) — REQUIRED for v1.0
 - [ ] v0.16.0 (Security Audit) — REQUIRED for v1.0
 
