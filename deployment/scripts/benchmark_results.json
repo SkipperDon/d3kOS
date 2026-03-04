@@ -1,0 +1,246 @@
+[
+  {
+    "model": "deepseek-coder-v2:16b",
+    "timestamp": "2026-03-04T09:54:21.187166",
+    "tests": {
+      "camera-assign-api": {
+        "scores": {
+          "syntax": {
+            "score": 0,
+            "max": 20,
+            "detail": "invalid syntax (<benchmark>, line 1)"
+          },
+          "keywords": {
+            "score": 20,
+            "max": 20,
+            "detail": "10/10 hits"
+          },
+          "forbidden": {
+            "score": 16,
+            "max": 20,
+            "detail": "violations: ['```']"
+          },
+          "variables": {
+            "score": 20,
+            "max": 20,
+            "detail": "5/5 exact names"
+          },
+          "similarity": {
+            "score": 20,
+            "max": 20,
+            "detail": "98% match to reference"
+          },
+          "total": 76,
+          "max": 100
+        },
+        "stats": {
+          "elapsed_s": 32.7,
+          "tokens_in": 484,
+          "tokens_out": 325,
+          "tokens_per_s": 9.9
+        },
+        "output_snippet": " ```python\u21b5@app.route('/camera/assign', methods=['POST'])\u21b5def assign_camera_position():\u21b5    data = request.get_json()\u21b5    cam_id = data.get('camera_id')\u21b5    position = data.get('position')\u21b5\u21b5    valid_positions = ['bow', 'stern', 'port', 'starboard', 'unassigned']\u21b5    if position not in valid_positio"
+      },
+      "camera-vision-buttons": {
+        "scores": {
+          "syntax": {
+            "score": 0,
+            "max": 20,
+            "detail": "/tmp/tmpsnvw9dpf.js:16"
+          },
+          "keywords": {
+            "score": 20,
+            "max": 20,
+            "detail": "9/9 hits"
+          },
+          "forbidden": {
+            "score": 8,
+            "max": 20,
+            "detail": "violations: ['```', 'cam.name', 'cams.forEach(cam =>']"
+          },
+          "variables": {
+            "score": 17,
+            "max": 20,
+            "detail": "5/6 exact names"
+          },
+          "similarity": {
+            "score": 15,
+            "max": 20,
+            "detail": "77% match to reference"
+          },
+          "total": 60,
+          "max": 100
+        },
+        "stats": {
+          "elapsed_s": 26.0,
+          "tokens_in": 559,
+          "tokens_out": 400,
+          "tokens_per_s": 15.4
+        },
+        "output_snippet": " ```javascript\u21b5const posOrder = ['bow', 'stern', 'port', 'starboard'];\u21b5\u21b5function renderSelector(cams, activeId) {\u21b5  let html = '';\u21b5\u21b5  posOrder.forEach(function(pos) {\u21b5    const cam = cams.find(function(c) { return c.position === pos; });\u21b5    if (!cam) return;\u21b5\u21b5    const isActive  = cam.id === active"
+      },
+      "simple-instruction-follow": {
+        "scores": {
+          "syntax": {
+            "score": 0,
+            "max": 20,
+            "detail": "invalid syntax (<benchmark>, line 1)"
+          },
+          "keywords": {
+            "score": 20,
+            "max": 20,
+            "detail": "4/4 hits"
+          },
+          "forbidden": {
+            "score": 16,
+            "max": 20,
+            "detail": "violations: ['```']"
+          },
+          "variables": {
+            "score": 20,
+            "max": 20,
+            "detail": "1/1 exact names"
+          },
+          "similarity": {
+            "score": 19,
+            "max": 20,
+            "detail": "93% match to reference"
+          },
+          "total": 75,
+          "max": 100
+        },
+        "stats": {
+          "elapsed_s": 1.9,
+          "tokens_in": 79,
+          "tokens_out": 34,
+          "tokens_per_s": 17.9
+        },
+        "output_snippet": " ```python\u21b5def celsius_to_fahrenheit(celsius):\u21b5    return celsius * 9 / 5 + 32\u21b5```"
+      }
+    },
+    "overall": 70,
+    "test_count": 3
+  },
+  {
+    "model": "qwen3-coder:30b",
+    "timestamp": "2026-03-04T09:55:21.814519",
+    "tests": {
+      "camera-assign-api": {
+        "scores": {
+          "syntax": {
+            "score": 20,
+            "max": 20,
+            "detail": "ok"
+          },
+          "keywords": {
+            "score": 20,
+            "max": 20,
+            "detail": "10/10 hits"
+          },
+          "forbidden": {
+            "score": 20,
+            "max": 20,
+            "detail": "clean"
+          },
+          "variables": {
+            "score": 20,
+            "max": 20,
+            "detail": "5/5 exact names"
+          },
+          "similarity": {
+            "score": 19,
+            "max": 20,
+            "detail": "95% match to reference"
+          },
+          "total": 99,
+          "max": 100
+        },
+        "stats": {
+          "elapsed_s": 44.5,
+          "tokens_in": 423,
+          "tokens_out": 276,
+          "tokens_per_s": 6.2
+        },
+        "output_snippet": "```python\u21b5@app.route('/camera/assign', methods=['POST'])\u21b5def assign_camera_position():\u21b5    cam_id = request.json.get('camera_id')\u21b5    position = request.json.get('position')\u21b5    \u21b5    valid_positions = ['bow', 'stern', 'port', 'starboard', 'unassigned']\u21b5    \u21b5    if position not in valid_positions:\u21b5  "
+      },
+      "camera-vision-buttons": {
+        "scores": {
+          "syntax": {
+            "score": 20,
+            "max": 20,
+            "detail": "ok"
+          },
+          "keywords": {
+            "score": 20,
+            "max": 20,
+            "detail": "9/9 hits"
+          },
+          "forbidden": {
+            "score": 12,
+            "max": 20,
+            "detail": "violations: ['cam.name', 'cams.forEach(cam =>']"
+          },
+          "variables": {
+            "score": 20,
+            "max": 20,
+            "detail": "6/6 exact names"
+          },
+          "similarity": {
+            "score": 20,
+            "max": 20,
+            "detail": "99% match to reference"
+          },
+          "total": 92,
+          "max": 100
+        },
+        "stats": {
+          "elapsed_s": 25.1,
+          "tokens_in": 474,
+          "tokens_out": 324,
+          "tokens_per_s": 12.9
+        },
+        "output_snippet": "function renderSelector(cams, activeId) {\u21b5      const sel = document.getElementById('cameraSelector');\u21b5      let html = '';\u21b5      const posOrder = ['bow', 'stern', 'port', 'starboard'];\u21b5\u21b5      posOrder.forEach(function(pos) {\u21b5        const cam = cams.find(function(c) { return c.position === pos; });"
+      },
+      "simple-instruction-follow": {
+        "scores": {
+          "syntax": {
+            "score": 20,
+            "max": 20,
+            "detail": "ok"
+          },
+          "keywords": {
+            "score": 20,
+            "max": 20,
+            "detail": "4/4 hits"
+          },
+          "forbidden": {
+            "score": 20,
+            "max": 20,
+            "detail": "clean"
+          },
+          "variables": {
+            "score": 20,
+            "max": 20,
+            "detail": "1/1 exact names"
+          },
+          "similarity": {
+            "score": 20,
+            "max": 20,
+            "detail": "100% match to reference"
+          },
+          "total": 100,
+          "max": 100
+        },
+        "stats": {
+          "elapsed_s": 3.4,
+          "tokens_in": 71,
+          "tokens_out": 24,
+          "tokens_per_s": 7.2
+        },
+        "output_snippet": "def celsius_to_fahrenheit(celsius):\u21b5    return celsius * 9 / 5 + 32"
+      }
+    },
+    "overall": 97,
+    "test_count": 3
+  }
+]
