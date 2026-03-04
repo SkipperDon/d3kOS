@@ -45,6 +45,20 @@
 - [✅] RAG retrieval wired into both executors — top-4 chunks injected before every Ollama call
 - [ ] Re-ingest `helm_os_source` after each Pi deployment (keeps code context current)
 
+### Verify Agent (`deployment/scripts/verify_agent.py`)
+
+- [✅] `d3kos-verify-agent.service` deployed on TrueNAS VM `192.168.1.103:11436`
+- [✅] `POST /verify` — receives generated code + instruction, returns `{pass, score, issue, suggestion}`
+- [✅] `GET /health`, `/report`, `/stats` — monitoring endpoints accessible from laptop
+- [✅] Inference routed to workstation `qwen3-coder:30b` GPU (TrueNAS CPU too slow — 0.03 t/s even on 1.5b due to bhyve ZFS ARC memory contention)
+- [✅] `call_verify()` wired into `ollama_execute_v3.py` — both REPLACE_EXACT and standard modes
+- [✅] FAIL → `Verify:` issue appended to block, triggers correction loop
+- [✅] Verifier offline → `None` returned, pipeline continues uninterrupted
+- [✅] Executor summary report now fetches verify stats from TrueNAS
+- [✅] `helm_os_context.md` updated — Ollama knows its GENERATOR role and the two-step pipeline
+- [✅] `deployment/docs/VERIFY_AGENT.md` written — full architecture, endpoints, management commands
+- [✅] `MEMORY.md` updated with verify agent details
+
 ### `helm_os_context.md` (`deployment/docs/`)
 
 - [✅] Units.js return types and variable names

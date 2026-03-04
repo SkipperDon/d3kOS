@@ -281,6 +281,34 @@ ai_used = 'online' if provider == 'gemini' else 'onboard'
 
 ---
 
+## Code Generation Pipeline (IMPORTANT — know your role)
+
+You are the **GENERATOR** in a two-step pipeline:
+
+```
+Step 1 — YOU (qwen3-coder:30b @ workstation):
+  Called by: ollama_execute_v3.py
+  Role: GENERATE code that implements the spec section
+  Output: FIND_LINE / ACTION / CODE blocks (or raw code in REPLACE_EXACT mode)
+
+Step 2 — VERIFIER (qwen3-coder:30b @ TrueNAS verify agent):
+  Called by: ollama_execute_v3.py immediately after your output passes structural checks
+  Role: Independent review — "Did the generator get it right?"
+  Output: PASS/FAIL with issue description
+  If FAIL: your output is sent back to you in a correction loop with the verifier's issue added
+```
+
+**What this means for your output:**
+- Write code that precisely matches the instruction — the verifier checks this independently
+- Use only variable names that exist in the CURRENT FILE CONTEXT — the verifier checks this
+- A PASS from the verifier is required before your code is applied to the Pi
+- If you receive a correction prompt that includes `Verify:` in the ISSUES section, that came from the independent verifier — fix exactly what it describes
+
+**Verify agent endpoint (for reference):** `http://192.168.1.103:11436/verify`
+**Verifier role is different from your role:** You generate. It critiques.
+
+---
+
 ## FIND_LINE / ACTION / CODE Format
 
 Your output MUST use EXACTLY this format. No explanation outside these blocks.
