@@ -25,8 +25,31 @@ MODEL            = "qwen3-coder:30b"
 TIMEOUT          = 300
 
 VERIFY_URL       = "http://192.168.1.103:11436/verify"   # TrueNAS independent verifier
-VERIFY_TIMEOUT   = 120                                    # 1.5b model, short prompts ~60-90s
+VERIFY_TIMEOUT   = 140                                    # workstation GPU via TrueNAS proxy
 VERIFY_ENABLED   = True                                   # set False to bypass verifier
+
+# ── Device context injected into every prompt ────────────────────────────────
+# This ensures Ollama always knows WHAT it is building for. Without this,
+# it generates generic web code that may not work on the specific platform.
+DEVICE_CONTEXT = """
+=== TARGET DEPLOYMENT ENVIRONMENT ===
+Device:      Raspberry Pi 4 (4GB RAM)
+OS:          Raspberry Pi OS Bookworm (Debian 13)
+Browser:     Chromium 144 on Wayland (labwc compositor) — KIOSK mode, no tabs/address bar
+Display:     Touchscreen with capacitive ILITEK-TP controller
+             IMPORTANT: Touch events come as raw pointer events, NOT gesture events.
+             Touch scroll MUST use JS touchstart/touchmove/touchend — CSS touch-action alone does NOT work.
+Services:    Flask APIs as systemd services on localhost (ports 8080-8111)
+Web server:  nginx serving /var/www/html/ at http://localhost/
+Python:      3.11, Flask, OpenCV, python-vlc, Paramiko
+JS:          Vanilla ES6, NO React/Vue/Angular. No npm. Include tags only.
+CSS:         Custom dark theme (--color-bg:#000, --color-accent:#0C0, --color-text:#fff)
+             Scrollbars: 40px, green (#00CC00) on black (#111)
+             Font sizes: body 22px, nav 20-28px — LARGE for touchscreen use
+Existing shared JS: /js/units.js (measurement unit conversions)
+                    /js/touch-scroll.js (touch scroll polyfill — already loaded on all pages)
+=== END ENVIRONMENT ===
+"""
 
 RAG_CHROMA_PATH  = str(pathlib.Path.home() / "rag-stack/chroma_data")
 RAG_VENV_SITE    = str(pathlib.Path.home() / "rag-stack/.venv/lib/python3.12/site-packages")
@@ -494,7 +517,9 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
             else:
                 anchor_desc = (f"Replace the block from:\n`{exact_find}`\nthrough:\n`{exact_end}`\nwith your code.")
 
-            prompt = f"""{context_file}
+            prompt = f"""{DEVICE_CONTEXT}
+
+{context_file}
 
 ---
 
@@ -602,7 +627,9 @@ Rewrite ONLY the corrected code. No FIND_LINE, no markers, no fences.
         rag = query_rag(src_file, keywords)
         rag_block = ("\n\n## BACKGROUND REFERENCE (do NOT copy FIND_LINE or END_LINE from here — use CURRENT FILE CONTEXT only)\n" + rag) if rag else ""
 
-        prompt = f"""{context_file}
+        prompt = f"""{DEVICE_CONTEXT}
+
+{context_file}
 
 ---
 
