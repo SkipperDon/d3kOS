@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-03-04T22:28:31.734226",
+  "elapsed_seconds": 5625,
+  "model": "qwen3-coder:30b",
+  "strategy": "inject+patch_js \u2014 never sends full HTML file",
+  "passed": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    13
+  ],
+  "failed": [],
+  "details": {
+    "13": {
+      "settings_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "1": {
+      "dashboard_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "2": {
+      "benchmark_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "4": {
+      "navigation_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "5": {
+      "boatlog_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "6": {
+      "weather_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "7": {
+      "marine_vision_html": [
+        true,
+        "deployed"
+      ],
+      "camera_stream_manager": [
+        true,
+        "deployed"
+      ]
+    },
+    "9": {
+      "onboarding_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "10": {
+      "query_handler": [
+        true,
+        "deployed"
+      ]
+    },
+    "8": {
+      "status": [
+        true,
+        "installed + config migrated"
+      ]
+    }
+  }
+}
