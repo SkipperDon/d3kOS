@@ -19,8 +19,8 @@ Feature directory must contain:
 import sys, re, json, time, pathlib, tempfile, subprocess, threading, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-OLLAMA_URL       = "http://192.168.1.36:11434/api/generate"
-OLLAMA_EMBED_URL = "http://192.168.1.36:11434/api/embed"
+OLLAMA_URL       = "http://192.168.1.62:11434/api/generate"
+OLLAMA_EMBED_URL = "http://192.168.1.62:11434/api/embed"
 MODEL            = "qwen3-coder:30b"
 TIMEOUT          = 300
 
@@ -449,7 +449,7 @@ def preflight_check():
             print(f"  ⚠ Ollama reachable but {MODEL} not in loaded models: {model_names}")
     except Exception as e:
         print(f"  ✗ Ollama workstation UNREACHABLE: {e}")
-        print(f"    Cannot run without generator. Check http://192.168.1.36:11434")
+        print(f"    Cannot run without generator. Check http://192.168.1.62:11434")
         sys.exit(1)
 
     # 2. TrueNAS verify agent
@@ -841,8 +841,8 @@ def print_report():
         print(f"  {c['label']:35s} {c['prompt_chars']:6d}p → {c['response_chars']:6d}r  {c['elapsed_s']:.1f}s")
     print(f"  {'TOTAL':35s} {sum(c['prompt_chars'] for c in calls):6d}p → "
           f"{sum(c['response_chars'] for c in calls):6d}r  {sum(c['elapsed_s'] for c in calls):.1f}s")
-    print(f"\n  Ollama generator  (qwen3-coder:30b @ 192.168.1.36  workstation GPU): $0.00")
-    print(f"  Ollama verifier   (qwen3-coder:30b @ 192.168.1.36  via TrueNAS proxy): $0.00")
+    print(f"\n  Ollama generator  (qwen3-coder:30b @ 192.168.1.62  workstation GPU): $0.00")
+    print(f"  Ollama verifier   (qwen3-coder:30b @ 192.168.1.62  via TrueNAS proxy): $0.00")
     # Fetch verify stats from TrueNAS
     try:
         with urllib.request.urlopen(
