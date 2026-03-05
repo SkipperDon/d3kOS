@@ -1,6 +1,19 @@
 # d3kOS Post-Install Bug Fix Specification
-**Version:** 1.0 | **Date:** 2026-03-04 | **Target:** Ollama `qwen3-coder:30b` on workstation `192.168.1.36`
+**Version:** 1.1 | **Date:** 2026-03-04 | **Target:** Ollama `qwen3-coder:30b` on workstation `192.168.1.62`
 **Pi:** `d3kos@192.168.1.237` | **Web root:** `/var/www/html/` | **Services:** `/opt/d3kos/services/`
+
+---
+
+## Executor Notes (lessons learned 2026-03-04)
+
+- **Workstation IP**: `192.168.1.62` (was `.36` — DHCP changed on reboot). Update OLLAMA_URL and verify agent if IP changes.
+- **DO NOT send full HTML files to Ollama**: d3kOS HTML pages are 600–1200 lines (25–50KB). Sending whole files causes 600s timeout on qwen3-coder:30b.
+- **Use surgical patch strategies instead**:
+  - `INJECT` — for adding new CSS/HTML/JS: ask Ollama to generate only the new code blocks, inject programmatically
+  - `PATCH_JS` — for modifying existing JS: extract only `<script>` blocks, patch, replace back
+  - `PATCH_FN` — for modifying Python: extract only the relevant function, patch, replace
+- **Flatpak must use sudo**: `sudo flatpak install -y --system flathub ...` — user-level install fails with "Deploy not allowed for user"
+- **Executors**: `ollama_execute_fixes.py` (v1, full-file approach — reference only), `ollama_execute_fixes_v2.py` (v2, surgical patches — use this)
 
 ---
 
