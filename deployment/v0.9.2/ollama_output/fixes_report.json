@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-03-04T18:44:51.631651",
+  "elapsed_seconds": 8152,
+  "ollama_url": "http://192.168.1.62:11434/api/generate",
+  "model": "qwen3-coder:30b",
+  "passed_fixes": [
+    3,
+    12,
+    14
+  ],
+  "failed_fixes": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    13
+  ],
+  "details": {
+    "13": {
+      "settings_api_py": [
+        true,
+        "deployed"
+      ],
+      "service_file": [
+        true,
+        "deployed"
+      ],
+      "sudoers": [
+        true,
+        "deployed"
+      ],
+      "nginx": [
+        true,
+        "added"
+      ],
+      "settings_html": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "3": {
+      "export_daily_sh": [
+        true,
+        "deployed"
+      ],
+      "service_ordering": [
+        true,
+        "updated"
+      ]
+    },
+    "1": {
+      "dashboard_html": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "2": {
+      "benchmark_html": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "4": {
+      "navigation_html": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "6": {
+      "weather_html": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "7": {
+      "marine_vision_html": [
+        false,
+        "ollama returned empty"
+      ],
+      "camera_stream_manager.py": [
+        false,
+        "ollama returned empty"
+      ],
+      "fish_detector.py": [
+        true,
+        "deployed"
+      ]
+    },
+    "5": {
+      "boatlog_html": [
+        false,
+        "ollama returned empty"
+      ],
+      "boatlog_api": [
+        true,
+        "deployed"
+      ]
+    },
+    "9": {
+      "onboarding_html": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "12": {
+      "settings_html": [
+        true,
+        "mechanical fix applied"
+      ]
+    },
+    "10": {
+      "query_handler": [
+        false,
+        "ollama returned empty"
+      ]
+    },
+    "8": {
+      "status": [
+        false,
+        "flatpak install rc=1"
+      ]
+    },
+    "14": {
+      "scrollbars": [
+        true,
+        "26/26 files patched"
+      ]
+    }
+  }
+}
