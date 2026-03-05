@@ -197,6 +197,8 @@ def _extract_fn_py(lines, hit):
         fe = i
     return fs, fe
 
+MAX_CTX_LINES = 200   # hard cap — prevents context collapse on large files
+
 def extract_context(source_text, keywords, file_type):
     lines = source_text.splitlines(); hit = None
     for i,l in enumerate(lines):
@@ -211,10 +213,15 @@ def extract_context(source_text, keywords, file_type):
                 if re.search(kw, l, re.IGNORECASE): hit=i; break
             if hit is not None: break
     if hit is None:
-        start=max(0,len(lines)-80)
+        start=max(0,len(lines)-min(80, MAX_CTX_LINES))
         return '\n'.join(f"{i+start+1}: {l}" for i,l in enumerate(lines[start:])), []
     fn = _extract_fn_py if file_type=='py' else _extract_fn_js
     s,e = fn(lines, hit)
+    # Enforce hard cap: trim extracted range if it exceeds MAX_CTX_LINES
+    if (e - s + 1) > MAX_CTX_LINES:
+        half = MAX_CTX_LINES // 2
+        s = max(s, hit - half)
+        e = min(e, hit + half)
     ctx    = '\n'.join(f"{i+1}: {lines[i]}" for i in range(s,e+1))
     preamb = '\n'.join(f"{i+1}: {lines[i]}" for i in range(min(15,s)))
     if preamb: ctx = preamb + '\n\n... (intervening lines omitted) ...\n\n' + ctx
@@ -355,25 +362,29 @@ def run_correction(block, source, filename, scope_vars):
                           f"Use only names from scope list below.")
         elif 'syntax' in issue.lower():
             advice.append(f"Fix this syntax error: {issue}")
-    prompt = f"""Your instruction block for {filename} failed validation.
+    # Snippet-only correction prompt — never send the full file
+    # _nearby_ctx gives max 30 lines around the target location
+    prompt = f"""{DEVICE_CONTEXT}
+
+Your code block for {filename} failed validation. Fix ONLY the CODE section.
 
 FAILED BLOCK:
 FIND_LINE: {block['find_line']}
 ACTION: {block['action']}
 CODE:
-{block['code']}
+{block['code'][:2000]}
 END_CODE
 
-ISSUES:
+ISSUES TO FIX:
 {chr(10).join('- '+e for e in block['issues'])}
 
 HOW TO FIX:
 {chr(10).join(advice) or 'Fix the issues above.'}
 
-SCOPE VARIABLES (use only these):
+SCOPE VARIABLES (use only these names):
 {', '.join(scope_vars[:30])}
 
-NEARBY FILE CONTEXT:
+NEARBY FILE CONTEXT (30 lines around target):
 {_nearby_ctx(block, source)}
 
 Return EXACTLY ONE corrected block. Nothing else.
@@ -391,7 +402,7 @@ END_CODE"""
 
 def call_verify(code, instruction, context, filename, phase_name=''):
     """
-    POST generated code to TrueNAS verify agent (qwen2.5-coder:1.5b).
+    POST generated code to TrueNAS verify agent (routes to qwen3-coder:30b on workstation).
     Returns dict with keys: pass (bool|None), score (int), issue (str), suggestion (str).
     Returns None if verifier is disabled or unreachable — caller must treat as non-blocking.
     """
@@ -415,6 +426,77 @@ def call_verify(code, instruction, context, filename, phase_name=''):
     except Exception as e:
         tprint(f"  [Verify] unreachable: {e} — continuing without verify")
         return None
+
+
+# ── Pre-flight health check ───────────────────────────────────────────────────
+
+def preflight_check():
+    """
+    Verify Ollama workstation and TrueNAS verify agent are reachable before
+    starting any run. Prints warm/cold model status. Exits if generator is down.
+    """
+    print(f"\n{'='*60}\nPRE-FLIGHT CHECKS\n{'='*60}")
+
+    # 1. Workstation Ollama
+    try:
+        req = urllib.request.Request(OLLAMA_URL.replace('/api/generate', '/api/tags'))
+        with urllib.request.urlopen(req, timeout=8) as r:
+            tags = json.loads(r.read().decode())
+        model_names = [m['name'] for m in tags.get('models', [])]
+        if MODEL in model_names or any(MODEL.split(':')[0] in n for n in model_names):
+            print(f"  ✓ Ollama workstation reachable — model {MODEL} loaded (warm)")
+        else:
+            print(f"  ⚠ Ollama reachable but {MODEL} not in loaded models: {model_names}")
+    except Exception as e:
+        print(f"  ✗ Ollama workstation UNREACHABLE: {e}")
+        print(f"    Cannot run without generator. Check http://192.168.1.36:11434")
+        sys.exit(1)
+
+    # 2. TrueNAS verify agent
+    if VERIFY_ENABLED:
+        try:
+            req = urllib.request.Request("http://192.168.1.103:11436/health")
+            with urllib.request.urlopen(req, timeout=6) as r:
+                health = json.loads(r.read().decode())
+            stats = health.get('stats', {})
+            print(f"  ✓ Verify agent reachable — "
+                  f"calls={stats.get('total_calls',0)} "
+                  f"pass={stats.get('pass',0)} fail={stats.get('fail',0)}")
+        except Exception as e:
+            print(f"  ⚠ Verify agent unreachable: {e} — will run without verify")
+    else:
+        print(f"  - Verify agent disabled (VERIFY_ENABLED=False)")
+
+    print(f"{'='*60}\n")
+
+
+# ── File safety — backup + size guard ────────────────────────────────────────
+
+def _backup_file(path):
+    """Write a .bak copy of a file before modifying it. Returns backup path."""
+    bak = pathlib.Path(str(path) + '.bak')
+    bak.write_text(pathlib.Path(path).read_text())
+    return bak
+
+
+def _size_guard(original_text, result_text, path, threshold=0.70):
+    """
+    Reject result if it is suspiciously smaller than the original.
+    Threshold 0.70 = reject if result < 70% of original line count.
+    Returns (ok: bool, reason: str).
+    Prevents the camera_stream_manager.py catastrophe where Ollama replaced
+    a 404-line file with a 19-line snippet.
+    """
+    orig_lines   = len(original_text.splitlines())
+    result_lines = len(result_text.splitlines())
+    if orig_lines < 10:           # tiny files — no guard needed
+        return True, ''
+    ratio = result_lines / orig_lines
+    if ratio < threshold:
+        return False, (f"SIZE GUARD: result {result_lines} lines = {ratio:.0%} of "
+                       f"original {orig_lines} lines (threshold {threshold:.0%}) — "
+                       f"likely truncation. Original preserved.")
+    return True, ''
 
 
 # ── Ollama call ───────────────────────────────────────────────────────────────
@@ -560,8 +642,8 @@ Do not wrap in markdown fences.
         # ── TrueNAS independent verify ─────────────────────────────────────────
         if b['valid'] and not skip_ollama:
             vr = call_verify(code=b['code'],
-                             instruction=spec_section_text[:800],
-                             context=ctx[:800],
+                             instruction=spec_section_text[:1200],
+                             context=ctx[:1200],
                              filename=src_file,
                              phase_name=name)
             if vr and vr.get('pass') is False:
@@ -572,13 +654,20 @@ Do not wrap in markdown fences.
 
         if not b['valid'] and not skip_ollama:
             tprint(f"  [CORRECTION] {b['issues']}")
-            corr_prompt = f"""Your code for {src_file} failed validation.
+            # Snippet-only correction: send ONLY the generated code + issues
+            # Never send the full file — avoids context collapse and timeout
+            corr_prompt = f"""{DEVICE_CONTEXT}
+
+Your code for {src_file} failed validation.
 
 ISSUES:
 {chr(10).join('- ' + e for e in b['issues'])}
 
-ORIGINAL CODE:
-{b['code']}
+ORIGINAL CODE TO FIX (this snippet only — do NOT modify surrounding file):
+{b['code'][:2000]}
+
+FILE CONTEXT (for variable names only):
+{ctx[:600]}
 
 SCOPE VARIABLES:
 {', '.join(scope_vars[:30])}
@@ -604,8 +693,15 @@ Rewrite ONLY the corrected code. No FIND_LINE, no markers, no fences.
         if apply and b['valid']:
             tprint(f"\n  Applying...")
             current = source_path.read_text()
-            source_path.write_text(_apply_block(current, b))
-            tprint(f"  ✓ Written to {source_path}")
+            result  = _apply_block(current, b)
+            ok, reason = _size_guard(current, result, source_path)
+            if not ok:
+                tprint(f"  ✗ {reason}")
+                tprint(f"  File NOT written. Flagging for manual review.")
+            else:
+                _backup_file(source_path)
+                source_path.write_text(result)
+                tprint(f"  ✓ Written to {source_path} (backup: {source_path}.bak)")
         elif apply:
             tprint(f"  No valid block to apply.")
         return
@@ -682,8 +778,8 @@ END_CODE
         for b in blocks:
             if b['valid']:
                 vr = call_verify(code=b['code'],
-                                 instruction=spec_text_for_verify[:800],
-                                 context=ctx[:800],
+                                 instruction=spec_text_for_verify[:1200],
+                                 context=ctx[:1200],
                                  filename=src_file,
                                  phase_name=name)
                 if vr and vr.get('pass') is False:
@@ -715,11 +811,18 @@ END_CODE
 
     if apply and valid:
         tprint(f"\n  Applying {len(valid)} block(s)...")
-        current = source_path.read_text()
+        original = source_path.read_text()
+        current  = original
         for b in valid:
             current = _apply_block(current, b)
-        source_path.write_text(current)
-        tprint(f"  ✓ Written to {source_path}")
+        ok, reason = _size_guard(original, current, source_path)
+        if not ok:
+            tprint(f"  ✗ {reason}")
+            tprint(f"  File NOT written. Flagging for manual review.")
+        else:
+            _backup_file(source_path)
+            source_path.write_text(current)
+            tprint(f"  ✓ Written to {source_path} (backup: {source_path}.bak)")
     elif apply:
         tprint(f"  No valid blocks to apply.")
     else:
@@ -738,8 +841,8 @@ def print_report():
         print(f"  {c['label']:35s} {c['prompt_chars']:6d}p → {c['response_chars']:6d}r  {c['elapsed_s']:.1f}s")
     print(f"  {'TOTAL':35s} {sum(c['prompt_chars'] for c in calls):6d}p → "
           f"{sum(c['response_chars'] for c in calls):6d}r  {sum(c['elapsed_s'] for c in calls):.1f}s")
-    print(f"\n  Ollama generator  (qwen3-coder:30b  @ 192.168.1.36 workstation): $0.00")
-    print(f"  Ollama verifier   (qwen2.5-coder:1.5b @ 192.168.1.103 TrueNAS): $0.00")
+    print(f"\n  Ollama generator  (qwen3-coder:30b @ 192.168.1.36  workstation GPU): $0.00")
+    print(f"  Ollama verifier   (qwen3-coder:30b @ 192.168.1.36  via TrueNAS proxy): $0.00")
     # Fetch verify stats from TrueNAS
     try:
         with urllib.request.urlopen(
@@ -777,6 +880,9 @@ def main():
     if not phases_to_run:
         print(f"Phase '{args.phase}' not found. Available: {[p['name'] for p in all_phases]}")
         sys.exit(1)
+
+    if not args.skip_ollama:
+        preflight_check()
 
     run_fn = lambda cfg: run_phase(cfg, feature_dir, args.apply, args.skip_ollama)
 
