@@ -1,0 +1,36 @@
+=== CSS ===
+#signalk-banner {
+  display: none;
+  background: #FF8C00;
+  color: #000;
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+#signalk-banner a {
+  color: #000;
+  text-decoration: underline;
+  margin-left: 12px;
+}
+=== HTML_AFTER_BODY ===
+<div id="signalk-banner">
+  ⚠️ Signal K is offline — engine data unavailable.
+  <a href="/settings.html#system-actions">Go to Settings → Restart Signal K</a>
+</div>
+=== JS_BEFORE_BODY_CLOSE ===
+function checkSignalK() {
+  fetch('/signalk/v1/api/', { signal: AbortSignal.timeout(3000) })
+    .then(r => {
+      document.getElementById('signalk-banner').style.display = r.ok ? 'none' : 'block';
+    })
+    .catch(() => {
+      document.getElementById('signalk-banner').style.display = 'block';
+    });
+}
+=== JS_INLINE ===
+checkSignalK();
+setInterval(checkSignalK, 5000);

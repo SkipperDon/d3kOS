@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Boat Log</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* === Design System - Consistent with Main Menu and Wizard === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors */
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+
+      /* Typography - 22-24px standard */
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-heading: 24px;
+      --line-height: 1.5;
+
+      /* Button Dimensions */
+      --button-radius: 8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      padding: 12px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Touch-Friendly Scrollbar */
+    main::-webkit-scrollbar {
+      width: 20px;
+    }
+
+    main::-webkit-scrollbar-track {
+      background: rgba(0, 204, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    main::-webkit-scrollbar-thumb {
+      background: var(--color-accent);
+      border-radius: 10px;
+      border: 3px solid var(--color-bg);
+    }
+
+    main::-webkit-scrollbar-thumb:active {
+      background: #00FF00;
+    }
+
+    .content-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Current Trip Section */
+    .trip-status {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .trip-status.inactive {
+      background-color: rgba(51, 51, 51, 0.3);
+      border-color: var(--color-disabled);
+    }
+
+    .trip-status.active {
+      background-color: rgba(0, 204, 0, 0.2);
+      border-color: var(--color-accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { border-color: var(--color-accent); }
+      50% { border-color: rgba(0, 204, 0, 0.5); }
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .status-indicator {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+
+    .status-indicator.inactive {
+      color: var(--color-disabled);
+    }
+
+    /* Trip Controls */
+    .trip-controls {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      min-width: 180px;
+      min-height: 60px;
+      padding: 12px 24px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .btn-primary:hover {
+      background-color: #00FF00;
+    }
+
+    .btn-danger {
+      border-color: var(--color-critical);
+      color: var(--color-critical);
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(255, 0, 0, 0.1);
+    }
+
+    .btn-tier2 {
+      position: relative;
+      border-color: var(--color-warning);
+      color: var(--color-warning);
+      background-color: rgba(255, 165, 0, 0.05);
+    }
+
+    .btn-tier2:hover {
+      background-color: rgba(255, 165, 0, 0.15);
+      border-color: #FFC04C;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      background-color: var(--color-warning);
+      color: var(--color-bg);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: var(--color-disabled);
+      color: var(--color-disabled);
+    }
+
+    .btn:disabled:hover {
+      transform: none;
+      background-color: var(--color-bg);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-accent);
+      line-height: 1.2;
+    }
+
+    .stat-unit {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+      margin-left: 4px;
+    }
+
+    /* Trip History */
+    .section-header {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin: 24px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    .trip-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .trip-item {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 16px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .trip-item:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      border-color: var(--color-accent);
+    }
+
+    .trip-date {
+      font-size: var(--font-base);
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+
+    .trip-details {
+      display: flex;
+      gap: 24px;
+      font-size: var(--font-base);
+    }
+
+    .trip-detail {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .trip-detail-label {
+      font-size: 18px;
+      opacity: 0.7;
+    }
+
+    .trip-detail-value {
+      font-weight: 700;
+    }
+
+    .trip-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      min-width: 80px;
+      min-height: 40px;
+      padding: 8px 16px;
+      font-size: 18px;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--color-text);
+      opacity: 0.6;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state-text {
+      font-size: var(--font-base);
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover,
+    .nav-button:active {
+      background-color: rgba(0, 204, 0, 0.2);
+      border-color: var(--color-accent);
+    }
+
+    .status-text {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Connection Status */
+    .connection-status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--color-critical);
+      margin-right: 8px;
+    }
+
+    .connection-status.connected {
+      background-color: var(--color-accent);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .trip-controls {
+        flex-direction: column;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .trip-item {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .trip-details {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>⚓ Boat Log</h1>
+      <p class="subtitle">Trip Recording & Engine Hours Tracking</p>
+    </header>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <button class="nav-button" onclick="goBack()" aria-label="Go back to main menu">
+        ← Main Menu
+      </button>
+
+      <span class="status-text">d3kOS v2.0 | Boat Log</span>
+
+      <button class="nav-button" onclick="exportBoatlogCSV()" aria-label="Export trip data">
+        Export Data
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+      <div class="content-wrapper">
+
+        <!-- Current Trip Status -->
+        <div class="trip-status" id="trip-status">
+          <div class="status-header">
+            <h2 class="status-indicator" id="status-indicator">No Active Trip</h2>
+            <div>
+              <span class="connection-status" id="connection-status"></span>
+              <span id="connection-text">Disconnected</span>
+            </div>
+          </div>
+
+          <!-- Trip Controls -->
+          <div class="trip-controls">
+            <button class="btn btn-primary" id="btn-start-trip" onclick="startTrip()">
+              ▶ Start Trip
+            </button>
+            <button class="btn btn-danger" id="btn-stop-trip" onclick="stopTrip()" disabled>
+              ⏹ Stop Trip
+            </button>
+            <button class="btn" id="btn-pause-trip" onclick="pauseTrip()" disabled>
+              ⏸ Pause
+            </button>
+            <button class="btn btn-tier2" id="btn-voice-note" onclick="recordVoiceNote()">
+              🎤 Voice Note
+              <span class="tier-badge">Tier 2</span>
+            </button>
+          </div>
+
+          <!-- Current Trip Stats -->
+          <div class="stats-grid" id="current-stats">
+            <div class="stat-card">
+              <div class="stat-label">Duration</div>
+              <div class="stat-value" id="stat-duration">0:00:00</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Distance</div>
+              <div class="stat-value">
+                <span id="stat-distance">0.0</span>
+                <span class="stat-unit">nm</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Avg Speed</div>
+              <div class="stat-value">
+                <span id="stat-speed">0.0</span>
+                <span class="stat-unit">kts</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Engine Hours</div>
+              <div class="stat-value">
+                <span id="stat-engine-hours">0.0</span>
+                <span class="stat-unit">hrs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Engine Hours Summary -->
+        <h2 class="section-header">Engine Status</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Engine Hours</div>
+            <div class="stat-value">
+              <span id="total-engine-hours">127.5</span>
+              <span class="stat-unit">hrs</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Hours Since Service</div>
+            <div class="stat-value">
+              <span id="hours-since-service">27.5</span>
+              <span class="stat-unit">hrs</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Next Service In</div>
+            <div class="stat-value">
+              <span id="next-service">72.5</span>
+              <span class="stat-unit">hrs</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Service Interval</div>
+            <div class="stat-value">
+              <span id="service-interval">100</span>
+              <span class="stat-unit">hrs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trip History -->
+        <h2 class="section-header">Trip History</h2>
+        <div class="trip-list" id="trip-list">
+          <!-- Trips will be dynamically loaded here -->
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No trips recorded yet. Start your first trip!</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // === Boat Log JavaScript ===
+
+    let currentTrip = null;
+    let trips = [];
+    let engineHours = { total: 127.5, sinceService: 27.5, serviceInterval: 100 };
+    let signalKConnected = false;
+    let signalKSocket = null;
+    let tripTimer = null;
+
+    // Load data from localStorage
+    function loadData() {
+      const savedTrips = localStorage.getItem('d3kos-trips');
+      if (savedTrips) {
+        trips = JSON.parse(savedTrips);
+      }
+
+      const savedEngineHours = localStorage.getItem('d3kos-engine-hours');
+      if (savedEngineHours) {
+        engineHours = JSON.parse(savedEngineHours);
+      }
+
+      const savedCurrentTrip = localStorage.getItem('d3kos-current-trip');
+      if (savedCurrentTrip) {
+        currentTrip = JSON.parse(savedCurrentTrip);
+        resumeTrip();
+      }
+
+      updateDisplay();
+    }
+
+    // Save data to localStorage
+    function saveData() {
+      localStorage.setItem('d3kos-trips', JSON.stringify(trips));
+      localStorage.setItem('d3kos-engine-hours', JSON.stringify(engineHours));
+      if (currentTrip) {
+        localStorage.setItem('d3kos-current-trip', JSON.stringify(currentTrip));
+      } else {
+        localStorage.removeItem('d3kos-current-trip');
+      }
+    }
+
+    // Start a new trip
+    function startTrip() {
+      if (currentTrip) {
+        alert('A trip is already in progress!');
+        return;
+      }
+
+      currentTrip = {
+        id: Date.now(),
+        startTime: new Date().toISOString(),
+        endTime: null,
+        duration: 0,
+        distance: 0,
+        avgSpeed: 0,
+        engineHours: 0,
+        paused: false,
+        pausedDuration: 0
+      };
+
+      document.getElementById('btn-start-trip').disabled = true;
+      document.getElementById('btn-stop-trip').disabled = false;
+      document.getElementById('btn-pause-trip').disabled = false;
+
+      document.getElementById('trip-status').classList.remove('inactive');
+      document.getElementById('trip-status').classList.add('active');
+      document.getElementById('status-indicator').textContent = 'Trip In Progress';
+      document.getElementById('status-indicator').classList.remove('inactive');
+
+      startTripTimer();
+      saveData();
+    }
+
+    // Stop current trip
+    function stopTrip() {
+      if (!currentTrip) return;
+
+      currentTrip.endTime = new Date().toISOString();
+      currentTrip.duration = Math.floor((new Date(currentTrip.endTime) - new Date(currentTrip.startTime)) / 1000) - currentTrip.pausedDuration;
+
+      trips.unshift(currentTrip);
+      currentTrip = null;
+
+      document.getElementById('btn-start-trip').disabled = false;
+      document.getElementById('btn-stop-trip').disabled = true;
+      document.getElementById('btn-pause-trip').disabled = true;
+
+      document.getElementById('trip-status').classList.remove('active');
+      document.getElementById('trip-status').classList.add('inactive');
+      document.getElementById('status-indicator').textContent = 'No Active Trip';
+      document.getElementById('status-indicator').classList.add('inactive');
+
+      stopTripTimer();
+      saveData();
+      updateDisplay();
+
+      alert('Trip stopped and saved!');
+    }
+
+    // Pause/Resume trip
+    function pauseTrip() {
+      if (!currentTrip) return;
+
+      if (currentTrip.paused) {
+        // Resume
+        currentTrip.paused = false;
+        currentTrip.pauseStartTime = null;
+        document.getElementById('btn-pause-trip').textContent = '⏸ Pause';
+        startTripTimer();
+      } else {
+        // Pause
+        currentTrip.paused = true;
+        currentTrip.pauseStartTime = Date.now();
+        document.getElementById('btn-pause-trip').textContent = '▶ Resume';
+        stopTripTimer();
+      }
+
+      saveData();
+    }
+
+    // Voice note recording (Tier 2 feature)
+    function recordVoiceNote() {
+      // Show Tier 2 notification
+      const message =
+        "🎤 Voice Note Recording\n\n" +
+        "This is a Tier 2 feature that requires:\n\n" +
+        "• Voice AI Assistant license\n" +
+        "• Microphone hardware\n" +
+        "• Voice processing models\n\n" +
+        "Voice notes allow you to:\n" +
+        "• Record audio comments during trips\n" +
+        "• Add voice annotations to log entries\n" +
+        "• Store audio memos with timestamps\n" +
+        "• Transcribe voice to text automatically\n\n" +
+        "Upgrade to Tier 2 to unlock voice features!\n\n" +
+        "Contact: service@atmyboat.com";
+
+      alert(message);
+    }
+
+    // Resume trip after page reload
+    function resumeTrip() {
+      document.getElementById('btn-start-trip').disabled = true;
+      document.getElementById('btn-stop-trip').disabled = false;
+      document.getElementById('btn-pause-trip').disabled = false;
+
+      document.getElementById('trip-status').classList.remove('inactive');
+      document.getElementById('trip-status').classList.add('active');
+      document.getElementById('status-indicator').textContent = 'Trip In Progress';
+      document.getElementById('status-indicator').classList.remove('inactive');
+
+      if (!currentTrip.paused) {
+        startTripTimer();
+      } else {
+        document.getElementById('btn-pause-trip').textContent = '▶ Resume';
+      }
+    }
+
+    // Trip timer
+    function startTripTimer() {
+      stopTripTimer();
+      tripTimer = setInterval(updateTripStats, 1000);
+    }
+
+    function stopTripTimer() {
+      if (tripTimer) {
+        clearInterval(tripTimer);
+        tripTimer = null;
+      }
+    }
+
+    // Update trip statistics
+    function updateTripStats() {
+      if (!currentTrip || currentTrip.paused) return;
+
+      const now = Date.now();
+      const start = new Date(currentTrip.startTime).getTime();
+      const elapsed = Math.floor((now - start) / 1000) - currentTrip.pausedDuration;
+
+      const hours = Math.floor(elapsed / 3600);
+      const minutes = Math.floor((elapsed % 3600) / 60);
+      const seconds = elapsed % 60;
+
+      document.getElementById('stat-duration').textContent =
+        `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+      // TODO: Update distance and speed from Signal K
+      // For now, simulate data
+      currentTrip.distance = (elapsed / 3600) * 5.5; // Simulated 5.5 knots
+      currentTrip.avgSpeed = 5.5;
+      currentTrip.engineHours = elapsed / 3600;
+
+      document.getElementById('stat-distance').textContent = currentTrip.distance.toFixed(1);
+      document.getElementById('stat-speed').textContent = currentTrip.avgSpeed.toFixed(1);
+      document.getElementById('stat-engine-hours').textContent = currentTrip.engineHours.toFixed(2);
+    }
+
+    // Update display
+    function updateDisplay() {
+      // Update engine hours
+      document.getElementById('total-engine-hours').textContent = engineHours.total.toFixed(1);
+      document.getElementById('hours-since-service').textContent = engineHours.sinceService.toFixed(1);
+      document.getElementById('next-service').textContent = (engineHours.serviceInterval - engineHours.sinceService).toFixed(1);
+      document.getElementById('service-interval').textContent = engineHours.serviceInterval.toFixed(0);
+
+      // Update trip history
+      updateTripList();
+    }
+
+    // Update trip list
+    function updateTripList() {
+      const tripList = document.getElementById('trip-list');
+
+      if (trips.length === 0) {
+        tripList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No trips recorded yet. Start your first trip!</div>
+          </div>
+        `;
+        return;
+      }
+
+      tripList.innerHTML = trips.map((trip, index) => {
+        const date = new Date(trip.startTime);
+        const duration = formatDuration(trip.duration);
+
+        return `
+          <div class="trip-item" onclick="viewTrip(${index})">
+            <div class="trip-date">
+              ${date.toLocaleDateString()}<br>
+              ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <div class="trip-details">
+              <div class="trip-detail">
+                <span class="trip-detail-label">Duration</span>
+                <span class="trip-detail-value">${duration}</span>
+              </div>
+              <div class="trip-detail">
+                <span class="trip-detail-label">Distance</span>
+                <span class="trip-detail-value">${trip.distance.toFixed(1)} nm</span>
+              </div>
+              <div class="trip-detail">
+                <span class="trip-detail-label">Avg Speed</span>
+                <span class="trip-detail-value">${trip.avgSpeed.toFixed(1)} kts</span>
+              </div>
+              <div class="trip-detail">
+                <span class="trip-detail-label">Engine Hrs</span>
+                <span class="trip-detail-value">${trip.engineHours.toFixed(2)} hrs</span>
+              </div>
+            </div>
+            <div class="trip-actions">
+              <button class="btn btn-small" onclick="deleteTrip(${index}); event.stopPropagation();">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Format duration
+    function formatDuration(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes}m`;
+    }
+
+    // View trip details
+    function viewTrip(index) {
+      const trip = trips[index];
+      const date = new Date(trip.startTime);
+      const duration = formatDuration(trip.duration);
+
+      alert(`Trip Details\n\nDate: ${date.toLocaleString()}\nDuration: ${duration}\nDistance: ${trip.distance.toFixed(2)} nm\nAvg Speed: ${trip.avgSpeed.toFixed(1)} kts\nEngine Hours: ${trip.engineHours.toFixed(2)} hrs`);
+    }
+
+    // Delete trip
+    function deleteTrip(index) {
+      if (confirm('Delete this trip?')) {
+        trips.splice(index, 1);
+        saveData();
+        updateDisplay();
+      }
+    }
+
+    // Export data to /home/d3kos/d3kos-exports/boatlogs/ for Tier 1 sync
+    async function exportData() {
+      const data = {
+        trips: trips,
+        engineHours: engineHours,
+        exportDate: new Date().toISOString()
+      };
+
+      try {
+        const response = await fetch('/export/boatlog', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert(`✓ Boatlog exported successfully!\n\nFile: ${result.filename}\nLocation: /home/d3kos/d3kos-exports/boatlogs/\n\nTier 1 will sync this file to centralized database.`);
+        } else {
+          alert(`✗ Export failed: ${result.error}`);
+        }
+      } catch (error) {
+        alert(`✗ Export failed: ${error.message}`);
+        console.error('Export error:', error);
+      }
+    }
+
+    // Export boatlog as CSV
+    async function exportBoatlogCSV() {
+      try {
+        // Call CSV export API
+        const response = await fetch("/api/boatlog/export", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Export failed: ${response.statusText}`);
+        }
+
+        // Get CSV as blob
+        const blob = await response.blob();
+
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+
+        // Get filename from response header or use default
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "d3kos_boatlog.csv";
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="?(.+)"?/);
+          if (match) filename = match[1];
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        alert(`✓ Boatlog exported as CSV: ${filename}`);
+
+      } catch (error) {
+        console.error("CSV export error:", error);
+        alert(`✗ CSV export failed: ${error.message}`);
+      }
+    }
+
+    // Go back to main menu
+    function goBack() {
+      window.location.href = '/';
+    }
+
+    // Connect to Signal K
+    function connectSignalK() {
+      try {
+        signalKSocket = new WebSocket('ws://localhost:3000/signalk/v1/stream?subscribe=none');
+
+        signalKSocket.onopen = () => {
+          console.log('Signal K connected');
+          signalKConnected = true;
+          document.getElementById('connection-status').classList.add('connected');
+          document.getElementById('connection-text').textContent = 'Connected';
+
+          // Subscribe to navigation data
+          signalKSocket.send(JSON.stringify({
+            context: 'vessels.self',
+            subscribe: [
+              { path: 'navigation.position' },
+              { path: 'navigation.speedOverGround' },
+              { path: 'propulsion.port.revolutions' },
+              { path: 'propulsion.port.runTime' }
+            ]
+          }));
+        };
+
+        signalKSocket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          // Handle Signal K updates
+          console.log('Signal K update:', data);
+        };
+
+        signalKSocket.onerror = () => {
+          console.error('Signal K connection error');
+          signalKConnected = false;
+        };
+
+        signalKSocket.onclose = () => {
+          console.log('Signal K disconnected');
+          signalKConnected = false;
+          document.getElementById('connection-status').classList.remove('connected');
+          document.getElementById('connection-text').textContent = 'Disconnected';
+
+          // Reconnect after 5 seconds
+          setTimeout(connectSignalK, 5000);
+        };
+      } catch (error) {
+        console.error('Failed to connect to Signal K:', error);
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      connectSignalK();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+=== CSS ===
+.camera-offline-placeholder {
+  background: #1a1a1a;
+  border: 2px dashed #444;
+  border-radius: 8px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+=== HTML_AFTER_BODY ===
+NONE
+=== JS_BEFORE_BODY_CLOSE ===
+NONE
+=== JS_INLINE ===
+NONE
