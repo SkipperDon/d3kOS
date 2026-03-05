@@ -56,7 +56,7 @@ Local Ollama RAG (Implementation)
 |--------|-------|------|----------|------|-----|
 | **TrueNAS** | 192.168.1.102 | root | damcor53$ | Storage, Ollama host | FreeBSD |
 | **TrueNAS VM** | 192.168.1.103 | ollama | d3kos2026 | Ollama AI Server | Ubuntu 22.04 LTS |
-| **Workstation** | 192.168.1.39 | admin | A#JFOPZD6& | GPU compute, Blue Iris | Windows 11 Pro |
+| **Workstation** | 192.168.1.62 | admin | A#JFOPZD6& | GPU compute, Blue Iris | Windows 11 Pro |
 | **Laptop** | Dynamic (WSL) | boatiq | N/A | Development | Windows 11 Home + WSL Ubuntu |
 | **d3kOS Pi** | 192.168.1.237 | d3kos | d3kos2026 | Testing, prototype | Debian Trixie |
 | **QNAP NAS** | 192.168.1.49<br>192.168.1.50 | admin | Donald 61# | Backup storage | QNAP OS |
@@ -192,7 +192,7 @@ claude-truenas
 
 ## 🚨 Critical Constraints
 
-### Workstation (192.168.1.39)
+### Workstation (192.168.1.62)
 - ⚠️ **NO FILE DELETION** - Contains confidential tax data
 - ⚠️ **Blue Iris runs 24/7** - GPU always partially loaded
 - ⚠️ **Must not interfere** with user's work at any time
