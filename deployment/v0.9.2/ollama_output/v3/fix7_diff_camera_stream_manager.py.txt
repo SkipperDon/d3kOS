@@ -1,0 +1,8 @@
+--- a/camera_stream_manager.py
++++ b/camera_stream_manager.py
+@@ -190,5 +190,4 @@
+         'port':       8084,
+         'status':     'online' if connected else 'offline',
+         'offline_reason': 'Camera unreachable — connect to boat network' if not connected else ''
+-    }
+-    return jsonify(camera)+    }    return jsonify(camera)

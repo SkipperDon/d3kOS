@@ -1,0 +1,58 @@
+--- a/boatlog.html
++++ b/boatlog.html
+@@ -443,8 +443,16 @@
+       }
+     }
+   </style>
++<style>
++#voice-note-status {
++  margin-left: 10px;
++  vertical-align: middle;
++}
++</style>
+ </head>
+ <body>
++<button id="voice-note-btn" onclick="startVoiceNote()" style="font-size:32px; padding:16px; min-width:64px;">🎤</button>
++<span id="voice-note-status" style="font-size:16px;"></span>
+   <div class="container">
+     <!-- Header -->
+     <header>
+@@ -996,5 +1004,38 @@
+       connectSignalK();
+     });
+   </script>
++<script>
++let mediaRecorder = null;
++let audioChunks = [];
++
++async function startVoiceNote() {
++  if (mediaRecorder && mediaRecorder.state === 'recording') {
++    mediaRecorder.stop();
++    document.getElementById('voice-note-btn').textContent = '🎤';
++    return;
++  }
++  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
++  mediaRecorder = new MediaRecorder(stream);
++  audioChunks = [];
++  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
++  mediaRecorder.onstop = async () => {
++    const blob = new Blob(audioChunks, { type: 'audio/webm' });
++    const fd = new FormData();
++    fd.append('audio', blob, 'voice_note.webm');
++    const res = await fetch('/boatlog/voice-note', { method: 'POST', body: fd });
++    const data = await res.json();
++    if (data.transcript) {
++      document.getElementById('log-notes').value += (document.getElementById('log-notes').value ? '\n' : '') + data.transcript;
++      document.getElementById('voice-note-status').textContent = '✓ Transcribed';
++    } else {
++      document.getElementById('voice-note-status').textContent = '✓ Saved (no transcript)';
++    }
++    stream.getTracks().forEach(t => t.stop());
++  };
++  mediaRecorder.start();
++  document.getElementById('voice-note-btn').textContent = '⏹';
++  document.getElementById('voice-note-status').textContent = 'Recording. ..';
++}
++</script>
+ </body>
+ </html>
