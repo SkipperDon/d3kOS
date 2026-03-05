@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Marine Charts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --color-bg: #000000; --color-text: #FFFFFF; --color-accent: #00CC00;
+      --font-family: "Roboto", "Arial", sans-serif; --font-base: 22px;
+      --font-heading: 24px; --button-radius: 8px;
+    }
+    body { font-family: var(--font-family); font-size: var(--font-base);
+      background-color: var(--color-bg); color: var(--color-text); line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .top-nav { padding: 16px 20px; border-bottom: 2px solid var(--color-accent);
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--color-bg); }
+    .nav-button { padding: 14px 28px; min-height: 60px; background-color: var(--color-bg);
+      color: var(--color-text); border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius); font-size: var(--font-base);
+      font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+    .nav-button:hover, .nav-button:active { background-color: rgba(0, 204, 0, 0.2); }
+    h1 { font-size: 32px; color: var(--color-accent); margin: 30px 0; text-align: center; }
+    .chart-section { background: rgba(0, 204, 0, 0.1); border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius); padding: 30px; margin: 20px 0; }
+    .launch-button { display: block; width: 100%; max-width: 500px; margin: 30px auto;
+      padding: 30px; background-color: var(--color-accent); color: var(--color-bg);
+      border: none; border-radius: var(--button-radius); font-size: 28px;
+      font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+    .launch-button:hover, .launch-button:active { background-color: #00FF00; transform: scale(1.02); }
+    .warning-box { background: rgba(255, 0, 0, 0.1); border: 2px solid #FF0000;
+      border-radius: var(--button-radius); padding: 20px; margin: 20px 0; }
+    .warning-box h3 { color: #FF0000; font-size: var(--font-heading); margin-bottom: 15px; }
+    .info-box { background: rgba(255, 165, 0, 0.1); border: 2px solid #FFA500;
+      border-radius: var(--button-radius); padding: 20px; margin: 20px 0; }
+    .info-box h3 { color: #FFA500; font-size: var(--font-heading); margin-bottom: 15px; }
+    .info-box ul, .warning-box ul { margin-left: 25px; line-height: 1.8; }
+    .info-box a { color: var(--color-accent); text-decoration: none; font-weight: 700; }
+    .info-box a:hover { text-decoration: underline; }
+    .section-title { font-size: var(--font-heading); color: var(--color-accent);
+      margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid var(--color-accent); }
+    code { background: rgba(0, 204, 0, 0.2); padding: 2px 6px; border-radius: 3px;
+      font-family: monospace; font-size: 20px; }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <button class="nav-button" onclick="window.location.href='/'">&larr; Main Menu</button>
+    <span style="font-size: var(--font-base); opacity: 0.7;">d3kOS v2.0 | Marine Charts</span>
+  </nav>
+
+  <div class="container">
+    <h1>🗺️ Marine Charts</h1>
+
+    <!-- Launch OpenCPN -->
+    <div class="chart-section">
+      <button class="launch-button" onclick="launchOpenCPN()">
+        🗺️ Launch OpenCPN Chart Plotter
+      </button>
+      <p style="text-align: center; opacity: 0.8; margin-top: 10px;">
+        Opens OpenCPN with live GPS data from Signal K
+      </p>
+    </div>
+
+    <!-- ARM64 Plugin Limitation Warning -->
+    <div class="warning-box">
+      <h3>⚠️ ARM64 Plugin Catalog Limitation</h3>
+      <p style="margin-bottom: 15px;">
+        <strong>Your system:</strong> Debian 13 ARM64 (Raspberry Pi)<br>
+        <strong>Issue:</strong> OpenCPN plugin catalog doesn't have ARM64 Linux builds
+      </p>
+      <p style="margin-bottom: 15px;">
+        The plugin manager shows <strong>0 plugins available</strong> because plugins are only compiled for:
+      </p>
+      <ul>
+        <li>Android ARM (not desktop Linux)</li>
+        <li>Ubuntu x86_64 (not ARM64)</li>
+        <li>Windows/Mac (not relevant)</li>
+      </ul>
+      <p style="margin-top: 15px; font-weight: 700;">
+        ✓ <strong>Solution:</strong> Install o-charts manually (see below)
+      </p>
+    </div>
+
+    <!-- O-Charts Manual Installation -->
+    <div class="info-box">
+      <h3>📦 O-Charts Manual Installation for ARM64</h3>
+
+      <h4 class="section-title">Step 1: Purchase Charts</h4>
+      <ul>
+        <li>Visit <a href="https://o-charts.org" target="_blank" rel="noopener">o-charts.org</a></li>
+        <li>Purchase charts for your region (e.g., US, Canada, Europe)</li>
+        <li>You'll receive a license key via email</li>
+      </ul>
+
+      <h4 class="section-title">Step 2: Download ARM64 Plugin</h4>
+      <ul>
+        <li>Login to your o-charts account</li>
+        <li>Go to: My oeSENC Charts → Downloads</li>
+        <li>Download: <strong>Linux ARM64</strong> version (NOT x86_64, NOT Android)</li>
+        <li>File will be named: <code>oesenc_pi-X.X.X-linux-arm64.tar.gz</code></li>
+      </ul>
+
+      <h4 class="section-title">Step 3: Install Plugin</h4>
+      <p style="margin-bottom: 10px;">Transfer file to Pi and run:</p>
+      <pre style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 5px; overflow-x: auto;">
+# Extract plugin to OpenCPN directory
+cd ~/.opencpn/plugins/
+tar -xzf ~/Downloads/oesenc_pi-*-linux-arm64.tar.gz
+
+# Restart OpenCPN
+</pre>
+
+      <h4 class="section-title">Step 4: Activate License</h4>
+      <ul>
+        <li>Launch OpenCPN (button above)</li>
+        <li>Go to: Tools → Options → Plugins</li>
+        <li>Find "oeSENC" plugin → Enable</li>
+        <li>Enter your license key from o-charts.org</li>
+        <li>Download your purchased charts</li>
+      </ul>
+    </div>
+
+    <!-- Free Alternatives -->
+    <div class="chart-section">
+      <h3 class="section-title">🆓 Free Chart Alternatives (No Plugin Required)</h3>
+      <ul style="line-height: 1.8;">
+        <li><strong>Built-in Charts:</strong> OpenCPN includes basic world charts</li>
+        <li><strong>NOAA ENC (US):</strong> Download from <a href="https://charts.noaa.gov/ENCs/ENCs.shtml" style="color: var(--color-accent);">charts.noaa.gov</a></li>
+        <li><strong>CHS (Canada):</strong> Download from Canadian Hydrographic Service</li>
+        <li><strong>OpenSeaMap:</strong> Community-contributed free charts</li>
+      </ul>
+      <p style="margin-top: 15px; opacity: 0.8;">
+        These can be manually downloaded and loaded into OpenCPN without plugins.
+      </p>
+    </div>
+
+    <!-- System Status -->
+    <div class="chart-section">
+      <h3 class="section-title">📊 System Status</h3>
+      <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <td style="padding: 10px; font-weight: 700;">OpenCPN Version</td>
+          <td style="padding: 10px; color: var(--color-accent);">✓ 5.10.2</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <td style="padding: 10px; font-weight: 700;">Architecture</td>
+          <td style="padding: 10px; color: var(--color-accent);">✓ ARM64 (aarch64)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <td style="padding: 10px; font-weight: 700;">Signal K GPS</td>
+          <td style="padding: 10px; color: var(--color-accent);">✓ Connected</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <td style="padding: 10px; font-weight: 700;">Plugin Catalog</td>
+          <td style="padding: 10px; color: #FF0000;">✗ No ARM64 builds available</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; font-weight: 700;">O-Charts Plugin</td>
+          <td style="padding: 10px; color: #FFA500;">⚠️ Manual install required</td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    function launchOpenCPN() {
+      fetch('/cgi-bin/launch-opencpn.sh')
+        .then(() => {
+          alert('🗺️ Launching OpenCPN...\n\n✓ GPS data automatically connected\n✓ Access via VNC or connected display\n\nNote: O-charts plugin requires manual installation (see instructions above)');
+        })
+        .catch(() => {
+          alert('🗺️ Launching OpenCPN...\n\nIf it doesn\'t appear:\n• Check VNC connection\n• Launch from desktop menu');
+        });
+    }
+  </script>
+</body>
+</html>

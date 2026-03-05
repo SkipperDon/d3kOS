@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/js/units.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Engine Dashboard - d3kOS</title>
@@ -93,28 +94,13 @@
     main {
       padding: 20px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       max-height: calc(100vh - 200px);
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
 
     /* Touch-Friendly Scrollbar */
-    main::-webkit-scrollbar {
-      width: 20px;
-    }
-
-    main::-webkit-scrollbar-track {
-      background: rgba(0, 204, 0, 0.1);
-      border-radius: 10px;
-    }
-
-    main::-webkit-scrollbar-thumb {
-      background: var(--color-accent);
-      border-radius: 10px;
-      border: 3px solid var(--color-bg);
-    }
-
-    main::-webkit-scrollbar-thumb:active {
-      background: #00FF00;
-    }
 
     /* Dashboard Sections */
     .dashboard-section {
@@ -257,9 +243,38 @@
       color: var(--color-critical);
       border: 2px solid var(--color-critical);
     }
-  </style>
+    #signalk-banner {
+      display: none;
+      background: #FF8C00;
+      color: #000;
+      padding: 16px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    #signalk-banner a {
+      color: #000;
+      text-decoration: underline;
+      margin-left: 12px;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
+<div id="signalk-banner">
+  ⚠️ Signal K is offline — engine data unavailable.
+  <a href="/settings.html#system-actions">Go to Settings → Restart Signal K</a>
+</div>
 <!-- Simulator Warning Banner (Auto-detect) -->
 <div id="simulator-warning-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#FF6600 0%,#FF3300 100%);border-bottom:4px solid #FF0000;padding:15px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.5);animation:banner-pulse 2s infinite;">
   <div style="font-size:28px;font-weight:bold;color:#FFFFFF;text-shadow:2px 2px 4px rgba(0,0,0,0.5);">
@@ -277,7 +292,7 @@
 #simulator-warning-banner + * {
   margin-top: 100px !important; /* Push content down when banner is visible */
 }
-</style>
+  </style>
 <script>
 // Check simulator status every 5 seconds
 (function checkSimulatorStatus() {
@@ -729,6 +744,16 @@
       if (valueEl) {
         if (name === 'voltage') {
           valueEl.textContent = value.toFixed(1);
+        } else if (name === 'temp' && typeof Units !== 'undefined') {
+          const formatted = Units.temperature.toDisplay(value); // e.g. "100.0°C" or "212.0°F"
+          valueEl.textContent = formatted;
+          const unitEl = valueEl.nextElementSibling;
+          if (unitEl && unitEl.classList.contains('gauge-unit')) unitEl.textContent = '';
+        } else if (name === 'oil' && typeof Units !== 'undefined') {
+          const formatted = Units.pressure.toDisplay(value); // e.g. "3.10 bar" or "45.0 PSI"
+          valueEl.textContent = formatted;
+          const unitEl = valueEl.nextElementSibling;
+          if (unitEl && unitEl.classList.contains('gauge-unit')) unitEl.textContent = '';
         } else {
           valueEl.textContent = value;
         }
@@ -758,6 +783,12 @@
     }
 
     // Update connection status indicator
+
+    window.addEventListener('measurementSystemChanged', function() {
+      updateGauge('temp', currentData.temp, 0, 250);
+      updateGauge('oil',  currentData.oil,  0, 100);
+    });
+
     function updateConnectionStatus(connected) {
       const statusEl = document.getElementById('connection-status');
       if (connected) {
@@ -792,6 +823,16 @@
     }
 
     // Initialize on page load
+    function checkSignalK() {
+      fetch('/signalk/v1/api/', { signal: AbortSignal.timeout(3000) })
+        .then(r => {
+          document.getElementById('signalk-banner').style.display = r.ok ? 'none' : 'block';
+        })
+        .catch(() => {
+          document.getElementById('signalk-banner').style.display = 'block';
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       console.log('Dashboard initializing...');
 
@@ -800,6 +841,8 @@
 
       connectSignalK();
       updateNetworkStatus();
+      checkSignalK();
+      setInterval(checkSignalK, 5000);
 
       // Update network status every 30 seconds
       setInterval(updateNetworkStatus, 30000);

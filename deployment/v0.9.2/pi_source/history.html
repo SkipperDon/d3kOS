@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversation History - d3kOS</title>
+  <style>
+    :root {
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-accent-dim: #008800;
+      --color-border: #333333;
+      --button-radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-size: 22px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      flex: 1;
+    }
+
+    .top-nav {
+      background-color: var(--color-bg);
+      border-bottom: 2px solid var(--color-accent);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    .nav-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--color-accent);
+      margin-bottom: 10px;
+    }
+
+    .page-subtitle {
+      font-size: 18px;
+      color: #999;
+      margin-bottom: 30px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-button {
+      background-color: #1a1a1a;
+      color: var(--color-text);
+      border: 2px solid var(--color-border);
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-button.active {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border-color: var(--color-accent);
+    }
+
+    .filter-button:hover {
+      border-color: var(--color-accent);
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+      background-color: #1a1a1a;
+      border: 2px solid var(--color-border);
+      border-radius: var(--button-radius);
+      color: var(--color-text);
+      font-size: 18px;
+      padding: 10px 15px;
+      font-family: inherit;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .conversation-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .conversation-card {
+      background-color: #0a0a0a;
+      border: 2px solid var(--color-border);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .conversation-card:hover {
+      border-color: var(--color-accent);
+    }
+
+    .conversation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .conversation-meta {
+      display: flex;
+      gap: 15px;
+      font-size: 16px;
+      color: #999;
+      flex-wrap: wrap;
+    }
+
+    .meta-badge {
+      background-color: #1a1a1a;
+      padding: 5px 12px;
+      border-radius: 5px;
+      border: 1px solid var(--color-border);
+    }
+
+    .meta-badge.online {
+      border-color: #4CAF50;
+      color: #4CAF50;
+    }
+
+    .meta-badge.onboard {
+      border-color: #2196F3;
+      color: #2196F3;
+    }
+
+    .conversation-question {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--color-accent);
+      margin-bottom: 10px;
+    }
+
+    .conversation-answer {
+      font-size: 18px;
+      line-height: 1.6;
+      color: #ddd;
+    }
+
+    .conversation-footer {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-button {
+      background-color: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-button:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .action-button.delete {
+      border-color: #cc0000;
+      color: #cc0000;
+    }
+
+    .action-button.delete:hover {
+      background-color: #cc0000;
+      color: #fff;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--color-accent);
+      font-size: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .empty-state svg {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #999;
+    }
+
+    .stat-item {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-value {
+      color: var(--color-accent);
+      font-weight: bold;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="top-nav">
+    <a href="/" class="nav-button">← Main Menu</a>
+    <div class="page-title">Conversation History</div>
+    <div style="width: 150px;"></div>
+  </div>
+
+  <div class="container">
+    <p class="page-subtitle">View and search past AI conversations</p>
+
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-item">
+        <span>Total:</span>
+        <span class="stat-value" id="totalCount">-</span>
+      </div>
+      <div class="stat-item">
+        <span>Online:</span>
+        <span class="stat-value" id="onlineCount">-</span>
+      </div>
+      <div class="stat-item">
+        <span>Onboard:</span>
+        <span class="stat-value" id="onboardCount">-</span>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-button active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="filter-button" data-filter="online" onclick="setFilter('online')">Online Only</button>
+      <button class="filter-button" data-filter="onboard" onclick="setFilter('onboard')">Onboard Only</button>
+      <input type="text" class="search-box" id="searchBox" placeholder="Search conversations..." oninput="filterConversations()">
+    </div>
+
+    <div class="conversation-list" id="conversationList">
+      <div class="loading">Loading conversations...</div>
+    </div>
+  </div>
+
+  <script>
+    let allConversations = [];
+    let currentFilter = 'all';
+
+    // Load conversations on page load
+    window.addEventListener('load', loadConversations);
+
+    async function loadConversations() {
+      try {
+        const response = await fetch('/history/conversations');
+        const data = await response.json();
+
+        allConversations = data.conversations;
+
+        // Update stats
+        document.getElementById('totalCount').textContent = data.stats.total;
+        document.getElementById('onlineCount').textContent = data.stats.online;
+        document.getElementById('onboardCount').textContent = data.stats.onboard;
+
+        // Display conversations
+        filterConversations();
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+        document.getElementById('conversationList').innerHTML = `
+          <div class="empty-state">
+            <p>Failed to load conversations. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+
+      // Update button states
+      document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+
+      filterConversations();
+    }
+
+    function filterConversations() {
+      const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+
+      let filtered = allConversations;
+
+      // Apply filter
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(conv => conv.ai_used === currentFilter);
+      }
+
+      // Apply search
+      if (searchTerm) {
+        filtered = filtered.filter(conv =>
+          conv.question.toLowerCase().includes(searchTerm) ||
+          conv.answer.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      displayConversations(filtered);
+    }
+
+    function displayConversations(conversations) {
+      const listDiv = document.getElementById('conversationList');
+
+      if (conversations.length === 0) {
+        listDiv.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24">
+              <path fill="currentColor" d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4A2,2 0 0,0 20,2M6,9H18V11H6M14,14H6V12H14M18,8H6V6H18"/>
+            </svg>
+            <p>No conversations found</p>
+          </div>
+        `;
+        return;
+      }
+
+      listDiv.innerHTML = conversations.map(conv => {
+        const date = new Date(conv.timestamp);
+        const timeStr = date.toLocaleString();
+        const responseTime = (conv.response_time_ms / 1000).toFixed(1);
+
+        return `
+          <div class="conversation-card" data-id="${conv.id}">
+            <div class="conversation-header">
+              <div class="conversation-meta">
+                <span class="meta-badge ${conv.ai_used}">${conv.ai_used === 'online' ? '🌐 Online' : '💻 Onboard'}</span>
+                <span class="meta-badge">${conv.model}</span>
+                <span class="meta-badge">⏱️ ${responseTime}s</span>
+                <span>${timeStr}</span>
+              </div>
+            </div>
+            <div class="conversation-question">${escapeHtml(conv.question)}</div>
+            <div class="conversation-answer">${escapeHtml(conv.answer)}</div>
+            <div class="conversation-footer">
+              <button class="action-button" onclick="copyToClipboard(${conv.id})">📋 Copy</button>
+              <button class="action-button" onclick="reask(${conv.id})">🔄 Re-ask</button>
+              <button class="action-button delete" onclick="deleteConversation(${conv.id})">🗑️ Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function copyToClipboard(id) {
+      const conv = allConversations.find(c => c.id === id);
+      if (conv) {
+        const text = `Q: ${conv.question}\n\nA: ${conv.answer}`;
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Copied to clipboard!');
+        });
+      }
+    }
+
+    function reask(id) {
+      const conv = allConversations.find(c => c.id === id);
+      if (conv) {
+        window.location.href = `/ai-assistant.html?q=${encodeURIComponent(conv.question)}`;
+      }
+    }
+
+    async function deleteConversation(id) {
+      if (!confirm('Delete this conversation?')) return;
+
+      try {
+        const response = await fetch(`/history/conversation/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          // Reload conversations
+          loadConversations();
+        } else {
+          alert('Failed to delete conversation');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete conversation');
+      }
+    }
+  </script>
+</body>
+</html>

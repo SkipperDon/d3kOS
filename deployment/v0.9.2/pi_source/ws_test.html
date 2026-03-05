@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head><title>WebSocket Test</title></head>
+<body style="background: #000; color: #0f0; font-family: monospace; padding: 20px;">
+<h1>Signal K WebSocket Test</h1>
+<button onclick="testConnection()" style="font-size: 20px; padding: 10px;">Test Connection</button>
+<pre id="output" style="margin-top: 20px; color: #fff;"></pre>
+
+<script>
+function log(msg) {
+  document.getElementById('output').innerHTML += msg + '\n';
+  console.log(msg);
+}
+
+function testConnection() {
+  document.getElementById('output').innerHTML = '';
+  const url = 'ws://' + window.location.hostname + ':3000/signalk/v1/stream?subscribe=none';
+  log('Testing connection to: ' + url);
+  log('Browser: ' + navigator.userAgent);
+  log('Page URL: ' + window.location.href);
+  log('');
+  
+  try {
+    const ws = new WebSocket(url);
+    log('WebSocket object created, state: ' + ws.readyState);
+    
+    ws.onopen = function() {
+      log('✓ SUCCESS! WebSocket connected');
+      log('ReadyState: ' + ws.readyState + ' (1 = OPEN)');
+      ws.close();
+    };
+    
+    ws.onerror = function(error) {
+      log('✗ ERROR! WebSocket error occurred');
+      log('Error object: ' + JSON.stringify(error));
+      log('ReadyState: ' + ws.readyState);
+    };
+    
+    ws.onclose = function(event) {
+      log('Connection closed');
+      log('Code: ' + event.code + ', Reason: ' + event.reason);
+      log('Clean: ' + event.wasClean);
+    };
+    
+    setTimeout(function() {
+      if (ws.readyState !== 1) {
+        log('✗ TIMEOUT! Connection did not open within 3 seconds');
+        log('Final state: ' + ws.readyState);
+        ws.close();
+      }
+    }, 3000);
+    
+  } catch (e) {
+    log('✗ EXCEPTION! ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Manual - d3kOS</title>
+  <style>
+    :root {
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-accent-dim: #008800;
+      --color-border: #333333;
+      --button-radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-size: 22px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      flex: 1;
+    }
+
+    .top-nav {
+      background-color: var(--color-bg);
+      border-bottom: 2px solid var(--color-accent);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .nav-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--color-accent);
+      margin-bottom: 10px;
+    }
+
+    .page-subtitle {
+      font-size: 18px;
+      color: #999;
+      margin-bottom: 30px;
+    }
+
+    .upload-card {
+      background-color: #0a0a0a;
+      border: 2px solid var(--color-border);
+      border-radius: var(--button-radius);
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: var(--color-accent);
+    }
+
+    .form-select {
+      width: 100%;
+      background-color: #1a1a1a;
+      border: 2px solid var(--color-border);
+      border-radius: var(--button-radius);
+      color: var(--color-text);
+      font-size: 20px;
+      padding: 15px;
+      font-family: inherit;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .file-input-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 15px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+
+    .file-input-wrapper input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-name {
+      margin-top: 10px;
+      color: var(--color-accent);
+      font-style: italic;
+    }
+
+    .upload-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 15px 40px;
+      font-size: 22px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .upload-button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: var(--button-radius);
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .message.success {
+      background-color: #1a3a1a;
+      border: 2px solid var(--color-accent);
+    }
+
+    .message.error {
+      background-color: #3a1a1a;
+      border: 2px solid #cc0000;
+    }
+
+    .info-box {
+      background-color: #1a1a0a;
+      border: 2px solid #666;
+      border-radius: var(--button-radius);
+      padding: 20px;
+      margin-top: 30px;
+    }
+
+    .info-box h3 {
+      color: var(--color-accent);
+      margin-bottom: 15px;
+    }
+
+    .info-box ul {
+      margin-left: 20px;
+    }
+
+    .info-box li {
+      margin-bottom: 10px;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="top-nav">
+    <a href="/" class="nav-button">← Main Menu</a>
+  </div>
+
+  <div class="container">
+    <h1 class="page-title">📄 Upload Manual</h1>
+    <p class="page-subtitle">Add manuals, regulations, and reference documents to your knowledge base</p>
+
+    <div class="upload-card">
+      <form id="uploadForm">
+        <div class="form-group">
+          <label class="form-label">Manual Type</label>
+          <select id="manualType" class="form-select">
+            <option value="boat">Boat Manual</option>
+            <option value="engine">Engine Manual</option>
+            <option value="electronics">Electronics Manual</option>
+            <option value="safety">Safety Equipment Manual</option>
+            <option value="regulations">Regulations</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Select PDF File</label>
+          <div class="file-input-wrapper">
+            <button type="button" class="file-input-button" onclick="document.getElementById('fileInput').click()">
+              Choose PDF File
+            </button>
+            <input type="file" id="fileInput" accept=".pdf" onchange="updateFileName()">
+          </div>
+          <div id="fileName" class="file-name"></div>
+        </div>
+
+        <button type="submit" id="uploadButton" class="upload-button">
+          Upload and Process Manual
+        </button>
+      </form>
+
+      <div id="message"></div>
+    </div>
+
+    <div class="info-box">
+      <h3>What Happens When You Upload?</h3>
+      <ul>
+        <li>The PDF will be processed and text extracted</li>
+        <li>Key specifications will be identified automatically</li>
+        <li>Information will be added to the AI knowledge base (skills.md)</li>
+        <li>The AI assistant will be able to answer questions about your manuals</li>
+        <li>Original PDF will be saved to /opt/d3kos/data/manuals/</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let selectedFile = null;
+
+    function updateFileName() {
+      const input = document.getElementById('fileInput');
+      const fileNameDiv = document.getElementById('fileName');
+      
+      if (input.files.length > 0) {
+        selectedFile = input.files[0];
+        fileNameDiv.textContent = `Selected: ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`;
+      } else {
+        selectedFile = null;
+        fileNameDiv.textContent = '';
+      }
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!selectedFile) {
+        showMessage('Please select a PDF file', 'error');
+        return;
+      }
+
+      const manualType = document.getElementById('manualType').value;
+      const uploadButton = document.getElementById('uploadButton');
+      
+      // Disable button
+      uploadButton.disabled = true;
+      uploadButton.textContent = 'Uploading...';
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('type', manualType);
+      
+      try {
+        const response = await fetch('/upload/manual', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage(`✓ ${result.message}`, 'success');
+          // Reset form
+          document.getElementById('fileInput').value = '';
+          selectedFile = null;
+          document.getElementById('fileName').textContent = '';
+        } else {
+          showMessage(`Error: ${result.error || result.message}`, 'error');
+        }
+      } catch (error) {
+        showMessage(`Upload failed: ${error.message}`, 'error');
+      } finally {
+        uploadButton.disabled = false;
+        uploadButton.textContent = 'Upload and Process Manual';
+      }
+    });
+
+    function showMessage(text, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = text;
+      messageDiv.className = `message ${type}`;
+      
+      if (type === 'success') {
+        setTimeout(() => {
+          messageDiv.textContent = '';
+          messageDiv.className = '';
+        }, 5000);
+      }
+    }
+  </script>
+</body>
+</html>

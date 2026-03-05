@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/js/units.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Boat Setup Wizard</title>
@@ -64,6 +65,11 @@
       max-width: 800px;
       margin: 0 auto;
       padding-bottom: 120px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      height: calc(100vh - 160px);
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
     .step {
       display: none;
@@ -194,7 +200,15 @@
       justify-content: center;
       margin: 30px 0;
     }
-  </style>
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
   <div class="nav-bar">
@@ -371,7 +385,76 @@
       </p>
     </div>
 
+    <!-- QR Code modal for Gemini key -->
+    <div id="gemini-qr-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9999;
+         flex-direction:column; align-items:center; justify-content:center; padding:30px; box-sizing:border-box;">
+      <div style="background:#111; border:2px solid #0C0; border-radius:16px; padding:32px; max-width:560px; width:100%; text-align:center;">
+        <p style="font-size:22px; font-weight:bold; color:#0C0; margin:0 0 8px 0;">Get Your Free Gemini API Key</p>
+        <p style="font-size:17px; color:#ccc; margin:0 0 20px 0;">Scan with your phone — you're already signed into Google there.</p>
+        <div id="gemini-qr-canvas" style="display:inline-block; background:#fff; padding:12px; border-radius:8px; margin-bottom:20px;"></div>
+        <p style="font-size:16px; color:#aaa; margin:0 0 4px 0;">Or visit on your phone:</p>
+        <p style="font-size:15px; color:#4285F4; margin:0 0 20px 0; word-break:break-all;">aistudio.google.com/app/apikey</p>
+        <ol style="font-size:17px; line-height:2; text-align:left; margin:0 0 24px 0; padding-left:24px; color:#ddd;">
+          <li>Scan the QR code with your phone</li>
+          <li>Sign in to Google AI Studio</li>
+          <li>Tap <strong style="color:#fff;">"Create API key"</strong></li>
+          <li>Copy the key (starts with <code style="color:#0C0;">AIza</code>)</li>
+          <li>Come back here — tap <strong style="color:#fff;">Close</strong> then <strong style="color:#fff;">Paste Key</strong></li>
+        </ol>
+        <button onclick="closeGeminiQR()"
+                style="font-size:22px; font-weight:bold; padding:18px 48px; background:#0C0; color:#000; border:none; border-radius:10px; cursor:pointer;">
+          ✓ Close &amp; Return to Wizard
+        </button>
+      </div>
+    </div>
+
     <div class="step" id="step20">
+      <h2>🤖 AI Assistant Setup</h2>
+      <p style="font-size:18px; margin-bottom:16px;">d3kOS includes a built-in AI assistant powered by Google Gemini. A free API key is required.</p>
+
+      <div style="background:#111; border:1px solid #333; border-radius:10px; padding:20px; margin-bottom:20px; text-align:left;">
+        <p style="font-size:18px; font-weight:bold; color:#0C0; margin:0 0 10px 0;">How to get your free API key:</p>
+        <ol style="font-size:17px; line-height:1.9; margin:0 0 16px 0; padding-left:24px;">
+          <li>Tap <strong style="color:#fff;">"Show QR Code"</strong> below</li>
+          <li>Scan with your phone — sign in to Google</li>
+          <li>Tap <strong style="color:#fff;">"Create API key"</strong></li>
+          <li>Copy the key (starts with <code style="color:#0C0;">AIza</code>)</li>
+          <li>Close the QR screen, then tap <strong style="color:#fff;">Paste Key</strong></li>
+        </ol>
+        <div style="text-align:center;">
+          <button onclick="showGeminiQR()"
+                  style="font-size:20px; font-weight:bold; padding:14px 32px; background:#4285F4; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+            📱 Show QR Code
+          </button>
+        </div>
+      </div>
+
+      <div class="config-box" style="margin: 0 0 16px 0;">
+        <label style="font-size:18px; display:block; margin-bottom:8px;">Gemini API Key</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="gemini-key-input" placeholder="AIza..."
+                 style="flex:1; font-size:18px; padding:12px; border-radius:8px; border:2px solid #555; background:#222; color:#fff; box-sizing:border-box;"
+                 onkeydown="if(event.key==='Enter'){saveGeminiAndContinue();}">
+          <button onclick="pasteGeminiKey()"
+                  style="font-size:20px; padding:12px 18px; background:#555; color:#fff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap;">
+            📋 Paste
+          </button>
+          <button onclick="toggleGeminiVisibility(this)"
+                  style="font-size:20px; padding:12px 14px; background:#333; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+            👁
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:12px;">
+        <button onclick="testGeminiKey()" style="font-size:20px; padding:16px 28px; background:#4CAF50; color:#fff; border:none; border-radius:8px; cursor:pointer;">🔌 Test Key</button>
+        <button onclick="saveGeminiAndContinue()" style="font-size:20px; padding:16px 28px; background:#2196F3; color:#fff; border:none; border-radius:8px; cursor:pointer;">✓ Save & Continue</button>
+        <button onclick="skipGemini()" style="font-size:20px; padding:16px 28px; background:#555; color:#fff; border:none; border-radius:8px; cursor:pointer;">Skip for Now</button>
+      </div>
+      <div id="gemini-test-result" style="font-size:18px; margin-top:4px; text-align:center;"></div>
+    </div>
+
+    <div class="step" id="step21">
       <h2>Setup Complete! 🎉</h2>
       <p>Your d3kOS is configured and ready to use.</p>
       <p><strong>Next steps:</strong></p>
@@ -392,7 +475,7 @@
 
   <script>
     let step = 0;
-    const total = 20;
+    const total = 21;
     let config = {};
 
     function start() {
@@ -486,7 +569,42 @@
       document.getElementById('reviewSummary').innerHTML = html;
     }
 
-    function generateDIP() {
+    
+// Auto-set measurement system based on boat origin
+document.addEventListener('DOMContentLoaded', function() {
+  const originSelect = document.getElementById('boat-origin') ||
+                       document.querySelector('[name="boat_origin"]') ||
+                       document.querySelector('[data-step="15"] select');
+  if (originSelect) {
+    originSelect.addEventListener('change', function() {
+      const origin = this.value.toLowerCase();
+      const metricRegions = [
+        'europe','germany','france','spain','italy','netherlands',
+        'sweden','norway','denmark','finland','australia','new zealand',
+        'japan','china','south korea','brazil','argentina','chile',
+        'south africa','india','singapore','asia','oceania','africa',
+        'south america','united kingdom','uk'
+      ];
+      const isMetric = metricRegions.some(r => origin.includes(r));
+      Units.setPreference(isMetric ? 'metric' : 'imperial');
+    });
+  }
+});
+
+// Engine size unit selector
+document.addEventListener('DOMContentLoaded', function() {
+  const engineSizeInput = document.getElementById('engine-size') ||
+                          document.querySelector('[name="engine_size"]');
+  if (engineSizeInput && !document.getElementById('engine-size-unit')) {
+    const unitSel = document.createElement('select');
+    unitSel.id = 'engine-size-unit';
+    unitSel.innerHTML = '<option value="ci">ci</option><option value="L">L</option>';
+    unitSel.value = Units.getPreference() === 'metric' ? 'L' : 'ci';
+    engineSizeInput.parentNode.insertBefore(unitSel, engineSizeInput.nextSibling);
+  }
+});
+
+function generateDIP() {
       // Get configuration values
       const cylinders = config.q8 || '4';
       const tankSensor = config.q15 || 'us';
@@ -584,6 +702,80 @@
         return 'unknown';
       }
     }
+
+    async function testGeminiKey() {
+      const key = document.getElementById('gemini-key-input').value.trim();
+      if (!key) { document.getElementById('gemini-test-result').textContent = '⚠️ Enter an API key first'; return; }
+      document.getElementById('gemini-test-result').textContent = 'Testing...';
+      try {
+        const r = await fetch('/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+        const d = await r.json();
+        document.getElementById('gemini-test-result').textContent = d.success ? '✅ Connected! AI assistant ready.' : '❌ ' + (d.error || 'Connection failed');
+      } catch (e) {
+        document.getElementById('gemini-test-result').textContent = '❌ Could not reach AI service';
+      }
+    }
+
+    async function saveGeminiAndContinue() {
+      const key = document.getElementById('gemini-key-input').value.trim();
+      if (key) {
+        try {
+          await fetch('/gemini/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+        } catch (e) { /* non-fatal */ }
+      }
+      step++;
+      show();
+    }
+
+    function skipGemini() {
+      step++;
+      show();
+    }
+
+    let _geminiQRBuilt = false;
+    function showGeminiQR() {
+      const modal = document.getElementById('gemini-qr-modal');
+      modal.style.display = 'flex';
+      if (!_geminiQRBuilt) {
+        _geminiQRBuilt = true;
+        new QRCode(document.getElementById('gemini-qr-canvas'), {
+          text: 'https://aistudio.google.com/app/apikey',
+          width: 220, height: 220,
+          colorDark: '#000000', colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }
+
+    function closeGeminiQR() {
+      document.getElementById('gemini-qr-modal').style.display = 'none';
+      // Focus the key input so keyboard pops up ready to paste
+      setTimeout(() => document.getElementById('gemini-key-input').focus(), 100);
+    }
+
+    async function pasteGeminiKey() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('gemini-key-input').value = text.trim();
+        document.getElementById('gemini-test-result').textContent = '📋 Key pasted — tap Test Key to verify.';
+      } catch (e) {
+        document.getElementById('gemini-test-result').textContent = '⚠️ Paste failed — tap the key field and paste manually.';
+      }
+    }
+
+    function toggleGeminiVisibility(btn) {
+      const inp = document.getElementById('gemini-key-input');
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+      else { inp.type = 'password'; btn.textContent = '👁'; }
+    }
+
+    // Enter key advances to next step (skip when in textarea or on a button)
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+      const tag = document.activeElement ? document.activeElement.tagName : '';
+      if (tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'SELECT') return;
+      if (step > 0 && step < total) { e.preventDefault(); next(); }
+    });
 
     async function complete() {
       // Toggle fullscreen to restore kiosk mode

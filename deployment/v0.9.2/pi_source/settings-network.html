@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Network Settings - d3kOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background-color: #000000;
+            color: #FFFFFF;
+            font-size: 22px;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background-color: #1a1a1a;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid #00CC00;
+        }
+
+        .back-button {
+            background-color: #333333;
+            color: #FFFFFF;
+            border: 2px solid #00CC00;
+            padding: 15px 30px;
+            font-size: 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            touch-action: manipulation;
+        }
+
+        .back-button:active {
+            background-color: #00CC00;
+            color: #000000;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00CC00;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .status-panel {
+            background-color: #1a1a1a;
+            border: 2px solid #00CC00;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .status-panel h2 {
+            font-size: 28px;
+            color: #00CC00;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333333;
+            padding-bottom: 10px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #333333;
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #AAAAAA;
+            font-size: 20px;
+        }
+
+        .status-value {
+            color: #FFFFFF;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .mode-hotspot {
+            background-color: #FF6600;
+            color: #FFFFFF;
+        }
+
+        .mode-client {
+            background-color: #0066CC;
+            color: #FFFFFF;
+        }
+
+        .mode-none {
+            background-color: #666666;
+            color: #FFFFFF;
+        }
+
+        .signal-bars {
+            display: inline-flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 24px;
+        }
+
+        .signal-bar {
+            width: 5px;
+            background-color: #333333;
+            border-radius: 2px;
+        }
+
+        .signal-bar.active {
+            background-color: #00CC00;
+        }
+
+        .button {
+            background-color: #00CC00;
+            color: #000000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .button:active {
+            transform: scale(0.98);
+            opacity: 0.8;
+        }
+
+        .button:disabled {
+            background-color: #666666;
+            color: #333333;
+            cursor: not-allowed;
+        }
+
+        .button-secondary {
+            background-color: #333333;
+            color: #FFFFFF;
+            border: 2px solid #00CC00;
+        }
+
+        .button-danger {
+            background-color: #CC0000;
+            color: #FFFFFF;
+        }
+
+        .wifi-list {
+            margin-top: 20px;
+        }
+
+        .wifi-network {
+            background-color: #2a2a2a;
+            border: 2px solid #333333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            touch-action: manipulation;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .wifi-network:active {
+            background-color: #00CC00;
+            border-color: #00CC00;
+            color: #000000;
+        }
+
+        .wifi-network.connected {
+            border-color: #00CC00;
+            background-color: #1a3a1a;
+        }
+
+        .wifi-info {
+            flex-grow: 1;
+        }
+
+        .wifi-ssid {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .wifi-security {
+            font-size: 18px;
+            color: #AAAAAA;
+        }
+
+        .wifi-signal {
+            margin-left: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            border: 3px solid #00CC00;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            color: #00CC00;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 20px;
+            color: #AAAAAA;
+            margin-bottom: 10px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            font-size: 22px;
+            background-color: #2a2a2a;
+            color: #FFFFFF;
+            border: 2px solid #00CC00;
+            border-radius: 8px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #00FF00;
+            background-color: #333333;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #333333;
+            border-top-color: #00CC00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 20px;
+        }
+
+        .message-success {
+            background-color: #1a3a1a;
+            border: 2px solid #00CC00;
+            color: #00CC00;
+        }
+
+        .message-error {
+            background-color: #3a1a1a;
+            border: 2px solid #CC0000;
+            color: #FF6666;
+        }
+
+        .clients-list {
+            margin-top: 20px;
+        }
+
+        .client-item {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #00CC00;
+        }
+
+        .client-hostname {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .client-details {
+            font-size: 18px;
+            color: #AAAAAA;
+        }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/settings.html" class="back-button">← Back</a>
+        <div class="page-title">Network Settings</div>
+        <div style="width: 120px;"></div>
+    </div>
+
+    <div class="container">
+        <!-- Current Status Panel -->
+        <div class="status-panel">
+            <h2>Current Connection</h2>
+            <div id="status-loading" class="status-row">
+                <div class="status-label">Loading...</div>
+                <div class="spinner"></div>
+            </div>
+            <div id="status-content" class="hidden">
+                <div class="status-row">
+                    <div class="status-label">Mode:</div>
+                    <div class="status-value">
+                        <span id="status-mode" class="mode-badge mode-none">Disconnected</span>
+                    </div>
+                </div>
+                <div id="wifi-status" class="hidden">
+                    <div class="status-row">
+                        <div class="status-label">Network:</div>
+                        <div class="status-value" id="wifi-ssid">-</div>
+                    </div>
+                    <div class="status-row">
+                        <div class="status-label">Signal Strength:</div>
+                        <div class="status-value">
+                            <span id="wifi-signal"></span>
+                        </div>
+                    </div>
+                    <div class="status-row">
+                        <div class="status-label">IP Address:</div>
+                        <div class="status-value" id="wifi-ip">-</div>
+                    </div>
+                </div>
+                <div id="hotspot-status" class="hidden">
+                    <div class="status-row">
+                        <div class="status-label">SSID:</div>
+                        <div class="status-value" id="hotspot-ssid">d3kOS</div>
+                    </div>
+                    <div class="status-row">
+                        <div class="status-label">Password:</div>
+                        <div class="status-value" id="hotspot-password">d3kos-2026</div>
+                    </div>
+                    <div class="status-row">
+                        <div class="status-label">Connected Devices:</div>
+                        <div class="status-value" id="hotspot-clients">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hotspot Clients Panel (shown when hotspot active) -->
+        <div id="clients-panel" class="status-panel hidden">
+            <h2>Connected Devices</h2>
+            <div id="clients-list" class="clients-list">
+                <div class="client-item">
+                    <div class="client-hostname">No devices connected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Panel -->
+        <div class="status-panel">
+            <h2>Actions</h2>
+            <button id="btn-toggle-mode" class="button" onclick="toggleMode()">
+                <span id="toggle-mode-text">Switch to Hotspot</span>
+                <span id="toggle-spinner" class="spinner hidden"></span>
+            </button>
+            <button id="btn-scan-wifi" class="button button-secondary" onclick="scanWiFi()">
+                <span>Scan for WiFi Networks</span>
+                <span id="scan-spinner" class="spinner hidden"></span>
+            </button>
+        </div>
+
+        <!-- Available Networks Panel -->
+        <div id="wifi-networks-panel" class="status-panel hidden">
+            <h2>Available WiFi Networks</h2>
+            <div id="wifi-list" class="wifi-list">
+                <!-- Networks populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Message Area -->
+        <div id="message-area"></div>
+    </div>
+
+    <!-- WiFi Password Modal -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Connect to WiFi</div>
+            <div class="input-group">
+                <label class="input-label">Network:</label>
+                <div id="connect-ssid" class="status-value">-</div>
+            </div>
+            <div class="input-group">
+                <label class="input-label" for="wifi-password">Password:</label>
+                <input type="password" id="wifi-password" class="input-field" placeholder="Enter WiFi password">
+            </div>
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closePasswordModal()" style="flex: 1;">Cancel</button>
+                <button class="button" onclick="connectToWiFi()" style="flex: 1;">
+                    <span id="connect-text">Connect</span>
+                    <span id="connect-spinner" class="spinner hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStatus = null;
+        let selectedNetwork = null;
+        let refreshInterval = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatus();
+            refreshInterval = setInterval(loadStatus, 10000); // Refresh every 10 seconds
+        });
+
+        async function loadStatus() {
+            try {
+                const response = await fetch('/network/status');
+                const data = await response.json();
+                currentStatus = data;
+                updateStatusDisplay(data);
+            } catch (error) {
+                console.error('Error loading status:', error);
+                showMessage('Failed to load network status', 'error');
+            }
+        }
+
+        function updateStatusDisplay(status) {
+            // Hide loading, show content
+            document.getElementById('status-loading').classList.add('hidden');
+            document.getElementById('status-content').classList.remove('hidden');
+
+            const modeBadge = document.getElementById('status-mode');
+            const wifiStatus = document.getElementById('wifi-status');
+            const hotspotStatus = document.getElementById('hotspot-status');
+            const toggleButton = document.getElementById('btn-toggle-mode');
+            const toggleText = document.getElementById('toggle-mode-text');
+            const clientsPanel = document.getElementById('clients-panel');
+
+            if (!status.connected) {
+                modeBadge.textContent = 'Disconnected';
+                modeBadge.className = 'mode-badge mode-none';
+                wifiStatus.classList.add('hidden');
+                hotspotStatus.classList.add('hidden');
+                clientsPanel.classList.add('hidden');
+                toggleText.textContent = 'Switch to Hotspot';
+                return;
+            }
+
+            if (status.mode === 'hotspot') {
+                // Hotspot mode
+                modeBadge.textContent = 'Hotspot Active';
+                modeBadge.className = 'mode-badge mode-hotspot';
+                wifiStatus.classList.add('hidden');
+                hotspotStatus.classList.remove('hidden');
+
+                if (status.hotspot) {
+                    document.getElementById('hotspot-ssid').textContent = status.hotspot.ssid;
+                    document.getElementById('hotspot-password').textContent = status.hotspot.password;
+                    document.getElementById('hotspot-clients').textContent = status.hotspot.client_count;
+
+                    // Show clients panel if there are connected devices
+                    if (status.hotspot.clients && status.hotspot.clients.length > 0) {
+                        clientsPanel.classList.remove('hidden');
+                        updateClientsList(status.hotspot.clients);
+                    } else {
+                        clientsPanel.classList.add('hidden');
+                    }
+                }
+
+                toggleText.textContent = 'Switch to WiFi';
+            } else {
+                // WiFi client mode
+                modeBadge.textContent = 'WiFi Connected';
+                modeBadge.className = 'mode-badge mode-client';
+                wifiStatus.classList.remove('hidden');
+                hotspotStatus.classList.add('hidden');
+                clientsPanel.classList.add('hidden');
+
+                if (status.wifi) {
+                    document.getElementById('wifi-ssid').textContent = status.wifi.ssid;
+                    document.getElementById('wifi-ip').textContent = status.wifi.ip_address;
+                    updateSignalBars(status.wifi.signal);
+                }
+
+                toggleText.textContent = 'Switch to Hotspot';
+            }
+        }
+
+        function updateSignalBars(signal) {
+            const container = document.getElementById('wifi-signal');
+            const bars = [];
+
+            for (let i = 1; i <= 4; i++) {
+                const height = i * 6;
+                const active = signal >= (i * 25) ? 'active' : '';
+                bars.push(`<div class="signal-bar ${active}" style="height: ${height}px;"></div>`);
+            }
+
+            container.innerHTML = `
+                <div class="signal-bars">
+                    ${bars.join('')}
+                </div>
+                <span style="margin-left: 10px;">${signal}%</span>
+            `;
+        }
+
+        function updateClientsList(clients) {
+            const container = document.getElementById('clients-list');
+
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="client-item">
+                        <div class="client-hostname">No devices connected</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = clients.map(client => `
+                <div class="client-item">
+                    <div class="client-hostname">${client.hostname}</div>
+                    <div class="client-details">
+                        IP: ${client.ip} • MAC: ${client.mac}
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        async function toggleMode() {
+            if (!currentStatus || !currentStatus.connected) {
+                // No connection, enable hotspot
+                await enableHotspot();
+                return;
+            }
+
+            if (currentStatus.mode === 'hotspot') {
+                // Disable hotspot (will disconnect)
+                if (!confirm('Disabling hotspot will disconnect all devices. Continue?')) {
+                    return;
+                }
+                await disableHotspot();
+            } else {
+                // Switch from WiFi to hotspot
+                if (!confirm('Switching to hotspot will disconnect from WiFi. Continue?')) {
+                    return;
+                }
+                await enableHotspot();
+            }
+        }
+
+        async function enableHotspot() {
+            const toggleButton = document.getElementById('btn-toggle-mode');
+            const toggleSpinner = document.getElementById('toggle-spinner');
+            const toggleText = document.getElementById('toggle-mode-text');
+
+            toggleButton.disabled = true;
+            toggleSpinner.classList.remove('hidden');
+            toggleText.textContent = 'Enabling hotspot...';
+
+            try {
+                const response = await fetch('/network/hotspot/enable', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Hotspot enabled successfully', 'success');
+                    setTimeout(loadStatus, 3000);
+                } else {
+                    showMessage('Failed to enable hotspot: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error enabling hotspot:', error);
+                showMessage('Failed to enable hotspot', 'error');
+            } finally {
+                toggleButton.disabled = false;
+                toggleSpinner.classList.add('hidden');
+                toggleText.textContent = 'Switch to Hotspot';
+            }
+        }
+
+        async function disableHotspot() {
+            const toggleButton = document.getElementById('btn-toggle-mode');
+            const toggleSpinner = document.getElementById('toggle-spinner');
+            const toggleText = document.getElementById('toggle-mode-text');
+
+            toggleButton.disabled = true;
+            toggleSpinner.classList.remove('hidden');
+            toggleText.textContent = 'Disabling hotspot...';
+
+            try {
+                const response = await fetch('/network/hotspot/disable', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Hotspot disabled', 'success');
+                    setTimeout(loadStatus, 2000);
+                } else {
+                    showMessage('Failed to disable hotspot: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error disabling hotspot:', error);
+                showMessage('Failed to disable hotspot', 'error');
+            } finally {
+                toggleButton.disabled = false;
+                toggleSpinner.classList.add('hidden');
+                toggleText.textContent = 'Switch to WiFi';
+            }
+        }
+
+        async function scanWiFi() {
+            const scanButton = document.getElementById('btn-scan-wifi');
+            const scanSpinner = document.getElementById('scan-spinner');
+            const networksPanel = document.getElementById('wifi-networks-panel');
+
+            scanButton.disabled = true;
+            scanSpinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/network/wifi/scan');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayWiFiNetworks(data.networks);
+                    networksPanel.classList.remove('hidden');
+                    showMessage(`Found ${data.count} networks`, 'success');
+                } else {
+                    showMessage('Failed to scan networks: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error scanning WiFi:', error);
+                showMessage('Failed to scan WiFi networks', 'error');
+            } finally {
+                scanButton.disabled = false;
+                scanSpinner.classList.add('hidden');
+            }
+        }
+
+        function displayWiFiNetworks(networks) {
+            const container = document.getElementById('wifi-list');
+
+            if (networks.length === 0) {
+                container.innerHTML = '<div class="wifi-network">No networks found</div>';
+                return;
+            }
+
+            const html = networks.map(network => {
+                const isConnected = currentStatus && currentStatus.wifi && 
+                                  currentStatus.wifi.ssid === network.ssid;
+                const connectedClass = isConnected ? 'connected' : '';
+                const securityText = network.secured ? '🔒 Secured' : '🔓 Open';
+
+                return `
+                    <div class="wifi-network ${connectedClass}" onclick="selectNetwork('${network.ssid}', ${network.secured})">
+                        <div class="wifi-info">
+                            <div class="wifi-ssid">${network.ssid} ${isConnected ? '(Connected)' : ''}</div>
+                            <div class="wifi-security">${securityText}</div>
+                        </div>
+                        <div class="wifi-signal">
+                            ${createSignalBars(network.signal)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function createSignalBars(signal) {
+            const bars = [];
+            for (let i = 1; i <= 4; i++) {
+                const height = i * 6;
+                const active = signal >= (i * 25) ? 'active' : '';
+                bars.push(`<div class="signal-bar ${active}" style="height: ${height}px;"></div>`);
+            }
+            return `<div class="signal-bars">${bars.join('')}</div>`;
+        }
+
+        function selectNetwork(ssid, secured) {
+            selectedNetwork = { ssid, secured };
+
+            if (!secured) {
+                // Open network, connect directly
+                if (confirm(`Connect to open network "${ssid}"?`)) {
+                    connectToWiFi();
+                }
+            } else {
+                // Secured network, show password modal
+                document.getElementById('connect-ssid').textContent = ssid;
+                document.getElementById('wifi-password').value = '';
+                document.getElementById('password-modal').classList.add('active');
+
+                // Auto-focus password field after modal opens
+                setTimeout(() => {
+                    document.getElementById('wifi-password').focus();
+                }, 100);
+            }
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.remove('active');
+            selectedNetwork = null;
+        }
+
+        async function connectToWiFi() {
+            if (!selectedNetwork) return;
+
+            const connectButton = document.querySelector('#password-modal .button:not(.button-secondary)');
+            const connectSpinner = document.getElementById('connect-spinner');
+            const connectText = document.getElementById('connect-text');
+            const password = document.getElementById('wifi-password').value;
+
+            connectButton.disabled = true;
+            connectSpinner.classList.remove('hidden');
+            connectText.textContent = 'Connecting...';
+
+            try {
+                const response = await fetch('/network/wifi/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ssid: selectedNetwork.ssid,
+                        password: selectedNetwork.secured ? password : ''
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Connected to ${data.ssid}`, 'success');
+                    closePasswordModal();
+                    setTimeout(loadStatus, 3000);
+                } else {
+                    showMessage('Connection failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error connecting to WiFi:', error);
+                showMessage('Failed to connect to WiFi', 'error');
+            } finally {
+                connectButton.disabled = false;
+                connectSpinner.classList.add('hidden');
+                connectText.textContent = 'Connect';
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('message-area');
+            const messageClass = type === 'error' ? 'message-error' : 'message-success';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${messageClass}`;
+            messageDiv.textContent = text;
+
+            messageArea.innerHTML = '';
+            messageArea.appendChild(messageDiv);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transition = 'opacity 0.5s';
+                setTimeout(() => messageDiv.remove(), 500);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
