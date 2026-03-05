@@ -1,0 +1,27 @@
+=== CSS ===
+NONE
+=== HTML_AFTER_BODY ===
+NONE
+=== JS_BEFORE_BODY_CLOSE ===
+async function testGeminiKey() {
+  const key = document.getElementById('gemini-key-input').value.trim();
+  if (!key) { document.getElementById('gemini-test-result').textContent = '⚠️ Enter an API key first'; return; }
+  document.getElementById('gemini-test-result').textContent = 'Testing...';
+  const r = await fetch('/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+  const d = await r.json();
+  document.getElementById('gemini-test-result').textContent = d.success ? '✅ Connected! AI assistant ready.' : '❌ ' + (d.error || 'Connection failed');
+}
+
+async function saveGeminiAndContinue() {
+  const key = document.getElementById('gemini-key-input').value.trim();
+  if (key) {
+    await fetch('/gemini/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+  }
+  showStep(18); // next step (completion)
+}
+
+function skipGemini() {
+  showStep(18);
+}
+=== JS_INLINE ===
+NONE

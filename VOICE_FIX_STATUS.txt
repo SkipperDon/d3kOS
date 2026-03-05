@@ -1,0 +1,96 @@
+==================================================
+VOICE ASSISTANT FIX - UNATTENDED IMPLEMENTATION
+==================================================
+
+Date: February 27, 2026 1:36 PM EST
+Status: ✅ IMPLEMENTED - READY FOR TESTING
+
+==================================================
+WHAT WAS FIXED
+==================================================
+
+ROOT CAUSE IDENTIFIED:
+- USB audio card numbers change on Raspberry Pi reboot
+- Voice assistant hardcoded to plughw:3,0 (card 3)
+- After reboot, Anker S330 becomes card 2/4/5 instead
+- System records from WRONG device → weak signal → Vosk fails
+
+SOLUTION IMPLEMENTED:
+✅ Modified voice-assistant-hybrid.py to use card NAME
+✅ Now uses: plughw:S330,0 (persistent across reboots)
+✅ Added re-detection before each listen
+✅ Service running with new code
+✅ Backup created: voice-assistant-hybrid.py.bak.usb-renumber
+
+BONUS: Software gain boost attempted (.asoundrc)
+⚠️  Limited effect, but may help
+
+==================================================
+QUICK TEST (When You Return)
+==================================================
+
+1. Say: "HELM"
+   Expected: "Aye Aye Captain" ✅
+
+2. Say: "what time is it"
+   Expected: System tells you the time ✅
+   NOT: "I didn't catch that" ❌
+
+3. If that works, test REBOOT persistence:
+   ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237 'sudo reboot'
+   Wait 3 minutes, then test voice again
+
+==================================================
+FILES MODIFIED (on Pi)
+==================================================
+
+1. /opt/d3kos/services/voice/voice-assistant-hybrid.py
+   - Uses card NAME instead of NUMBER
+   - Backup: voice-assistant-hybrid.py.bak.usb-renumber
+
+2. /home/d3kos/.asoundrc (NEW)
+   - Software audio boost configuration
+
+Voice service: ✅ RUNNING (restarted at 13:35 EST)
+
+==================================================
+FULL DOCUMENTATION
+==================================================
+
+Complete details in:
+/home/boatiq/Helm-OS/doc/VOICE_ASSISTANT_USB_RENUMBER_FIX_2026-02-27.md
+
+Includes:
+- Technical explanation of root cause
+- Research references (Raspberry Pi forums)
+- All code changes with before/after
+- Detailed testing instructions
+- Rollback plan if needed
+- Success criteria checklist
+
+==================================================
+ROLLBACK (If Fix Doesn't Work)
+==================================================
+
+ssh -i ~/.ssh/d3kos_key d3kos@192.168.1.237 '
+sudo systemctl stop d3kos-voice
+sudo cp /opt/d3kos/services/voice/voice-assistant-hybrid.py.bak.usb-renumber /opt/d3kos/services/voice/voice-assistant-hybrid.py
+rm ~/.asoundrc
+sudo systemctl start d3kos-voice
+'
+
+==================================================
+CONFIDENCE LEVEL
+==================================================
+
+Root Cause Analysis: 100% confident
+Solution Approach: 95% confident (proven by community)
+Implementation: Verified (syntax OK, service running)
+
+Expected Outcome: Voice commands should work across reboots
+
+Testing Required: User must verify transcription works
+
+==================================================
+STATUS: Waiting for your testing
+==================================================

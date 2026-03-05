@@ -380,14 +380,20 @@ Return only the corrected code. No markdown, no explanation.
 
 # ── Core: deploy with gate ────────────────────────────────────────────────────
 def gated_deploy(fix_id, pi_path, original, modified, description,
-                 sudo=False, mode="644"):
+                 sudo=False, mode="644", snippet=None):
     """
     Verify → gate → backup → deploy → diff → restart service.
+    snippet: the small generated code block (CSS/JS/patch) for correction loop.
+             Falls back to modified[:3000] so correction never sends a full HTML file.
     Returns (deployed: bool, reason: str).
     """
+    # Use snippet for verify/correction to avoid sending full HTML files
+    verify_code = snippet if snippet else modified
+    correction_code = snippet if snippet else modified[:3000]
+
     # Verify
     passed, score, issue = call_verify(
-        modified, description, original[:2000],
+        verify_code, description, original[:2000],
         os.path.basename(pi_path), fix_id
     )
 
@@ -396,14 +402,15 @@ def gated_deploy(fix_id, pi_path, original, modified, description,
         log(f"  Gate: score={score} < {DEPLOY_MIN_SCORE} — attempting correction")
         corrected = call_ollama(
             CORRECTION_PROMPT.format(
-                instruction=description, issue=issue, code=modified
+                instruction=description, issue=issue, code=correction_code
             ),
             f"fix{fix_id}-correction"
         )
         if corrected:
-            modified = corrected
+            # corrected is only the snippet — re-integrate into full file for INJECT
+            correction_code = corrected
             passed, score, issue = call_verify(
-                modified, description, original[:2000],
+                corrected, description, original[:2000],
                 os.path.basename(pi_path), fix_id
             )
 
@@ -460,7 +467,8 @@ def handle_inject(fix_id, spec, pi_path, description, sudo=False):
         js = "\n\n".join(filter(None, [parsed["JS_BEFORE_BODY_CLOSE"], parsed["JS_INLINE"]]))
         if js:
             html = inject_before_body_close(html, js)
-        return gated_deploy(fix_id, pi_path, original, html, description, sudo=sudo)
+        snippet = result  # raw Ollama output (CSS+HTML+JS) — small, safe for correction
+        return gated_deploy(fix_id, pi_path, original, html, description, sudo=sudo, snippet=snippet)
     except Exception as e:
         log(f"  [Fix {fix_id}] FAILED: {e}", "ERROR")
         return False, str(e)
@@ -514,7 +522,8 @@ def handle_patch_js(fix_id, spec, pi_path, description, use_prescan=True, sudo=F
 
     try:
         new_html = replace_scripts(original, result)
-        return gated_deploy(fix_id, pi_path, original, new_html, description, sudo=sudo)
+        snippet = target_js  # patched JS snippet only — safe for correction loop
+        return gated_deploy(fix_id, pi_path, original, new_html, description, sudo=sudo, snippet=snippet)
     except Exception as e:
         log(f"  [Fix {fix_id}] FAILED: {e}", "ERROR")
         return False, str(e)
@@ -550,7 +559,8 @@ def handle_patch_fn(fix_id, spec, pi_path, description, extract_re=None, sudo=Fa
 
     modified = result if full_replace else (original[:span[0]] + result + original[span[1]:])
 
-    return gated_deploy(fix_id, pi_path, original, modified, description, sudo=sudo)
+    # snippet = just the patched section (not full file) for safe correction loop
+    return gated_deploy(fix_id, pi_path, original, modified, description, sudo=sudo, snippet=result)
 
 
 def handle_create(fix_id, spec, pi_path, description, sudo=False, mode="644"):

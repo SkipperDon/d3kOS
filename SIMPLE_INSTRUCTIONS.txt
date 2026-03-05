@@ -1,0 +1,69 @@
+========================================
+FISH TRAINING - 3 SIMPLE STEPS
+========================================
+
+STEP 1: Copy 3 Files to USB Drive
+----------------------------------
+From this Ubuntu computer, copy these 3 files to a USB drive:
+
+Files to copy:
+1. /home/boatiq/Helm-OS/START_TRAINING.bat
+2. /home/boatiq/Helm-OS/train_fish_model_483species.py
+3. /home/boatiq/final_all_index.txt
+
+
+STEP 2: Move Files to Workstation
+----------------------------------
+Plug USB into your Windows workstation
+
+Copy all 3 files to: C:\fish-training\
+
+(If C:\fish-training doesn't exist, just create it)
+
+
+STEP 3: Double-Click START_TRAINING.bat
+----------------------------------------
+Go to C:\fish-training\
+
+Double-click: START_TRAINING.bat
+
+That's it! Training will start automatically.
+
+Wait 12-16 hours.
+
+
+========================================
+WHAT HAPPENS:
+========================================
+
+The script will:
+- Install Python packages if needed (10 min)
+- Load your 483 fish species dataset
+- Train the model (12-16 hours)
+- Save the model to C:\fish-training\output\
+
+Look for: fish_classifier_483species_best.onnx
+
+That's the file for your Raspberry Pi!
+
+
+========================================
+QUESTIONS?
+========================================
+
+If it says "Python not found":
+- Install Python from python.org first
+
+If it says "Dataset not found":
+- Make sure your fish images are at:
+  C:\fish-training\fish-species-image-data-fish_data\images\
+
+If it asks "Install PyTorch?":
+- Press Y and wait 10 minutes
+
+
+========================================
+DONE!
+========================================
+
+After training, you'll have a working fish detector!

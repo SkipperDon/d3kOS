@@ -1,0 +1,25 @@
+[Unit]
+Description=Ollama Health Agent
+Documentation=https://github.com/your-repo
+After=network-online.target ollama.service
+Wants=network-online.target
+# Restart agent if ollama restarts
+BindsTo=ollama.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ollama-agent
+ExecStart=/usr/bin/python3 /opt/ollama-agent/ollama-agent.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ollama-agent
+
+# Resource limits — agent itself should be lightweight
+MemoryMax=256M
+CPUQuota=10%
+
+[Install]
+WantedBy=multi-user.target

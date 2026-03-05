@@ -1,0 +1,3 @@
+d3kos ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart signalk
+d3kos ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nodered
+d3kos ALL=(ALL) NOPASSWD: /usr/bin/reboot

@@ -1,0 +1,40 @@
+# YOLOv8 Forward Watch Dataset Configuration
+# Marine Object Detection for d3kOS
+
+# Dataset root path (current directory)
+path: .
+
+# Training, validation, and test sets (relative to path)
+train: images/train
+val: images/val
+test: images/test  # optional
+
+# Number of classes
+nc: 6
+
+# Class names (Forward Watch marine objects)
+names:
+  0: ship
+  1: boat
+  2: debris
+  3: buoy
+  4: kayak
+  5: log
+
+# Training hyperparameters
+imgsz: 640
+batch: 16
+epochs: 100
+device: 0  # GPU 0 (RTX 3060 Ti)
+
+# Expected folder structure:
+# forward-watch-complete/
+#   data.yaml (this file)
+#   train_here.py
+#   START_TRAINING_HERE.bat
+#   images/
+#     train/ (training images)
+#     val/ (validation images)
+#   labels/
+#     train/ (training labels)
+#     val/ (validation labels)

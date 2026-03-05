@@ -1,0 +1,13 @@
+[Unit]
+Description=d3kOS Settings Action API
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services
+ExecStart=/usr/bin/python3 /opt/d3kos/services/settings-api.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
