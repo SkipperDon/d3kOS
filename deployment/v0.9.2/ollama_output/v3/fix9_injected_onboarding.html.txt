@@ -1,0 +1,57 @@
+=== CSS ===
+.none { display: none; }
+.setting-card { background: #333; padding: 20px; border-radius: 10px; margin: 15px 0; }
+.setting-card label { font-weight: bold; color: #fff; }
+.setting-card input { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #555; background: #222; color: #fff; font-size: 18px; box-sizing: border-box; }
+.setting-card small { color: #aaa; display: block; margin-top: 8px; }
+.wizard-step { padding: 20px; }
+.wizard-step h2 { color: #4CAF50; margin-bottom: 15px; }
+.wizard-step p { font-size: 18px; line-height: 1.5; color: #ccc; margin-bottom: 20px; }
+button { cursor: pointer; padding: 16px 32px; font-size: 20px; border-radius: 8px; border: none; margin: 8px; transition: background 0.3s; }
+button:hover { opacity: 0.9; }
+#gemini-test-result { font-size: 18px; margin-top: 12px; padding: 10px; border-radius: 8px; }
+#gemini-test-result.success { background: #4CAF50; color: white; }
+#gemini-test-result.error { background: #f44336; color: white; }
+=== HTML_AFTER_BODY ===
+<!-- Step 17: AI Assistant Setup (Optional) -->
+<div class="wizard-step" id="step-17" style="display:none;">
+  <h2>🤖 AI Assistant Setup</h2>
+  <p style="font-size:18px;">d3kOS includes an AI assistant. Add a free Gemini API key for the best experience.</p>
+
+  <div class="setting-card" style="margin: 20px 0;">
+    <label style="font-size:18px; display:block; margin-bottom:8px;">Gemini API Key (optional)</label>
+    <input type="password" id="gemini-key-input" placeholder="AIza..." style="width:100%; font-size:18px; padding:12px; border-radius:8px; border:2px solid #555; background:#222; color:#fff;">
+    <small style="color:#aaa; margin-top:8px; display:block;">Free API key from <strong>aistudio.google.com</strong></small>
+  </div>
+
+  <button onclick="testGeminiKey()" style="font-size:20px; padding:16px 32px; background:#4CAF50; color:#fff; border:none; border-radius:8px; margin:8px;">🔌 Test Connection</button>
+  <div id="gemini-test-result" style="font-size:18px; margin-top:12px;"></div>
+
+  <div style="display:flex; gap:16px; margin-top:24px; justify-content:center;">
+    <button onclick="saveGeminiAndContinue()" style="font-size:20px; padding:16px 32px; background:#2196F3; color:#fff; border:none; border-radius:8px;">✓ Save & Continue</button>
+    <button onclick="skipGemini()" style="font-size:20px; padding:16px 32px; background:#555; color:#fff; border:none; border-radius:8px;">Skip for Now</button>
+  </div>
+</div>
+=== JS_BEFORE_BODY_CLOSE ===
+async function testGeminiKey() {
+  const key = document.getElementById('gemini-key-input').value.trim();
+  if (!key) { document.getElementById('gemini-test-result').textContent = '⚠️ Enter an API key first'; return; }
+  document.getElementById('gemini-test-result').textContent = 'Testing. ..';
+  const r = await fetch('/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+  const d = await r.json();
+  document.getElementById('gemini-test-result').textContent = d.success ? '✅ Connected! AI assistant ready.' : '❌ ' + (d.error || 'Connection failed');
+}
+
+async function saveGeminiAndContinue() {
+  const key = document.getElementById('gemini-key-input').value.trim();
+  if (key) {
+    await fetch('/gemini/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+  }
+  showStep(18); // next step (completion)
+}
+
+function skipGemini() {
+  showStep(18);
+}
+=== JS_INLINE ===
+NONE

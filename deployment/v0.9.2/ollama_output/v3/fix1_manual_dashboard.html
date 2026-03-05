@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/js/units.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engine Dashboard - d3kOS</title>
+  <style>
+    /* === DESIGN SYSTEM: Matches boatlog.html === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-heading: 24px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Top Navigation (matches boatlog.html) */
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: 8px;
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .status-text {
+      font-size: 18px;
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Header */
+    header {
+      padding: 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    /* Main Content */
+    main {
+      padding: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+
+    /* Touch-Friendly Scrollbar */
+    main::-webkit-scrollbar {
+      width: 20px;
+    }
+
+    main::-webkit-scrollbar-track {
+      background: rgba(0, 204, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    main::-webkit-scrollbar-thumb {
+      background: var(--color-accent);
+      border-radius: 10px;
+      border: 3px solid var(--color-bg);
+    }
+
+    main::-webkit-scrollbar-thumb:active {
+      background: #00FF00;
+    }
+
+    /* Dashboard Sections */
+    .dashboard-section {
+      margin-bottom: 30px;
+      border: 2px solid var(--color-accent);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .section-title {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--color-accent);
+      padding-bottom: 10px;
+    }
+
+    /* Gauge Grid */
+    .gauge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      border: 1px solid var(--color-accent);
+      border-radius: 8px;
+      background: rgba(0, 204, 0, 0.05);
+    }
+
+    .gauge-label {
+      font-size: var(--font-base);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 10px;
+    }
+
+    .gauge-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--color-text);
+      margin: 10px 0;
+    }
+
+    .gauge-unit {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    .gauge-bar {
+      width: 100%;
+      height: 30px;
+      background: var(--color-disabled);
+      border-radius: 15px;
+      overflow: hidden;
+      margin-top: 10px;
+      position: relative;
+    }
+
+    .gauge-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      transition: width 0.3s ease;
+      border-radius: 15px;
+    }
+
+    .gauge-bar-fill.warning {
+      background: var(--color-warning);
+    }
+
+    .gauge-bar-fill.critical {
+      background: var(--color-critical);
+    }
+
+    /* Status Indicators */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .status-item {
+      padding: 15px;
+      border: 1px solid var(--color-accent);
+      border-radius: 8px;
+      background: rgba(0, 204, 0, 0.05);
+    }
+
+    .status-label {
+      font-size: var(--font-base);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 5px;
+    }
+
+    .status-value {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .status-online {
+      color: var(--color-accent);
+    }
+
+    .status-offline {
+      color: var(--color-critical);
+    }
+
+    .status-warning {
+      color: var(--color-warning);
+    }
+
+    /* Connection Status */
+    .connection-status {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      z-index: 1000;
+    }
+
+    .connection-status.connected {
+      background: rgba(0, 204, 0, 0.2);
+      color: var(--color-accent);
+      border: 2px solid var(--color-accent);
+    }
+
+    .connection-status.disconnected {
+      background: rgba(255, 0, 0, 0.2);
+      color: var(--color-critical);
+      border: 2px solid var(--color-critical);
+    }
+    #signalk-banner {
+      display: none;
+      background: #FF8C00;
+      color: #000;
+      padding: 16px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    #signalk-banner a {
+      color: #000;
+      text-decoration: underline;
+      margin-left: 12px;
+    }
+  </style>
+</head>
+<body>
+<div id="signalk-banner">
+  ⚠️ Signal K is offline — engine data unavailable.
+  <a href="/settings.html#system-actions">Go to Settings → Restart Signal K</a>
+</div>
+<!-- Simulator Warning Banner (Auto-detect) -->
+<div id="simulator-warning-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#FF6600 0%,#FF3300 100%);border-bottom:4px solid #FF0000;padding:15px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.5);animation:banner-pulse 2s infinite;">
+  <div style="font-size:28px;font-weight:bold;color:#FFFFFF;text-shadow:2px 2px 4px rgba(0,0,0,0.5);">
+    🟠 SIMULATOR MODE ACTIVE
+  </div>
+  <div style="font-size:20px;color:#FFFFFF;margin-top:5px;">
+    Simulated data is being broadcast - Real engine data ignored
+  </div>
+</div>
+<style>
+@keyframes banner-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+#simulator-warning-banner + * {
+  margin-top: 100px !important; /* Push content down when banner is visible */
+}
+</style>
+<script>
+// Check simulator status every 5 seconds
+(function checkSimulatorStatus() {
+  fetch('/simulator/status')
+    .then(r => r.json())
+    .then(d => {
+      const banner = document.getElementById('simulator-warning-banner');
+      if (d.success && d.running) {
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    })
+    .catch(e => console.warn('Simulator status check failed:', e));
+  
+  setTimeout(checkSimulatorStatus, 5000);
+})();
+</script>
+
+  <!-- Connection Status Indicator -->
+  <div class="connection-status disconnected" id="connection-status">
+    ⚠️ Connecting...
+  </div>
+
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <button class="nav-button" onclick="goBack()">
+      ← Main Menu
+    </button>
+    <span class="status-text">d3kOS v2.0 | Engine Dashboard</span>
+    <button class="nav-button" onclick="window.location.reload()">
+      ↻ Refresh
+    </button>
+  </nav>
+
+  <!-- Header -->
+  <header>
+    <h1>⚓ Engine Dashboard</h1>
+    <p class="subtitle">Real-Time Monitoring • 4-Row Layout per MASTER_SYSTEM_SPEC</p>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- ROW 1: ENGINE METRICS -->
+    <section class="dashboard-section">
+      <h2 class="section-title">⚙️ Engine Metrics</h2>
+      <div class="gauge-grid">
+        <!-- Tachometer (RPM) -->
+        <div class="gauge-container">
+          <div class="gauge-label">TACHOMETER</div>
+          <div class="gauge-value" id="rpm-value">0</div>
+          <div class="gauge-unit">RPM</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="rpm-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Tilt/Trim -->
+        <div class="gauge-container">
+          <div class="gauge-label">TILT/TRIM</div>
+          <div class="gauge-value" id="trim-value">0</div>
+          <div class="gauge-unit">%</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="trim-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Coolant Temperature -->
+        <div class="gauge-container">
+          <div class="gauge-label">COOLANT TEMP</div>
+          <div class="gauge-value" id="temp-value">0</div>
+          <div class="gauge-unit">°F</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="temp-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Voltage -->
+        <div class="gauge-container">
+          <div class="gauge-label">VOLTAGE</div>
+          <div class="gauge-value" id="voltage-value">0.0</div>
+          <div class="gauge-unit">V</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="voltage-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Oil Pressure -->
+        <div class="gauge-container">
+          <div class="gauge-label">OIL PRESSURE</div>
+          <div class="gauge-value" id="oil-value">0</div>
+          <div class="gauge-unit">PSI</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="oil-bar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 2: TANK LEVELS -->
+    <section class="dashboard-section">
+      <h2 class="section-title">💧 Tank Levels</h2>
+      <div class="gauge-grid">
+        <!-- Fresh Water -->
+        <div class="gauge-container">
+          <div class="gauge-label">FRESH WATER</div>
+          <div class="gauge-value" id="fresh-value">0</div>
+          <div class="gauge-unit">%</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="fresh-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Black Water -->
+        <div class="gauge-container">
+          <div class="gauge-label">BLACK WATER</div>
+          <div class="gauge-value" id="black-value">0</div>
+          <div class="gauge-unit">%</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="black-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Fuel -->
+        <div class="gauge-container">
+          <div class="gauge-label">FUEL</div>
+          <div class="gauge-value" id="fuel-value">0</div>
+          <div class="gauge-unit">%</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="fuel-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Battery -->
+        <div class="gauge-container">
+          <div class="gauge-label">BATTERY</div>
+          <div class="gauge-value" id="battery-value">0</div>
+          <div class="gauge-unit">%</div>
+          <div class="gauge-bar">
+            <div class="gauge-bar-fill" id="battery-bar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 3: SYSTEM STATUS -->
+    <section class="dashboard-section">
+      <h2 class="section-title">🖥️ System Status</h2>
+      <div class="status-grid">
+        <!-- CPU -->
+        <div class="status-item">
+          <div class="status-label">CPU</div>
+          <div class="status-value" id="cpu-value">--</div>
+        </div>
+
+        <!-- Memory -->
+        <div class="status-item">
+          <div class="status-label">MEMORY</div>
+          <div class="status-value" id="memory-value">--</div>
+        </div>
+
+        <!-- Storage -->
+        <div class="status-item">
+          <div class="status-label">STORAGE</div>
+          <div class="status-value" id="storage-value">--</div>
+        </div>
+
+        <!-- GPU -->
+        <div class="status-item">
+          <div class="status-label">GPU</div>
+          <div class="status-value" id="gpu-value">--</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 4: NETWORK STATUS -->
+    <section class="dashboard-section">
+      <h2 class="section-title">🌐 Network Status</h2>
+      <div class="status-grid">
+        <!-- WiFi -->
+        <div class="status-item">
+          <div class="status-label">WiFi</div>
+          <div class="status-value status-offline" id="wifi-value">Disconnected</div>
+        </div>
+
+        <!-- Ethernet -->
+        <div class="status-item">
+          <div class="status-label">ETHERNET</div>
+          <div class="status-value status-offline" id="ethernet-value">Disconnected</div>
+        </div>
+
+        <!-- NMEA2000 -->
+        <div class="status-item">
+          <div class="status-label">NMEA2000</div>
+          <div class="status-value status-offline" id="nmea-value">Down</div>
+        </div>
+
+        <!-- Internet -->
+        <div class="status-item">
+          <div class="status-label">INTERNET</div>
+          <div class="status-value status-offline" id="internet-value">Offline</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // === SIGNAL K CONNECTION (Same as navigation.html) ===
+    let ws = null;
+    let signalKConnected = false;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+
+    // Current data
+    let currentData = {
+      rpm: 0,
+      trim: 0,
+      temp: 0,
+      voltage: 0,
+      oil: 0,
+      fresh: 0,
+      black: 0,
+      fuel: 0,
+      battery: 0
+    };
+
+    // Navigation
+    function goBack() {
+      window.location.href = '/';
+    }
+
+    // Fetch initial data from Signal K API
+    async function fetchInitialData() {
+      try {
+        console.log('Fetching initial engine data...');
+        const response = await fetch('/signalk/v1/api/vessels/self');
+        const data = await response.json();
+
+        console.log('Initial data:', data);
+
+        // Update RPM
+        if (data.propulsion) {
+          Object.values(data.propulsion).forEach(engine => {
+            if (engine.revolutions && engine.revolutions.value != null) {
+              const rpm = Math.round(engine.revolutions.value * 60); // rad/s to RPM
+              updateGauge('rpm', rpm, 0, 3000);
+            }
+            if (engine.drive && engine.drive.trimState && engine.drive.trimState.value != null) {
+              const trim = Math.round(engine.drive.trimState.value * 100); // 0-1 to 0-100%
+              updateGauge('trim', trim, 0, 100);
+            }
+            if (engine.temperature && engine.temperature.value != null) {
+              const tempF = Math.round(engine.temperature.value * 9/5 + 32); // C to F
+              updateGauge('temp', tempF, 0, 250);
+            }
+            if (engine.oilPressure && engine.oilPressure.value != null) {
+              const psi = Math.round(engine.oilPressure.value / 6894.76); // Pa to PSI
+              updateGauge('oil', psi, 0, 100);
+            }
+          });
+        }
+
+        // Update Voltage
+        if (data.electrical && data.electrical.batteries) {
+          Object.values(data.electrical.batteries).forEach(battery => {
+            if (battery.voltage && battery.voltage.value != null) {
+              updateGauge('voltage', battery.voltage.value.toFixed(1), 0, 15);
+            }
+            if (battery.capacity && battery.capacity.stateOfCharge && battery.capacity.stateOfCharge.value != null) {
+              const batteryPct = Math.round(battery.capacity.stateOfCharge.value * 100);
+              updateGauge('battery', batteryPct, 0, 100);
+            }
+          });
+        }
+
+        // Update Tank Levels
+        if (data.tanks) {
+          if (data.tanks.freshWater) {
+            Object.values(data.tanks.freshWater).forEach(tank => {
+              if (tank.currentLevel && tank.currentLevel.value != null) {
+                const level = Math.round(tank.currentLevel.value * 100);
+                updateGauge('fresh', level, 0, 100);
+              }
+            });
+          }
+          if (data.tanks.blackWater) {
+            Object.values(data.tanks.blackWater).forEach(tank => {
+              if (tank.currentLevel && tank.currentLevel.value != null) {
+                const level = Math.round(tank.currentLevel.value * 100);
+                updateGauge('black', level, 0, 100);
+              }
+            });
+          }
+          if (data.tanks.fuel) {
+            Object.values(data.tanks.fuel).forEach(tank => {
+              if (tank.currentLevel && tank.currentLevel.value != null) {
+                const level = Math.round(tank.currentLevel.value * 100);
+                updateGauge('fuel', level, 0, 100);
+              }
+            });
+          }
+        }
+
+        console.log('Initial data loaded');
+      } catch (error) {
+        console.error('Failed to fetch initial data:', error);
+      }
+    }
+
+    // Connect to Signal K
+    function connectSignalK() {
+      try {
+        ws = new WebSocket('ws://' + window.location.hostname + '/signalk/v1/stream?subscribe=none');
+
+        ws.onopen = () => {
+          console.log('✓ Connected to Signal K');
+          signalKConnected = true;
+          reconnectAttempts = 0;
+          updateConnectionStatus(true);
+
+          // Subscribe to all needed paths
+          const subscription = {
+            context: 'vessels.self',
+            subscribe: [
+              { path: 'propulsion.*.revolutions' },
+              { path: 'propulsion.*.drive.trimState' },
+              { path: 'propulsion.*.temperature' },
+              { path: 'electrical.batteries.*.voltage' },
+              { path: 'propulsion.*.oilPressure' },
+              { path: 'tanks.freshWater.*.currentLevel' },
+              { path: 'tanks.blackWater.*.currentLevel' },
+              { path: 'tanks.fuel.*.currentLevel' },
+              { path: 'electrical.batteries.*.capacity.stateOfCharge' },
+              { path: 'environment.rpi.*' }
+            ]
+          };
+
+          ws.send(JSON.stringify(subscription));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.updates) {
+              processSignalKUpdates(data.updates);
+            }
+          } catch (e) {
+            console.error('Parse error:', e);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          signalKConnected = false;
+          updateConnectionStatus(false);
+        };
+
+        ws.onclose = () => {
+          console.log('Disconnected from Signal K');
+          signalKConnected = false;
+          updateConnectionStatus(false);
+
+          // Attempt reconnection
+          if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            console.log(`Reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts}...`);
+            setTimeout(connectSignalK, 3000);
+          }
+        };
+      } catch (error) {
+        console.error('Connection failed:', error);
+        updateConnectionStatus(false);
+      }
+    }
+
+    // Process Signal K updates
+    function processSignalKUpdates(updates) {
+      updates.forEach(update => {
+        if (!update.values) return;
+
+        update.values.forEach(val => {
+          const path = val.path;
+          const value = val.value;
+
+          // Engine metrics
+          if (path.includes('revolutions')) {
+            currentData.rpm = Math.round(value * 60 / (2 * Math.PI));
+            updateGauge('rpm', currentData.rpm, 0, 4000);
+          }
+          else if (path.includes('trimState')) {
+            currentData.trim = Math.round(value * 100);
+            updateGauge('trim', currentData.trim, 0, 100);
+          }
+          else if (path.includes('temperature')) {
+            currentData.temp = Math.round((value - 273.15) * 9/5 + 32);
+            updateGauge('temp', currentData.temp, 0, 250);
+          }
+          else if (path.includes('voltage')) {
+            currentData.voltage = value.toFixed(1);
+            updateGauge('voltage', parseFloat(currentData.voltage), 10, 16);
+          }
+          else if (path.includes('oilPressure')) {
+            currentData.oil = Math.round(value / 6894.76);
+            updateGauge('oil', currentData.oil, 0, 100);
+          }
+          // Tank levels
+          else if (path.includes('tanks.freshWater') && path.includes('currentLevel')) {
+            currentData.fresh = Math.round(value * 100);
+            updateGauge('fresh', currentData.fresh, 0, 100);
+          }
+          else if (path.includes('tanks.blackWater') && path.includes('currentLevel')) {
+            currentData.black = Math.round(value * 100);
+            updateGauge('black', currentData.black, 0, 100);
+          }
+          else if (path.includes('tanks.fuel') && path.includes('currentLevel')) {
+            currentData.fuel = Math.round(value * 100);
+            updateGauge('fuel', currentData.fuel, 0, 100);
+          }
+          else if (path.includes('stateOfCharge')) {
+            currentData.battery = Math.round(value * 100);
+            updateGauge('battery', currentData.battery, 0, 100);
+          }
+          // System monitoring
+          else if (path.includes('rpi.cpu.temperature')) {
+            const tempC = value - 273.15;
+            document.getElementById('cpu-value').textContent = `${tempC.toFixed(1)}°C`;
+          }
+          else if (path.includes('rpi.memory.utilisation')) {
+            const memPercent = Math.round(value * 100);
+            document.getElementById('memory-value').textContent = `${memPercent}%`;
+          }
+          else if (path.includes('rpi.sd.utilisation')) {
+            const diskPercent = Math.round(value * 100);
+            document.getElementById('storage-value').textContent = `${diskPercent}%`;
+          }
+          else if (path.includes('rpi.gpu.temperature')) {
+            const tempC = value - 273.15;
+            document.getElementById('gpu-value').textContent = `${tempC.toFixed(1)}°C`;
+          }
+        });
+      });
+    }
+
+    // Update gauge display
+    function updateGauge(name, value, min, max) {
+      const valueEl = document.getElementById(`${name}-value`);
+      const barEl = document.getElementById(`${name}-bar`);
+
+      if (valueEl) {
+        if (name === 'voltage') {
+          valueEl.textContent = value.toFixed(1);
+        } else if (name === 'temp' && typeof Units !== 'undefined') {
+          const formatted = Units.temperature.toDisplay(value); // e.g. "100.0°C" or "212.0°F"
+          valueEl.textContent = formatted;
+          const unitEl = valueEl.nextElementSibling;
+          if (unitEl && unitEl.classList.contains('gauge-unit')) unitEl.textContent = '';
+        } else if (name === 'oil' && typeof Units !== 'undefined') {
+          const formatted = Units.pressure.toDisplay(value); // e.g. "3.10 bar" or "45.0 PSI"
+          valueEl.textContent = formatted;
+          const unitEl = valueEl.nextElementSibling;
+          if (unitEl && unitEl.classList.contains('gauge-unit')) unitEl.textContent = '';
+        } else {
+          valueEl.textContent = value;
+        }
+      }
+
+      if (barEl) {
+        const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+        barEl.style.width = percent + '%';
+
+        // Color coding based on thresholds
+        barEl.className = 'gauge-bar-fill';
+
+        // Engine-specific thresholds
+        if (name === 'rpm' && value > 3500) barEl.classList.add('critical');
+        else if (name === 'rpm' && value > 3000) barEl.classList.add('warning');
+        else if (name === 'temp' && value > 220) barEl.classList.add('critical');
+        else if (name === 'temp' && value > 200) barEl.classList.add('warning');
+        else if (name === 'oil' && value < 30) barEl.classList.add('critical');
+        else if (name === 'voltage' && (value < 11.5 || value > 14.5)) barEl.classList.add('warning');
+
+        // Tank thresholds (low is bad except black water)
+        else if (name !== 'black' && value < 25) barEl.classList.add('critical');
+        else if (name !== 'black' && value < 50) barEl.classList.add('warning');
+        else if (name === 'black' && value > 90) barEl.classList.add('critical');
+        else if (name === 'black' && value > 75) barEl.classList.add('warning');
+      }
+    }
+
+    // Update connection status indicator
+
+    window.addEventListener('measurementSystemChanged', function() {
+      updateGauge('temp', currentData.temp, 0, 250);
+      updateGauge('oil',  currentData.oil,  0, 100);
+    });
+
+    function updateConnectionStatus(connected) {
+      const statusEl = document.getElementById('connection-status');
+      if (connected) {
+        statusEl.textContent = '✓ Signal K Connected';
+        statusEl.className = 'connection-status connected';
+      } else {
+        statusEl.textContent = '⚠️ Signal K Disconnected';
+        statusEl.className = 'connection-status disconnected';
+      }
+    }
+
+    // Fetch system and network status (fallback if not in Signal K)
+    async function updateSystemStatus() {
+      // This would call a Node-RED endpoint that runs system commands
+      // For now, just placeholder - system data should come through Signal K
+    }
+
+    async function updateNetworkStatus() {
+      // Placeholder - network status updates
+      // In production, this would query actual network interfaces
+      document.getElementById('wifi-value').textContent = 'Connected';
+      document.getElementById('wifi-value').className = 'status-value status-online';
+
+      document.getElementById('ethernet-value').textContent = 'Connected';
+      document.getElementById('ethernet-value').className = 'status-value status-online';
+
+      document.getElementById('nmea-value').textContent = 'Active';
+      document.getElementById('nmea-value').className = 'status-value status-online';
+
+      document.getElementById('internet-value').textContent = 'Online';
+      document.getElementById('internet-value').className = 'status-value status-online';
+    }
+
+    // Initialize on page load
+    function checkSignalK() {
+      fetch('/signalk/v1/api/', { signal: AbortSignal.timeout(3000) })
+        .then(r => {
+          document.getElementById('signalk-banner').style.display = r.ok ? 'none' : 'block';
+        })
+        .catch(() => {
+          document.getElementById('signalk-banner').style.display = 'block';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Dashboard initializing...');
+
+      // Fetch initial data immediately
+      fetchInitialData();
+
+      connectSignalK();
+      updateNetworkStatus();
+      checkSignalK();
+      setInterval(checkSignalK, 5000);
+
+      // Update network status every 30 seconds
+      setInterval(updateNetworkStatus, 30000);
+    });
+  </script>
+</body>
+</html>

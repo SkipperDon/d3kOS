@@ -1,0 +1,41 @@
+--- a/marine-vision.html
++++ b/marine-vision.html
+@@ -255,6 +255,17 @@
+     .recording-name { font-size: 18px; color: #00CC00; }
+     .recording-size { font-size: 16px; color: rgba(255,255,255,0.6); }
+   </style>
++<style>
++.camera-offline-placeholder {
++  background: #1a1a1a;
++  border: 2px dashed #444;
++  border-radius: 8px;
++  min-height: 200px;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++}
++</style>
+ </head>
+ <body>
+   <header>
+@@ -643,5 +654,20 @@
+         .catch(() => {});
+     }
+   </script>
++<script>
++document.addEventListener('DOMContentLoaded', function() {
++  const cameras = document.querySelectorAll('img[data-camera-name]');
++  cameras.forEach(img => {
++    const cameraName = img.getAttribute('data-camera-name');
++    img.onerror = function() {
++      this.style.display = 'none';
++      const placeholder = document.createElement('div');
++      placeholder.className = 'camera-offline-placeholder';
++      placeholder.innerHTML = '<div style="text-align:center;padding:40px;font-size:20px;color:#888;">📷<br>' + cameraName + '<br><small>Offline — Connect to boat network</small></div>';
++      this.parentNode.appendChild(placeholder);
++    };
++  });
++});
++</script>
+ </body>
+ </html>

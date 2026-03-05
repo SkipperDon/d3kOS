@@ -1,0 +1,97 @@
+{
+  "run_id": "20260305_073042",
+  "timestamp": "2026-03-05T09:14:45.457267",
+  "elapsed_seconds": 6242,
+  "model": "qwen3-coder:30b",
+  "verify_online": true,
+  "deploy_min_score": 50,
+  "passed": [
+    5,
+    7,
+    8
+  ],
+  "failed": [
+    1,
+    2,
+    4,
+    6,
+    9,
+    10,
+    13
+  ],
+  "flagged_for_review": [
+    13,
+    1,
+    2,
+    4,
+    6,
+    9,
+    10
+  ],
+  "details": {
+    "13": {
+      "settings_html": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "1": {
+      "dashboard_html": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "2": {
+      "benchmark_html": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "4": {
+      "navigation_html": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "5": {
+      "boatlog_html": [
+        true,
+        "deployed"
+      ]
+    },
+    "6": {
+      "weather_html": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "7": {
+      "marine_vision_html": [
+        true,
+        "deployed"
+      ],
+      "camera_stream_manager": [
+        true,
+        "deployed"
+      ]
+    },
+    "9": {
+      "onboarding_html": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "10": {
+      "query_handler": [
+        false,
+        "blocked by gate score=30"
+      ]
+    },
+    "8": {
+      "status": [
+        true,
+        "already installed"
+      ]
+    }
+  }
+}
