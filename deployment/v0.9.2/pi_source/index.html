@@ -149,6 +149,9 @@
       flex: 1;
       padding: 30px 20px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
 
     .menu-grid {
@@ -357,7 +360,15 @@
       background-color: #00FF00;
       transform: scale(1.05);
     }
-  </style>
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
   <!-- Toggle Fullscreen Button -->

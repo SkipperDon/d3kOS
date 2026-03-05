@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulator Settings - d3kOS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Roboto", Arial, sans-serif;
+      background: #000000;
+      color: #FFFFFF;
+      font-size: 22px;
+      padding: 20px;
+      line-height: 1.5;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      color: #00CC00;
+    }
+
+    h2 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      color: #00CC00;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: #FFFFFF;
+      opacity: 0.8;
+      margin-bottom: 30px;
+    }
+
+    .warning-banner {
+      background: linear-gradient(135deg, #FF6600 0%, #FF3300 100%);
+      border: 3px solid #FF0000;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 20px 0;
+      text-align: center;
+      display: none;
+      animation: pulse 2s infinite;
+    }
+
+    .warning-banner.active {
+      display: block;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .warning-banner h2 {
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+
+    .warning-banner p {
+      font-size: 22px;
+      color: #FFFFFF;
+    }
+
+    .section {
+      background: #1a1a1a;
+      padding: 25px;
+      margin: 20px 0;
+      border-left: 5px solid #00CC00;
+      border-radius: 8px;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background: #000000;
+      border-radius: 8px;
+      margin: 15px 0;
+      border: 2px solid #333333;
+    }
+
+    .toggle-label {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 120px;
+      height: 60px;
+      background: #333333;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.on {
+      background: #00CC00;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 50px;
+      height: 50px;
+      background: #FFFFFF;
+      border-radius: 25px;
+      transition: transform 0.3s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle-switch.on .toggle-slider {
+      transform: translateX(60px);
+    }
+
+    .toggle-text {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFFFFF;
+    }
+
+    .toggle-text.off {
+      left: 15px;
+    }
+
+    .toggle-text.on {
+      right: 15px;
+    }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .value-card {
+      background: #000000;
+      border: 2px solid #00CC00;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .value-card.simulated {
+      border-color: #FFA500;
+      background: rgba(255, 165, 0, 0.1);
+    }
+
+    .value-label {
+      font-size: 18px;
+      color: #CCCCCC;
+      margin-bottom: 8px;
+    }
+
+    .value-number {
+      font-size: 42px;
+      font-weight: bold;
+      color: #00CC00;
+      margin: 10px 0;
+    }
+
+    .value-card.simulated .value-number {
+      color: #FFA500;
+    }
+
+    .value-unit {
+      font-size: 20px;
+      color: #CCCCCC;
+    }
+
+    .button {
+      background: #00CC00;
+      color: #000000;
+      border: none;
+      padding: 20px 40px;
+      font-size: 24px;
+      cursor: pointer;
+      margin: 10px;
+      font-weight: bold;
+      border-radius: 8px;
+      touch-action: manipulation;
+    }
+
+    .button:active {
+      transform: scale(0.98);
+    }
+
+    .button.secondary {
+      background: #333333;
+      color: #FFFFFF;
+      border: 2px solid #00CC00;
+    }
+
+    .button:disabled {
+      background: #333333;
+      color: #888888;
+      cursor: not-allowed;
+    }
+
+    .info-box {
+      background: rgba(0, 204, 0, 0.1);
+      border: 2px solid #00CC00;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .info-box h3 {
+      color: #00CC00;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .info-box ul {
+      margin-left: 30px;
+      line-height: 1.8;
+    }
+
+    .risk-box {
+      background: rgba(255, 0, 0, 0.1);
+      border: 2px solid #FF3333;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .risk-box h3 {
+      color: #FF3333;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .risk-item {
+      display: flex;
+      align-items: flex-start;
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+    }
+
+    .risk-icon {
+      font-size: 28px;
+      margin-right: 15px;
+    }
+
+    .status-text {
+      font-size: 20px;
+      color: #CCCCCC;
+      margin: 10px 0;
+    }
+
+    .status-text.success {
+      color: #00CC00;
+    }
+
+    .status-text.error {
+      color: #FF3333;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <h1>🔧 NMEA2000 Simulator</h1>
+  <p class="subtitle">Control test data generation for development and testing</p>
+
+  <!-- Warning Banner (shows when simulator is active) -->
+  <div id="warning-banner" class="warning-banner">
+    <h2>⚠️ SIMULATOR MODE ACTIVE</h2>
+    <p>Simulated data is being broadcast - Real CX5106 engine data is ignored</p>
+  </div>
+
+  <!-- Simulator Control -->
+  <div class="section">
+    <h2>Simulator Control</h2>
+    <div class="toggle-container">
+      <div class="toggle-label">Simulator Status</div>
+      <div id="toggle-switch" class="toggle-switch" onclick="toggleSimulator()">
+        <span class="toggle-text off">OFF</span>
+        <span class="toggle-text on">ON</span>
+        <div class="toggle-slider"></div>
+      </div>
+    </div>
+    <p id="status-text" class="status-text">Checking status...</p>
+  </div>
+
+  <!-- Live Simulated Values -->
+  <div class="section">
+    <h2>📊 Current Simulated Values</h2>
+    <div id="values-display" style="display:none;">
+      <div class="values-grid">
+        <div class="value-card simulated">
+          <div class="value-label">Engine RPM</div>
+          <div class="value-number" id="rpm-value">0</div>
+          <div class="value-unit">Cycling 800-2400 RPM</div>
+        </div>
+        <div class="value-card simulated">
+          <div class="value-label">Boost Pressure</div>
+          <div class="value-number" id="boost-value">150,000</div>
+          <div class="value-unit">Pa (1.5 bar / 22 PSI)</div>
+        </div>
+        <div class="value-card simulated">
+          <div class="value-label">Trim</div>
+          <div class="value-number" id="trim-value">0</div>
+          <div class="value-unit">% (Neutral)</div>
+        </div>
+        <div class="value-card simulated">
+          <div class="value-label">Update Rate</div>
+          <div class="value-number">1</div>
+          <div class="value-unit">Hz (every second)</div>
+        </div>
+      </div>
+      <div class="info-box">
+        <h3>📡 Broadcast Information</h3>
+        <ul>
+          <li><strong>PGN:</strong> 127488 (Engine Parameters Rapid Update)</li>
+          <li><strong>Interface:</strong> vcan0 (Virtual CAN)</li>
+          <li><strong>Source:</strong> 64 (0x40)</li>
+          <li><strong>Engine Instance:</strong> 0 (Port engine)</li>
+        </ul>
+      </div>
+    </div>
+    <div id="values-inactive" style="display:block;">
+      <p class="status-text">Simulator is OFF - No simulated values are being generated</p>
+    </div>
+  </div>
+
+  <!-- Usage Information -->
+  <div class="section">
+    <div class="info-box">
+      <h3>✅ When to Use Simulator</h3>
+      <ul>
+        <li><strong>Indoor Development:</strong> Test system without running engine</li>
+        <li><strong>UI Testing:</strong> Verify dashboard displays and alarms</li>
+        <li><strong>Demos:</strong> Show system capabilities to others</li>
+        <li><strong>Training:</strong> Learn system without burning fuel</li>
+        <li><strong>Edge Cases:</strong> Test high RPM, failures, etc.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Risk Warning -->
+  <div class="section">
+    <div class="risk-box">
+      <h3>🔴 Critical Risks of Leaving Simulator ON</h3>
+      <div class="risk-item">
+        <span class="risk-icon">⚠️</span>
+        <div>
+          <strong>Real Engine Data Ignored:</strong> If CX5106 is connected, actual RPM, boost, and trim values will be overridden by simulated data. You won't see real engine conditions.
+        </div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-icon">🚨</span>
+        <div>
+          <strong>False/Missing Alarms:</strong> Real engine problems (overheating, low oil) won't trigger alerts because simulated values are always "normal".
+        </div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-icon">❌</span>
+        <div>
+          <strong>User Confusion:</strong> Easy to forget simulator is active and make operational decisions based on fake data.
+        </div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-icon">🔧</span>
+        <div>
+          <strong>Troubleshooting Issues:</strong> Diagnosing real problems becomes difficult when data is simulated.
+        </div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-icon">📡</span>
+        <div>
+          <strong>Network Pollution:</strong> Simulated data broadcast on NMEA2000 network could confuse chartplotters and other displays.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safety Features -->
+  <div class="section">
+    <div class="info-box">
+      <h3>🛡️ Built-in Safety Features</h3>
+      <ul>
+        <li><strong>Auto-Disable on Boot:</strong> Simulator is OFF by default after reboot</li>
+        <li><strong>Dashboard Banner:</strong> Orange warning shown on all pages when active</li>
+        <li><strong>Manual Enable Required:</strong> Must be manually turned on each session</li>
+        <li><strong>Visual Indicators:</strong> Simulated values displayed in orange</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Back Button -->
+  <div style="margin-top: 30px;">
+    <button class="button secondary" onclick="window.location.href='/settings.html'">← Back to Settings</button>
+  </div>
+
+  <script>
+    let updateInterval = null;
+
+    // Check simulator status on page load
+    async function checkStatus() {
+      try {
+        const response = await fetch('/simulator/status');
+        const data = await response.json();
+        
+        updateUI(data.running);
+        
+        if (data.running) {
+          document.getElementById('status-text').textContent = '✅ Simulator is RUNNING';
+          document.getElementById('status-text').className = 'status-text success';
+        } else {
+          document.getElementById('status-text').textContent = '⭕ Simulator is STOPPED';
+          document.getElementById('status-text').className = 'status-text';
+        }
+      } catch (error) {
+        console.error('Error checking status:', error);
+        document.getElementById('status-text').textContent = '❌ Error: Cannot connect to simulator API';
+        document.getElementById('status-text').className = 'status-text error';
+      }
+    }
+
+    // Toggle simulator on/off
+    async function toggleSimulator() {
+      const toggleSwitch = document.getElementById('toggle-switch');
+      const statusText = document.getElementById('status-text');
+      
+      // Disable toggle during operation
+      toggleSwitch.style.pointerEvents = 'none';
+      statusText.textContent = '⏳ Please wait...';
+      statusText.className = 'status-text';
+
+      try {
+        const response = await fetch('/simulator/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          updateUI(data.running);
+          
+          if (data.running) {
+            statusText.textContent = '✅ Simulator started successfully';
+            statusText.className = 'status-text success';
+          } else {
+            statusText.textContent = '⭕ Simulator stopped successfully';
+            statusText.className = 'status-text';
+          }
+        } else {
+          statusText.textContent = '❌ Error: ' + (data.error || 'Unknown error');
+          statusText.className = 'status-text error';
+        }
+      } catch (error) {
+        console.error('Error toggling simulator:', error);
+        statusText.textContent = '❌ Error: Cannot connect to simulator API';
+        statusText.className = 'status-text error';
+      } finally {
+        toggleSwitch.style.pointerEvents = 'auto';
+      }
+    }
+
+    // Update UI based on simulator state
+    function updateUI(isRunning) {
+      const toggleSwitch = document.getElementById('toggle-switch');
+      const warningBanner = document.getElementById('warning-banner');
+      const valuesDisplay = document.getElementById('values-display');
+      const valuesInactive = document.getElementById('values-inactive');
+
+      if (isRunning) {
+        toggleSwitch.classList.add('on');
+        warningBanner.classList.add('active');
+        valuesDisplay.style.display = 'block';
+        valuesInactive.style.display = 'none';
+        startValueUpdates();
+      } else {
+        toggleSwitch.classList.remove('on');
+        warningBanner.classList.remove('active');
+        valuesDisplay.style.display = 'none';
+        valuesInactive.style.display = 'block';
+        stopValueUpdates();
+      }
+    }
+
+    // Start updating live values
+    function startValueUpdates() {
+      if (updateInterval) return;
+      
+      updateInterval = setInterval(async () => {
+        try {
+          const response = await fetch('/simulator/values');
+          const data = await response.json();
+          
+          if (data.success && data.values) {
+            document.getElementById('rpm-value').textContent = data.values.rpm.toLocaleString();
+            document.getElementById('boost-value').textContent = data.values.boost_pa.toLocaleString();
+            document.getElementById('trim-value').textContent = data.values.trim;
+          }
+        } catch (error) {
+          console.error('Error fetching values:', error);
+        }
+      }, 1000); // Update every second
+    }
+
+    // Stop updating values
+    function stopValueUpdates() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+    }
+
+    // Initialize page
+    window.addEventListener('load', checkStatus);
+
+    // Refresh status every 10 seconds
+    setInterval(checkStatus, 10000);
+  </script>
+</body>
+</html>

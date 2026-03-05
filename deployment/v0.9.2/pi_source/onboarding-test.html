@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Input Test</title>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      padding: 50px;
+      font-size: 24px;
+    }
+    input {
+      width: 500px;
+      height: 60px;
+      font-size: 24px;
+      padding: 10px;
+      margin: 20px 0;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <h1>Keyboard Test Page</h1>
+  <p>Test input field below:</p>
+  <input type="text" id="test" placeholder="Type here...">
+  <p id="output">Waiting for input...</p>
+  <script>
+    document.getElementById('test').addEventListener('input', function(e) {
+      document.getElementById('output').textContent = 'Typed: ' + e.target.value;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Healing - d3kOS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: #FFFFFF;
+            margin: 0;
+            padding: 0;
+            font-size: 22px;
+        }
+        .header {
+            background-color: #00CC00;
+            color: #000000;
+            padding: 20px;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 20px;
+        }
+        .status-panel {
+            background-color: #1a1a1a;
+            border: 2px solid #00CC00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .issue-card {
+            background-color: #2a2a2a;
+            border-left: 5px solid #ff9900;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .issue-card.critical {
+            border-left-color: #ff0000;
+        }
+        .issue-card.warning {
+            border-left-color: #ffcc00;
+        }
+        .issue-card.resolved {
+            border-left-color: #00CC00;
+            opacity: 0.6;
+        }
+        button {
+            background-color: #00CC00;
+            color: #000000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 22px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #00ff00;
+        }
+        .back-button {
+            background-color: #333333;
+            color: #FFFFFF;
+        }
+        .stat-box {
+            display: inline-block;
+            background-color: #2a2a2a;
+            border: 2px solid #00CC00;
+            border-radius: 5px;
+            padding: 15px 25px;
+            margin: 10px;
+            min-width: 150px;
+        }
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00CC00;
+        }
+        .stat-label {
+            font-size: 18px;
+            color: #999999;
+        }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        🛡️ Self-Healing System
+    </div>
+
+    <div class="content">
+        <button class="back-button" onclick="window.location.href='/'">← Main Menu</button>
+
+        <div class="status-panel">
+            <h2>System Status</h2>
+            <div id="system-status">Loading...</div>
+            <div id="system-stats" style="margin-top: 20px;">
+                <div class="stat-box">
+                    <div class="stat-value" id="active-issues">-</div>
+                    <div class="stat-label">Active Issues</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="resolved-today">-</div>
+                    <div class="stat-label">Resolved Today</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-panel">
+            <h2>Active Issues</h2>
+            <button onclick="runDetection()">🔍 Scan Now</button>
+            <div id="issues-list" style="margin-top: 20px;">Loading...</div>
+        </div>
+
+        <div class="status-panel">
+            <h2>Remediation Log</h2>
+            <button onclick="viewLog()">📋 View Full Log</button>
+            <div id="recent-actions" style="margin-top: 20px;">
+                <p style="color: #999999;">Recent remediation actions will appear here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStatus() {
+            try {
+                const response = await fetch('/healing/status');
+                const data = await response.json();
+                document.getElementById('system-status').innerHTML = `
+                    <p>✅ Detection Service: <strong>${data.status}</strong></p>
+                    <p>Service: ${data.service}</p>
+                `;
+            } catch (error) {
+                document.getElementById('system-status').innerHTML =
+                    `<p style="color: #ff0000;">❌ Error loading status: ${error.message}</p>`;
+            }
+        }
+
+        async function loadIssues() {
+            try {
+                const response = await fetch('/healing/issues');
+                const data = await response.json();
+
+                document.getElementById('active-issues').textContent = data.issues.length;
+
+                if (data.issues.length === 0) {
+                    document.getElementById('issues-list').innerHTML =
+                        '<p style="color: #00CC00;">✅ No active issues detected</p>';
+                    return;
+                }
+
+                let html = '';
+                data.issues.forEach(issue => {
+                    const severityClass = issue.severity;
+                    const icon = issue.severity === 'critical' ? '🔴' : '⚠️';
+                    html += `
+                        <div class="issue-card ${severityClass}">
+                            <p><strong>${icon} ${issue.description}</strong></p>
+                            <p>Category: ${issue.category} | Severity: ${issue.severity}</p>
+                            <p>Detected: ${new Date(issue.timestamp).toLocaleString()}</p>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('issues-list').innerHTML = html;
+            } catch (error) {
+                document.getElementById('issues-list').innerHTML =
+                    `<p style="color: #ff0000;">❌ Error loading issues: ${error.message}</p>`;
+            }
+        }
+
+        async function runDetection() {
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = '🔍 Scanning...';
+
+                const response = await fetch('/healing/detect', {method: 'POST'});
+                const data = await response.json();
+
+                button.disabled = false;
+                button.textContent = '🔍 Scan Now';
+
+                if (data.issues_found === 0) {
+                    alert('✅ Detection complete: No issues found');
+                } else {
+                    alert(`⚠️ Detection complete: ${data.issues_found} issue(s) found`);
+                }
+
+                loadIssues();
+            } catch (error) {
+                alert('❌ Error running detection: ' + error.message);
+                event.target.disabled = false;
+                event.target.textContent = '🔍 Scan Now';
+            }
+        }
+
+        function viewLog() {
+            alert('Remediation log view will be implemented in Phase B4');
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(() => {
+            loadStatus();
+            loadIssues();
+        }, 10000);
+
+        // Initial load
+        loadStatus();
+        loadIssues();
+    </script>
+</body>
+</html>

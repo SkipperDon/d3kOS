@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - QR Code Pairing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* === Design System - Consistent with Main Menu and Wizard === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors */
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+
+      /* Typography - 22-24px standard */
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-heading: 24px;
+      --line-height: 1.5;
+
+      /* Button Dimensions */
+      --button-radius: 8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      padding: 12px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    /* Touch-Friendly Scrollbar */
+    main      width: 20px;
+    }
+
+    main      background: rgba(0, 204, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    main      background: var(--color-accent);
+      border-radius: 10px;
+      border: 3px solid var(--color-bg);
+    }
+
+    main      background: #00FF00;
+    }
+
+    .content-wrapper {
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* QR Code Section */
+    .qr-section {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 40px;
+      margin-bottom: 30px;
+    }
+
+    .qr-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 20px;
+    }
+
+    .qr-code-container {
+      background-color: #FFFFFF;
+      padding: 20px;
+      border-radius: var(--button-radius);
+      display: inline-block;
+      margin: 20px auto;
+    }
+
+    #qrcode {
+      display: inline-block;
+    }
+
+    .installation-id {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-accent);
+      margin: 20px 0;
+      letter-spacing: 4px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .qr-description {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+      margin: 16px 0;
+      line-height: 1.6;
+    }
+
+    /* Connection Info */
+    .connection-info {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 24px;
+      margin: 20px 0;
+      text-align: left;
+    }
+
+    .info-section {
+      margin-bottom: 20px;
+    }
+
+    .info-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-header {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-list {
+      list-style: none;
+      padding: 0;
+      font-size: var(--font-base);
+    }
+
+    .info-list li {
+      padding: 8px 0;
+      padding-left: 32px;
+      position: relative;
+    }
+
+    .info-list li:before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+      font-weight: 700;
+    }
+
+    .connection-url {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      color: var(--color-accent);
+      margin: 12px 0;
+      word-break: break-all;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-width: 180px;
+      min-height: 60px;
+      padding: 12px 24px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .btn-primary:hover {
+      background-color: #00FF00;
+    }
+
+    /* Instructions */
+    .instructions {
+      background-color: rgba(0, 204, 0, 0.05);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 24px;
+      margin: 20px 0;
+      text-align: left;
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      text-align: center;
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 20px;
+      margin-right: 12px;
+    }
+
+    .step-text {
+      font-size: var(--font-base);
+      display: inline-block;
+      vertical-align: middle;
+      width: calc(100% - 60px);
+    }
+
+    .step-item {
+      margin-bottom: 16px;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover,
+    .nav-button:active {
+      background-color: rgba(0, 204, 0, 0.2);
+      border-color: var(--color-accent);
+    }
+
+    .status-text {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .qr-section {
+        padding: 20px;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .step-text {
+        width: calc(100% - 48px);
+      }
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background-color: white;
+      }
+
+      header, footer, .btn-group, .instructions, .connection-info {
+        display: none !important;
+      }
+
+      .qr-section {
+        border: 2px solid black;
+        page-break-inside: avoid;
+      }
+
+      .qr-title, .installation-id {
+        color: black;
+      }
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>📱 QR Code Pairing</h1>
+      <p class="subtitle">Connect Mobile Devices & Share Configuration</p>
+    </header>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <button class="nav-button" onclick="goBack()" aria-label="Go back to main menu">
+        ← Main Menu
+      </button>
+
+      <span class="status-text">d3kOS v2.0 | QR Code</span>
+
+      <button class="nav-button" onclick="shareConfig()" aria-label="Share configuration">
+        Share Config
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+      <div class="content-wrapper">
+
+        <!-- QR Code Display -->
+        <div class="qr-section">
+          <h2 class="qr-title">Scan to Connect</h2>
+          <p class="qr-description">
+            Scan this QR code with the d3kOS mobile app or any QR code reader to connect to your system
+          </p>
+
+          <div class="qr-code-container">
+            <div id="qrcode"></div>
+          </div>
+
+          <div class="installation-id" id="installation-id">Loading...</div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="regenerateQR()">🔄 Regenerate Code</button>
+            <button class="btn" onclick="downloadQR()">💾 Download QR</button>
+            <button class="btn" onclick="printQR()">🖨️ Print QR</button>
+          </div>
+        </div>
+
+        <!-- Connection Information -->
+        <div class="connection-info">
+          <div class="info-section">
+            <div class="info-header">
+              <span>🌐</span>
+              <span>Connection Details</span>
+            </div>
+            <ul class="info-list">
+              <li>System IP: <strong id="system-ip">192.168.1.237</strong></li>
+              <li>Web Interface: <strong>http://192.168.1.237/</strong></li>
+              <li>Signal K: <strong>http://192.168.1.237:3000</strong></li>
+              <li>Node-RED: <strong>http://192.168.1.237:1880</strong></li>
+            </ul>
+          </div>
+
+          <div class="info-section">
+            <div class="info-header">
+              <span>📊</span>
+              <span>System Information</span>
+            </div>
+            <ul class="info-list">
+              <li>System: <strong>d3kOS v2.0</strong></li>
+              <li>Hardware: <strong>Raspberry Pi 4B</strong></li>
+              <li>Network: <strong id="network-name">Local Network</strong></li>
+              <li>Installation ID: <strong id="install-id-text">Loading...</strong></li>
+            </ul>
+          </div>
+
+          <div class="info-section">
+            <div class="info-header">
+              <span>🔗</span>
+              <span>Direct Connection URL</span>
+            </div>
+            <div class="connection-url" id="connection-url">
+              d3kos://connect?host=192.168.1.237&id=XXXX-XXXX-XXXX
+            </div>
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+          <h3 style="font-size: var(--font-heading); color: var(--color-accent); margin-bottom: 20px;">
+            📱 How to Connect Your Mobile Device
+          </h3>
+
+          <div class="step-item">
+            <span class="step-number">1</span>
+            <span class="step-text">Download the d3kOS mobile app from your app store (iOS/Android)</span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">2</span>
+            <span class="step-text">Open the app and tap "Scan QR Code" or "Add System"</span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">3</span>
+            <span class="step-text">Point your camera at the QR code above</span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">4</span>
+            <span class="step-text">Confirm the connection and wait for data sync</span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">5</span>
+            <span class="step-text">Your mobile device is now paired! View real-time engine data, trips, and alerts</span>
+          </div>
+        </div>
+
+        <!-- Manual Connection -->
+        <div class="instructions">
+          <h3 style="font-size: var(--font-heading); color: var(--color-accent); margin-bottom: 20px;">
+            🔧 Manual Connection (Without QR Code)
+          </h3>
+
+          <div class="step-item">
+            <span class="step-number">1</span>
+            <span class="step-text">Ensure your mobile device is on the same WiFi network</span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">2</span>
+            <span class="step-text">In the d3kOS app, select "Manual Setup"</span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">3</span>
+            <span class="step-text">Enter IP address: <strong>192.168.1.237</strong></span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">4</span>
+            <span class="step-text">Enter Installation ID: <strong id="manual-install-id">Loading...</strong></span>
+          </div>
+
+          <div class="step-item">
+            <span class="step-number">5</span>
+            <span class="step-text">Tap "Connect" and wait for verification</span>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // === QR Code JavaScript ===
+
+    let installationId = '';
+    let qrcodeObj = null;
+
+    // Generate installation ID
+    function generateInstallationId() {
+      const saved = localStorage.getItem('d3kos-installation-id');
+      if (saved) {
+        return saved;
+      }
+
+      // Generate new ID: XXXX-XXXX-XXXX format
+      const segment = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+      const newId = `${segment()}-${segment()}-${segment()}`;
+      localStorage.setItem('d3kos-installation-id', newId);
+      return newId;
+    }
+
+    // Generate QR code data
+    function generateQRData() {
+      const systemIp = '192.168.1.237';
+      const data = {
+        type: 'd3kos-system',
+        version: '2.0',
+        host: systemIp,
+        installationId: installationId,
+        urls: {
+          web: `http://${systemIp}/`,
+          signalk: `http://${systemIp}:3000`,
+          nodered: `http://${systemIp}:1880`,
+          ws: `ws://${systemIp}:3000/signalk/v1/stream`
+        },
+        name: 'd3kOS Marine System',
+        timestamp: new Date().toISOString()
+      };
+
+      return JSON.stringify(data);
+    }
+
+    // Create QR code
+    function createQRCode() {
+      const qrContainer = document.getElementById('qrcode');
+      qrContainer.innerHTML = ''; // Clear existing
+
+      const qrData = generateQRData();
+
+      try {
+        qrcodeObj = new QRCode(qrContainer, {
+          text: qrData,
+          width: 300,
+          height: 300,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      } catch (error) {
+        console.error('QR Code generation error:', error);
+        qrContainer.innerHTML = '<div style="width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; background: #f0f0f0; color: #000; font-size: 16px; text-align: center; padding: 20px;">QR Code will be generated here<br>Loading library...</div>';
+      }
+    }
+
+    // Update display
+    function updateDisplay() {
+      installationId = generateInstallationId();
+
+      document.getElementById('installation-id').textContent = installationId;
+      document.getElementById('install-id-text').textContent = installationId;
+      document.getElementById('manual-install-id').textContent = installationId;
+
+      const connectionUrl = `d3kos://connect?host=192.168.1.237&id=${installationId}`;
+      document.getElementById('connection-url').textContent = connectionUrl;
+
+      createQRCode();
+    }
+
+    // Regenerate QR code
+    function regenerateQR() {
+      if (confirm('Generate a new Installation ID?\n\nThis will disconnect any paired devices. They will need to scan the new QR code.')) {
+        localStorage.removeItem('d3kos-installation-id');
+        updateDisplay();
+        alert('✅ New QR code generated!\n\nPrevious pairings have been invalidated.');
+      }
+    }
+
+    // Download QR code
+    function downloadQR() {
+      try {
+        const canvas = document.querySelector('#qrcode canvas');
+        if (!canvas) {
+          alert('⚠️ QR code not ready yet. Please wait a moment and try again.');
+          return;
+        }
+
+        const link = document.createElement('a');
+        link.download = `d3kos-qrcode-${installationId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        alert('✅ QR code downloaded!');
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('❌ Failed to download QR code. Please try again.');
+      }
+    }
+
+    // Print QR code
+    function printQR() {
+      window.print();
+    }
+
+    // Share configuration
+    function shareConfig() {
+      const config = {
+        installationId: installationId,
+        systemIp: '192.168.1.237',
+        urls: {
+          web: 'http://192.168.1.237/',
+          signalk: 'http://192.168.1.237:3000',
+          nodered: 'http://192.168.1.237:1880'
+        },
+        system: 'd3kOS v2.0',
+        hardware: 'Raspberry Pi 4B'
+      };
+
+      const configStr = JSON.stringify(config, null, 2);
+      const configBlob = new Blob([configStr], { type: 'application/json' });
+      const url = URL.createObjectURL(configBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `d3kos-config-${installationId}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      alert('✅ Configuration file downloaded!\n\nShare this file to help others connect to your system.');
+    }
+
+    // Go back to main menu
+    function goBack() {
+      window.location.href = '/';
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDisplay();
+    });
+
+    // Fallback if QRCode library fails to load
+    setTimeout(() => {
+      const qrContainer = document.getElementById('qrcode');
+      if (!qrContainer.querySelector('canvas') && !qrContainer.querySelector('img')) {
+        console.warn('QR Code library may not be loaded');
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

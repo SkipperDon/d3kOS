@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/js/units.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Weather Radar</title>
@@ -216,23 +217,17 @@
     .conditions-panel {
       background-color: var(--color-bg);
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 20px;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
 
-    .conditions-panel::-webkit-scrollbar {
-      width: 16px;
-    }
+    .conditions-panel
 
-    .conditions-panel::-webkit-scrollbar-track {
-      background: rgba(0, 204, 0, 0.1);
-      border-radius: 8px;
-    }
+    .conditions-panel
 
-    .conditions-panel::-webkit-scrollbar-thumb {
-      background: var(--color-accent);
-      border-radius: 8px;
-      border: 3px solid var(--color-bg);
-    }
+    .conditions-panel
 
     .timestamp {
       font-size: 18px;
@@ -344,7 +339,15 @@
       color: var(--color-accent);
       z-index: 100;
     }
-  </style>
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
   <div class="container">
@@ -410,6 +413,11 @@
 
     // Signal K connection
     let signalkWS = null;
+
+
+    window.addEventListener('measurementSystemChanged', function() {
+      updateRadar();  // reload Windy embed with updated units
+    });
 
     function connectSignalK() {
       signalkWS = new WebSocket(SIGNALK_WS);
@@ -864,10 +872,23 @@
       }
     }
 
-    // Initialize
+    // Initialize — fetch GPS position first, fall back to Lake Simcoe
+    async function initPosition() {
+      try {
+        const r = await fetch('/signalk/v1/api/vessels/self/navigation/position',
+          { signal: AbortSignal.timeout(4000) });
+        const d = await r.json();
+        if (d.value && d.value.latitude && d.value.longitude) {
+          currentPosition = { lat: d.value.latitude, lon: d.value.longitude };
+          hasGPSFix = true;
+        }
+      } catch (e) { /* fallback to Lake Simcoe */ }
+      updateRadar();
+      fetchWeatherData();
+    }
+
     connectSignalK();
-    updateRadar(); // Load radar with default position on page load
-    fetchWeatherData(); // Fetch initial weather data
+    initPosition(); // Load with GPS position (or fallback)
     initOverlayButtons();
     initMapControls();
 

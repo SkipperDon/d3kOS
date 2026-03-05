@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Data Management - d3kOS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;background:#000;color:#FFF;font-size:22px;padding:20px}
+h1{font-size:36px;margin-bottom:20px;color:#00CC00}.section{background:#1a1a1a;padding:20px;margin:20px 0;border-left:4px solid #00CC00}
+.button{background:#00CC00;color:#000;border:none;padding:20px 40px;font-size:24px;cursor:pointer;margin:10px;font-weight:bold}
+.button:disabled{background:#333;color:#888;cursor:not-allowed}.button.secondary{background:#333;color:#FFF;border:2px solid #00CC00}
+.status{padding:15px;background:#000;margin:10px 0;border:1px solid #333}.tier-warning{background:#331100;border:2px solid #FF3333;padding:20px;margin:20px 0;color:#FF3333;font-size:24px}
+.success{color:#00CC00}.error{color:#FF3333}
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style></head><body>
+<h1>📦 Data Management</h1>
+<div id="tier-check" style="display:none" class="tier-warning"><h2>⚠️ Export Not Available</h2>
+<p>Data export requires <strong>Tier 1</strong> or higher.</p><p style="margin-top:15px">You are currently on <strong>Tier 0</strong>.</p>
+<button class="button" onclick="window.location.href='/settings.html'" style="margin-top:20px">View Upgrade Options</button></div>
+<div id="export-section"><div class="section"><h2>Manual Export</h2><p style="margin:15px 0">Export configuration data to JSON format:</p>
+<button id="export-btn" class="button" onclick="generateExport()">📤 Export Data Now</button>
+<div id="export-status" class="status" style="display:none"></div></div>
+<div class="section"><h2>Export History</h2><div id="export-list" class="status">Loading...</div></div>
+<div class="section"><h2>Export Categories</h2><p>Data included:</p><div style="font-size:20px;line-height:1.8;margin-top:10px">
+<div>✅ Settings configuration</div><div>✅ Onboarding/Initial setup</div><div>✅ License information</div></div></div></div>
+<div style="margin-top:30px"><button class="button secondary" onclick="window.location.href='/settings.html'">← Back to Settings</button></div>
+<script>
+async function checkTierAccess(){try{const r=await fetch('/tier/status');const d=await r.json();
+if(d.success&&d.tier===0){document.getElementById('tier-check').style.display='block';document.getElementById('export-section').style.display='none'}
+else{loadExportHistory()}}catch(e){console.error('Error:',e)}}
+async function generateExport(){const btn=document.getElementById('export-btn');const status=document.getElementById('export-status');
+btn.disabled=true;btn.textContent='⏳ Exporting...';status.style.display='block';status.innerHTML='<span class="success">Collecting data...</span>';
+try{const r=await fetch('/export/generate',{method:'POST',headers:{'Content-Type':'application/json'}});const d=await r.json();
+if(d.success){status.innerHTML=`<span class="success">✅ Export created!</span><br>Export ID: ${d.export_id}<br>Categories: ${d.statistics.categories_with_data}/3<br>Size: ${Math.round(d.statistics.total_size_bytes/1024)} KB`;
+setTimeout(loadExportHistory,1000)}else{status.innerHTML=`<span class="error">❌ Failed: ${d.error}</span>`}}
+catch(e){status.innerHTML=`<span class="error">❌ Error: ${e.message}</span>`}finally{btn.disabled=false;btn.textContent='📤 Export Data Now'}}
+async function loadExportHistory(){try{const r=await fetch('/export/list');const d=await r.json();const list=document.getElementById('export-list');
+if(d.success&&d.count>0){list.innerHTML=d.exports.map(e=>`<div style="margin:10px 0;padding:10px;background:#000;border-left:3px solid #00CC00">
+<strong>${e.filename}</strong><br>Size: ${(e.size/1024).toFixed(2)} KB<br>Created: ${new Date(e.created).toLocaleString()}</div>`).join('')}
+else{list.innerHTML='No exports yet'}}catch(e){console.error('Error:',e)}}
+window.addEventListener('load',checkTierAccess);
+</script></body></html>

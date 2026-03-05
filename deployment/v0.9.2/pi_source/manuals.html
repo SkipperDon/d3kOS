@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Manuals - d3kOS</title>
+  <style>
+    :root {
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-accent-dim: #008800;
+      --color-border: #333333;
+      --button-radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-size: 22px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      flex: 1;
+    }
+
+    .top-nav {
+      background-color: var(--color-bg);
+      border-bottom: 2px solid var(--color-accent);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    .nav-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--color-accent);
+      margin-bottom: 10px;
+    }
+
+    .page-subtitle {
+      font-size: 18px;
+      color: #999;
+      margin-bottom: 30px;
+    }
+
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .upload-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .stats {
+      font-size: 18px;
+      color: #999;
+    }
+
+    .stats-value {
+      color: var(--color-accent);
+      font-weight: bold;
+    }
+
+    .manual-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .manual-card {
+      background-color: #0a0a0a;
+      border: 2px solid var(--color-border);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .manual-card:hover {
+      border-color: var(--color-accent);
+    }
+
+    .manual-info {
+      flex: 1;
+    }
+
+    .manual-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+
+    .manual-meta {
+      font-size: 16px;
+      color: #999;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .manual-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .action-button {
+      background-color: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .action-button:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .action-button.delete {
+      border-color: #cc0000;
+      color: #cc0000;
+    }
+
+    .action-button.delete:hover {
+      background-color: #cc0000;
+      color: #fff;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--color-accent);
+      font-size: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .empty-state svg {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .empty-state .upload-button {
+      margin-top: 20px;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="top-nav">
+    <a href="/" class="nav-button">← Main Menu</a>
+    <div class="page-title">Manage Manuals</div>
+    <div style="width: 150px;"></div>
+  </div>
+
+  <div class="container">
+    <p class="page-subtitle">View and manage uploaded boat, engine, and equipment manuals</p>
+
+    <div class="action-bar">
+      <a href="/upload-manual.html" class="upload-button">➕ Upload New Manual</a>
+      <div class="stats">
+        <span class="stats-value" id="manualCount">-</span> manuals uploaded
+      </div>
+    </div>
+
+    <div class="manual-list" id="manualList">
+      <div class="loading">Loading manuals...</div>
+    </div>
+  </div>
+
+  <script>
+    let allManuals = [];
+
+    // Load manuals on page load
+    window.addEventListener('load', loadManuals);
+
+    async function loadManuals() {
+      try {
+        const response = await fetch('/history/manuals');
+        const data = await response.json();
+
+        allManuals = data.manuals;
+
+        // Update count
+        document.getElementById('manualCount').textContent = data.count;
+
+        // Display manuals
+        displayManuals(allManuals);
+      } catch (error) {
+        console.error('Failed to load manuals:', error);
+        document.getElementById('manualList').innerHTML = `
+          <div class="empty-state">
+            <p>Failed to load manuals. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    function displayManuals(manuals) {
+      const listDiv = document.getElementById('manualList');
+
+      if (manuals.length === 0) {
+        listDiv.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24">
+              <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+            </svg>
+            <h2>No manuals uploaded yet</h2>
+            <p>Upload your first manual to get started</p>
+            <a href="/upload-manual.html" class="upload-button">Upload Manual</a>
+          </div>
+        `;
+        return;
+      }
+
+      listDiv.innerHTML = manuals.map(manual => {
+        const sizeKB = (manual.size / 1024).toFixed(0);
+        const sizeMB = (manual.size / 1024 / 1024).toFixed(2);
+        const sizeStr = manual.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+
+        const date = new Date(manual.uploaded * 1000);
+        const dateStr = date.toLocaleDateString();
+
+        return `
+          <div class="manual-card">
+            <div class="manual-info">
+              <div class="manual-name">📄 ${escapeHtml(manual.filename)}</div>
+              <div class="manual-meta">
+                <span>📦 ${sizeStr}</span>
+                <span>📅 Uploaded ${dateStr}</span>
+              </div>
+            </div>
+            <div class="manual-actions">
+              <button class="action-button delete" onclick="deleteManual('${escapeHtml(manual.filename)}')">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function deleteManual(filename) {
+      if (!confirm(`Delete manual "${filename}"?\n\nThis will also remove its content from the AI knowledge base.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/history/manual/${encodeURIComponent(filename)}`, {
+          method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('Manual deleted successfully');
+          // Reload manuals
+          loadManuals();
+        } else {
+          alert(`Failed to delete manual: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete manual');
+      }
+    }
+  </script>
+</body>
+</html>

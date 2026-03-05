@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/js/units.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Navigation</title>
@@ -131,27 +132,11 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
 
     /* Touch-Friendly Scrollbar */
-    main::-webkit-scrollbar {
-      width: 20px;
-    }
-
-    main::-webkit-scrollbar-track {
-      background: rgba(0, 204, 0, 0.1);
-      border-radius: 10px;
-    }
-
-    main::-webkit-scrollbar-thumb {
-      background: var(--color-accent);
-      border-radius: 10px;
-      border: 3px solid var(--color-bg);
-    }
-
-    main::-webkit-scrollbar-thumb:active {
-      background: #00FF00;
-    }
 
     .content-wrapper {
       max-width: 1200px;
@@ -416,7 +401,15 @@
     .gps-status-item.good .gps-status-value {
       color: var(--color-accent);
     }
-  </style>
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
   <div class="container">
@@ -448,7 +441,7 @@
       <div class="content-wrapper">
 
         <!-- Current Position -->
-        <div class="position-display" id="position-display">
+        <div class="position-display no-data" id="position-display">
           <div class="position-title">📍 Current Position</div>
           <div class="position-coords">
             <div class="coord-item">
@@ -464,27 +457,27 @@
 
         <!-- Navigation Stats -->
         <div class="nav-grid">
-          <div class="nav-card" id="card-sog">
+          <div class="nav-card no-data" id="card-sog">
             <div class="nav-label">Speed Over Ground</div>
             <div class="nav-value" id="sog">--</div>
             <div class="nav-unit">knots</div>
           </div>
 
-          <div class="nav-card" id="card-cog">
+          <div class="nav-card no-data" id="card-cog">
             <div class="nav-label">Course Over Ground</div>
             <div class="nav-value" id="cog">--</div>
             <div class="nav-unit">degrees</div>
             <div class="nav-subtext" id="cog-cardinal">--</div>
           </div>
 
-          <div class="nav-card" id="card-heading">
+          <div class="nav-card no-data" id="card-heading">
             <div class="nav-label">Heading (True)</div>
             <div class="nav-value" id="heading">--</div>
             <div class="nav-unit">degrees</div>
             <div class="nav-subtext" id="heading-cardinal">--</div>
           </div>
 
-          <div class="nav-card" id="card-depth">
+          <div class="nav-card no-data" id="card-depth">
             <div class="nav-label">Depth Below Surface</div>
             <div class="nav-value" id="depth">--</div>
             <div class="nav-unit">meters</div>
@@ -607,6 +600,12 @@
 
       connectSignalK();
       setInterval(updateDataAge, 1000);
+    });
+
+
+    window.addEventListener('measurementSystemChanged', function() {
+      updateSOG();
+      updateDepth();
     });
 
     function connectSignalK() {
@@ -747,7 +746,8 @@
       const sog = navData.speedOverGround;
       if (sog !== null) {
         const knots = sog * 1.94384; // m/s to knots
-        document.getElementById('sog').textContent = knots.toFixed(1);
+        document.getElementById('sog').textContent =
+          (typeof Units !== 'undefined') ? Units.speed.toDisplay(knots) : knots.toFixed(1) + ' kts';
         document.getElementById('card-sog').classList.remove('no-data');
       }
     }
@@ -775,7 +775,9 @@
     function updateDepth() {
       const depth = navData.depth;
       if (depth !== null) {
-        document.getElementById('depth').textContent = depth.toFixed(1);
+        const depthFt = depth * 3.28084; // Signal K depth is meters; Units.depth expects feet
+        document.getElementById('depth').textContent =
+          (typeof Units !== 'undefined') ? Units.depth.toDisplay(depthFt) : depth.toFixed(1) + ' m';
         document.getElementById('card-depth').classList.remove('no-data');
       }
     }

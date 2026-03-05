@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/js/units.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Helm Assistant</title>
@@ -119,24 +120,13 @@
     }
 
     /* Touch-Friendly Scrollbar */
-    .scrollable::-webkit-scrollbar {
-      width: 20px;
-    }
+    .scrollable
 
-    .scrollable::-webkit-scrollbar-track {
-      background: rgba(0, 204, 0, 0.1);
-      border-radius: 10px;
-    }
+    .scrollable
 
-    .scrollable::-webkit-scrollbar-thumb {
-      background: var(--color-accent);
-      border-radius: 10px;
-      border: 3px solid var(--color-bg);
-    }
+    .scrollable
 
-    .scrollable::-webkit-scrollbar-thumb:active {
-      background: #00FF00;
-    }
+    .scrollable
 
     /* Quick Actions */
     .quick-actions {
@@ -185,6 +175,8 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
 
     .message {
@@ -376,7 +368,15 @@
       opacity: 0.8;
       line-height: 1.4;
     }
-  </style>
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
 <!-- Simulator Warning Banner (Auto-detect) -->
@@ -396,7 +396,7 @@
 #simulator-warning-banner + * {
   margin-top: 100px !important; /* Push content down when banner is visible */
 }
-</style>
+  </style>
 <script>
 // Check simulator status every 5 seconds
 (function checkSimulatorStatus() {
@@ -756,8 +756,8 @@
 
       let response = `⚙️ **Engine Status: ${status}**\n\n` +
                      `RPM: ${rpm}\n` +
-                     `Oil Pressure: ${oil} PSI\n` +
-                     `Coolant Temperature: ${temp}°F\n` +
+                     `Oil Pressure: ${typeof Units !== 'undefined' ? Units.pressure.toDisplay(oil) : oil + ' PSI'}\n` +
+                     `Coolant Temperature: ${typeof Units !== 'undefined' ? Units.temperature.toDisplay(temp) : temp + '°F'}\n` +
                      `Battery Voltage: ${voltage}V\n` +
                      `Engine Hours: ${hours} hrs\n`;
 

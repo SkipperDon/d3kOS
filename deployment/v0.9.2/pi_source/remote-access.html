@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/js/units.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Remote Access</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --color-bg:       #000000;
+      --color-text:     #FFFFFF;
+      --color-accent:   #00CC00;
+      --color-warning:  #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+      --font-family:    "Roboto", "Arial", sans-serif;
+      --font-base:      22px;
+      --font-heading:   24px;
+      --line-height:    1.5;
+      --button-radius:  8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 12px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle { font-size: var(--font-base); opacity: 0.8; }
+
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover, .nav-button:active {
+      background-color: rgba(0, 204, 0, 0.2);
+    }
+
+    .status-badge {
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .status-badge.connected {
+      background-color: rgba(0, 204, 0, 0.15);
+      border: 2px solid var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .status-badge.disconnected {
+      background-color: rgba(255, 165, 0, 0.15);
+      border: 2px solid var(--color-warning);
+      color: var(--color-warning);
+    }
+
+    main {
+      flex: 1;
+      padding: 24px 20px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    .content-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── QR Section ── */
+    .qr-section {
+      background-color: rgba(0, 204, 0, 0.08);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 32px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .qr-section h2 {
+      font-size: 26px;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+    }
+
+    .qr-description {
+      opacity: 0.8;
+      margin-bottom: 24px;
+    }
+
+    .qr-code-container {
+      background: #FFFFFF;
+      padding: 16px;
+      border-radius: var(--button-radius);
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .qr-url {
+      font-family: 'Courier New', monospace;
+      font-size: 24px;
+      color: var(--color-accent);
+      margin: 12px 0;
+      word-break: break-all;
+    }
+
+    .qr-placeholder {
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      color: #666;
+      font-size: 16px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* ── Info Cards ── */
+    .info-card {
+      background-color: rgba(255, 255, 255, 0.04);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .info-card h3 {
+      font-size: var(--font-heading);
+      color: var(--color-accent);
+      margin-bottom: 16px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-label {
+      opacity: 0.7;
+      flex-shrink: 0;
+      margin-right: 16px;
+    }
+
+    .detail-value {
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      color: var(--color-accent);
+      word-break: break-all;
+      text-align: right;
+    }
+
+    .key-masked { letter-spacing: 4px; }
+
+    /* ── Buttons ── */
+    .btn {
+      min-height: 60px;
+      padding: 12px 24px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .btn:hover, .btn:active { background-color: rgba(0,204,0,0.15); }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .btn-primary:hover, .btn-primary:active { background-color: #00FF00; }
+
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    /* ── Instructions ── */
+    .instructions {
+      background-color: rgba(0, 204, 0, 0.04);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .instructions h3 {
+      font-size: var(--font-heading);
+      color: var(--color-accent);
+      margin-bottom: 20px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .step-text {
+      font-size: var(--font-base);
+      padding-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* ── Not connected state ── */
+    .warning-box {
+      background-color: rgba(255, 165, 0, 0.1);
+      border: 2px solid var(--color-warning);
+      border-radius: var(--button-radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .warning-box h3 { color: var(--color-warning); margin-bottom: 12px; }
+
+    @media (max-width: 600px) {
+      .detail-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .detail-value { text-align: left; }
+      .btn-group { flex-direction: column; }
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>📡 Remote Access</h1>
+      <p class="subtitle">Access d3kOS from your phone — anywhere</p>
+    </header>
+
+    <nav class="top-nav">
+      <button class="nav-button" onclick="window.location.href='/settings.html'">← Settings</button>
+      <span id="status-badge" class="status-badge disconnected">Checking...</span>
+      <button class="nav-button" onclick="loadConfig()">↺ Refresh</button>
+    </nav>
+
+    <main>
+      <div class="content-wrapper">
+
+        <!-- Not connected warning (hidden when connected) -->
+        <div id="not-connected-box" class="warning-box" style="display:none;">
+          <h3>⚠️ Tailscale Not Connected</h3>
+          <p>Tailscale is not running. Remote access only works on the boat's local Wi-Fi until Tailscale is reconnected.</p>
+          <p style="margin-top:12px; opacity:0.7;">To reconnect: <code style="color:var(--color-warning)">sudo tailscale up</code></p>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="qr-section">
+          <h2>Scan to Open on Your Phone</h2>
+          <p class="qr-description">Open your phone's camera and point it at this code — no app needed.</p>
+          <div class="qr-code-container">
+            <div id="qrcode">
+              <div class="qr-placeholder">Generating QR code...</div>
+            </div>
+          </div>
+          <div class="qr-url" id="qr-url">Loading...</div>
+          <div class="btn-group" style="justify-content:center;">
+            <button class="btn btn-primary" onclick="downloadQR()">💾 Save QR Image</button>
+          </div>
+        </div>
+
+        <!-- Connection Details -->
+        <div class="info-card">
+          <h3>🌐 Connection Details</h3>
+
+          <div class="detail-row">
+            <span class="detail-label">Remote (Tailscale)</span>
+            <span class="detail-value" id="tailscale-url">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Local (boat Wi-Fi)</span>
+            <span class="detail-value" id="local-url">http://192.168.1.237</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">API Key</span>
+            <span class="detail-value">
+              <span id="api-key-masked" class="key-masked">••••••••••••••••</span>
+              <span id="api-key-value" style="display:none;font-size:16px;"></span>
+            </span>
+          </div>
+          <div class="btn-group">
+            <button class="btn" onclick="toggleKey()">👁 Show / Hide Key</button>
+            <button class="btn" onclick="copyKey()">📋 Copy Key</button>
+          </div>
+        </div>
+
+        <!-- How to Connect -->
+        <div class="instructions">
+          <h3>📱 How to Access Remotely</h3>
+
+          <div class="step-item">
+            <span class="step-number">1</span>
+            <span class="step-text">Install <strong>Tailscale</strong> on your phone — free from the App Store or Play Store</span>
+          </div>
+          <div class="step-item">
+            <span class="step-number">2</span>
+            <span class="step-text">Log in to Tailscale with your account and make sure it is turned on</span>
+          </div>
+          <div class="step-item">
+            <span class="step-number">3</span>
+            <span class="step-text">Open your phone's camera and scan the QR code above — or type the address in your browser</span>
+          </div>
+          <div class="step-item">
+            <span class="step-number">4</span>
+            <span class="step-text">The full d3kOS dashboard opens on your phone — works on cellular, at home, anywhere</span>
+          </div>
+        </div>
+
+        <!-- Available Endpoints -->
+        <div class="info-card">
+          <h3>🔗 What You Can Access</h3>
+          <div class="detail-row">
+            <span class="detail-label">Full Dashboard</span>
+            <span class="detail-value" id="link-dashboard">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">AI Chat (Helm)</span>
+            <span class="detail-value" id="link-helm">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Navigation</span>
+            <span class="detail-value" id="link-nav">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Status API</span>
+            <span class="detail-value" id="link-api">—</span>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    let cfg = null;
+    let keyVisible = false;
+
+    function loadConfig() {
+      document.getElementById('status-badge').textContent = 'Checking...';
+      document.getElementById('status-badge').className = 'status-badge disconnected';
+
+      fetch('/remote/config')
+        .then(r => r.json())
+        .then(data => {
+          cfg = data;
+          renderConfig(data);
+        })
+        .catch(err => {
+          console.error('Config fetch failed:', err);
+          document.getElementById('status-badge').textContent = '⚠ Error';
+        });
+    }
+
+    function renderConfig(data) {
+      const badge = document.getElementById('status-badge');
+      const notConnectedBox = document.getElementById('not-connected-box');
+
+      if (data.tailscale_connected && data.tailscale_ip) {
+        badge.textContent = '✓ Tailscale Connected';
+        badge.className = 'status-badge connected';
+        notConnectedBox.style.display = 'none';
+
+        const baseUrl = data.tailscale_url;
+
+        // QR code
+        document.getElementById('qr-url').textContent = baseUrl;
+        document.getElementById('qrcode').innerHTML = '';
+        new QRCode(document.getElementById('qrcode'), {
+          text: baseUrl,
+          width: 260,
+          height: 260,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // Connection details
+        document.getElementById('tailscale-url').textContent = baseUrl;
+        document.getElementById('link-dashboard').textContent = baseUrl + '/dashboard.html';
+        document.getElementById('link-helm').textContent = baseUrl + '/helm.html';
+        document.getElementById('link-nav').textContent = baseUrl + '/navigation.html';
+        document.getElementById('link-api').textContent = baseUrl + '/remote/status';
+
+      } else {
+        badge.textContent = '⚠ Tailscale Off';
+        badge.className = 'status-badge disconnected';
+        notConnectedBox.style.display = 'block';
+
+        // Fall back to local URL for QR
+        const localUrl = data.local_url || 'http://192.168.1.237';
+        document.getElementById('qr-url').textContent = localUrl + ' (local only)';
+        document.getElementById('qrcode').innerHTML = '';
+        new QRCode(document.getElementById('qrcode'), {
+          text: localUrl,
+          width: 260,
+          height: 260,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        document.getElementById('tailscale-url').textContent = 'Not connected';
+        document.getElementById('link-dashboard').textContent = localUrl + '/dashboard.html';
+        document.getElementById('link-helm').textContent = localUrl + '/helm.html';
+        document.getElementById('link-nav').textContent = localUrl + '/navigation.html';
+        document.getElementById('link-api').textContent = localUrl + '/remote/status';
+      }
+
+      // API key
+      if (data.api_key) {
+        document.getElementById('api-key-value').textContent = data.api_key;
+      } else {
+        document.getElementById('api-key-masked').textContent = 'No key set';
+      }
+    }
+
+    function toggleKey() {
+      keyVisible = !keyVisible;
+      document.getElementById('api-key-masked').style.display = keyVisible ? 'none' : 'inline';
+      document.getElementById('api-key-value').style.display = keyVisible ? 'inline' : 'none';
+    }
+
+    function copyKey() {
+      if (!cfg || !cfg.api_key) return;
+      navigator.clipboard.writeText(cfg.api_key)
+        .then(() => alert('API key copied to clipboard.'))
+        .catch(() => {
+          // Fallback for non-secure context
+          const el = document.createElement('textarea');
+          el.value = cfg.api_key;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          alert('API key copied.');
+        });
+    }
+
+    function downloadQR() {
+      const canvas = document.querySelector('#qrcode canvas');
+      if (!canvas) { alert('QR code not ready yet.'); return; }
+      const link = document.createElement('a');
+      link.download = 'd3kos-remote-access-qr.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    document.addEventListener('DOMContentLoaded', loadConfig);
+  </script>
+</body>
+</html>

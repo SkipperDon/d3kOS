@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant - d3kOS</title>
+  <style>
+    :root {
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-accent-dim: #008800;
+      --color-border: #333333;
+      --color-user-msg: #1a3a1a;
+      --color-assistant-msg: #0a0a0a;
+      --button-radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-size: 28px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      background-color: var(--color-bg);
+      border-bottom: 2px solid var(--color-accent);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 70px;
+    }
+
+    .nav-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background-color 0.2s;
+    }
+
+    .nav-button:hover {
+      background-color: var(--color-accent-dim);
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--color-accent);
+    }
+
+    /* Chat Container */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    /* Custom Scrollbar */
+    .chat-container
+
+    .chat-container
+
+    .chat-container
+
+    /* Messages */
+    .message {
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      border-radius: var(--button-radius);
+      max-width: 85%;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background-color: var(--color-user-msg);
+      border: 1px solid var(--color-accent);
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background-color: var(--color-assistant-msg);
+      border: 1px solid var(--color-border);
+    }
+
+    .message.error {
+      align-self: flex-start;
+      background-color: #3a1a1a;
+      border: 1px solid #cc0000;
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 18px;
+      opacity: 0.7;
+    }
+
+    .message-role {
+      font-weight: bold;
+      color: var(--color-accent);
+    }
+
+    .message-meta {
+      display: flex;
+      gap: 15px;
+      font-size: 16px;
+    }
+
+    .message-content {
+      font-size: 28px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* Input Area */
+    .input-area {
+      border-top: 2px solid var(--color-accent);
+      padding: 20px;
+      background-color: var(--color-bg);
+    }
+
+    .input-container {
+      display: flex;
+      gap: 15px;
+      align-items: stretch;
+    }
+
+    .input-box {
+      flex: 1;
+      background-color: #1a1a1a;
+      border: 2px solid var(--color-border);
+      border-radius: var(--button-radius);
+      color: var(--color-text);
+      font-size: 28px;
+      padding: 15px;
+      font-family: inherit;
+      resize: none;
+      min-height: 60px;
+      max-height: 150px;
+    }
+
+    .input-box:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .send-button {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: none;
+      padding: 15px 40px;
+      font-size: 28px;
+      font-weight: bold;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      transition: background-color 0.2s;
+      white-space: nowrap;
+    }
+
+    .send-button:hover:not(:disabled) {
+      background-color: var(--color-accent-dim);
+    }
+
+    .send-button:disabled {
+      background-color: #555555;
+      cursor: not-allowed;
+    }
+
+    /* Provider selector */
+    .provider-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .provider-button {
+      background-color: #1a1a1a;
+      color: var(--color-text);
+      border: 2px solid var(--color-border);
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .provider-button.active {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border-color: var(--color-accent);
+    }
+
+    .provider-button:hover {
+      border-color: var(--color-accent);
+    }
+
+    /* Loading indicator */
+    .loading {
+      align-self: flex-start;
+      padding: 15px;
+      border-radius: var(--button-radius);
+      background-color: var(--color-assistant-msg);
+      border: 1px solid var(--color-accent);
+      font-style: italic;
+      opacity: 0.8;
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    /* Welcome message */
+    .welcome {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--color-accent);
+      opacity: 0.6;
+    }
+
+    .welcome h2 {
+      margin-bottom: 20px;
+      font-size: 32px;
+    }
+
+    .welcome p {
+      font-size: 20px;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Navigation -->
+    <div class="top-nav">
+      <a href="/" class="nav-button">← Main Menu</a>
+      <div class="page-title">AI Assistant</div>
+      <div style="width: 150px;"></div> <!-- Spacer for centering -->
+    </div>
+
+    <!-- Chat Container -->
+    <div class="chat-container" id="chatContainer">
+      <div class="welcome">
+        <h2>🤖 d3kOS AI Assistant</h2>
+        <p>Ask me anything about your boat's engine, systems, or marine operations.</p>
+        <p style="margin-top: 10px; font-size: 18px;">Select an AI mode below and type your question.</p>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <!-- AI Provider Status -->
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background-color: #1a1a1a; border-radius: 8px; border: 1px solid var(--color-border);">
+        <span style="font-size: 40px;">🤖</span>
+        <div>
+          <div style="font-size: 36px; font-weight: bold; color: var(--color-accent);">AI Manual Search</div>
+          <div style="font-size: 28px; color: #888; margin-top: 2px;">1-2 Second Responses • 100% Free • Offline</div>
+        </div>
+      </div>
+      <div class="input-container">
+        <textarea 
+          id="inputBox" 
+          class="input-box" 
+          placeholder="Ask a question about your boat..."
+          rows="1"
+        ></textarea>
+        <button id="sendButton" class="send-button" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentProvider = 'ollama';  // RAG-only manual search (local, free)
+    let isProcessing = false;
+
+    // Set mode (quick vs detailed)
+
+
+    // Provider selection removed - always use Ollama + RAG
+
+    // Send message
+    async function sendMessage() {
+      if (isProcessing) return;
+
+      const inputBox = document.getElementById('inputBox');
+      const question = inputBox.value.trim();
+
+      if (!question) return;
+
+      // Clear input
+      inputBox.value = '';
+      inputBox.style.height = 'auto';
+
+      // Add user message
+      addMessage('user', question);
+
+      // Add loading indicator
+      const loadingId = addLoading();
+
+      // Disable input
+      isProcessing = true;
+      document.getElementById('sendButton').disabled = true;
+
+      try {
+        // Call AI API
+        const response = await fetch('/ai/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            question: question,
+            provider: "rag",  // RAG-only manual search
+          })
+        });
+
+        const data = await response.json();
+
+        // Remove loading
+        removeLoading(loadingId);
+
+        if (data.error) {
+          addMessage('error', data.error);
+        } else {
+          addMessage('assistant', data.answer, {
+            provider: data.provider,
+            model: data.model,
+            responseTime: data.response_time_ms
+          });
+        }
+      } catch (error) {
+        removeLoading(loadingId);
+        addMessage('error', 'Failed to connect to AI service. Please try again.');
+        console.error('AI query error:', error);
+      } finally {
+        isProcessing = false;
+        document.getElementById('sendButton').disabled = false;
+        inputBox.focus();
+      }
+    }
+
+    // Add message to chat
+    function addMessage(role, content, meta = {}) {
+      const chatContainer = document.getElementById('chatContainer');
+      
+      // Remove welcome message if present
+      const welcome = chatContainer.querySelector('.welcome');
+      if (welcome) welcome.remove();
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${role}`;
+
+      let metaHtml = '';
+      if (meta.provider) {
+        const time = (meta.responseTime / 1000).toFixed(1);
+        metaHtml = `
+          <div class="message-meta">
+            <span>🤖 ${meta.model}</span>
+            <span>⏱️ ${time}s</span>
+          </div>
+        `;
+      }
+
+      const roleName = role === 'user' ? 'You' : role === 'assistant' ? 'Assistant' : 'Error';
+      
+      messageDiv.innerHTML = `
+        <div class="message-header">
+          <span class="message-role">${roleName}</span>
+          ${metaHtml}
+        </div>
+        <div class="message-content">${escapeHtml(content)}</div>
+      `;
+
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Add loading indicator
+    function addLoading() {
+      const chatContainer = document.getElementById('chatContainer');
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'loading';
+      loadingDiv.id = 'loading-' + Date.now();
+      loadingDiv.textContent = 'Thinking';
+      chatContainer.appendChild(loadingDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return loadingDiv.id;
+    }
+
+    // Remove loading indicator
+    function removeLoading(id) {
+      const loading = document.getElementById(id);
+      if (loading) loading.remove();
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Auto-resize textarea
+    const inputBox = document.getElementById('inputBox');
+    inputBox.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+    });
+
+    // Enter to send (Shift+Enter for new line)
+    inputBox.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Focus input on load and check for query parameter
+    window.addEventListener('load', () => {
+      // Check for ?q= query parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const question = urlParams.get('q');
+
+      if (question) {
+        inputBox.value = question;
+        inputBox.style.height = 'auto';
+        inputBox.style.height = Math.min(inputBox.scrollHeight, 150) + 'px';
+      }
+
+      inputBox.focus();
+    });
+  </script>
+</body>
+</html>
