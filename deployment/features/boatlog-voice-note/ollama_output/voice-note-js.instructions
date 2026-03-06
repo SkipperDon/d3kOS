@@ -1,0 +1,18 @@
+function recordVoiceNote() {
+  // Show Tier 2 notification
+  const message =
+    "🎤 Voice Note Recording\n\n" +
+    "This is a Tier 2 feature that requires:\n\n" +
+    "• Voice AI Assistant license\n" +
+    "• Microphone hardware\n" +
+    "• Voice processing models\n\n" +
+    "Voice notes allow you to:\n" +
+    "• Record audio comments during trips\n" +
+    "• Add voice annotations to log entries\n" +
+    "• Store audio memos with timestamps\n" +
+    "• Transcribe voice to text automatically\n\n" +
+    "Upgrade to Tier 2 to unlock voice features!\n\n" +
+    "Contact: service@atmyboat.com";
+
+  alert(message);
+}
