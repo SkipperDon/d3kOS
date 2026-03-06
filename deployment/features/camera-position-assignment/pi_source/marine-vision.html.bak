@@ -392,37 +392,21 @@
         .catch(() => {});
     }
 
-function renderSelector(cams, activeId) {
-  const sel = document.getElementById('cameraSelector');
-  let html = '';
-  const posOrder = ['bow', 'stern', 'port', 'starboard'];
-  posOrder.forEach(function(pos) {
-    const cam = cams.find(function(c) { return c.position === pos; });
-    if (!cam) return;
-    const isActive  = cam.id === activeId && !gridMode;
-    const isOffline = !cam.connected;
-    let cls = 'cam-btn';
-    if (isActive)  cls += ' active';
-    if (isOffline) cls += ' offline';
-    const label = cam.position ? cam.position.charAt(0).toUpperCase() + cam.position.slice(1) : cam.name;
-    html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${label}</button>`;
-  });
-  if (!html) {
-    cams.forEach(function(cam) {
-      const isActive  = cam.id === activeId && !gridMode;
-      const isOffline = !cam.connected;
-      let cls = 'cam-btn';
-      if (isActive)  cls += ' active';
-      if (isOffline) cls += ' offline';
-      html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
-    });
-  }
-  if (cams.length > 1) {
-    const gCls = 'grid-btn' + (gridMode ? ' active' : '');
-    html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
-  }
-  sel.innerHTML = html;
-});
+    function renderSelector(cams, activeId) {
+      const sel = document.getElementById('cameraSelector');
+      let html = '';
+      const posOrder = ['bow', 'stern', 'port', 'starboard'];
+      posOrder.forEach(function(pos) {
+        const cam = cams.find(function(c) { return c.position === pos; });
+        if (!cam) return;
+        const isActive  = cam.id === activeId && !gridMode;
+        const isOffline = !cam.connected;
+        let cls = 'cam-btn';
+        if (isActive)  cls += ' active';
+        if (isOffline) cls += ' offline';
+        const label = pos.charAt(0).toUpperCase() + pos.slice(1);
+        html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${label}</button>`;
+      });
       if (!html) {
         cams.forEach(function(cam) {
           const isActive  = cam.id === activeId && !gridMode;

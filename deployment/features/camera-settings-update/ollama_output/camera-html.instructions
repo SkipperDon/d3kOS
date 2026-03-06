@@ -1,6 +1,14 @@
-FIND_LINE: <div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
-END_LINE: <div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
+FIND_LINE:         <h2 class="section-header">📹 Camera Management</h2>
 ACTION: REPLACE
 CODE:
-<div style="margin: 20px 0;"><button onclick="window.location.href='/settings-data.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
+        <h2 class="section-header">📹 Camera Management</h2>
+        <div id="camera-cards-container">
+          <div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">Loading cameras...</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="window.location.href='/marine-vision.html'">
+            <span class="btn-icon">📹</span>
+            Open Marine Vision
+          </button>
+        </div>
 END_CODE
