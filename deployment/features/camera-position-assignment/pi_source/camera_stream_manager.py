@@ -93,30 +93,34 @@ def frame_grabber(cam_id):
     last_attempt    = 0
 
     while True:
-        cap = state['cap']
-        if cap and cap.isOpened():
-            ret, frame = cap.read()
-            if ret and frame is not None:
-                with state['lock']:
-                    state['frame']     = frame
-                    state['connected'] = True
+        try:
+            cap = state['cap']
+            if cap and cap.isOpened():
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    with state['lock']:
+                        state['frame']     = frame
+                        state['connected'] = True
+                else:
+                    state['connected'] = False
+                    now = time.time()
+                    if now - last_attempt > reconnect_delay:
+                        last_attempt = now
+                        try:
+                            cap.release()
+                        except Exception:
+                            pass
+                        state['cap'] = init_camera(cam_id)
+                time.sleep(0.033)   # ~30 FPS
             else:
                 state['connected'] = False
                 now = time.time()
                 if now - last_attempt > reconnect_delay:
                     last_attempt = now
-                    try:
-                        cap.release()
-                    except Exception:
-                        pass
                     state['cap'] = init_camera(cam_id)
-            time.sleep(0.033)   # ~30 FPS
-        else:
+                time.sleep(2)
+        except Exception:
             state['connected'] = False
-            now = time.time()
-            if now - last_attempt > reconnect_delay:
-                last_attempt = now
-                state['cap'] = init_camera(cam_id)
             time.sleep(2)
 
 
@@ -187,6 +191,8 @@ def camera_status():
         'recording':  recording_active,
         'service':    'd3kos-camera-stream',
         'port':       8084,
+        'status':     'online' if connected else 'offline',
+        'offline_reason': 'Camera unreachable — connect to boat network' if not connected else '',
     })
 
 
@@ -330,6 +336,30 @@ def switch_camera(cam_id):
     return jsonify({'ok': True, 'active_camera': active_id})
 
 
+@app.route('/camera/assign', methods=['POST'])
+def assign_camera_position():
+    data = request.get_json()
+    cam_id = data.get('camera_id')
+    position = data.get('position')
+    valid_positions = ['bow', 'stern', 'port', 'starboard', 'unassigned']
+    if position not in valid_positions:
+        return jsonify({'ok': False, 'error': 'invalid position'}), 400
+    with open(CAMERAS_CONFIG) as f:
+        config = json.load(f)
+    found = False
+    for cam in config['cameras']:
+        if cam['id'] == cam_id:
+            found = True
+        if cam.get('position') == position and position != 'unassigned':
+            cam['position'] = 'unassigned'
+    if not found:
+        return jsonify({'ok': False, 'error': 'camera not found'}), 404
+    for cam in config['cameras']:
+        if cam['id'] == cam_id:
+            cam['position'] = position
+    with open(CAMERAS_CONFIG, 'w') as f:
+        json.dump(config, f, indent=2)
+    return jsonify({'ok': True, 'camera_id': cam_id, 'position': position})
 @app.route('/camera/assign', methods=['POST'])
 def assign_camera_position():
     data = request.get_json()

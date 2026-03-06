@@ -238,7 +238,10 @@
     .recordings-list {
       max-height: 300px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       margin-top: 15px;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
     }
 
     .recording-item {
@@ -254,7 +257,15 @@
 
     .recording-name { font-size: 18px; color: #00CC00; }
     .recording-size { font-size: 16px; color: rgba(255,255,255,0.6); }
-  </style>
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
 </head>
 <body>
   <header>
@@ -381,21 +392,37 @@
         .catch(() => {});
     }
 
-    function renderSelector(cams, activeId) {
-      const sel = document.getElementById('cameraSelector');
-      let html = '';
-      const posOrder = ['bow', 'stern', 'port', 'starboard'];
-      posOrder.forEach(function(pos) {
-        const cam = cams.find(function(c) { return c.position === pos; });
-        if (!cam) return;
-        const isActive  = cam.id === activeId && !gridMode;
-        const isOffline = !cam.connected;
-        let cls = 'cam-btn';
-        if (isActive)  cls += ' active';
-        if (isOffline) cls += ' offline';
-        const label = pos.charAt(0).toUpperCase() + pos.slice(1);
-        html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${label}</button>`;
-      });
+function renderSelector(cams, activeId) {
+  const sel = document.getElementById('cameraSelector');
+  let html = '';
+  const posOrder = ['bow', 'stern', 'port', 'starboard'];
+  posOrder.forEach(function(pos) {
+    const cam = cams.find(function(c) { return c.position === pos; });
+    if (!cam) return;
+    const isActive  = cam.id === activeId && !gridMode;
+    const isOffline = !cam.connected;
+    let cls = 'cam-btn';
+    if (isActive)  cls += ' active';
+    if (isOffline) cls += ' offline';
+    const label = cam.position ? cam.position.charAt(0).toUpperCase() + cam.position.slice(1) : cam.name;
+    html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${label}</button>`;
+  });
+  if (!html) {
+    cams.forEach(function(cam) {
+      const isActive  = cam.id === activeId && !gridMode;
+      const isOffline = !cam.connected;
+      let cls = 'cam-btn';
+      if (isActive)  cls += ' active';
+      if (isOffline) cls += ' offline';
+      html += `<button class="${cls}" onclick="switchCamera('${cam.id}')">${cam.name}</button>`;
+    });
+  }
+  if (cams.length > 1) {
+    const gCls = 'grid-btn' + (gridMode ? ' active' : '');
+    html += `<button class="${gCls}" onclick="toggleGrid()">Grid View</button>`;
+  }
+  sel.innerHTML = html;
+});
       if (!html) {
         cams.forEach(function(cam) {
           const isActive  = cam.id === activeId && !gridMode;
@@ -643,5 +670,6 @@
         .catch(() => {});
     }
   </script>
+  <script src="/js/touch-scroll.js"></script>
 </body>
 </html>
