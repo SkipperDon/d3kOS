@@ -1,10 +1,150 @@
-FIND_LINE:           ip.textContent = data.camera_ip || 'Not configured';
-ACTION: INSERT_AFTER
-CODE:
-
-          // Update the camera IP in the settings panel
-          const settingsIp = document.getElementById('camera1-ip-setting');
-          if (settingsIp) {
-            settingsIp.textContent = data.camera_ip || 'Not configured';
+FIND_LINE:     function updateCameraStatus() {
+      fetch('/camera/list')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var container = document.getElementById('camera-cards-container');
+          if (!data.cameras || data.cameras.length === 0) {
+            container.innerHTML = '<div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">No cameras configured</div>';
+            return;
           }
+          var html = '';
+          data.cameras.forEach(function(cam) {
+            var connColor = cam.connected ? '#00CC00' : '#FF0000';
+            var connText  = cam.connected ? '✓ Connected' : '✗ Offline';
+            var activeLabel = cam.active ? ' <span style="color:#FFD700;font-size:18px;">(Active)</span>' : '';
+            var switchBtn = cam.active ? '' :
+              '<button onclick="switchCamera(\'' + cam.id + '\')" style="margin-top:12px;padding:10px 20px;background:#00CC00;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;">Set Active</button>';
+            html += '<div class="setting-card" style="margin-bottom:12px;">' +
+              '<div style="font-size:20px;font-weight:700;color:#00CC00;margin-bottom:8px;">' + cam.name + activeLabel + '</div>' +
+              '<div style="font-size:17px;color:rgba(255,255,255,0.7);">Model: ' + (cam.model || 'Reolink') + '</div>' +
+              '<div style="font-size:17px;color:rgba(255,255,255,0.7);">IP: ' + cam.ip + '</div>' +
+              '<div style="font-size:17px;color:' + connColor + ';">' + connText + '</div>' +
+              switchBtn +
+              '</div>';
+          });
+          container.innerHTML = html;
+        })
+        .catch(function(err) {
+          console.error('Failed to get camera list:', err);
+          document.getElementById('camera-cards-container').innerHTML =
+            '<div class="setting-card" style="color:#FF0000;padding:20px;">Camera service unavailable</div>';
+        });
+    }
+ACTION: REPLACE
+CODE:
+    function updateCameraStatus() {
+      fetch('/camera/list')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var container = document.getElementById('camera-cards-container');
+          if (!data.cameras || data.cameras.length === 0) {
+            container.innerHTML = '<div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">No cameras configured</div>';
+            return;
+          }
+          var html = '';
+          data.cameras.forEach(function(cam) {
+            var connColor = cam.connected ? '#00CC00' : '#FF0000';
+            var connText  = cam.connected ? '✓ Connected' : '✗ Offline';
+            var activeLabel = cam.active ? ' <span style="color:#FFD700;font-size:18px;">(Active)</span>' : '';
+            var switchBtn = cam.active ? '' :
+              '<button onclick="switchCamera(\'' + cam.id + '\')" style="margin-top:12px;padding:10px 20px;background:#00CC00;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;">Set Active</button>';
+            html += '<div class="setting-card" style="margin-bottom:12px;">' +
+              '<div style="font-size:20px;font-weight:700;color:#00CC00;margin-bottom:8px;">' + cam.name + activeLabel + '</div>' +
+              '<div style="font-size:17px;color:rgba(255,255,255,0.7);">Model: ' + (cam.model || 'Reolink') + '</div>' +
+              '<div style="font-size:17px;color:rgba(255,255,255,0.7);">IP: ' + cam.ip + '</div>' +
+              '<div style="font-size:17px;color:' + connColor + ';">' + connText + '</div>' +
+              switchBtn +
+              '</div>';
+          });
+          container.innerHTML = html;
+        })
+        .catch(function(err) {
+          console.error('Failed to get camera list:', err);
+          document.getElementById('camera-cards-container').innerHTML =
+            '<div class="setting-card" style="color:#FF0000;padding:20px;">Camera service unavailable</div>';
+        });
+    }
+
+    // New function to handle camera deletion
+    function deleteCamera(cameraId) {
+      if (!confirm('Are you sure you want to delete this camera?')) return;
+      
+      fetch('/camera/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: cameraId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateCameraStatus(); // Refresh the camera list
+        } else {
+          alert('Failed to delete camera: ' + data.error);
+        }
+      })
+      .catch(err => {
+        console.error('Delete camera error:', err);
+        alert('An error occurred while deleting the camera.');
+      });
+    }
+
+    // New function to switch active camera
+    function switchCamera(cameraId) {
+      fetch('/camera/switch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: cameraId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateCameraStatus(); // Refresh the camera list
+        } else {
+          alert('Failed to switch camera: ' + data.error);
+        }
+      })
+      .catch(err => {
+        console.error('Switch camera error:', err);
+        alert('An error occurred while switching the camera.');
+      });
+    }
+
+    // New function to add a new camera
+    function addCamera() {
+      const name = prompt('Enter camera name:');
+      if (!name) return;
+      
+      const ip = prompt('Enter camera IP address:');
+      if (!ip) return;
+      
+      const model = prompt('Enter camera model (default: Reolink):', 'Reolink');
+      
+      fetch('/camera/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          name: name,
+          ip: ip,
+          model: model || 'Reolink'
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateCameraStatus(); // Refresh the camera list
+        } else {
+          alert('Failed to add camera: ' + data.error);
+        }
+      })
+      .catch(err => {
+        console.error('Add camera error:', err);
+        alert('An error occurred while adding the camera.');
+      });
+    }
 END_CODE

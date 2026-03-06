@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>d3kOS — Language Selection</title>
+  <!--
+    d3kOS Language Selection Page
+    ─────────────────────────────────────────────────────────────────────────
+    SERVED BY:  Flask settings service — port 8101
+    URL:        http://localhost:8101/language
+    FILE PATH:  /opt/d3kos/ui/language-menu.html
+    API DEPS:   GET  http://localhost:8101/api/language
+                POST http://localhost:8101/api/language  { "language": "fr" }
+                GET  http://localhost:8101/api/i18n/<lang_code>
+    ─────────────────────────────────────────────────────────────────────────
+    CRITICAL: All fetch() calls go through Flask on localhost:8101.
+    NEVER use filesystem paths (file:// or /opt/...) — Chromium blocks them.
+    ─────────────────────────────────────────────────────────────────────────
+    Design system — MASTER_SYSTEM_SPEC.md:
+      Background #000000 | Text #FFFFFF | Accent #00CC00
+      Warning #FFA500 | Critical #FF0000
+      Min font 22px | Buttons 24px bold
+      Touch targets 120x80px min | AODA WCAG 2.1 AA
+  -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #000000;
+      --surface: #111111;
+      --border:  #333333;
+      --text:    #FFFFFF;
+      --muted:   #888888;
+      --accent:  #00CC00;
+      --warning: #FFA500;
+      --crit:    #FF0000;
+      --hover:   #001a00;
+      --active:  #003300;
+      --focus:   3px solid #00CC00;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 22px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      gap: 32px;
+    }
+
+    /* LOADING */
+    .loading-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px;
+      z-index: 999;
+    }
+    .loading-screen.hidden { display: none; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ERROR BANNER */
+    .error-banner {
+      background: #1a0000;
+      border: 2px solid var(--crit);
+      border-left: 4px solid var(--crit);
+      border-radius: 4px;
+      padding: 14px 20px;
+      font-size: 20px;
+      color: var(--crit);
+      max-width: 900px; width: 100%;
+      display: none;
+    }
+    .error-banner.show { display: block; }
+
+    /* HEADER */
+    .header { text-align: center; }
+    .d3k-logo { font-size: 14px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+    .header h1 { font-size: 32px; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; text-transform: uppercase; }
+    .header p  { font-size: 22px; color: var(--muted); margin-top: 8px; }
+
+    /* NOTICE */
+    .notice {
+      background: #001100;
+      border: 1px solid var(--accent); border-left: 4px solid var(--accent);
+      border-radius: 4px; padding: 12px 20px;
+      font-size: 20px; color: var(--accent);
+      max-width: 900px; width: 100%; text-align: center;
+    }
+
+    /* LANGUAGE GRID */
+    .lang-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px; max-width: 1100px; width: 100%;
+    }
+
+    .lang-btn {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--surface);
+      border: 2px solid var(--border); border-radius: 6px;
+      padding: 16px 20px; min-height: 80px;
+      cursor: pointer;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 24px; font-weight: 700; color: var(--text);
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .lang-btn:hover, .lang-btn:focus {
+      background: var(--hover); border-color: var(--accent); outline: none;
+    }
+    .lang-btn:focus { outline: var(--focus); outline-offset: 2px; }
+    .lang-btn.active { background: var(--active); border-color: var(--accent); color: var(--accent); }
+
+    .lang-btn .flag   { font-size: 32px; flex-shrink: 0; }
+    .lang-btn .info   { flex: 1; }
+    .lang-btn .name   { display: block; font-size: 24px; font-weight: 700; }
+    .lang-btn .region { display: block; font-size: 17px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+    .lang-btn.active .region { color: #00aa00; }
+    .lang-btn .code-tag { font-size: 16px; letter-spacing: 0.1em; color: var(--muted); font-weight: 400; align-self: flex-start; }
+    .lang-btn.active .code-tag { color: var(--accent); }
+
+    .lang-btn .check {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border); border-radius: 4px;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .lang-btn.active .check { background: var(--accent); border-color: var(--accent); }
+    .lang-btn.active .check::after {
+      content: ''; width: 8px; height: 13px;
+      border-right: 3px solid #000; border-bottom: 3px solid #000;
+      transform: rotate(45deg) translate(-1px,-1px); display: block;
+    }
+
+    /* CONFIRM BAR */
+    .confirm-bar {
+      max-width: 1100px; width: 100%;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 20px; flex-wrap: wrap;
+    }
+    .selected-label { font-size: 22px; color: var(--muted); }
+    .selected-label span { color: var(--accent); font-weight: 700; }
+
+    .btn-group { display: flex; gap: 16px; }
+
+    .confirm-btn {
+      background: var(--accent); color: #000;
+      border: none; border-radius: 6px;
+      padding: 16px 40px; min-height: 80px; min-width: 220px;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 24px; font-weight: 700; cursor: pointer;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .confirm-btn:hover:not(:disabled) { background: #00ff00; }
+    .confirm-btn:focus { outline: var(--focus); outline-offset: 3px; }
+    .confirm-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .back-btn {
+      background: transparent; color: var(--muted);
+      border: 2px solid var(--border); border-radius: 6px;
+      padding: 16px 30px; min-height: 80px;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 22px; font-weight: 400; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .back-btn:hover { border-color: var(--muted); color: var(--text); }
+
+    /* STATUS */
+    .status-msg {
+      font-size: 22px; padding: 16px 24px; border-radius: 6px;
+      max-width: 1100px; width: 100%; text-align: center;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .status-msg.show   { opacity: 1; }
+    .status-msg.success { background: #001a00; border: 2px solid var(--accent); color: var(--accent); }
+    .status-msg.saving  { background: #1a1100; border: 2px solid var(--warning); color: var(--warning); }
+
+    /* API STATUS */
+    .api-status { font-size: 16px; color: var(--muted); text-align: right; max-width: 1100px; width: 100%; }
+    .api-status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+    .api-status.online .dot  { background: var(--accent); }
+    .api-status.offline .dot { background: var(--crit); }
+
+    /* DEMO PANEL */
+    .demo-panel {
+      max-width: 1100px; width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border); border-top: 3px solid var(--accent);
+      border-radius: 6px; padding: 24px 28px;
+    }
+    .demo-panel h3 { font-size: 20px; color: var(--muted); font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; }
+    .demo-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .demo-item { background: #0a0a0a; border: 1px solid var(--border); border-radius: 4px; padding: 14px 18px; }
+    .demo-item .demo-key { font-size: 16px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+    .demo-item .demo-val { font-size: 22px; color: var(--accent); font-weight: 500; transition: opacity 0.2s; }
+    .demo-val.fade { opacity: 0; }
+
+    @media (max-width: 600px) {
+      .lang-grid   { grid-template-columns: 1fr; }
+      .demo-row    { grid-template-columns: 1fr; }
+      .confirm-bar { flex-direction: column; align-items: stretch; }
+      .btn-group   { flex-direction: column; }
+      .confirm-btn, .back-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Loading language settings...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-banner" id="errorBanner" role="alert">
+    ⚠ Cannot reach d3kOS settings service (port 8101). Running in read-only mode.
+    Check: <strong>systemctl status d3kos-settings</strong>
+  </div>
+
+  <div class="header">
+    <div class="d3k-logo">d3kOS v2.0 — Marine Intelligence Operating System</div>
+    <h1>Select Language</h1>
+    <p>Choose your preferred interface language</p>
+  </div>
+
+  <div class="notice">⚓ 18 languages — selected for global pleasure boating markets</div>
+
+  <div class="lang-grid" id="langGrid" role="listbox" aria-label="Language selection"></div>
+
+  <div class="confirm-bar">
+    <div class="selected-label">Selected: <span id="selectedName">English</span></div>
+    <div class="btn-group">
+      <button class="back-btn" id="backBtn">← Back</button>
+      <button class="confirm-btn" id="confirmBtn">CONFIRM ✓</button>
+    </div>
+  </div>
+
+  <div class="status-msg" id="statusMsg" role="status" aria-live="polite"></div>
+  <div class="api-status" id="apiStatus"><span class="dot"></span>Checking settings service...</div>
+
+  <div class="demo-panel">
+    <h3>Live d3kOS UI Preview</h3>
+    <div class="demo-row">
+      <div class="demo-item"><div class="demo-key">Dashboard</div><div class="demo-val" id="t-dashboard">Dashboard</div></div>
+      <div class="demo-item"><div class="demo-key">Engine Status</div><div class="demo-val" id="t-engine">Engine Status</div></div>
+      <div class="demo-item"><div class="demo-key">Voice Wake Word</div><div class="demo-val" id="t-helm">Helm</div></div>
+      <div class="demo-item"><div class="demo-key">Boat Log</div><div class="demo-val" id="t-log">Boat Log</div></div>
+      <div class="demo-item"><div class="demo-key">Settings</div><div class="demo-val" id="t-settings">Settings</div></div>
+      <div class="demo-item"><div class="demo-key">⚠ High Temp Alert</div><div class="demo-val" id="t-alert">⚠ High Engine Temperature</div></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── CONFIG ───────────────────────────────────────────────────────────
+    // IMPORTANT: All API calls must go through Flask on localhost:8101.
+    // Chromium running on the Pi 4B cannot fetch() local filesystem paths.
+    const API_BASE = 'http://localhost:8101';
+    const DASHBOARD_URL = 'http://localhost:1880/dashboard';
+
+    // ─── LANGUAGE MANIFEST ────────────────────────────────────────────────
+    const languages = [
+      { code:'en', nativeName:'English',    flag:'🇬🇧', region:'USA · UK · Australia · NZ',         dir:'ltr' },
+      { code:'fr', nativeName:'Français',   flag:'🇫🇷', region:'France · Côte d\'Azur · Caribbean', dir:'ltr' },
+      { code:'it', nativeName:'Italiano',   flag:'🇮🇹', region:'Italy · Amalfi · Sicily',           dir:'ltr' },
+      { code:'es', nativeName:'Español',    flag:'🇪🇸', region:'Spain · Balearics · Latin America', dir:'ltr' },
+      { code:'el', nativeName:'Ελληνικά',   flag:'🇬🇷', region:'Greece · Aegean · Ionian',          dir:'ltr' },
+      { code:'hr', nativeName:'Hrvatski',   flag:'🇭🇷', region:'Croatia · Dalmatian Coast',         dir:'ltr' },
+      { code:'tr', nativeName:'Türkçe',     flag:'🇹🇷', region:'Turkey · Turquoise Coast',          dir:'ltr' },
+      { code:'de', nativeName:'Deutsch',    flag:'🇩🇪', region:'Germany · Austria · Switzerland',   dir:'ltr' },
+      { code:'nl', nativeName:'Nederlands', flag:'🇳🇱', region:'Netherlands · Belgium',             dir:'ltr' },
+      { code:'sv', nativeName:'Svenska',    flag:'🇸🇪', region:'Sweden · Archipelago',              dir:'ltr' },
+      { code:'no', nativeName:'Norsk',      flag:'🇳🇴', region:'Norway · Fjords',                   dir:'ltr' },
+      { code:'da', nativeName:'Dansk',      flag:'🇩🇰', region:'Denmark · Baltic Sea',              dir:'ltr' },
+      { code:'fi', nativeName:'Suomi',      flag:'🇫🇮', region:'Finland · Lake District',           dir:'ltr' },
+      { code:'pt', nativeName:'Português',  flag:'🇵🇹', region:'Portugal · Brazil · Atlantic Is.',  dir:'ltr' },
+      { code:'ar', nativeName:'العربية',    flag:'🇦🇪', region:'UAE · Qatar · Oman · Red Sea',      dir:'rtl' },
+      { code:'zh', nativeName:'中文',        flag:'🇨🇳', region:'China · Hong Kong · Taiwan',        dir:'ltr' },
+      { code:'ja', nativeName:'日本語',      flag:'🇯🇵', region:'Japan · Inland Sea · Pacific',      dir:'ltr' },
+      { code:'uk', nativeName:'Українська', flag:'🇺🇦', region:'Black Sea · Odessa · Diaspora',     dir:'ltr' },
+    ];
+
+    // ─── ENGLISH FALLBACK (used if Flask API is offline) ─────────────────
+    const FALLBACK = {
+      dashboard:'Dashboard', engine_status:'Engine Status',
+      voice_wake:'Helm',     boat_log:'Boat Log',
+      settings:'Settings',   alert_high_temp:'⚠ High Engine Temperature'
+    };
+
+    // ─── STATE ────────────────────────────────────────────────────────────
+    let currentLang    = 'en';
+    let currentStrings = { ...FALLBACK };
+    let apiOnline      = false;
+
+    // ─── INIT ─────────────────────────────────────────────────────────────
+    async function init() {
+      try {
+        const res = await fetch(`${API_BASE}/api/language`, { signal: AbortSignal.timeout(3000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        currentLang = data.language || 'en';
+        apiOnline = true;
+        setApiStatus(true);
+        await loadTranslation(currentLang);
+      } catch (err) {
+        console.warn('Settings API unavailable:', err.message);
+        setApiStatus(false);
+        document.getElementById('errorBanner').classList.add('show');
+      }
+      buildGrid();
+      document.getElementById('selectedName').textContent =
+        languages.find(l => l.code === currentLang)?.nativeName || 'English';
+      document.getElementById('loadingScreen').classList.add('hidden');
+    }
+
+    // ─── LOAD TRANSLATIONS FROM FLASK API ────────────────────────────────
+    // Fetches /opt/d3kos/config/i18n/<code>.json via Flask endpoint.
+    // Flask reads the file server-side and returns it — Chromium cannot
+    // access the filesystem directly.
+    async function loadTranslation(code) {
+      try {
+        const res = await fetch(`${API_BASE}/api/i18n/${code}`, { signal: AbortSignal.timeout(3000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        currentStrings = {
+          dashboard:       data.ui?.dashboard      || FALLBACK.dashboard,
+          engine_status:   data.ui?.engine_status  || FALLBACK.engine_status,
+          voice_wake:      data.ui?.voice_wake      || FALLBACK.voice_wake,
+          boat_log:        data.ui?.boat_log        || FALLBACK.boat_log,
+          settings:        data.ui?.settings        || FALLBACK.settings,
+          alert_high_temp: data.alerts?.high_temp   || FALLBACK.alert_high_temp,
+        };
+      } catch {
+        currentStrings = { ...FALLBACK };
+      }
+      updatePreview();
+    }
+
+    // ─── BUILD GRID ───────────────────────────────────────────────────────
+    function buildGrid() {
+      const grid = document.getElementById('langGrid');
+      grid.innerHTML = '';
+      languages.forEach(lang => {
+        const btn = document.createElement('button');
+        btn.className = 'lang-btn' + (lang.code === currentLang ? ' active' : '');
+        btn.setAttribute('role', 'option');
+        btn.setAttribute('aria-selected', String(lang.code === currentLang));
+        btn.setAttribute('aria-label', `${lang.nativeName} — ${lang.region}`);
+        btn.dataset.code = lang.code;
+        btn.innerHTML = `
+          <span class="flag" aria-hidden="true">${lang.flag}</span>
+          <span class="info">
+            <span class="name">${lang.nativeName}</span>
+            <span class="region">${lang.region}</span>
+          </span>
+          <span class="code-tag">${lang.code.toUpperCase()}</span>
+          <span class="check" aria-hidden="true"></span>
+        `;
+        btn.addEventListener('click', () => selectLang(lang));
+        grid.appendChild(btn);
+      });
+    }
+
+    // ─── SELECT LANGUAGE ──────────────────────────────────────────────────
+    async function selectLang(lang) {
+      currentLang = lang.code;
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        const on = b.dataset.code === lang.code;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      document.getElementById('selectedName').textContent = lang.nativeName;
+      document.documentElement.dir  = lang.dir;
+      document.documentElement.lang = lang.code;
+      document.getElementById('statusMsg').classList.remove('show');
+      if (apiOnline) await loadTranslation(lang.code);
+    }
+
+    // ─── UPDATE PREVIEW PANEL ─────────────────────────────────────────────
+    function updatePreview() {
+      document.querySelectorAll('.demo-val').forEach(el => el.classList.add('fade'));
+      setTimeout(() => {
+        document.getElementById('t-dashboard').textContent = currentStrings.dashboard;
+        document.getElementById('t-engine').textContent    = currentStrings.engine_status;
+        document.getElementById('t-helm').textContent      = currentStrings.voice_wake;
+        document.getElementById('t-log').textContent       = currentStrings.boat_log;
+        document.getElementById('t-settings').textContent  = currentStrings.settings;
+        document.getElementById('t-alert').textContent     = currentStrings.alert_high_temp;
+        document.querySelectorAll('.demo-val').forEach(el => el.classList.remove('fade'));
+      }, 200);
+    }
+
+    // ─── CONFIRM & SAVE ───────────────────────────────────────────────────
+    document.getElementById('confirmBtn').addEventListener('click', async () => {
+      const lang   = languages.find(l => l.code === currentLang);
+      const status = document.getElementById('statusMsg');
+      const btn    = document.getElementById('confirmBtn');
+
+      btn.disabled = true;
+      status.textContent = '⏳ Saving language preference...';
+      status.className   = 'status-msg saving show';
+
+      if (!apiOnline) {
+        status.textContent = `⚠ API offline. Set manually: edit /opt/d3kos/config/onboarding.json → "language": "${lang.code}"`;
+        status.className   = 'status-msg saving show';
+        btn.disabled = false;
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/language`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ language: lang.code, dir: lang.dir }),
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        status.textContent = `✓ Language set to ${lang.nativeName} (${lang.code.toUpperCase()}) — reloading...`;
+        status.className   = 'status-msg success show';
+        setTimeout(() => { window.location.href = DASHBOARD_URL; }, 2500);
+
+      } catch (err) {
+        status.textContent = `⚠ Save failed: ${err.message}`;
+        status.className   = 'status-msg saving show';
+        btn.disabled = false;
+      }
+    });
+
+    // ─── BACK BUTTON ──────────────────────────────────────────────────────
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = DASHBOARD_URL;
+    });
+
+    // ─── API STATUS ───────────────────────────────────────────────────────
+    function setApiStatus(online) {
+      const el = document.getElementById('apiStatus');
+      el.className = `api-status ${online ? 'online' : 'offline'}`;
+      el.innerHTML = `<span class="dot"></span>${online
+        ? 'Settings service connected — port 8101'
+        : 'Settings service offline — read-only mode'}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

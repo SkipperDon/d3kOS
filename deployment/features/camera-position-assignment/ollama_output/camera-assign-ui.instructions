@@ -1,74 +1,26 @@
-    // Camera Management Functions
-    var POSITIONS = ['bow', 'stern', 'port', 'starboard'];
-
-    function positionLabel(pos) {
-      if (!pos || pos === 'unassigned') return 'Unassigned';
-      return pos.charAt(0).toUpperCase() + pos.slice(1);
-    }
-
-    function assignPosition(camId, position) {
-      fetch('/camera/assign', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({camera_id: camId, position: position})
-      })
-        .then(function(r) { return r.json(); })
-        .then(function() { updateCameraStatus(); })
-        .catch(function(err) { console.error('Assign failed:', err); });
-    }
-
-    function renderAssignButtons(camId) {
-      return POSITIONS.map(function(pos) {
-        return '<button onclick="assignPosition(\'' + camId + '\',\'' + pos + '\')" ' +
-          'style="margin:4px;padding:8px 14px;background:#333;color:#fff;border:1px solid #555;' +
-          'border-radius:6px;font-size:16px;cursor:pointer;">' +
-          positionLabel(pos) + '</button>';
-      }).join('') +
-      '<button onclick="assignPosition(\'' + camId + '\',\'unassigned\')" ' +
-        'style="margin:4px;padding:8px 14px;background:#333;color:#888;border:1px solid #444;' +
-        'border-radius:6px;font-size:16px;cursor:pointer;">Clear</button>';
-    }
-
-    function updateCameraStatus() {
-      fetch('/camera/list')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          var container = document.getElementById('camera-cards-container');
-          if (!data.cameras || data.cameras.length === 0) {
-            container.innerHTML = '<div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">No cameras configured</div>';
-            return;
-          }
-          var html = '';
-          data.cameras.forEach(function(cam) {
-            var connColor = cam.connected ? '#00CC00' : '#FF0000';
-            var connText  = cam.connected ? '✓ Connected' : '✗ Offline';
-            var activeLabel = cam.active ? ' <span style="color:#FFD700;font-size:18px;">(Active)</span>' : '';
-            var posLabel = positionLabel(cam.position);
-            var posColor = (!cam.position || cam.position === 'unassigned') ? '#FF8800' : '#00CC00';
-            var switchBtn = cam.active ? '' :
-              '<button onclick="switchCamera(\'' + cam.id + '\')" style="margin-top:8px;margin-right:8px;padding:10px 20px;background:#00CC00;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;">Set Active</button>';
-            html += '<div class="setting-card" style="margin-bottom:12px;">' +
-              '<div style="font-size:20px;font-weight:700;color:#00CC00;margin-bottom:8px;">' + cam.name + activeLabel + '</div>' +
-              '<div style="font-size:17px;color:rgba(255,255,255,0.7);">Model: ' + (cam.model || 'Reolink') + '</div>' +
-              '<div style="font-size:17px;color:rgba(255,255,255,0.7);">IP: ' + cam.ip + '</div>' +
-              '<div style="font-size:17px;color:' + connColor + ';">' + connText + '</div>' +
-              '<div style="font-size:17px;color:' + posColor + ';margin-top:8px;">Position: ' + posLabel + '</div>' +
-              '<div style="margin-top:10px;">' + renderAssignButtons(cam.id) + '</div>' +
-              switchBtn +
-              '</div>';
-          });
-          container.innerHTML = html;
-        })
-        .catch(function(err) {
-          console.error('Failed to get camera list:', err);
-          document.getElementById('camera-cards-container').innerHTML =
-            '<div class="setting-card" style="color:#FF0000;padding:20px;">Camera service unavailable</div>';
-        });
-    }
-
-    function switchCamera(camId) {
-      fetch('/camera/switch/' + camId, { method: 'POST' })
-        .then(function(r) { return r.json(); })
-        .then(function() { updateCameraStatus(); })
-        .catch(function(err) { console.error('Switch failed:', err); });
-    }
+function updateCameraStatus() {
+  fetch('/camera/status')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      const container = document.getElementById('camera-grid');
+      container.innerHTML = '';
+      data.cameras.forEach(cam => {
+        const camEl = document.createElement('div');
+        camEl.className = 'camera-card';
+        camEl.innerHTML = `
+          <h3>${cam.name}</h3>
+          <p>Position: ${cam.position || 'Unassigned'}</p>
+          <button onclick="switchCamera('${cam.id}')">Switch</button>
+          <select onchange="assignPosition('${cam.id}', this.value)">
+            <option value="">Assign...</option>
+            <option value="bow">Bow</option>
+            <option value="stern">Stern</option>
+            <option value="port">Port</option>
+            <option value="starboard">Starboard</option>
+          </select>
+        `;
+        container.appendChild(camEl);
+      });
+    })
+    .catch(function(err) { console.error('Status failed:', err); });
+}
