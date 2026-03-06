@@ -1051,8 +1051,8 @@
 
 ### 1. QR Code URL Update
 
-- [ ] Update onboarding wizard QR to encode: `https://atmyboat.com/register?device=[INSTALLATION_ID]&tier=t0&version=[FIRMWARE]`
-- [ ] Confirm `INSTALLATION_ID` generated on first boot and persisted to `/opt/d3kos/config/device.json`
+- [✅] Update onboarding wizard QR to encode: `https://atmyboat.com/register?device=[INSTALLATION_ID]&tier=t0&version=[FIRMWARE]`
+- [✅] Confirm `INSTALLATION_ID` generated on first boot and persisted to `/opt/d3kos/config/device.json`
 
 ### 2. Registration Handshake Endpoint (Port 8091)
 
@@ -1063,31 +1063,31 @@
 
 ### 3. cloud-credentials.json
 
-- [ ] New file `/opt/d3kos/config/cloud-credentials.json` — T1+ only, not created on T0 (offline by design)
+- [✅] New file `/opt/d3kos/config/cloud-credentials.json` — T1+ only, not created on T0 (offline by design)
 - [✅] Schema: `{boat_uuid, device_api_key, supabase_url, supabase_anon_key, webhook_url, tier}`
-- [ ] `chmod 600` — API key file, readable by d3kos user only
+- [✅] `chmod 600` — API key file, readable by d3kos user only
 - [✅] Added to `.gitignore`
 
 ### 4. Node-RED Telemetry Push Flow
 
 - [✅] New Node-RED flow `d3kOS-cloud-telemetry-push`
-- [ ] Checks for `cloud-credentials.json` on startup — absent = flow inactive (T0 safe)
-- [ ] `POST https://atmyboat.com/api/telemetry/push` every 60 seconds, `Authorization: Bearer [device_api_key]`
-- [ ] Payload: RPM, coolant temp, fuel level, battery volts, GPS lat/lon/speed, firmware version, uptime
+- [✅] Checks for `cloud-credentials.json` on startup — absent = flow inactive (T0 safe)
+- [✅] `POST https://atmyboat.com/api/telemetry/push` every 60 seconds, `Authorization: Bearer [device_api_key]`
+- [✅] Payload: RPM, coolant temp, fuel level, battery volts, GPS lat/lon/speed, firmware version, uptime
 - [✅] SQLite offline buffer (JSONL append at telemetry-buffer.jsonl) `/opt/d3kos/data/telemetry-buffer.db` — queues offline, flushes on reconnect
 
 ### 5. Alarm Webhook Flow
 
 - [✅] New Node-RED flow `d3kOS-alarm-webhook`
 - [✅] Fires on WARNING or CRITICAL engine/system alerts
-- [ ] `POST https://atmyboat.com/api/notify` with `device_api_key` auth
+- [✅] `POST https://atmyboat.com/api/notify` with `device_api_key` auth
 - [✅] Payload: `{alert_type, severity, value, threshold, timestamp}`
 - [✅] Only active when `cloud-credentials.json` exists (T0 safe)
 
 ### 6. Force Password Change (Security — EU CRA / NIST)
 
 - [✅] Onboarding wizard: detect if Pi password is still default (`step-password` shown before step1) `pi`
-- [ ] Block wizard progression until password changed — call `passwd` from wizard UI
+- [✅] Block wizard progression until password changed — call `passwd` from wizard UI
 - [✅] Store `password_changed: true` in `onboarding.json` once confirmed
 
 **Deliverable:** Pi fully cloud-ready. T0 devices unaffected. T1+ register via website and push telemetry automatically.
