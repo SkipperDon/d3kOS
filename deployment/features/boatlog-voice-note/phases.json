@@ -1,0 +1,12 @@
+[
+  {
+    "name": "voice-note-js",
+    "source_file": "boatlog.html",
+    "spec_section": "PHASE 1: REPLACE recordVoiceNote PLACEHOLDER — voice-note-js",
+    "keywords": ["recordVoiceNote", "btn-voice-note", "MediaRecorder", "voice-note"],
+    "replace_exact": true,
+    "find_line": "    function recordVoiceNote() {",
+    "end_line": "    }",
+    "action": "REPLACE"
+  }
+]
