@@ -8,14 +8,14 @@ from ultralytics import YOLO
 
 # Training configuration
 EPOCHS = 100  # Number of training cycles
-BATCH_SIZE = 16  # Images per batch
+BATCH_SIZE = 8   # Safe for 8GB VRAM — prevents out-of-memory crash
 IMAGE_SIZE = 640  # Input image size
 
 # Dataset path - EXACT location
-DATASET_PATH = r"C:\Users\donmo\Downloads\forward-watch-complete\data.yaml"
+DATASET_PATH = r"C:\Users\donmo\Downloads\forward-watch-dataset\forward-watch-dataset\data.yaml"
 
 # Output directory
-OUTPUT_DIR = r"C:\Users\donmo\Downloads\forward-watch-complete\output"
+OUTPUT_DIR = r"C:\Users\donmo\Downloads\forward-watch-dataset\forward-watch-dataset\output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 print("=" * 60)
