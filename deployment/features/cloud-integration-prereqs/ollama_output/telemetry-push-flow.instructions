@@ -1,0 +1,18 @@
+FIND_LINE:     "id": "build-telemetry",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Build telemetry payload",
+    "func": "var fs = global.get('fs') || require('fs');\nvar path = '/opt/d3kos/config/cloud-credentials.json';\ntry {\n  if (!fs.existsSync(path)) { msg.skip = true; return msg; }\n  msg.credentials = JSON.parse(fs.readFileSync(path, 'utf8'));\n  msg.skip = false;\n} catch(e) {\n  msg.skip = true;\n}\nreturn msg;",
+    "outputs": 1,
+    "wires": [["send-telemetry"]]
+END_LINE:     "wires": [["send-telemetry"]]
+ACTION: REPLACE
+CODE:
+    "id": "build-telemetry",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Build telemetry payload",
+    "func": "var fs = global.get('fs') || require('fs');\nvar path = '/opt/d3kos/config/cloud-credentials.json';\ntry {\n  if (!fs.existsSync(path)) { msg.skip = true; return msg; }\n  msg.credentials = JSON.parse(fs.readFileSync(path, 'utf8'));\n  msg.skip = false;\n} catch(e) {\n  msg.skip = true;\n}\n\n// Add telemetry data from Signal K\nif (msg.payload && msg.payload.vessels) {\n  var vessel = msg.payload.vessels['self'];\n  if (vessel) {\n    // Extract key telemetry fields\n    msg.telemetry = {\n      timestamp: new Date().toISOString(),\n      // Basic vessel info\n      name: vessel.name || 'Unknown',\n      // Navigation data\n      position: vessel.navigation && vessel.navigation.position ? {\n        latitude: vessel.navigation.position.latitude,\n        longitude: vessel.navigation.position.longitude\n      } : null,\n      speed: vessel.navigation && vessel.navigation.speedOverGround ? vessel.navigation.speedOverGround : null,\n      heading: vessel.navigation && vessel.navigation.courseOverGroundTrue ? vessel.navigation.courseOverGroundTrue : null,\n      // Engine data\n      engine: {\n        rpm: vessel.propulsion && vessel.propulsion['0'] && vessel.propulsion['0'].revolutions ? vessel.propulsion['0'].revolutions : null,\n        temperature: vessel.propulsion && vessel.propulsion['0'] && vessel.propulsion['0'].temperature ? vessel.propulsion['0'].temperature : null,\n        oilPressure: vessel.propulsion && vessel.propulsion['0'] && vessel.propulsion['0'].oilPressure ? vessel.propulsion['0'].oilPressure : null\n      },\n      // Battery data\n      battery: {\n        voltage: vessel.battery && vessel.battery.voltage ? vessel.battery.voltage : null,\n        current: vessel.battery && vessel.battery.current ? vessel.battery.current : null\n      },\n      // Fuel data\n      fuel: {\n        level: vessel.fuel && vessel.fuel.level ? vessel.fuel.level : null,\n        consumption: vessel.fuel && vessel.fuel.consumption ? vessel.fuel.consumption : null\n      }\n    };\n  }\n}\n\nreturn msg;",
+    "outputs": 1,
+    "wires": [["send-telemetry"]]
+END_CODE

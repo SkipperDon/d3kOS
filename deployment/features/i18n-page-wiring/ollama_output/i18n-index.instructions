@@ -1,0 +1,226 @@
+FIND_LINE: <link rel="stylesheet" href="/d3kos-touch.css">
+ACTION: REPLACE
+CODE:
+<link rel="stylesheet" href="/d3kos-touch.css">
+  <style>
+    /* === MASTER_SYSTEM_SPEC.md Section 5.1.2 Visual Design === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --color-bg: #000;
+      --color-text: #fff;
+      --color-accent: #00cc00;
+      --color-disabled: #333;
+      --font-main: 'Roboto', sans-serif;
+      --font-size-base: 20px;
+      --font-size-button: 18px;
+      --button-height: 80px;
+      --button-width: 80px;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-size: var(--font-size-base);
+      line-height: 1.4;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      flex-grow: 1;
+    }
+
+    /* Main Menu Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .menu-button {
+      height: var(--button-height);
+      width: var(--button-width);
+      background-color: rgba(51, 51, 51, 0.3);
+      border: 2px solid var(--color-accent);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .menu-button:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      border-color: var(--color-accent);
+      transform: translateY(-2px);
+    }
+
+    .menu-button:active {
+      transform: translateY(0);
+    }
+
+    .menu-button:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 4px;
+    }
+
+    .menu-button:disabled {
+      border-color: var(--color-disabled);
+      color: var(--color-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .menu-button:disabled:hover {
+      transform: none;
+      background-color: var(--color-bg);
+    }
+
+    .menu-button svg {
+      width: 48px;
+      height: 48px;
+      fill: var(--color-text);
+      flex-shrink: 0;
+    }
+
+    .menu-button:hover svg {
+      fill: var(--color-accent);
+    }
+
+    .menu-button:disabled svg {
+      fill: var(--color-disabled);
+    }
+
+    .button-label {
+      font-size: var(--font-button);
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* Empty space for future button */
+    .empty-space {
+      border: 2px dashed var(--color-disabled);
+      opacity: 0.3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--color-disabled);
+    }
+
+    /* Footer */
+    footer {
+      padding: 16px 20px;
+      border-top: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .footer-button {
+      padding: 12px 24px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .footer-button:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+    }
+
+    .footer-button:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .status-text {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .menu-button {
+        height: 70px;
+        width: 70px;
+      }
+
+      .button-label {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-button {
+        height: 90px;
+        width: 90px;
+      }
+    }
+
+    /* Animations */
+    @keyframes blink {
+      0%, 60%, 100% { opacity: 0.2; }
+      30% { opacity: 1; }
+    }
+
+    .typing-dots span {
+      animation: blink 1.4s infinite;
+      animation-fill-mode: both;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+  </style>
+END_CODE

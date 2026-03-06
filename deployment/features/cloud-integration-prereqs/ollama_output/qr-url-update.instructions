@@ -1,0 +1,28 @@
+FIND_LINE:   <title>Engine Dashboard - d3kOS</title>
+END_LINE: </head>
+ACTION: INSERT_AFTER
+CODE:
+<script>
+  // Ensure qrData includes device, tier, and version parameters
+  let qrData = '';
+
+  function generateQR() {
+    const installationId = localStorage.getItem('installation_id') || 'unknown';
+    const device = 'raspberry-pi';
+    const tier = 'standard';
+    const version = '1.0.0';
+    const baseUrl = window.location.origin;
+    qrData = `${baseUrl}/register?device=${device}&tier=${tier}&version=${version}&id=${installationId}`;
+    
+    new QRCode(document.getElementById("qrcode"), {
+      text: qrData,
+      width: 256,
+      height: 256,
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  // Call generateQR on page load
+  window.onload = generateQR;
+</script>
+END_CODE

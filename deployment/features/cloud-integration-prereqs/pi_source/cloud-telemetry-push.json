@@ -1,0 +1,102 @@
+[
+  {
+    "id": "d3kos-cloud-telemetry-tab",
+    "type": "tab",
+    "label": "d3kOS Cloud Telemetry Push",
+    "disabled": false,
+    "info": "Pushes telemetry to atmyboat.com every 60s. Silent no-op when cloud-credentials.json is absent (T0 safe)."
+  },
+  {
+    "id": "inject-60s",
+    "type": "inject",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Every 60s",
+    "props": [],
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "10",
+    "topic": "",
+    "wires": [["check-credentials"]]
+  },
+  {
+    "id": "check-credentials",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Check cloud-credentials.json",
+    "func": "var fs = global.get('fs') || require('fs');\nvar path = '/opt/d3kos/config/cloud-credentials.json';\ntry {\n  if (!fs.existsSync(path)) { msg.skip = true; return msg; }\n  msg.credentials = JSON.parse(fs.readFileSync(path, 'utf8'));\n  msg.skip = false;\n} catch(e) {\n  msg.skip = true;\n}\nreturn msg;",
+    "outputs": 1,
+    "wires": [["skip-switch"]]
+  },
+  {
+    "id": "skip-switch",
+    "type": "switch",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Skip if not linked",
+    "property": "skip",
+    "propertyType": "msg",
+    "rules": [{"t": "false"}],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "wires": [["fetch-signalk"]]
+  },
+  {
+    "id": "fetch-signalk",
+    "type": "http request",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "GET Signal K vessels/self",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://localhost:3000/signalk/v1/api/vessels/self",
+    "wires": [["build-telemetry"]]
+  },
+  {
+    "id": "build-telemetry",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Build telemetry payload",
+    "func": "var fs = global.get('fs') || require('fs');\nvar sk = msg.payload || {};\nvar nav = (sk.navigation) || {};\nvar env = (sk.environment) || {};\nvar prop = (sk.propulsion && sk.propulsion.main) || {};\n\nvar firmware = 'unknown';\ntry { firmware = fs.readFileSync('/opt/d3kos/config/version.txt','utf8').trim(); } catch(e){}\n\nvar getValue = function(obj, key) {\n  try { return obj[key] && obj[key].value !== undefined ? obj[key].value : null; } catch(e){ return null; }\n};\n\nmsg.credentials = msg.credentials || {};\nmsg.payload = {\n  device_api_key: msg.credentials.device_api_key,\n  boat_uuid: msg.credentials.boat_uuid,\n  timestamp: new Date().toISOString(),\n  readings: {\n    rpm: getValue(prop, 'revolutions'),\n    coolant_temp_c: getValue(prop, 'coolantTemperature'),\n    fuel_level: getValue(env, 'fuel.level'),\n    battery_volts: getValue(env, 'electrical.batteries.house.voltage'),\n    gps_lat: getValue(nav, 'position') ? getValue(nav,'position').latitude : null,\n    gps_lon: getValue(nav, 'position') ? getValue(nav,'position').longitude : null,\n    speed_knots: getValue(nav, 'speedOverGround'),\n    heading_deg: getValue(nav, 'headingTrue'),\n    firmware_version: firmware\n  }\n};\nmsg.headers = {\n  'Content-Type': 'application/json',\n  'Authorization': 'Bearer ' + msg.credentials.device_api_key\n};\nreturn msg;",
+    "outputs": 1,
+    "wires": [["push-to-atmyboat"]]
+  },
+  {
+    "id": "push-to-atmyboat",
+    "type": "http request",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "POST atmyboat.com/api/telemetry/push",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/telemetry/push",
+    "wires": [["log-push"], ["buffer-offline"]]
+  },
+  {
+    "id": "log-push",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Log push timestamp",
+    "func": "var fs = global.get('fs') || require('fs');\ntry {\n  fs.writeFileSync('/opt/d3kos/data/telemetry-last-push.txt', new Date().toISOString());\n} catch(e){}\nreturn msg;",
+    "outputs": 1,
+    "wires": [[]]
+  },
+  {
+    "id": "buffer-offline",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Buffer failed push (SQLite)",
+    "func": "// Log failed push for retry — write to buffer file\nvar fs = global.get('fs') || require('fs');\ntry {\n  var entry = JSON.stringify({timestamp: new Date().toISOString(), payload: msg.payload}) + '\\n';\n  fs.appendFileSync('/opt/d3kos/data/telemetry-buffer.jsonl', entry);\n} catch(e){}\nreturn null;",
+    "outputs": 1,
+    "wires": [[]]
+  },
+  {
+    "id": "catch-errors",
+    "type": "catch",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Catch all errors",
+    "scope": null,
+    "uncaught": false,
+    "wires": [["buffer-offline"]]
+  }
+]

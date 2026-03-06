@@ -30,6 +30,17 @@ If genuinely blocked with two meaningfully different paths that produce differen
 - All work stays on this laptop until the user explicitly instructs a push
 - Documentation, specs, and session logs stay local
 
+## Security — API Keys (CRITICAL — READ EVERY SESSION)
+
+**NEVER write a real API key, token, or password anywhere in this repo — not in docs, not in examples, not in comments.**
+
+- Doc files, session notes, and "before/after" config examples are the highest risk — they go into commits
+- Always use placeholders: `YOUR_KEY_HERE`, `sk-or-v1-***REDACTED***`, `[device_api_key]`
+- Pre-commit hook at `.git/hooks/pre-commit` will block commits containing key patterns — do not bypass it
+- If a key is spotted in staged files: stop, redact it, then commit
+- Files that must NEVER be committed: `api-keys.json`, `cloud-credentials.json`, `.env` — covered by `.gitignore`
+- Incident history: OpenRouter key `...c0f4` exposed in `doc/OLLAMA_INTEGRATION_COMPLETE_2026-02-27.md` — committed Feb 2026, caught by GitHub secret scanning, key auto-revoked. Cause: live key pasted into a doc as a config example.
+
 ---
 
 ## Ollama Workflow
@@ -74,6 +85,25 @@ Cost notes:
 - Over time this builds a cost-per-feature baseline for planning
 
 ---
+
+## Cost Control (CRITICAL)
+
+Before every action ask: **can I do this directly without AI?**
+- Direct file edits, deploys, config changes, one-line patches = just do it
+- New files, complex code generation, multi-block patches = use Ollama (free, local GPU)
+- Planning, spec writing, reviewing output, debugging = Claude (necessary cost)
+- Never use Claude to write code Ollama can write
+- Never call Ollama for trivial changes Claude can apply directly in one Edit tool call
+- When in doubt: direct action first, Ollama second, Claude last
+
+## Windows GUI Rule (HARD — applies to every instruction given to Don)
+
+Don runs Windows. When giving Don instructions:
+- NEVER mention terminal, WSL, PowerShell, SSH, SCP, bash, or any command line
+- ALWAYS use click-by-click Windows Explorer and browser steps
+- To access WSL files from Windows: `\\wsl.localhost\Ubuntu\home\boatiq\...` in Windows Explorer address bar
+- To access files on the Pi: use the browser (Node-RED UI, d3kOS web UI) or Windows Explorer network path if SMB is available
+- If something genuinely requires a command, Claude runs it silently — Don never sees or types it
 
 ## Pi Deployment
 

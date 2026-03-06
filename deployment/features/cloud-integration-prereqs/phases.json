@@ -1,0 +1,41 @@
+[
+  {
+    "name": "qr-url-update",
+    "source_file": "onboarding.html",
+    "spec_section": "PHASE 1: QR Code URL Update (onboarding.html)",
+    "keywords": ["generateQR", "qrData", "atmyboat.com", "register", "tier", "version"],
+    "find_line": "      const qrData = id;  // Just the installation ID",
+    "action": "REPLACE",
+    "end_line": "      const qrData = id;  // Just the installation ID"
+  },
+  {
+    "name": "cloud-link-api",
+    "source_file": "cloud-link-api.py",
+    "spec_section": "PHASE 2: New Flask Service — cloud-link-api.py (Port 8091)",
+    "keywords": ["/api/link", "/api/status", "cloud-credentials.json", "boat_uuid", "device_api_key"],
+    "create_new": true
+  },
+  {
+    "name": "password-check-api",
+    "source_file": "network-api.py",
+    "spec_section": "PHASE 3: Force Password Change in Onboarding Wizard (onboarding.html) — Network API additions",
+    "keywords": ["check-default-password", "change-password", "password_changed", "chpasswd"],
+    "find_line": "if __name__ == '__main__':",
+    "action": "INSERT_BEFORE"
+  },
+  {
+    "name": "password-wizard-step",
+    "source_file": "onboarding.html",
+    "spec_section": "PHASE 3: Force Password Change in Onboarding Wizard (onboarding.html)",
+    "keywords": ["check-default-password", "change-password", "step0", "password_changed"],
+    "find_line": "    <div class=\"step\" id=\"step1\">",
+    "action": "INSERT_BEFORE"
+  },
+  {
+    "name": "telemetry-push-flow",
+    "source_file": "cloud-telemetry-push.json",
+    "spec_section": "PHASE 4: Node-RED Telemetry Push Flow (JSON export)",
+    "keywords": ["cloud-credentials.json", "telemetry/push", "device_api_key", "boat_uuid"],
+    "create_new": true
+  }
+]
