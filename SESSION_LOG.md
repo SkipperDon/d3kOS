@@ -2,6 +2,249 @@
 
 ---
 
+## Session 2026-03-06 (Part 17)
+**Goal:** i18n multi-language system + touchscreen multitouch fixes + OpenCPN Flatpak migration + AIS pipeline
+
+**Completed:**
+
+### Workstream 1 — i18n Multi-Language System (18 languages)
+- Created 18 translation JSON files at `/opt/d3kos/config/i18n/` (en, fr, it, es, el, hr, tr, de, nl, sv, no, da, fi, pt, ar, zh, ja, uk)
+  - Schema: `lang_code, lang_name, native_name, dir, ui{}, alerts{}, onboarding{}, voice{}`
+  - Arabic is the only RTL language (`"dir": "rtl"`)
+  - All marine terms carefully translated (Boat Log = Journal de bord / Bordbuch / Logboek etc.)
+- Created `/opt/d3kos/config/onboarding.json` with `{"language": "en", "dir": "ltr"}`
+- Added language API routes to `network-api.py` (port 8101):
+  - `GET /api/language` — returns current language setting
+  - `POST /api/language` — saves language + dir to onboarding.json
+  - `GET /api/i18n/<lang_code>` — returns full translation JSON
+  - `GET /api/languages` — returns list of all available languages
+- Deployed `/var/www/html/language-menu.html` — 18-language grid selector, touch-optimised, back to main menu
+- Patched `index.html`: added `.lang-globe-btn` CSS + fixed globe button (top-right, shows current lang code loaded from API)
+- Patched `settings.html`: added Language Settings tile button after Network Settings
+- Patched `onboarding.html`: added full language overlay shown on first boot when language is still default English
+
+### Workstream 2 — Touchscreen Multitouch Fixes
+- Created `/var/www/html/d3kos-touch.css`:
+  - `touch-action: manipulation` on all buttons and interactive elements
+  - `touch-action: pan-y` on scrollable containers
+  - `-webkit-tap-highlight-color: transparent` to eliminate tap flash
+  - `overscroll-behavior: contain` to prevent page bounce
+- Linked touch CSS into all pages: index.html, settings.html, onboarding.html, dashboard.html, language-menu.html, boatlog.html, helm.html
+- Updated Chromium autostart desktop file (`/home/d3kos/.config/autostart/d3kos-browser.desktop`):
+  - Added missing flags: `--enable-pinch --pull-to-refresh=1 --enable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents`
+  - Already had `--touch-events=enabled`; pinch was the critical missing flag
+
+### Workstream 3 — OpenCPN Flatpak Migration + AIS Pipeline
+- Flatpak OpenCPN 5.12.4 was already installed system-wide — discovered during investigation
+- Fixed `install-opencpn.sh`: was using `flatpak run --user` (wrong — system install, not user)
+  - Fixed to `flatpak run org.opencpn.OpenCPN` (no --user flag)
+  - Applied `sudo flatpak override --device=input` and `--device=dri` for touchscreen + display access
+- Enabled VDM in signalk-to-nmea0183 plugin (`~/.signalk/plugin-config-data/sk-to-nmea0183.json`):
+  - `VDM` was `None` — set to `true` with `VDM_throttle: 0`
+  - AIS pipeline now flowing: Signal K → signalk-to-nmea0183 → TCP port 10110 → OpenCPN
+- User installed o-charts and AIS Radar View plugins via OpenCPN Flatpak plugin manager
+- o-charts device fingerprint file identified and copied to Windows: `oc03L_1772818229.fpr` → `C:\Users\donmo\Downloads\`
+  - Explained file-based registration (no in-app login — go to o-charts.org → My Charts → Assign Device)
+
+**Decisions:**
+- Language routes added to network-api.py (port 8101) — confirmed as the correct service for network/language config
+- Onboarding language overlay only shown when language is still default 'en' — zero friction for existing English users
+- Globe button position: fixed top-right, font-size 24px, min 60px height — touch-safe on touchscreen
+- Flatpak OpenCPN system install (no --user) is the only supported path on this Pi
+
+**Ollama:** 0 calls (all work done directly via SSH + Python patch scripts)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-06 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending (manual — Don):**
+- o-charts.org → log in → My Charts → Assign device using `oc03L_1772818229.fpr` → download charts
+- Copy downloaded charts to Pi: `~/.var/app/org.opencpn.OpenCPN/data/opencpn/charts/`
+- In OpenCPN: Chart Files → add above directory → Apply
+- Open OpenCPN Charts button in d3kOS → verify AIS targets appear from Signal K detections
+
+---
+
+## v0.9.3 — Complete Website Rewrite
+**Status:** ✅ Complete (shipped prior to session log start)
+**Description:** Complete rewrite of the d3kOS web interface — all pages rebuilt from scratch with the current dark marine UI theme. This is the foundational website that all subsequent features build on.
+
+**Pages delivered:**
+- `index.html` — Main launcher menu with all service tiles
+- `dashboard.html` — Engine gauges and instrument panel
+- `navigation.html` — GPS chart and navigation data
+- `weather.html` — Weather map with OWM tile overlay
+- `marine-vision.html` — Camera feeds and fish detector
+- `boatlog.html` — Boat log with voice notes
+- `settings.html` — All system settings and configuration
+- `onboarding.html` — First-boot setup wizard
+- `helm.html` — Helm assistant page
+
+**Design system:** Black background (#000), green accent (#00CC00), white text (#FFF), dark cards (#111), 56px scrollbars, touch-safe button sizing
+
+---
+
+## Session 2026-03-06 (Part 16)
+**Goal:** npm publish + checklist updates
+
+**Completed:**
+- Updated PROJECT_CHECKLIST.md — signalk-forward-watch marked v0.1.0 Published
+- npm publish attempted — account created but sign-in broken across browsers, skipped for now
+- Noted in checklist and memory to retry npm login next session
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-06 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- npm sign-in issue — contact npm support or retry with different approach
+- npm publish once login resolved
+- Download-on-first-run for model
+- Real-world detection testing on water
+
+---
+
+## Session 2026-03-06 (Part 15)
+**Goal:** Export YOLOv8 model, generate plugin via Ollama, deploy to Signal K on Pi
+
+**Completed:**
+- YOLOv8 training completed overnight on workstation RTX 3060 Ti (21,719 images, 100 epochs)
+- Exported best.pt → best.onnx (11.7MB) via Windows bat file, moved to `models/forward-watch.onnx`
+- Ran `generate_plugin.py` — Ollama qwen3-coder:30b generated all 7 plugin files in ~700s
+- Fixed 8 bugs in generated code (all manual — verify agent was offline):
+  - `index.js`: wrong require paths (PascalCase vs kebab-case), wrong method names, Detector never init'd, no boat GPS from Signal K
+  - `detector.js`: `decodeImage()` was random-noise placeholder — replaced with real sharp JPEG decode + CHW float32 normalization; fixed ONNX output parsing for YOLOv8 `[1,10,8400]` shape
+  - `gps-calculator.js`: distance formula inverted (`5000*h` → `5/h` — spec error, h=1.0 now = 5m not 5km)
+  - `package.json`: added missing `sharp` dependency; fixed `node-onvif` version (0.2.0 doesn't exist → 0.1.7)
+- Deployed to Pi: `~/.signalk/node_modules/signalk-forward-watch/`, npm install, registered in `.signalk/package.json`
+- Fixed leading space in RTSP URL and trailing spaces in password from Signal K admin UI entry
+- **Plugin confirmed working**: camera 10.42.0.100 reachable, ffmpeg grabbing frames every 3s, ONNX inference running on Pi CPU
+
+**Decisions:**
+- `sharp` added as image decoder — best option for JPEG→float32 tensor on Node.js/ARM
+- ONNX CPU inference on Pi 4 is viable — model loads, GPU warning is expected/harmless
+- Plugin config whitespace stripping should be added to index.js in future (user typed spaces in admin UI)
+
+**Ollama:** 7 calls (one per phase), ~700s total, all phases saved. Verify agent offline this session.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-06 | TBD |
+| Ollama (qwen3-coder:30b) | 7 calls ~700s | $0.00 |
+| Session total | | TBD |
+
+**Also completed:**
+- Signal K data confirmed flowing: `environment.forwardWatch.detections` updating every 30s
+- CPU load settled at ~58% total Pi capacity (4 cores) — healthy, 40% headroom
+- Pushed to GitHub: `github.com/SkipperDon/signalk-forward-watch`
+- Published v0.1.0 Release with `forward-watch.onnx` (12MB) attached
+- README includes wget one-liner for model download — ready for community testing
+
+**Also completed:**
+- Posted introduction + plugin to Signal K Discord
+- Posted to OpenMarine forum general discussion
+- Published to GitHub Releases v0.1.0 with forward-watch.onnx (12MB)
+
+**Also completed:**
+- Added OpenCPN integration — detections write as fake AIS vessels into Signal K, appear on chart automatically
+- OpenPlotter users: zero configuration needed, works out of the box
+- Pushed OpenCPN commit to GitHub (9ea9f02)
+- Updated OpenMarine forum post with OpenCPN angle
+
+**Pending:**
+- Add download-on-first-run logic (auto-fetch model from GitHub Releases if not present)
+- Test detections with actual marine targets on the water
+- Monitor GitHub for community feedback and issues
+
+---
+
+## Session 2026-03-05 (Part 14)
+**Goal:** Design and start Forward Watch Signal K plugin + train YOLOv8-Marine model
+
+**Completed:**
+- Redesigned Forward Watch as a proper standalone community Signal K plugin (`signalk-forward-watch`) — not tied to d3kOS
+- Defined full plugin architecture: ONVIF auto-discovery + manual RTSP override, CPU-first YOLOv8n ONNX inference, standard Signal K config form, audio alarm default OFF, per-target alert cooldown
+- Confirmed plugin will live at `github.com/SkipperDon/signalk-forward-watch`
+- Dataset preparation: merged 6 Kaggle datasets into unified YOLOv8 format on Pi
+  - 19,500 train + 2,219 val = 21,719 labeled images
+  - Sources: yolov8-ship-detection v1-v7 (ships), uw-garbage-debris (debris), ship-detection-aerial XML (boats)
+  - Script: `/home/boatiq/Helm-OS/prepare_dataset.py`
+- Dataset zipped and served from Pi HTTP server; downloaded to workstation
+- Fixed data.yaml Linux path issue (absolute Pi path → relative `path: .`)
+- Fixed double-nested extraction issue with `FIX_AND_TRAIN.bat`
+- **YOLOv8 training now running on workstation** — 21,719 images, 100 epochs, batch=8, RTX 3060 Ti
+  - Running alongside Blue Iris (Blue Iris uses NVDEC not CUDA — no conflict)
+  - Expected completion: 18-24 hours
+- Created plugin project structure at `/home/boatiq/signalk-forward-watch/`
+- Created `deployment/phases.json` — 7-phase plugin spec for Ollama
+- Created `deployment/generate_plugin.py` — Ollama generator + verify agent pipeline
+- Saved user preference: Windows GUI only — no terminal/Linux commands for anything user runs
+
+**Decisions:**
+- Ollama cannot run while training occupies GPU VRAM — generator deferred until training finishes
+- Claude does not write plugin code (costs API tokens) — Ollama builds it for free after training
+- Model download-on-first-run from GitHub Releases (not Google Drive — unreliable for large files)
+- GitHub Releases as primary model host, not Google Drive
+- Plugin published under `github.com/SkipperDon/signalk-forward-watch` (same org as d3kOS)
+- Used `FIX_AND_TRAIN.bat` pattern (all-in-one BAT) to avoid .py file download issues in browser
+
+**Ollama:** 0 plugin generation calls (GPU occupied by training)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-05 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Training to complete overnight (check accuracy — target mAP50 > 0.75)
+- Export best.pt → ONNX on workstation
+- Run `generate_plugin.py` once GPU is free — Ollama builds all 7 plugin files
+- Review and test plugin on d3kOS Pi as first Signal K host
+
+---
+
+## Session 2026-03-05 (Part 13)
+**Goal:** Fix workstation IP across all configs, run Ollama executor on both camera features
+
+**Completed:**
+- Fixed workstation IP `.36` → `.62` in `ollama_execute_v3.py` (committed)
+- Fixed workstation IP `.39` → `.62` in `SKIPPERDON_ENVIRONMENT.md` (committed)
+- Fixed Open WebUI Ollama URL `.36` → `.62` in MEMORY.md
+- Confirmed TrueNAS verify agent already running correct version (qwen3-coder:30b, .62 IP)
+- Ran `camera-settings-update` feature:
+  - `camera-html` phase: FLAGGED — executor JS syntax checker false-positived on pure HTML block
+  - `camera-js` phase: CORRECTED by verify agent (missing parenthesis), applied to pi_source
+- Pi was offline at session start, came back mid-session
+
+**Decisions:**
+- Do not manually fix executor HTML validation bug — let Ollama handle it
+- `camera-settings-update` runs before `camera-position-assignment` (both touch settings.html)
+
+**Ollama:** 4 calls total — 1 flagged (HTML false positive), 1 corrected+applied, 2 support calls
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-05 | TBD |
+| Ollama (qwen3-coder:30b) | 4 calls, 385s | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- `camera-html` phase still not applied (flagged, needs resolution)
+- `camera-position-assignment` feature not yet run
+- Deploy updated settings.html (camera-js) to Pi
+- Update MEMORY.md active features when complete
+
+---
+
 ## Session 2026-03-05 (Part 12)
 **Goal:** Run Ollama autonomously to implement all 14 v0.9.2 post-install fixes
 

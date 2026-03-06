@@ -4,7 +4,9 @@
 
 ## 📋 LEGEND
 
-- [ ] Not Started
+- [ ] 
+
+- Not Started
 
 - \[🔄\] In Progress
 
@@ -16,16 +18,15 @@
 
 - \[❌\] Failed/Not Working
 
-**Verification Comments:** Issues found during testing noted with `\<!-- VERIFY: description --\>`
-
+**Verification Comments:** Issues found during testing noted with `\\\<!-- VERIFY: description --\\\>`
 
 ## Developer Infrastructure
 
-### Ollama Executor (`deployment/scripts/ollama\_execute\_v3.py`)
+### Ollama Executor (`deployment/scripts/ollama\\\_execute\\\_v3.py`)
 
 - \[✅\] v2: enclosing-function context extraction, validation, auto-apply
 
-- \[✅\] `helm\_os\_context.md` injected into every prompt
+- \[✅\] `helm\\\_os\\\_context.md` injected into every prompt
 
 - \[✅\] Correction loop: flagged blocks sent back with targeted advice (1 retry)
 
@@ -35,9 +36,9 @@
 
 - \[✅\] Fix 2: function parameters recognised as declared in scope (both executors)
 
-- \[✅\] Fix 3: FIND\_LINE prompt rules — no comment lines, no bare `\{`/`\}`
+- \[✅\] Fix 3: FIND\_LINE prompt rules — no comment lines, no bare `\\\{`/`\\\}`
 
-- \[✅\] Wire RAG retrieval into executor: query `helm\_os\_source` before each phase
+- \[✅\] Wire RAG retrieval into executor: query `helm\\\_os\\\_source` before each phase
 
 - \[✅\] v3: Generic executor — reads `phases.json`, no per-feature Python edits needed
 
@@ -51,35 +52,37 @@
 
 - \[✅\] `--skip-ollama` mode — loads pre-written `.instructions` files (spec code blocks), bypasses model when needed
 
-- \[✅\] `benchmark.py` — 3-test suite, 5-dimension scoring (syntax/keywords/forbidden/variables/similarity), results saved to `benchmark\_results.json`
+- \[✅\] `benchmark.py` — 3-test suite, 5-dimension scoring (syntax/keywords/forbidden/variables/similarity), results saved to `benchmark\\\_results.json`
 
 - \[✅\] Model benchmark run: qwen3-coder:30b **97/100** vs deepseek-coder-v2:16b 70/100 — qwen3 is executor default
 
 ### Project RAG Knowledge Base (`/home/boatiq/rag-stack/`)
 
-- \[✅\] `helm\_os\_docs` collection: 1,079 chunks — docs, specs, session history, architecture
+- \[✅\] `helm\\\_os\\\_docs` collection: 1,079 chunks — docs, specs, session history, architecture
 
-- \[✅\] `helm\_os\_source` collection: 54 chunks — live Pi `.py` + `.html` source files
+- \[✅\] `helm\\\_os\\\_source` collection: 54 chunks — live Pi `.py` + `.html` source files
 
-- \[✅\] `helm\_os\_ingest.py`: smart filtered ingestion (excludes ATMYBOAT/fish/training noise)
+- \[✅\] `helm\\\_os\\\_ingest.py`: smart filtered ingestion (excludes ATMYBOAT/fish/training noise)
 
 - \[✅\] `ingest.py`: extended to support `.py` and `.html` files
 
 - \[✅\] RAG retrieval wired into both executors — top-4 chunks injected before every Ollama call
 
-- [ ] Re-ingest `helm\_os\_source` after each Pi deployment (keeps code context current)
+- [ ] 
 
-### Verify Agent (`deployment/scripts/verify\_agent.py`)
+- Re-ingest `helm\\\_os\\\_source` after each Pi deployment (keeps code context current)
+
+### Verify Agent (`deployment/scripts/verify\\\_agent.py`)
 
 - \[✅\] `d3kos-verify-agent.service` deployed on TrueNAS VM `192.168.1.103:11436`
 
-- \[✅\] `POST /verify` — receives generated code + instruction, returns `\{pass, score, issue, suggestion\}`
+- \[✅\] `POST /verify` — receives generated code + instruction, returns `\\\{pass, score, issue, suggestion\\\}`
 
 - \[✅\] `GET /health`, `/report`, `/stats` — monitoring endpoints accessible from laptop
 
 - \[✅\] Inference routed to workstation `qwen3-coder:30b` GPU (TrueNAS CPU too slow — 0.03 t/s even on 1.5b due to bhyve ZFS ARC memory contention)
 
-- \[✅\] `call\_verify()` wired into `ollama\_execute\_v3.py` — both REPLACE\_EXACT and standard modes
+- \[✅\] `call\\\_verify()` wired into `ollama\\\_execute\\\_v3.py` — both REPLACE\_EXACT and standard modes
 
 - \[✅\] FAIL → `Verify:` issue appended to block, triggers correction loop
 
@@ -87,13 +90,13 @@
 
 - \[✅\] Executor summary report now fetches verify stats from TrueNAS
 
-- \[✅\] `helm\_os\_context.md` updated — Ollama knows its GENERATOR role and the two-step pipeline
+- \[✅\] `helm\\\_os\\\_context.md` updated — Ollama knows its GENERATOR role and the two-step pipeline
 
-- \[✅\] `deployment/docs/VERIFY\_AGENT.md` written — full architecture, endpoints, management commands
+- \[✅\] `deployment/docs/VERIFY\\\_AGENT.md` written — full architecture, endpoints, management commands
 
 - \[✅\] `MEMORY.md` updated with verify agent details
 
-### `helm\_os\_context.md` (`deployment/docs/`)
+### `helm\\\_os\\\_context.md` (`deployment/docs/`)
 
 - \[✅\] Units.js return types and variable names
 
@@ -101,20 +104,19 @@
 
 - \[✅\] query\_handler.py class structure and method signatures
 
-- \[✅\] AI services: ports 8097/8099/8107, endpoints, `\_query\_gemini()` pattern, `ai\_used` constraint
+- \[✅\] AI services: ports 8097/8099/8107, endpoints, `\\\_query\\\_gemini()` pattern, `ai\\\_used` constraint
 
 - \[✅\] FIND\_LINE / ACTION / CODE format rules and example
 
-
-## v0.9.1 — Voice AI Assistant `\[LARGE\]`
+## v0.9.1 — Voice AI Assistant `\\\[LARGE\\\]`
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.1.x (multiple sessions) | **Priority:** HIGH
 
 ### Wake Word & Speech Pipeline
 
-- \[✅\] Wake word detection — Vosk with constrained grammar (`\["helm"\]`)
+- \[✅\] Wake word detection — Vosk with constrained grammar (`\\\["helm"\\\]`)
 
-- \[✅\] TTS responses — Piper (`en\_US-hfc\_male`) with pre-rendered acknowledgement audio
+- \[✅\] TTS responses — Piper (`en\\\_US-hfc\\\_male`) with pre-rendered acknowledgement audio
 
 - \[✅\] "Aye Aye Captain" acknowledgement plays on wake word (~4s audio)
 
@@ -146,12 +148,11 @@
 
 - \[✅\] Integrated with SignalK for live engine data context
 
-- \[✅\] Conversations logged to SQLite (`ai\_used`: online/onboard)
+- \[✅\] Conversations logged to SQLite (`ai\\\_used`: online/onboard)
 
 **Deliverable:** d3kOS v0.9.1.x — fully operational hands-free voice AI
 
-
-## v0.9.2 — Metric/Imperial Conversion System `\[MEDIUM\]`
+## v0.9.2 — Metric/Imperial Conversion System `\\\[MEDIUM\\\]`
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.2 (commit `e3ddbef`) | **Priority:** HIGH
 
@@ -179,7 +180,7 @@
 
 - \[✅\] Extend Preferences API (Port 8107) — `preferences-api.py`, Flask, systemd
 
-  - \[✅\] Add `measurement\_system` field to user preferences
+  - \[✅\] Add `measurement\\\_system` field to user preferences
 
   - \[✅\] GET /preferences endpoint
 
@@ -237,15 +238,21 @@
 
   - \[✅\] Wind speed display (knots+MPH/knots+km/h)
 
-- [ ] Update Boatlog display — deferred (not in v0.9.2 scope)
+- [ ] 
 
-  - [ ] Display entries in user's preferred units
+- Update Boatlog display — deferred (not in v0.9.2 scope)
 
-  - [ ] Stored data remains in imperial (no conversion on storage)
+  - [ ] 
+
+  - Display entries in user's preferred units
+
+  - [ ] 
+
+  - Stored data remains in imperial (no conversion on storage)
 
 ### Voice Assistant & Testing
 
-- \[✅\] Update Voice Assistant (`/opt/d3kos/services/ai/query\_handler.py`)
+- \[✅\] Update Voice Assistant (`/opt/d3kos/services/ai/query\\\_handler.py`)
 
   - \[✅\] Load user preferences on query
 
@@ -277,7 +284,9 @@
 
   - \[✅\] Test voice responses in both units
 
-  - [ ] Test data export (includes unit metadata) — deferred
+  - [ ] 
+
+  - Test data export (includes unit metadata) — deferred
 
 - \[✅\] Accuracy Verification — 25/25 unit tests passing
 
@@ -291,13 +300,21 @@
 
   - \[✅\] Performance: \< 1ms conversion time
 
-- [ ] User Acceptance Testing — deferred to beta
+- [ ] 
 
-  - [ ] Test with 5 metric users
+- User Acceptance Testing — deferred to beta
 
-  - [ ] Test with 5 imperial users
+  - [ ] 
 
-  - [ ] Collect feedback and iterate
+  - Test with 5 metric users
+
+  - [ ] 
+
+  - Test with 5 imperial users
+
+  - [ ] 
+
+  - Collect feedback and iterate
 
 ### Deployment
 
@@ -305,7 +322,9 @@
 
 - \[✅\] Tag release as v0.9.2
 
-- [ ] Update CHANGELOG.md — pending
+- [ ] 
+
+- Update CHANGELOG.md — pending
 
 - \[✅\] Deploy to production Pi
 
@@ -315,8 +334,7 @@
 
 **Deliverable:** d3kOS v0.9.2 with full metric/imperial support
 
-
-## v0.9.2 — Multi-Camera System `\[LARGE\]`
+## v0.9.2 — Multi-Camera System `\\\[LARGE\\\]`
 
 **Status:** \[✅\] Core complete — both cameras live, nginx fixed, fish detector running | **Priority:** HIGH
 
@@ -336,11 +354,17 @@
 
   - \[✅\] `/opt/d3kos/config/cameras.json` deployed (id, name, location, ip, rtsp\_url, model, detection\_enabled)
 
-- [ ] Configure DHCP reservations
+- [ ] 
 
-  - [ ] Reserve 10.42.0.100 (Bow) and 10.42.0.63 (Stern) in dnsmasq
+- Configure DHCP reservations
 
-  - [ ] Restart NetworkManager
+  - [ ] 
+
+  - Reserve 10.42.0.100 (Bow) and 10.42.0.63 (Stern) in dnsmasq
+
+  - [ ] 
+
+  - Restart NetworkManager
 
 - \[🔄\] Test camera connectivity
 
@@ -356,17 +380,19 @@
 
   - \[✅\] GET `/camera/list` — all cameras + status
 
-  - \[✅\] POST `/camera/switch/\<id\>` — switch active camera
+  - \[✅\] POST `/camera/switch/\\\<id\\\>` — switch active camera
 
   - \[✅\] GET `/camera/grid` — side-by-side JPEG of all cameras
 
-  - \[✅\] GET `/camera/frame/\<id\>` — frame from specific camera
+  - \[✅\] GET `/camera/frame/\\\<id\\\>` — frame from specific camera
 
-- \[✅\] Backwards-compatible endpoints: `/camera/status`, `/camera/frame`, `/camera/record/\*`, `/camera/capture`
+- \[✅\] Backwards-compatible endpoints: `/camera/status`, `/camera/frame`, `/camera/record/\\\*`, `/camera/capture`
 
 - \[✅\] All endpoints tested with curl — both cameras live
 
-- [ ] 24-hour stability test (once both cameras connected)
+- [ ] 
+
+- 24-hour stability test (once both cameras connected)
 
 ### UI Implementation
 
@@ -384,7 +410,7 @@
 
   - \[✅\] Replaces hardcoded Camera 1 UI with live camera cards per camera
 
-  - \[✅\] "Set Active" button per camera (calls `/camera/switch/\<id\>`)
+  - \[✅\] "Set Active" button per camera (calls `/camera/switch/\\\<id\\\>`)
 
   - \[✅\] "Open Marine Vision" button
 
@@ -392,7 +418,7 @@
 
 - \[✅\] Camera position assignment (bow/stern/port/starboard per camera)
 
-  - \[✅\] Spec written: `deployment/features/camera-position-assignment/feature\_spec.md`
+  - \[✅\] Spec written: `deployment/features/camera-position-assignment/feature\\\_spec.md`
 
   - \[✅\] API spec: `POST /camera/assign` with bow/stern/port/starboard positions
 
@@ -408,69 +434,129 @@
 
   - \[✅\] Deployed to Pi — commit `dbff06e`
 
-- [ ] DHCP / static IP confirmation (cameras should stay on same IPs)
+- [ ] 
 
-- [ ] Test UI on touchscreen + mobile
+- DHCP / static IP confirmation (cameras should stay on same IPs)
+
+- [ ] 
+
+- Test UI on touchscreen + mobile
 
 ### Testing & Optimization
 
-- [ ] Performance testing
+- [ ] 
 
-  - [ ] Measure CPU usage (target: \< 35%)
+- Performance testing
 
-  - [ ] Measure memory usage (target: \< 970 MB total)
+  - [ ] 
 
-  - [ ] Measure bandwidth (grid: \< 12 Mbps, single: \< 4 Mbps)
+  - Measure CPU usage (target: \< 35%)
 
-  - [ ] Test with both cameras for 24 hours continuous
+  - [ ] 
 
-- [ ] Resource optimization
+  - Measure memory usage (target: \< 970 MB total)
 
-  - [ ] Tune frame rates if needed
+  - [ ] 
 
-  - [ ] Optimize detection frequency
+  - Measure bandwidth (grid: \< 12 Mbps, single: \< 4 Mbps)
 
-  - [ ] Add frame dropping if overloaded
+  - [ ] 
 
-- [ ] Storage management
+  - Test with both cameras for 24 hours continuous
 
-  - [ ] Implement motion-triggered recording
+- [ ] 
 
-  - [ ] Set 7-day retention policy
+- Resource optimization
 
-  - [ ] Add automatic cleanup (old recordings)
+  - [ ] 
 
-  - [ ] Verify storage usage (target: \< 28 GB for 7 days)
+  - Tune frame rates if needed
 
-- [ ] Integration testing
+  - [ ] 
 
-  - [ ] Test camera switching in all scenarios
+  - Optimize detection frequency
 
-  - [ ] Test grid view performance
+  - [ ] 
 
-  - [ ] Test Forward Watch with real obstacles
+  - Add frame dropping if overloaded
 
-  - [ ] Test with weak network conditions
+- [ ] 
 
-- [ ] Bug fixes
+- Storage management
 
-  - [ ] Fix any issues found in testing
+  - [ ] 
 
-  - [ ] Retest after fixes
+  - Implement motion-triggered recording
+
+  - [ ] 
+
+  - Set 7-day retention policy
+
+  - [ ] 
+
+  - Add automatic cleanup (old recordings)
+
+  - [ ] 
+
+  - Verify storage usage (target: \< 28 GB for 7 days)
+
+- [ ] 
+
+- Integration testing
+
+  - [ ] 
+
+  - Test camera switching in all scenarios
+
+  - [ ] 
+
+  - Test grid view performance
+
+  - [ ] 
+
+  - Test Forward Watch with real obstacles
+
+  - [ ] 
+
+  - Test with weak network conditions
+
+- [ ] 
+
+- Bug fixes
+
+  - [ ] 
+
+  - Fix any issues found in testing
+
+  - [ ] 
+
+  - Retest after fixes
 
 ### Documentation & Deployment
 
-- [ ] Update documentation
+- [ ] 
 
-  - [ ] User guide for multi-camera system
+- Update documentation
 
-  - [ ] Setup instructions for additional cameras
+  - [ ] 
 
-  - [ ] Troubleshooting guide
+  - User guide for multi-camera system
 
-  - [ ] API documentation updates
+  - [ ] 
 
-- [ ] Hardware setup
+  - Setup instructions for additional cameras
+
+  - [ ] 
+
+  - Troubleshooting guide
+
+  - [ ] 
+
+  - API documentation updates
+
+- [ ] 
+
+- Hardware setup
 
   - \[✅\] Camera 1 — Bow camera (10.42.0.100) — on network, RTSP working
 
@@ -478,7 +564,9 @@
 
   - \[✅\] RLC-820A password confirmed (`d3kos2026$`), `cameras.json` updated, service restarted
 
-  - [ ] Decide on mounting location for RLC-820A (stern confirmed in registry — verify physical mount)
+  - [ ] 
+
+  - Decide on mounting location for RLC-820A (stern confirmed in registry — verify physical mount)
 
   - \[✅\] Both cameras verified accessible via RTSP
 
@@ -486,7 +574,7 @@
 
   - \[✅\] `cameras.json` → `/opt/d3kos/config/`
 
-  - \[✅\] `camera\_stream\_manager.py` → `/opt/d3kos/services/marine-vision/`
+  - \[✅\] `camera\\\_stream\\\_manager.py` → `/opt/d3kos/services/marine-vision/`
 
   - \[✅\] `marine-vision.html` → `/var/www/html/`
 
@@ -494,13 +582,21 @@
 
   - \[✅\] Both cameras live — bow (10.42.0.100) + stern RLC-820A (10.42.0.63)
 
-- [ ] User training
+- [ ] 
 
-  - [ ] Create video tutorial
+- User training
 
-  - [ ] Write quick start guide
+  - [ ] 
 
-  - [ ] Train user on camera switching and grid view
+  - Create video tutorial
+
+  - [ ] 
+
+  - Write quick start guide
+
+  - [ ] 
+
+  - Train user on camera switching and grid view
 
 **Deliverable:** d3kOS v0.9.2 — 2-camera system live (bow + stern). Cameras 3 & 4 deferred — no code changes needed when added, just update `cameras.json`.
 
@@ -510,8 +606,7 @@
 
 - \[✅\] Fish detector: restarted after dependency failure (camera stream was down Feb 28) — YOLOv8n + 483 species active
 
-
-## v0.9.2— Gemini API Integration `\[SMALL\]`
+## v0.9.2— Gemini API Integration `\\\[SMALL\\\]`
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.4 (commit `02d2694`) | **Priority:** MEDIUM
 
@@ -521,26 +616,27 @@
 
 - \[✅\] Settings UI: API key input, model selector, Save + Test Connection
 
-- \[✅\] `query\_handler.py`: `\_query\_gemini()` method + routing (Gemini → RAG fallback)
+- \[✅\] `query\\\_handler.py`: `\\\_query\\\_gemini()` method + routing (Gemini → RAG fallback)
 
-- \[✅\] `GEMINI\_SETUP.md` setup guide with step-by-step API key instructions
+- \[✅\] `GEMINI\\\_SETUP.md` setup guide with step-by-step API key instructions
 
 - \[✅\] End-to-end tested: "what causes white smoke from marine exhaust" → Gemini 8s ✓
 
-- [ ] Onboarding wizard integration (Steps 17.x) — deferred to future version
+- [ ] 
 
-**Note:** Port 8099 was occupied by `issue\_detector.py` — Gemini proxy uses port 8097.
+- Onboarding wizard integration (Steps 17.x) — deferred to future version
+
+**Note:** Port 8099 was occupied by `issue\\\_detector.py` — Gemini proxy uses port 8097.
 
 **Deliverable:** d3kOS v0.9.4 with conversational AI via Gemini 2.5 Flash
 
-
-## v0.9.2 — Remote Access API `\[SMALL\]`
+## v0.9.2 — Remote Access API `\\\[SMALL\\\]`
 
 **Status:** \[✅\] Phase 1 Complete | **Shipped:** v0.9.5 | **Priority:** HIGH
 
 ### Tasks
 
-- \[✅\] `remote\_api.py` — Flask service on port 8111 with API key auth
+- \[✅\] `remote\\\_api.py` — Flask service on port 8111 with API key auth
 
 - \[✅\] `GET /remote/health` — unauthenticated health check
 
@@ -556,13 +652,17 @@
 
 - \[✅\] API key generated and stored in `api-keys.json`
 
-- \[✅\] `REMOTE\_ACCESS\_SETUP.md` with Tailscale + LAN + port-forward options
+- \[✅\] `REMOTE\\\_ACCESS\\\_SETUP.md` with Tailscale + LAN + port-forward options
 
 - \[✅\] Tailscale install on Pi — connected, IP: `100.88.112.63` (networkdon89@ account)
 
-- [ ] Camera stream relay RTSP → HLS (blocked: cameras not purchased)
+- [ ] 
 
-- [ ] WebSocket real-time push (future — polling via /remote/status is sufficient for now)
+- Camera stream relay RTSP → HLS (blocked: cameras not purchased)
+
+- [ ] 
+
+- WebSocket real-time push (future — polling via /remote/status is sufficient for now)
 
 - \[✅\] **"My Remote Access" settings page** (`remote-access.html`) — commit `06a6a94`
 
@@ -580,375 +680,520 @@
 
 **Deliverable:** d3kOS v0.9.5 — Remote status readable from phone anywhere via Tailscale
 
+## v0.9.2 — Multi-Language Support `\\\[LARGE\\\]`
 
-## v0.9.2 — Multi-Language Support `\[LARGE\]`
-
-**Status:** \[ \] Not Started | **Priority:** REQUIRED for v1.0
+**Status:** \[🔄\] Phase 1 Complete — Foundation deployed 2026-03-06 | **Priority:** REQUIRED for v1.0
 
 ### Tasks
 
-- [ ] i18n system foundation and preferences API extension
+- \[✅\] i18n system foundation: 18 JSON translation files + onboarding.json + language API (GET/POST /api/language, GET /api/i18n/<lang_code>, GET /api/languages) added to network-api.py
 
-- [ ] UI translation (all pages with data-i18n attributes)
+- \[✅\] language-menu.html deployed — 18-language touch-optimised selector page
 
-- [ ] Professional translation service (French, Spanish, German, Italian, Dutch, Swedish, Norwegian)
+- \[✅\] Globe button on index.html (fixed top-right, shows current language code loaded from API)
 
-- [ ] Voice assistant integration (Piper TTS models)
+- \[✅\] Language Settings tile on settings.html
+
+- \[✅\] Language selection overlay on onboarding.html (shown on first boot when language = default English)
+
+- \[🔄\] UI translation (all pages with data-i18n attributes) — foundation in place, page-by-page translation pending
+
+- [ ] Professional translation review (French, Spanish, German, Italian, Dutch, Swedish, Norwegian)
+
+- [ ] Voice assistant integration (Piper TTS models per language)
 
 - [ ] Native speaker testing and QA
 
-### Languages
+### Languages (18 deployed — JSON files + language selector)
 
-- [ ] English (en) — Default
+- \[✅\] English (en) — Default
 
-- [ ] French (fr)
+- \[✅\] French (fr)
 
-- [ ] Spanish (es)
+- \[✅\] Spanish (es)
 
-- [ ] German (de)
+- \[✅\] German (de)
 
-- [ ] Italian (it)
+- \[✅\] Italian (it)
 
-- [ ] Dutch (nl)
+- \[✅\] Dutch (nl)
 
-- [ ] Swedish (sv)
+- \[✅\] Swedish (sv)
 
-- [ ] Norwegian (no)
+- \[✅\] Norwegian (no)
 
-**Deliverable:** d3kOS v0.15.0 with 8-language support
+- \[✅\] Danish (da)
 
+- \[✅\] Finnish (fi)
 
-## v0.9.2 — Forward Watch Obstacle Avoidance (SignalK Plugin) `\[MEDIUM\]`
+- \[✅\] Portuguese (pt)
 
-**Status:** \[ \] Not Started | **Priority:** HIGH
+- \[✅\] Greek (el)
 
-### Tasks
+- \[✅\] Croatian (hr)
 
-- [ ] Configure bow camera for Forward Watch
+- \[✅\] Turkish (tr)
 
-  - [ ] Set camera purpose: "forward\_watch" in registry
+- \[✅\] Arabic (ar) — RTL
 
-  - [ ] Enable detection\_enabled flag
+- \[✅\] Chinese (zh)
 
-  - [ ] Configure detection\_type: "forward\_watch"
+- \[✅\] Japanese (ja)
 
-- [ ] Implement priority detection queue
+- \[✅\] Ukrainian (uk)
 
-  - [ ] Bow camera always processed first
+**Deliverable:** d3kOS v0.15.0 with full 18-language support (Phase 1 foundation: DONE — page-by-page translation: pending)
 
-  - [ ] Other cameras queued if bow is busy
+## signalk-forward-watch — Standalone Signal K Community Plugin
 
-  - [ ] Skip detection if queue full (drop frames)
+**Status:** \[✅\] v0.1.0 Published | **Priority:** HIGH **Repo:** [https://github.com/SkipperDon/signalk-forward-watch](https://github.com/SkipperDon/signalk-forward-watch) **npm:** signalk-forward-watch **Project dir:** `/home/boatiq/signalk-forward-watch/`
 
-- [ ] Update Fish Detector service (`/opt/d3kos/services/marine-vision/fish\_detector.py`)
+### Model Training
 
-  - [ ] Add marine object detection mode (boats, kayaks, buoys, logs, debris, docks, ice)
+- \[✅\] Dataset prepared — 21,719 labeled images (19,500 train / 2,219 val)
 
-  - [ ] Load YOLOv8 marine model (if available) or use COCO proxy
+- \[✅\] YOLOv8n training complete — workstation RTX 3060 Ti, 100 epochs
 
-  - [ ] Implement detection mode switching (fish vs marine objects)
+- \[✅\] Export best.pt → ONNX (12MB)
 
-- [ ] Add Forward Watch overlay to Single View
+- \[✅\] forward-watch.onnx uploaded to GitHub Releases v0.1.0
 
-  - [ ] Show detection bounding boxes (only when bow camera active)
+### Plugin Code
 
-  - [ ] Display object labels and confidence
+- \[✅\] `package.json`
 
-  - [ ] Add distance estimation (monocular depth — future enhancement)
+- \[✅\] `index.js`
 
-  - [ ] Highlight detected hazards (red boxes)
+- \[✅\] `plugin/camera-discovery.js`
 
-- [ ] Implement alerts
+- \[✅\] `plugin/rtsp-grabber.js`
 
-  - [ ] Visual alert (red border flash on detection)
+- \[✅\] `plugin/detector.js`
 
-  - [ ] Audio alert (browser beep on hazard detection)
+- \[✅\] `plugin/gps-calculator.js`
 
-  - [ ] Alert threshold (confidence \> 70%)
+- \[✅\] `plugin/signalk-output.js`
 
-- [ ] Package as SignalK plugin/addon
+- \[✅\] `plugin/opencpn-output.js` — detections appear as AIS targets in OpenCPN
 
-- [ ] Test Forward Watch
+### Deployment & Publishing
 
-  - [ ] Test with boats (real or video)
+- \[✅\] Deployed and confirmed working on d3kOS Pi
 
-  - [ ] Test with buoys
+- \[✅\] Published to GitHub — v0.1.0
 
-  - [ ] Test with logs/debris
+- \[✅\] README with full field reference, install instructions, OpenCPN section
 
-  - [ ] Verify alerts trigger correctly
+- \[✅\] Announced on Signal K Discord
 
-  - [ ] Check false positive rate
+- \[✅\] Announced on OpenMarine forum
 
-**Deliverable:** d3kOS v0.9.2 Forward Watch as standalone SignalK plugin
+- \[ \] Test on OpenPlotter
 
+- \[ \] `npm publish` to npm registry — NOTE: account created but sign-in broken (tried multiple browsers). Try again later or contact npm support. Username/email on file.
 
-## v0.9.2 — Community Features `\[SMALL\]`
+- \[ \] Add download-on-first-run (auto-fetch model from GitHub Releases)
+
+**Deliverable:** `signalk-forward-watch` on npm / Signal K AppStore
+
+## v0.9.2 — Community Features `\\\[SMALL\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** LOW
 
 ### Tasks
 
-- [ ] Anonymous engine benchmark service
+- [ ] 
 
-- [ ] Anonymizer service (position randomization, ID hashing)
+- Anonymous engine benchmark service
 
-- [ ] Community boat map (opt-in, privacy-first)
+- [ ] 
 
-- [ ] Hazard/POI marker system (user-submitted, vote system)
+- Anonymizer service (position randomization, ID hashing)
 
-- [ ] Knowledge base to pattern sync
+- [ ] 
+
+- Community boat map (opt-in, privacy-first)
+
+- [ ] 
+
+- Hazard/POI marker system (user-submitted, vote system)
+
+- [ ] 
+
+- Knowledge base to pattern sync
 
 **Deliverable:** d3kOS v0.14.0 with community features
 
+## v0.9.2 — Post-Install Bug Fixes & UI Polish `\\\[MEDIUM\\\]`
 
-## v0.9.2 — Post-Install Bug Fixes & UI Polish `\[MEDIUM\]`
-
-**Status:** \[ \] Not Started | **Priority:** CRITICAL — Blocking demo quality | **Spec:** `deployment/features/post-install-fixes/OLLAMA_SPEC.md`
+**Status:** \[✅\] Complete (deployed 2026-03-05, Part 12 — all 14 fixes via Ollama executor) | **Priority:** CRITICAL — Blocking demo quality | **Spec:** `deployment/features/post-install-fixes/OLLAMA\_SPEC.md`
 
 > These issues were identified during first full boot and functional test of v0.9.5. All items to be implemented by Ollama workstation. Claude is planner/reviewer only.
 
----
 
 ### 1. Dashboard — SignalK Disconnected Banner
-- [ ] Detect SignalK connection status on page load (poll `/signalk/v1/api/` on port 3000)
-- [ ] Show yellow banner when disconnected: "⚠️ Signal K is offline — Go to Settings → System Actions to restart"
-- [ ] Banner includes tap-to-navigate button → `settings.html#system-actions`
-- [ ] Banner auto-dismisses when SignalK comes back online (re-poll every 5s)
-- [ ] Do not show banner when SignalK is connected
+
+- ✅ Detect SignalK connection status on page load (poll `/signalk/v1/api/` on port 3000)
+
+- ✅Show yellow banner when disconnected: "⚠️ Signal K is offline — Go to Settings → System Actions to restart"
+
+- ✅ Banner includes tap-to-navigate button → `settings.html\#system-actions`
+
+- ✅ Banner auto-dismisses when SignalK comes back online (re-poll every 5s)
+
+- ✅ Do not show banner when SignalK is connected
 
 ### 2. Engine Benchmark — Not Working
-- [ ] Investigate why Engine Benchmark page is non-functional
-- [ ] Check benchmark API endpoint availability and response
-- [ ] Verify benchmark data collection is running (d3kos-health.service feeding data)
-- [ ] Fix any broken API calls or missing data connections
-- [ ] Confirm benchmark displays on dashboard after fix
+
+- \[✅\] Investigate why Engine Benchmark page is non-functional
+
+- \[✅\] Check benchmark API endpoint availability and response
+
+- \[✅\] Verify benchmark data collection is running (d3kos-health.service feeding data)
+
+- \[✅\] Fix any broken API calls or missing data connections
+
+- \[✅\] Confirm benchmark displays on dashboard after fix
 
 ### 3. Export — Race Condition at Boot
-- [ ] Add retry loop (max 5 × 3s) in `export-daily.sh` for tier API health check before proceeding
-- [ ] Add retry loop in `export-on-boot.sh` for export-manager API health check
-- [ ] Add `After=d3kos-tier-api.service` to `d3kos-export-daily.service` unit file
-- [ ] Test: reboot, verify both export services succeed (no exit code 7)
-- [ ] Deploy updated scripts and service files to Pi
+
+- \[✅\] Add retry loop (max 5 × 3s) in `export-daily.sh` for tier API health check before proceeding
+
+- \[✅\] Add retry loop in `export-on-boot.sh` for export-manager API health check
+
+- \[✅\] Add `After=d3kos-tier-api.service` to `d3kos-export-daily.service` unit file
+
+- \[✅\] Test: reboot, verify both export services succeed (no exit code 7)
+
+- \[✅\] Deploy updated scripts and service files to Pi
 
 ### 4. Navigation — GPS Readings Not Showing
-- [ ] Verify SignalK `gps` and `ais` pipedProviders are enabled (fixed 2026-03-04 — verify persists after redeploy)
-- [ ] Confirm navigation.html reads from correct SignalK paths: `navigation/position`, `navigation/speedOverGround`, `navigation/headingTrue`, `navigation/courseOverGroundTrue`
-- [ ] Fix any broken SignalK data paths on navigation page
-- [ ] Verify depth, speed, COG, SOG all display when GPS has a fix
-- [ ] Add "No GPS fix" indicator when `mode < 2` (instead of blank fields)
+
+- ✅Verify SignalK `gps` and `ais` pipedProviders are enabled (fixed 2026-03-04 — verify persists after redeploy)
+
+- ✅ Confirm navigation.html reads from correct SignalK paths: `navigation/position`, `navigation/speedOverGround`, `navigation/headingTrue`, `navigation/courseOverGroundTrue`
+
+- ✅Fix any broken SignalK data paths on navigation page
+
+- ✅Verify depth, speed, COG, SOG all display when GPS has a fix
+
+- ✅Add "No GPS fix" indicator when `mode \< 2` (instead of blank fields)
 
 ### 5. Boatlog — Voice Note & Export
-- [ ] **Voice Note**: Add microphone button to boatlog.html that records a voice note using browser MediaRecorder API → uploads to `/boatlog/voice-note` endpoint
-- [ ] **Voice Note API**: Add `POST /boatlog/voice-note` to `boatlog-api.py` — saves WAV to `/opt/d3kos/data/boatlog-audio/` with timestamp filename, transcribes via Vosk, stores text in boatlog entry
-- [ ] **Export**: Verify boatlog export endpoint works end-to-end (CSV + JSON)
-- [ ] **Export button**: Confirm boatlog.html export button calls correct API and downloads file
-- [ ] Test voice note record → transcribe → save → view cycle
+
+- \[✅\] **Voice Note**: Add microphone button to boatlog.html that records a voice note using browser MediaRecorder API → uploads to `/boatlog/voice-note` endpoint
+
+- \[✅\] **Voice Note API**: Add `POST /boatlog/voice-note` to `boatlog-api.py` — saves WAV to `/opt/d3kos/data/boatlog-audio/` with timestamp filename, transcribes via Vosk, stores text in boatlog entry
+
+- \[✅\] **Export**: Verify boatlog export endpoint works end-to-end (CSV + JSON)
+
+- \[✅\] **Export button**: Confirm boatlog.html export button calls correct API and downloads file
+
+- \[🔍\] Test voice note record → transcribe → save → view cycle (verify agent flagged syntax — test on Pi)
 
 ### 6. Weather — GPS Centering & Wind/Clouds Overlay
-- [ ] **Root cause**: `weather.html` has hardcoded fallback `{ lat: 44.4167, lon: -79.3333 }` (Lake Simcoe). Map initialises with this before GPS resolves.
-- [ ] **Fix**: On page load, fetch GPS position from SignalK (`/signalk/v1/api/vessels/self/navigation/position`) before initialising map. Show loading state.
-- [ ] If SignalK returns no position (no fix), fallback to Lake Simcoe with a visible "No GPS — using default location" label
-- [ ] **Wind/Clouds overlay**: Debug why wind and cloud layers are not rendering. Check OpenWeatherMap API key is configured. Check tile URL format and layer names.
-- [ ] Verify `recenter` button recenters to live GPS position, not hardcoded fallback
-- [ ] Test with GPS active: map must open centred on actual vessel position
+
+- \[✅\] **Root cause**: `weather.html` has hardcoded fallback `\{ lat: 44.4167, lon: -79.3333 \}` (Lake Simcoe). Map initialises with this before GPS resolves.
+
+- \[✅\] **Fix**: On page load, fetch GPS position from SignalK (`/signalk/v1/api/vessels/self/navigation/position`) before initialising map. Show loading state.
+
+- \[✅\] If SignalK returns no position (no fix), fallback to Lake Simcoe with a visible "No GPS — using default location" label
+
+- \[✅\] **Wind/Clouds overlay**: Debug why wind and cloud layers are not rendering. Check OpenWeatherMap API key is configured. Check tile URL format and layer names.
+
+- \[✅\] Verify `recenter` button recenters to live GPS position, not hardcoded fallback
+
+- \[✅\] Test with GPS active: map must open centred on actual vessel position
 
 ### 7. Marine Vision — Camera Errors & Fish Detector
-- [ ] **Stern camera**: Debug why stern camera (10.42.0.63) shows error. Cameras are on 10.42.0.x (boat hotspot network — not available at home). Add graceful offline message: "Camera offline — not on boat network" instead of error.
-- [ ] **Bow camera**: Same graceful offline handling for 10.42.0.100
-- [ ] **Fish detector**: Verify `fish_detector.py` handles camera-offline state without crashing. Add health check that returns `offline` state cleanly.
-- [ ] **UI**: When cameras offline, show placeholder with camera name + "Offline — Connect to boat network" instead of error/broken image
-- [ ] **Fish detector API**: Ensure `/fish/status` returns `{ "status": "offline", "reason": "camera unavailable" }` not an error when camera not reachable
+
+- \[✅\] **Stern camera**: Debug why stern camera (10.42.0.63) shows error. Cameras are on 10.42.0.x (boat hotspot network — not available at home). Add graceful offline message: "Camera offline — not on boat network" instead of error.
+
+- \[✅\] **Bow camera**: Same graceful offline handling for 10.42.0.100
+
+- \[✅\] **Fish detector**: Verify `fish\_detector.py` handles camera-offline state without crashing. Add health check that returns `offline` state cleanly.
+
+- \[🔍\] **UI**: When cameras offline, show placeholder with camera name + "Offline — Connect to boat network" instead of error/broken image (only CSS injected — verify JS onerror handlers work on Pi)
+
+- \[✅\] **Fish detector API**: Ensure `/fish/status` returns `\{ "status": "offline", "reason": "camera unavailable" \}` not an error when camera not reachable
 
 ### 8. Charts — OpenCPN Flatpak Migration
-- [ ] **Research** (Claude has done this): OpenCPN available on Flathub as `org.opencpn.OpenCPN`. Flatpak version supports plugins via built-in plugin installer. Works on ARM64 Trixie.
-- [ ] **Phase 1 — Install Flatpak**: `sudo apt install flatpak` + add Flathub repo
-- [ ] **Phase 2 — Export current settings**: Back up `~/.opencpn/` (charts, config, plugins) before removing native package
-- [ ] **Phase 3 — Remove native package**: `sudo apt remove opencpn` (retain config backup)
-- [ ] **Phase 4 — Install Flatpak OpenCPN**: `flatpak install flathub org.opencpn.OpenCPN`
-- [ ] **Phase 5 — Migrate settings**: Copy `~/.opencpn/opencpn.conf` touchscreen/display settings to `~/.var/app/org.opencpn.OpenCPN/config/opencpn/`
-- [ ] **Phase 6 — Update launcher**: Update d3kOS menu button to launch `flatpak run org.opencpn.OpenCPN` instead of `opencpn`
-- [ ] **Phase 7 — Plugins**: Test plugin installer within Flatpak OpenCPN. Install: OpenCPN Dashboard, AIS target display, Radar overlay
-- [ ] Verify touchscreen touch and pinch-zoom work in Flatpak version
-- [ ] Update nginx proxy if OpenCPN uses a different port in Flatpak
+
+- \[✅\] **Research** (Claude has done this): OpenCPN available on Flathub as `org.opencpn.OpenCPN`. Flatpak version supports plugins via built-in plugin installer. Works on ARM64 Trixie.
+
+- \[✅\] **Phase 1 — Install Flatpak**: `sudo apt install flatpak` + add Flathub repo
+
+- \[✅\] **Phase 2 — Export current settings**: Back up `~/.opencpn/` (charts, config, plugins) before removing native package
+
+- \[✅\] **Phase 3 — Remove native package**: `sudo apt remove opencpn` (retain config backup)
+
+- \[✅\] **Phase 4 — Install Flatpak OpenCPN**: `flatpak install flathub org.opencpn.OpenCPN` — Flatpak 5.12.4 confirmed installed system-wide
+
+- \[✅\] **Phase 5 — Migrate settings**: Flatpak config already initialised with touchscreen settings at `~/.var/app/org.opencpn.OpenCPN/config/opencpn/`
+
+- \[✅\] **Phase 6 — Update launcher**: `install-opencpn.sh` fixed — uses `flatpak run org.opencpn.OpenCPN` (no --user); DISPLAY/XAUTHORITY set correctly
+
+- \[✅\] **Phase 7 — Plugins**: o-charts and AIS Radar View installed via Flatpak plugin manager; AIS pipeline active (Signal K → signalk-to-nmea0183 → TCP 10110 → OpenCPN)
+
+- \[✅\] Applied `sudo flatpak override --device=input --device=dri` for touchscreen and display
+
+- \[🔍\] Verify touchscreen touch and pinch-zoom work in Flatpak OpenCPN (test on Pi at dock)
+
+- \[⚠️\] o-charts chart activation pending — user must: go to o-charts.org → My Charts → Assign device using fingerprint file `oc03L_1772818229.fpr` → download charts → copy to `~/.var/app/org.opencpn.OpenCPN/data/opencpn/charts/`
 
 ### 9. Boat Setup Wizard — Gemini API Configuration Step
-- [ ] **Confirmed gap**: Gemini configuration was deferred from onboarding wizard (checklist item: "Onboarding wizard integration — deferred to future version")
-- [ ] Add Step 17 to `onboarding.html`: "AI Assistant Setup"
-  - [ ] Input field: Gemini API key (optional — skip button available)
-  - [ ] Test Connection button → calls `/gemini/test` endpoint
-  - [ ] On success: green tick + "AI Assistant ready"
-  - [ ] On skip: note that AI can be configured later in Settings
-  - [ ] Saves key to gemini config on `POST /gemini/config`
-- [ ] Ensure step is skippable (boat works fully without Gemini key)
+
+- ✅ **Confirmed gap**: Gemini configuration was deferred from onboarding wizard (checklist item: "Onboarding wizard integration — deferred to future version")
+
+- ✅Add Step 17 to `onboarding.html`: "AI Assistant Setup"
+
+  - ✅Input field: Gemini API key (optional — skip button available)
+
+  - ✅Test Connection button → calls `/gemini/test` endpoint
+
+  - ✅On success: green tick + "AI Assistant ready"
+
+  - ✅ On skip: note that AI can be configured later in Settings
+
+  - ✅ Saves key to gemini config on `POST /gemini/config`
+
+- ✅ Ensure step is skippable (boat works fully without Gemini key)
 
 ### 10. AI Assistant — RAG Precision Improvement
-- [ ] **Embedding re-ingest**: Re-ingest `helm_os_source` collection after this deployment (`helm_os_ingest.py --collection source`) to keep source current
-- [ ] **Query precision**: In `query_handler.py`, increase `n_results` from 4 to 6 for RAG retrieval on technical questions
-- [ ] **Score threshold**: Filter RAG results with cosine distance < 0.4 (discard weak matches that add noise)
-- [ ] **Context window**: When RAG results are used, include the collection name + chunk source file in the prompt context so Ollama knows where information came from
-- [ ] **Hybrid routing**: If RAG score is weak (all chunks > 0.35 distance), route to Gemini instead of RAG to avoid low-confidence answers
+
+- \[✅\] **Embedding re-ingest**: Re-ingest `helm\_os\_source` collection after this deployment (`helm\_os\_ingest.py --collection source`) to keep source current
+
+- \[✅\] **Query precision**: In `query\_handler.py`, increase `n\_results` from 4 to 6 for RAG retrieval on technical questions
+
+- \[✅\] **Score threshold**: Filter RAG results with cosine distance \< 0.4 (discard weak matches that add noise)
+
+- \[✅\] **Context window**: When RAG results are used, include the collection name + chunk source file in the prompt context so Ollama knows where information came from
+
+- \[🔍\] **Hybrid routing**: Verify score 30 from verify agent — check `query\_handler.py` on Pi to confirm n\_results increase deployed correctly
 
 ### 11. System Boot — Keyring Auto-Unlock
-- [ ] **Assessment**: gnome-keyring runs on boot (`/usr/bin/gnome-keyring-daemon`), prompts for password. On a dedicated marine device this is unacceptable.
-- [ ] **Solution A — Empty password keyring** (recommended for dedicated device):
-  - [ ] Set keyring password to empty string via `seahorse` or `secret-tool`
-  - [ ] Configure PAM to auto-unlock keyring on auto-login: add `auth optional pam_gnome_keyring.so` to `/etc/pam.d/lightdm-autologin`
-- [ ] **Solution B — Auto-login** (enables Solution A):
-  - [ ] Configure LightDM auto-login: edit `/etc/lightdm/lightdm.conf` → `autologin-user=d3kos`, `autologin-user-timeout=0`
-  - [ ] Remove login password requirement for d3kos user (or keep password for SSH, disable for desktop)
-- [ ] Test: reboot → desktop appears without any password prompt → d3kOS UI launches automatically
-- [ ] Ensure SSH still requires password (security boundary)
+
+- **✅Assessment**: gnome-keyring runs on boot (`/usr/bin/gnome-keyring-daemon`), prompts for password. On a dedicated marine device this is unacceptable.
+
+- **✅Solution A — Empty password keyring** (recommended for dedicated device):
+
+  - ✅Set keyring password to empty string via `seahorse` or `secret-tool`
+
+  - ✅ Configure PAM to auto-unlock keyring on auto-login: add `auth optional pam\_gnome\_keyring.so` to `/etc/pam.d/lightdm-autologin`
+
+
+- ✅ Test: reboot → desktop appears without any password prompt → d3kOS UI launches automatically
+
+- ✅Ensure SSH still requires password (security boundary)
 
 ### 12. Settings — Measurement System Section Formatting
-- [ ] **Root cause**: `settings.html` line 627 uses `<h2>Measurement System</h2>` without `class="section-header"` and without an emoji icon
-- [ ] **Fix**: Change to `<h2 class="section-header">📏 Measurement System</h2>` to match all other sections
-- [ ] Also check lines 691+ for `<h2>🤖 AI Assistant — Gemini API</h2>` — apply same class if missing
-- [ ] Visual test: confirm Measurement System heading matches Engine Configuration, Units & Display, etc.
+
+- \[✅\] **Root cause**: `settings.html` line 627 uses `\<h2\>Measurement System\</h2\>` without `class="section-header"` and without an emoji icon
+
+- \[✅\] **Fix**: Change to `\<h2 class="section-header"\>📏 Measurement System\</h2\>` to match all other sections
+
+- \[✅\] Also check lines 691+ for `\<h2\>🤖 AI Assistant — Gemini API\</h2\>` — apply same class if missing
+
+- \[✅\] Visual test: confirm Measurement System heading matches Engine Configuration, Units & Display, etc.
 
 ### 13. Settings — System Actions Actually Work
-- [ ] **Root cause**: `restartsignalk()`, `restartNodered()`, `rebootSystem()` at lines 1019-1034 only show `alert()` with SSH instructions — they do nothing
-- [ ] **Create Settings Action API** (`d3kos-settings-api.py`, port 8101):
-  - [ ] `POST /settings/restart-signalk` → `subprocess.run(['sudo', 'systemctl', 'restart', 'signalk'])`
-  - [ ] `POST /settings/restart-nodered` → `subprocess.run(['sudo', 'systemctl', 'restart', 'nodered'])`
-  - [ ] `POST /settings/reboot` → `subprocess.run(['sudo', 'reboot'])`
-  - [ ] `POST /settings/initial-setup-reset` → call existing reset logic
-  - [ ] All endpoints return `{ "success": true, "message": "..." }`
-  - [ ] Add sudoers rule: `d3kos ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart signalk, /usr/bin/systemctl restart nodered, /usr/bin/reboot`
-- [ ] **Update settings.html**: Replace all `alert()` calls with `fetch('/settings/restart-signalk', {method:'POST'})` calls
-- [ ] **Confirm with user before reboot**: reboot action shows confirmation dialog first
-- [ ] Add nginx proxy `/settings/action/` → `localhost:8101`
-- [ ] Create systemd service `d3kos-settings-api.service`, enable, deploy
+
+- \[✅\] **Root cause**: `restartsignalk()`, `restartNodered()`, `rebootSystem()` at lines 1019-1034 only show `alert()` with SSH instructions — they do nothing
+
+- \[✅\] **Create Settings Action API** (`d3kos-settings-api.py`, port 8101):
+
+  - \[✅\] `POST /settings/restart-signalk` → `subprocess.run(\['sudo', 'systemctl', 'restart', 'signalk'\])`
+
+  - \[✅\] `POST /settings/restart-nodered` → `subprocess.run(\['sudo', 'systemctl', 'restart', 'nodered'\])`
+
+  - \[✅\] `POST /settings/reboot` → `subprocess.run(\['sudo', 'reboot'\])`
+
+  - \[✅\] `POST /settings/initial-setup-reset` → call existing reset logic
+
+  - \[✅\] All endpoints return `\{ "success": true, "message": "..." \}`
+
+  - \[✅\] Add sudoers rule: `d3kos ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart signalk, /usr/bin/systemctl restart nodered, /usr/bin/reboot`
+
+- \[✅\] **Update settings.html**: Replace all `alert()` calls with `fetch('/settings/restart-signalk', \{method:'POST'\})` calls
+
+- \[✅\] **Confirm with user before reboot**: reboot action shows confirmation dialog first
+
+- \[✅\] Add nginx proxy `/settings/action/` → `localhost:8101`
+
+- \[✅\] Create systemd service `d3kos-settings-api.service`, enable, deploy
 
 ### 14. All Pages — Scrollbar Size (Touch-Friendly)
-- [ ] **Root cause**: All pages with right-side scrollbars use default browser scrollbar (~8-12px wide) — impossible to grab accurately on touchscreen
-- [ ] **Fix**: Add global CSS rule to ALL html pages (or shared CSS file): scrollbar must be minimum 5× current size (~50-60px wide) with high-contrast track and thumb
-- [ ] Apply to: `dashboard.html`, `navigation.html`, `weather.html`, `marine-vision.html`, `boatlog.html`, `settings.html`, `onboarding.html`, and any other pages with scrollable content
-- [ ] CSS to add to every page `<style>` block:
-  ```css
-  ::-webkit-scrollbar { width: 56px; }
-  ::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 8px; }
-  ::-webkit-scrollbar-thumb { background: #555; border-radius: 8px; min-height: 80px; }
-  ::-webkit-scrollbar-thumb:active { background: #FFD700; }
-  ```
-- [ ] If a shared CSS file exists (`/var/www/html/css/`), add there once instead of per-page
-- [ ] Test on touchscreen: scrollbar must be easy to grab and drag with a finger
 
----
+- \[✅\] **Root cause**: All pages with right-side scrollbars use default browser scrollbar (~8-12px wide) — impossible to grab accurately on touchscreen
+
+- \[✅\] **Fix**: Add global CSS rule to ALL html pages (or shared CSS file): scrollbar must be minimum 5× current size (~50-60px wide) with high-contrast track and thumb
+
+- \[✅\] Apply to: `dashboard.html`, `navigation.html`, `weather.html`, `marine-vision.html`, `boatlog.html`, `settings.html`, `onboarding.html`, and any other pages with scrollable content (56px scrollbars deployed to all 26 pages)
+
+- \[✅\] CSS added: `::-webkit-scrollbar { width: 56px }` + track/thumb/active rules on all pages
+
+- \[✅\] Also created shared `d3kos-touch.css` (2026-03-06) with touch-action, tap-highlight, and overscroll rules
+
+- \[✅\] Test on touchscreen: scrollbar must be easy to grab and drag with a finger
+
 
 **Deliverable:** All 14 items resolved. d3kOS fully functional on first boot with no SSH required for any operation.
 
-**Spec for Ollama:** `deployment/features/post-install-fixes/OLLAMA_SPEC.md`
+**Spec for Ollama:** `deployment/features/post-install-fixes/OLLAMA\_SPEC.md`
 
-
-## v0.9.4 — Mobile Apps (iOS/Android) `\[LARGE\]`
+## v0.9.4 — Mobile Apps (iOS/Android) `\\\[LARGE\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** HIGH
 
 ### Tasks
 
-- [ ] AtMyBoat.com VPS setup (Headscale, MQTT, PostgreSQL)
+- [ ] 
 
-- [ ] REST API + web dashboard
+- AtMyBoat.com VPS setup (Headscale, MQTT, PostgreSQL)
 
-- [ ] React Native mobile app
+- [ ] 
 
-- [ ] Pi integration (Tailscale, MQTT publisher)
+- REST API + web dashboard
+
+- [ ] 
+
+- React Native mobile app
+
+- [ ] 
+
+- Pi integration (Tailscale, MQTT publisher)
 
 **Deliverable:** d3kOS v0.9.5 + AtMyBoat.com cloud platform
 
-
-## v0.9.5 — Predictive Maintenance `\[LARGE\]`
+## v0.9.5 — Predictive Maintenance `\\\[LARGE\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** HIGH
 
 ### Tasks
 
-- [ ] Data collection (30-day baseline)
+- [ ] 
 
-- [ ] Anomaly detection algorithms
+- Data collection (30-day baseline)
 
-- [ ] ML models (5 models: overheating, oil, battery, SD card, GPS)
+- [ ] 
 
-- [ ] Alert system integration
+- Anomaly detection algorithms
 
-- [ ] Additional automation (weather, fuel, maintenance scheduling)
+- [ ] 
+
+- ML models (5 models: overheating, oil, battery, SD card, GPS)
+
+- [ ] 
+
+- Alert system integration
+
+- [ ] 
+
+- Additional automation (weather, fuel, maintenance scheduling)
 
 **Deliverable:** d3kOS v0.10.0 with predictive maintenance
 
-
-## v0.9.6 — Fleet Management `\[MEDIUM\]`
+## v0.9.6 — Fleet Management `\\\[MEDIUM\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** MEDIUM
 
 ### Tasks
 
-- [ ] Fleet creation and invitation system
+- [ ] 
 
-- [ ] Fleet map with live vessel positions
+- Fleet creation and invitation system
 
-- [ ] Fleet analytics (engine hours, fuel, alerts)
+- [ ] 
 
-- [ ] Testing and Tier 3 activation
+- Fleet map with live vessel positions
+
+- [ ] 
+
+- Fleet analytics (engine hours, fuel, alerts)
+
+- [ ] 
+
+- Testing and Tier 3 activation
 
 **Deliverable:** d3kOS v0.10.1 with fleet management
 
-
-## v0.9.6 — Remote Diagnostic Console `\[MEDIUM\]`
+## v0.9.6 — Remote Diagnostic Console `\\\[MEDIUM\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** MEDIUM
 
 ### Tasks
 
-- [ ] Support ticket system + consent flow
+- [ ] 
 
-- [ ] Diagnostic agent (log collection)
+- Support ticket system + consent flow
 
-- [ ] Claude API + AI diagnosis
+- [ ] 
 
-- [ ] Fix delivery + user approval
+- Diagnostic agent (log collection)
 
-- [ ] Knowledge base and admin console
+- [ ] 
+
+- Claude API + AI diagnosis
+
+- [ ] 
+
+- Fix delivery + user approval
+
+- [ ] 
+
+- Knowledge base and admin console
 
 **Deliverable:** d3kOS v0.11.0 with remote diagnostics
 
-
-## v0.9.7 — Autonomous Agents `\[LARGE\]`
+## v0.9.7 — Autonomous Agents `\\\[LARGE\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** HIGH
 
 ### Tasks
 
-- [ ] Agent framework (base class, scheduler, communication bus)
+- [ ] 
 
-- [ ] Update agent (GitHub integration, backup/restore, auto-rollback)
+- Agent framework (base class, scheduler, communication bus)
 
-- [ ] Performance agent (CPU/memory/disk monitoring, auto-remediation)
+- [ ] 
 
-- [ ] Storage agent (cleanup automation, predictive warnings)
+- Update agent (GitHub integration, backup/restore, auto-rollback)
 
-- [ ] Health check agent (daily reports, weekly scans)
+- [ ] 
 
-- [ ] Backup agent (incremental backups, cloud sync)
+- Performance agent (CPU/memory/disk monitoring, auto-remediation)
 
-- [ ] Testing (reliability, failure modes, UAT)
+- [ ] 
+
+- Storage agent (cleanup automation, predictive warnings)
+
+- [ ] 
+
+- Health check agent (daily reports, weekly scans)
+
+- [ ] 
+
+- Backup agent (incremental backups, cloud sync)
+
+- [ ] 
+
+- Testing (reliability, failure modes, UAT)
 
 **Deliverable:** d3kOS v0.12.0 with autonomous agents
 
-
-## v0.9.5 — AI Action Layer `\[SMALL\]`
+## v0.9.5 — AI Action Layer `\\\[SMALL\\\]`
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.5 (commit `c68d8c6`) | **Priority:** MEDIUM
 
 ### Tasks
 
-- \[✅\] `classify\_action\_query()` — detect action intent before simple/Gemini routing
+- \[✅\] `classify\\\_action\\\_query()` — detect action intent before simple/Gemini routing
 
-- \[✅\] `execute\_action()` — whitelist dispatcher (log\_note, log\_hours, set\_fuel\_alarm)
+- \[✅\] `execute\\\_action()` — whitelist dispatcher (log\_note, log\_hours, set\_fuel\_alarm)
 
-- \[✅\] `\_append\_maintenance\_log()` — append-only JSON log at `/opt/d3kos/data/maintenance-log.json`
+- \[✅\] `\\\_append\\\_maintenance\\\_log()` — append-only JSON log at `/opt/d3kos/data/maintenance-log.json`
 
-- \[✅\] `\_set\_pref()` — write to `user-preferences.json` for config changes
+- \[✅\] `\\\_set\\\_pref()` — write to `user-preferences.json` for config changes
 
 - \[✅\] Wired into `query()` — action check runs before all other routing
 
@@ -968,203 +1213,359 @@
 
 **Deliverable:** d3kOS v0.9.5 with voice-triggered maintenance logging and config actions
 
-
-## v0.9.7 — Failure Intelligence & Recovery `\[SMALL\]`
+## v0.9.7 — Failure Intelligence & Recovery `\\\[SMALL\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** MEDIUM
 
 ### Tasks
 
-- [ ] Failure pattern recognition
+- [ ] 
 
-- [ ] Community data aggregation
+- Failure pattern recognition
 
-- [ ] Recovery playbook system
+- [ ] 
 
-- [ ] Testing and knowledge base integration
+- Community data aggregation
+
+- [ ] 
+
+- Recovery playbook system
+
+- [ ] 
+
+- Testing and knowledge base integration
 
 **Deliverable:** d3kOS v0.13.0 with failure intelligence
 
-
-## v0.9.8 — Security Audit & Penetration Testing `\[LARGE\]`
+## v0.9.8 — Security Audit & Penetration Testing `\\\[LARGE\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** CRITICAL — Required before v1.0 launch
 
 ### Automated Security Scanning
 
-- [ ] Run npm audit (Node.js dependencies)
+- [ ] 
 
-- [ ] Run pip-audit (Python dependencies)
+- Run npm audit (Node.js dependencies)
 
-- [ ] OWASP ZAP automated scan (all web endpoints)
+- [ ] 
 
-- [ ] SQL injection testing (SQLMap on all database queries)
+- Run pip-audit (Python dependencies)
 
-- [ ] Review OWASP Top 10 compliance
+- [ ] 
 
-- [ ] Scan for hardcoded secrets in codebase
+- OWASP ZAP automated scan (all web endpoints)
 
-- [ ] Check file permissions on sensitive files
+- [ ] 
+
+- SQL injection testing (SQLMap on all database queries)
+
+- [ ] 
+
+- Review OWASP Top 10 compliance
+
+- [ ] 
+
+- Scan for hardcoded secrets in codebase
+
+- [ ] 
+
+- Check file permissions on sensitive files
 
 ### Manual Code Review
 
-- [ ] Authentication/authorization review
+- [ ] 
 
-  - [ ] Verify all API endpoints require auth
+- Authentication/authorization review
 
-  - [ ] Check JWT token validation
+  - [ ] 
 
-  - [ ] Review session management
+  - Verify all API endpoints require auth
 
-  - [ ] Test for session hijacking
+  - [ ] 
 
-- [ ] Input validation review
+  - Check JWT token validation
 
-  - [ ] Check all user inputs for XSS prevention
+  - [ ] 
 
-  - [ ] Verify parameterized database queries
+  - Review session management
 
-  - [ ] Test file upload security
+  - [ ] 
 
-  - [ ] Check for command injection vulnerabilities
+  - Test for session hijacking
 
-  - [ ] Test for directory traversal attacks
+- [ ] 
 
-- [ ] Secrets management review
+- Input validation review
 
-  - [ ] API key storage (should be encrypted)
+  - [ ] 
 
-  - [ ] Password hashing (bcrypt/scrypt)
+  - Check all user inputs for XSS prevention
 
-  - [ ] Certificate management
+  - [ ] 
 
-  - [ ] Webhook signature verification
+  - Verify parameterized database queries
+
+  - [ ] 
+
+  - Test file upload security
+
+  - [ ] 
+
+  - Check for command injection vulnerabilities
+
+  - [ ] 
+
+  - Test for directory traversal attacks
+
+- [ ] 
+
+- Secrets management review
+
+  - [ ] 
+
+  - API key storage (should be encrypted)
+
+  - [ ] 
+
+  - Password hashing (bcrypt/scrypt)
+
+  - [ ] 
+
+  - Certificate management
+
+  - [ ] 
+
+  - Webhook signature verification
 
 ### Penetration Testing (External Firm)
 
-- [ ] Contract professional penetration testing firm
+- [ ] 
 
-- [ ] External penetration test (network-level attacks)
+- Contract professional penetration testing firm
 
-- [ ] Internal penetration test (privilege escalation)
+- [ ] 
 
-- [ ] API endpoint fuzzing (all 20+ services)
+- External penetration test (network-level attacks)
 
-- [ ] WireGuard VPN security review
+- [ ] 
 
-- [ ] MQTT broker security audit (TLS, ACLs)
+- Internal penetration test (privilege escalation)
 
-- [ ] Signal K server security review
+- [ ] 
 
-- [ ] Rate limiting and DDoS protection testing
+- API endpoint fuzzing (all 20+ services)
+
+- [ ] 
+
+- WireGuard VPN security review
+
+- [ ] 
+
+- MQTT broker security audit (TLS, ACLs)
+
+- [ ] 
+
+- Signal K server security review
+
+- [ ] 
+
+- Rate limiting and DDoS protection testing
 
 ### Fixes & Privacy Compliance
 
-- [ ] Fix all critical vulnerabilities (must be zero)
+- [ ] 
 
-- [ ] Fix all high vulnerabilities (must be zero)
+- Fix all critical vulnerabilities (must be zero)
 
-- [ ] Document medium/low vulnerabilities with mitigation plans
+- [ ] 
 
-- [ ] GDPR compliance verification
+- Fix all high vulnerabilities (must be zero)
 
-  - [ ] Data retention policy implementation
+- [ ] 
 
-  - [ ] User data export functionality (Article 20)
+- Document medium/low vulnerabilities with mitigation plans
 
-  - [ ] Data deletion functionality (Article 17)
+- [ ] 
 
-  - [ ] Privacy policy review and update
+- GDPR compliance verification
 
-- [ ] CCPA compliance verification (California users)
+  - [ ] 
 
-- [ ] Retest after fixes
+  - Data retention policy implementation
 
-- [ ] Obtain penetration test certificate
+  - [ ] 
+
+  - User data export functionality (Article 20)
+
+  - [ ] 
+
+  - Data deletion functionality (Article 17)
+
+  - [ ] 
+
+  - Privacy policy review and update
+
+- [ ] 
+
+- CCPA compliance verification (California users)
+
+- [ ] 
+
+- Retest after fixes
+
+- [ ] 
+
+- Obtain penetration test certificate
 
 ### Critical Checklist (Must Pass)
 
-- [ ] Zero critical vulnerabilities
+- [ ] 
 
-- [ ] Zero high vulnerabilities
+- Zero critical vulnerabilities
 
-- [ ] All API endpoints require authentication
+- [ ] 
 
-- [ ] All database queries use parameterized statements
+- Zero high vulnerabilities
 
-- [ ] All passwords hashed with bcrypt/scrypt
+- [ ] 
 
-- [ ] No hardcoded secrets in code
+- All API endpoints require authentication
 
-- [ ] All external APIs use HTTPS
+- [ ] 
 
-- [ ] Rate limiting on all public endpoints
+- All database queries use parameterized statements
 
-- [ ] MQTT topics secured with ACLs
+- [ ] 
 
-- [ ] File uploads validated for malicious content
+- All passwords hashed with bcrypt/scrypt
 
-- [ ] Sessions expire properly
+- [ ] 
 
-- [ ] All webhooks validate signatures
+- No hardcoded secrets in code
 
-- [ ] GDPR/CCPA compliant
+- [ ] 
 
-- [ ] Penetration test certificate obtained
+- All external APIs use HTTPS
+
+- [ ] 
+
+- Rate limiting on all public endpoints
+
+- [ ] 
+
+- MQTT topics secured with ACLs
+
+- [ ] 
+
+- File uploads validated for malicious content
+
+- [ ] 
+
+- Sessions expire properly
+
+- [ ] 
+
+- All webhooks validate signatures
+
+- [ ] 
+
+- GDPR/CCPA compliant
+
+- [ ] 
+
+- Penetration test certificate obtained
 
 **Deliverable:** d3kOS v0.16.0 — Security certified, production ready
 
-
-## v1.0.0 — Incremental Update System & Production Launch `\[LARGE\]`
+## v1.0.0 — Incremental Update System & Production Launch `\\\[LARGE\\\]`
 
 **Status:** \[ \] Not Started | **Priority:** HIGH
 
 ### Incremental Update System
 
-- [ ] Enhanced update service (signature verification, checksum)
+- [ ] 
 
-- [ ] Pre-update snapshot system
+- Enhanced update service (signature verification, checksum)
 
-- [ ] Post-update health check and auto-rollback
+- [ ] 
 
-- [ ] Update package storage (AtMyBoat.com)
+- Pre-update snapshot system
 
-- [ ] Admin console update manager
+- [ ] 
+
+- Post-update health check and auto-rollback
+
+- [ ] 
+
+- Update package storage (AtMyBoat.com)
+
+- [ ] 
+
+- Admin console update manager
 
 ### Production Launch Checklist
 
-- [ ] All v0.x versions deployed and stable
+- [ ] 
 
-- [ ] Security audit passed (v0.16.0)
+- All v0.x versions deployed and stable
 
-- [ ] Multi-language support active (v0.15.0)
+- [ ] 
 
-- [ ] Documentation complete (user + developer guides)
+- Security audit passed (v0.16.0)
 
-- [ ] Professional website launched (AtMyBoat.com)
+- [ ] 
 
-- [ ] Support infrastructure ready (ticketing, diagnostic console)
+- Multi-language support active (v0.15.0)
 
-- [ ] Payment processing active (Stripe, Apple IAP, Google Play)
+- [ ] 
 
-- [ ] Beta testing complete (100+ users, 6+ months)
+- Documentation complete (user + developer guides)
 
-- [ ] Performance targets met (uptime \> 99.5%, response \< 3s)
+- [ ] 
 
-- [ ] Backup and recovery tested
+- Professional website launched (AtMyBoat.com)
 
-- [ ] Disaster recovery plan documented
+- [ ] 
 
-- [ ] Legal review complete (terms, privacy, GDPR/CCPA)
+- Support infrastructure ready (ticketing, diagnostic console)
 
-- [ ] Marketing materials ready
+- [ ] 
 
-- [ ] Press release prepared
+- Payment processing active (Stripe, Apple IAP, Google Play)
 
-- [ ] Launch date announced
+- [ ] 
+
+- Beta testing complete (100+ users, 6+ months)
+
+- [ ] 
+
+- Performance targets met (uptime \> 99.5%, response \< 3s)
+
+- [ ] 
+
+- Backup and recovery tested
+
+- [ ] 
+
+- Disaster recovery plan documented
+
+- [ ] 
+
+- Legal review complete (terms, privacy, GDPR/CCPA)
+
+- [ ] 
+
+- Marketing materials ready
+
+- [ ] 
+
+- Press release prepared
+
+- [ ] 
+
+- Launch date announced
 
 **Deliverable:** d3kOS v1.0.0 — Production ready, international marine electronics platform
-
 
 ## 📊 OVERALL PROGRESS TRACKING
 
@@ -1174,33 +1575,63 @@
 
 - \[✅\] v0.9.2 Complete (Metric/Imperial)
 
-- \[🔄\] v0.9.2 In Progress (Multi-Camera System) — both cameras live, pending DHCP reservations + 24h stability test
+- \[✅\] v0.9.3 Complete (Complete Website Rewrite — full dark marine UI, all 9 pages)
+
+- \[✅\] v0.9.2 Complete (Multi-Camera System) — both cameras live, nginx fixed, fish detector running
 
 - \[✅\] v0.9.4 Complete (Gemini AI Integration)
 
 - \[✅\] v0.9.5 Complete (AI Action Layer + Remote Access API + Tailscale)
 
-- [ ] v0.9.6 Complete (Remote Access & Camera Streaming) — cameras not purchased
+- \[✅\] v0.9.5 Complete (Post-Install Bug Fixes — all 14 items, deployed 2026-03-05)
 
-- [ ] v0.9.6 Complete (Fleet Management)
+- \[🔄\] v0.9.x In Progress (i18n Multi-Language Foundation — 18 languages, Phase 1 deployed 2026-03-06)
 
-- [ ] v0.10.0 Complete (Predictive Maintenance)
+- \[🔄\] v0.9.x In Progress (OpenCPN Flatpak + AIS Pipeline — Flatpak live, AIS flowing, o-charts activation pending)
 
-- [ ] v0.11.0 Complete (Diagnostic Console)
+- [ ] 
 
-- [ ] v0.12.0 Complete (Autonomous Agents)
+- v0.9.6 Complete (Remote Access & Camera Streaming) — cameras not purchased
 
-- [ ] v0.12.1 Complete (AI Action Layer — extended)
+- [ ] 
 
-- [ ] v0.13.0 Complete (Failure Intelligence)
+- v0.9.6 Complete (Fleet Management)
 
-- [ ] v0.14.0 Complete (Community Features)
+- [ ] 
 
-- [ ] v0.15.0 Complete (Multi-Language) — REQUIRED for v1.0
+- v0.10.0 Complete (Predictive Maintenance)
 
-- [ ] v0.16.0 Complete (Security Audit) — REQUIRED for v1.0
+- [ ] 
 
-- [ ] v1.0.0 LAUNCHED (Production Release)
+- v0.11.0 Complete (Diagnostic Console)
+
+- [ ] 
+
+- v0.12.0 Complete (Autonomous Agents)
+
+- [ ] 
+
+- v0.12.1 Complete (AI Action Layer — extended)
+
+- [ ] 
+
+- v0.13.0 Complete (Failure Intelligence)
+
+- [ ] 
+
+- v0.14.0 Complete (Community Features)
+
+- [ ] 
+
+- v0.15.0 Complete (Multi-Language) — REQUIRED for v1.0
+
+- [ ] 
+
+- v0.16.0 Complete (Security Audit) — REQUIRED for v1.0
+
+- [ ] 
+
+- v1.0.0 LAUNCHED (Production Release)
 
 ### Critical Path
 
@@ -1208,55 +1639,73 @@
 
 - \[✅\] v0.9.2 (Metric/Imperial) — DONE
 
+- \[✅\] v0.9.3 (Complete Website Rewrite) — DONE
+
 - \[✅\] v0.9.4 (Gemini AI) — DONE
 
 - \[✅\] v0.9.2 (Multi-Camera) — both cameras live, nginx fixed, fish detector running
 
 - \[✅\] Fix: voice rule overmatch ("speed" pattern) — FIXED commit `680a795`
 
-- [ ] v0.15.0 (Multi-Language) — REQUIRED for v1.0
+- \[✅\] v0.9.5 (Post-Install Bug Fixes) — all 14 deployed 2026-03-05
+
+- \[🔄\] v0.x (Multi-Language Phase 1) — foundation deployed 2026-03-06, page translation pending
+
+- \[🔄\] v0.x (OpenCPN + AIS) — Flatpak live, AIS flowing, o-charts activation pending
+
+- [ ] v0.15.0 (Multi-Language full) — REQUIRED for v1.0
 
 - [ ] v0.16.0 (Security Audit) — REQUIRED for v1.0
 
 ### Risk Areas (Monitor Closely)
 
-- [ ] Security vulnerabilities (must be zero critical/high at v1.0)
+- [ ] 
 
-- [ ] Performance degradation (monitor CPU/memory/bandwidth)
+- Security vulnerabilities (must be zero critical/high at v1.0)
 
-- [ ] Third-party API dependencies (Google Gemini, Stripe, Apple, Google Play)
+- [ ] 
 
-- [ ] Hardware compatibility (cameras, GPS, CAN bus)
+- Performance degradation (monitor CPU/memory/bandwidth)
 
-- [ ] User adoption (need 1,000+ Tier 2 users for break-even)
+- [ ] 
 
-- [ ] International compliance (GDPR, CCPA, translation quality)
+- Third-party API dependencies (Google Gemini, Stripe, Apple, Google Play)
 
+- [ ] 
+
+- Hardware compatibility (cameras, GPS, CAN bus)
+
+- [ ] 
+
+- User adoption (need 1,000+ Tier 2 users for break-even)
+
+- [ ] 
+
+- International compliance (GDPR, CCPA, translation quality)
 
 ## 📝 NOTES & CONVENTIONS
 
 ### Checklist Update Protocol
 
-1. When starting a task: Change `\[ \]` to `\[🔄\]`
+1. When starting a task: Change `\\\[ \\\]` to `\\\[🔄\\\]`
 
-2. When completing a task: Change `\[🔄\]` to `\[✅\]`
+2. When completing a task: Change `\\\[🔄\\\]` to `\\\[✅\\\]`
 
-3. When blocked: Change to `\[⚠️\]` and add comment explaining blocker
+3. When blocked: Change to `\\\[⚠️\\\]` and add comment explaining blocker
 
-4. When verification fails: Change to `\[🔍\]` and add `\<!-- VERIFY: issue description --\>`
+4. When verification fails: Change to `\\\[🔍\\\]` and add `\\\<!-- VERIFY: issue description --\\\>`
 
-5. When something doesn't work: Change to `\[❌\]` and add `\<!-- NOT WORKING: description --\>`
+5. When something doesn't work: Change to `\\\[❌\\\]` and add `\\\<!-- NOT WORKING: description --\\\>`
 
 ### Commit Protocol
 
-Every commit should update this checklist — mark completed tasks as `\[✅\]`, add verification comments if testing reveals issues, and tag commits with the version number (e.g., v0.9.2).
+Every commit should update this checklist — mark completed tasks as `\\\[✅\\\]`, add verification comments if testing reveals issues, and tag commits with the version number (e.g., v0.9.2).
 
 ### Verification Protocol
 
-All `\[🔍\]` items must be retested before considering a version complete. Add `\<!-- VERIFY: description --\>` comments for issues found. Do not proceed to next version until all verifications pass.
+All `\\\[🔍\\\]` items must be retested before considering a version complete. Add `\\\<!-- VERIFY: description --\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-
-**Last Updated:** March 4, 2026 (Part 7) | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 6, 2026 (Part 17) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 

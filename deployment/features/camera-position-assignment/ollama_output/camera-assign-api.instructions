@@ -1,25 +1,39 @@
-@app.route('/camera/assign', methods=['POST'])
-def assign_camera_position():
-    data = request.get_json()
-    cam_id = data.get('camera_id')
-    position = data.get('position')
-    valid_positions = ['bow', 'stern', 'port', 'starboard', 'unassigned']
-    if position not in valid_positions:
-        return jsonify({'ok': False, 'error': 'invalid position'}), 400
-    with open(CAMERAS_CONFIG) as f:
-        config = json.load(f)
-    found = False
-    for cam in config['cameras']:
-        if cam['id'] == cam_id:
-            found = True
-        if cam.get('position') == position and position != 'unassigned':
-            cam['position'] = 'unassigned'
-    if not found:
-        return jsonify({'ok': False, 'error': 'camera not found'}), 404
-    for cam in config['cameras']:
-        if cam['id'] == cam_id:
-            cam['position'] = position
-    with open(CAMERAS_CONFIG, 'w') as f:
-        json.dump(config, f, indent=2)
-    return jsonify({'ok': True, 'camera_id': cam_id, 'position': position})
+@app.route('/camera/grid', methods=['GET'])
+def get_camera_grid():
+    """Return a side-by-side JPEG of all cameras."""
+    if not cameras:
+        return jsonify({'error': 'No cameras configured'}), 400
 
+    # Collect frames from all cameras
+    frames = []
+    for cam_id in cameras:
+        state = cam_state.get(cam_id)
+        if not state or not state['frame'] is None:
+            # If no frame available, use a black frame
+            frame = np.zeros((240, 320, 3), dtype=np.uint8)
+            frame[:] = [128, 128, 128]  # Gray
+        else:
+            with state['lock']:
+                frame = state['frame'].copy()
+        frames.append(frame)
+
+    if not frames:
+        return jsonify({'error': 'No frames available'}), 500
+
+    # Resize all frames to same size (if needed)
+    h, w = frames[0].shape[:2]
+    resized_frames = [cv2.resize(f, (w, h)) for f in frames]
+
+    # Arrange frames side-by-side
+    grid = np.hstack(resized_frames)
+
+    # Convert to JPEG
+    success, buffer = cv2.imencode('.jpg', grid)
+    if not success:
+        return jsonify({'error': 'Failed to encode image'}), 500
+
+    # Return as file response
+    from io import BytesIO
+    img_io = BytesIO(buffer)
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/jpeg', as_attachment=False, download_name='camera_grid.jpg')
