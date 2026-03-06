@@ -354,17 +354,11 @@
 
   - \[✅\] `/opt/d3kos/config/cameras.json` deployed (id, name, location, ip, rtsp\_url, model, detection\_enabled)
 
-- [ ] 
+- \[⚠️\] Configure DHCP reservations — ON-BOAT TASK
 
-- Configure DHCP reservations
+  - \[✅\] `setup\_dhcp\_reservations.py` deployed to `/home/d3kos/` on Pi
 
-  - [ ] 
-
-  - Reserve 10.42.0.100 (Bow) and 10.42.0.63 (Stern) in dnsmasq
-
-  - [ ] 
-
-  - Restart NetworkManager
+  - \[⚠️\] Run `sudo python3 ~/setup\_dhcp\_reservations.py` once when cameras are connected to hotspot — auto-reads MAC addresses from lease file + writes dnsmasq.conf + restarts dnsmasq
 
 - \[🔄\] Test camera connectivity
 
@@ -889,7 +883,9 @@
 
 - \[✅\] **Export button**: Confirm boatlog.html export button calls correct API and downloads file
 
-- \[🔍\] Test voice note record → transcribe → save → view cycle (verify agent flagged syntax — test on Pi)
+- \[✅\] recordVoiceNote() replaced — real MediaRecorder implementation deployed 2026-03-06 (verify agent corrected Ollama placeholder regeneration)
+
+- \[🔍\] Test voice note record → transcribe → save → view cycle on Pi at dock
 
 ### 6. Weather — GPS Centering & Wind/Clouds Overlay
 
@@ -913,7 +909,7 @@
 
 - \[✅\] **Fish detector**: Verify `fish\_detector.py` handles camera-offline state without crashing. Add health check that returns `offline` state cleanly.
 
-- \[🔍\] **UI**: When cameras offline, show placeholder with camera name + "Offline — Connect to boat network" instead of error/broken image (only CSS injected — verify JS onerror handlers work on Pi)
+- \[✅\] **UI**: onerror handler deployed — shows "No camera feed available" + hides broken image (marine-vision.html line 492)
 
 - \[✅\] **Fish detector API**: Ensure `/fish/status` returns `\{ "status": "offline", "reason": "camera unavailable" \}` not an error when camera not reachable
 
@@ -969,7 +965,7 @@
 
 - \[✅\] **Context window**: When RAG results are used, include the collection name + chunk source file in the prompt context so Ollama knows where information came from
 
-- \[🔍\] **Hybrid routing**: Verify score 30 from verify agent — check `query\_handler.py` on Pi to confirm n\_results increase deployed correctly
+- \[✅\] **Hybrid routing confirmed**: `k=6` + distance filter (`< 0.4`) confirmed in `query\_handler.py` line 232-236 on Pi
 
 ### 11. System Boot — Keyring Auto-Unlock
 
@@ -1705,7 +1701,7 @@ Every commit should update this checklist — mark completed tasks as `\\\[✅\\
 
 All `\\\[🔍\\\]` items must be retested before considering a version complete. Add `\\\<!-- VERIFY: description --\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** March 6, 2026 (Part 17) | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 6, 2026 (Part 17 continued) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
