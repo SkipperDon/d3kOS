@@ -1,0 +1,24 @@
+# Secrets & credentials — NEVER commit these
+api-keys.json
+cloud-credentials.json
+.env
+.env.*
+**/config/api-keys.json
+**/config/cloud-credentials.json
+telemetry-buffer.db
+
+# Pi SSH keys
+*.pem
+id_d3kos
+id_rsa
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store

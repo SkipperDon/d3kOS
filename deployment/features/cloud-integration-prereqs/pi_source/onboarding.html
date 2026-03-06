@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/js/units.js"></script>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/d3kos-touch.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engine Dashboard - d3kOS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      padding: 0;
+      margin: 0;
+      font-size: 22px;
+      font-family: Arial, sans-serif;
+    }
+    .nav-bar {
+      background: #000;
+      border-bottom: 2px solid #0C0;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-btn {
+      background: #0C0;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .title {
+      font-size: 28px;
+      color: #0C0;
+      font-weight: bold;
+    }
+    .progress {
+      background: rgba(0,204,0,0.1);
+      padding: 15px 20px;
+      border-bottom: 1px solid #0C0;
+      text-align: center;
+    }
+    .progress-text {
+      color: #0C0;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #0C0;
+      transition: width 0.3s;
+    }
+    .content {
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      padding-bottom: 120px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      height: calc(100vh - 160px);
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+    .step {
+      display: none;
+    }
+    .step.active {
+      display: block;
+    }
+    h2 {
+      color: #0C0;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+    p {
+      color: #fff;
+      opacity: 0.8;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+    input, select {
+      width: 100%;
+      max-width: 600px;
+      height: 60px;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 22px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0C0;
+    }
+    .nav-bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #000;
+      border-top: 2px solid #0C0;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .nav-bottom button {
+      background: #0C0;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-size: 22px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      min-width: 140px;
+    }
+    .nav-bottom button:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+    .btn-start {
+      background: #0C0;
+      color: #000;
+      border: none;
+      padding: 20px 60px;
+      font-size: 28px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 30px;
+    }
+    .config-box {
+      background: #1a1a1a;
+      border: 2px solid #0C0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .config-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #333;
+    }
+    .config-item:last-child {
+      border-bottom: none;
+    }
+    .config-label {
+      color: #0C0;
+      font-weight: bold;
+    }
+    .config-value {
+      color: #fff;
+    }
+    .dip-switch {
+      display: inline-block;
+      width: 40px;
+      height: 60px;
+      background: #333;
+      border: 2px solid #0C0;
+      margin: 0 5px;
+      text-align: center;
+      line-height: 60px;
+      font-size: 32px;
+      font-weight: bold;
+      border-radius: 4px;
+    }
+    .dip-switch.on {
+      background: #0C0;
+      color: #000;
+    }
+    .dip-switch.off {
+      background: #1a1a1a;
+      color: #666;
+    }
+    .dip-row {
+      margin: 30px 0;
+      text-align: center;
+    }
+    .dip-label {
+      font-size: 18px;
+      color: #0C0;
+      margin-top: 10px;
+    }
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+
+  <!-- Language selection overlay — shown on fresh start if language not yet chosen -->
+  <div id="langOverlay" style="display:none;position:fixed;inset:0;background:#000;z-index:999;overflow-y:auto;padding:40px 20px;">
+    <div style="max-width:900px;margin:0 auto;text-align:center;">
+      <div style="font-size:14px;color:#888;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">d3kOS — Marine Intelligence OS</div>
+      <h1 style="font-size:32px;color:#00CC00;margin-bottom:16px;">Select Language</h1>
+      <div style="font-size:20px;color:#555;margin-bottom:28px;line-height:2;">
+        <span>🇬🇧 Welcome</span> &nbsp;
+        <span>🇫🇷 Bienvenue</span> &nbsp;
+        <span>🇩🇪 Willkommen</span> &nbsp;
+        <span>🇪🇸 Bienvenido</span>
+      </div>
+      <div id="obLangGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:32px;text-align:left;"></div>
+      <div style="font-size:22px;color:#888;margin-bottom:20px;">Selected: <span id="obSelectedName" style="color:#00CC00;font-weight:bold;">English</span></div>
+      <button id="obLangConfirm" onclick="confirmObLanguage()" style="background:#00CC00;color:#000;border:none;border-radius:6px;padding:16px 48px;min-height:80px;font-size:24px;font-weight:bold;cursor:pointer;touch-action:manipulation;">Continue →</button>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var LANGS = [
+        {code:'en',n:'English',f:'🇬🇧'},{code:'fr',n:'Français',f:'🇫🇷'},
+        {code:'it',n:'Italiano',f:'🇮🇹'},{code:'es',n:'Español',f:'🇪🇸'},
+        {code:'el',n:'Ελληνικά',f:'🇬🇷'},{code:'hr',n:'Hrvatski',f:'🇭🇷'},
+        {code:'tr',n:'Türkçe',f:'🇹🇷'},{code:'de',n:'Deutsch',f:'🇩🇪'},
+        {code:'nl',n:'Nederlands',f:'🇳🇱'},{code:'sv',n:'Svenska',f:'🇸🇪'},
+        {code:'no',n:'Norsk',f:'🇳🇴'},{code:'da',n:'Dansk',f:'🇩🇰'},
+        {code:'fi',n:'Suomi',f:'🇫🇮'},{code:'pt',n:'Português',f:'🇵🇹'},
+        {code:'ar',n:'العربية',f:'🇦🇪'},{code:'zh',n:'中文',f:'🇨🇳'},
+        {code:'ja',n:'日本語',f:'🇯🇵'},{code:'uk',n:'Українська',f:'🇺🇦'}
+      ];
+      var obLang = 'en';
+      fetch('http://localhost:8101/api/language', {signal: AbortSignal.timeout(2000)})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (!d.language || d.language === 'en') {
+            buildObGrid();
+            document.getElementById('langOverlay').style.display = 'block';
+          }
+        })
+        .catch(function(){});
+            function buildObGrid() {
+        var grid = document.getElementById('obLangGrid');
+        LANGS.forEach(function(l) {
+          var btn = document.createElement('button');
+          btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#111;border:2px solid #333;border-radius:6px;padding:14px 18px;min-height:70px;cursor:pointer;font-size:20px;font-weight:bold;color:#fff;width:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
+          btn.dataset.code = l.code;
+          btn.innerHTML = '<span style="font-size:28px">' + l.f + '</span><span>' + l.n + '</span>';
+          btn.onclick = function() {
+            obLang = l.code;
+            document.getElementById('obSelectedName').textContent = l.n;
+            document.querySelectorAll('#obLangGrid button').forEach(function(b) {
+              b.style.borderColor = b.dataset.code === l.code ? '#00CC00' : '#333';
+              b.style.background  = b.dataset.code === l.code ? '#003300' : '#111';
+            });
+          };
+          grid.appendChild(btn);
+        });
+      }
+      
+      // Add the new settings section
+      function addSettingsSection() {
+        const settingsGrid = document.querySelector('.settings-grid');
+        if (!settingsGrid) return;
+        
+        const settingCard = document.createElement('div');
+        settingCard.className = 'setting-card';
+        settingCard.innerHTML = `
+          <label class="setting-label">Language Selection</label>
+          <p class="setting-description">Select the language for the dashboard interface.</p>
+          <div id="obLangGrid" style="display:grid;gap:12px;margin-top:12px;"></div>
+          <div style="margin-top:16px;">
+            <span id="obSelectedName" style="font-size:20px;font-weight:bold;color:#00CC00;">English</span>
+          </div>
+        `;
+        
+        settingsGrid.appendChild(settingCard);
+        buildObGrid();
+      }
+      
+      // Initialize after DOM is loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        addSettingsSection();
+      });
+      window.confirmObLanguage = function() {
+        var btn = document.getElementById('obLangConfirm');
+        btn.disabled = true; btn.textContent = 'Saving...';
+        var dir = obLang === 'ar' ? 'rtl' : 'ltr';
+        fetch('http://localhost:8101/api/language', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({language: obLang, dir: dir}),
+          signal: AbortSignal.timeout(4000)
+        }).finally(function() {
+          document.getElementById('langOverlay').style.display = 'none';
+        });
+      };
+    })();
+  </script>
+
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="location.href='/'">← Main Menu</button>
+    <div class="title">Boat Setup Wizard</div>
+    <div style="width:150px"></div>
+  </div>
+
+  <div class="progress" id="progress" style="display:none">
+    <div class="progress-text" id="progressText">Step 1 of 20</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:5%"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="step active" id="step0">
+      <h2 data-i18n="onboarding.welcome">Welcome to d3kOS Setup</h2>
+      <p>This wizard configures your marine engine monitoring system (10-15 minutes).</p>
+      <p><strong>You'll need:</strong> Engine manual, propeller specs, CX5106 gateway</p>
+      <button class="btn-start" onclick="start()">Start Setup →</button>
+    </div>
+
+    <!-- step-password: force password change if still default — shown before step1 if needed -->
+    <div class="step" id="step-password" style="display:none;">
+      <h2>Security Setup Required</h2>
+      <p style="color:#ffcc00;font-size:20px;">Your device is using the default password. You must change it before continuing.</p>
+      <div style="margin:24px 0;">
+        <label style="display:block;margin-bottom:8px;font-size:18px;">New Password (min 8 characters)</label>
+        <input id="newPassword" type="password" placeholder="Enter new password" style="width:100%;padding:16px;font-size:20px;background:#111;color:#fff;border:2px solid #444;border-radius:8px;box-sizing:border-box;">
+      </div>
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-size:18px;">Confirm Password</label>
+        <input id="confirmPassword" type="password" placeholder="Confirm new password" style="width:100%;padding:16px;font-size:20px;background:#111;color:#fff;border:2px solid #444;border-radius:8px;box-sizing:border-box;">
+      </div>
+      <p id="passwordError" style="color:#ff4444;font-size:18px;min-height:24px;"></p>
+      <button class="btn-next" onclick="submitPasswordChange()">Set Password & Continue →</button>
+    </div>
+
+    <div class="step" id="step1">
+      <h2>What boat manufacturer do you have?</h2>
+      <p>Start typing or select from suggestions</p>
+      <input type="text" id="q1" placeholder="e.g., Sea Ray, Bayliner">
+    </div>
+
+    <div class="step" id="step2">
+      <h2>What year is your boat?</h2>
+      <p>Enter 4-digit year</p>
+      <input type="number" id="q2" min="1950" max="2026" placeholder="e.g., 2018">
+    </div>
+
+    <div class="step" id="step3">
+      <h2>What's your boat model?</h2>
+      <p>Enter boat model designation</p>
+      <input type="text" id="q3" placeholder="e.g., Sundancer 320">
+    </div>
+
+    <div class="step" id="step4">
+      <h2>Do you have a chartplotter?</h2>
+      <p>Select if you have third-party chartplotter</p>
+      <select id="q4">
+        <option value="">Select...</option>
+        <option value="yes">Yes, I have a chartplotter</option>
+        <option value="no">No chartplotter</option>
+      </select>
+    </div>
+
+    <div class="step" id="step5">
+      <h2>Who makes your engine?</h2>
+      <p>Enter engine manufacturer</p>
+      <input type="text" id="q5" placeholder="e.g., Mercury Marine, Yamaha">
+    </div>
+
+    <div class="step" id="step6">
+      <h2>What's your engine model?</h2>
+      <p>Enter specific engine model</p>
+      <input type="text" id="q6" placeholder="e.g., 5.0L MPI Alpha">
+    </div>
+
+    <div class="step" id="step7">
+      <h2>What year is your engine?</h2>
+      <p>Enter 4-digit year</p>
+      <input type="number" id="q7" min="1950" max="2026" placeholder="e.g., 2018">
+    </div>
+
+    <div class="step" id="step8">
+      <h2>How many cylinders?</h2>
+      <p>Select number of cylinders</p>
+      <select id="q8">
+        <option value="">Select...</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="6">6</option>
+        <option value="8">8</option>
+        <option value="12">12</option>
+      </select>
+    </div>
+
+    <div class="step" id="step9">
+      <h2>What's your engine size?</h2>
+      <p>Enter in liters OR cubic inches</p>
+      <input type="number" id="q9" step="0.1" placeholder="e.g., 5.0 liters or 305 CID">
+    </div>
+
+    <div class="step" id="step10">
+      <h2>How powerful is your engine?</h2>
+      <p>Enter horsepower OR kilowatts</p>
+      <input type="number" id="q10" placeholder="e.g., 220 HP or 164 kW">
+    </div>
+
+    <div class="step" id="step11">
+      <h2>What's your engine's compression?</h2>
+      <p>Enter compression ratio (e.g., 9.5 for 9.5:1)</p>
+      <input type="number" id="q11" step="0.1" placeholder="e.g., 9.5">
+    </div>
+
+    <div class="step" id="step12">
+      <h2>What RPM does your engine idle at?</h2>
+      <p>Enter specified idle RPM</p>
+      <input type="number" id="q12" placeholder="e.g., 700">
+    </div>
+
+    <div class="step" id="step13">
+      <h2>What's your max RPM range?</h2>
+      <p>Enter WOT RPM range (e.g., 4800-5200)</p>
+      <input type="text" id="q13" placeholder="e.g., 4800-5200">
+    </div>
+
+    <div class="step" id="step14">
+      <h2>What type of engine do you have?</h2>
+      <p>Select induction type</p>
+      <select id="q14">
+        <option value="">Select...</option>
+        <option value="na">Naturally Aspirated</option>
+        <option value="turbo">Turbocharged</option>
+        <option value="super">Supercharged</option>
+      </select>
+    </div>
+
+    <div class="step" id="step15">
+      <h2>Where was your boat made?</h2>
+      <p>Select region for tank sensor configuration</p>
+      <select id="q15">
+        <option value="">Select...</option>
+        <option value="us">North America</option>
+        <option value="euro">Europe</option>
+        <option value="unknown">I don't know</option>
+      </select>
+    </div>
+
+    <div class="step" id="step16">
+      <h2>Which engine is this?</h2>
+      <p>Select engine position</p>
+      <select id="q16">
+        <option value="">Select...</option>
+        <option value="primary">Primary/Single Engine</option>
+        <option value="port">Port (Left)</option>
+        <option value="starboard">Starboard (Right)</option>
+      </select>
+    </div>
+
+    <div class="step" id="step17">
+      <h2>Review Your Configuration</h2>
+      <p>Please verify all information is correct</p>
+      <div class="config-box" id="reviewSummary"></div>
+    </div>
+
+    <div class="step" id="step18">
+      <h2>CX5106 DIP Switch Configuration</h2>
+      <p>Configure your CX5106 gateway with these settings</p>
+      <div class="config-box">
+        <h3 style="color:#0C0;margin-bottom:20px">First Row (Engine Configuration)</h3>
+        <div class="dip-row" id="dipRow1"></div>
+        <div id="dipExplanation1" style="margin-top:20px;font-size:18px;line-height:1.6"></div>
+
+        <h3 style="color:#0C0;margin:30px 0 20px 0">Second Row (Regional Settings)</h3>
+        <div class="dip-row" id="dipRow2"></div>
+        <div id="dipExplanation2" style="margin-top:20px;font-size:18px;line-height:1.6"></div>
+      </div>
+    </div>
+
+    <div class="step" id="step19">
+      <h2>Installation Complete!</h2>
+      <p>Scan this QR code with the d3kOS mobile app to pair your device</p>
+      <div id="qrcode"></div>
+      <p style="text-align:center;margin-top:20px;font-size:24px">
+        Installation ID: <span id="installId" style="color:#0C0;font-weight:bold"></span>
+      </p>
+    </div>
+
+    <!-- QR Code modal for Gemini key -->
+    <div id="gemini-qr-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9999;
+         flex-direction:column; align-items:center; justify-content:center; padding:30px; box-sizing:border-box;">
+      <div style="background:#111; border:2px solid #0C0; border-radius:16px; padding:32px; max-width:560px; width:100%; text-align:center;">
+        <p style="font-size:22px; font-weight:bold; color:#0C0; margin:0 0 8px 0;">Get Your Free Gemini API Key</p>
+        <p style="font-size:17px; color:#ccc; margin:0 0 20px 0;">Scan with your phone — you're already signed into Google there.</p>
+        <div id="gemini-qr-canvas" style="display:inline-block; background:#fff; padding:12px; border-radius:8px; margin-bottom:20px;"></div>
+        <p style="font-size:16px; color:#aaa; margin:0 0 4px 0;">Or visit on your phone:</p>
+        <p style="font-size:15px; color:#4285F4; margin:0 0 20px 0; word-break:break-all;">aistudio.google.com/app/apikey</p>
+        <ol style="font-size:17px; line-height:2; text-align:left; margin:0 0 24px 0; padding-left:24px; color:#ddd;">
+          <li>Scan the QR code with your phone</li>
+          <li>Sign in to Google AI Studio</li>
+          <li>Tap <strong style="color:#fff;">"Create API key"</strong></li>
+          <li>Copy the key (starts with <code style="color:#0C0;">AIza</code>)</li>
+          <li>Come back here — tap <strong style="color:#fff;">Close</strong> then <strong style="color:#fff;">Paste Key</strong></li>
+        </ol>
+        <button onclick="closeGeminiQR()"
+                style="font-size:22px; font-weight:bold; padding:18px 48px; background:#0C0; color:#000; border:none; border-radius:10px; cursor:pointer;">
+          ✓ Close &amp; Return to Wizard
+        </button>
+      </div>
+    </div>
+
+    <div class="step" id="step20">
+      <h2>🤖 AI Assistant Setup</h2>
+      <p style="font-size:18px; margin-bottom:16px;">d3kOS includes a built-in AI assistant powered by Google Gemini. A free API key is required.</p>
+
+      <div style="background:#111; border:1px solid #333; border-radius:10px; padding:20px; margin-bottom:20px; text-align:left;">
+        <p style="font-size:18px; font-weight:bold; color:#0C0; margin:0 0 10px 0;">How to get your free API key:</p>
+        <ol style="font-size:17px; line-height:1.9; margin:0 0 16px 0; padding-left:24px;">
+          <li>Tap <strong style="color:#fff;">"Show QR Code"</strong> below</li>
+          <li>Scan with your phone — sign in to Google</li>
+          <li>Tap <strong style="color:#fff;">"Create API key"</strong></li>
+          <li>Copy the key (starts with <code style="color:#0C0;">AIza</code>)</li>
+          <li>Close the QR screen, then tap <strong style="color:#fff;">Paste Key</strong></li>
+        </ol>
+        <div style="text-align:center;">
+          <button onclick="showGeminiQR()"
+                  style="font-size:20px; font-weight:bold; padding:14px 32px; background:#4285F4; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+            📱 Show QR Code
+          </button>
+        </div>
+      </div>
+
+      <div class="config-box" style="margin: 0 0 16px 0;">
+        <label style="font-size:18px; display:block; margin-bottom:8px;">Gemini API Key</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="gemini-key-input" placeholder="AIza..."
+                 style="flex:1; font-size:18px; padding:12px; border-radius:8px; border:2px solid #555; background:#222; color:#fff; box-sizing:border-box;"
+                 onkeydown="if(event.key==='Enter'){saveGeminiAndContinue();}">
+          <button onclick="pasteGeminiKey()"
+                  style="font-size:20px; padding:12px 18px; background:#555; color:#fff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap;">
+            📋 Paste
+          </button>
+          <button onclick="toggleGeminiVisibility(this)"
+                  style="font-size:20px; padding:12px 14px; background:#333; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+            👁
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:12px;">
+        <button onclick="testGeminiKey()" style="font-size:20px; padding:16px 28px; background:#4CAF50; color:#fff; border:none; border-radius:8px; cursor:pointer;">🔌 Test Key</button>
+        <button onclick="saveGeminiAndContinue()" style="font-size:20px; padding:16px 28px; background:#2196F3; color:#fff; border:none; border-radius:8px; cursor:pointer;">✓ Save & Continue</button>
+        <button onclick="skipGemini()" style="font-size:20px; padding:16px 28px; background:#555; color:#fff; border:none; border-radius:8px; cursor:pointer;">Skip for Now</button>
+      </div>
+      <div id="gemini-test-result" style="font-size:18px; margin-top:4px; text-align:center;"></div>
+    </div>
+
+    <div class="step" id="step21">
+      <h2 data-i18n="onboarding.wizard_complete">Setup Complete! 🎉</h2>
+      <p>Your d3kOS is configured and ready to use.</p>
+      <p><strong>Next steps:</strong></p>
+      <ul style="margin-left:25px">
+        <li>Configure CX5106 DIP switches (review Step 18)</li>
+        <li>Verify NMEA2000 data in Signal K</li>
+        <li>Run engine baseline (30 minutes)</li>
+        <li>Test dashboard gauges</li>
+      </ul>
+      <button class="btn-start" onclick="complete()">Go to Main Menu</button>
+    </div>
+  </div>
+
+  <div class="nav-bottom">
+    <button id="back" onclick="back()" disabled data-i18n="ui.back">← Back</button>
+    <button id="next" onclick="next()">Next →</button>
+  </div>
+
+  <script>
+    let step = 0;
+    const total = 21;
+    let config = {};
+
+    async function start() {
+      document.getElementById('progress').style.display = 'block';
+      // Check if password is still default before starting wizard
+      try {
+        const r = await fetch('/network/check-default-password');
+        const d = await r.json();
+        if (d.default) {
+          document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+          document.getElementById('step-password').classList.add('active');
+          document.getElementById('progress').style.display = 'block';
+          return;
+        }
+      } catch(e) {}
+      step = 1;
+      show();
+    }
+
+    async function submitPasswordChange() {
+      var pw  = document.getElementById('newPassword').value;
+      var pw2 = document.getElementById('confirmPassword').value;
+      var err = document.getElementById('passwordError');
+      err.textContent = '';
+      if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+      if (pw !== pw2)    { err.textContent = 'Passwords do not match.'; return; }
+      if (pw === 'pi')   { err.textContent = 'Cannot use the default password.'; return; }
+      err.textContent = 'Changing password...';
+      try {
+        const r = await fetch('/network/change-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({new_password: pw})
+        });
+        const d = await r.json();
+        if (d.success) {
+          step = 1;
+          show();
+        } else {
+          err.textContent = 'Error: ' + (d.error || 'Unknown error');
+        }
+      } catch(e) {
+        err.textContent = 'Network error — try again.';
+      }
+    }
+
+    function show() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('step' + step).classList.add('active');
+      
+      if (step > 0) {
+        document.getElementById('progressText').textContent = 'Step ' + step + ' of ' + total;
+        document.getElementById('progressFill').style.width = (step / total * 100) + '%';
+      }
+      
+      document.getElementById('back').disabled = (step <= 1);
+      document.getElementById('next').textContent = (step >= total) ? 'Complete' : 'Next →';
+      document.getElementById('next').style.display = (step >= total) ? 'none' : 'block';
+
+      // Generate content for special steps
+      if (step === 17) generateReview();
+      if (step === 18) generateDIP();
+      if (step === 19) generateQR();
+      
+      // Auto-focus first input in active step to trigger keyboard
+      setTimeout(() => {
+        const activeStep = document.getElementById("step" + step);
+        const firstInput = activeStep?.querySelector("input, select, textarea");
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
+
+    function next() {
+      if (step < total) {
+        // Save current answer
+        saveAnswer();
+        step++;
+        show();
+      }
+    }
+
+    function back() {
+      if (step > 1) {
+        step--;
+        show();
+      } else if (step === 1) {
+        step = 0;
+        show();
+        document.getElementById('progress').style.display = 'none';
+      }
+    }
+
+    function saveAnswer() {
+      const input = document.getElementById('q' + step);
+      if (input) {
+        config['q' + step] = input.value;
+      }
+    }
+
+    function generateReview() {
+      const labels = {
+        q1: 'Boat Manufacturer',
+        q2: 'Boat Year',
+        q3: 'Boat Model',
+        q4: 'Chartplotter',
+        q5: 'Engine Manufacturer',
+        q6: 'Engine Model',
+        q7: 'Engine Year',
+        q8: 'Cylinders',
+        q9: 'Engine Size',
+        q10: 'Engine Power',
+        q11: 'Compression Ratio',
+        q12: 'Idle RPM',
+        q13: 'Max RPM Range',
+        q14: 'Engine Type',
+        q15: 'Boat Origin',
+        q16: 'Engine Position'
+      };
+
+      let html = '';
+      for (let i = 1; i <= 16; i++) {
+        const key = 'q' + i;
+        const value = config[key] || '(not set)';
+        html += `<div class="config-item">
+          <span class="config-label">${labels[key]}:</span>
+          <span class="config-value">${value}</span>
+        </div>`;
+      }
+      document.getElementById('reviewSummary').innerHTML = html;
+    }
+
+    
+// Auto-set measurement system based on boat origin
+document.addEventListener('DOMContentLoaded', function() {
+  const originSelect = document.getElementById('boat-origin') ||
+                       document.querySelector('[name="boat_origin"]') ||
+                       document.querySelector('[data-step="15"] select');
+  if (originSelect) {
+    originSelect.addEventListener('change', function() {
+      const origin = this.value.toLowerCase();
+      const metricRegions = [
+        'europe','germany','france','spain','italy','netherlands',
+        'sweden','norway','denmark','finland','australia','new zealand',
+        'japan','china','south korea','brazil','argentina','chile',
+        'south africa','india','singapore','asia','oceania','africa',
+        'south america','united kingdom','uk'
+      ];
+      const isMetric = metricRegions.some(r => origin.includes(r));
+      Units.setPreference(isMetric ? 'metric' : 'imperial');
+    });
+  }
+});
+
+// Engine size unit selector
+document.addEventListener('DOMContentLoaded', function() {
+  const engineSizeInput = document.getElementById('engine-size') ||
+                          document.querySelector('[name="engine_size"]');
+  if (engineSizeInput && !document.getElementById('engine-size-unit')) {
+    const unitSel = document.createElement('select');
+    unitSel.id = 'engine-size-unit';
+    unitSel.innerHTML = '<option value="ci">ci</option><option value="L">L</option>';
+    unitSel.value = Units.getPreference() === 'metric' ? 'L' : 'ci';
+    engineSizeInput.parentNode.insertBefore(unitSel, engineSizeInput.nextSibling);
+  }
+});
+
+function generateDIP() {
+      // Get configuration values
+      const cylinders = config.q8 || '4';
+      const tankSensor = config.q15 || 'us';
+      const enginePos = config.q16 || 'primary';
+
+      // First row - 8 switches (Engine Configuration)
+      // SW1-2: Instance (00 = single/primary, 01 = port, 10 = starboard)
+      // SW3-4: RPM sensor type (00 = alternator W-terminal)
+      // SW5-6: Cylinder count
+      // SW7: Stroke (0 = 4-stroke, 1 = 2-stroke)
+      // SW8: Gear ratio (0 = 1:1 direct drive)
+      
+      const cylinderMap = {
+        '1': [0,0], '2': [1,0], '3': [0,1], '4': [0,0],
+        '6': [1,0], '8': [0,1], '12': [1,1]
+      };
+      const cylConfig = cylinderMap[cylinders] || [0,0];
+      
+      const row1 = [0,0,0,0, cylConfig[0],cylConfig[1], 0,0]; // Default 4-cyl config
+      
+      let html1 = '';
+      for (let i = 0; i < 8; i++) {
+        const state = row1[i] ? 'on' : 'off';
+        const symbol = row1[i] ? '█' : '░';
+        html1 += `<div class="dip-switch ${state}">${symbol}</div>`;
+      }
+      document.getElementById('dipRow1').innerHTML = html1;
+      
+      document.getElementById('dipExplanation1').innerHTML = `
+        <strong>Switch Settings:</strong><br>
+        • SW1-2: OFF/OFF - Single engine (Instance 0)<br>
+        • SW3-4: OFF/OFF - Alternator W-terminal for RPM<br>
+        • SW5-6: ${cylConfig[0]?'ON':'OFF'}/${cylConfig[1]?'ON':'OFF'} - ${cylinders} cylinders<br>
+        • SW7: OFF - 4-stroke engine<br>
+        • SW8: OFF - 1:1 gear ratio (direct drive)
+      `;
+
+      // Second row - 2 switches
+      // SW "1": Tank sensor (1 = North America 240-33Ω, 0 = Europe 0-190Ω)
+      // SW "2": Engine position (0 = Primary/Port, 1 = Starboard)
+      
+      const tankSwitch = (tankSensor === 'us') ? 1 : 0;
+      const posSwitch = (enginePos === 'starboard') ? 1 : 0;
+      const row2 = [tankSwitch, posSwitch];
+      
+      let html2 = '';
+      for (let i = 0; i < 2; i++) {
+        const state = row2[i] ? 'on' : 'off';
+        const symbol = row2[i] ? '█' : '░';
+        html2 += `<div class="dip-switch ${state}" style="width:60px">${symbol}</div>`;
+      }
+      document.getElementById('dipRow2').innerHTML = html2;
+      
+      const tankLabel = tankSwitch ? 'North America (240-33Ω)' : 'Europe (0-190Ω)';
+      const posLabel = posSwitch ? 'Starboard' : 'Primary/Port';
+      document.getElementById('dipExplanation2').innerHTML = `
+        <strong>Switch Settings:</strong><br>
+        • SW "1": ${tankSwitch?'ON':'OFF'} - ${tankLabel} tank senders<br>
+        • SW "2": ${posSwitch?'ON':'OFF'} - ${posLabel} engine
+      `;
+    }
+
+    async function generateQR() {
+      // Generate installation ID
+      const id = await getInstallationId();
+      document.getElementById("installId").textContent = id;
+
+      // Build full atmyboat.com registration URL
+      let firmware = 'unknown';
+      try {
+        const vr = await fetch('/api/version');
+        const vd = await vr.json();
+        firmware = vd.version || 'unknown';
+      } catch(e) {}
+      const qrData = 'https://atmyboat.com/register?device=' + encodeURIComponent(id) + '&tier=t0&version=' + encodeURIComponent(firmware);
+      
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), {
+        text: qrData,
+        width: 400,
+        height: 400,
+        colorDark: "#000000",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    async function getInstallationId() {
+      try {
+        const response = await fetch('/license/info');
+        const data = await response.json();
+        
+        if (data.success && data.installation_id) {
+          return data.installation_id;
+        } else {
+          console.error('Failed to get installation ID from license API');
+          return 'unknown';
+        }
+      } catch (error) {
+        console.error('Error fetching installation ID:', error);
+        return 'unknown';
+      }
+    }
+
+    async function testGeminiKey() {
+      const key = document.getElementById('gemini-key-input').value.trim();
+      if (!key) { document.getElementById('gemini-test-result').textContent = '⚠️ Enter an API key first'; return; }
+      document.getElementById('gemini-test-result').textContent = 'Testing...';
+      try {
+        const r = await fetch('/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+        const d = await r.json();
+        document.getElementById('gemini-test-result').textContent = d.success ? '✅ Connected! AI assistant ready.' : '❌ ' + (d.error || 'Connection failed');
+      } catch (e) {
+        document.getElementById('gemini-test-result').textContent = '❌ Could not reach AI service';
+      }
+    }
+
+    async function saveGeminiAndContinue() {
+      const key = document.getElementById('gemini-key-input').value.trim();
+      if (key) {
+        try {
+          await fetch('/gemini/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({api_key: key}) });
+        } catch (e) { /* non-fatal */ }
+      }
+      step++;
+      show();
+    }
+
+    function skipGemini() {
+      step++;
+      show();
+    }
+
+    let _geminiQRBuilt = false;
+    function showGeminiQR() {
+      const modal = document.getElementById('gemini-qr-modal');
+      modal.style.display = 'flex';
+      if (!_geminiQRBuilt) {
+        _geminiQRBuilt = true;
+        new QRCode(document.getElementById('gemini-qr-canvas'), {
+          text: 'https://aistudio.google.com/app/apikey',
+          width: 220, height: 220,
+          colorDark: '#000000', colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }
+
+    function closeGeminiQR() {
+      document.getElementById('gemini-qr-modal').style.display = 'none';
+      // Focus the key input so keyboard pops up ready to paste
+      setTimeout(() => document.getElementById('gemini-key-input').focus(), 100);
+    }
+
+    async function pasteGeminiKey() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('gemini-key-input').value = text.trim();
+        document.getElementById('gemini-test-result').textContent = '📋 Key pasted — tap Test Key to verify.';
+      } catch (e) {
+        document.getElementById('gemini-test-result').textContent = '⚠️ Paste failed — tap the key field and paste manually.';
+      }
+    }
+
+    function toggleGeminiVisibility(btn) {
+      const inp = document.getElementById('gemini-key-input');
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+      else { inp.type = 'password'; btn.textContent = '👁'; }
+    }
+
+    // Enter key advances to next step (skip when in textarea or on a button)
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+      const tag = document.activeElement ? document.activeElement.tagName : '';
+      if (tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'SELECT') return;
+      if (step > 0 && step < total) { e.preventDefault(); next(); }
+    });
+
+    async function complete() {
+      // Toggle fullscreen to restore kiosk mode
+      try {
+        await fetch('http://localhost:1880/toggle-fullscreen', {
+          method: 'POST',
+          mode: 'no-cors'
+        });
+      } catch (e) {
+        console.error('Fullscreen toggle failed:', e);
+      }
+      
+      // Wait for F11 to process
+      setTimeout(() => {
+        // Save config for manual search
+        localStorage.setItem("onboarding-config", JSON.stringify(config));
+        window.location.href = '/manual-search.html';
+      }, 500);
+    }
+  </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
+</body>
+</html>
