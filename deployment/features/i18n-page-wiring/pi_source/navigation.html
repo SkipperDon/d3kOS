@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="/js/units.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Navigation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* === Design System - Consistent with Main Menu and Other Pages === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors */
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+
+      /* Typography - 22-24px standard */
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-heading: 24px;
+      --line-height: 1.5;
+
+      /* Button Dimensions */
+      --button-radius: 8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      padding: 12px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    .connection-status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--color-critical);
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .connection-status.connected {
+      background-color: var(--color-accent);
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover,
+    .nav-button:active {
+      background-color: rgba(0, 204, 0, 0.2);
+      border-color: var(--color-accent);
+    }
+
+    .status-text {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    /* Touch-Friendly Scrollbar */
+
+    .content-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Section Headers */
+    .section-header {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin: 24px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    /* Navigation Stats Grid */
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .nav-card {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .nav-card.no-data {
+      background-color: rgba(51, 51, 51, 0.3);
+      border-color: var(--color-disabled);
+    }
+
+    .nav-label {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .nav-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .nav-card.no-data .nav-value {
+      color: var(--color-disabled);
+    }
+
+    .nav-unit {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.6;
+    }
+
+    .nav-subtext {
+      font-size: 20px;
+      color: var(--color-text);
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+
+    /* Position Display */
+    .position-display {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .position-display.no-data {
+      background-color: rgba(51, 51, 51, 0.3);
+      border-color: var(--color-disabled);
+    }
+
+    .position-title {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .position-display.no-data .position-title {
+      color: var(--color-disabled);
+    }
+
+    .position-coords {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      font-size: var(--font-base);
+    }
+
+    .coord-item {
+      text-align: center;
+    }
+
+    .coord-label {
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+    }
+
+    .position-display.no-data .coord-label {
+      color: var(--color-disabled);
+    }
+
+    .coord-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    /* AIS Targets */
+    .ais-container {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .ais-target {
+      background-color: rgba(51, 51, 51, 0.5);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .ais-target:last-child {
+      margin-bottom: 0;
+    }
+
+    .ais-name {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+    }
+
+    .ais-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      font-size: 20px;
+    }
+
+    .ais-info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ais-info-label {
+      font-size: 18px;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+
+    .ais-info-value {
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .no-targets {
+      text-align: center;
+      font-size: var(--font-base);
+      opacity: 0.7;
+      padding: 20px;
+    }
+
+    /* OpenCPN Section */
+    .opencpn-section {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .opencpn-icon {
+      font-size: 80px;
+      margin-bottom: 16px;
+    }
+
+    .opencpn-title {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 12px;
+    }
+
+    .opencpn-description {
+      font-size: var(--font-base);
+      opacity: 0.8;
+      margin-bottom: 20px;
+      line-height: var(--line-height);
+    }
+
+    .opencpn-button {
+      padding: 16px 40px;
+      min-height: 70px;
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-heading);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .opencpn-button:hover,
+    .opencpn-button:active {
+      background-color: #00FF00;
+      border-color: #00FF00;
+    }
+
+    /* GPS Status */
+    .gps-status {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .gps-status-item {
+      background-color: rgba(51, 51, 51, 0.5);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .gps-status-item.good {
+      background-color: rgba(0, 204, 0, 0.1);
+      border-color: var(--color-accent);
+    }
+
+    .gps-status-label {
+      font-size: 20px;
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .gps-status-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .gps-status-item.good .gps-status-value {
+      color: var(--color-accent);
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>🗺️ Navigation</h1>
+      <p class="subtitle">
+        <span class="connection-status" id="connection-status"></span>
+        <span id="connection-text">GPS Position & AIS Targets</span>
+      </p>
+    </header>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <button class="nav-button" onclick="goBack()" aria-label="Go back to main menu">
+        ← Main Menu
+      </button>
+
+      <span class="status-text">d3kOS v2.0 | Navigation</span>
+
+      <button class="nav-button" onclick="refreshData()" aria-label="Refresh navigation data">
+        🔄 Refresh
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+      <div class="content-wrapper">
+
+        <!-- Current Position -->
+        <div class="position-display no-data" id="position-display">
+          <div class="position-title">📍 Current Position</div>
+          <div class="position-coords">
+            <div class="coord-item">
+              <div class="coord-label">Latitude</div>
+              <div class="coord-value" id="latitude">--°--'--"</div>
+            </div>
+            <div class="coord-item">
+              <div class="coord-label">Longitude</div>
+              <div class="coord-value" id="longitude">--°--'--"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Stats -->
+        <div class="nav-grid">
+          <div class="nav-card no-data" id="card-sog">
+            <div class="nav-label" data-i18n="ui.speed">Speed Over Ground</div>
+            <div class="nav-value" id="sog">--</div>
+            <div class="nav-unit">knots</div>
+          </div>
+
+          <div class="nav-card no-data" id="card-cog">
+            <div class="nav-label" data-i18n="ui.course">Course Over Ground</div>
+            <div class="nav-value" id="cog">--</div>
+            <div class="nav-unit">degrees</div>
+            <div class="nav-subtext" id="cog-cardinal">--</div>
+          </div>
+
+          <div class="nav-card no-data" id="card-heading">
+            <div class="nav-label" data-i18n="ui.heading">Heading (True)</div>
+            <div class="nav-value" id="heading">--</div>
+            <div class="nav-unit">degrees</div>
+            <div class="nav-subtext" id="heading-cardinal">--</div>
+          </div>
+
+          <div class="nav-card no-data" id="card-depth">
+            <div class="nav-label" data-i18n="ui.depth">Depth Below Surface</div>
+            <div class="nav-value" id="depth">--</div>
+            <div class="nav-unit">meters</div>
+          </div>
+        </div>
+
+        <!-- GPS Status -->
+        <h2 class="section-header">📡 GPS Status</h2>
+        <div class="gps-status">
+          <div class="gps-status-item" id="gps-fix">
+            <div class="gps-status-label">Fix Quality</div>
+            <div class="gps-status-value" id="fix-quality">--</div>
+          </div>
+
+          <div class="gps-status-item" id="gps-satellites">
+            <div class="gps-status-label">Satellites</div>
+            <div class="gps-status-value" id="satellites">--</div>
+          </div>
+
+          <div class="gps-status-item" id="gps-hdop">
+            <div class="gps-status-label">HDOP</div>
+            <div class="gps-status-value" id="hdop">--</div>
+          </div>
+
+          <div class="gps-status-item" id="gps-age">
+            <div class="gps-status-label">Data Age</div>
+            <div class="gps-status-value" id="data-age">--</div>
+          </div>
+        </div>
+
+        <!-- AIS Targets -->
+        <h2 class="section-header">🚢 AIS Targets</h2>
+        <div class="ais-container" id="ais-container">
+          <div class="no-targets" id="no-targets">
+            No AIS targets detected
+          </div>
+        </div>
+
+        <!-- OpenCPN -->
+        <h2 class="section-header">🗺️ Chart Plotter</h2>
+        <div class="opencpn-section">
+          <div class="opencpn-icon">🗺️</div>
+          <div class="opencpn-title">OpenCPN Chart Plotter</div>
+          <div class="opencpn-description">
+            Launch OpenCPN for detailed chart display, route planning, and advanced navigation features. OpenCPN automatically connects to Signal K for real-time boat data.
+          </div>
+          <button class="opencpn-button" onclick="launchOpenCPN()">
+            Launch OpenCPN
+          </button>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // === Navigation JavaScript ===
+
+    let signalKSocket = null;
+    let signalKConnected = false;
+    let navData = {
+      position: { latitude: null, longitude: null },
+      speedOverGround: null,
+      courseOverGroundTrue: null,
+      heading: null,
+      depth: null,
+      gnss: {
+        satellites: null,
+        horizontalDilution: null,
+        methodQuality: null
+      }
+    };
+    let aisTargets = {};
+    let lastDataTime = null;
+
+    // Load data on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      // Fetch initial data immediately
+      fetch('/signalk/v1/api/vessels/self')
+        .then(r => r.json())
+        .then(data => {
+          console.log('Initial data fetched:', data);
+          // Update position
+          if (data.navigation && data.navigation.position && data.navigation.position.value) {
+            navData.position.latitude = data.navigation.position.value.latitude;
+            navData.position.longitude = data.navigation.position.value.longitude;
+            updatePosition();
+          }
+          // Update other nav data
+          if (data.navigation) {
+            if (data.navigation.speedOverGround && data.navigation.speedOverGround.value != null) {
+              navData.speedOverGround = data.navigation.speedOverGround.value;
+              updateSOG();
+            }
+            if (data.navigation.courseOverGroundTrue && data.navigation.courseOverGroundTrue.value != null) {
+              navData.courseOverGroundTrue = data.navigation.courseOverGroundTrue.value;
+              updateCOG();
+            }
+            if (data.navigation.headingTrue && data.navigation.headingTrue.value != null) {
+              navData.heading = data.navigation.headingTrue.value;
+              updateHeading();
+            }
+            if (data.navigation.gnss) {
+              if (data.navigation.gnss.satellites && data.navigation.gnss.satellites.value != null) {
+                navData.gnss.satellites = data.navigation.gnss.satellites.value;
+              }
+              if (data.navigation.gnss.horizontalDilution && data.navigation.gnss.horizontalDilution.value != null) {
+                navData.gnss.horizontalDilution = data.navigation.gnss.horizontalDilution.value;
+              }
+              if (data.navigation.gnss.methodQuality && data.navigation.gnss.methodQuality.value != null) {
+                navData.gnss.methodQuality = data.navigation.gnss.methodQuality.value;
+              }
+              updateGPSStatus();
+            }
+          }
+          lastDataTime = new Date();
+        })
+        .catch(err => console.error('Failed to fetch initial data:', err));
+
+      connectSignalK();
+      setInterval(updateDataAge, 1000);
+    });
+
+
+    window.addEventListener('measurementSystemChanged', function() {
+      updateSOG();
+      updateDepth();
+    });
+
+    function connectSignalK() {
+      try {
+        signalKSocket = new WebSocket('ws://' + window.location.hostname + '/signalk/v1/stream?subscribe=none');
+
+        signalKSocket.onopen = () => {
+          console.log('Signal K connected');
+          signalKConnected = true;
+          document.getElementById('connection-status').classList.add('connected');
+          document.getElementById('connection-text').textContent = 'GPS Position & AIS Targets';
+
+          // Subscribe to navigation data
+          signalKSocket.send(JSON.stringify({
+            context: 'vessels.self',
+            subscribe: [
+              { path: 'navigation.position' },
+              { path: 'navigation.speedOverGround' },
+              { path: 'navigation.courseOverGroundTrue' },
+              { path: 'navigation.headingTrue' },
+              { path: 'environment.depth.belowSurface' },
+              { path: 'navigation.gnss.satellites' },
+              { path: 'navigation.gnss.horizontalDilution' },
+              { path: 'navigation.gnss.methodQuality' }
+            ]
+          }));
+
+          // Subscribe to AIS targets
+          signalKSocket.send(JSON.stringify({
+            context: 'vessels.*',
+            subscribe: [
+              { path: 'navigation.position' },
+              { path: 'name' },
+              { path: 'navigation.speedOverGround' },
+              { path: 'navigation.courseOverGroundTrue' }
+            ]
+          }));
+        };
+
+        signalKSocket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.updates) {
+            processSignalKUpdate(data);
+          }
+        };
+
+        signalKSocket.onerror = (error) => {
+          console.error('Signal K error:', error);
+          signalKConnected = false;
+          document.getElementById('connection-status').classList.remove('connected');
+        };
+
+        signalKSocket.onclose = () => {
+          console.log('Signal K disconnected');
+          signalKConnected = false;
+          document.getElementById('connection-status').classList.remove('connected');
+          setTimeout(connectSignalK, 5000);
+        };
+
+      } catch (error) {
+        console.error('Failed to connect to Signal K:', error);
+      }
+    }
+
+    function processSignalKUpdate(data) {
+      lastDataTime = new Date();
+
+      data.updates.forEach(update => {
+        const context = data.context || 'vessels.self';
+
+        update.values.forEach(value => {
+          const path = value.path;
+          const val = value.value;
+
+          // Handle own vessel data
+          if (context === 'vessels.self') {
+            if (path === 'navigation.position' && val) {
+              navData.position.latitude = val.latitude;
+              navData.position.longitude = val.longitude;
+              updatePosition();
+            } else if (path === 'navigation.speedOverGround' && val !== null) {
+              navData.speedOverGround = val;
+              updateSOG();
+            } else if (path === 'navigation.courseOverGroundTrue' && val !== null) {
+              navData.courseOverGroundTrue = val;
+              updateCOG();
+            } else if (path === 'navigation.headingTrue' && val !== null) {
+              navData.heading = val;
+              updateHeading();
+            } else if (path === 'environment.depth.belowSurface' && val !== null) {
+              navData.depth = val;
+              updateDepth();
+            } else if (path === 'navigation.gnss.satellites' && val !== null) {
+              navData.gnss.satellites = val;
+              updateGPSStatus();
+            } else if (path === 'navigation.gnss.horizontalDilution' && val !== null) {
+              navData.gnss.horizontalDilution = val;
+              updateGPSStatus();
+            } else if (path === 'navigation.gnss.methodQuality' && val !== null) {
+              navData.gnss.methodQuality = val;
+              updateGPSStatus();
+            }
+          } else if (context.startsWith('vessels.') && context !== 'vessels.self') {
+            // Handle AIS target data
+            const mmsi = context.split('.')[1];
+            if (!aisTargets[mmsi]) {
+              aisTargets[mmsi] = {};
+            }
+
+            if (path === 'name') {
+              aisTargets[mmsi].name = val;
+            } else if (path === 'navigation.position' && val) {
+              aisTargets[mmsi].position = val;
+            } else if (path === 'navigation.speedOverGround') {
+              aisTargets[mmsi].sog = val;
+            } else if (path === 'navigation.courseOverGroundTrue') {
+              aisTargets[mmsi].cog = val;
+            }
+
+            updateAISTargets();
+          }
+        });
+      });
+    }
+
+    function updatePosition() {
+      const lat = navData.position.latitude;
+      const lon = navData.position.longitude;
+
+      if (lat !== null && lon !== null) {
+        document.getElementById('latitude').textContent = formatLatitude(lat);
+        document.getElementById('longitude').textContent = formatLongitude(lon);
+        document.getElementById('position-display').classList.remove('no-data');
+      }
+    }
+
+    function updateSOG() {
+      const sog = navData.speedOverGround;
+      if (sog !== null) {
+        const knots = sog * 1.94384; // m/s to knots
+        document.getElementById('sog').textContent =
+          (typeof Units !== 'undefined') ? Units.speed.toDisplay(knots) : knots.toFixed(1) + ' kts';
+        document.getElementById('card-sog').classList.remove('no-data');
+      }
+    }
+
+    function updateCOG() {
+      const cog = navData.courseOverGroundTrue;
+      if (cog !== null) {
+        const degrees = radiansToDegrees(cog);
+        document.getElementById('cog').textContent = Math.round(degrees);
+        document.getElementById('cog-cardinal').textContent = degreesToCardinal(degrees);
+        document.getElementById('card-cog').classList.remove('no-data');
+      }
+    }
+
+    function updateHeading() {
+      const heading = navData.heading;
+      if (heading !== null) {
+        const degrees = radiansToDegrees(heading);
+        document.getElementById('heading').textContent = Math.round(degrees);
+        document.getElementById('heading-cardinal').textContent = degreesToCardinal(degrees);
+        document.getElementById('card-heading').classList.remove('no-data');
+      }
+    }
+
+    function updateDepth() {
+      const depth = navData.depth;
+      if (depth !== null) {
+        const depthFt = depth * 3.28084; // Signal K depth is meters; Units.depth expects feet
+        document.getElementById('depth').textContent =
+          (typeof Units !== 'undefined') ? Units.depth.toDisplay(depthFt) : depth.toFixed(1) + ' m';
+        document.getElementById('card-depth').classList.remove('no-data');
+      }
+    }
+
+    function updateGPSStatus() {
+      const satellites = navData.gnss.satellites;
+      const hdop = navData.gnss.horizontalDilution;
+      const quality = navData.gnss.methodQuality;
+
+      if (satellites !== null) {
+        document.getElementById('satellites').textContent = satellites;
+        const satElement = document.getElementById('gps-satellites');
+        if (satellites >= 4) {
+          satElement.classList.add('good');
+        } else {
+          satElement.classList.remove('good');
+        }
+      }
+
+      if (hdop !== null) {
+        document.getElementById('hdop').textContent = hdop.toFixed(1);
+        const hdopElement = document.getElementById('gps-hdop');
+        if (hdop < 2) {
+          hdopElement.classList.add('good');
+        } else {
+          hdopElement.classList.remove('good');
+        }
+      }
+
+      if (quality !== null) {
+        const qualityText = getFixQualityText(quality);
+        document.getElementById('fix-quality').textContent = qualityText;
+        const fixElement = document.getElementById('gps-fix');
+        if (quality === 'DGNSS' || quality === 'RTK') {
+          fixElement.classList.add('good');
+        } else if (quality === 'GNSS') {
+          fixElement.classList.add('good');
+        } else {
+          fixElement.classList.remove('good');
+        }
+      }
+    }
+
+    function updateAISTargets() {
+      const container = document.getElementById('ais-container');
+      const noTargets = document.getElementById('no-targets');
+
+      const targetList = Object.entries(aisTargets).filter(([mmsi, data]) => {
+        return data.name && data.position;
+      });
+
+      if (targetList.length === 0) {
+        noTargets.style.display = 'block';
+        return;
+      }
+
+      noTargets.style.display = 'none';
+
+      // Calculate distance and bearing to each target
+      const ownPos = navData.position;
+      if (ownPos.latitude && ownPos.longitude) {
+        targetList.forEach(([mmsi, data]) => {
+          const dist = calculateDistance(
+            ownPos.latitude, ownPos.longitude,
+            data.position.latitude, data.position.longitude
+          );
+          const bearing = calculateBearing(
+            ownPos.latitude, ownPos.longitude,
+            data.position.latitude, data.position.longitude
+          );
+          data.distance = dist;
+          data.bearing = bearing;
+        });
+
+        // Sort by distance
+        targetList.sort((a, b) => a[1].distance - b[1].distance);
+      }
+
+      // Render targets
+      container.innerHTML = targetList.map(([mmsi, data]) => {
+        const sog = data.sog ? (data.sog * 1.94384).toFixed(1) : '--';
+        const cog = data.cog ? Math.round(radiansToDegrees(data.cog)) : '--';
+        const dist = data.distance !== undefined ? data.distance.toFixed(2) : '--';
+        const bearing = data.bearing !== undefined ? Math.round(data.bearing) : '--';
+
+        return `
+          <div class="ais-target">
+            <div class="ais-name">🚢 ${data.name || 'Unknown'}</div>
+            <div class="ais-info">
+              <div class="ais-info-item">
+                <div class="ais-info-label">MMSI</div>
+                <div class="ais-info-value">${mmsi}</div>
+              </div>
+              <div class="ais-info-item">
+                <div class="ais-info-label">Distance</div>
+                <div class="ais-info-value">${dist} nm</div>
+              </div>
+              <div class="ais-info-item">
+                <div class="ais-info-label">Bearing</div>
+                <div class="ais-info-value">${bearing}°</div>
+              </div>
+              <div class="ais-info-item">
+                <div class="ais-info-label">Speed</div>
+                <div class="ais-info-value">${sog} kts</div>
+              </div>
+              <div class="ais-info-item">
+                <div class="ais-info-label">Course</div>
+                <div class="ais-info-value">${cog}°</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateDataAge() {
+      if (lastDataTime) {
+        const ageSeconds = Math.floor((new Date() - lastDataTime) / 1000);
+        const ageElement = document.getElementById('data-age');
+        document.getElementById('data-age').textContent = ageSeconds + 's';
+
+        const ageStatusElement = document.getElementById('gps-age');
+        if (ageSeconds < 2) {
+          ageStatusElement.classList.add('good');
+        } else {
+          ageStatusElement.classList.remove('good');
+        }
+      }
+    }
+
+    // Helper functions
+    function formatLatitude(lat) {
+      const dir = lat >= 0 ? 'N' : 'S';
+      const absLat = Math.abs(lat);
+      const deg = Math.floor(absLat);
+      const min = (absLat - deg) * 60;
+      return `${deg}°${min.toFixed(3)}' ${dir}`;
+    }
+
+    function formatLongitude(lon) {
+      const dir = lon >= 0 ? 'E' : 'W';
+      const absLon = Math.abs(lon);
+      const deg = Math.floor(absLon);
+      const min = (absLon - deg) * 60;
+      return `${deg}°${min.toFixed(3)}' ${dir}`;
+    }
+
+    function radiansToDegrees(radians) {
+      return radians * 180 / Math.PI;
+    }
+
+    function degreesToCardinal(degrees) {
+      const cardinals = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+      const index = Math.round(degrees / 22.5) % 16;
+      return cardinals[index];
+    }
+
+    function getFixQualityText(quality) {
+      const qualityMap = {
+        'no GPS': 'No Fix',
+        'GNSS': 'GPS',
+        'DGNSS': 'DGPS',
+        'RTK': 'RTK',
+        'Float RTK': 'Float RTK'
+      };
+      return qualityMap[quality] || quality;
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      // Haversine formula
+      const R = 3440.065; // Earth radius in nautical miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+      const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+      const bearing = Math.atan2(y, x) * 180 / Math.PI;
+      return (bearing + 360) % 360;
+    }
+
+    function launchOpenCPN() {
+      alert('🗺️ Launching OpenCPN Chart Plotter...\n\nOpenCPN will open on the desktop. Access it via VNC or connect a monitor to the Raspberry Pi.\n\nOpenCPN automatically connects to Signal K for real-time boat data.');
+
+      // Launch OpenCPN via remote command
+      fetch('/cgi-bin/launch-opencpn.sh')
+        .then(response => {
+          if (!response.ok) {
+            console.log('OpenCPN launch via HTTP failed, trying alternative method');
+          }
+        })
+        .catch(error => {
+          console.log('OpenCPN launch error:', error);
+        });
+    }
+
+    function refreshData() {
+      location.reload();
+    }
+
+    function goBack() {
+      window.location.href = '/';
+    }
+
+  </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
+</body>
+</html>

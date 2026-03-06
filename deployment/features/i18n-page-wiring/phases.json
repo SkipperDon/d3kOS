@@ -1,0 +1,56 @@
+[
+  {
+    "name": "i18n-index",
+    "source_file": "index.html",
+    "spec_section": "PHASE 1: index.html — i18n-index",
+    "keywords": ["button-label", "Dashboard", "Boat Log", "Navigation", "Settings"]
+  },
+  {
+    "name": "i18n-dashboard",
+    "source_file": "dashboard.html",
+    "spec_section": "PHASE 2: dashboard.html — i18n-dashboard",
+    "keywords": ["section-title", "Engine Metrics", "Tank Levels", "System Status"]
+  },
+  {
+    "name": "i18n-navigation",
+    "source_file": "navigation.html",
+    "spec_section": "PHASE 3: navigation.html — i18n-navigation",
+    "keywords": ["nav-label", "Speed Over Ground", "Course Over Ground", "Heading", "Depth"]
+  },
+  {
+    "name": "i18n-weather",
+    "source_file": "weather.html",
+    "spec_section": "PHASE 4: weather.html — i18n-weather",
+    "keywords": ["Weather", "loading", "offline", "Temperature", "Wind"]
+  },
+  {
+    "name": "i18n-marine-vision",
+    "source_file": "marine-vision.html",
+    "spec_section": "PHASE 5: marine-vision.html — i18n-marine-vision",
+    "keywords": ["Marine Vision", "Camera", "Offline", "camera-selector", "cam-btn"]
+  },
+  {
+    "name": "i18n-boatlog",
+    "source_file": "boatlog.html",
+    "spec_section": "PHASE 6: boatlog.html — i18n-boatlog",
+    "keywords": ["Boat Log", "Start Trip", "Stop Trip", "New Entry", "Voice Note", "Export"]
+  },
+  {
+    "name": "i18n-settings",
+    "source_file": "settings.html",
+    "spec_section": "PHASE 7: settings.html — i18n-settings",
+    "keywords": ["section-header", "Engine Configuration", "Camera Settings", "Network", "Language"]
+  },
+  {
+    "name": "i18n-onboarding",
+    "source_file": "onboarding.html",
+    "spec_section": "PHASE 8: onboarding.html — i18n-onboarding",
+    "keywords": ["Welcome", "Select Engine", "Engine Model", "Setup Complete", "Continue"]
+  },
+  {
+    "name": "i18n-helm",
+    "source_file": "helm.html",
+    "spec_section": "PHASE 9: helm.html — i18n-helm",
+    "keywords": ["Listening", "Processing", "Ready", "Helm", "helm-status"]
+  }
+]
