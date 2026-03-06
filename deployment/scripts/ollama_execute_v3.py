@@ -215,7 +215,7 @@ def extract_context(source_text, keywords, file_type):
     if hit is None:
         start=max(0,len(lines)-min(80, MAX_CTX_LINES))
         return '\n'.join(f"{i+start+1}: {l}" for i,l in enumerate(lines[start:])), []
-    fn = _extract_fn_py if file_type=='py' else _extract_fn_js
+    fn = _extract_fn_py if file_type=='py' else _extract_fn_js  # html uses js extractor
     s,e = fn(lines, hit)
     # Enforce hard cap: trim extracted range if it exceeds MAX_CTX_LINES
     if (e - s + 1) > MAX_CTX_LINES:
@@ -262,6 +262,8 @@ def parse_blocks(text):
     return blocks
 
 def check_invented(code, source, ft):
+    if ft == 'html':
+        return []   # HTML blocks are not JS — skip identifier analysis
     declared = set()
     if ft=='py':
         for m in re.finditer(r'\bdef\s+(\w+)\b', code): declared.add(m.group(1))
@@ -321,7 +323,7 @@ def validate(blocks, source, ft):
         if inv:
             b['valid']=False
             b['issues'].append(f"Invented identifiers: {', '.join(inv)}")
-        if ft=='js' and '<script' not in b['code']:
+        if ft=='js':
             ok,err = syntax_js(b['code'])
             if not ok: b['valid']=False; b['issues'].append(f"JS syntax: {err}")
         if ft=='py':
@@ -552,7 +554,7 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
     source_path = feature_dir / 'pi_source' / src_file
     spec_path   = feature_dir / 'feature_spec.md'
     out_path    = feature_dir / 'ollama_output' / f'{name}.instructions'
-    ft          = 'py' if src_file.endswith('.py') else 'js'
+    ft          = 'py' if src_file.endswith('.py') else ('html' if src_file.endswith('.html') else 'js')
 
     tprint(f"\n{'='*60}\nPHASE: {name} | FILE: {src_file}"
            f"{' [EXACT]' if replace_exact else ''}\n{'='*60}")
