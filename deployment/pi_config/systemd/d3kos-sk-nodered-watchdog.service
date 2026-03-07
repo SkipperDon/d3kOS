@@ -1,0 +1,8 @@
+[Unit]
+Description=d3kOS Signal K and Node-RED Watchdog
+After=signalk.service nodered.service
+
+[Service]
+Type=oneshot
+User=d3kos
+ExecStart=/bin/bash -c '  SK_OK=0; NR_OK=0;   curl -s --max-time 5 http://localhost:3000/signalk > /dev/null 2>&1 && SK_OK=1;   curl -s --max-time 5 http://localhost:1880 > /dev/null 2>&1 && NR_OK=1;   if [ $SK_OK -eq 0 ]; then     logger -t d3kos-watchdog "Signal K health check failed, restarting";     systemctl restart signalk;   fi;   if [ $NR_OK -eq 0 ]; then     logger -t d3kos-watchdog "Node-RED health check failed, restarting";     systemctl restart nodered;   fi'
