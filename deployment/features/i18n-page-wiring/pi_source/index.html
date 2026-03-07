@@ -641,19 +641,8 @@
           window.location.href = '/dashboard.html';
           break;
         case 'onboarding':
-          // Toggle out of fullscreen first so keyboard is accessible
-          fetch('http://localhost:1880/toggle-fullscreen', {
-            method: 'POST',
-            mode: 'no-cors'
-          }).then(() => {
-            // Wait for fullscreen to toggle before navigating
-            setTimeout(() => {
-              window.location.href = '/onboarding.html';
-            }, 500);
-          }).catch(() => {
-            // If toggle fails, navigate anyway
-            window.location.href = '/onboarding.html';
-          });
+          if (document.fullscreenElement) { document.exitFullscreen(); }
+          window.location.href = '/onboarding.html';
           break;
         case 'benchmark':
           window.location.href = '/benchmark.html';
@@ -832,21 +821,13 @@
 
     // Toggle Fullscreen Function
     function toggleFullscreen() {
-      console.log('Toggle button clicked');
-
-      // Call Node-RED endpoint to toggle fullscreen
-      fetch('http://localhost:1880/toggle-fullscreen', {
-        method: 'POST',
-        mode: 'no-cors'
-      })
-      .then(response => {
-        console.log('Fullscreen toggle request sent');
-        return response;
-      })
-      .catch(error => {
-        console.error('Fetch error:', error);
-        alert('Toggle failed: ' + error.message);
-      });
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function(e) {
+          console.error('Fullscreen request failed:', e);
+        });
+      } else {
+        document.exitFullscreen();
+      }
     }
   </script>
 
