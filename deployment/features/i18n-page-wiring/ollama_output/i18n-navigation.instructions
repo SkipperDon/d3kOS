@@ -1,0 +1,7 @@
+FIND_LINE: <title>d3kOS - Navigation</title>
+END_LINE: <title>d3kOS - Navigation</title>
+ACTION: REPLACE
+CODE:
+<title>d3kOS - Weather</title>
+<link rel="stylesheet" href="/css/weather.css">
+END_CODE

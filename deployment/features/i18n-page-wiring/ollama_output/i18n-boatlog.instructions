@@ -1,0 +1,8 @@
+FIND_LINE: <link rel="preconnect" href="https://fonts.googleapis.com">
+END_LINE: <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+ACTION: INSERT_AFTER
+CODE:
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+END_CODE
