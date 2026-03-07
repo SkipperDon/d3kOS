@@ -489,6 +489,10 @@
             </button>
           </div>
 
+          <!-- Voice recording state indicator -->
+          <div id="voice-rec-indicator" style="display:none; border-radius:6px; padding:10px 18px;
+               font-size:20px; text-align:center; margin-top:12px;"></div>
+
           <!-- Current Trip Stats -->
           <div class="stats-grid" id="current-stats">
             <div class="stat-card">
@@ -689,66 +693,116 @@
     }
 
     // Voice note recording (Tier 2 feature)
-function recordVoiceNote() {
-  // Check if MediaRecorder is supported
-  if (!window.MediaRecorder) {
-    alert("🎤 Voice Note Recording\n\nYour browser does not support voice recording.");
-    return;
-  }
-
-  // Request microphone access
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks = [];
-
-      mediaRecorder.ondataavailable = event => {
-        audioChunks.push(event.data);
+    // ── Mic lock helpers ──────────────────────────────────────────────────
+    function setRecIndicator(state) {
+      var el = document.getElementById('voice-rec-indicator');
+      if (!el) return;
+      var states = {
+        preparing: { text: 'Releasing helm mic...', bg: '#1a1a00', border: '#888800', color: '#cccc00' },
+        ready:     { text: 'Go ahead Captain, record your log', bg: '#001a00', border: '#00CC00', color: '#00FF00' },
+        recording: { text: 'Recording... tap Voice Note to stop', bg: '#1a0000', border: '#CC0000', color: '#FF4444' },
+        saving:    { text: 'Saving note...', bg: '#111111', border: '#444444', color: '#888888' }
       };
+      var s = states[state];
+      if (!s) { el.style.display = 'none'; return; }
+      el.style.display  = 'block';
+      el.style.background   = s.bg;
+      el.style.border   = '1px solid ' + s.border;
+      el.style.color    = s.color;
+      el.textContent    = s.text;
+    }
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
+    async function resumeVoice() {
+      try {
+        await fetch('http://localhost:8101/api/voice/resume', { method: 'POST' });
+      } catch (e) { /* auto-resume timer in network-api covers crashes */ }
+      setRecIndicator(null);
+      var btn = document.getElementById('btn-voice-note');
+      if (btn) {
+        btn.innerHTML = '🎤 Voice Note <span class="tier-badge">Tier 2</span>';
+        btn.disabled = false;
+      }
+    }
 
-        // Create a temporary link to download the recording
-        const link = document.createElement('a');
+    var _activeMediaRecorder = null;
+
+    async function recordVoiceNote() {
+      if (!window.MediaRecorder) {
+        alert("Your browser does not support voice recording.");
+        return;
+      }
+
+      // Tap again to stop early
+      if (_activeMediaRecorder && _activeMediaRecorder.state === 'recording') {
+        _activeMediaRecorder.stop();
+        return;
+      }
+
+      var btn = document.getElementById('btn-voice-note');
+
+      // Step 1: Pause helm voice commands, show preparing state
+      setRecIndicator('preparing');
+      if (btn) btn.disabled = true;
+
+      try {
+        await fetch('http://localhost:8101/api/voice/pause', { method: 'POST' });
+      } catch (e) { /* non-blocking — still try to record */ }
+
+      // Step 2: Get mic access
+      var stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        console.error('Voice note mic error:', err);
+        setRecIndicator(null);
+        await resumeVoice();
+        alert("Microphone access denied or unavailable.\nPlease allow microphone access in browser settings.");
+        return;
+      }
+
+      // Step 3: Show "ready" state so Captain knows to speak
+      setRecIndicator('ready');
+      await new Promise(function(resolve) { setTimeout(resolve, 800); });
+
+      // Step 4: Start recording
+      var mediaRecorder = new MediaRecorder(stream);
+      _activeMediaRecorder = mediaRecorder;
+      var audioChunks = [];
+
+      mediaRecorder.ondataavailable = function(event) { audioChunks.push(event.data); };
+
+      mediaRecorder.onstop = async function() {
+        setRecIndicator('saving');
+        _activeMediaRecorder = null;
+        var audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        var audioUrl  = URL.createObjectURL(audioBlob);
+        var link = document.createElement('a');
         link.href = audioUrl;
-        link.download = `voice-note-${new Date().toISOString()}.webm`;
+        link.download = 'voice-note-' + new Date().toISOString().replace(/:/g, '-') + '.webm';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
-        // Clean up
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(function(track) { track.stop(); });
+        await resumeVoice();
       };
 
       mediaRecorder.start();
+      setRecIndicator('recording');
+      if (btn) {
+        btn.innerHTML = '⏹ Stop Recording <span class="tier-badge">Tier 2</span>';
+        btn.disabled = false;
+      }
 
-      // Stop recording after 10 seconds (or use a UI control)
-      setTimeout(() => {
-        if (mediaRecorder.state !== 'inactive') {
-          mediaRecorder.stop();
-        }
-      }, 10000);
+      // Auto-stop after 30 seconds
+      setTimeout(function() {
+        if (mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
+      }, 30000);
+    }
 
-      // Show notification
-      const message =
-        "🎤 Voice Note Recording\n\n" +
-        "Recording started. Audio will be saved as a WebM file.\n\n" +
-        "Features:\n" +
-        "• 10-second automatic recording\n" +
-        "• Downloadable audio files\n" +
-        "• Timestamped with current date/time\n\n" +
-        "Note: This is a Tier 2 feature. Full AI transcription requires an upgrade.";
-
-      alert(message);
-    })
-    .catch(err => {
-      console.error("🎤 Voice Note Recording Error:", err);
-      alert("🎤 Voice Note Recording\n\nMicrophone access denied or unavailable.\n\n" +
-            "Please allow microphone access in your browser settings.");
+    // Safety: resume voice service if user navigates away mid-recording
+    window.addEventListener('beforeunload', function() {
+      navigator.sendBeacon('http://localhost:8101/api/voice/resume', '{}');
     });
-}
 
     // Resume trip after page reload
     function resumeTrip() {
