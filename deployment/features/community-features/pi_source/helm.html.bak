@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/js/units.js"></script>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/d3kos-touch.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Helm Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* === Design System - Consistent with Main Menu and Other Pages === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors */
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+
+      /* Typography - 22-24px standard */
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-heading: 24px;
+      --line-height: 1.5;
+
+      /* Button Dimensions */
+      --button-radius: 8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      padding: 12px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover,
+    .nav-button:active {
+      background-color: rgba(0, 204, 0, 0.2);
+      border-color: var(--color-accent);
+    }
+
+    .status-text {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Touch-Friendly Scrollbar */
+    .scrollable
+
+    .scrollable
+
+    .scrollable
+
+    .scrollable
+
+    /* Quick Actions */
+    .quick-actions {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      background-color: var(--color-bg);
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .action-btn {
+      padding: 14px 20px;
+      min-height: 60px;
+      background-color: rgba(0, 204, 0, 0.1);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+      text-align: center;
+    }
+
+    .action-btn:hover,
+    .action-btn:active {
+      background-color: rgba(0, 204, 0, 0.3);
+    }
+
+    /* Chat Area */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    .message {
+      margin-bottom: 16px;
+      padding: 16px;
+      border-radius: var(--button-radius);
+      max-width: 80%;
+      font-size: var(--font-base);
+    }
+
+    .message-user {
+      background-color: rgba(0, 204, 0, 0.2);
+      border: 2px solid var(--color-accent);
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .message-helm {
+      background-color: rgba(51, 51, 51, 0.5);
+      border: 2px solid var(--color-disabled);
+    }
+
+    .message-time {
+      font-size: 18px;
+      opacity: 0.6;
+      margin-top: 8px;
+    }
+
+    .message-status {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      text-align: center;
+      max-width: 100%;
+      padding: 12px;
+      font-size: 20px;
+    }
+
+    .typing-indicator {
+      display: none;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: rgba(51, 51, 51, 0.5);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      max-width: 200px;
+      font-size: var(--font-base);
+    }
+
+    .typing-indicator.active {
+      display: block;
+    }
+
+    .typing-dots {
+      display: inline-block;
+    }
+
+    .typing-dots span {
+      animation: blink 1.4s infinite;
+      animation-fill-mode: both;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0; }
+      40% { opacity: 1; }
+    }
+
+    /* Chat Input */
+    .chat-input-container {
+      padding: 16px 20px;
+      border-top: 2px solid var(--color-accent);
+      background-color: var(--color-bg);
+    }
+
+    .chat-input-wrapper {
+      display: flex;
+      gap: 12px;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 14px 20px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-family: var(--font-family);
+      resize: none;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: #00FF00;
+      box-shadow: 0 0 10px rgba(0, 204, 0, 0.3);
+    }
+
+    .send-btn {
+      padding: 14px 28px;
+      min-height: 60px;
+      min-width: 120px;
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .send-btn:hover,
+    .send-btn:active {
+      background-color: #00FF00;
+      border-color: #00FF00;
+    }
+
+    .send-btn:disabled {
+      background-color: var(--color-disabled);
+      border-color: var(--color-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    /* Welcome Screen */
+    .welcome-screen {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .welcome-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+
+    .welcome-title {
+      font-size: var(--font-heading);
+      color: var(--color-accent);
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .welcome-text {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+      margin-bottom: 24px;
+      line-height: var(--line-height);
+    }
+
+    .welcome-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+      text-align: left;
+    }
+
+    .feature-card {
+      background-color: rgba(0, 204, 0, 0.1);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      padding: 16px;
+    }
+
+    .feature-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .feature-title {
+      font-size: var(--font-base);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 8px;
+    }
+
+    .feature-description {
+      font-size: 20px;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+<!-- Simulator Warning Banner (Auto-detect) -->
+<div id="simulator-warning-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#FF6600 0%,#FF3300 100%);border-bottom:4px solid #FF0000;padding:15px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.5);animation:banner-pulse 2s infinite;">
+  <div style="font-size:28px;font-weight:bold;color:#FFFFFF;text-shadow:2px 2px 4px rgba(0,0,0,0.5);">
+    🟠 SIMULATOR MODE ACTIVE
+  </div>
+  <div style="font-size:20px;color:#FFFFFF;margin-top:5px;">
+    Simulated data is being broadcast - Real engine data ignored
+  </div>
+</div>
+<style>
+@keyframes banner-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+#simulator-warning-banner + * {
+  margin-top: 100px !important; /* Push content down when banner is visible */
+}
+  </style>
+<script>
+// Check simulator status every 5 seconds
+(function checkSimulatorStatus() {
+  fetch('/simulator/status')
+    .then(r => r.json())
+    .then(d => {
+      const banner = document.getElementById('simulator-warning-banner');
+      if (d.success && d.running) {
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    })
+    .catch(e => console.warn('Simulator status check failed:', e));
+  
+  setTimeout(checkSimulatorStatus, 5000);
+})();
+</script>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>🧭 Helm Assistant</h1>
+      <p class="subtitle">AI-Powered Troubleshooting & System Help</p>
+    </header>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <button class="nav-button" onclick="goBack()" aria-label="Go back to main menu">
+        ← Main Menu
+      </button>
+
+      <span class="status-text">d3kOS v2.0 | Helm</span>
+
+      <button class="nav-button" onclick="clearChat()" aria-label="Clear chat history">
+        Clear Chat
+      </button>
+    </nav>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <div class="action-buttons">
+        <button class="action-btn" onclick="quickAction('engine_status')">
+          ⚙️ Engine Status
+        </button>
+        <button class="action-btn" onclick="quickAction('check_anomalies')">
+          🔍 Check Issues
+        </button>
+        <button class="action-btn" onclick="quickAction('system_health')">
+          💚 System Health
+        </button>
+        <button class="action-btn" onclick="quickAction('diagnostics')">
+          🛠️ Run Diagnostics
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+      <div class="chat-container">
+        <div class="chat-messages scrollable" id="chat-messages">
+          <!-- Welcome Screen -->
+          <div class="welcome-screen" id="welcome-screen">
+            <div class="welcome-icon">🧭</div>
+            <h2 class="welcome-title">Welcome to Helm Assistant</h2>
+            <p class="welcome-text">
+              Your AI-powered marine troubleshooting companion. Ask me anything about your engine, system diagnostics, or maintenance procedures.
+            </p>
+
+            <div class="welcome-features">
+              <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Quick Diagnostics</div>
+                <div class="feature-description">
+                  Instant engine status, anomaly detection, and system health checks
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon">💡</div>
+                <div class="feature-title">Smart Troubleshooting</div>
+                <div class="feature-description">
+                  Context-aware advice based on your current engine metrics and history
+                </div>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <div class="feature-title">Knowledge Base</div>
+                <div class="feature-description">
+                  Access marine engine specs, maintenance schedules, and best practices
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messages will be appended here -->
+          <div class="typing-indicator" id="typing-indicator">
+            <span class="typing-dots">
+              Helm is thinking<span>.</span><span>.</span><span>.</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+          <div class="chat-input-wrapper">
+            <textarea
+              class="chat-input"
+              id="chat-input"
+              placeholder="Ask Helm anything... (e.g., 'What's the engine status?')"
+              rows="1"
+              maxlength="500"
+            ></textarea>
+            <button class="send-btn" id="send-btn" onclick="sendMessage()">
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // === Helm Assistant JavaScript ===
+
+    let chatHistory = [];
+    let signalKSocket = null;
+    let signalKConnected = false;
+    let currentEngineData = {};
+
+    // Load chat history on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      loadChatHistory();
+      connectSignalK();
+      setupInputHandlers();
+    });
+
+    function loadChatHistory() {
+      const saved = localStorage.getItem('d3kos-helm-chat');
+      if (saved) {
+        chatHistory = JSON.parse(saved);
+        if (chatHistory.length > 0) {
+          document.getElementById('welcome-screen').style.display = 'none';
+          chatHistory.forEach(msg => {
+            appendMessage(msg.type, msg.text, msg.timestamp, false);
+          });
+          scrollToBottom();
+        }
+      }
+    }
+
+    function saveChatHistory() {
+      localStorage.setItem('d3kos-helm-chat', JSON.stringify(chatHistory));
+    }
+
+    function connectSignalK() {
+      try {
+        signalKSocket = new WebSocket('ws://localhost:3000/signalk/v1/stream?subscribe=none');
+
+        signalKSocket.onopen = () => {
+          console.log('Signal K connected');
+          signalKConnected = true;
+
+          // Subscribe to engine metrics
+          signalKSocket.send(JSON.stringify({
+            context: 'vessels.self',
+            subscribe: [
+              { path: 'propulsion.port.revolutions' },
+              { path: 'propulsion.port.oilPressure' },
+              { path: 'propulsion.port.temperature' },
+              { path: 'propulsion.port.runTime' },
+              { path: 'electrical.batteries.house.voltage' }
+            ]
+          }));
+        };
+
+        signalKSocket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.updates) {
+            data.updates.forEach(update => {
+              update.values.forEach(value => {
+                const path = value.path;
+                const val = value.value;
+
+                if (path === 'propulsion.port.revolutions') {
+                  currentEngineData.rpm = Math.round(val * 60);
+                } else if (path === 'propulsion.port.oilPressure') {
+                  currentEngineData.oilPressure = Math.round(val / 6894.76);
+                } else if (path === 'propulsion.port.temperature') {
+                  currentEngineData.temperature = Math.round((val - 273.15) * 9/5 + 32);
+                } else if (path === 'propulsion.port.runTime') {
+                  currentEngineData.engineHours = (val / 3600).toFixed(1);
+                } else if (path === 'electrical.batteries.house.voltage') {
+                  currentEngineData.voltage = val.toFixed(1);
+                }
+              });
+            });
+          }
+        };
+
+        signalKSocket.onerror = (error) => {
+          console.error('Signal K error:', error);
+          signalKConnected = false;
+        };
+
+        signalKSocket.onclose = () => {
+          console.log('Signal K disconnected');
+          signalKConnected = false;
+          setTimeout(connectSignalK, 5000);
+        };
+
+      } catch (error) {
+        console.error('Failed to connect to Signal K:', error);
+      }
+    }
+
+    function setupInputHandlers() {
+      const input = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('send-btn');
+
+      // Auto-resize textarea
+      input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px';
+      });
+
+      // Send on Enter (but allow Shift+Enter for newlines)
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+
+      if (message === '') return;
+
+      // Hide welcome screen
+      document.getElementById('welcome-screen').style.display = 'none';
+
+      // Add user message
+      appendMessage('user', message, new Date().toISOString(), true);
+
+      // Clear input
+      input.value = '';
+      input.style.height = 'auto';
+
+      // Show typing indicator
+      document.getElementById('typing-indicator').classList.add('active');
+      scrollToBottom();
+
+      // Process message
+      setTimeout(() => {
+        processMessage(message);
+      }, 800);
+    }
+
+    function processMessage(message) {
+      const lowerMessage = message.toLowerCase();
+
+      let response = '';
+
+      // Check for quick action patterns
+      if (lowerMessage.includes('engine status') || lowerMessage.includes('engine running')) {
+        response = getEngineStatus();
+      } else if (lowerMessage.includes('anomal') || lowerMessage.includes('issue') || lowerMessage.includes('problem')) {
+        response = checkAnomalies();
+      } else if (lowerMessage.includes('system health') || lowerMessage.includes('system status')) {
+        response = getSystemHealth();
+      } else if (lowerMessage.includes('diagnostic')) {
+        response = runDiagnostics();
+      } else if (lowerMessage.includes('oil pressure')) {
+        response = getOilPressureInfo();
+      } else if (lowerMessage.includes('temperature') || lowerMessage.includes('temp')) {
+        response = getTemperatureInfo();
+      } else if (lowerMessage.includes('rpm')) {
+        response = getRPMInfo();
+      } else if (lowerMessage.includes('voltage') || lowerMessage.includes('battery')) {
+        response = getBatteryInfo();
+      } else if (lowerMessage.includes('maintenance')) {
+        response = getMaintenanceInfo();
+      } else if (lowerMessage.includes('help')) {
+        response = getHelpInfo();
+      } else {
+        response = getGeneralResponse(message);
+      }
+
+      // Hide typing indicator
+      document.getElementById('typing-indicator').classList.remove('active');
+
+      // Add Helm response
+      appendMessage('helm', response, new Date().toISOString(), true);
+    }
+
+    function quickAction(action) {
+      let message = '';
+
+      switch (action) {
+        case 'engine_status':
+          message = 'What is the engine status?';
+          break;
+        case 'check_anomalies':
+          message = 'Check for any anomalies or issues';
+          break;
+        case 'system_health':
+          message = 'Show system health';
+          break;
+        case 'diagnostics':
+          message = 'Run diagnostics';
+          break;
+      }
+
+      document.getElementById('chat-input').value = message;
+      sendMessage();
+    }
+
+    function getEngineStatus() {
+      if (!signalKConnected) {
+        return "⚠️ Unable to connect to Signal K. Engine data is unavailable. Please check your Signal K server.";
+      }
+
+      const rpm = currentEngineData.rpm || 0;
+      const oil = currentEngineData.oilPressure || 0;
+      const temp = currentEngineData.temperature || 0;
+      const voltage = currentEngineData.voltage || 0;
+      const hours = currentEngineData.engineHours || 0;
+
+      if (rpm === 0) {
+        return `🛑 **Engine Status: STOPPED**\n\n` +
+               `Engine Hours: ${hours} hrs\n` +
+               `Battery Voltage: ${voltage}V\n\n` +
+               `The engine is currently not running. All systems on standby.`;
+      }
+
+      let status = '✅ NORMAL';
+      let warnings = [];
+
+      // Check thresholds
+      if (oil < 30) {
+        status = '⚠️ WARNING';
+        warnings.push('Oil pressure is low');
+      }
+      if (temp > 200) {
+        status = '⚠️ WARNING';
+        warnings.push('Coolant temperature is high');
+      }
+      if (voltage < 12) {
+        warnings.push('Battery voltage is low');
+      }
+
+      let response = `⚙️ **Engine Status: ${status}**\n\n` +
+                     `RPM: ${rpm}\n` +
+                     `Oil Pressure: ${typeof Units !== 'undefined' ? Units.pressure.toDisplay(oil) : oil + ' PSI'}\n` +
+                     `Coolant Temperature: ${typeof Units !== 'undefined' ? Units.temperature.toDisplay(temp) : temp + '°F'}\n` +
+                     `Battery Voltage: ${voltage}V\n` +
+                     `Engine Hours: ${hours} hrs\n`;
+
+      if (warnings.length > 0) {
+        response += `\n**Warnings:**\n` + warnings.map(w => `• ${w}`).join('\n');
+      } else {
+        response += `\nAll systems operating normally.`;
+      }
+
+      return response;
+    }
+
+    function checkAnomalies() {
+      const rpm = currentEngineData.rpm || 0;
+      const oil = currentEngineData.oilPressure || 0;
+      const temp = currentEngineData.temperature || 0;
+      const voltage = currentEngineData.voltage || 0;
+
+      const issues = [];
+
+      if (rpm > 0) {
+        if (oil < 30) issues.push('⚠️ Oil pressure critically low (< 30 PSI)');
+        else if (oil < 40) issues.push('ℹ️ Oil pressure slightly low (< 40 PSI)');
+
+        if (temp > 210) issues.push('🔴 Coolant temperature critically high (> 210°F)');
+        else if (temp > 200) issues.push('⚠️ Coolant temperature elevated (> 200°F)');
+
+        if (rpm > 3500) issues.push('⚠️ RPM high (> 3500) - reduce throttle');
+      }
+
+      if (voltage < 11) issues.push('🔴 Battery voltage critically low (< 11V)');
+      else if (voltage < 12) issues.push('⚠️ Battery voltage low (< 12V)');
+
+      if (issues.length === 0) {
+        return "✅ **No Anomalies Detected**\n\nAll systems are operating within normal parameters. Continue monitoring during operation.";
+      }
+
+      return `🔍 **${issues.length} Issue${issues.length > 1 ? 's' : ''} Detected:**\n\n` +
+             issues.join('\n\n') +
+             `\n\n**Recommendation:** Address warnings immediately. Check engine systems and refer to maintenance manual if issues persist.`;
+    }
+
+    function getSystemHealth() {
+      const health = {
+        signalk: signalKConnected ? '✅ Connected' : '❌ Disconnected',
+        engine: (currentEngineData.rpm || 0) > 0 ? '✅ Running' : '⭕ Stopped',
+        battery: (currentEngineData.voltage || 0) >= 12 ? '✅ Good' : '⚠️ Low',
+        data: Object.keys(currentEngineData).length > 0 ? '✅ Available' : '❌ Unavailable'
+      };
+
+      return `💚 **System Health Status**\n\n` +
+             `**Signal K Server:** ${health.signalk}\n` +
+             `**Engine Status:** ${health.engine}\n` +
+             `**Battery Status:** ${health.battery}\n` +
+             `**Engine Data:** ${health.data}\n\n` +
+             `**System:** Raspberry Pi 4B (8GB)\n` +
+             `**OS:** Debian Trixie\n` +
+             `**Version:** d3kOS v2.0`;
+    }
+
+    function runDiagnostics() {
+      return `🛠️ **Running System Diagnostics...**\n\n` +
+             `✅ Signal K Server: ${signalKConnected ? 'Connected' : 'Disconnected'}\n` +
+             `✅ NMEA2000 Interface: Active\n` +
+             `✅ Web Interface: Responsive\n` +
+             `✅ Node-RED Dashboard: Running\n` +
+             `✅ Data Logging: Active\n\n` +
+             `**All core systems operational.**\n\n` +
+             `For detailed diagnostics, check the Settings page or Node-RED Dashboard.`;
+    }
+
+    function getOilPressureInfo() {
+      const oil = currentEngineData.oilPressure || 0;
+
+      if (oil === 0) {
+        return "ℹ️ **Oil Pressure Information**\n\nEngine is not running. Start the engine to view oil pressure readings.\n\n**Normal Range:** 40-65 PSI at cruise RPM\n**Warning:** < 30 PSI\n**Critical:** < 20 PSI";
+      }
+
+      let status = '';
+      if (oil < 20) status = '🔴 CRITICAL';
+      else if (oil < 30) status = '⚠️ WARNING';
+      else if (oil < 40) status = 'ℹ️ LOW';
+      else status = '✅ NORMAL';
+
+      return `🛢️ **Oil Pressure: ${oil} PSI (${status})**\n\n` +
+             `**Normal Range:** 40-65 PSI at cruise RPM\n` +
+             `**Idle Range:** 10-20 PSI\n\n` +
+             (oil < 30 ? `**Action Required:** Check oil level immediately. Low oil pressure can cause severe engine damage.` :
+              `Oil pressure is within normal operating range.`);
+    }
+
+    function getTemperatureInfo() {
+      const temp = currentEngineData.temperature || 0;
+
+      if (temp === 0) {
+        return "🌡️ **Temperature Information**\n\nEngine is not running. Coolant temperature unavailable.\n\n**Normal Range:** 160-195°F\n**Warning:** > 200°F\n**Critical:** > 210°F";
+      }
+
+      let status = '';
+      if (temp > 210) status = '🔴 CRITICAL';
+      else if (temp > 200) status = '⚠️ WARNING';
+      else if (temp > 195) status = 'ℹ️ ELEVATED';
+      else status = '✅ NORMAL';
+
+      return `🌡️ **Coolant Temperature: ${temp}°F (${status})**\n\n` +
+             `**Normal Range:** 160-195°F\n` +
+             `**Thermostat Opens:** ~160°F\n\n` +
+             (temp > 200 ? `**Action Required:** Reduce RPM and check coolant level. High temperature can cause engine damage.` :
+              `Temperature is within normal operating range.`);
+    }
+
+    function getRPMInfo() {
+      const rpm = currentEngineData.rpm || 0;
+
+      if (rpm === 0) {
+        return "⚙️ **RPM Information**\n\nEngine is not running (0 RPM).\n\n**Idle:** 600-800 RPM\n**Cruise:** 2500-3200 RPM\n**Max:** 3600 RPM (brief periods only)";
+      }
+
+      let status = '';
+      if (rpm > 3600) status = '🔴 OVER-REV';
+      else if (rpm > 3400) status = '⚠️ HIGH';
+      else if (rpm > 2000) status = '✅ CRUISE';
+      else if (rpm > 1000) status = 'ℹ️ LOW CRUISE';
+      else status = '⚙️ IDLE';
+
+      return `⚙️ **Engine RPM: ${rpm} (${status})**\n\n` +
+             `**Idle Range:** 600-800 RPM\n` +
+             `**Optimal Cruise:** 2500-3200 RPM\n` +
+             `**Maximum:** 3600 RPM\n\n` +
+             (rpm > 3400 ? `**Recommendation:** Reduce throttle to prevent engine strain.` :
+              `Engine speed is appropriate for current operation.`);
+    }
+
+    function getBatteryInfo() {
+      const voltage = currentEngineData.voltage || 0;
+
+      if (voltage === 0) {
+        return "🔋 **Battery Information**\n\nBattery voltage data unavailable.\n\n**Fully Charged:** 12.6-12.8V\n**Good:** 12.4-12.6V\n**Low:** < 12.0V\n**Critical:** < 11.5V";
+      }
+
+      let status = '';
+      let health = '';
+      if (voltage < 11.5) {
+        status = '🔴 CRITICAL';
+        health = 'Battery critically discharged';
+      } else if (voltage < 12.0) {
+        status = '⚠️ LOW';
+        health = 'Battery needs charging';
+      } else if (voltage < 12.4) {
+        status = 'ℹ️ FAIR';
+        health = 'Battery partially charged';
+      } else {
+        status = '✅ GOOD';
+        health = 'Battery fully charged';
+      }
+
+      return `🔋 **Battery Voltage: ${voltage}V (${status})**\n\n` +
+             `${health}\n\n` +
+             `**Voltage Guide:**\n` +
+             `• 12.6-12.8V: Fully charged\n` +
+             `• 12.4-12.6V: Good charge\n` +
+             `• 12.0-12.4V: Needs charging\n` +
+             `• < 12.0V: Low - charge immediately\n` +
+             `• < 11.5V: Critical - risk of damage`;
+    }
+
+    function getMaintenanceInfo() {
+      const hours = parseFloat(currentEngineData.engineHours || 0);
+
+      return `🔧 **Maintenance Information**\n\n` +
+             `**Current Engine Hours:** ${hours} hrs\n\n` +
+             `**Maintenance Schedule:**\n` +
+             `• Oil Change: Every 100 hrs\n` +
+             `• Oil Filter: Every 100 hrs\n` +
+             `• Fuel Filter: Every 200 hrs\n` +
+             `• Impeller: Every 2 years or 200 hrs\n` +
+             `• Coolant Flush: Every 2 years\n` +
+             `• Belt Inspection: Every 100 hrs\n` +
+             `• Spark Plugs: Every 300 hrs\n\n` +
+             `Configure intervals in Settings page.`;
+    }
+
+    function getHelpInfo() {
+      return `❓ **Helm Assistant Help**\n\n` +
+             `**I can help you with:**\n` +
+             `• Engine status and diagnostics\n` +
+             `• Anomaly detection\n` +
+             `• System health checks\n` +
+             `• Troubleshooting guidance\n` +
+             `• Maintenance schedules\n` +
+             `• Metric explanations\n\n` +
+             `**Try asking:**\n` +
+             `• "What's the engine status?"\n` +
+             `• "Check for anomalies"\n` +
+             `• "Tell me about oil pressure"\n` +
+             `• "When is maintenance due?"\n` +
+             `• "Run system diagnostics"`;
+    }
+
+    function getGeneralResponse(message) {
+      return `🧭 **Helm Assistant**\n\n` +
+             `I'm not sure how to help with "${message}".\n\n` +
+             `Try asking about:\n` +
+             `• Engine status or metrics\n` +
+             `• System diagnostics\n` +
+             `• Anomaly detection\n` +
+             `• Maintenance information\n\n` +
+             `Type "help" to see what I can do!`;
+    }
+
+    function appendMessage(type, text, timestamp, save) {
+      const messagesDiv = document.getElementById('chat-messages');
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message message-${type}`;
+
+      const textDiv = document.createElement('div');
+      textDiv.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      messageDiv.appendChild(textDiv);
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'message-time';
+      const time = new Date(timestamp);
+      timeDiv.textContent = time.toLocaleTimeString();
+      messageDiv.appendChild(timeDiv);
+
+      const typingIndicator = document.getElementById('typing-indicator');
+      messagesDiv.insertBefore(messageDiv, typingIndicator);
+
+      if (save) {
+        chatHistory.push({
+          type: type,
+          text: text,
+          timestamp: timestamp
+        });
+        saveChatHistory();
+      }
+
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      const messagesDiv = document.getElementById('chat-messages');
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function clearChat() {
+      if (confirm('Clear all chat history? This cannot be undone.')) {
+        chatHistory = [];
+        localStorage.removeItem('d3kos-helm-chat');
+
+        const messagesDiv = document.getElementById('chat-messages');
+        messagesDiv.innerHTML = `
+          <div class="welcome-screen" id="welcome-screen">
+            <div class="welcome-icon">🧭</div>
+            <h2 class="welcome-title">Chat Cleared</h2>
+            <p class="welcome-text">
+              Ask me anything about your engine, system diagnostics, or maintenance procedures.
+            </p>
+          </div>
+          <div class="typing-indicator" id="typing-indicator">
+            <span class="typing-dots">
+              Helm is thinking<span>.</span><span>.</span><span>.</span>
+            </span>
+          </div>
+        `;
+      }
+    }
+
+    function goBack() {
+      window.location.href = '/';
+    }
+
+    // Auto-focus textarea on page load to trigger keyboard
+    setTimeout(() => {
+      const input = document.getElementById("chat-input");
+      if (input) input.focus();
+    }, 500);
+  </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
+</body>
+</html>

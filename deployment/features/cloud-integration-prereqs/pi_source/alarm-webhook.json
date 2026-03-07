@@ -1,0 +1,83 @@
+[
+  {
+    "id": "d3kos-alarm-webhook-tab",
+    "type": "tab",
+    "label": "d3kOS Alarm Webhook",
+    "disabled": false,
+    "info": "Fires POST to atmyboat.com/api/notify on WARNING or CRITICAL engine/system alerts. Silent no-op when cloud-credentials.json is absent (T0 safe)."
+  },
+  {
+    "id": "alarm-signalk-listen",
+    "type": "signalk-input",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Listen SK notifications.*",
+    "path": "notifications.*",
+    "sendInitialValue": false,
+    "wires": [["alarm-filter-severity"]]
+  },
+  {
+    "id": "alarm-filter-severity",
+    "type": "function",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Filter WARNING/CRITICAL only",
+    "func": "var state = msg.payload && msg.payload.value && msg.payload.value.state;\nif (state !== 'warning' && state !== 'alarm') { return null; }\nmsg.alert_path = msg.topic || msg.path || 'unknown';\nmsg.alert_state = state;\nreturn msg;",
+    "outputs": 1,
+    "wires": [["alarm-check-credentials"]]
+  },
+  {
+    "id": "alarm-check-credentials",
+    "type": "function",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Check cloud-credentials.json",
+    "func": "var fs = global.get('fs') || require('fs');\nvar path = '/opt/d3kos/config/cloud-credentials.json';\ntry {\n  if (!fs.existsSync(path)) { return null; }\n  msg.credentials = JSON.parse(fs.readFileSync(path, 'utf8'));\n} catch(e) {\n  return null;\n}\nreturn msg;",
+    "outputs": 1,
+    "wires": [["alarm-build-payload"]]
+  },
+  {
+    "id": "alarm-build-payload",
+    "type": "function",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Build webhook payload",
+    "func": "var val = msg.payload && msg.payload.value || {};\nvar severity = msg.alert_state === 'alarm' ? 'CRITICAL' : 'WARNING';\nmsg.payload = {\n  device_api_key: msg.credentials.device_api_key,\n  boat_uuid: msg.credentials.boat_uuid,\n  alert_type: msg.alert_path,\n  severity: severity,\n  message: val.message || '',\n  method: val.method || '',\n  timestamp: new Date().toISOString()\n};\nmsg.headers = {\n  'Content-Type': 'application/json',\n  'Authorization': 'Bearer ' + msg.credentials.device_api_key\n};\nreturn msg;",
+    "outputs": 1,
+    "wires": [["alarm-post-webhook"]]
+  },
+  {
+    "id": "alarm-post-webhook",
+    "type": "http request",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "POST atmyboat.com/api/notify",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/notify",
+    "wires": [["alarm-log-result"], ["alarm-log-error"]]
+  },
+  {
+    "id": "alarm-log-result",
+    "type": "function",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Log success",
+    "func": "var fs = global.get('fs') || require('fs');\ntry {\n  var entry = JSON.stringify({ts: new Date().toISOString(), status: msg.statusCode, alert: msg.payload && msg.payload.alert_type}) + '\\n';\n  fs.appendFileSync('/opt/d3kos/data/alarm-webhook-log.jsonl', entry);\n} catch(e){}\nreturn null;",
+    "outputs": 1,
+    "wires": [[]]
+  },
+  {
+    "id": "alarm-log-error",
+    "type": "function",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Log error",
+    "func": "var fs = global.get('fs') || require('fs');\ntry {\n  var entry = JSON.stringify({ts: new Date().toISOString(), error: msg.error || 'http-error', alert: msg.alert_path}) + '\\n';\n  fs.appendFileSync('/opt/d3kos/data/alarm-webhook-log.jsonl', entry);\n} catch(e){}\nreturn null;",
+    "outputs": 1,
+    "wires": [[]]
+  },
+  {
+    "id": "alarm-catch-all",
+    "type": "catch",
+    "z": "d3kos-alarm-webhook-tab",
+    "name": "Catch all errors",
+    "scope": null,
+    "uncaught": false,
+    "wires": [["alarm-log-error"]]
+  }
+]

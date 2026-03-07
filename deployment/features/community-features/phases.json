@@ -1,0 +1,110 @@
+[
+  {
+    "name": "anonymiser",
+    "source_file": "anonymiser.py",
+    "spec_section": "Sub-Feature 2: Anonymiser Utility",
+    "keywords": [
+      "anon_token",
+      "strip_position",
+      "strip_vessel_name",
+      "HMAC",
+      "device_api_key"
+    ],
+    "replace_exact": true,
+    "find_line": "# anonymiser.py",
+    "end_line": "# SKELETON",
+    "action": "REPLACE",
+    "prompt_suffix": "IMPORTANT: Generate EXACTLY these three functions and nothing else:\n1. anon_token(boat_uuid) \u2014 reads device_api_key from /opt/d3kos/config/api-keys.json, returns SHA-256 HMAC of boat_uuid keyed on device_api_key (hex digest)\n2. strip_position(lat, lon, precision=2) \u2014 returns dict {lat_approx: round(lat,precision), lon_approx: round(lon,precision)}\n3. strip_vessel_name(data) \u2014 removes keys 'name','vessel_name','mmsi','callsign' from dict data, returns modified dict\nDo NOT generate any other functions, classes, test data, or main block. Just these three functions with imports (import hashlib, hmac, json)."
+  },
+  {
+    "name": "community-api",
+    "source_file": "community-api.py",
+    "spec_section": "Sub-Feature 4: Hazard and POI Marker Submission",
+    "keywords": [
+      "community-api",
+      "marker",
+      "community-prefs",
+      "anonymiser",
+      "Flask",
+      "8095"
+    ],
+    "replace_exact": true,
+    "find_line": "# community-api.py",
+    "end_line": "# SKELETON",
+    "action": "REPLACE",
+    "prompt_suffix": "IMPORTANT: Generate a Flask service (port 8095) with EXACTLY these two routes:\n1. POST /api/community/marker \u2014 reads JSON body (category, description, lat, lon), checks /opt/d3kos/config/community-prefs.json for hazard_reporting=true, anonymises position (round to 2dp), forwards to https://atmyboat.com/api/community/markers via requests.post, returns {ok:true} or error\n2. GET /api/community/markers \u2014 reads bbox query param, proxies GET https://atmyboat.com/api/community/markers?bbox=... and returns the result\nBoth routes must return 503 if community-prefs.json hazard_reporting is false. Import: from flask import Flask,jsonify,request; import requests,json,os; from anonymiser import strip_position"
+  },
+  {
+    "name": "community-prefs-settings",
+    "source_file": "settings.html",
+    "spec_section": "Settings UI",
+    "replace_exact": true,
+    "find_line": "        <h2 class=\"section-header\">\ud83d\udcbe Data Management</h2>",
+    "action": "INSERT_BEFORE",
+    "prompt_suffix": "Insert a new Community & Privacy settings section BEFORE the Data Management header. Generate a `<h2 class=\"section-header\">Community & Privacy</h2>` section containing 4 toggle checkboxes with labels: 'Share engine benchmarks (anonymous fleet comparison)', 'Show my boat on community map (approx. 1 km grid)', 'Enable hazard/POI reporting from nav page', 'Help improve the knowledge base (issue category only)'. Each checkbox has an id (benchmark_sharing, boat_map, hazard_reporting, knowledge_base) and onchange that calls saveCommunityPref(this.id, this.checked). All start unchecked. Style to match existing setting-card divs in the page. Return only the HTML to insert \u2014 no FIND_LINE, no END_LINE, no wrapper."
+  },
+  {
+    "name": "community-engine-benchmark",
+    "source_file": "community-engine-benchmark.json",
+    "spec_section": "Sub-Feature 1: Anonymous Engine Benchmark Service",
+    "keywords": [
+      "benchmark",
+      "anon_token",
+      "engine",
+      "RPM",
+      "community",
+      "inject"
+    ],
+    "replace_exact": true,
+    "find_line": "[",
+    "end_line": "]",
+    "action": "REPLACE",
+    "prompt_suffix": "IMPORTANT: Generate a Node-RED flow JSON array for the community engine benchmark feature. The flow MUST have exactly these nodes:\n1. tab node: {id, type:'tab', label:'Community Engine Benchmark'}\n2. inject node: triggers every 600 seconds (repeat:'600'), once:false\n3. function node: sets msg.payload = {anon_token: msg.payload.anon_token, engine_make: msg.payload.engine_make, engine_model: msg.payload.engine_model, rpm: msg.payload.rpm, coolant_temp_c: msg.payload.coolant_temp_c, fuel_burn_lph: msg.payload.fuel_burn_lph, firmware_version: 'v0.9.2'}\n4. http request node: method:'POST', url:'https://atmyboat.com/api/community/benchmark', ret:'obj'\nEach node needs: id (8-char hex like 'a1b2c3d4'), type, name, z (tab id), wires. Return ONLY the JSON array."
+  },
+  {
+    "name": "community-boat-map",
+    "source_file": "community-boat-map.json",
+    "spec_section": "Sub-Feature 3: Community Boat Map",
+    "keywords": [
+      "position",
+      "anon_token",
+      "GPS",
+      "lat_approx",
+      "lon_approx",
+      "inject"
+    ],
+    "replace_exact": true,
+    "find_line": "[",
+    "end_line": "]",
+    "action": "REPLACE",
+    "prompt_suffix": "IMPORTANT: Generate a Node-RED flow JSON array for the community boat map feature. The flow MUST have exactly these nodes:\n1. tab node: {id, type:'tab', label:'Community Boat Map'}\n2. inject node: triggers every 3600 seconds (repeat:'3600'), once:false\n3. function node: sets msg.payload = {anon_token: msg.payload.anon_token, lat_approx: Math.round(msg.payload.lat * 100)/100, lon_approx: Math.round(msg.payload.lon * 100)/100, firmware_version: 'v0.9.2', timestamp: new Date().toISOString()}\n4. http request node: method:'POST', url:'https://atmyboat.com/api/community/position', ret:'obj'\nEach node needs: id (8-char hex like 'a1b2c3d4'), type, name, z (tab id), wires. Return ONLY the JSON array."
+  },
+  {
+    "name": "community-knowledge-log",
+    "source_file": "community-knowledge-log.json",
+    "spec_section": "Sub-Feature 5: Knowledge Base Pattern Logger",
+    "keywords": [
+      "maintenance-log",
+      "knowledge",
+      "category",
+      "anon_token",
+      "watch",
+      "tail"
+    ],
+    "replace_exact": true,
+    "find_line": "[",
+    "end_line": "]",
+    "action": "REPLACE",
+    "prompt_suffix": "Generate a valid Node-RED flow JSON array. Each node object requires: id (unique 8-char hex string), type, name, wires (array of arrays). Flow must start with a tab node (type='tab'). Use these node types: tab, inject, function, http request, watch, change. The watch node monitors a file path. The http request node posts JSON to the URL. Return only the JSON array \u2014 no explanation, no fences."
+  },
+  {
+    "name": "hazard-poi-ui",
+    "source_file": "helm.html",
+    "spec_section": "Sub-Feature 4: Hazard and POI Marker Submission",
+    "context_limit": 1500,
+    "replace_exact": true,
+    "find_line": "  <script src=\"/js/i18n.js\"></script>",
+    "action": "INSERT_BEFORE",
+    "prompt_suffix": "Insert a 'Report Hazard / POI' button and bottom sheet modal BEFORE the i18n.js script tag. The button is a floating action button (position:fixed, bottom:80px, right:20px, z-index:500, background:#FF6600) with text '\u26a0 Report'. Clicking it opens a bottom sheet div (id='hazard-sheet', position:fixed, bottom:0, left:0, right:0, z-index:600, background:#1a1a1a, padding:20px) containing: a category <select> with options (Hazard, Shallow, Fuel, Anchorage, Marina, Other), a text <input> for description (max 80 chars), a Submit button that calls submitHazardReport(), and a Cancel button that hides the sheet. Also include a <script> block with submitHazardReport() that POSTs {category, description, lat: currentLat, lon: currentLon} to http://localhost:8095/api/community/marker (use existing gpsLat/gpsLon variables from page scope if available, else 0). Return only the HTML+script to insert."
+  }
+]

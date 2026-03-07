@@ -2,6 +2,47 @@
 
 ---
 
+## Session 2026-03-07 (Part 18)
+**Goal:** Close v0.9.2 — anti-hallucination executor fixes, community-features deploy, camera-settings repair, i18n page wiring deploy
+
+**Completed:**
+- **Executor (ollama_execute_v3.py) hardened**: added prompt_suffix injection, context_limit support, json ft type, KNOWN_GLOBALS expansion (stdlib/Flask/dunder), check_invented skeleton detection, import-statement parsing for declared identifiers
+- **Workstation Ollama IP corrected**: 192.168.1.62 → 192.168.1.36 (DHCP revert after reboot)
+- **camera-settings-update repaired**: corrupted JS section (mixed code from two features) replaced with spec-correct `updateCameraStatus()` and `switchCamera()`. Deployed to Pi. Patched `data-i18n="ui.section_camera"` back onto Camera Management h2.
+- **community-features — all 7 phases generated and deployed**:
+  - `anonymiser.py`: anon_token (HMAC-SHA256), strip_position, strip_vessel_name
+  - `community-api.py`: Flask port 8103, POST /api/community/marker, GET /api/community/markers, community-prefs.json gating
+  - `settings.html`: Community & Privacy section with 4 opt-in toggles (all off by default)
+  - `helm.html`: hazard/POI floating button + bottom sheet modal + submitHazardReport()
+  - 3 Node-RED flows: engine-benchmark (600s), boat-map (3600s), knowledge-log (file watch)
+  - `d3kos-community-api.service` created and enabled on Pi
+  - `community-prefs.json` created on Pi with all features off
+  - Node-RED: all 3 flows deployed with remapped UUIDs to avoid ID collision
+- **alarm-webhook Node-RED flow deployed**: found at cloud-integration-prereqs, IDs remapped, deployed via Python urllib merge script
+- **i18n page wiring**: confirmed all spec targets applied (most were already done in overnight run); added final missing data-i18n="ui.confirm" to onboarding Continue button; deployed all 9 HTML files to Pi
+- **v0.9.2 declared COMPLETE**
+
+**Decisions:**
+- Port 8095 was taken (boatlog-export-api) → community-api moved to 8103
+- Back buttons say "← Main Menu" (not "Back") — no data-i18n added to these (spec rule 6: text must exactly match key)
+- i18n overnight run produced wrong output (CSS replacements instead of attribute additions) — remaining gaps applied via direct edit instead of re-running Ollama
+- Node-RED flows deployed with UUID-remapped IDs to prevent silent collision with existing flows
+
+**Ollama:** ~20 initial calls + ~15 corrections across community-features phases; executor auto-applied most after corrections
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-07 | TBD |
+| Ollama (qwen3-coder:30b) | ~35 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- DHCP reservations for cameras: Don runs `sudo python3 ~/setup_dhcp_reservations.py` on Pi when cameras on hotspot (on-boat task only)
+- v0.9.3 website build: next major version, not started
+
+---
+
 ## Session 2026-03-06 (Part 17)
 **Goal:** i18n multi-language system + touchscreen multitouch fixes + OpenCPN Flatpak migration + AIS pipeline
 
@@ -729,4 +770,41 @@
 - v0.9.3 Multi-Camera System
 - v0.9.4 Gemini API Integration
 
+---
+
+## Session 2026-03-07
+**Goal:** Complete v0.9.2 remaining work — i18n wiring, camera-settings-update, community-features
+
+**Completed:**
+- Confirmed overnight i18n run was killed by WSL restart; manually applied all 9 i18n attribute changes and deployed
+- Set `OLLAMA_FLASH_ATTENTION=1` and `OLLAMA_KV_CACHE=q8_0` in Windows System env vars for workstation Ollama
+- Workstation IP reverted to 192.168.1.36 after reboot; updated executor and memory (was .62)
+- Confirmed qwen3-coder:30b quantization: Q4_K_M, 30.5B params
+- Implemented full anti-hallucination guard suite in ollama_execute_v3.py: CSS injection detection, code bloat guard, per-phase forbidden_in_code/max_code_lines/prompt_suffix/examples, json ft skip, import parsing for declared names, dunder globals, skeleton detection, context_limit option
+- Fixed camera-settings-update: restored corrupted camera JS (mixed code from 2 features), deployed clean version to Pi (also fixed duplicate camera-cards-container HTML on Pi)
+- Built community-features executor setup from scratch: converted phases.json to executor format, created skeleton pi_source files, all 7 phases generated and applied
+- community-features pi_source ready to deploy (Pi was offline at end of session)
+
+**Decisions:**
+- camera-settings-update JS repaired directly (spec was explicit, corruption was too deep for Ollama to navigate) 
+- community-features used Ollama for all new-file generation — required multiple prompt refinement iterations but all 7 phases eventually correct
+- Standard mode HTML phases must use replace_exact+INSERT_BEFORE when keywords don't appear in source file
+- Node-RED JSON flows need highly explicit prompt_suffix with exact endpoint URL and payload shape
+
+**Ollama:** ~20 calls total across all community-features phases (multiple retries due to validation improvements mid-session); $0.00
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-07 | TBD |
+| Ollama (qwen3-coder:30b) | ~20 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Deploy community-features to Pi when online (commands in MEMORY.md)
+- Create community-prefs.json on Pi and register community-api.py as systemd service
+- Import 3 Node-RED flows via Node-RED UI
+- Deploy alarm-webhook Node-RED flow
+- DHCP reservations for cameras (on-boat task)
+- v0.9.2 closes → v0.9.3 website build starts
 ---

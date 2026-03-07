@@ -1,0 +1,60 @@
+<button id="report-hazard-btn" style="position:fixed; bottom:80px; right:20px; z-index:500; background:#FF6600; width:60px; height:60px; border-radius:50%; border:none; color:white; font-size:14px; display:flex; align-items:center; justify-content:center;">⚠ Report</button>
+
+<div id="hazard-sheet" style="position:fixed; bottom:0; left:0; right:0; z-index:600; background:#1a1a1a; padding:20px; transform:translateY(100%); transition:transform 0.3s ease;">
+  <div style="display:flex; flex-direction:column; gap:15px;">
+    <select id="hazard-category" style="padding:10px; border-radius:4px; background:#333; color:white; border:none;">
+      <option value="Hazard">Hazard</option>
+      <option value="Shallow">Shallow</option>
+      <option value="Fuel">Fuel</option>
+      <option value="Anchorage">Anchorage</option>
+      <option value="Marina">Marina</option>
+      <option value="Other">Other</option>
+    </select>
+    
+    <input type="text" id="hazard-description" maxlength="80" placeholder="Description (max 80 chars)" style="padding:10px; border-radius:4px; background:#333; color:white; border:none;">
+    
+    <div style="display:flex; gap:10px;">
+      <button onclick="submitHazardReport()" style="flex:1; padding:10px; border-radius:4px; background:#00cc66; color:white; border:none;">Submit</button>
+      <button onclick="document.getElementById('hazard-sheet').style.transform='translateY(100%)'" style="flex:1; padding:10px; border-radius:4px; background:#666; color:white; border:none;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('report-hazard-btn').addEventListener('click', function() {
+    document.getElementById('hazard-sheet').style.transform='translateY(0)';
+  });
+
+  function submitHazardReport() {
+    const category = document.getElementById('hazard-category').value;
+    const description = document.getElementById('hazard-description').value;
+    
+    if (!description.trim()) return;
+    
+    const data = {
+      category,
+      description,
+      lat: typeof currentLat !== 'undefined' ? currentLat : 0,
+      lon: typeof currentLon !== 'undefined' ? currentLon : 0
+    };
+    
+    fetch('http://localhost:8095/api/community/marker', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    }).then(response => {
+      if (response.ok) {
+        document.getElementById('hazard-sheet').style.transform='translateY(100%)';
+        document.getElementById('hazard-description').value = '';
+        alert('Report submitted successfully!');
+      } else {
+        alert('Failed to submit report.');
+      }
+    }).catch(err => {
+      console.error('Error:', err);
+      alert('Error submitting report.');
+    });
+  }
+</script>

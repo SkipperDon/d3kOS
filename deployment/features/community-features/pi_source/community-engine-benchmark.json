@@ -1,0 +1,67 @@
+[
+  {
+    "id": "a1b2c3d4",
+    "type": "tab",
+    "label": "Community Engine Benchmark"
+  },
+  {
+    "id": "e5f6g7h8",
+    "type": "inject",
+    "name": "",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "repeat": "600",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "z": "a1b2c3d4"
+  },
+  {
+    "id": "i9j0k1l2",
+    "type": "function",
+    "name": "Set Benchmark Data",
+    "func": "msg.payload = {\n    anon_token: msg.payload.anon_token,\n    engine_make: msg.payload.engine_make,\n    engine_model: msg.payload.engine_model,\n    rpm: msg.payload.rpm,\n    coolant_temp_c: msg.payload.coolant_temp_c,\n    fuel_burn_lph: msg.payload.fuel_burn_lph,\n    firmware_version: 'v0.9.2'\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "z": "a1b2c3d4"
+  },
+  {
+    "id": "m3n4o5p6",
+    "type": "http request",
+    "name": "Submit Benchmark",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/community/benchmark",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 540,
+    "y": 180,
+    "z": "a1b2c3d4",
+    "wires": [
+      [
+        "q7r8s9t0"
+      ]
+    ]
+  },
+  {
+    "id": "q7r8s9t0",
+    "type": "debug",
+    "name": "Response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "z": "a1b2c3d4"
+  }
+]

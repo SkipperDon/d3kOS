@@ -19,8 +19,8 @@ Feature directory must contain:
 import sys, re, json, time, pathlib, tempfile, subprocess, threading, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-OLLAMA_URL       = "http://192.168.1.62:11434/api/generate"
-OLLAMA_EMBED_URL = "http://192.168.1.62:11434/api/embed"
+OLLAMA_URL       = "http://192.168.1.36:11434/api/generate"
+OLLAMA_EMBED_URL = "http://192.168.1.36:11434/api/embed"
 MODEL            = "qwen3-coder:30b"
 TIMEOUT          = 300
 
@@ -69,6 +69,8 @@ KNOWN_GLOBALS = {
     'const','let','var','function','return','if','else','for','while','do',
     'switch','case','break','continue','new','this','typeof','instanceof',
     'class','import','export','default','from','async','await','try','catch',
+    '__name__','__file__','__main__','__doc__','__all__','__init__','__class__',
+    '__dict__','__module__','__package__','__spec__','__builtins__',
     'finally','throw','in','of','delete','void','true','false','null',
     'undefined','NaN','Infinity','JSON','Math','Date','parseInt','parseFloat',
     'isNaN','isFinite','Promise','Error','Object','Array','String','Number',
@@ -128,6 +130,21 @@ KNOWN_GLOBALS = {
     'cameras','camera','cam','active','connected','has_frame','camera_id',
     'camera_name','camera_ip','recording','bow','stern','port','starboard',
     'position','assign','direction','unassigned',
+    # Python stdlib modules (for new-file generation)
+    'hashlib','datetime','timezone','hmac','base64','json','os','sys','re',
+    'time','math','uuid','pathlib','logging','threading','functools','itertools',
+    'collections','contextlib','traceback','inspect','tempfile','subprocess',
+    'socket','struct','argparse','configparser','sqlite3','decimal',
+    # Flask and web framework names
+    'Flask','flask','jsonify','request','abort','Blueprint','make_response',
+    'redirect','render_template','send_file','current_app','methods',
+    # Requests library
+    'requests','HTTPError','ConnectionError','Timeout',
+    # Community feature specific
+    'anon_token','strip_position','strip_vessel_name','community_prefs',
+    'boat_uuid','lat_approx','lon_approx','engine_make','engine_model',
+    'firmware_version','anon_marker','month_year','region_country',
+    'debug','host','port',
 }
 
 
@@ -265,7 +282,16 @@ def check_invented(code, source, ft):
     if ft == 'html':
         return []   # HTML blocks are not JS — skip identifier analysis
     declared = set()
+    if ft=='json':
+        return []   # JSON nodes — skip identifier analysis
     if ft=='py':
+        # Treat imported module/symbol names as declared
+        for m in re.finditer(r'^\s*import\s+(\w+)', code, re.MULTILINE):
+            declared.add(m.group(1))
+        for m in re.finditer(r'^\s*from\s+\S+\s+import\s+(.+)', code, re.MULTILINE):
+            for nm in m.group(1).split(','):
+                nm = nm.strip().split(' as ')[-1].strip()
+                if nm and nm.isidentifier(): declared.add(nm)
         for m in re.finditer(r'\bdef\s+(\w+)\b', code): declared.add(m.group(1))
         for m in re.finditer(r'\bdef\s+\w+\s*\(([^)]*)\)', code):
             for p in m.group(1).split(','):
@@ -310,7 +336,16 @@ def syntax_py(code):
     pathlib.Path(tmp).unlink(missing_ok=True)
     return (True,'') if r.returncode==0 else (False,(r.stderr or r.stdout).strip())
 
-def validate(blocks, source, ft):
+# CSS properties that indicate a hallucinated CSS injection rather than an attribute addition
+_CSS_PROP_RE = re.compile(
+    r'\b(margin|padding|color|font-|background|border-|display|position|'
+    r'width|height|overflow|flex|grid|opacity|transform|animation|transition)\s*:',
+    re.IGNORECASE)
+
+def validate(blocks, source, ft, phase_cfg=None):
+    forbidden_in_code = (phase_cfg or {}).get('forbidden_in_code', [])
+    max_code_lines    = (phase_cfg or {}).get('max_code_lines')
+
     for b in blocks:
         b['valid']=True; b['issues']=[]
         if b['find_line'] not in source:
@@ -319,10 +354,57 @@ def validate(blocks, source, ft):
         if b.get('end_line') and b['end_line'] not in source:
             b['valid']=False
             b['issues'].append(f"END_LINE not found: {b['end_line']!r}")
-        inv = check_invented(b['code'], source, ft)
-        if inv:
-            b['valid']=False
-            b['issues'].append(f"Invented identifiers: {', '.join(inv)}")
+
+        # ── HTML hallucination guards ─────────────────────────────────────────
+        # Catches Ollama rewriting CSS/HTML structure instead of adding attributes.
+        if ft == 'html':
+            code_lines = len(b['code'].splitlines())
+            # Guard 1: explicit <style> block injection
+            if '<style>' in b['code']:
+                b['valid'] = False
+                b['issues'].append(
+                    "CSS injection: CODE contains <style> block — only HTML attribute "
+                    "additions are allowed; do not add CSS")
+            # Guard 2: bulk CSS properties (>5 matches = structural rewrite)
+            else:
+                css_hits = _CSS_PROP_RE.findall(b['code'])
+                if len(css_hits) > 5:
+                    b['valid'] = False
+                    b['issues'].append(
+                        f"CSS injection: {len(css_hits)} CSS property declarations found in CODE "
+                        f"({', '.join(dict.fromkeys(css_hits[:4]))}) — "
+                        f"only add HTML attributes, never CSS")
+            # Guard 3: code bloat — single-line REPLACE should not produce >8 lines
+            if b['action'] == 'REPLACE' and not b.get('end_line') and code_lines > 8:
+                b['valid'] = False
+                b['issues'].append(
+                    f"Code bloat: {code_lines}-line CODE replacing a single FIND_LINE — "
+                    f"you must output the original line with only the new attribute added, "
+                    f"not a rewrite")
+
+        # ── Per-phase forbidden patterns (phases.json: forbidden_in_code list) ─
+        for pat in forbidden_in_code:
+            if pat in b['code']:
+                b['valid'] = False
+                b['issues'].append(f"Forbidden pattern in CODE: {pat!r}")
+
+        # ── Per-phase max_code_lines (phases.json: max_code_lines int) ────────
+        if max_code_lines:
+            code_lines = len(b['code'].splitlines())
+            if code_lines > max_code_lines:
+                b['valid'] = False
+                b['issues'].append(
+                    f"CODE too long: {code_lines} lines exceeds max {max_code_lines} "
+                    f"for this phase type")
+
+        # Skip invented-identifier check when source is a skeleton (no real scope)
+        # — generated new files will always have "new" identifiers vs a 3-line stub
+        _has_scope = len(source.split()) > 20
+        if _has_scope:
+            inv = check_invented(b['code'], source, ft)
+            if inv:
+                b['valid']=False
+                b['issues'].append(f"Invented identifiers: {', '.join(inv)}")
         if ft=='js':
             ok,err = syntax_js(b['code'])
             if not ok: b['valid']=False; b['issues'].append(f"JS syntax: {err}")
@@ -451,7 +533,7 @@ def preflight_check():
             print(f"  ⚠ Ollama reachable but {MODEL} not in loaded models: {model_names}")
     except Exception as e:
         print(f"  ✗ Ollama workstation UNREACHABLE: {e}")
-        print(f"    Cannot run without generator. Check http://192.168.1.62:11434")
+        print(f"    Cannot run without generator. Check http://192.168.1.36:11434")
         sys.exit(1)
 
     # 2. TrueNAS verify agent
@@ -554,7 +636,7 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
     source_path = feature_dir / 'pi_source' / src_file
     spec_path   = feature_dir / 'feature_spec.md'
     out_path    = feature_dir / 'ollama_output' / f'{name}.instructions'
-    ft          = 'py' if src_file.endswith('.py') else ('html' if src_file.endswith('.html') else 'js')
+    ft          = 'py' if src_file.endswith('.py') else ('html' if src_file.endswith('.html') else ('json' if src_file.endswith('.json') else 'js'))
 
     tprint(f"\n{'='*60}\nPHASE: {name} | FILE: {src_file}"
            f"{' [EXACT]' if replace_exact else ''}\n{'='*60}")
@@ -566,6 +648,9 @@ def run_phase(phase_cfg, feature_dir, apply=False, skip_ollama=False):
 
     source_text = source_path.read_text()
     ctx, scope_vars = extract_context(source_text, keywords, ft)
+    ctx_limit = phase_cfg.get('context_limit')
+    if ctx_limit and len(ctx) > ctx_limit:
+        ctx = ctx[:ctx_limit]
     tprint(f"  Context: {len(ctx)} chars | Scope vars: {scope_vars[:8]}")
 
     # ── REPLACE_EXACT mode: anchors from phases.json, Ollama writes CODE only ──
@@ -626,6 +711,16 @@ IMPORTANT: The SPEC section above contains a code block (between ``` markers) sh
 Write ONLY the code — no FIND_LINE, no END_LINE, no ACTION, no END_CODE marker.
 Do not wrap in markdown fences.
 """
+            # ── Per-phase prompt suffix and few-shot examples ──────────────────
+            _ex = phase_cfg.get('examples', [])
+            if _ex:
+                ex_block = "\n\n## EXAMPLES (follow this exact pattern):\n"
+                for ex in _ex:
+                    ex_block += f"\nInput:\n{ex.get('input','')}\nOutput:\n{ex.get('output','')}\n"
+                prompt += ex_block
+            _sfx = phase_cfg.get('prompt_suffix', '')
+            if _sfx:
+                prompt += f"\n\n{_sfx}"
             tprint(f"  Calling Ollama ({len(prompt)} chars)...")
             response = call_ollama(prompt, label=name)
             if not response:
@@ -639,7 +734,7 @@ Do not wrap in markdown fences.
              'action': exact_action, 'code': code,
              'valid': True, 'issues': [], 'correction_attempted': False, 'corrected': False}
         source_text = source_path.read_text()
-        [b] = validate([b], source_text, ft)
+        [b] = validate([b], source_text, ft, phase_cfg)
 
         # ── TrueNAS independent verify ─────────────────────────────────────────
         if b['valid'] and not skip_ollama:
@@ -680,7 +775,7 @@ Rewrite ONLY the corrected code. No FIND_LINE, no markers, no fences.
             if resp2:
                 b['code'] = _strip_fences(resp2)
                 b['correction_attempted'] = True
-                [b] = validate([b], source_text, ft)
+                [b] = validate([b], source_text, ft, phase_cfg)
                 if b['valid']:
                     tprint(f"  [CORRECTION] Fixed!")
                     b['corrected'] = True
@@ -756,6 +851,16 @@ CODE:
 <your code here>
 END_CODE
 """
+        # ── Per-phase prompt suffix and few-shot examples ──────────────────────
+        _ex = phase_cfg.get('examples', [])
+        if _ex:
+            ex_block = "\n\n## EXAMPLES (follow this exact pattern):\n"
+            for ex in _ex:
+                ex_block += f"\nInput:\n{ex.get('input','')}\nOutput:\n{ex.get('output','')}\n"
+            prompt += ex_block
+        _sfx = phase_cfg.get('prompt_suffix', '')
+        if _sfx:
+            prompt += f"\n\n{_sfx}"
         tprint(f"  Calling Ollama ({len(prompt)} chars)...")
         response = call_ollama(prompt, label=name)
         if response:
@@ -772,7 +877,7 @@ END_CODE
         tprint(f"  [WARNING] No FIND_LINE/ACTION/CODE blocks\n  Response:\n{response[:500]}"); return
 
     source_text = source_path.read_text()
-    blocks = validate(blocks, source_text, ft)
+    blocks = validate(blocks, source_text, ft, phase_cfg)
 
     if not skip_ollama:
         # ── TrueNAS verify pass for each valid block ───────────────────────────
@@ -796,7 +901,7 @@ END_CODE
                 b['correction_attempted'] = True
                 fixed = run_correction(b, source_text, src_file, scope_vars)
                 if fixed:
-                    [fb] = validate([fixed], source_text, ft)
+                    [fb] = validate([fixed], source_text, ft, phase_cfg)
                     if fb['valid']:
                         tprint(f"  [CORRECTION] Fixed!")
                         b.update(fb); b['corrected']=True
@@ -843,8 +948,8 @@ def print_report():
         print(f"  {c['label']:35s} {c['prompt_chars']:6d}p → {c['response_chars']:6d}r  {c['elapsed_s']:.1f}s")
     print(f"  {'TOTAL':35s} {sum(c['prompt_chars'] for c in calls):6d}p → "
           f"{sum(c['response_chars'] for c in calls):6d}r  {sum(c['elapsed_s'] for c in calls):.1f}s")
-    print(f"\n  Ollama generator  (qwen3-coder:30b @ 192.168.1.62  workstation GPU): $0.00")
-    print(f"  Ollama verifier   (qwen3-coder:30b @ 192.168.1.62  via TrueNAS proxy): $0.00")
+    print(f"\n  Ollama generator  (qwen3-coder:30b @ 192.168.1.36  workstation GPU): $0.00")
+    print(f"  Ollama verifier   (qwen3-coder:30b @ 192.168.1.36  via TrueNAS proxy): $0.00")
     # Fetch verify stats from TrueNAS
     try:
         with urllib.request.urlopen(

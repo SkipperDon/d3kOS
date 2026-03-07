@@ -1,0 +1,77 @@
+[
+  {
+    "id": "a1b2c3d4",
+    "type": "tab",
+    "label": "Community Boat Map"
+  },
+  {
+    "id": "e5f6g7h8",
+    "type": "inject",
+    "name": "",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "repeat": "3600",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "z": "a1b2c3d4"
+  },
+  {
+    "id": "i9j0k1l2",
+    "type": "function",
+    "name": "",
+    "func": "msg.payload = {\n    anon_token: msg.payload.anon_token,\n    lat_approx: Math.round(msg.payload.lat * 100)/100,\n    lon_approx: Math.round(msg.payload.lon * 100)/100,\n    firmware_version: 'v0.9.2',\n    timestamp: new Date().toISOString()\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 160,
+    "z": "a1b2c3d4",
+    "wires": [
+      [
+        "m3n4o5p6"
+      ]
+    ]
+  },
+  {
+    "id": "m3n4o5p6",
+    "type": "http request",
+    "name": "",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/community/position",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 640,
+    "y": 160,
+    "z": "a1b2c3d4",
+    "wires": [
+      [
+        "q7r8s9t0"
+      ]
+    ]
+  },
+  {
+    "id": "q7r8s9t0",
+    "type": "debug",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 850,
+    "y": 160,
+    "z": "a1b2c3d4",
+    "wires": []
+  }
+]
