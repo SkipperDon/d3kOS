@@ -1,0 +1,17 @@
+[Unit]
+Description=Node-RED
+After=network.target signalk.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+ExecStartPre=/usr/local/bin/wait-for-signalk.sh
+ExecStart=/usr/bin/node-red
+Restart=always
+RestartSec=10
+User=d3kos
+WorkingDirectory=/home/d3kos
+Environment=NODE_RED_USER_DIR=/home/d3kos/.node-red
+
+[Install]
+WantedBy=multi-user.target
