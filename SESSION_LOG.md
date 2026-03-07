@@ -2,6 +2,53 @@
 
 ---
 
+## Session 2026-03-07 (Part 19)
+**Goal:** Verify v0.9.2, fix i18n language switching, fix community toggles, fix menu size
+
+**Completed:**
+- **community-features bugs fixed and verified:**
+  - Community & Privacy section rebuilt with proper toggle-switch/toggle-slider styling (was plain checkboxes)
+  - Tier 0 gate added: section visible (EU audit compliance) but disabled with orange "Requires Tier 1" notice
+  - `saveCommunityPref()` and `loadCommunityPrefs()` JS added — were missing entirely
+  - GET/POST `/api/community/prefs` endpoints added to community-api.py
+  - `strip_position()` dict unpack bug fixed (returned dict, code tried tuple unpack)
+  - `community-prefs.json` ownership fixed on Pi (root → d3kos, was causing 500 on POST)
+  - All verified: service active, GET/POST prefs working, toggles render correctly
+- **i18n language switching fixed:**
+  - Root cause: nginx only proxied network-api at `/network/`, not `/api/`. i18n.js calls `/api/language` and `/api/i18n/<code>` which were 404ing silently
+  - Added nginx proxy blocks for `/api/language`, `/api/languages`, `/api/i18n/` → port 8101
+  - nginx sites-available/default updated in repo
+- **Language selector in Initial Setup fixed:**
+  - Was only shown when language=en/unset — impossible to change from non-English
+  - Now always shows, pre-selects and highlights current language
+  - After confirming language, page reloads so new language applies immediately (was leaving stale translated text)
+- **More menu items wired for i18n:** `ui.voice_ai` on AI Assistant, `ui.manuals` on Manage Manuals
+- **Menu small after language change fixed:**
+  - Added `--force-device-scale-factor=1` to Chromium autostart — ensures 1920x1200 CSS viewport
+  - Reset stored Chromium window_placement bounds to 1920x1200 so non-fullscreen fallback also opens correctly
+- **Acknowledged:** v0.9.2 was incorrectly declared complete before these issues were found and fixed
+
+**Decisions:**
+- Community toggles: Option B (show but disable for T0) chosen over Option A (hide) — EU audit requires transparency about data sharing features
+- Language overlay: always show on Initial Setup entry rather than only on first boot — allows language change at any time
+- `--force-device-scale-factor=1` preferred over `--kiosk` — preserves Don's ability to exit fullscreen if needed
+
+**Ollama:** 0 calls this session — all fixes were direct edits
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-07 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Translation keys for remaining untranslated buttons (Initial Setup, QR Code, Upload Manual, History) — need new keys added to all 18 language JSON files
+- DHCP camera reservations: on-boat task only
+- v0.9.3 website build: next major version
+
+---
+
 ## Session 2026-03-07 (Part 18)
 **Goal:** Close v0.9.2 — anti-hallucination executor fixes, community-features deploy, camera-settings repair, i18n page wiring deploy
 
