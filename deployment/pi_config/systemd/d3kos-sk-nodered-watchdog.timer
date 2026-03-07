@@ -1,0 +1,10 @@
+[Unit]
+Description=d3kOS Signal K and Node-RED Watchdog Timer
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=120
+Unit=d3kos-sk-nodered-watchdog.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Signal K Server
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+ExecStart=/usr/bin/signalk-server
+Restart=always
+RestartSec=10
+User=d3kos
+WorkingDirectory=/home/d3kos/.signalk
+WatchdogSec=120
+NotifyAccess=main
+
+[Install]
+WantedBy=multi-user.target
