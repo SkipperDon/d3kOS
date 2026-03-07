@@ -2,6 +2,40 @@
 
 ---
 
+## Session 2026-03-07 (Part 20)
+**Goal:** Complete Phase 4 polish from 18-item v0.9.2 remediation + implement voice mic lock
+
+**Completed:**
+- Phase 4 final items: `export-daily.sh` chmod +x; settings/weather/qrcode synced to repo
+- Git commit `cd491a4` — all 11 Phase 1A–4 HTML files, 347 insertions/126 deletions
+- Voice mic lock — full implementation across 3 files (see `VOICE_MIC_LOCK_SPEC.md`):
+  - `voice-assistant-hybrid.py`: SIGUSR1/SIGUSR2 signal handlers; `_mic_locked` flag; loop restructured to auto-restart listener and idle when locked
+  - `network-api.py`: `/api/voice/pause` (SIGUSR1 + 90s auto-resume timer) and `/api/voice/resume` (SIGUSR2) endpoints added
+  - `boatlog.html`: async `recordVoiceNote()` with 4-state indicator; pause before `getUserMedia()`; resume at all exit paths; `beforeunload` sendBeacon safety
+- Smoke tested live on Pi: `🔒 Mic locked` / `🔓 Mic unlocked` confirmed in journalctl
+- Git commits: `30faf63` (feat), `6edf0b1` (docs)
+
+**Decisions:**
+- Signal-based mic lock (SIGUSR1/2) chosen over systemctl stop/start — avoids 3-5s model reload on resume; lock/unlock is ~0.5s
+- 30s auto-stop replaces original 10s — more practical for a voice log entry
+- Blocking alert removed from recording flow — replaced with non-blocking 4-state indicator
+- 90s safety timer in network-api ensures helm voice never stays locked if browser crashes
+
+**Ollama:** 0 calls this session — all changes were direct edits
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-07 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Don to reboot Pi and run review process against v0.9.2 + mic lock fixes
+- Voice note Tier 2 deferred architectural note: mic lock is now in place; next step if needed is routing transcription through voice service
+
+---
+
 ## Session 2026-03-07 (Part 19)
 **Goal:** Verify v0.9.2, fix i18n language switching, fix community toggles, fix menu size
 
