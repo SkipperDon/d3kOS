@@ -282,7 +282,9 @@
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({language: obLang, dir: dir}),
           signal: AbortSignal.timeout(4000)
-        }).finally(function() {
+        }).then(function() {
+          window.location.reload();
+        }).catch(function() {
           document.getElementById('langOverlay').style.display = 'none';
         });
       };
