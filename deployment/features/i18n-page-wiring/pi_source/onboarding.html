@@ -246,19 +246,23 @@
       fetch('http://localhost:8101/api/language', {signal: AbortSignal.timeout(2000)})
         .then(function(r){ return r.json(); })
         .then(function(d){
-          if (!d.language || d.language === 'en') {
-            buildObGrid();
-            document.getElementById('langOverlay').style.display = 'block';
-          }
+          obLang = (d.language && d.language !== '') ? d.language : 'en';
+          buildObGrid();
+          document.getElementById('langOverlay').style.display = 'block';
         })
-        .catch(function(){});
+        .catch(function(){
+          buildObGrid();
+          document.getElementById('langOverlay').style.display = 'block';
+        });
       function buildObGrid() {
         var grid = document.getElementById('obLangGrid');
         LANGS.forEach(function(l) {
           var btn = document.createElement('button');
-          btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#111;border:2px solid #333;border-radius:6px;padding:14px 18px;min-height:70px;cursor:pointer;font-size:20px;font-weight:bold;color:#fff;width:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
+          var selected = (l.code === obLang);
+          btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (selected ? '#003300' : '#111') + ';border:2px solid ' + (selected ? '#00CC00' : '#333') + ';border-radius:6px;padding:14px 18px;min-height:70px;cursor:pointer;font-size:20px;font-weight:bold;color:#fff;width:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
           btn.dataset.code = l.code;
           btn.innerHTML = '<span style="font-size:28px">' + l.f + '</span><span>' + l.n + '</span>';
+          if (selected) document.getElementById('obSelectedName').textContent = l.n;
           btn.onclick = function() {
             obLang = l.code;
             document.getElementById('obSelectedName').textContent = l.n;
