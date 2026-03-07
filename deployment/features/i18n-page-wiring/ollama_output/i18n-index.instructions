@@ -21,6 +21,7 @@ CODE:
       --font-size-button: 18px;
       --button-height: 80px;
       --button-width: 80px;
+      --border-radius: 12px;
     }
 
     body {
@@ -30,45 +31,30 @@ CODE:
       font-size: var(--font-size-base);
       line-height: 1.4;
       height: 100vh;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    /* Header */
-    header {
-      padding: 16px 20px;
-      border-bottom: 2px solid var(--color-accent);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: var(--color-bg);
-    }
+    /* === SYSTEM_MENU.md Section 5.2.1 Menu Layout === */
 
-    .header-title {
-      font-size: 24px;
-      font-weight: 700;
-      text-align: center;
-      flex-grow: 1;
-    }
-
-    /* Main Menu Grid */
-    .menu-grid {
+    .system-menu {
+      flex: 1;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
       gap: 16px;
       padding: 20px;
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .menu-button {
-      height: var(--button-height);
-      width: var(--button-width);
-      background-color: rgba(51, 51, 51, 0.3);
-      border: 2px solid var(--color-accent);
-      border-radius: 12px;
+      aspect-ratio: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -175,52 +161,16 @@ CODE:
       font-weight: 500;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        padding: 16px;
-      }
-
-      .menu-button {
-        height: 70px;
-        width: 70px;
-      }
-
-      .button-label {
-        font-size: 16px;
-      }
+    .status-text.warning {
+      color: #ff9900;
     }
 
-    @media (max-width: 480px) {
-      .menu-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .menu-button {
-        height: 90px;
-        width: 90px;
-      }
+    .status-text.error {
+      color: #ff3333;
     }
 
-    /* Animations */
-    @keyframes blink {
-      0%, 60%, 100% { opacity: 0.2; }
-      30% { opacity: 1; }
-    }
-
-    .typing-dots span {
-      animation: blink 1.4s infinite;
-      animation-fill-mode: both;
-    }
-
-    .typing-dots span:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    .typing-dots span:nth-child(3) {
-      animation-delay: 0.4s;
+    .status-text.success {
+      color: var(--color-accent);
     }
   </style>
 END_CODE

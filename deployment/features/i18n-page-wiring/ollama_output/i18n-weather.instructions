@@ -1,0 +1,31 @@
+FIND_LINE: <title>d3kOS - Weather Radar</title>
+END_LINE: <title>d3kOS - Weather Radar</title>
+ACTION: REPLACE
+CODE:
+<title>d3kOS - Weather Radar</title>
+  <script>
+    // Auto-detect simulator mode
+    const isSimulator = window.location.hostname === 'localhost' || window.location.hostname.includes('192.168.');
+    
+    if (isSimulator) {
+      document.addEventListener('DOMContentLoaded', function() {
+        const banner = document.createElement('div');
+        banner.className = 'simulator-banner';
+        banner.textContent = '⚠️ SIMULATOR MODE - No real-time data';
+        banner.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          padding: 10px;
+          background: #ff0000;
+          color: white;
+          text-align: center;
+          font-weight: bold;
+          z-index: 1000;
+        `;
+        document.body.appendChild(banner);
+      });
+    }
+  </script>
+END_CODE

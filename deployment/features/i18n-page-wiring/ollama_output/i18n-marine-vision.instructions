@@ -1,0 +1,7 @@
+```
+FIND_LINE: <title>Marine Vision - d3kOS</title>
+ACTION: REPLACE
+CODE:
+<title data-i18n="marine_vision_title">Marine Vision - d3kOS</title>
+END_CODE
+```
