@@ -490,7 +490,7 @@
       if (!currentPosition.lat || !currentPosition.lon) return;
 
       // Use Windy.com embedded map with current overlay and zoom
-      const windyUrl = `https://embed.windy.com/embed2.html?lat=${currentPosition.lat}&lon=${currentPosition.lon}&detailLat=${currentPosition.lat}&detailLon=${currentPosition.lon}&width=100%&height=100%&zoom=${currentZoom}&level=surface&overlay=${currentOverlay}&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1`;
+      const windyUrl = `https://embed.windy.com/embed2.html?lat=${currentPosition.lat}&lon=${currentPosition.lon}&detailLat=${currentPosition.lat}&detailLon=${currentPosition.lon}&width=100%&height=100%&zoom=${currentZoom}&level=surface&overlay=${currentOverlay}&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1`;
 
       document.getElementById('radarFrame').src = windyUrl;
       document.getElementById('locationName').textContent = 'Current Position';
