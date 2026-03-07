@@ -83,6 +83,7 @@
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
       overscroll-behavior: contain;
+      will-change: transform;
     }
 
     /* Touch-Friendly Scrollbar */
@@ -1122,8 +1123,9 @@
       updateMetricDisplays();
 
       // Update metrics display every second
-      setInterval(updateMetricDisplays, 1000);
+      setInterval(function() { requestAnimationFrame(updateMetricDisplays); }, 1000);
     });
   </script>
+  <script src="/js/touch-scroll.js"></script>
 </body>
 </html>

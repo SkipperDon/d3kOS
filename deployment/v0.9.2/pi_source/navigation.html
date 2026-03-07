@@ -410,6 +410,7 @@
     /* Touch scroll baseline */
     html, body { touch-action: pan-y; }
     </style>
+  <link rel="stylesheet" href="/d3kos-touch.css">
 </head>
 <body>
   <div class="container">
@@ -458,27 +459,27 @@
         <!-- Navigation Stats -->
         <div class="nav-grid">
           <div class="nav-card no-data" id="card-sog">
-            <div class="nav-label">Speed Over Ground</div>
+            <div class="nav-label" data-i18n="ui.speed">Speed Over Ground</div>
             <div class="nav-value" id="sog">--</div>
             <div class="nav-unit">knots</div>
           </div>
 
           <div class="nav-card no-data" id="card-cog">
-            <div class="nav-label">Course Over Ground</div>
+            <div class="nav-label" data-i18n="ui.course">Course Over Ground</div>
             <div class="nav-value" id="cog">--</div>
             <div class="nav-unit">degrees</div>
             <div class="nav-subtext" id="cog-cardinal">--</div>
           </div>
 
           <div class="nav-card no-data" id="card-heading">
-            <div class="nav-label">Heading (True)</div>
+            <div class="nav-label" data-i18n="ui.heading">Heading (True)</div>
             <div class="nav-value" id="heading">--</div>
             <div class="nav-unit">degrees</div>
             <div class="nav-subtext" id="heading-cardinal">--</div>
           </div>
 
           <div class="nav-card no-data" id="card-depth">
-            <div class="nav-label">Depth Below Surface</div>
+            <div class="nav-label" data-i18n="ui.depth">Depth Below Surface</div>
             <div class="nav-value" id="depth">--</div>
             <div class="nav-unit">meters</div>
           </div>
@@ -498,7 +499,7 @@
           </div>
 
           <div class="gps-status-item" id="gps-hdop">
-            <div class="gps-status-label">HDOP</div>
+            <div class="gps-status-label">Horizontal Dilution of Precision</div>
             <div class="gps-status-value" id="hdop">--</div>
           </div>
 
@@ -991,5 +992,7 @@
     }
 
   </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>

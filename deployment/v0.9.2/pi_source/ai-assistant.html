@@ -34,7 +34,7 @@
     .container {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100dvh;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -486,5 +486,16 @@
       inputBox.focus();
     });
   </script>
+  <script>
+    // Keyboard visibility fix — shrinks container when virtual keyboard opens
+    if (window.visualViewport) {
+      function onViewportChange() {
+        document.querySelector('.container').style.height = window.visualViewport.height + 'px';
+      }
+      window.visualViewport.addEventListener('resize', onViewportChange);
+      window.visualViewport.addEventListener('scroll', onViewportChange);
+    }
+  </script>
+  <script src="/js/touch-scroll.js"></script>
 </body>
 </html>
