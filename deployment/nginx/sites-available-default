@@ -123,6 +123,23 @@ server {
         proxy_read_timeout 30s;
     }
 
+    # i18n language routes (proxied directly to network-api port 8101)
+    location /api/language {
+        proxy_pass http://localhost:8101/api/language;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    location /api/languages {
+        proxy_pass http://localhost:8101/api/languages;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    location /api/i18n/ {
+        proxy_pass http://localhost:8101/api/i18n/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
     # Network management API (port 8101) — routes at /, so strip /network prefix
     location /network/ {
         proxy_pass http://localhost:8101/;
@@ -154,7 +171,7 @@ server {
     # ── License / Tier / Simulator ────────────────────────────────────────────
     # License API (port 8091)
     location /license/ {
-        proxy_pass http://localhost:8091;
+        proxy_pass http://localhost:8092;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -189,6 +206,11 @@ server {
     }
 
     # ── Remote Status API ─────────────────────────────────────────────────────
+        location /cloud/ {
+            proxy_pass http://localhost:8092/;
+            proxy_set_header Host $host;
+        }
+
     location /remote/ {
         proxy_pass http://localhost:8111/remote/;
         proxy_http_version 1.1;
@@ -197,4 +219,19 @@ server {
         proxy_set_header X-API-Key $http_x_api_key;
         proxy_read_timeout 30s;
     }
+
+    location /settings/action/ {
+        proxy_pass http://127.0.0.1:8102;
+        proxy_set_header Host $host;
+    }
+    # SignalK (port 3000)
+    location /signalk/ {
+        proxy_pass http://localhost:3000/signalk/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 60s;
+    }
+
 }
