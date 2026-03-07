@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=d3kOS Main Menu
+Comment=Auto-start d3kOS web interface
+Exec=/bin/bash -c 'rm -f /home/d3kos/.config/chromium/Default/Sessions/* /home/d3kos/.config/chromium/Default/Current* /home/d3kos/.config/chromium/Default/Last* && /usr/bin/chromium --start-fullscreen --force-device-scale-factor=1 --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-session-crashed-bubble --hide-crash-restore-bubble --disable-restore-session-state --disable-translate --disable-features=TranslateUI,OverlayScrollbar --touch-events=enabled --enable-pinch --pull-to-refresh=1 --enable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents http://localhost/'
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
