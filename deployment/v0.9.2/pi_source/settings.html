@@ -3,6 +3,7 @@
 <head>
   <script src="/js/units.js"></script>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="/d3kos-touch.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -386,7 +387,7 @@
         ← Main Menu
       </button>
 
-      <span class="status-text">d3kOS v2.0 | Settings</span>
+      <span class="status-text"></span>
 
       <button class="nav-button" onclick="runDiagnostics()" aria-label="Run system diagnostics">
         🔍 Diagnostics
@@ -398,7 +399,7 @@
       <div class="content-wrapper">
 
         <!-- Engine Settings -->
-        <h2 class="section-header">⚓ Engine Configuration</h2>
+        <h2 class="section-header" data-i18n="ui.section_engine">⚓ Engine Configuration</h2>
         <div class="settings-grid">
           <div class="setting-card">
             <label class="setting-label" for="service-interval">Service Interval</label>
@@ -431,7 +432,7 @@
         </div>
 
         <!-- Units & Display -->
-        <h2 class="section-header">📏 Units & Display</h2>
+        <h2 class="section-header" data-i18n="ui.section_units">📏 Units & Display</h2>
         <div class="settings-grid">
           <div class="setting-card">
             <label class="setting-label" for="distance-unit">Distance Units</label>
@@ -559,17 +560,17 @@
           </div>
         </div>
 
-        <!-- Data Management -->
-<div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
         
                 <!-- Network Settings -->
         <div style="margin: 20px 0;"><button onclick="window.location.href='/settings-network.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📶 Network Settings (WiFi/Hotspot)</button></div>
+        <!-- Language Settings -->
+        <div style="margin: 20px 0;"><button onclick="window.location.href='/language-menu.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">🌐 Language Settings</button></div>
         <!-- Remote Access Settings -->
         <div style="margin: 20px 0;"><button onclick="window.location.href='/remote-access.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📡 Remote Access &amp; QR Code</button></div>
         <!-- Simulator Settings -->
         <div style="margin: 20px 0;"><button onclick="window.location.href='/settings-simulator.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">🔧 NMEA2000 Simulator (Testing)</button></div>
         
-        <h2 class="section-header">📹 Camera Management</h2>
+                <h2 class="section-header" data-i18n="ui.section_camera">📹 Camera Management</h2>
         <div id="camera-cards-container">
           <div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">Loading cameras...</div>
         </div>
@@ -580,8 +581,42 @@
           </button>
         </div>
 
+        <h2 class="section-header">Community & Privacy</h2>
+        <div id="community-tier-notice" style="display:none; background:#1a1a1a; border:1px solid #FF6600; border-radius:8px; padding:14px 18px; margin-bottom:12px; color:#FF6600; font-size:18px;">
+          🔒 Requires Tier 1 — connect via the d3kOS mobile app to unlock community features
+        </div>
+        <div class="settings-grid">
+          <div class="setting-card">
+            <div class="setting-label">Share engine benchmarks (anonymous fleet comparison)</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="benchmark_sharing" onchange="saveCommunityPref('benchmark_sharing', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-card">
+            <div class="setting-label">Show my boat on community map (approx. 1 km grid)</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="boat_map" onchange="saveCommunityPref('boat_map', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-card">
+            <div class="setting-label">Enable hazard/POI reporting from nav page</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="hazard_reporting" onchange="saveCommunityPref('hazard_reporting', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-card">
+            <div class="setting-label">Help improve the knowledge base (issue category only)</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="knowledge_base" onchange="saveCommunityPref('knowledge_base', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
         <h2 class="section-header">💾 Data Management</h2>
-<div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
+<div style="margin: 20px 0;"><button onclick="window.location.href='/settings-data.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="exportAllData()">📤 Export All Data</button>
           <button class="btn" onclick="importData()">📥 Import Data</button>
@@ -590,7 +625,7 @@
         </div>
 
         <!-- System Actions -->
-        <h2 class="section-header">🔧 System Actions</h2>
+        <h2 class="section-header" data-i18n="ui.section_system">🔧 System Actions</h2>
         <div class="btn-group">
           <button class="btn" onclick="restartSignalK()">🔄 Restart Signal K</button>
           <button class="btn" onclick="restartNodeRED()">🔄 Restart Node-RED</button>
@@ -599,7 +634,7 @@
         </div>
 
         <!-- About -->
-        <h2 class="section-header">ℹ️ About d3kOS</h2>
+        <h2 class="section-header">About d3kOS</h2>
         <div class="setting-card">
           <p style="font-size: var(--font-base); margin-bottom: 12px;">
             <strong>d3kOS</strong> is a comprehensive marine electronics system for engine monitoring, trip logging, and performance analysis.
@@ -1109,42 +1144,42 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadSettings();
       checkSignalK();
+      loadCommunityPrefs();
     });
+
+    function loadCommunityPrefs() {
+      var communityIds = ['benchmark_sharing','boat_map','hazard_reporting','knowledge_base'];
+      Promise.all([
+        fetch('http://localhost:8103/api/community/prefs').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+        fetch('/tier/status').then(function(r) { return r.json(); }).catch(function() { return {tier: 1}; })
+      ]).then(function(results) {
+        var prefs = results[0];
+        var tier = results[1].tier;
+        var locked = (tier === 0);
+        document.getElementById('community-tier-notice').style.display = locked ? 'block' : 'none';
+        communityIds.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.checked = !!prefs[id];
+          el.disabled = locked;
+          el.closest('.toggle-switch').style.opacity = locked ? '0.4' : '1';
+        });
+      });
+    }
+
+    function saveCommunityPref(key, value) {
+      var el = document.getElementById(key);
+      if (el && el.disabled) return;
+      fetch('http://localhost:8103/api/community/prefs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key: key, value: value})
+      }).catch(function() {});
+    }
   </script>
 
   <script>
     // Camera Management Functions
-// Camera Management Functions
-    var POSITIONS = ['bow', 'stern', 'port', 'starboard'];
-
-    function positionLabel(pos) {
-      if (!pos || pos === 'unassigned') return 'Unassigned';
-      return pos.charAt(0).toUpperCase() + pos.slice(1);
-    }
-
-    function assignPosition(camId, position) {
-      fetch('/camera/assign', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({camera_id: camId, position: position})
-      })
-        .then(function(r) { return r.json(); })
-        .then(function() { updateCameraStatus(); })
-        .catch(function(err) { console.error('Assign failed:', err); });
-    }
-
-    function renderAssignButtons(camId) {
-      return POSITIONS.map(function(pos) {
-        return '<button onclick="assignPosition(\'' + camId + '\',\'' + pos + '\')" ' +
-          'style="margin:4px;padding:8px 14px;background:#333;color:#fff;border:1px solid #555;' +
-          'border-radius:6px;font-size:16px;cursor:pointer;">' +
-          positionLabel(pos) + '</button>';
-      }).join('') +
-      '<button onclick="assignPosition(\'' + camId + '\',\'unassigned\')" ' +
-        'style="margin:4px;padding:8px 14px;background:#333;color:#888;border:1px solid #444;' +
-        'border-radius:6px;font-size:16px;cursor:pointer;">Clear</button>';
-    }
-
     function updateCameraStatus() {
       fetch('/camera/list')
         .then(function(r) { return r.json(); })
@@ -1157,19 +1192,15 @@
           var html = '';
           data.cameras.forEach(function(cam) {
             var connColor = cam.connected ? '#00CC00' : '#FF0000';
-            var connText  = cam.connected ? '✓ Connected' : '✗ Offline';
+            var connText  = cam.connected ? '\u2713 Connected' : '\u2717 Offline';
             var activeLabel = cam.active ? ' <span style="color:#FFD700;font-size:18px;">(Active)</span>' : '';
-            var posLabel = positionLabel(cam.position);
-            var posColor = (!cam.position || cam.position === 'unassigned') ? '#FF8800' : '#00CC00';
             var switchBtn = cam.active ? '' :
-              '<button onclick="switchCamera(\'' + cam.id + '\')" style="margin-top:8px;margin-right:8px;padding:10px 20px;background:#00CC00;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;">Set Active</button>';
+              '<button onclick="switchCamera(\'' + cam.id + '\')" style="margin-top:12px;padding:10px 20px;background:#00CC00;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer;">Set Active</button>';
             html += '<div class="setting-card" style="margin-bottom:12px;">' +
               '<div style="font-size:20px;font-weight:700;color:#00CC00;margin-bottom:8px;">' + cam.name + activeLabel + '</div>' +
               '<div style="font-size:17px;color:rgba(255,255,255,0.7);">Model: ' + (cam.model || 'Reolink') + '</div>' +
               '<div style="font-size:17px;color:rgba(255,255,255,0.7);">IP: ' + cam.ip + '</div>' +
               '<div style="font-size:17px;color:' + connColor + ';">' + connText + '</div>' +
-              '<div style="font-size:17px;color:' + posColor + ';margin-top:8px;">Position: ' + posLabel + '</div>' +
-              '<div style="margin-top:10px;">' + renderAssignButtons(cam.id) + '</div>' +
               switchBtn +
               '</div>';
           });
@@ -1188,7 +1219,6 @@
         .then(function() { updateCameraStatus(); })
         .catch(function(err) { console.error('Switch failed:', err); });
     }
-    }
 
     // Update camera status on page load
     window.addEventListener('load', function() {
@@ -1199,5 +1229,7 @@
   </script>
 
         <!-- License & Tier -->        <h2 class="section-header">🎫 License & Tier</h2>        <div class="setting-card">          <div style="font-size: 22px; line-height: 2;">            <div><strong>Tier:</strong> <span id="tier-display" style="color: #FFD700;">Loading...</span></div>            <div><strong>Installation ID:</strong> <span id="install-id" style="color: #00CC00; font-family: monospace;">Loading...</span></div>            <div><strong>Features:</strong> <span id="features-display">Loading...</span></div>          </div>        </div>        <script>        fetch("/tier/status").then(r=>r.json()).then(d=>{          document.getElementById("tier-display").textContent="Tier "+d.tier;          document.getElementById("install-id").textContent=d.installation_id;          const f=d.features;          document.getElementById("features-display").innerHTML=(f.voice_assistant?"✅":"❌")+" Voice, "+(f.camera?"✅":"❌")+" Camera";        });        </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>

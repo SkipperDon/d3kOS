@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="/d3kos-touch.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Boat Log</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -452,7 +453,7 @@
 
       <span class="status-text">d3kOS v2.0 | Boat Log</span>
 
-      <button class="nav-button" onclick="exportBoatlogCSV()" aria-label="Export trip data">
+      <button class="nav-button" onclick="exportBoatlogCSV()" aria-label="Export trip data" data-i18n="ui.export_data">
         Export Data
       </button>
     </nav>
@@ -473,13 +474,13 @@
 
           <!-- Trip Controls -->
           <div class="trip-controls">
-            <button class="btn btn-primary" id="btn-start-trip" onclick="startTrip()">
+            <button class="btn btn-primary" id="btn-start-trip" onclick="startTrip()" data-i18n="ui.start_trip">
               ▶ Start Trip
             </button>
-            <button class="btn btn-danger" id="btn-stop-trip" onclick="stopTrip()" disabled>
+            <button class="btn btn-danger" id="btn-stop-trip" onclick="stopTrip()" disabled data-i18n="ui.stop_trip">
               ⏹ Stop Trip
             </button>
-            <button class="btn" id="btn-pause-trip" onclick="pauseTrip()" disabled>
+            <button class="btn" id="btn-pause-trip" onclick="pauseTrip()" disabled data-i18n="ui.pause_trip">
               ⏸ Pause
             </button>
             <button class="btn btn-tier2" id="btn-voice-note" onclick="recordVoiceNote()">
@@ -519,7 +520,7 @@
         </div>
 
         <!-- Engine Hours Summary -->
-        <h2 class="section-header">Engine Status</h2>
+        <h2 class="section-header" data-i18n="ui.engine_status">Engine Status</h2>
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-label">Total Engine Hours</div>
@@ -688,24 +689,66 @@
     }
 
     // Voice note recording (Tier 2 feature)
-    function recordVoiceNote() {
-      // Show Tier 2 notification
+function recordVoiceNote() {
+  // Check if MediaRecorder is supported
+  if (!window.MediaRecorder) {
+    alert("🎤 Voice Note Recording\n\nYour browser does not support voice recording.");
+    return;
+  }
+
+  // Request microphone access
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks = [];
+
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // Create a temporary link to download the recording
+        const link = document.createElement('a');
+        link.href = audioUrl;
+        link.download = `voice-note-${new Date().toISOString()}.webm`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+
+      // Stop recording after 10 seconds (or use a UI control)
+      setTimeout(() => {
+        if (mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      }, 10000);
+
+      // Show notification
       const message =
         "🎤 Voice Note Recording\n\n" +
-        "This is a Tier 2 feature that requires:\n\n" +
-        "• Voice AI Assistant license\n" +
-        "• Microphone hardware\n" +
-        "• Voice processing models\n\n" +
-        "Voice notes allow you to:\n" +
-        "• Record audio comments during trips\n" +
-        "• Add voice annotations to log entries\n" +
-        "• Store audio memos with timestamps\n" +
-        "• Transcribe voice to text automatically\n\n" +
-        "Upgrade to Tier 2 to unlock voice features!\n\n" +
-        "Contact: service@atmyboat.com";
+        "Recording started. Audio will be saved as a WebM file.\n\n" +
+        "Features:\n" +
+        "• 10-second automatic recording\n" +
+        "• Downloadable audio files\n" +
+        "• Timestamped with current date/time\n\n" +
+        "Note: This is a Tier 2 feature. Full AI transcription requires an upgrade.";
 
       alert(message);
-    }
+    })
+    .catch(err => {
+      console.error("🎤 Voice Note Recording Error:", err);
+      alert("🎤 Voice Note Recording\n\nMicrophone access denied or unavailable.\n\n" +
+            "Please allow microphone access in your browser settings.");
+    });
+}
 
     // Resume trip after page reload
     function resumeTrip() {
@@ -876,10 +919,10 @@
         if (result.success) {
           alert(`✓ Boatlog exported successfully!\n\nFile: ${result.filename}\nLocation: /home/d3kos/d3kos-exports/boatlogs/\n\nTier 1 will sync this file to centralized database.`);
         } else {
-          alert(`✗ Export failed: ${result.error}`);
+          alert('Export failed: ' + result.error);
         }
       } catch (error) {
-        alert(`✗ Export failed: ${error.message}`);
+        alert('Export failed: ' + error.message);
         console.error('Export error:', error);
       }
     }
@@ -925,7 +968,10 @@
 
       } catch (error) {
         console.error("CSV export error:", error);
-        alert(`✗ CSV export failed: ${error.message}`);
+        const msg = error.message && error.message.includes('NOT FOUND')
+          ? 'No trip data to export. Start and complete a trip first.'
+          : error.message;
+        alert('CSV export failed: ' + msg);
       }
     }
 
@@ -988,5 +1034,7 @@
       connectSignalK();
     });
   </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>

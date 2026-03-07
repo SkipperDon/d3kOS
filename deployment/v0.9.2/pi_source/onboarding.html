@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/js/units.js"></script>
   <meta charset="UTF-8">
+  <script src="/js/units.js"></script>
+  <link rel="stylesheet" href="/d3kos-touch.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Boat Setup Wizard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -211,6 +212,94 @@
     </style>
 </head>
 <body>
+
+  <!-- Language selection overlay — shown on fresh start if language not yet chosen -->
+  <div id="langOverlay" style="display:none;position:fixed;inset:0;background:#000;z-index:999;overflow-y:auto;padding:40px 20px;">
+    <div style="max-width:900px;margin:0 auto;text-align:center;">
+      <div style="font-size:14px;color:#888;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">d3kOS — Marine Intelligence OS</div>
+      <h1 style="font-size:32px;color:#00CC00;margin-bottom:16px;">Select Language</h1>
+      <div style="font-size:20px;color:#555;margin-bottom:28px;line-height:2;">
+        <span>🇬🇧 Welcome</span> &nbsp;
+        <span>🇫🇷 Bienvenue</span> &nbsp;
+        <span>🇩🇪 Willkommen</span> &nbsp;
+        <span>🇪🇸 Bienvenido</span>
+      </div>
+      <div id="obLangGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:32px;text-align:left;"></div>
+      <div style="font-size:22px;color:#888;margin-bottom:20px;">Selected: <span id="obSelectedName" style="color:#00CC00;font-weight:bold;">English</span></div>
+      <button id="obLangConfirm" onclick="confirmObLanguage()" data-i18n="ui.confirm" style="background:#00CC00;color:#000;border:none;border-radius:6px;padding:16px 48px;min-height:80px;font-size:24px;font-weight:bold;cursor:pointer;touch-action:manipulation;">Continue →</button>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var LANGS = [
+        {code:'en',n:'English',f:'🇬🇧'},{code:'fr',n:'Français',f:'🇫🇷'},
+        {code:'it',n:'Italiano',f:'🇮🇹'},{code:'es',n:'Español',f:'🇪🇸'},
+        {code:'el',n:'Ελληνικά',f:'🇬🇷'},{code:'hr',n:'Hrvatski',f:'🇭🇷'},
+        {code:'tr',n:'Türkçe',f:'🇹🇷'},{code:'de',n:'Deutsch',f:'🇩🇪'},
+        {code:'nl',n:'Nederlands',f:'🇳🇱'},{code:'sv',n:'Svenska',f:'🇸🇪'},
+        {code:'no',n:'Norsk',f:'🇳🇴'},{code:'da',n:'Dansk',f:'🇩🇰'},
+        {code:'fi',n:'Suomi',f:'🇫🇮'},{code:'pt',n:'Português',f:'🇵🇹'},
+        {code:'ar',n:'العربية',f:'🇦🇪'},{code:'zh',n:'中文',f:'🇨🇳'},
+        {code:'ja',n:'日本語',f:'🇯🇵'},{code:'uk',n:'Українська',f:'🇺🇦'}
+      ];
+      var obLang = 'en';
+      fetch('http://localhost:8101/api/language', {signal: AbortSignal.timeout(2000)})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          obLang = (d.language && d.language !== '') ? d.language : 'en';
+          buildObGrid();
+          // Skip overlay on the reload immediately following a language confirm
+          if (localStorage.getItem('langJustSet')) {
+            localStorage.removeItem('langJustSet');
+          } else {
+            document.getElementById('langOverlay').style.display = 'block';
+          }
+        })
+        .catch(function(){
+          buildObGrid();
+          if (!localStorage.getItem('langJustSet')) {
+            document.getElementById('langOverlay').style.display = 'block';
+          }
+          localStorage.removeItem('langJustSet');
+        });
+      function buildObGrid() {
+        var grid = document.getElementById('obLangGrid');
+        LANGS.forEach(function(l) {
+          var btn = document.createElement('button');
+          var selected = (l.code === obLang);
+          btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (selected ? '#003300' : '#111') + ';border:2px solid ' + (selected ? '#00CC00' : '#333') + ';border-radius:6px;padding:14px 18px;min-height:70px;cursor:pointer;font-size:20px;font-weight:bold;color:#fff;width:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
+          btn.dataset.code = l.code;
+          btn.innerHTML = '<span style="font-size:28px">' + l.f + '</span><span>' + l.n + '</span>';
+          if (selected) document.getElementById('obSelectedName').textContent = l.n;
+          btn.onclick = function() {
+            obLang = l.code;
+            document.getElementById('obSelectedName').textContent = l.n;
+            document.querySelectorAll('#obLangGrid button').forEach(function(b) {
+              b.style.borderColor = b.dataset.code === l.code ? '#00CC00' : '#333';
+              b.style.background  = b.dataset.code === l.code ? '#003300' : '#111';
+            });
+          };
+          grid.appendChild(btn);
+        });
+      }
+      window.confirmObLanguage = function() {
+        var btn = document.getElementById('obLangConfirm');
+        btn.disabled = true; btn.textContent = 'Saving...';
+        var dir = obLang === 'ar' ? 'rtl' : 'ltr';
+        fetch('http://localhost:8101/api/language', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({language: obLang, dir: dir}),
+          signal: AbortSignal.timeout(4000)
+        }).then(function() {
+          localStorage.setItem('langJustSet', '1');
+          window.location.reload();
+        }).catch(function() {
+          document.getElementById('langOverlay').style.display = 'none';
+        });
+      };
+    })();
+  </script>
+
   <div class="nav-bar">
     <button class="nav-btn" onclick="location.href='/'">← Main Menu</button>
     <div class="title">Boat Setup Wizard</div>
@@ -226,7 +315,7 @@
 
   <div class="content">
     <div class="step active" id="step0">
-      <h2>Welcome to d3kOS Setup</h2>
+      <h2 data-i18n="onboarding.welcome">Welcome to d3kOS Setup</h2>
       <p>This wizard configures your marine engine monitoring system (10-15 minutes).</p>
       <p><strong>You'll need:</strong> Engine manual, propeller specs, CX5106 gateway</p>
       <button class="btn-start" onclick="start()">Start Setup →</button>
@@ -455,7 +544,7 @@
     </div>
 
     <div class="step" id="step21">
-      <h2>Setup Complete! 🎉</h2>
+      <h2 data-i18n="onboarding.wizard_complete">Setup Complete! 🎉</h2>
       <p>Your d3kOS is configured and ready to use.</p>
       <p><strong>Next steps:</strong></p>
       <ul style="margin-left:25px">
@@ -469,7 +558,7 @@
   </div>
 
   <div class="nav-bottom">
-    <button id="back" onclick="back()" disabled>← Back</button>
+    <button id="back" onclick="back()" disabled data-i18n="ui.back">← Back</button>
     <button id="next" onclick="next()">Next →</button>
   </div>
 
@@ -796,5 +885,7 @@ function generateDIP() {
       }, 500);
     }
   </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>

@@ -177,7 +177,7 @@ tar -xzf ~/Downloads/oesenc_pi-*-linux-arm64.tar.gz
 
   <script>
     function launchOpenCPN() {
-      fetch('/cgi-bin/launch-opencpn.sh')
+      fetch('http://localhost:1880/launch-opencpn', { method: 'POST', mode: 'no-cors' })
         .then(() => {
           alert('🗺️ Launching OpenCPN...\n\n✓ GPS data automatically connected\n✓ Access via VNC or connected display\n\nNote: O-charts plugin requires manual installation (see instructions above)');
         })
@@ -186,5 +186,6 @@ tar -xzf ~/Downloads/oesenc_pi-*-linux-arm64.tar.gz
         });
     }
   </script>
+  <script src="/js/touch-scroll.js"></script>
 </body>
 </html>

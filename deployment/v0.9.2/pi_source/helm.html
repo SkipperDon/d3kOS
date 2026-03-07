@@ -3,6 +3,7 @@
 <head>
   <script src="/js/units.js"></script>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="/d3kos-touch.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS - Helm Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,7 +51,7 @@
     .container {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100dvh;
       max-width: 1920px;
       margin: 0 auto;
     }
@@ -1037,5 +1038,17 @@
       if (input) input.focus();
     }, 500);
   </script>
+  <script>
+    // Keyboard visibility fix — shrinks container when virtual keyboard opens
+    if (window.visualViewport) {
+      function onViewportChange() {
+        document.querySelector('.container').style.height = window.visualViewport.height + 'px';
+      }
+      window.visualViewport.addEventListener('resize', onViewportChange);
+      window.visualViewport.addEventListener('scroll', onViewportChange);
+    }
+  </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>
