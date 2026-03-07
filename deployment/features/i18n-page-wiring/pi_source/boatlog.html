@@ -453,7 +453,7 @@
 
       <span class="status-text">d3kOS v2.0 | Boat Log</span>
 
-      <button class="nav-button" onclick="exportBoatlogCSV()" aria-label="Export trip data">
+      <button class="nav-button" onclick="exportBoatlogCSV()" aria-label="Export trip data" data-i18n="ui.export_data">
         Export Data
       </button>
     </nav>
@@ -480,7 +480,7 @@
             <button class="btn btn-danger" id="btn-stop-trip" onclick="stopTrip()" disabled data-i18n="ui.stop_trip">
               ⏹ Stop Trip
             </button>
-            <button class="btn" id="btn-pause-trip" onclick="pauseTrip()" disabled>
+            <button class="btn" id="btn-pause-trip" onclick="pauseTrip()" disabled data-i18n="ui.pause_trip">
               ⏸ Pause
             </button>
             <button class="btn btn-tier2" id="btn-voice-note" onclick="recordVoiceNote()">
@@ -520,7 +520,7 @@
         </div>
 
         <!-- Engine Hours Summary -->
-        <h2 class="section-header">Engine Status</h2>
+        <h2 class="section-header" data-i18n="ui.engine_status">Engine Status</h2>
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-label">Total Engine Hours</div>
