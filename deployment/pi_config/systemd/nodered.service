@@ -11,8 +11,6 @@ RestartSec=10
 User=d3kos
 WorkingDirectory=/home/d3kos
 Environment=NODE_RED_USER_DIR=/home/d3kos/.node-red
-WatchdogSec=120
-NotifyAccess=main
 
 [Install]
 WantedBy=multi-user.target
