@@ -36,13 +36,13 @@ def post_marker():
             return jsonify({'error': 'Missing required fields'}), 400
             
         # Anonymise position
-        anonymised_lat, anonymised_lon = strip_position(lat, lon)
-        
+        pos = strip_position(lat, lon)
+
         payload = {
             'category': category,
             'description': description,
-            'lat': anonymised_lat,
-            'lon': anonymised_lon
+            'lat': pos['lat_approx'],
+            'lon': pos['lon_approx']
         }
         
         response = requests.post(
@@ -81,6 +81,25 @@ def get_markers():
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+VALID_PREFS = {'benchmark_sharing', 'boat_map', 'hazard_reporting', 'knowledge_base'}
+
+@app.route('/api/community/prefs', methods=['GET'])
+def get_prefs():
+    return jsonify(load_community_prefs())
+
+@app.route('/api/community/prefs', methods=['POST'])
+def set_pref():
+    data = request.get_json(force=True)
+    key = data.get('key')
+    value = data.get('value')
+    if key not in VALID_PREFS or not isinstance(value, bool):
+        return jsonify({'error': 'Invalid key or value'}), 400
+    prefs = load_community_prefs()
+    prefs[key] = value
+    with open(COMMUNITY_PREFS_PATH, 'w') as f:
+        json.dump(prefs, f)
+    return jsonify({'ok': True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8103, debug=False)

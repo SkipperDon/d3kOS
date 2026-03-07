@@ -432,7 +432,7 @@
         </div>
 
         <!-- Units & Display -->
-        <h2 class="section-header">📏 Units & Display</h2>
+        <h2 class="section-header" data-i18n="ui.section_units">📏 Units & Display</h2>
         <div class="settings-grid">
           <div class="setting-card">
             <label class="setting-label" for="distance-unit">Distance Units</label>
@@ -581,25 +581,40 @@
           </button>
         </div>
 
-<h2 class="section-header">Community & Privacy</h2>
-<div class="setting-card">
-  <div style="display: flex; align-items: center; margin-bottom: 12px;">
-    <input type="checkbox" id="benchmark_sharing" onchange="saveCommunityPref('benchmark_sharing', this.checked)">
-    <label for="benchmark_sharing" style="margin-left: 8px; font-size: 18px;">Share engine benchmarks (anonymous fleet comparison)</label>
-  </div>
-  <div style="display: flex; align-items: center; margin-bottom: 12px;">
-    <input type="checkbox" id="boat_map" onchange="saveCommunityPref('boat_map', this.checked)">
-    <label for="boat_map" style="margin-left: 8px; font-size: 18px;">Show my boat on community map (approx. 1 km grid)</label>
-  </div>
-  <div style="display: flex; align-items: center; margin-bottom: 12px;">
-    <input type="checkbox" id="hazard_reporting" onchange="saveCommunityPref('hazard_reporting', this.checked)">
-    <label for="hazard_reporting" style="margin-left: 8px; font-size: 18px;">Enable hazard/POI reporting from nav page</label>
-  </div>
-  <div style="display: flex; align-items: center;">
-    <input type="checkbox" id="knowledge_base" onchange="saveCommunityPref('knowledge_base', this.checked)">
-    <label for="knowledge_base" style="margin-left: 8px; font-size: 18px;">Help improve the knowledge base (issue category only)</label>
-  </div>
-</div>
+        <h2 class="section-header">Community & Privacy</h2>
+        <div id="community-tier-notice" style="display:none; background:#1a1a1a; border:1px solid #FF6600; border-radius:8px; padding:14px 18px; margin-bottom:12px; color:#FF6600; font-size:18px;">
+          🔒 Requires Tier 1 — connect via the d3kOS mobile app to unlock community features
+        </div>
+        <div class="settings-grid">
+          <div class="setting-card">
+            <div class="setting-label">Share engine benchmarks (anonymous fleet comparison)</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="benchmark_sharing" onchange="saveCommunityPref('benchmark_sharing', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-card">
+            <div class="setting-label">Show my boat on community map (approx. 1 km grid)</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="boat_map" onchange="saveCommunityPref('boat_map', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-card">
+            <div class="setting-label">Enable hazard/POI reporting from nav page</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="hazard_reporting" onchange="saveCommunityPref('hazard_reporting', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-card">
+            <div class="setting-label">Help improve the knowledge base (issue category only)</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="knowledge_base" onchange="saveCommunityPref('knowledge_base', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
         <h2 class="section-header">💾 Data Management</h2>
 <div style="margin: 20px 0;"><button onclick="window.location.href='/settings-data.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
         <div class="btn-group">
@@ -1166,7 +1181,38 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadSettings();
       checkSignalK();
+      loadCommunityPrefs();
     });
+
+    function loadCommunityPrefs() {
+      var communityIds = ['benchmark_sharing','boat_map','hazard_reporting','knowledge_base'];
+      Promise.all([
+        fetch('http://localhost:8103/api/community/prefs').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+        fetch('/tier/status').then(function(r) { return r.json(); }).catch(function() { return {tier: 1}; })
+      ]).then(function(results) {
+        var prefs = results[0];
+        var tier = results[1].tier;
+        var locked = (tier === 0);
+        document.getElementById('community-tier-notice').style.display = locked ? 'block' : 'none';
+        communityIds.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.checked = !!prefs[id];
+          el.disabled = locked;
+          el.closest('.toggle-switch').style.opacity = locked ? '0.4' : '1';
+        });
+      });
+    }
+
+    function saveCommunityPref(key, value) {
+      var el = document.getElementById(key);
+      if (el && el.disabled) return;
+      fetch('http://localhost:8103/api/community/prefs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key: key, value: value})
+      }).catch(function() {});
+    }
   </script>
 
   <script>
