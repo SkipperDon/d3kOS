@@ -1,8 +1,81 @@
 # d3kOS - Incomplete Features & TODO List
 
 **Date Created:** 2026-02-20
+**Last Updated:** 2026-03-07
 **Purpose:** Comprehensive list of incomplete features for planning discussions
 **Next Steps:** Discuss existing website, database structure, implementation methods
+
+---
+
+## 🟡 signalk-forward-watch v0.2.0 — Worker Thread Refactor
+
+**Plugin repo:** `/home/boatiq/signalk-forward-watch/`
+**Current version:** v0.1.0 (published on GitHub, npm pending)
+**Status:** v0.1.0 live on Pi — temporary interval workaround in place
+
+### Background
+
+v0.1.0 runs ONNX inference directly on the Signal K main Node.js event loop thread.
+Each inference cycle takes ~2 minutes on Pi 4 CPU. This blocks the entire Signal K
+server during inference — GPS, AIS, engine data all freeze.
+
+**Temporary fix applied (2026-03-07):** `detection_interval` raised from 3s → 300s.
+This gives breathing room between blocking calls but means the boat goes 5 minutes
+between forward watch updates — too long for a safety system underway.
+
+**Best practice (Node.js + ONNX Runtime documentation):** CPU-heavy inference must
+run in a `worker_thread`, not on the main event loop. Session options must be
+configured for edge devices to prevent ONNX Runtime's internal thread pool from
+busy-spinning.
+
+### Scope of Work
+
+**1. Move ONNX inference to a persistent worker thread**
+- Create `src/onnx-worker.js` — loads model once, receives frames via `workerData`/`postMessage`, returns detections
+- Main plugin thread spawns worker once at `start()`, keeps it alive, sends camera frames to it
+- Worker posts detection results back; plugin calls `app.handleMessage()` on receipt
+- Main Signal K event loop never blocks regardless of inference duration
+
+**2. Configure ONNX Runtime session options for Raspberry Pi**
+```js
+const options = new ort.SessionOptions();
+options.intraOpNumThreads = 1;   // don't use all 4 Pi cores
+options.addConfigEntry("session.intra_op.allow_spinning", "0");  // no busy-wait CPU burn
+options.executionMode = 'sequential';
+```
+
+**3. Restore detection interval to a useful value**
+- With inference off the event loop, interval can return to 30–60s
+- Make configurable in plugin settings (currently hardcoded workaround)
+- Default: 60s (safe for underway, low CPU)
+
+**4. Worker lifecycle management**
+- Worker starts in `plugin.start()`, terminates in `plugin.stop()`
+- On worker crash: log error, restart worker (do not crash Signal K)
+- Worker error event must be handled explicitly (unhandled = silent failure)
+
+**5. Version bump and publish**
+- Bump `package.json` to `0.2.0`
+- Update README — document worker thread architecture, new session options
+- Publish to npm (unblock account first — sign-in was broken as of v0.1.0)
+- Tag `v0.2.0` release on GitHub with updated `.onnx` model if retrained
+
+### Expected Outcome
+
+| Metric | v0.1.0 (current) | v0.2.0 (target) |
+|--------|-----------------|-----------------|
+| Signal K blocked during inference | Yes (~2 min) | No |
+| Detection interval | 300s (workaround) | 60s |
+| ONNX CPU burn between cycles | High (spin-wait) | Low (passive wait) |
+| Pi CPU during inference | ~58% all 4 cores | ~25% 1 core |
+
+### Research Sources
+- [ONNX Runtime Threading — Microsoft](https://onnxruntime.ai/docs/performance/tune-performance/threading.html)
+- [Reducing CPU with ONNX Runtime — Inworld AI](https://inworld.ai/blog/reducing-cpu-usage-in-machine-learning-model-inference-with-onnx-runtime)
+- [Don't Block the Event Loop — Node.js](https://nodejs.org/en/docs/guides/dont-block-the-event-loop)
+- [Worker Threads handbook — freeCodeCamp](https://www.freecodecamp.org/news/how-to-implement-multi-threading-in-nodejs-with-worker-threads-full-handbook/)
+
+---
 
 ---
 
