@@ -2,6 +2,53 @@
 
 ---
 
+## Session 2026-03-10 (Part 8)
+**Goal:** Fix Initial Setup — language overlay freezes on Continue, wizard never proceeds
+
+**Investigation:**
+- Read onboarding.html language overlay logic in full
+- Traced `confirmObLanguage()`: saves language → `window.location.reload()` → on reload, overlay `.then` handler runs unconditionally → shows overlay again → infinite loop
+- Checked network-api.py GET `/api/language`: returns `cfg.get('language', 'en')` — defaults to `'en'` even when never set → can't distinguish "never chosen" from "chose English"
+- Confirmed current `onboarding.json`: `{"language": "en", "dir": "ltr"}` (key present = language was set)
+
+**Root causes (two):**
+1. `onboarding.html` `.then` handler showed the overlay unconditionally regardless of whether language was already set
+2. `network-api.py` defaulted to `'en'` for unset language — no signal to detect "fresh system"
+
+**Fix applied:**
+- `network-api.py`: `cfg.get('language', 'en')` → `cfg.get('language', '')` — returns empty string when language never set
+- `onboarding.html`: Added early return in `.then` handler — if `d.language` is set and non-empty, hide overlay and return; else show overlay as normal
+- Restarted `d3kos-network-api` service
+
+**Verification:**
+| Scenario | API returns | Overlay |
+|----------|-------------|---------|
+| Fresh system (no key in JSON) | `""` | Shows ✓ |
+| After saving language + reload | `"en"` | Skipped ✓ |
+| Returning user | `"en"`/`"fr"` etc. | Skipped ✓ |
+
+**Note on shebang/`!` escaping:** Shell history expansion converts `!` to `\!` through SSH pipelines. Worked around using base64-encoded Python scripts for file patching.
+
+**Files changed:**
+| File | Location | Change |
+|------|----------|--------|
+| `onboarding.html` | Pi `/var/www/html/` | Early return in overlay `.then` if language already set |
+| `network-api.py` | Pi `/opt/d3kos/services/network/` | Default language `'en'` → `''` for unset |
+| `onboarding.html` | Repo `deployment/features/i18n-page-wiring/pi_source/` | Synced from Pi |
+| `network-api.py` | Repo `deployment/features/cloud-integration-prereqs/pi_source/` | Synced from Pi |
+
+**Commit:** `4a469f0` — fix: initial setup language overlay freezes on Continue — infinite loop
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
 ## Session 2026-03-10 (Part 7)
 **Goal:** Fix single-finger scroll on Settings page — only scrolling one line at a time
 
