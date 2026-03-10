@@ -68,9 +68,7 @@
 
 - \[✅\] RAG retrieval wired into both executors — top-4 chunks injected before every Ollama call
 
-- [ ] 
-
-- Re-ingest `helm\\\\\\\_os\\\\\\\_source` after each Pi deployment (keeps code context current)
+- \[🔄\] Re-ingest `helm\\\\\\\_os\\\\\\\_source` after each Pi deployment — recurring task, not one-time. Command: `cd /home/boatiq/rag-stack && .venv/bin/python3 helm_os_ingest.py --collection source`
 
 ### Verify Agent (`deployment/scripts/verify\\\\\\\_agent.py`)
 
@@ -107,6 +105,19 @@
 - \[✅\] AI services: ports 8097/8099/8107, endpoints, `\\\\\\\_query\\\\\\\_gemini()` pattern, `ai\\\\\\\_used` constraint
 
 - \[✅\] FIND\_LINE / ACTION / CODE format rules and example
+
+### AAO Operating Environment — Claude Code Hardening (2026-03-10)
+
+- \[✅\] DI-001 drift incident documented — Claude touched files outside task scope; /methodology-check, /clear, /compact had no blocking effect
+- \[✅\] PreToolUse hook added to `~/.claude/settings.json` — scope audit echo fires before every Write/Edit/MultiEdit/Bash call
+- \[✅\] PostToolUse hook updated — ruff lint check after every write
+- \[✅\] Stop hook updated — AAO compliance checklist reminder at session end
+- \[✅\] Emergency Brake — Hard Stop Protocol added to `/home/boatiq/CLAUDE.md` — phrases STOP / HALT / FREEZE / AAO STOP trigger unconditional halt + file audit + re-authorization
+- \[✅\] Emergency Brake section mirrored to `MEMORY.md`
+- \[✅\] DI-001 incident record added to top of `SESSION_LOG.md`
+- \[✅\] Clarified: /compact, /clear, /methodology-check are advisory only — brake phrases are the only unconditional stop mechanism
+- \[✅\] `/session-close` command updated — now 5-step AAO close: file list, compliance checklist, PROJECT\_CHECKLIST.md update, SESSION\_LOG.md entry, plain-language summary
+- \[✅\] `aao-methodology-repo` updated and pushed to GitHub — governing-docs/, config/, remediation/DRIFT\_INCIDENT\_001.md, remediation/EMERGENCY\_BRAKE\_PROTOCOL.md (commit 5e19b73)
 
 ## v0.9.1 — Voice AI Assistant [Effort: Large]
 
@@ -240,15 +251,11 @@
 
 - [ ] 
 
-- Update Boatlog display — deferred (not in v0.9.2 scope)
+- [ ] Update Boatlog display
 
-  - [ ] 
+  - [ ] Display entries in user's preferred units
 
-  - Display entries in user's preferred units
-
-  - [ ] 
-
-  - Stored data remains in imperial (no conversion on storage)
+  - [ ] Stored data remains in imperial (no conversion on storage)
 
 ### Voice Assistant & Testing
 
@@ -286,7 +293,7 @@
 
   - [ ] 
 
-  - Test data export (includes unit metadata) — deferred
+  - [ ] Test data export (includes unit metadata)
 
 - \[✅\] Accuracy Verification — 25/25 unit tests passing
 
@@ -302,19 +309,13 @@
 
 - [ ] 
 
-- User Acceptance Testing — deferred to beta
+- [ ] User Acceptance Testing
 
-  - [ ] 
+  - [ ] Test with 5 metric users
 
-  - Test with 5 metric users
+  - [ ] Test with 5 imperial users
 
-  - [ ] 
-
-  - Test with 5 imperial users
-
-  - [ ] 
-
-  - Collect feedback and iterate
+  - [ ] Collect feedback and iterate
 
 ### Deployment
 
@@ -324,7 +325,7 @@
 
 - [ ] 
 
-- Update CHANGELOG.md — pending
+- [ ] Update CHANGELOG.md
 
 - \[✅\] Deploy to production Pi
 
@@ -334,17 +335,21 @@
 
 **Deliverable:** d3kOS v0.9.2 with full metric/imperial support
 
-## v0.9.2 — Multi-Camera System [Effort: Large]
+## v0.9.2 — Marine Vision: Live IP Camera System (Bow + Stern) [Effort: Large]
+
+**What this is:** Live video feeds from two IP cameras mounted on the boat (bow and stern), displayed in the Marine Vision page of d3kOS. Includes camera switching, side-by-side grid view, fish species detector (YOLOv8n, 483 species), and graceful offline handling when not on the boat network.
 
 **Status:** \[✅\] Core complete — both cameras live, nginx fixed, fish detector running | **Priority:** HIGH
 
-**Hardware:** 2 cameras active, 2 more planned for later:
+**Note on "On-Boat Tasks":** Some tasks below are marked as on-boat tasks. These can only be done physically on the boat with cameras connected to the boat's hotspot network (10.42.0.x). They cannot be done from home or over Tailscale.
+
+**Hardware:** 2 cameras active, 2 more planned:
 
 - Camera 1 (bow, 10.42.0.100) — connected, live
 
 - Camera 2 (stern, 10.42.0.63) — Reolink RLC-820A — connected, live
 
-- Camera 3 & 4 — future purchase (RLC-820A × 2) — add to `cameras.json` when ready, no code changes needed
+- Camera 3 & 4 — Reolink RLC-820A × 2 (planned purchase) — when purchased, add to `cameras.json` — no code changes needed
 
 **Commit:** `be236c5`
 
@@ -536,7 +541,7 @@
 
   - [ ] 
 
-  - User guide for multi-camera system
+  - User guide for Marine Vision camera system
 
   - [ ] 
 
@@ -594,7 +599,7 @@
 
   - Train user on camera switching and grid view
 
-**Deliverable:** d3kOS v0.9.2 — 2-camera system live (bow + stern). Cameras 3 & 4 deferred — no code changes needed when added, just update `cameras.json`.
+**Deliverable:** d3kOS v0.9.2 — Marine Vision live with bow + stern cameras, grid view, fish detector, camera position labels. Cameras 3 & 4: update `cameras.json` when purchased — no code changes needed.
 
 **Also fixed this session:**
 
@@ -618,9 +623,7 @@
 
 - \[✅\] End-to-end tested: "what causes white smoke from marine exhaust" → Gemini 8s ✓
 
-- [ ] 
-
-- Onboarding wizard integration (Steps 17.x) — deferred to future version
+- \[✅\] Onboarding wizard integration (Steps 17.x) — deployed in Post-Install Fix #9 (Part 12): Step 17 "AI Assistant Setup" added to onboarding.html with API key input, Test Connection button, skip option
 
 **Note:** Port 8099 was occupied by `issue\\\\\\\_detector.py` — Gemini proxy uses port 8097.
 
@@ -652,9 +655,9 @@
 
 - \[✅\] Tailscale install on Pi — connected, IP: `100.88.112.63` (networkdon89@ account)
 
-- ✅Camera stream relay RTSP → HLS (blocked: cameras not purchased)
+- [ ] Camera stream relay RTSP → HLS (implement when cameras 3 & 4 purchased)
 
-- [ ] WebSocket real-time push (future — polling via /remote/status is sufficient for now)
+- [ ] WebSocket real-time push — implement push notifications instead of polling `/remote/status`
 
 - \[✅\] **"My Remote Access" settings page** (`remote-access.html`) — commit `06a6a94`
 
@@ -672,79 +675,169 @@
 
 **Deliverable:** d3kOS v0.9.5 — Remote status readable from phone anywhere via Tailscale
 
-## v0.9.2 — Multi-Language Support [Effort: Large]
+## v1.1 — Multi-Language Platform [Effort: Very Large]
 
-**Status:** \[🔄\] Phase 1 Complete — Foundation deployed 2026-03-06 | **Priority:** REQUIRED for v1.0
+**Status:** [🔄] Layer 0 (UI foundation) partially done — Layers 1–5 (voice, AI, keyboard) not started
+**Priority:** REQUIRED for v1.1
+**Full spec:** `doc/MULTILANGUAGE_PLATFORM_SPEC.md` | `deployment/v1.1/`
 
-### Tasks
+> Multi-language is not UI translation. It is a 6-layer platform stack covering speech input,
+> speech output, AI response language, keyboard/text input, boat log recording, and UI display.
+> All layers must work together for a captain to fully operate d3kOS in their own language.
 
-- \[✅\] i18n system foundation: 18 JSON translation files + onboarding.json + language API (GET/POST /api/language, GET /api/i18n/\<lang\_code\>, GET /api/languages) added to network-api.py
+---
 
-- \[✅\] language-menu.html deployed — 18-language touch-optimised selector page
+### Layer 0 — UI Foundation (Translation JSON + Display)
+**Status:** [🔄] Partial — 6 of 20 pages wired, 14 remaining
 
-- \[✅\] Globe button on index.html (fixed top-right, shows current language code loaded from API)
+- [✅] 18 JSON translation files deployed at `/opt/d3kos/config/i18n/`
+- [✅] Language API live on port 8101 — GET/POST `/api/language`, GET `/api/i18n/<code>`, GET `/api/languages`
+- [✅] `language-menu.html` — 18-language touch-optimised selector
+- [✅] Globe button on `index.html`
+- [✅] Language tile in `settings.html`
+- [✅] Language overlay on `onboarding.html`
+- [✅] `data-i18n` wired: `index.html`, `dashboard.html`, `navigation.html`, `boatlog.html`, `settings.html`, `onboarding.html`
+- [ ] Wire 14 remaining pages: `weather.html`, `marine-vision.html`, `helm.html`, `ai-assistant.html`, `charts.html`, `manuals.html`, `manual-search.html`, `history.html`, `settings-network.html`, `settings-data.html`, `settings-healing.html`, `settings-simulator.html`, `remote-access.html`, `upload-manual.html`
+- [ ] Expand translation keys in all 18 JSON files to cover new pages
+- [ ] Noto fonts installed on Pi for Arabic, CJK, Greek, Cyrillic: `sudo apt install fonts-noto fonts-noto-cjk fonts-noto-extra`
+- [ ] Arabic RTL: `document.documentElement.dir` set on all pages when `lang=ar`
+- [ ] Professional translation review: French, Spanish, German, Italian, Dutch, Swedish, Norwegian (marine terminology)
+- [ ] Native speaker QA testing
 
-- \[✅\] Language Settings tile on settings.html
+---
 
-- \[✅\] Language selection overlay on onboarding.html (shown on first boot when language = default English)
+### Layer 1 — Speech-to-Text (Voice Input in Any Language)
+**Status:** [ ] Not Started
+**Files:** `voice-assistant-hybrid.py` (listen()), `boatlog-export-api.py` (transcribe_audio()), new `whisper_transcribe.py`
 
-- \[🔄\] UI translation (all pages with data-i18n attributes) — foundation in place, page-by-page translation pending
+**What it does:** A French captain says "Helm, quel est mon régime moteur?" — the spoken command after the wake word is transcribed in French, not forced through an English model.
 
-- [ ] 
+- [ ] Deploy `whisper-small` model (244MB, 99 languages) to Pi at `/opt/d3kos/models/whisper/`
+- [ ] Create `whisper_transcribe.py` helper — loads model once, reads `language` from `onboarding.json`, exposes `transcribe(wav_path) -> str`
+- [ ] Replace Vosk transcription in `voice-assistant-hybrid.py` `listen()` — keep Vosk for wake-word detection only, switch to Whisper for post-wake command transcription
+- [ ] Replace Vosk transcription in `boatlog-export-api.py` `transcribe_audio()` with Whisper
+- [ ] Performance test: whisper-small on Pi 4B — target < 6s per transcription
+- [ ] Test: French, German, Spanish voice commands correctly transcribed
+- [ ] Test: Arabic voice note transcribed correctly
 
-- Professional translation review (French, Spanish, German, Italian, Dutch, Swedish, Norwegian)
+---
 
-- [ ] 
+### Layer 2 — Text-to-Speech (Voice Output in Any Language)
+**Status:** [ ] Not Started
+**Files:** `voice-assistant-hybrid.py` (TTS calls), new per-language Piper model files
 
-- Voice assistant integration (Piper TTS models per language)
+**What it does:** Helm speaks back to the captain in their language, not always English.
 
-- [ ] 
+- [ ] Map language codes to Piper model names (fr, de, es, it, nl, pt, uk, ar have official Piper models)
+- [ ] Download and deploy Piper `.onnx` models for: French, German, Spanish, Italian, Dutch, Portuguese, Ukrainian, Arabic (~60–200MB each, ~1.5GB total)
+- [ ] For languages without Piper models (fi, sv, no, da, hr, tr, el, zh, ja): configure `espeak-ng` fallback voices
+- [ ] Update `voice-assistant-hybrid.py` to read `language` from `onboarding.json` on startup and select correct TTS model/voice
+- [ ] Create `tts_speak(text, language)` abstraction — routes to Piper or espeak-ng based on language
+- [ ] Test: French response spoken in French voice
+- [ ] Test: Arabic response spoken correctly (rtl text still spoken ltr by Piper)
+- [ ] Test: Finnish/Norwegian fallback via espeak-ng is intelligible
 
-- Native speaker testing and QA
+---
 
-### Languages (18 deployed — JSON files + language selector)
+### Layer 3 — AI Response Language
+**Status:** [ ] Not Started
+**Files:** `query_handler.py`
 
-- \[✅\] English (en) — Default
+**What it does:** Gemini, RAG, and all rule-based engine responses come back in the captain's language — not English.
 
-- \[✅\] French (fr)
+- [ ] Read `language` from `/opt/d3kos/config/onboarding.json` on `query_handler.py` startup
+- [ ] Inject language instruction into all Gemini system prompts: `"The user speaks [language]. Always respond in [language]. Use correct marine terminology for [language]."`
+- [ ] Replace hardcoded English strings in rule-based responses (RPM, temperature, oil, fuel, speed) with values pulled from i18n JSON files
+- [ ] RAG responses: Gemini translates the English retrieved chunks into the user's language before replying
+- [ ] Test: "what is my engine temperature" asked in French → French response
+- [ ] Test: rule-based "Your RPM is 2400" rendered in Spanish
+- [ ] Test: RAG marine manual answer returned in Italian
+- [ ] Language quality caveat documented for minor languages (Croatian, Ukrainian, Finnish)
 
-- \[✅\] Spanish (es)
+---
 
-- \[✅\] German (de)
+### Layer 4 — Keyboard and Text Input
+**Status:** [ ] Not Started — existing keyboard bug must be fixed first
+**Dependency:** Resolve open keyboard investigation (`memory/keyboard-scroll-investigation.md`) before starting
 
-- \[✅\] Italian (it)
+**What it does:** A captain can type a boat log entry, chat with Helm, or search manuals in their own language.
 
-- \[✅\] Dutch (nl)
+#### Latin-script languages (fr, de, es, it, nl, sv, no, da, fi, pt, hr, tr, uk)
+- [ ] Fix existing English on-screen keyboard bug (pre-condition)
+- [ ] Implement per-language virtual keyboard layouts (AZERTY, QWERTZ, accented characters: é, ü, ø, ç, ğ, і, etc.)
+- [ ] Switch keyboard layout automatically based on `onboarding.json` language
 
-- \[✅\] Swedish (sv)
+#### Arabic (RTL)
+- [ ] Install `fcitx5` on Pi with Arabic keyboard layout
+- [ ] Configure labwc/Wayland to use fcitx5 as input method
+- [ ] Set `dir="rtl"` and `lang="ar"` on all text input fields when Arabic active
+- [ ] Cursor starts right, text flows right-to-left in all input fields
+- [ ] Test: Arabic entry in boatlog stores and displays correctly
 
-- \[✅\] Norwegian (no)
+#### CJK — Chinese and Japanese (separate milestone, not v1.0)
+- [ ] `fcitx5` + `fcitx5-chinese-addons` (Pinyin → Hanzi) for Chinese
+- [ ] `fcitx5` + `fcitx5-mozc` (Romaji/Kana → Kanji) for Japanese
+- [ ] Voice input (Layer 1) is the practical path for CJK on a touchscreen boat helm
 
-- \[✅\] Danish (da)
+---
 
-- \[✅\] Finnish (fi)
+### Layer 5 — Boat Log in the User's Language
+**Status:** [ ] Not Started — automatic once Layers 1 and 4 are complete
+**Files:** `boatlog-export-api.py`, `boatlog.html`
 
-- \[✅\] Portuguese (pt)
+**What it does:** A captain records and reads their log entirely in their own language.
 
-- \[✅\] Greek (el)
+- [ ] Voice notes: transcribed by Whisper in user's language (Layer 1 dependency)
+- [ ] Text entries: typed in user's language with correct keyboard (Layer 4 dependency)
+- [ ] Noto fonts rendering all languages in `boatlog.html` display (Layer 0 dependency)
+- [ ] CSV/JSON export: UTF-8 already — no code changes needed
+- [ ] Test: French captain speaks a voice note → stored and displayed in French
+- [ ] Test: German captain types a log entry in German → stored and displayed correctly
+- [ ] Test: Arabic entry stored and displayed RTL
 
-- \[✅\] Croatian (hr)
+---
 
-- \[✅\] Turkish (tr)
+### Supported Languages
 
-- \[✅\] Arabic (ar) — RTL
+| Code | Language | Piper TTS | Whisper STT | Keyboard |
+|------|----------|-----------|-------------|----------|
+| en | English | ✅ Deployed | ✅ | ✅ |
+| fr | French | Piper model needed | Whisper-small | Latin layout |
+| de | German | Piper model needed | Whisper-small | QWERTZ layout |
+| es | Spanish | Piper model needed | Whisper-small | Latin layout |
+| it | Italian | Piper model needed | Whisper-small | Latin layout |
+| nl | Dutch | Piper model needed | Whisper-small | Latin layout |
+| pt | Portuguese | Piper model needed | Whisper-small | Latin layout |
+| uk | Ukrainian | Piper model needed | Whisper-small | Cyrillic layout |
+| ar | Arabic | Piper model needed | Whisper-small | fcitx5 RTL |
+| sv | Swedish | espeak-ng fallback | Whisper-small | Latin layout |
+| no | Norwegian | espeak-ng fallback | Whisper-small | Latin layout |
+| da | Danish | espeak-ng fallback | Whisper-small | Latin layout |
+| fi | Finnish | espeak-ng fallback | Whisper-small | Latin layout |
+| hr | Croatian | espeak-ng fallback | Whisper-small | Latin layout |
+| tr | Turkish | espeak-ng fallback | Whisper-small | Latin layout |
+| el | Greek | espeak-ng fallback | Whisper-small | Greek layout |
+| zh | Chinese | espeak-ng fallback | Whisper-small | fcitx5 (v1.1+) |
+| ja | Japanese | espeak-ng fallback | Whisper-small | fcitx5 (v1.1+) |
 
-- \[✅\] Chinese (zh)
+---
 
-- \[✅\] Japanese (ja)
+### Delivery Order (dependencies)
 
-- \[✅\] Ukrainian (uk)
+1. Layer 1 (Whisper STT) — blocks all voice testing in any language
+2. Layer 2 (Piper/espeak TTS) — parallel with Layer 1
+3. Layer 3 (AI response language) — testable once Layer 1 works
+4. Layer 0 (wire remaining 14 pages) — parallel, no dependency on voice
+5. Layer 4 (keyboard) — fix existing bug first, then add layouts
+6. Layer 5 (boat log) — automatic once Layers 1 and 4 are done
 
-**Deliverable:** d3kOS v0.15.0 with full 18-language support (Phase 1 foundation: DONE — page-by-page translation: pending)
+**Minimum viable multilingual** (captain can speak, hear, and write in their language): Layers 1 + 2 + 3 + 5
+
+**Deliverable:** d3kOS v1.0 — full 18-language platform. A captain operates the system entirely in their own language: voice commands, voice responses, AI answers, boat log, and UI.
 
 ## signalk-forward-watch — Standalone Signal K Community Plugin
 
-**Status:** \[✅\] v0.1.0 Published | **Priority:** HIGH **Repo:** [https://github.com/SkipperDon/signalk-forward-watch](https://github.com/SkipperDon/signalk-forward-watch) **npm:** signalk-forward-watch **Project dir:** `/home/boatiq/signalk-forward-watch/`
+**Status:** \[✅\] v0.1.0 Published to GitHub | **Priority:** HIGH | **Repo:** [https://github.com/SkipperDon/signalk-forward-watch](https://github.com/SkipperDon/signalk-forward-watch) | **npm:** signalk-forward-watch | **Project dir:** `/home/boatiq/signalk-forward-watch/`
 
 ### Model Training
 
@@ -788,7 +881,7 @@
 
 - \[ \] Test on OpenPlotter
 
-- \[ \] `npm publish` to npm registry — NOTE: account created but sign-in broken (tried multiple browsers). Try again later or contact npm support. Username/email on file.
+- \[ \] `npm publish` to npm registry — sign-in issue. Use `npm login --auth-type=web` from `/home/boatiq/signalk-forward-watch/` then `npm publish`
 
 - \[ \] Add download-on-first-run (auto-fetch model from GitHub Releases)
 
@@ -796,31 +889,24 @@
 
 ## v0.9.2 — Community Features [Effort: Small]
 
-**Status:** \[ \] Not Started | **Priority:** LOW
+**Status:** \[✅\] Pi-side deployed 2026-03-07 (Part 18) | flows currently disabled until atmyboat.com backend exists (v0.9.3) | **Priority:** MEDIUM
 
-### Tasks
+**What was deployed to Pi (Part 18):**
+- \[✅\] `anonymiser.py` — anon_token (HMAC-SHA256), strip_position (2dp ~1.1km grid), strip_vessel_name
+- \[✅\] `community-api.py` — Flask port 8103, POST /api/community/marker, GET /api/community/markers, prefs gating
+- \[✅\] `d3kos-community-api.service` — created, enabled, running on Pi
+- \[✅\] `community-prefs.json` — created on Pi, all features off by default
+- \[✅\] `settings.html` — Community & Privacy section with 4 opt-in toggles (Tier 1 gate shown, toggles disabled for T0)
+- \[✅\] `helm.html` — hazard/POI floating button + bottom sheet modal + submitHazardReport()
+- \[✅\] 3 Node-RED flows deployed (UUIDs remapped to avoid collisions): engine-benchmark (600s), boat-map (3600s), knowledge-log (file watch)
 
-- [ ] 
+**Current state:** Flows disabled in Node-RED UI — all 3 were making HTTP calls to atmyboat.com endpoints that don't exist yet. Was causing Node-RED 93% CPU. Re-enable when v0.9.3 backend is live.
 
-- Anonymous engine benchmark service
+**What remains:**
+- \[ \] Re-enable flows when atmyboat.com community API endpoints are live (v0.9.3)
+- \[ \] End-to-end test: toggle on → data flows to atmyboat.com → appears on community map
 
-- [ ] 
-
-- Anonymizer service (position randomization, ID hashing)
-
-- [ ] 
-
-- Community boat map (opt-in, privacy-first)
-
-- [ ] 
-
-- Hazard/POI marker system (user-submitted, vote system)
-
-- [ ] 
-
-- Knowledge base to pattern sync
-
-**Deliverable:** d3kOS v0.14.0 with community features
+**Deliverable:** Full end-to-end when atmyboat.com backend (v0.9.3) is live. Pi-side is complete.
 
 ## v0.9.2 — Post-Install Bug Fixes & UI Polish [Effort: Medium]
 
@@ -936,13 +1022,13 @@
 
 - \[✅\] Applied `sudo flatpak override --device=input --device=dri` for touchscreen and display
 
-- \[🔍\] Verify touchscreen touch and pinch-zoom work in Flatpak OpenCPN (test on Pi at dock)
+- \[✅\] Touchscreen touch and pinch-zoom confirmed working in Flatpak OpenCPN — twofing patched for Wayland XInput fallback, ILITEK touchscreen symlinked via udev rule to `/dev/twofingtouch`, autostarted in labwc before OpenCPN
 
-- \[⚠️\] o-charts chart activation pending — user must: go to o-charts.org → My Charts → Assign device using fingerprint file `oc03L\_1772818229.fpr` → download charts → copy to `~/.var/app/org.opencpn.OpenCPN/data/opencpn/charts/`
+- \[ \] o-charts chart activation — Don's manual task: open OpenCPN → Options → Plugins → O-Charts → Preferences → Log in with o-charts.org account → download charts. Alternative: fingerprint file `oc03L\_1772818229.fpr` at `C:\Users\donmo\Downloads\` for web registration at o-charts.org → My Charts → Assign Device. See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
 
 ### 9. Boat Setup Wizard — Gemini API Configuration Step
 
-- ✅ **Confirmed gap**: Gemini configuration was deferred from onboarding wizard (checklist item: "Onboarding wizard integration — deferred to future version")
+- \[✅\] Gemini API key configuration added to onboarding wizard (Step 17)
 
 - ✅Add Step 17 to `onboarding.html`: "AI Assistant Setup"
 
@@ -1047,7 +1133,7 @@
 **Status:** [✅] Complete (deployed 2026-03-06) | **Priority:** CRITICAL — Must complete before v0.9.3 website build
 **Spec:** `deployment/v0.9.3/ATMYBOAT_CLAUDE_CODE_SPEC.md` — PART 14
 
-> Pi-side changes only. After this section no Pi work is deferred — v0.9.2 closes completely before v0.9.3 starts.
+> Pi-side changes only. v0.9.2 closes completely before v0.9.3 starts.
 
 ### 1. QR Code URL Update
 
@@ -1094,152 +1180,173 @@
 
 ---
 
-## v0.9.3 — atmyboat.com Website Platform [Effort: Large]
+## v0.9.3 — AtMyBoat.com Community Platform [Effort: Large]
 
 **Status:** [ ] Not Started | **Priority:** HIGH
-**Spec:** `deployment/v0.9.3/ATMYBOAT_CLAUDE_CODE_SPEC.md` (all decisions made — build exactly as specified)
-**Repo:** New — `github.com/SkipperDon/atmyboat-web` (separate from d3kOS repo)
-**Stack:** Next.js 15 (App Router, TypeScript) · Tailwind CSS v3 · Supabase · Vercel · Cloudflare
+**Platform:** WordPress + bbPress + PHP AI — HostPapa shared hosting (no SSH)
+**Repo:** `github.com/SkipperDon/atmyboat-forum`
+**Spec:** `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` (authoritative — all decisions final)
+**Standing instruction:** `deployment/v0.9.3/ATMYBOAT_STANDING_INSTRUCTION.md` — paste at top of every session
+**Design mockup:** `deployment/v0.9.3/atmyboat-mockup-v2-accessible.html`
 
-> **Pre-condition:** v0.9.2 Cloud Integration Pre-Requisites (Pi Side) must be complete and tested before starting here.
+> Every session working on v0.9.3 must start by pasting ATMYBOAT_STANDING_INSTRUCTION.md.
+> All work happens on HostPapa Staging — never touch the live site until Phase 4.
+> Phases must be completed in strict order.
 
----
+### What This Builds
 
-### Services & API Keys Don Must Set Up Before Starting
+| Layer | URL | Technology |
+|-------|-----|-----------|
+| Community forum | atmyboat.com/forum | bbPress WordPress plugin |
+| Product hub | atmyboat.com/products | WordPress page templates |
+| AI assistant | Forum widget | PHP + cURL → Claude Haiku (claude-haiku-4-5-20251001) |
+| Blog SEO | atmyboat.com/blog | Yoast SEO configuration |
 
-| Service | Purpose | Cost | Action |
-|---------|---------|------|--------|
-| **Supabase** | Database, Auth, Realtime, Storage | Free tier | supabase.com — create new project |
-| **Vercel** | Next.js hosting + CI/CD | Free tier | vercel.com — connect GitHub |
-| **Cloudflare** | DNS + CDN for atmyboat.com | Free | cloudflare.com — add domain |
-| **Resend** | Transactional email | Free (3k/mo) | resend.com — verify domain DNS |
-| **Stripe** | T2/T3 subscription payments | % per transaction | stripe.com — new account |
-| **GitHub** | New repo `SkipperDon/atmyboat-web` | Free | Already have — create new repo |
-| **Anthropic** | Claude API (First Mate widget) | Per token — watch costs | Already have — use existing key |
-
-**Environment Variables Claude will need from you:**
-
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-RESEND_API_KEY=
-STRIPE_SECRET_KEY=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
-ANTHROPIC_API_KEY=        (already have)
-NEXTAUTH_SECRET=          (generate: openssl rand -base64 32)
-VAPID_PUBLIC_KEY=         (generate: npx web-push generate-vapid-keys)
-VAPID_PRIVATE_KEY=
-```
-
-**Cost Watch:** Running cost at launch = $0–$20/month. Stripe charges % per transaction only. Claude API (First Mate widget) is the main variable cost — monitor usage in Anthropic console.
+### Stack (final — do not substitute)
+- **Forum:** bbPress (not Flarum — uses existing WP users, DB, and admin)
+- **AI:** PHP + cURL only — HostPapa blocks Node.js, npm, PM2
+- **AI model:** Claude Haiku only — hard cap $30/month in Anthropic Console
+- **Hosting:** HostPapa Growth shared hosting — FTPS deploy via `lftp`, or cPanel Git VC
+- **Theme:** Twenty Twenty child theme — never modify parent theme
+- **No subdomains** — all content at atmyboat.com/subfolder (SEO authority stays on one domain)
 
 ---
 
-### Phase 1 — Launch [Effort: Large]
+### Phase 0 — Staging & Safety Net [Manual — Don does this]
+- [ ] Run UpdraftPlus full backup on live site — verify completed, download off-server
+- [ ] Activate HostPapa Staging (cPanel → Staging → Create Staging Site)
+- [ ] Confirm staging URL loads identical to live, has its own database
+- [ ] Register Anthropic Console account — set $30/month hard billing cap immediately
+- [ ] Generate Anthropic API key — keep locally, never paste in chat
 
-**Status:** [ ] Not Started
-
-#### Foundation (Days 1–3)
-- [ ] Next.js 15 project scaffold — full folder structure per spec PART 3
-- [ ] Tailwind + design system (colours, fonts, components) — spec PART 6
-- [ ] Supabase project: create, run full schema SQL — spec PART 4
-- [ ] Environment variables configured — spec PART 5
-- [ ] Middleware auth protection — spec PART 8
-
-#### Public Pages (Days 4–6)
-- [ ] Landing page (hero + 3 sections) — headline: "She's got 40 years of stories. Now she's got a brain."
-- [ ] Nav + Footer (GPL v3 notice, Anthropic attribution)
-- [ ] `/d3kos` — product page (price comparison $500 vs $5,000+, 6 feature blocks, hardware overview)
-- [ ] `/hardware` — BOM page (Pi 4B, PiCAN-M HAT, CX5106, USB GPS, touchscreen)
-- [ ] `/download` — firmware download page
-
-#### Auth + Registration (Days 7–9)
-- [ ] Supabase Auth integration (T1 registration)
-- [ ] Multi-step registration flow: email → boat details → device link
-- [ ] `/register?device=[ID]` — QR deep-link pre-populates device field from Pi QR scan
-- [ ] `POST /api/auth/register-device` — generates `boat_uuid` + `device_api_key`, pushes to Pi `/api/link`
-- [ ] `/subscribe` — tier comparison (T0 free / T1 free / T2 $9.99/mo / T3 $99.99/yr)
-- [ ] Stripe checkout for T2 + T3
-- [ ] Stripe webhook handler
-
-#### Dashboard (Days 10–12)
-- [ ] Dashboard shell (dark theme, sidebar, header)
-- [ ] Boat card (name, home port, firmware version, tier badge, health badge)
-- [ ] GPS map (Leaflet)
-- [ ] Engine gauges — RPM, coolant temp, fuel level, battery volts (Supabase Realtime live updates)
-- [ ] `POST /api/telemetry/push` — receive + validate telemetry from Pi with `device_api_key` auth
-- [ ] OTA manifest API
-
-#### AI + Final (Days 13–15)
-- [ ] AI First Mate widget — `POST /api/first-mate` (Claude API proxy, server-side only)
-- [ ] `/compatible` — engine compatibility checker
-- [ ] `/docs` — documentation hub (quickstart, FAQ, hardware, CX5106 wizard, voice assistant)
-- [ ] Legal pages: `/privacy`, `/terms`, `/license`, `/warranty`, `/shipping`
-- [ ] `/contact`
-- [ ] SEO metadata + sitemap.xml + robots.txt
-- [ ] Vercel deployment + Cloudflare DNS live
-
-**Deliverable Phase 1:** atmyboat.com live — public pages, T1 registration, device linking, live telemetry dashboard, AI First Mate.
+**Phase 0 complete when:** Backup downloaded. Staging live. API key in hand.
 
 ---
 
-### Phase 2 — Community [Effort: Large]
+### Phase 1 — Child Theme Setup [Manual — Don does this on staging]
+- [ ] Create `wp-content/themes/twentytwenty-child/` with `style.css` (Template: twentytwenty) and `functions.php`
+- [ ] Create `inc/`, `logs/`, `data/` folders inside child theme
+- [ ] Create `inc/atmyboat-config.php` with Anthropic API key — add to `.gitignore` immediately
+- [ ] Activate child theme on staging — verify site still loads correctly
+- [ ] Create GitHub repo `SkipperDon/atmyboat-forum` — push child theme (excluding config file)
+- [ ] Review existing repo contents before building any file
 
-**Status:** [ ] Not Started
-
-- [ ] Flarum forum at `community.atmyboat.com`
-- [ ] Forum SSO (Supabase auth)
-- [ ] `/blog` — Captain's Log (MDX or Supabase-backed)
-- [ ] Dashboard: voyage logs, alerts history, Marine Vision gallery
-- [ ] Alert system: webhook handler + Web Push notifications + Resend email
-- [ ] Alert settings page (per-alert enable/disable, thresholds)
-- [ ] Marine directory hub + 4 category pages (marinas, mechanics, chandleries, boat yards)
-- [ ] Individual listing pages + business claim/manage flow
-- [ ] `/story` — Skipper Don page
-- [ ] `/hall-of-fame`
-
-**Deliverable Phase 2:** Community live — forum, blog, alerts, marine directory.
+**Phase 1 complete when:** Child theme active on staging. Config file in place. GitHub repo live.
 
 ---
 
-### Phase 3 — Revenue [Effort: Large]
-
-**Status:** [ ] Not Started
-
-- [ ] T2 feature gates: advanced analytics, Marine Vision video, Helm AI history
-- [ ] B2B portal `/b2b/*` — usage stats, datasets, API access for commercial operators
-- [ ] B2B data API endpoints + anonymised aggregate views
-- [ ] Skipper's Academy (YouTube-based course pages)
-- [ ] Sponsored challenges system
-- [ ] Affiliate link tracking
-- [ ] `/data-services` AI qualification flow
-- [ ] Directory: lead routing system + listing analytics dashboard
-- [ ] T3 fleet management dashboard `/dashboard/fleet`
-- [ ] SMS alerts via Twilio (T2+)
-
-**Deliverable Phase 3:** Revenue active — T2/T3 gates, B2B portal, directory monetisation.
+### Phase 2A — bbPress Forum + MailPoet
+- [ ] Install bbPress plugin on staging
+- [ ] Create 7 forum categories (in order): d3kOS Support, Marine Electronics, Engine & Mechanical, Electrical & Wiring, Navigation & Charts, General Seamanship, AI-Assisted Fixes
+- [ ] Enable open self-registration (WP Admin → Settings → General → Anyone can register)
+- [ ] Configure MailPoet for bbPress notification emails via HostPapa SMTP
+- [ ] Create forum index page at `/forum` — assign bbPress forum index template
+- [ ] Draft 10 seed threads (Claude Code task) — Don posts manually in WP Admin
+- [ ] Verify 7 forums visible at `/forum`, 10 threads present, email notifications working
 
 ---
 
-### Phase 4 — Scale [Effort: Large]
+### Phase 2B — AODA Design System
+**Design:** Dark navy (#0A2342) + amber (#B87800) + teal (#1A7A6E). Fonts: Playfair Display + Source Serif 4 + JetBrains Mono. All WCAG 2.0 AA minimum 4.5:1 contrast.
 
-**Status:** [ ] Not Started
-
-- [ ] Native mobile app (React Native — shares TypeScript types with web)
-- [ ] PDF voyage report generation
-- [ ] Fleet GPS map (T3)
-- [ ] Predictive maintenance (AI fleet-wide analysis)
-- [ ] Route optimisation AI
-- [ ] Marina booking integration
-- [ ] NOAA/Environment Canada weather overlay
-
-**Deliverable Phase 4:** Full platform — mobile app, fleet management, AI analytics at scale.
+- [ ] Add CSS variables and Google Fonts to `style.css`
+- [ ] Add blueprint grid background texture (`body::before`)
+- [ ] Create `bbpress.css` — forum thread list, post layout, member avatars, category cards
+- [ ] Forum body text: 18px minimum, 1.8 line-height (Source Serif 4) — AODA non-negotiable
+- [ ] All buttons and links: 48×48px minimum touch targets
+- [ ] Skip-to-content link as first focusable element on every page (`header.php` override)
+- [ ] Sticky header: backdrop blur, logo left, nav links, amber CTA right
+- [ ] Mobile: 4-item bottom nav (Home / Forum / Search / Profile), 48×56px per item
+- [ ] Forum readable at 320px — no horizontal scroll
+- [ ] Verify all colour pairs pass WCAG 2.0 AA 4.5:1 (see Part 3 of build reference)
 
 ---
 
-**v0.9.3 Complete When:** All Phase 1 items done AND Pi telemetry confirmed end-to-end (Pi pushes → API receives → dashboard gauges update live).
+### Phase 2C — PHP AI Assistant
+**Model:** `claude-haiku-4-5-20251001` only. Max 1000 tokens output. 500 char input limit. No query text stored — token counts and timestamps only.
+
+- [ ] Create `inc/ai-assistant.php` — bbPress context search (WP_Query top 5 posts) + cURL Anthropic API call
+- [ ] System prompt: marine mechanic persona, cites forum thread URLs, plain English, safety caveats
+- [ ] Cost guards: reject >500 char questions, enforce 1000 token cap, log daily token totals to `/logs/ai-YYYY-MM-DD.log`
+- [ ] AJAX endpoint in `functions.php` — nonce validation (`check_ajax_referer`), input sanitization
+- [ ] Create `ai-widget.php` — `[atmyboat_ai]` shortcode, navy/teal styling, question input, answer + source links, disclaimer
+- [ ] Add `[atmyboat_ai]` to forum index page and sidebar
+- [ ] Test: d3kOS question → response with cited thread URLs
+- [ ] Test: >500 char question → graceful rejection
+- [ ] Verify log file created, token counts only, no query text
+
+---
+
+### Phase 2D — Product Hub
+- [ ] Create `data/products.json` — d3kOS entry (name, slug, features, specs, CTAs)
+- [ ] Create `page-products.php` — reads products.json, renders product card grid
+- [ ] Create `page-product.php` — hero, features, specs, GitHub link, forum support CTA
+- [ ] Create d3kOS product page in WP Admin at `/products/d3kos` using `page-product.php`
+- [ ] Verify d3kOS page links to d3kOS Support forum category
+- [ ] Add Products to main WordPress navigation menu on staging
+- [ ] Yoast: set meta title and description on `/products` and `/products/d3kos`
+
+---
+
+### Phase 2E — SEO Configuration
+- [ ] Yoast: enable XML sitemap — includes `/forum`, `/products`, and all blog posts
+- [ ] Yoast: bbPress forum threads and archives in sitemap XML
+- [ ] Yoast: meta title format for forum threads: "Thread Title | AtMyBoat Community"
+- [ ] Yoast: Open Graph for product pages
+- [ ] Register Bing Webmaster Tools — verify atmyboat.com, add verification meta tag via Yoast
+- [ ] Submit sitemap to Bing Webmaster Tools: `atmyboat.com/sitemap_index.xml`
+- [ ] Submit updated sitemap to Google Search Console via Site Kit
+- [ ] Create `/privacy` privacy policy page (PIPEDA requirement)
+- [ ] Create `/accessibility` accessibility statement (AODA requirement)
+- [ ] Add internal cross-links: homepage → products → forum → blog
+
+---
+
+### Phase 3 — AODA Compliance Audit (staging — before any migration)
+- [ ] All body text 4.5:1 minimum contrast — test every text/background pair
+- [ ] 18px minimum font for all forum body text — verify in Chrome DevTools
+- [ ] All buttons and links 48×48px touch targets — DevTools mobile emulation
+- [ ] All images have descriptive alt text — WAVE scan at wave.webaim.org
+- [ ] All form inputs have visible labels (not placeholder-only)
+- [ ] Tab navigation through every interactive element in logical order
+- [ ] Focus ring visible on every focused element at 3:1+ contrast
+- [ ] Skip-to-content link is first Tab stop on every page
+- [ ] Screen reader navigates forum thread list (VoiceOver or NVDA)
+- [ ] No content flashes more than 3 times per second
+- [ ] `lang="en"` on all HTML pages
+- [ ] `/privacy` and `/accessibility` pages live and linked in footer
+- [ ] Security: `inc/atmyboat-config.php` not in GitHub, AJAX nonces in place, logs not browser-accessible
+
+**Phase 3 complete when:** All AODA checks pass on staging. Cleared for live migration.
+
+---
+
+### Phase 4 — Migration: Staging → Live [Manual — Don does this]
+- [ ] Run UpdraftPlus full backup on **live site** — verify completed, download off-server
+- [ ] Write down backup timestamp before touching anything
+- [ ] HostPapa cPanel: Staging → Push to Live — wait for confirmation
+- [ ] Verify: atmyboat.com homepage loads correctly
+- [ ] Verify: atmyboat.com/forum loads with all categories and seed threads
+- [ ] Verify: atmyboat.com/products loads, d3kOS product page renders
+- [ ] Test: submit a forum post — saves correctly, email notification arrives
+- [ ] Test: AI assistant question → response with thread citations
+- [ ] Verify: sitemap at atmyboat.com/sitemap_index.xml includes forum and products
+- [ ] Resubmit sitemap in Google Search Console and Bing Webmaster Tools
+
+**Phase 4 complete when:** Forum and Product Hub live. AI assistant working. SEO resubmitted.
+
+---
+
+### Phase 5 — Future Platform Expansion (do not start until Phase 4 verified)
+- [ ] T1/T2/T3 subscription tiers
+- [ ] Device registration via QR scan
+- [ ] Supabase telemetry dashboard
+- [ ] Advanced AI (First Mate, session history)
+- [ ] Marine Vision gallery
+- [ ] Fleet management (T3)
+- [ ] B2B intelligence portal
+
+**Deliverable:** atmyboat.com community forum live with AI assistant, product hub showing d3kOS, full AODA compliance, SEO configured.
 
 
 
@@ -1779,7 +1886,7 @@ VAPID_PRIVATE_KEY=
 
 - \[✅\] v0.9.2 Complete (Pi Website — dark marine UI rewrite, all 9 pages: index, dashboard, navigation, weather, marine-vision, boatlog, settings, onboarding, helm)
 
-- \[✅\] v0.9.2 Complete (Multi-Camera System) — both cameras live, nginx fixed, fish detector running
+- \[✅\] v0.9.2 Complete (Marine Vision — Live IP Camera System) — both cameras live, nginx fixed, fish detector running
 
 - \[✅\] v0.9.4 Complete (Gemini AI Integration)
 
@@ -1787,11 +1894,11 @@ VAPID_PRIVATE_KEY=
 
 - \[✅\] v0.9.5 Complete (Post-Install Bug Fixes — all 14 items, deployed 2026-03-05)
 
-- \[✅\] v0.9.x Complete (i18n Multi-Language Foundation — 18 languages, Phase 1 deployed 2026-03-06; page-by-page translation pending for v0.15.0)
+- \[✅\] v0.9.x Complete (i18n Multi-Language Foundation — 18 languages, Phase 1 deployed 2026-03-06; 14 remaining pages wired in v1.1)
 
 - \[✅\] v0.9.x Complete (Touchscreen Multitouch — d3kos-touch.css + Chromium pinch flags deployed 2026-03-06)
 
-- \[✅\] v0.9.x Complete (OpenCPN Flatpak + AIS Pipeline — Flatpak live, AIS flowing; o-charts chart activation pending manual step by Don)
+- \[✅\] v0.9.x Complete (OpenCPN Flatpak + AIS Pipeline — Flatpak live, AIS flowing; twofing pinch-zoom working; o-charts activation: Don's manual task)
 
 - [ ] 
 
@@ -1847,17 +1954,17 @@ VAPID_PRIVATE_KEY=
 
 - \[✅\] v0.9.4 (Gemini AI) — DONE
 
-- \[✅\] v0.9.2 (Multi-Camera) — both cameras live, nginx fixed, fish detector running
+- \[✅\] v0.9.2 (Marine Vision — Live IP Camera System) — both cameras live, nginx fixed, fish detector running
 
 - \[✅\] Fix: voice rule overmatch ("speed" pattern) — FIXED commit `680a795`
 
 - \[✅\] v0.9.5 (Post-Install Bug Fixes) — all 14 deployed 2026-03-05
 
-- \[✅\] v0.x (Multi-Language Phase 1) — foundation deployed 2026-03-06; page translation deferred to v0.15.0
+- \[✅\] v0.x (Multi-Language Phase 1) — foundation deployed 2026-03-06; 14-page wiring in v1.1
 
 - \[✅\] v0.x (Touchscreen Multitouch) — d3kos-touch.css + Chromium pinch flags deployed 2026-03-06
 
-- \[✅\] v0.x (OpenCPN + AIS) — Flatpak live, AIS flowing; o-charts chart activation pending manual step by Don
+- \[✅\] v0.x (OpenCPN + AIS) — Flatpak live, AIS flowing; twofing pinch-zoom working; o-charts activation: Don's manual task
 
 - \[✅\] v0.9.2 (Cloud Integration Pre-Requisites — Pi Side) — QR update, port 8091, cloud-credentials.json, Node-RED telemetry push, alarm webhook, force password change
 
@@ -1919,7 +2026,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\[�
 
 All `\\\\\\\[🔍\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\<!-- VERIFY: description --\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** March 6, 2026 (Part 17 continued) | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 10, 2026 (AAO Hardening session) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
