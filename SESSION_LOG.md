@@ -2,6 +2,40 @@
 
 ---
 
+## Session 2026-03-10 (Part 5)
+**Goal:** Marine Vision camera audit — fix fish detection camera assignment
+
+**Completed:**
+- Probed both cameras via SSH → Pi to confirm RTSP connectivity and stream paths
+- Stern camera (RLC-820A, 10.42.0.63): `h264Preview_01_sub` working — H.264 640×360 @ 25fps; `h264Preview_01_main` also working — HEVC 4K @ 25fps. Earlier 404 was transient.
+- Bow camera (10.42.0.100): streaming H.264 640×360. Password is `d3kos2026` (no `$`) — URL in cameras.json confirmed correct.
+- Identified config error: `active_camera` was `bow` but bow camera is not positioned to see fish. Stern camera faces water.
+- Updated `/opt/d3kos/config/cameras.json` on Pi: `active_camera` → `stern`, `detection_enabled` → `true` on stern, `false` on bow. Added `position` field to both entries.
+- Restarted `d3kos-camera-stream` service — verified `connected: true`, `has_frame: true` on stern camera via API.
+- Synced local repo copy: `deployment/v0.9.2-multicam/pi_source/cameras.json`
+
+**Files changed:**
+| File | Location | Change |
+|------|----------|--------|
+| `cameras.json` | Pi `/opt/d3kos/config/` | active_camera bow→stern, detection_enabled flipped |
+| `cameras.json` | Repo `deployment/v0.9.2-multicam/pi_source/` | Synced to match Pi |
+
+**Commit:** `acd0308` — config: switch fish detection to stern camera
+
+**Decisions:**
+- Stern camera is the correct detection camera — faces water where fish are visible
+- Sub-stream (640×360 H.264) used for detection — appropriate resolution for YOLOv8, lower CPU load than 4K HEVC main stream
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
 ## Session 2026-03-10 (Part 4)
 **Goal:** Signal K 12-hour health check — identify and fix anomalies
 
