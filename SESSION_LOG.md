@@ -2,6 +2,47 @@
 
 ---
 
+## Session 2026-03-10 (Part 4)
+**Goal:** Signal K 12-hour health check — identify and fix anomalies
+
+**Diagnosis:**
+- SK had restarted 104 times in 13 hours on a precise ~8-minute cycle
+- Root cause: self-feeding NMEA loopback — `ais` piped provider (settings.json) connected to SK's own internal NMEA aggregator on port 10110, causing SK to feed data back into itself
+- Memory grew at 255MB/min (857MB → 2200MB in 7min), hitting 2048MB heap limit → GC thrash → CPU >90% → watchdog restart cycle
+- Secondary: `/var/log/d3kos-watchdog.log` missing (d3kos user lacked /var/log write permission), watchdog working but producing no audit trail
+
+**Fix applied (Don approved):**
+- Disabled `ais` piped provider in `/home/d3kos/.signalk/settings.json` (`enabled: false`)
+- Created `/var/log/d3kos-watchdog.log` with `chown d3kos:d3kos`
+- Restarted Signal K
+
+**Verification:**
+| Metric | Before fix | After fix (5min) |
+|--------|-----------|-----------------|
+| RSS memory | 857MB → 2200MB in 7min | 174MB stable |
+| CPU | 100%+ continuous | 7.5% |
+| Watchdog strikes | Constant restarts | SK 0, NR 0 |
+| Port 10110 loopback | Active (SK→SK) | Gone |
+| Restarts/hour | ~8 | 0 |
+
+**Files changed on Pi:**
+| File | Change |
+|------|--------|
+| `/home/d3kos/.signalk/settings.json` | `ais` pipedProvider `enabled: true` → `false` |
+| `/var/log/d3kos-watchdog.log` | Created, owned by d3kos |
+
+**Rollback:** Set `ais` provider `enabled: true` in settings.json and restart SK. Only needed if an external AIS receiver is ever connected to port 10110.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
 ## Session 2026-03-10 (Part 3)
 **Goal:** AAO methodology repo restructure per AAO_METHODOLOGY_GITHUB_UPDATE.md
 
