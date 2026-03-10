@@ -247,6 +247,7 @@
         .then(function(r){ return r.json(); })
         .then(function(d){
           obLang = (d.language && d.language !== '') ? d.language : 'en';
+          if (d.language && d.language !== '') { document.getElementById('langOverlay').style.display = 'none'; return; }
           buildObGrid();
           document.getElementById('langOverlay').style.display = 'block';
         })
@@ -877,6 +878,7 @@ function generateDIP() {
     }
   </script>
   <script src="/js/touch-scroll.js"></script>
+  <script src="/js/keyboard-fix.js"></script>
   <script src="/js/i18n.js"></script>
 </body>
 </html>

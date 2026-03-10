@@ -10,6 +10,8 @@ import sys
 import json
 import subprocess
 import time
+import signal
+import threading
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -395,7 +397,7 @@ def _save_onboarding(cfg):
 @app.route('/api/language', methods=['GET'])
 def get_language():
     cfg = _load_onboarding()
-    return jsonify({'language': cfg.get('language', 'en'), 'dir': cfg.get('dir', 'ltr')})
+    return jsonify({'language': cfg.get('language', ''), 'dir': cfg.get('dir', 'ltr')})
 
 @app.route('/api/language', methods=['POST'])
 def set_language():
@@ -483,6 +485,56 @@ def change_password():
         return jsonify({'success': False, 'error': 'Timeout changing password'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── Voice Mic Lock API ────────────────────────────────────────────────────
+_voice_auto_resume_timer = None
+
+def _get_voice_pid():
+    """Get MainPID of d3kos-voice.service. Returns None if not running."""
+    try:
+        result = subprocess.run(
+            ['systemctl', 'show', 'd3kos-voice', '--property=MainPID'],
+            capture_output=True, text=True, timeout=3
+        )
+        pid_str = result.stdout.strip().replace('MainPID=', '')
+        pid = int(pid_str)
+        return pid if pid > 0 else None
+    except Exception:
+        return None
+
+def _do_voice_resume():
+    global _voice_auto_resume_timer
+    if _voice_auto_resume_timer:
+        _voice_auto_resume_timer.cancel()
+        _voice_auto_resume_timer = None
+    pid = _get_voice_pid()
+    if pid:
+        try:
+            os.kill(pid, signal.SIGUSR2)
+        except ProcessLookupError:
+            pass
+
+@app.route('/api/voice/pause', methods=['POST'])
+def voice_pause():
+    global _voice_auto_resume_timer
+    pid = _get_voice_pid()
+    if pid:
+        try:
+            os.kill(pid, signal.SIGUSR1)
+        except ProcessLookupError:
+            pass
+    # Safety: auto-resume after 90 seconds if browser crashes without calling resume
+    if _voice_auto_resume_timer:
+        _voice_auto_resume_timer.cancel()
+    _voice_auto_resume_timer = threading.Timer(90.0, _do_voice_resume)
+    _voice_auto_resume_timer.start()
+    return jsonify({'status': 'paused'})
+
+@app.route('/api/voice/resume', methods=['POST'])
+def voice_resume():
+    _do_voice_resume()
+    return jsonify({'status': 'resumed'})
 
 
 if __name__ == '__main__':
