@@ -2,6 +2,51 @@
 
 ---
 
+## Session 2026-03-10 (Part 7)
+**Goal:** Fix single-finger scroll on Settings page — only scrolling one line at a time
+
+**Investigation:**
+- Confirmed issue is Settings page only — dashboard, marine-vision, navigation all scroll correctly
+- Read `memory/keyboard-scroll-investigation.md` before any action
+- Compared settings.html vs dashboard.html scroll layout:
+  - Dashboard `<main>`: `overflow-y: auto` + `max-height: calc(100vh - 200px)` → constrained scroll box ✓
+  - Settings `<main>`: `overflow-y: auto` + `flex: 1` with no height constraint → container expanded to content height → `scrollHeight == clientHeight` → not a scroll box
+- `getScrollParent()` in touch-scroll.js fell through to `document.documentElement`
+- Page-level scroll with `touch-action: pan-y` on html/body → browser handled each gesture as one discrete step instead of continuous scroll
+
+**First attempt (CSS flex approach — did not work):**
+- Changed `.container` from `min-height: 100vh` → `height: 100vh; overflow: hidden`
+- Added `min-height: 0` to `<main>`
+- Flex height constraint did not reliably create scroll container in this Chromium version
+
+**Fix applied (explicit max-height — confirmed working):**
+- Reverted `.container` back to `min-height: 100vh`
+- Kept `min-height: 0` on `<main>`
+- Added `max-height: calc(100vh - 220px)` to `<main>` — mirrors dashboard's proven pattern
+- `<main>` is now a constrained scroll box; `getScrollParent()` finds it correctly
+
+**Root cause:** Missing explicit height constraint on `<main>`. flex:1 alone does not constrain height when parent is `min-height` (not `height`).
+
+**Files changed:**
+| File | Location | Change |
+|------|----------|--------|
+| `settings.html` | Pi `/var/www/html/` | `min-height: 0` + `max-height: calc(100vh - 220px)` on `<main>` |
+| `settings.html` | Repo `deployment/features/i18n-page-wiring/pi_source/` | Synced from Pi |
+
+**Commit:** `c447ff5` — fix: settings page single-finger scroll only scrolling one line at a time
+
+**Note:** `/bug-fix` slash command is a custom file command — not auto-registered as a Claude Code skill. Invoked manually from `~/.claude/commands/bug-fix.md`.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
 ## Session 2026-03-10 (Part 6)
 **Goal:** Fix main menu shrinking to 1/6 size when toggling fullscreen
 
