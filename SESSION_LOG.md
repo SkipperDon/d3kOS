@@ -2,6 +2,57 @@
 
 ---
 
+## Session 2026-03-10 (Part 6)
+**Goal:** Fix main menu shrinking to 1/6 size when toggling fullscreen
+
+**Investigation:**
+- Confirmed display is 1920×1200 (HDMI-A-2, ILITEK touchscreen)
+- Chromium launched with `--start-fullscreen --window-size=1920,1200` but saved window_placement in Preferences was `right:672, bottom:522` — 672×522px windowed size
+- F11 (sent by toggle-fullscreen.sh via wtype) exits fullscreen; Chromium restores to saved 672×522 window, not 1920×1200
+- labwc window rule existed (`<maximized>yes</maximized>`) but used `class="Chromium"` (X11 attribute) — Wayland app_id is `chromium` (lowercase); rule never matched
+- `wlrctl toplevel list` confirmed Chromium's Wayland app_id: `chromium`
+- `wlrctl` confirmed as available and working: `wlrctl toplevel maximize app_id:chromium` exit 0
+
+**Root causes (three):**
+1. `toggle-fullscreen.sh` only sent F11 — no maximize after exit
+2. labwc window rule attribute wrong: `class="Chromium"` should be `identifier="chromium"`
+3. `wlrctl` available for direct Wayland window control but not used
+
+**Fix applied:**
+- Rewrote `/usr/local/bin/toggle-fullscreen.sh` with state file tracking (`/tmp/d3kos-fullscreen-state`): fullscreen→windowed path sends F11 + 0.3s sleep + `wlrctl maximize`; windowed→fullscreen path uses `wlrctl fullscreen` directly
+- Fixed `/home/d3kos/.config/labwc/rc.xml`: `class="Chromium"` → `identifier="chromium"`
+- Reloaded labwc config (SIGHUP PID 1217)
+
+**Tested and confirmed working by Don**
+
+**Files changed on Pi:**
+| File | Pi Path | Change |
+|------|---------|--------|
+| `toggle-fullscreen.sh` | `/usr/local/bin/` | State-tracked toggle with wlrctl maximize |
+| `labwc-rc.xml` | `/home/d3kos/.config/labwc/rc.xml` | identifier="chromium" (was class="Chromium") |
+
+**Files added to repo:**
+| File | Repo Path |
+|------|-----------|
+| `toggle-fullscreen.sh` | `deployment/pi_config/toggle-fullscreen.sh` |
+| `labwc-rc.xml` | `deployment/pi_config/labwc-rc.xml` |
+
+**Commits:** `594270d` — fix: fullscreen toggle leaves main menu at full size in windowed mode
+
+**Rollback:** `sudo cp /usr/local/bin/toggle-fullscreen.sh.bak-20260310 /usr/local/bin/toggle-fullscreen.sh` + restore rc.xml from `rc.xml.bak-20260310`
+
+**Note:** `/bug-fix` slash command not registered as a Claude Code skill — invoked manually from `~/.claude/commands/bug-fix.md`
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
 ## Session 2026-03-10 (Part 5)
 **Goal:** Marine Vision camera audit — fix fish detection camera assignment
 
