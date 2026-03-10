@@ -79,6 +79,8 @@
     /* Main Content */
     main {
       flex: 1;
+      min-height: 0;
+      max-height: calc(100vh - 220px);
       padding: 20px;
       overflow-y: auto;
       overflow-x: hidden;
@@ -1231,6 +1233,7 @@ function updateCameraStatus() {
 
         <!-- License & Tier -->        <h2 class="section-header">🎫 License & Tier</h2>        <div class="setting-card">          <div style="font-size: 22px; line-height: 2;">            <div><strong>Tier:</strong> <span id="tier-display" style="color: #FFD700;">Loading...</span></div>            <div><strong>Installation ID:</strong> <span id="install-id" style="color: #00CC00; font-family: monospace;">Loading...</span></div>            <div><strong>Features:</strong> <span id="features-display">Loading...</span></div>          </div>        </div>        <script>        fetch("/tier/status").then(r=>r.json()).then(d=>{          document.getElementById("tier-display").textContent="Tier "+d.tier;          document.getElementById("install-id").textContent=d.installation_id;          const f=d.features;          document.getElementById("features-display").innerHTML=(f.voice_assistant?"✅":"❌")+" Voice, "+(f.camera?"✅":"❌")+" Camera";        });        </script>
   <script src="/js/touch-scroll.js"></script>
+  <script src="/js/keyboard-fix.js"></script>
   <script src="/js/i18n.js"></script>
 </body>
 </html>
