@@ -365,7 +365,7 @@
 - \[✅\] Step 5 — fish_detector.py: reads slots.json, per-slot frame fetch, slot_id on captures, /detect/reload endpoint
 - \[⚠️\] Touchscreen test Settings UI + Marine Vision (requires Pi touchscreen)
 - \[⚠️\] 24hr stability test + performance test — requires cameras (lab cameras will cover this)
-- [ ] DEPLOYMENT_INDEX.md updated ✅ (done 2026-03-11)
+- \[✅\] DEPLOYMENT_INDEX.md updated — done 2026-03-11
 - [ ] setup_dhcp_reservations.py: one-line update to read hardware.json (deferred — low priority)
 
 **Note on "On-Boat Tasks":** Some tasks are marked as on-boat tasks. These can only be done physically on the boat with cameras connected to the boat's hotspot network (10.42.0.x). They cannot be done from home or over Tailscale.
@@ -1858,6 +1858,8 @@
 - [ ] User adoption (need 1,000+ Tier 2 users for break-even)
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
+
+**Last Updated:** 2026-03-11 | Session: Marine Vision Camera Overhaul complete (Steps 1–5), DEPLOYMENT_INDEX updated
 
 ## 📝 NOTES & CONVENTIONS
 
