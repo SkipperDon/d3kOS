@@ -2,6 +2,48 @@
 
 ---
 
+## Session — 2026-03-11 — Marine Vision Camera Overhaul complete + DEPLOYMENT_INDEX updated
+
+**Tasks completed:**
+- fish_detector.py Step 5 finalized and deployed: slot-aware detection, per-slot frame URL, slot_id on all captures, /detect/reload endpoint, DB column index fix (location=idx8, species_confidence=idx9, species_top3=idx10)
+- DEPLOYMENT_INDEX.md updated: camera-overhaul added, MARINE_VISION_CAMERA_SYSTEM.md + v0.9.2-multicam + camera-settings-update + camera-position-assignment marked superseded
+- MARINE_VISION_CAMERA_SYSTEM.md: superseded banner added
+- PROJECT_CHECKLIST.md: camera-overhaul completion section added, old Marine Vision section marked superseded, deliverable note corrected (cameras.json → Settings UI)
+- BUILD_CHECKLIST.md: Step 5 complete, "ON-BOAT TASK" labels corrected to "requires cameras"
+- Committed: `8f7af0d` (overhaul Steps 1–5, 12 files) and `c2ec1a8` (label correction)
+
+**Files changed:**
+- `deployment/features/camera-overhaul/pi_source/fish_detector.py` — Step 5 edits 6–8 + column index fix
+- `deployment/docs/DEPLOYMENT_INDEX.md` — camera-overhaul entries, superseded notices
+- `deployment/docs/MARINE_VISION_CAMERA_SYSTEM.md` — superseded banner
+- `PROJECT_CHECKLIST.md` — overhaul section added, old section superseded, label corrections, Last Updated line
+- `deployment/features/camera-overhaul/BUILD_CHECKLIST.md` — Step 5 complete, label corrections
+- `SESSION_LOG.md` — this entry + detailed entry below
+- `CLAUDE.md` (Helm-OS) — Active Build section added
+- Pi: `/opt/d3kos/services/marine-vision/fish_detector.py` — deployed (backup taken)
+
+**PROJECT_CHECKLIST.md updates:**
+- Camera overhaul DEPLOYMENT_INDEX item: `[ ]` → `[✅]`
+- "On-boat: touchscreen test" → "Touchscreen test (requires Pi touchscreen)"
+- "On-boat: 24hr stability test" → "requires cameras (lab cameras will cover)"
+- Old Marine Vision section: renamed SUPERSEDED, deliverable note corrected
+- Last Updated line added at bottom
+
+**AAO compliance:** PASS — all risks classified, Medium pre-stated, no High actions, no push, no scope creep, no injection patterns.
+
+**Open items for next session:**
+- npm publish v0.2.0 for signalk-forward-watch (local, no cameras needed)
+- i18n keys: 4 pages missing translations
+- CHANGELOG.md update for v0.9.2
+- Camera tests: 24hr stability + performance + DHCP — requires lab cameras
+- Touchscreen test — requires Pi
+- Boatlog voice note live test
+- WebSocket real-time push (Remote Access page)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session 2026-03-11 — Marine Vision Camera Overhaul (Steps 1–5 Complete)
 
 **Goal:** Full camera management overhaul — replace hardcoded cameras.json with dynamic Slot/Hardware architecture supporting 1–20 cameras.
