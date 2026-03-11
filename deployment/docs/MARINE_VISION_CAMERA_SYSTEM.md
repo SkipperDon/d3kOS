@@ -1,8 +1,15 @@
 # Marine Vision — Live IP Camera System (Bow + Stern)
 
-**Version:** v0.9.2 | **Date:** 2026-03-06 | **Status:** Core complete
+> **SUPERSEDED — 2026-03-11**
+> This document describes the original `cameras.json` two-camera system.
+> It has been replaced by the Slot/Hardware architecture.
+> **Active documentation:** `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md`
+> **Active source:** `deployment/features/camera-overhaul/pi_source/`
+> This file is retained as read-only history.
+
+**Version:** v0.9.2 | **Date:** 2026-03-06 | **Status:** SUPERSEDED 2026-03-11
 **Commits:** `be236c5`, `9478f1d`, `9e53dfa`, `dbff06e`
-**Source:** `deployment/v0.9.2-multicam/`
+**Source:** `deployment/v0.9.2-multicam/` (superseded — read-only)
 
 ---
 

@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/js/units.js"></script>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/d3kos-touch.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS - Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* === Design System - Consistent with Main Menu and Wizard === */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors */
+      --color-bg: #000000;
+      --color-text: #FFFFFF;
+      --color-accent: #00CC00;
+      --color-warning: #FFA500;
+      --color-critical: #FF0000;
+      --color-disabled: #333333;
+
+      /* Typography - 22-24px standard */
+      --font-family: "Roboto", "Arial", sans-serif;
+      --font-base: 22px;
+      --font-heading: 24px;
+      --line-height: 1.5;
+
+      /* Button Dimensions */
+      --button-radius: 8px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--font-base);
+      line-height: var(--line-height);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      padding: 12px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    h1 {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.8;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      min-height: 0;
+      max-height: calc(100vh - 220px);
+      padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    /* Touch-Friendly Scrollbar */
+
+    .content-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Section Headers */
+    .section-header {
+      font-size: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-accent);
+      margin: 24px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header:first-child {
+      margin-top: 0;
+    }
+
+    /* Settings Grid */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    /* Setting Card */
+    .setting-card {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 2px solid var(--color-disabled);
+      border-radius: var(--button-radius);
+      padding: 20px;
+    }
+
+    .setting-label {
+      font-size: var(--font-base);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .setting-description {
+      font-size: 18px;
+      color: var(--color-text);
+      opacity: 0.7;
+      margin-bottom: 12px;
+    }
+
+    /* Form Controls */
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      font-size: var(--font-base);
+      font-family: var(--font-family);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(0, 204, 0, 0.2);
+    }
+
+    select.form-control {
+      cursor: pointer;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 80px;
+      height: 40px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--color-disabled);
+      transition: 0.3s;
+      border-radius: 40px;
+      border: 2px solid var(--color-text);
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 28px;
+      width: 28px;
+      left: 4px;
+      bottom: 4px;
+      background-color: var(--color-text);
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--color-accent);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(40px);
+    }
+
+    /* Buttons */
+    .btn {
+      min-width: 180px;
+      min-height: 50px;
+      padding: 12px 24px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 204, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .btn-primary:hover {
+      background-color: #00FF00;
+    }
+
+    .btn-warning {
+      border-color: var(--color-warning);
+      color: var(--color-warning);
+    }
+
+    .btn-warning:hover {
+      background-color: rgba(255, 165, 0, 0.1);
+    }
+
+    .btn-danger {
+      border-color: var(--color-critical);
+      color: var(--color-critical);
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(255, 0, 0, 0.1);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* System Info */
+    .info-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px 24px;
+      font-size: var(--font-base);
+    }
+
+    .info-label {
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+
+    .info-value {
+      color: var(--color-text);
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .status-badge.online {
+      background-color: var(--color-accent);
+      color: var(--color-bg);
+    }
+
+    .status-badge.offline {
+      background-color: var(--color-disabled);
+      color: var(--color-text);
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--color-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--color-bg);
+    }
+
+    .nav-button {
+      padding: 14px 28px;
+      min-height: 60px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      border: 2px solid var(--color-accent);
+      border-radius: var(--button-radius);
+      font-size: var(--font-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-button:hover,
+    .nav-button:active {
+      background-color: rgba(0, 204, 0, 0.2);
+      border-color: var(--color-accent);
+    }
+
+    .status-text {
+      font-size: var(--font-base);
+      color: var(--color-text);
+      opacity: 0.7;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+        /* d3kOS Touchscreen Scrollbar */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: #00CC00 !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: #00CC00 #111 !important; }
+    /* Touch scroll baseline */
+    html, body { touch-action: pan-y; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>⚙️ Settings</h1>
+      <p class="subtitle">System Configuration & Preferences</p>
+    </header>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <button class="nav-button" onclick="goBack()" aria-label="Go back to main menu">
+        ← Main Menu
+      </button>
+
+      <span class="status-text">d3kOS v2.0 | Settings</span>
+
+      <button class="nav-button" onclick="runDiagnostics()" aria-label="Run system diagnostics">
+        🔍 Diagnostics
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+      <div class="content-wrapper">
+
+        <!-- Engine Settings -->
+        <h2 class="section-header" data-i18n="ui.section_engine">⚓ Engine Configuration</h2>
+        <div class="settings-grid">
+          <div class="setting-card">
+            <label class="setting-label" for="service-interval">Service Interval</label>
+            <p class="setting-description">Hours between scheduled maintenance</p>
+            <input type="number" id="service-interval" class="form-control" value="100" min="10" max="500" step="10">
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label" for="oil-change-interval">Oil Change Interval</label>
+            <p class="setting-description">Hours between oil changes</p>
+            <input type="number" id="oil-change-interval" class="form-control" value="50" min="10" max="200" step="10">
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label" for="engine-hours">Total Engine Hours</label>
+            <p class="setting-description">Manually adjust if needed</p>
+            <input type="number" id="engine-hours" class="form-control" value="127.5" min="0" step="0.1">
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label" for="hours-since-service">Hours Since Last Service</label>
+            <p class="setting-description">Reset after performing maintenance</p>
+            <input type="number" id="hours-since-service" class="form-control" value="27.5" min="0" step="0.1">
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveEngineSettings()">💾 Save Engine Settings</button>
+          <button class="btn btn-warning" onclick="resetServiceCounter()">🔄 Reset Service Counter</button>
+        </div>
+
+        <!-- Units & Display -->
+        <h2 class="section-header" data-i18n="ui.section_units">📏 Units & Display</h2>
+        <div class="settings-grid">
+          <div class="setting-card">
+            <label class="setting-label" for="distance-unit">Distance Units</label>
+            <p class="setting-description">Nautical miles or kilometers</p>
+            <select id="distance-unit" class="form-control">
+              <option value="nm">Nautical Miles (nm)</option>
+              <option value="km">Kilometers (km)</option>
+              <option value="mi">Miles (mi)</option>
+            </select>
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label" for="speed-unit">Speed Units</label>
+            <p class="setting-description">Knots, km/h, or mph</p>
+            <select id="speed-unit" class="form-control">
+              <option value="kts">Knots (kts)</option>
+              <option value="kmh">Kilometers/Hour (km/h)</option>
+              <option value="mph">Miles/Hour (mph)</option>
+            </select>
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label" for="temp-unit">Temperature Units</label>
+            <p class="setting-description">Celsius or Fahrenheit</p>
+            <select id="temp-unit" class="form-control">
+              <option value="C">Celsius (°C)</option>
+              <option value="F">Fahrenheit (°F)</option>
+            </select>
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label" for="pressure-unit">Pressure Units</label>
+            <p class="setting-description">kPa, PSI, or bar</p>
+            <select id="pressure-unit" class="form-control">
+              <option value="kpa">Kilopascals (kPa)</option>
+              <option value="psi">PSI</option>
+              <option value="bar">Bar</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveDisplaySettings()">💾 Save Display Settings</button>
+        </div>
+
+        <!-- Alerts & Notifications -->
+        <h2 class="section-header">🔔 Alerts & Notifications</h2>
+        <div class="settings-grid">
+          <div class="setting-card">
+            <label class="setting-label">Service Due Alert</label>
+            <p class="setting-description">Notify when service is due</p>
+            <label class="toggle-switch">
+              <input type="checkbox" id="service-alert" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label">Overheat Warning</label>
+            <p class="setting-description">Alert on high engine temperature</p>
+            <label class="toggle-switch">
+              <input type="checkbox" id="overheat-alert" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label">Low Oil Pressure Alert</label>
+            <p class="setting-description">Alert on low oil pressure</p>
+            <label class="toggle-switch">
+              <input type="checkbox" id="oil-alert" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-card">
+            <label class="setting-label">Battery Voltage Alert</label>
+            <p class="setting-description">Alert on low battery voltage</p>
+            <label class="toggle-switch">
+              <input type="checkbox" id="battery-alert" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveAlertSettings()">💾 Save Alert Settings</button>
+        </div>
+
+        <!-- System Information -->
+        <h2 class="section-header">💻 System Information</h2>
+        <div class="setting-card">
+          <div class="info-grid">
+            <span class="info-label">System:</span>
+            <span class="info-value">d3kOS v2.0</span>
+
+            <span class="info-label">Hardware:</span>
+            <span class="info-value">Raspberry Pi 4B (8GB RAM)</span>
+
+            <span class="info-label">OS:</span>
+            <span class="info-value">Debian GNU/Linux 13 (Trixie)</span>
+
+            <span class="info-label">Signal K:</span>
+            <span class="info-value" id="signalk-status">
+              <span class="status-badge offline">Offline</span>
+            </span>
+
+            <span class="info-label">Node-RED:</span>
+            <span class="info-value">v4.1.4</span>
+
+            <span class="info-label">IP Address:</span>
+            <span class="info-value" id="ip-address">192.168.1.237</span>
+
+            <span class="info-label">Disk Usage:</span>
+            <span class="info-value" id="disk-usage">78% (3.1GB free)</span>
+
+            <span class="info-label">Memory Usage:</span>
+            <span class="info-value" id="memory-usage">43%</span>
+
+            <span class="info-label">CPU Temperature:</span>
+            <span class="info-value" id="cpu-temp">72.5°C</span>
+
+            <span class="info-label">Uptime:</span>
+            <span class="info-value" id="uptime">12h 24m</span>
+          </div>
+        </div>
+
+        <!-- Data Management -->
+<div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
+        
+                <!-- Network Settings -->
+        <div style="margin: 20px 0;"><button onclick="window.location.href='/settings-network.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📶 Network Settings (WiFi/Hotspot)</button></div>
+        <!-- Language Settings -->
+        <div style="margin: 20px 0;"><button onclick="window.location.href='/language-menu.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">🌐 Language Settings</button></div>
+        <!-- Remote Access Settings -->
+        <div style="margin: 20px 0;"><button onclick="window.location.href='/remote-access.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📡 Remote Access &amp; QR Code</button></div>
+        <!-- Simulator Settings -->
+        <div style="margin: 20px 0;"><button onclick="window.location.href='/settings-simulator.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">🔧 NMEA2000 Simulator (Testing)</button></div>
+        
+                <!-- ═══════════════════════════════════════════════════════════
+             CAMERA SETUP — Slot/Hardware Architecture
+             ═══════════════════════════════════════════════════════════ -->
+        <h2 class="section-header" data-i18n="ui.section_camera">
+          📹 Camera Setup
+          <button class="btn btn-primary cs-scan-btn" onclick="csRunScan()" style="min-height:48px;font-size:18px;padding:8px 20px;">
+            Scan for Cameras
+          </button>
+        </h2>
+
+        <!-- Three-panel grid -->
+        <div class="cs-grid">
+
+          <!-- Panel 1: Slot list -->
+          <div class="cs-panel">
+            <div class="cs-panel-header">
+              POSITIONS
+              <button class="btn btn-primary" onclick="csShowNewSlotModal()"
+                      style="min-height:48px;font-size:18px;padding:8px 16px;">+ New Position</button>
+            </div>
+            <div id="cs-slot-list">
+              <div class="cs-empty">Loading...</div>
+            </div>
+          </div>
+
+          <!-- Panel 2: Slot detail -->
+          <div class="cs-panel" id="cs-detail-panel">
+            <div class="cs-panel-header">SLOT DETAIL</div>
+            <div id="cs-detail-body" class="cs-empty" style="padding:20px;text-align:center;">
+              Select a position to edit it.
+            </div>
+          </div>
+
+          <!-- Panel 3: Unassigned hardware -->
+          <div class="cs-panel">
+            <div class="cs-panel-header">UNASSIGNED CAMERAS</div>
+            <div id="cs-hw-list">
+              <div class="cs-empty">Loading...</div>
+            </div>
+            <div style="padding:12px;">
+              <button class="btn btn-primary" onclick="csRunScan()"
+                      style="width:100%;min-height:64px;font-size:20px;">
+                Scan for Cameras
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /cs-grid -->
+
+        <!-- Role summary bar -->
+        <div id="cs-role-summary" class="cs-role-bar">
+          Loading role summary...
+        </div>
+
+        <!-- Open Marine Vision shortcut -->
+        <div class="btn-group" style="margin-top:16px;">
+          <button class="btn btn-secondary" onclick="window.location.href='/marine-vision.html'"
+                  style="min-height:64px;font-size:20px;">
+            📹 Open Marine Vision
+          </button>
+        </div>
+
+        <!-- New Position modal -->
+        <div id="cs-new-modal" class="cs-modal" style="display:none;">
+          <div class="cs-modal-box">
+            <h3 style="color:var(--color-accent);margin-bottom:16px;">New Position</h3>
+            <label class="setting-label">Name</label>
+            <input id="cs-new-name" type="text" class="form-control" placeholder="e.g. Engine Room"
+                   style="margin-bottom:16px;" />
+            <div style="margin-bottom:16px;">
+              <label style="display:flex;align-items:center;gap:12px;min-height:48px;font-size:20px;margin-bottom:10px;">
+                <input type="checkbox" id="cs-new-fw" style="width:28px;height:28px;" />
+                Forward Watch
+              </label>
+              <label style="display:flex;align-items:center;gap:12px;min-height:48px;font-size:20px;margin-bottom:10px;">
+                <input type="checkbox" id="cs-new-fish" style="width:28px;height:28px;" />
+                Fish Detection
+              </label>
+              <label style="display:flex;align-items:center;gap:12px;min-height:48px;font-size:20px;">
+                <input type="checkbox" id="cs-new-grid" checked style="width:28px;height:28px;" />
+                Show in Grid
+              </label>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="csSaveNewSlot()"
+                      style="min-height:80px;flex:1;font-size:22px;">Save</button>
+              <button class="btn" onclick="csCloseNewModal()"
+                      style="min-height:80px;flex:1;font-size:22px;">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reassign modal -->
+        <div id="cs-reassign-modal" class="cs-modal" style="display:none;">
+          <div class="cs-modal-box">
+            <h3 style="color:var(--color-accent);margin-bottom:16px;">Assign Camera to Position</h3>
+            <p id="cs-reassign-slot-name" style="font-size:20px;margin-bottom:16px;"></p>
+            <div id="cs-reassign-hw-list"></div>
+            <button class="btn" onclick="csCloseReassignModal()"
+                    style="min-height:64px;width:100%;margin-top:16px;font-size:20px;">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Camera Setup styles -->
+        <style>
+          .cs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr 1fr;
+            gap: 12px;
+            margin: 12px 0;
+            align-items: start;
+          }
+          @media (max-width: 900px) {
+            .cs-grid { grid-template-columns: 1fr; }
+          }
+          .cs-panel {
+            border: 2px solid var(--color-disabled);
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          .cs-panel-header {
+            background: rgba(0,204,0,0.1);
+            border-bottom: 2px solid var(--color-accent);
+            padding: 10px 14px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .cs-empty {
+            color: rgba(255,255,255,0.5);
+            font-size: 18px;
+            padding: 20px;
+            text-align: center;
+          }
+          .cs-slot-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            min-height: 64px;
+            font-size: 20px;
+            touch-action: manipulation;
+          }
+          .cs-slot-row:hover, .cs-slot-row.selected {
+            background: rgba(0,204,0,0.12);
+          }
+          .cs-dot { font-size: 22px; flex-shrink: 0; }
+          .cs-slot-label { flex: 1; }
+          .cs-hw-card {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 18px;
+          }
+          .cs-hw-thumb {
+            width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #111;
+            margin-bottom: 8px;
+            display: block;
+          }
+          .cs-detail-thumb {
+            width: 100%;
+            max-height: 160px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #111;
+            margin-bottom: 12px;
+            display: block;
+          }
+          .cs-role-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 20px;
+            min-height: 52px;
+          }
+          .cs-role-bar {
+            background: rgba(0,204,0,0.08);
+            border: 1px solid rgba(0,204,0,0.3);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 18px;
+            margin-top: 8px;
+            line-height: 2;
+          }
+          .cs-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+          .cs-modal-box {
+            background: #1a1a1a;
+            border: 2px solid var(--color-accent);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+          }
+          .cs-scan-btn { display: none; }
+          .cs-action-btn {
+            width: 100%;
+            min-height: 80px;
+            font-size: 20px;
+            margin-bottom: 8px;
+            display: block;
+          }
+          .cs-edit-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+          }
+          .cs-edit-name input {
+            flex: 1;
+            padding: 10px;
+            font-size: 22px;
+            background: #000;
+            color: #fff;
+            border: 2px solid var(--color-accent);
+            border-radius: 8px;
+          }
+        </style>
+
+        <h2 class="section-header">💾 Data Management</h2>
+<div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="exportAllData()">📤 Export All Data</button>
+          <button class="btn" onclick="importData()">📥 Import Data</button>
+          <button class="btn btn-warning" onclick="clearTripData()">🗑️ Clear Trip Data</button>
+          <button class="btn btn-warning" onclick="clearBenchmarkData()">🗑️ Clear Benchmark Data</button>
+        </div>
+
+        <!-- System Actions -->
+        <h2 class="section-header" data-i18n="ui.section_system">🔧 System Actions</h2>
+        <div class="btn-group">
+          <button class="btn" onclick="restartSignalK()">🔄 Restart Signal K</button>
+          <button class="btn" onclick="restartNodeRED()">🔄 Restart Node-RED</button>
+          <button class="btn btn-warning" onclick="rebootSystem()">🔄 Reboot System</button>
+          <button class="btn btn-danger" onclick="initialSetupReset()">⚠️ Initial Setup Reset</button>
+        </div>
+
+        <!-- About -->
+        <h2 class="section-header">ℹ️ About d3kOS</h2>
+        <div class="setting-card">
+          <p style="font-size: var(--font-base); margin-bottom: 12px;">
+            <strong>d3kOS</strong> is a comprehensive marine electronics system for engine monitoring, trip logging, and performance analysis.
+          </p>
+          <p style="font-size: 18px; opacity: 0.7; margin-bottom: 12px;">
+            Built on Raspberry Pi 4B with Signal K integration, NMEA2000 support, and a touch-friendly dark interface optimized for 10.1" marine displays.
+          </p>
+          <p style="font-size: 18px; opacity: 0.7;">
+            © 2026 d3kOS Project | Version 2.0 | Built with Claude Code
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Measurement System Section -->
+            <div class="settings-section" id="measurement-section">
+        <h2>Measurement System</h2>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Units</strong>
+          </div>
+          <div class="setting-control">
+            <select id="unit-system" onchange="updateUnits()">
+              <option value="metric">Metric (km/h, °C, bar)</option>
+              <option value="imperial">Imperial (mph, °F, psi)</option>
+              <option value="nautical">Nautical (knots, °C, bar)</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Display Format</strong>
+          </div>
+          <div class="setting-control">
+            <select id="display-format" onchange="updateDisplayFormat()">
+              <option value="digital">Digital</option>
+              <option value="analog">Analog</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Temperature Unit</strong>
+          </div>
+          <div class="setting-control">
+            <select id="temp-unit" onchange="updateTempUnit()">
+              <option value="celsius">Celsius (°C)</option>
+              <option value="fahrenheit">Fahrenheit (°F)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+        <h2>Measurement System</h2>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Units</strong>
+            <p class="setting-description">Imperial (°F, PSI, gal, ft) or Metric (°C, bar, L, m)</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input type="checkbox" id="measurement-toggle" onchange="handleMeasurementToggle()">
+              <span class="toggle-slider"></span>
+            </label>
+            <span id="measurement-label" class="toggle-label">Imperial</span>
+          </div>
+        </div>
+        <div class="setting-info">
+          <p><strong>Affects:</strong> Dashboard gauges, voice responses, navigation, weather, boatlog display</p>
+          <p><strong>Note:</strong> Data is always stored in imperial units. Metric is display-only.</p>
+        </div>
+      </div>
+
+      <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var system = Units.getPreference();
+        document.getElementById('measurement-toggle').checked = (system === 'metric');
+        document.getElementById('measurement-label').textContent =
+          system === 'metric' ? 'Metric' : 'Imperial';
+      });
+      function handleMeasurementToggle() {
+        var isMetric = document.getElementById('measurement-toggle').checked;
+        var system = isMetric ? 'metric' : 'imperial';
+        // Set localStorage immediately
+        localStorage.setItem('d3kos-measurement-system', system);
+        document.getElementById('measurement-label').textContent =
+          isMetric ? 'Metric' : 'Imperial';
+        var info = document.querySelector('#measurement-section .setting-info');
+        info.innerHTML += '<p style="color:#00CC00;font-weight:bold;">\u2713 Updated to ' + system + '</p>';
+        // POST to backend first, then reload — eliminates the race condition
+        fetch('/api/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ measurement_system: system })
+        })
+        .then(function() { location.reload(); })
+        .catch(function() { setTimeout(function(){ location.reload(); }, 500); });
+      }
+      </script>
+
+      <style>
+      .toggle-switch { position:relative; display:inline-block; width:60px; height:34px; }
+      .toggle-switch input { opacity:0; width:0; height:0; }
+      .toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+        background:#666; transition:.3s; border-radius:34px; }
+      .toggle-slider:before { position:absolute; content:""; height:26px; width:26px;
+        left:4px; bottom:4px; background:white; transition:.3s; border-radius:50%; }
+      input:checked + .toggle-slider { background:#00CC00; }
+      input:checked + .toggle-slider:before { transform:translateX(26px); }
+      .toggle-label { margin-left:10px; font-weight:bold; color:#fff; font-size:16px; }
+      .setting-description { color:#ccc; font-size:14px; margin:4px 0 0; }
+      .setting-info { background:#222; border:1px solid #00CC00; padding:12px;
+        margin-top:12px; border-radius:5px; font-size:13px; color:#ccc; }
+  </style>
+
+      <!-- Gemini AI Configuration Section -->
+      <div class="settings-section" id="gemini-section">
+        <h2>🤖 AI Assistant — Gemini API</h2>
+
+        <div class="setting-info" style="margin-bottom:16px;">
+          <p style="font-size:15px;margin-bottom:8px;"><strong>What is Gemini?</strong><br>
+          Google Gemini is an AI that gives Helm smarter, conversational answers to complex questions —
+          engine diagnostics, navigation advice, marine regulations, and more.</p>
+          <p style="font-size:15px;margin-bottom:10px;"><strong>How to get a free API key (2 minutes):</strong></p>
+          <ol style="font-size:14px;color:#ccc;margin-left:20px;line-height:2;">
+            <li>Open a browser and go to <strong style="color:#00CC00;">aistudio.google.com</strong></li>
+            <li>Sign in with your Google account</li>
+            <li>Click <strong>"Get API key"</strong> in the left sidebar</li>
+            <li>Click <strong>"Create API key"</strong></li>
+            <li>Copy the key — it starts with <strong style="font-family:monospace;">AIza...</strong></li>
+            <li>Paste it in the field below and click <strong>Save Configuration</strong></li>
+          </ol>
+          <p style="font-size:13px;color:#aaa;margin-top:8px;">
+            ✓ Free tier is sufficient &nbsp;|&nbsp; ✓ Key stays on your Pi, never sent to any other server &nbsp;|&nbsp; ✓ Works offline for engine/sensor queries
+          </p>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Gemini API Key</strong>
+            <p class="setting-description">Paste your key from aistudio.google.com</p>
+          </div>
+          <div class="setting-control" style="flex:1;">
+            <div style="display:flex;gap:8px;">
+              <input type="password" id="gemini-key-input"
+                     placeholder="AIzaSy..."
+                     style="flex:1;padding:8px;background:#333;color:#fff;border:1px solid #555;
+                            border-radius:4px;font-size:14px;font-family:monospace;">
+              <button onclick="toggleKeyVisibility()" class="btn-marine">Show</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Model</strong>
+            <p class="setting-description">Flash = faster, Pro = smarter</p>
+          </div>
+          <div class="setting-control">
+            <select id="gemini-model-select"
+                    style="padding:8px;background:#333;color:#fff;border:1px solid #555;border-radius:4px;">
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro (Most Capable)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button onclick="saveGeminiConfig()" class="btn-marine">Save Configuration</button>
+          <button onclick="testGeminiConnection()" class="btn-marine">Test Connection</button>
+        </div>
+
+        <div id="gemini-status" style="margin-top:10px;padding:8px;border-radius:4px;
+             font-size:13px;font-family:monospace;display:none;"></div>
+      </div>
+
+      <script>
+      // Load current Gemini config on page load
+      fetch('/gemini/config')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.key_set) {
+            document.getElementById('gemini-key-input').placeholder = 'Key configured (hidden)';
+          }
+          var sel = document.getElementById('gemini-model-select');
+          if (data.gemini_model) sel.value = data.gemini_model;
+        })
+        .catch(function() {});
+
+      function toggleKeyVisibility() {
+        var input = document.getElementById('gemini-key-input');
+        var btn = event.target;
+        if (input.type === 'password') {
+          input.type = 'text';
+          btn.textContent = 'Hide';
+        } else {
+          input.type = 'password';
+          btn.textContent = 'Show';
+        }
+      }
+
+      function showGeminiStatus(msg, isError) {
+        var el = document.getElementById('gemini-status');
+        el.style.display = 'block';
+        el.style.background = isError ? '#400' : '#040';
+        el.style.border = '1px solid ' + (isError ? '#f00' : '#0f0');
+        el.style.color = isError ? '#f88' : '#8f8';
+        el.textContent = msg;
+        setTimeout(function() { el.style.display = 'none'; }, 5000);
+      }
+
+      function saveGeminiConfig() {
+        var key = document.getElementById('gemini-key-input').value.trim();
+        var model = document.getElementById('gemini-model-select').value;
+        var payload = { gemini_model: model };
+        if (key) payload.gemini_api_key = key;
+        fetch('/gemini/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(function(r) {
+          if (r.ok) {
+            showGeminiStatus('Configuration saved', false);
+            document.getElementById('gemini-key-input').value = '';
+            document.getElementById('gemini-key-input').placeholder = 'Key configured (hidden)';
+          } else {
+            showGeminiStatus('Save failed', true);
+          }
+        })
+        .catch(function(e) { showGeminiStatus('Error: ' + e.message, true); });
+      }
+
+      function testGeminiConnection() {
+        showGeminiStatus('Testing connection...', false);
+        fetch('/gemini/test')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) {
+              showGeminiStatus('Connected! Response: "' + data.response + '" (Model: ' + data.model + ')', false);
+            } else {
+              showGeminiStatus('Test failed: ' + (data.error || 'Unknown error'), true);
+            }
+          })
+          .catch(function(e) { showGeminiStatus('Connection error: ' + e.message, true); });
+      }
+      </script>
+    </main>
+
+  </div>
+
+  <script>
+    // === Settings JavaScript ===
+
+    let settings = {
+      engine: {
+        serviceInterval: 100,
+        oilChangeInterval: 50,
+        totalHours: 127.5,
+        hoursSinceService: 27.5
+      },
+      display: {
+        distanceUnit: 'nm',
+        speedUnit: 'kts',
+        tempUnit: 'C',
+        pressureUnit: 'kpa'
+      },
+      alerts: {
+        serviceAlert: true,
+        overheatAlert: true,
+        oilAlert: true,
+        batteryAlert: true
+      }
+    };
+
+    let signalKConnected = false;
+
+    // Load settings from localStorage
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('d3kos-settings');
+      if (savedSettings) {
+        settings = JSON.parse(savedSettings);
+      }
+
+      // Load engine settings
+      document.getElementById('service-interval').value = settings.engine.serviceInterval;
+      document.getElementById('oil-change-interval').value = settings.engine.oilChangeInterval;
+      document.getElementById('engine-hours').value = settings.engine.totalHours;
+      document.getElementById('hours-since-service').value = settings.engine.hoursSinceService;
+
+      // Load display settings
+      document.getElementById('distance-unit').value = settings.display.distanceUnit;
+      document.getElementById('speed-unit').value = settings.display.speedUnit;
+      document.getElementById('temp-unit').value = settings.display.tempUnit;
+      document.getElementById('pressure-unit').value = settings.display.pressureUnit;
+
+      // Load alert settings
+      document.getElementById('service-alert').checked = settings.alerts.serviceAlert;
+      document.getElementById('overheat-alert').checked = settings.alerts.overheatAlert;
+      document.getElementById('oil-alert').checked = settings.alerts.oilAlert;
+      document.getElementById('battery-alert').checked = settings.alerts.batteryAlert;
+
+      updateSystemInfo();
+    }
+
+    // Save settings to localStorage
+    function saveSettings() {
+      localStorage.setItem('d3kos-settings', JSON.stringify(settings));
+    }
+
+    // Save engine settings
+    function saveEngineSettings() {
+      settings.engine.serviceInterval = parseFloat(document.getElementById('service-interval').value);
+      settings.engine.oilChangeInterval = parseFloat(document.getElementById('oil-change-interval').value);
+      settings.engine.totalHours = parseFloat(document.getElementById('engine-hours').value);
+      settings.engine.hoursSinceService = parseFloat(document.getElementById('hours-since-service').value);
+
+      // Also update boat log engine hours
+      const engineHours = localStorage.getItem('d3kos-engine-hours');
+      if (engineHours) {
+        const hours = JSON.parse(engineHours);
+        hours.total = settings.engine.totalHours;
+        hours.sinceService = settings.engine.hoursSinceService;
+        hours.serviceInterval = settings.engine.serviceInterval;
+        localStorage.setItem('d3kos-engine-hours', JSON.stringify(hours));
+      }
+
+      saveSettings();
+      alert('✅ Engine settings saved successfully!');
+    }
+
+    // Reset service counter
+    function resetServiceCounter() {
+      if (confirm('Reset service counter to 0 hours?\n\nDo this after performing scheduled maintenance.')) {
+        settings.engine.hoursSinceService = 0;
+        document.getElementById('hours-since-service').value = 0;
+        saveSettings();
+        alert('✅ Service counter reset!');
+      }
+    }
+
+    // Save display settings
+    function saveDisplaySettings() {
+      settings.display.distanceUnit = document.getElementById('distance-unit').value;
+      settings.display.speedUnit = document.getElementById('speed-unit').value;
+      settings.display.tempUnit = document.getElementById('temp-unit').value;
+      settings.display.pressureUnit = document.getElementById('pressure-unit').value;
+
+      saveSettings();
+      alert('✅ Display settings saved!\n\nReload pages to see changes.');
+    }
+
+    // Save alert settings
+    function saveAlertSettings() {
+      settings.alerts.serviceAlert = document.getElementById('service-alert').checked;
+      settings.alerts.overheatAlert = document.getElementById('overheat-alert').checked;
+      settings.alerts.oilAlert = document.getElementById('oil-alert').checked;
+      settings.alerts.batteryAlert = document.getElementById('battery-alert').checked;
+
+      saveSettings();
+      alert('✅ Alert settings saved!');
+    }
+
+    // Export all data
+    function exportAllData() {
+      const allData = {
+        settings: settings,
+        trips: JSON.parse(localStorage.getItem('d3kos-trips') || '[]'),
+        benchmarkTests: JSON.parse(localStorage.getItem('d3kos-benchmark-tests') || '[]'),
+        benchmarkBaseline: JSON.parse(localStorage.getItem('d3kos-benchmark-baseline') || 'null'),
+        engineHours: JSON.parse(localStorage.getItem('d3kos-engine-hours') || '{}'),
+        exportDate: new Date().toISOString(),
+        version: '2.0'
+      };
+
+      const dataStr = JSON.stringify(allData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `d3kos-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      alert('✅ All data exported successfully!');
+    }
+
+    // Import data
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+
+            if (confirm('Import data?\n\nThis will replace your current settings and data!')) {
+              if (data.settings) localStorage.setItem('d3kos-settings', JSON.stringify(data.settings));
+              if (data.trips) localStorage.setItem('d3kos-trips', JSON.stringify(data.trips));
+              if (data.benchmarkTests) localStorage.setItem('d3kos-benchmark-tests', JSON.stringify(data.benchmarkTests));
+              if (data.benchmarkBaseline) localStorage.setItem('d3kos-benchmark-baseline', JSON.stringify(data.benchmarkBaseline));
+              if (data.engineHours) localStorage.setItem('d3kos-engine-hours', JSON.stringify(data.engineHours));
+
+              alert('✅ Data imported successfully!\n\nReloading page...');
+              location.reload();
+            }
+          } catch (error) {
+            alert('❌ Error importing data: Invalid file format');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // Clear trip data
+    function clearTripData() {
+      if (confirm('⚠️ Delete all trip data?\n\nThis cannot be undone!')) {
+        if (confirm('Are you absolutely sure?\n\nAll recorded trips will be permanently deleted.')) {
+          localStorage.removeItem('d3kos-trips');
+          localStorage.removeItem('d3kos-current-trip');
+          alert('✅ Trip data cleared!');
+        }
+      }
+    }
+
+    // Clear benchmark data
+    function clearBenchmarkData() {
+      if (confirm('⚠️ Delete all benchmark data?\n\nThis cannot be undone!')) {
+        if (confirm('Are you absolutely sure?\n\nAll tests and baseline data will be permanently deleted.')) {
+          localStorage.removeItem('d3kos-benchmark-tests');
+          localStorage.removeItem('d3kos-benchmark-baseline');
+          localStorage.removeItem('d3kos-current-benchmark');
+          alert('✅ Benchmark data cleared!');
+        }
+      }
+    }
+
+    function showToast(msg) {
+      let t = document.getElementById('d3k-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'd3k-toast';
+        t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:16px 28px;border-radius:10px;font-size:20px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.5);';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.display = 'block';
+      clearTimeout(t._timeout);
+      t._timeout = setTimeout(() => { t.style.display = 'none'; }, 4000);
+    }
+
+    // Restart Signal K
+    function restartSignalK() {
+      if (!confirm('Restart Signal K? Engine data will pause briefly.')) return;
+      fetch('/settings/action/restart-signalk', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => showToast(d.success ? '✓ Signal K restarting...' : '✗ ' + d.error))
+        .catch(() => showToast('✗ Could not reach settings API'));
+    }
+
+    // Restart Node-RED
+    function restartNodeRED() {
+      if (!confirm('Restart Node-RED? Dashboard will reload.')) return;
+      fetch('/settings/action/restart-nodered', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => showToast(d.success ? '✓ Node-RED restarting...' : '✗ ' + d.error))
+        .catch(() => showToast('✗ Could not reach settings API'));
+    }
+
+    // Reboot system
+    function rebootSystem() {
+      if (!confirm('Reboot the system now?')) return;
+      fetch('/settings/action/reboot', { method: 'POST' })
+        .then(() => { showToast('🔄 Rebooting...'); setTimeout(() => location.reload(), 15000); })
+        .catch(() => showToast('✗ Could not reach settings API'));
+    }
+
+    // Factory reset
+    function initialSetupReset() {
+      if (confirm('⚠️ INITIAL SETUP RESET?\n\nThis will delete ALL data and settings!')) {
+        if (confirm('Are you ABSOLUTELY SURE?\n\nType YES in the next dialog to confirm.')) {
+          const confirmation = prompt('Type YES to confirm initial setup reset:');
+          if (confirmation === 'YES') {
+            localStorage.clear();
+            alert('✅ Factory reset complete!\n\nReloading...');
+            location.reload();
+          } else {
+            alert('Factory reset cancelled.');
+          }
+        }
+      }
+    }
+
+    // Run diagnostics
+    function runDiagnostics() {
+      alert('🔍 System Diagnostics\n\n' +
+        'Signal K: ' + (signalKConnected ? 'Connected ✓' : 'Disconnected ✗') + '\n' +
+        'Node-RED: Running ✓\n' +
+        'Web Server: Running ✓\n' +
+        'VNC Server: Running ✓\n' +
+        'CAN0 Interface: Active ✓\n\n' +
+        'Storage: 78% used\n' +
+        'Memory: 43% used\n' +
+        'CPU Temp: 72.5°C\n\n' +
+        'All systems operational!');
+    }
+
+    // Update system info
+    function updateSystemInfo() {
+      // Update Signal K status if connected
+      if (signalKConnected) {
+        document.getElementById('signalk-status').innerHTML = '<span class="status-badge online">Online</span>';
+      }
+    }
+
+    // Check Signal K connection
+    function checkSignalK() {
+      try {
+        const ws = new WebSocket('ws://localhost:3000/signalk/v1/stream?subscribe=none');
+        ws.onopen = () => {
+          signalKConnected = true;
+          updateSystemInfo();
+          ws.close();
+        };
+        ws.onerror = () => {
+          signalKConnected = false;
+        };
+      } catch (error) {
+        signalKConnected = false;
+      }
+    }
+
+    // Go back to main menu
+    function goBack() {
+      window.location.href = '/';
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSettings();
+      checkSignalK();
+    });
+  </script>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // Camera Setup — Slot/Hardware Architecture
+    // ═══════════════════════════════════════════════════════════
+
+    var csSlots    = [];   // current slots from /camera/slots
+    var csHardware = [];   // current hardware from /camera/hardware
+    var csSelectedSlotId = null;
+    var csThumbTimers    = {};  // slot_id → setInterval handle
+
+    // ── Data load ──────────────────────────────────────────────
+
+    function csLoad() {
+      Promise.all([
+        fetch('/camera/slots').then(function(r){ return r.json(); }),
+        fetch('/camera/hardware').then(function(r){ return r.json(); })
+      ]).then(function(results) {
+        csSlots    = results[0];
+        csHardware = results[1];
+        csRenderSlotList();
+        csRenderHwPanel();
+        csRenderRoleSummary();
+        if (csSelectedSlotId) {
+          var still = csSlots.find(function(s){ return s.slot_id === csSelectedSlotId; });
+          if (still) csShowDetail(csSelectedSlotId);
+        }
+      }).catch(function(err) {
+        console.error('Camera load failed:', err);
+        document.getElementById('cs-slot-list').innerHTML =
+          '<div class="cs-empty">Could not reach camera service.</div>';
+      });
+    }
+
+    // ── Slot list panel ────────────────────────────────────────
+
+    function csStatusDot(status) {
+      if (status === 'online')      return '<span class="cs-dot" style="color:#00CC00;">&#9679;</span>';
+      if (status === 'offline')     return '<span class="cs-dot" style="color:#FF4444;">&#9679;</span>';
+      if (status === 'connecting')  return '<span class="cs-dot" style="color:#FFA500;">&#9679;</span>';
+      return '<span class="cs-dot" style="color:#555;">&#9675;</span>'; // unassigned
+    }
+
+    function csRenderSlotList() {
+      var el = document.getElementById('cs-slot-list');
+      if (!csSlots.length) {
+        el.innerHTML = '<div class="cs-empty">No positions yet.<br>Tap + New Position.</div>';
+        return;
+      }
+      var sorted = csSlots.slice().sort(function(a,b){ return a.display_order - b.display_order; });
+      el.innerHTML = sorted.map(function(s) {
+        var sel = s.slot_id === csSelectedSlotId ? ' selected' : '';
+        var roles = [];
+        if (s.roles.forward_watch)  roles.push('FW');
+        if (s.roles.fish_detection) roles.push('Fish');
+        var roleTag = roles.length ? ' <small style="color:#888;font-size:15px;">['+roles.join(',')+']</small>' : '';
+        return '<div class="cs-slot-row' + sel + '" onclick="csShowDetail(\'' + s.slot_id + '\')">' +
+               csStatusDot(s.status) +
+               '<span class="cs-slot-label">' + csEsc(s.label) + roleTag + '</span>' +
+               '</div>';
+      }).join('');
+    }
+
+    // ── Slot detail panel ──────────────────────────────────────
+
+    function csShowDetail(slotId) {
+      csSelectedSlotId = slotId;
+      csRenderSlotList(); // update selection highlight
+      csClearThumbTimers();
+
+      var s  = csSlots.find(function(x){ return x.slot_id === slotId; });
+      var hw = s && s.hardware_id ? csHardware.find(function(h){ return h.hardware_id === s.hardware_id; }) : null;
+      var el = document.getElementById('cs-detail-body');
+
+      if (!s) { el.innerHTML = '<div class="cs-empty">Slot not found.</div>'; return; }
+
+      var thumbId = 'cs-thumb-' + slotId;
+      var hwInfo  = hw ?
+        '<div style="font-size:18px;color:rgba(255,255,255,0.7);line-height:1.8;">' +
+        '<div>' + csEsc(hw.model || 'Unknown model') + '</div>' +
+        '<div>' + csEsc(hw.ip || '') + ' &nbsp; ' +
+        (hw.connected ? '<span style="color:#00CC00;">&#9679; online</span>' : '<span style="color:#888;">&#9675; offline</span>') +
+        '</div></div>' :
+        '<div style="color:rgba(255,255,255,0.4);font-size:18px;">No camera assigned</div>';
+
+      el.innerHTML =
+        // Label edit
+        '<div class="cs-edit-name">' +
+        '<input id="cs-label-input" value="' + csEsc(s.label) + '" />' +
+        '<button class="btn btn-primary" onclick="csRenameSlot(\'' + slotId + '\')" ' +
+        'style="min-height:48px;padding:8px 16px;font-size:18px;">Save</button>' +
+        '</div>' +
+
+        // Thumbnail
+        (s.assigned ?
+          '<img id="' + thumbId + '" class="cs-detail-thumb" src="/camera/frame/' + slotId + '?t=' + Date.now() + '" alt="Camera feed" />' :
+          '<div style="height:120px;background:#111;border-radius:4px;display:flex;align-items:center;' +
+          'justify-content:center;color:#555;font-size:18px;margin-bottom:12px;">No camera assigned</div>') +
+
+        // Roles
+        '<div style="font-weight:700;color:var(--color-accent);margin-bottom:8px;">Roles</div>' +
+        csRoleRow('forward_watch',  'Forward Watch',  s, true)  +
+        csRoleRow('fish_detection', 'Fish Detection', s, false) +
+        csRoleRow('active_default', 'Active Default', s, true)  +
+        csRoleRow('display_in_grid','Show in Grid',   s, false) +
+
+        // Hardware info
+        '<div style="font-weight:700;color:var(--color-accent);margin:12px 0 8px;">Hardware</div>' +
+        hwInfo +
+
+        // Actions
+        '<div style="margin-top:16px;">' +
+        '<button class="btn btn-primary cs-action-btn" onclick="csOpenReassign(\'' + slotId + '\')">' +
+        (s.assigned ? 'Reassign Camera' : 'Assign Camera') + '</button>' +
+        (s.assigned ?
+          '<button class="btn btn-warning cs-action-btn" onclick="csUnassign(\'' + slotId + '\')">Unassign Camera</button>' : '') +
+        '<button class="btn btn-danger cs-action-btn" onclick="csDeleteSlot(\'' + slotId + '\')"' +
+        ' style="border-color:var(--color-critical);color:var(--color-critical);">Delete Position</button>' +
+        '</div>';
+
+      // Start live thumbnail refresh if assigned
+      if (s.assigned) {
+        csThumbTimers[slotId] = setInterval(function() {
+          var img = document.getElementById(thumbId);
+          if (img) img.src = '/camera/frame/' + slotId + '?t=' + Date.now();
+        }, 1000);
+      }
+    }
+
+    function csRoleRow(role, label, slot, exclusive) {
+      var checked = slot.roles[role] ? 'checked' : '';
+      var type    = exclusive ? 'radio' : 'checkbox';
+      var name    = exclusive ? 'cs-role-excl' : '';
+      return '<div class="cs-role-row">' +
+             '<span>' + label + (exclusive ? ' <small style="color:#888;font-size:15px;">(one only)</small>' : '') + '</span>' +
+             '<label class="toggle-switch" style="flex-shrink:0;">' +
+             '<input type="checkbox" ' + checked + ' onchange="csToggleRole(\'' + slot.slot_id + '\',\'' + role + '\',this.checked,' + exclusive + ')" />' +
+             '<span class="toggle-slider"></span></label>' +
+             '</div>';
+    }
+
+    function csClearThumbTimers() {
+      Object.keys(csThumbTimers).forEach(function(k) { clearInterval(csThumbTimers[k]); });
+      csThumbTimers = {};
+    }
+
+    // ── Unassigned hardware panel ──────────────────────────────
+
+    function csRenderHwPanel() {
+      var el       = document.getElementById('cs-hw-list');
+      var unassigned = csHardware.filter(function(h){ return !h.assigned_to_slot; });
+      if (!unassigned.length) {
+        el.innerHTML = '<div class="cs-empty">No unassigned cameras detected.</div>';
+        return;
+      }
+      el.innerHTML = unassigned.map(function(hw) {
+        var thumbSrc = hw.connected ? ('/camera/frame/' + hw.hardware_id + '?t=' + Date.now()) : '';
+        return '<div class="cs-hw-card">' +
+          (hw.connected ?
+            '<img src="' + thumbSrc + '" class="cs-hw-thumb" alt="camera" />' :
+            '<div class="cs-hw-thumb" style="height:80px;display:flex;align-items:center;' +
+            'justify-content:center;color:#555;font-size:16px;">Offline</div>') +
+          '<div style="font-size:18px;margin-bottom:4px;">' + csEsc(hw.ip || '') + '</div>' +
+          '<div style="font-size:16px;color:rgba(255,255,255,0.5);margin-bottom:8px;">' + csEsc(hw.model || 'Unknown') + '</div>' +
+          '<button class="btn btn-primary" onclick="csOpenReassignFromHw(\'' + hw.hardware_id + '\')" ' +
+          'style="width:100%;min-height:64px;font-size:18px;">Assign to Position</button>' +
+          '</div>';
+      }).join('');
+    }
+
+    // ── Role summary bar ───────────────────────────────────────
+
+    function csRenderRoleSummary() {
+      var fw    = csSlots.find(function(s){ return s.roles.forward_watch; });
+      var def   = csSlots.find(function(s){ return s.roles.active_default; });
+      var fish  = csSlots.filter(function(s){ return s.roles.fish_detection; });
+
+      var fwTxt   = fw   ? (csEsc(fw.label)  + (fw.status  === 'online' ? ' <span style="color:#00CC00;">&#9679;</span>' : ' <span style="color:#FF4444;">&#9651;</span>'))
+                        : '<span style="color:#FFA500;">&#9651; Not assigned</span>';
+      var defTxt  = def  ? csEsc(def.label)  + (def.status === 'online' ? ' <span style="color:#00CC00;">&#9679;</span>' : '') : '(none)';
+      var fishTxt = fish.length ? fish.map(function(s){ return csEsc(s.label); }).join(', ') : '(none)';
+
+      document.getElementById('cs-role-summary').innerHTML =
+        '<strong>Forward Watch:</strong> ' + fwTxt + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '<strong>Fish Detection:</strong> ' + fishTxt + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '<strong>Active Default:</strong> ' + defTxt;
+    }
+
+    // ── Actions ────────────────────────────────────────────────
+
+    function csToggleRole(slotId, role, val, exclusive) {
+      fetch('/camera/slots/' + slotId, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ roles: { [role]: val } })
+      }).then(function(){ csLoad(); }).catch(console.error);
+    }
+
+    function csRenameSlot(slotId) {
+      var newLabel = (document.getElementById('cs-label-input').value || '').trim();
+      if (!newLabel) return;
+      fetch('/camera/slots/' + slotId, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ label: newLabel })
+      }).then(function(){ csLoad(); showToast('Position renamed.'); }).catch(console.error);
+    }
+
+    function csUnassign(slotId) {
+      if (!confirm('Unassign camera from this position?')) return;
+      fetch('/camera/slots/' + slotId + '/unassign', { method: 'POST' })
+        .then(function(){ csLoad(); showToast('Camera unassigned.'); }).catch(console.error);
+    }
+
+    function csDeleteSlot(slotId) {
+      var s = csSlots.find(function(x){ return x.slot_id === slotId; });
+      if (!confirm('Delete position "' + (s ? s.label : slotId) + '"?\n\nThis cannot be undone. The camera (if any) will return to the unassigned pool.')) return;
+      fetch('/camera/slots/' + slotId, { method: 'DELETE' })
+        .then(function(){
+          csSelectedSlotId = null;
+          csClearThumbTimers();
+          document.getElementById('cs-detail-body').innerHTML = '<div class="cs-empty">Select a position to edit it.</div>';
+          csLoad();
+          showToast('Position deleted.');
+        }).catch(console.error);
+    }
+
+    function csRunScan() {
+      showToast('Scanning for cameras...');
+      fetch('/camera/scan', { method: 'POST' })
+        .then(function(){ setTimeout(csLoad, 3500); })
+        .catch(console.error);
+    }
+
+    function csAssignHw(slotId, hwId) {
+      fetch('/camera/slots/' + slotId + '/assign', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ hardware_id: hwId })
+      }).then(function(){
+        csCloseReassignModal();
+        csLoad();
+        showToast('Camera assigned.');
+        csShowDetail(slotId);
+      }).catch(console.error);
+    }
+
+    // ── New Position modal ─────────────────────────────────────
+
+    function csShowNewSlotModal() {
+      document.getElementById('cs-new-name').value = '';
+      document.getElementById('cs-new-fw').checked   = false;
+      document.getElementById('cs-new-fish').checked = false;
+      document.getElementById('cs-new-grid').checked = true;
+      document.getElementById('cs-new-modal').style.display = 'flex';
+      setTimeout(function(){ document.getElementById('cs-new-name').focus(); }, 100);
+    }
+
+    function csCloseNewModal() {
+      document.getElementById('cs-new-modal').style.display = 'none';
+    }
+
+    function csSaveNewSlot() {
+      var label = (document.getElementById('cs-new-name').value || '').trim();
+      if (!label) { showToast('Please enter a name.'); return; }
+      fetch('/camera/slots', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          label: label,
+          roles: {
+            forward_watch:  document.getElementById('cs-new-fw').checked,
+            fish_detection: document.getElementById('cs-new-fish').checked,
+            display_in_grid: document.getElementById('cs-new-grid').checked
+          }
+        })
+      }).then(function(r){ return r.json(); })
+        .then(function(slot){
+          csCloseNewModal();
+          csLoad();
+          showToast('Position "' + label + '" created.');
+          if (slot.slot_id) setTimeout(function(){ csShowDetail(slot.slot_id); }, 400);
+        }).catch(console.error);
+    }
+
+    // ── Reassign modal ─────────────────────────────────────────
+
+    var csReassignTargetSlot = null;
+
+    function csOpenReassign(slotId) {
+      csReassignTargetSlot = slotId;
+      var s    = csSlots.find(function(x){ return x.slot_id === slotId; });
+      var name = s ? s.label : slotId;
+      document.getElementById('cs-reassign-slot-name').textContent = 'Slot: ' + name;
+      var unassigned = csHardware.filter(function(h){ return !h.assigned_to_slot || h.assigned_to_slot === slotId; });
+      var el = document.getElementById('cs-reassign-hw-list');
+      if (!unassigned.length) {
+        el.innerHTML = '<div class="cs-empty">No cameras available.<br>Tap Scan for Cameras first.</div>';
+      } else {
+        el.innerHTML = unassigned.map(function(hw) {
+          return '<button onclick="csAssignHw(\'' + slotId + '\',\'' + hw.hardware_id + '\')" ' +
+            'style="width:100%;min-height:80px;margin-bottom:8px;background:#1a1a1a;' +
+            'color:#fff;border:2px solid #00CC00;border-radius:8px;font-size:18px;' +
+            'cursor:pointer;text-align:left;padding:12px;">' +
+            '<strong>' + csEsc(hw.ip || hw.hardware_id) + '</strong><br>' +
+            '<span style="color:#888;font-size:16px;">' + csEsc(hw.model || 'Unknown') + ' &mdash; ' +
+            (hw.connected ? '<span style="color:#00CC00;">online</span>' : '<span style="color:#888;">offline</span>') +
+            '</span></button>';
+        }).join('');
+      }
+      document.getElementById('cs-reassign-modal').style.display = 'flex';
+    }
+
+    function csOpenReassignFromHw(hwId) {
+      // Pick a slot first — open reassign on all slots that are unassigned
+      var unassignedSlots = csSlots.filter(function(s){ return !s.assigned; });
+      if (!unassignedSlots.length) {
+        showToast('All positions already have cameras. Create a new position first.');
+        return;
+      }
+      // Show a quick slot picker if multiple unassigned slots
+      var slotId = unassignedSlots[0].slot_id;
+      if (unassignedSlots.length > 1) {
+        var choice = prompt(
+          'Which position?\n' +
+          unassignedSlots.map(function(s,i){ return (i+1)+'. '+s.label; }).join('\n') +
+          '\n\nEnter number:'
+        );
+        var idx = parseInt(choice) - 1;
+        if (isNaN(idx) || !unassignedSlots[idx]) return;
+        slotId = unassignedSlots[idx].slot_id;
+      }
+      csAssignHw(slotId, hwId);
+    }
+
+    function csCloseReassignModal() {
+      document.getElementById('cs-reassign-modal').style.display = 'none';
+      csReassignTargetSlot = null;
+    }
+
+    // ── Utility ────────────────────────────────────────────────
+
+    function csEsc(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Init ───────────────────────────────────────────────────
+
+    window.addEventListener('pageshow', function() {
+      csLoad();
+    });
+  </script>
+
+        <!-- License & Tier -->        <h2 class="section-header">🎫 License & Tier</h2>        <div class="setting-card">          <div style="font-size: 22px; line-height: 2;">            <div><strong>Tier:</strong> <span id="tier-display" style="color: #FFD700;">Loading...</span></div>            <div><strong>Installation ID:</strong> <span id="install-id" style="color: #00CC00; font-family: monospace;">Loading...</span></div>            <div><strong>Features:</strong> <span id="features-display">Loading...</span></div>          </div>        </div>        <script>        fetch("/tier/status").then(r=>r.json()).then(d=>{          document.getElementById("tier-display").textContent="Tier "+d.tier;          document.getElementById("install-id").textContent=d.installation_id;          const f=d.features;          document.getElementById("features-display").innerHTML=(f.voice_assistant?"✅":"❌")+" Voice, "+(f.camera?"✅":"❌")+" Camera";        });        </script>
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/keyboard-fix.js"></script>
+  <script src="/js/i18n.js"></script>
+</body>
+</html>

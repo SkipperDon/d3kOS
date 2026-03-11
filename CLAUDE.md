@@ -116,3 +116,29 @@ Don runs Windows. When giving Don instructions:
 - Services: `/opt/d3kos/services/`
 - Config: `/opt/d3kos/config/`
 - Deploy script: `deployment/v0.9.2/scripts/deploy.sh`
+
+---
+
+## Active Build — Marine Vision Camera Overhaul
+
+**Spec:** `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md`
+**Feature dir:** `deployment/features/camera-overhaul/`
+**Build checklist:** `deployment/features/camera-overhaul/BUILD_CHECKLIST.md`
+**Status:** Step 1 in progress (migrate_cameras.py)
+
+### Pre-deploy rules for this build
+- Run `migrate_cameras.py` on Pi FIRST before deploying camera_stream_manager.py (Step 2)
+- Verify `slots.json` and `hardware.json` exist and are correct before Step 2 deploy
+- Keep `cameras.json.bak` intact — it is the rollback source for Step 1
+- Each step must be verified working before the next step begins
+- Rollback for any step: redeploy from `deployment/v0.9.2-multicam/pi_source/`
+
+### New config files (Pi paths)
+- `/opt/d3kos/config/slots.json` — owner-defined positions (created by migration)
+- `/opt/d3kos/config/hardware.json` — discovered hardware (created by migration)
+- `/opt/d3kos/config/cameras.json.bak` — original config backup (never delete)
+
+### Service locations (unchanged)
+- `camera_stream_manager.py` → `/opt/d3kos/services/camera/camera_stream_manager.py`
+- `fish_detector.py` → `/opt/d3kos/services/camera/fish_detector.py`
+- Port 8084 (camera), Port 8086 (fish detector) — unchanged
