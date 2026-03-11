@@ -32,7 +32,7 @@
 **AAO compliance:** PASS — all risks classified, Medium pre-stated, no High actions, no push, no scope creep, no injection patterns.
 
 **Open items for next session:**
-- npm publish v0.2.0 for signalk-forward-watch (local, no cameras needed)
+- ~~npm publish v0.2.0~~ — COMPLETE 2026-03-11 (completed earlier today)
 - i18n keys: 4 pages missing translations
 - CHANGELOG.md update for v0.9.2
 - Camera tests: 24hr stability + performance + DHCP — requires lab cameras
