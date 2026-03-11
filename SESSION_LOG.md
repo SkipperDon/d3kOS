@@ -1782,3 +1782,157 @@ Current voice-to-text is English-only (Vosk `vosk-model-small-en-us-0.15`). The 
 - WebSocket real-time push for Remote Access
 - Onboarding wizard Gemini API key step (Steps 17.x)
 ---
+
+## Session: 2026-03-11
+
+### Bug Fix — nginx upstream IPv4/IPv6 resolution (navigation.html)
+
+**Date:** 2026-03-11
+**Reported by:** nginx error log — `connect() failed (111: Connection refused)` on `/simulator/status`, `/api/language`, `/api/preferences` with upstream `http://[::1]:PORT`
+
+**Bug description:**
+navigation.html was failing to load data from three backend services. nginx error log showed connection refused on upstream `http://[::1]:PORT` — IPv6 loopback. The system's `/etc/hosts` maps `localhost` to both `127.0.0.1` and `::1`. nginx was non-deterministically resolving `localhost` to IPv6, but all backend Python services only bind to IPv4.
+
+**Root cause:**
+All 25 `proxy_pass` directives in `/etc/nginx/sites-available/default` used `proxy_pass http://localhost:PORT`. On a dual-stack system, nginx DNS resolution of `localhost` can return `::1` (IPv6). Backend services bound to `0.0.0.0` or `127.0.0.1` (IPv4 only) refuse IPv6 connections → 502 for the page, logged as connection refused.
+
+This was intermittent — sometimes nginx resolved to IPv4 (worked), sometimes IPv6 (failed). Explains why the issue appeared inconsistent.
+
+**Files changed:**
+| File | Pi Path | Change |
+|------|---------|--------|
+| default | /etc/nginx/sites-available/default | `proxy_pass http://localhost` → `proxy_pass http://127.0.0.1` (25 entries) |
+| default | /etc/nginx/sites-enabled/default | Synced from sites-available |
+| test_nginx_upstream_ipv4.py | /opt/d3kos/tests/ | New — 5-test regression suite |
+
+**Backup:** `/etc/nginx/sites-available/default.bak.20260311_HHMMSS`
+
+**Fix applied:**
+```bash
+sudo sed -i 's|proxy_pass http://localhost|proxy_pass http://127.0.0.1|g' /etc/nginx/sites-available/default
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo nginx -s reload
+```
+
+**Test results:** 5/5 pass — `test_nginx_conf_uses_127_not_localhost`, `test_simulator_via_nginx`, `test_language_api_via_nginx`, `test_preferences_api_via_nginx`, `test_nginx_conf_syntax`
+
+**Rollback:**
+```bash
+sudo sed -i 's|proxy_pass http://127.0.0.1|proxy_pass http://localhost|g' /etc/nginx/sites-available/default
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+sudo nginx -s reload
+```
+
+**Health check:** `curl http://localhost/simulator/status`, `/api/language`, `/api/preferences` — all 200.
+
+**Notes:**
+- `/network/` and `/api/i18n/` return 404 (no root handler in those services) — separate issue, out of scope.
+- Also validated helm.html, ai-assistant.html, onboarding.html — all 200 OK.
+- SignalK: active 6 days, response times 1.5–2ms. Node-RED: active 18h, flows started cleanly.
+
+### Fix — navigation.html one-finger scroll not working
+
+**Date:** 2026-03-11
+
+**Root causes (2):**
+1. Missing `window/windowed` trigger — navigation.html stayed in fullscreen mode when navigated to from index.html. ILITEK/Wayland/Chromium touch scroll does not work reliably in fullscreen.
+2. Wrong container height constraint — `.container { min-height: 100vh }` allowed the container to grow beyond the viewport. `main { flex: 1; overflow-y: auto }` never actually overflowed so `touch-scroll.js` targeted `document.documentElement` instead of `main`.
+
+**Files changed:**
+| File | Pi Path | Change |
+|------|---------|--------|
+| navigation.html | /var/www/html/navigation.html | 3 edits (see below) |
+
+**Changes applied:**
+1. `.container { min-height: 100vh }` → `height: 100vh` — bounds `main` so it overflows and scrolls correctly
+2. `goBack()` — added `fetch('/window/fullscreen')` + 200ms delay before `location.href='/'` — matches pattern of all other sub-pages
+3. Added `DOMContentLoaded` block before `</body>`: `fetch('/window/windowed')` — switches Chromium to windowed mode on page load, enabling touch scroll
+
+**Backup:** `/var/www/html/navigation.html.bak.20260311_HHMMSS`
+
+**Rollback:**
+```bash
+sudo cp /var/www/html/navigation.html.bak.20260311_* /var/www/html/navigation.html
+```
+
+**Test results:** 5/5 pass (nginx upstream suite). navigation.html HTTP 200.
+
+**Verification needed on device:** Confirm one-finger scroll works on touchscreen after next page load.
+
+### Fix — nginx window/keyboard routes lost (caused by earlier cp)
+
+**Date:** 2026-03-11
+
+**Root cause:**
+The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This file contained `/window/` and `/keyboard/` location blocks proxying to keyboard-api on port 8085. The `sites-available/default` file never had these routes. When the IPv4/IPv6 fix earlier today ran `sudo cp sites-available/default sites-enabled/default`, it overwrote the Mar 10 routes. All `/window/` and `/keyboard/` calls started returning 404 at 08:29 — exactly after that reload.
+
+**Fix:**
+1. Restored `sites-available/default` from `default.bak.20260311_082505`
+2. Re-applied `proxy_pass localhost → 127.0.0.1` sed
+3. Appended `/window/` and `/keyboard/` location blocks (recovered from `/tmp/nginx-new`)
+4. Removed premature extra `}` via Python script
+5. Synced to sites-enabled + nginx reload
+
+**Routes restored:**
+- `location /window/` → `proxy_pass http://127.0.0.1:8085` (5s timeout)
+- `location /keyboard/` → `proxy_pass http://127.0.0.1:8085` (5s timeout)
+
+**Lesson learned:** `sites-available/default` and `sites-enabled/default` were out of sync. Going forward, always edit `sites-available/default` and symlink/copy to `sites-enabled/default`. The Mar 10 deployment wrote directly to `sites-enabled/default` without updating `sites-available/default`.
+
+**Test results:** 5/5 pass. `/window/windowed` 200, `/window/fullscreen` 200, `/keyboard/show` 200.
+
+---
+
+## Session 2026-03-11 (Part 22)
+**Goal:** Re-enable signalk-forward-watch after SK stability confirmed; fix d3kos-export-boot.service FAILED state
+
+**Completed:**
+
+### signalk-forward-watch v0.2.0
+- **Root cause analysed:** `require('onnxruntime-node')` at top of `detector.js` loaded ~470MB into SK main process heap at startup regardless of `enabled: false`. This was why the plugin was physically deleted in Part 21.
+- **Fix:** Moved all onnxruntime inference into a Node.js Worker thread (`plugin/detector-worker.js`). SK main process heap never touches the ONNX runtime. Worker spawns on `start()`, terminates on `stop()`.
+- **Files changed:**
+  - `plugin/detector-worker.js` — NEW. onnxruntime, sharp, inference logic, NMS all live here.
+  - `plugin/detector.js` — rewritten as thin wrapper. Spawns worker, relays messages, exposes `init()`, `detect()`, `terminate()`.
+  - `index.js` — added `this.detector.terminate()` to `stop()`.
+  - `package.json` — bumped to v0.2.0.
+- **Deployed to Pi:** full plugin reinstalled at `~/.signalk/node_modules/signalk-forward-watch/`, `npm install` run, registered in SK `package.json`, plugin enabled.
+- **Verified stable:** SK RSS 289MB after 1 hour with plugin enabled and worker running. Zero crashes, zero journal errors. Previously crashed at 470MB+ on startup.
+- **npm published:** `signalk-forward-watch@0.2.0` live on npmjs.com.
+- **GitHub pushed:** `github.com/SkipperDon/signalk-forward-watch` — commit `6a139d6`, tag `v0.2.0`.
+
+### d3kos-export-boot.service FAILED
+- **Root cause:** Race condition at boot. export-boot and export-manager start simultaneously. `systemctl is-active` returns active as soon as process exists, but Flask doesn't bind port 8094 for ~2 seconds. Script ran `curl localhost:8094` before port was open. curl exit code 7 (CURLE_COULDNT_CONNECT) + `set -e` = script killed. Systemd reported `status=7/NOTRUNNING`.
+- **Fix in `/opt/d3kos/scripts/export-on-boot.sh`:**
+  - Removed `set -e`
+  - Replaced `systemctl is-active` port assumption with `nc -z localhost 8094` retry loop (10 × 3s = 30s max)
+  - If port not ready after 30s: log warning, `exit 0` (clean — don't block boot)
+  - Wrapped `curl` with `--max-time 5 || echo '{}'` and `jq || echo '0'` — failures are logged, not fatal
+- **Tested:** `systemctl reset-failed` + `systemctl start` → `status=0/SUCCESS`. Full log run confirmed.
+
+**Files changed on Pi:**
+| File | Pi Path | Change |
+|------|---------|--------|
+| `detector-worker.js` | `~/.signalk/node_modules/signalk-forward-watch/plugin/` | New — onnxruntime worker |
+| `detector.js` | `~/.signalk/node_modules/signalk-forward-watch/plugin/` | Rewritten — worker wrapper |
+| `index.js` | `~/.signalk/node_modules/signalk-forward-watch/` | detector.terminate() in stop() |
+| `package.json` | `~/.signalk/node_modules/signalk-forward-watch/` | v0.2.0 |
+| `export-on-boot.sh` | `/opt/d3kos/scripts/` | Race condition + set -e fix |
+
+**SK memory at session end:** 289MB RSS — stable, no growth trend.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude (Sonnet 4.6) | This session | TBD |
+| Ollama | 0 calls | $0.00 |
+| npm publish | signalk-forward-watch@0.2.0 | $0.00 |
+
+**Pending v0.9.2 tasks remaining:**
+- On-screen keyboard (Helm + AI Assistant) — read `memory/keyboard-scroll-investigation.md` first
+- i18n keys — 4 pages missing translations
+- CHANGELOG.md update
+- Boatlog voice note: verify record → transcribe → save → view
+- Marine Vision on-boat tasks (DHCP reservations, 24hr stability test)
+- UAT: 5 metric + 5 imperial users
+- WebSocket real-time push (Remote Access page)

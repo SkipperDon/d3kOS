@@ -45,6 +45,8 @@ These documents explain what problem was solved and exactly how the solution wor
 | `deployment/docs/MARINE_VISION_CAMERA_SYSTEM.md` | Live IP camera system (bow + stern) — architecture, API, cameras.json, on-boat tasks |
 | `deployment/docs/VERIFY_AGENT.md` | Independent code reviewer on TrueNAS VM — how it works, endpoints |
 | `deployment/docs/WORKFLOW.md` | Ollama executor workflow — how features are built via Ollama |
+| `deployment/docs/EXPORT_BOOT_RACE_FIX.md` | `d3kos-export-boot.service` FAILED since 2026-03-04 — root cause: `set -e` + `curl` exit 7 before Flask bound port 8094. Fix: `nc -z` port-ready loop, removed `set -e`, guarded curl/jq. Resolved 2026-03-11. |
+| `deployment/docs/FORWARD_WATCH_WORKER_THREAD.md` | `signalk-forward-watch` v0.2.0 — onnxruntime loaded into SK main heap at require() time (~470MB) even when disabled. Fix: moved inference into Node.js Worker thread (`detector-worker.js`). SK heap unaffected. Deployed + verified stable 2026-03-11. |
 
 ---
 
@@ -61,6 +63,7 @@ Each directory in `deployment/features/` contains a `feature_spec.md`, `phases.j
 | `deployment/features/community-features/` | Community engine benchmark, anonymizer, boat map, hazard markers | Deployed 2026-03-07 |
 | `deployment/features/cloud-integration-prereqs/` | QR code URL, port 8091, cloud-credentials.json, Node-RED telemetry, alarm webhook | Deployed 2026-03-06 |
 | `deployment/features/boatlog-voice-note/` | Voice-to-text boat log entries | In progress |
+| `/home/boatiq/signalk-forward-watch/` | **signalk-forward-watch** standalone SK plugin — YOLOv8 obstacle detection via bow camera. v0.1.0: initial release. v0.2.0 (2026-03-11): onnxruntime moved to Worker thread, SK heap isolated. Published npm + GitHub. | v0.2.0 deployed to Pi 2026-03-11 |
 
 ---
 
