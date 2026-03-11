@@ -51,7 +51,7 @@
     .container {
       display: flex;
       flex-direction: column;
-      height: 100dvh;
+      height: 100vh;
       max-width: 1920px;
       margin: 0 auto;
     }
@@ -1037,16 +1037,6 @@
       const input = document.getElementById("chat-input");
       if (input) input.focus();
     }, 500);
-  </script>
-  <script>
-    // Keyboard visibility fix — shrinks container when virtual keyboard opens
-    if (window.visualViewport) {
-      function onViewportChange() {
-        document.querySelector('.container').style.height = window.visualViewport.height + 'px';
-      }
-      window.visualViewport.addEventListener('resize', onViewportChange);
-      window.visualViewport.addEventListener('scroll', onViewportChange);
-    }
   </script>
   <script src="/js/touch-scroll.js"></script>
   <script src="/js/i18n.js"></script>

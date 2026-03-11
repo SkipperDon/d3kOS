@@ -22,3 +22,11 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# Windows metadata (WSL alternate data stream files)
+*:Zone.Identifier
+
+# Office documents — use Markdown only
+*.docx
+*.odt
+*.xlsx

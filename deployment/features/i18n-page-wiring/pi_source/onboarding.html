@@ -247,7 +247,10 @@
         .then(function(r){ return r.json(); })
         .then(function(d){
           obLang = (d.language && d.language !== '') ? d.language : 'en';
-          if (d.language && d.language !== '') { document.getElementById('langOverlay').style.display = 'none'; return; }
+          if (d.language && d.language !== '' && sessionStorage.getItem('langJustConfirmed')) {
+            sessionStorage.removeItem('langJustConfirmed');
+            document.getElementById('langOverlay').style.display = 'none'; return;
+          }
           buildObGrid();
           document.getElementById('langOverlay').style.display = 'block';
         })
@@ -284,6 +287,7 @@
           body: JSON.stringify({language: obLang, dir: dir}),
           signal: AbortSignal.timeout(4000)
         }).then(function() {
+          sessionStorage.setItem('langJustConfirmed', '1');
           window.location.reload();
         }).catch(function() {
           document.getElementById('langOverlay').style.display = 'none';
@@ -293,7 +297,7 @@
   </script>
 
   <div class="nav-bar">
-    <button class="nav-btn" onclick="location.href='/'">← Main Menu</button>
+    <button class="nav-btn" onclick="fetch('/window/fullscreen',{method:'POST'}).catch(function(){}); setTimeout(function(){ location.href='/'; }, 200);">← Main Menu</button>
     <div class="title">Boat Setup Wizard</div>
     <div style="width:150px"></div>
   </div>
@@ -859,17 +863,7 @@ function generateDIP() {
     });
 
     async function complete() {
-      // Toggle fullscreen to restore kiosk mode
-      try {
-        await fetch('http://localhost:1880/toggle-fullscreen', {
-          method: 'POST',
-          mode: 'no-cors'
-        });
-      } catch (e) {
-        console.error('Fullscreen toggle failed:', e);
-      }
-      
-      // Wait for F11 to process
+      fetch('/window/fullscreen', { method: 'POST' }).catch(function() {});
       setTimeout(() => {
         // Save config for manual search
         localStorage.setItem("onboarding-config", JSON.stringify(config));
@@ -880,5 +874,10 @@ function generateDIP() {
   <script src="/js/touch-scroll.js"></script>
   <script src="/js/keyboard-fix.js"></script>
   <script src="/js/i18n.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('/window/windowed', {method:'POST'}).catch(function(){});
+});
+</script>
 </body>
 </html>

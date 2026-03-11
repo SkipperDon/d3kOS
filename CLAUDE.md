@@ -1,6 +1,8 @@
 # d3kOS / Helm-OS — Claude Operational Instructions
 
-Full technical spec is at: `Claude/CLAUDE.md` — read it before making architectural decisions.
+Full technical spec is at: `Claude/PROJECT_SPEC.md` — read it before making architectural decisions.
+
+**Master document index:** `deployment/docs/DEPLOYMENT_INDEX.md` — lists every solution document, feature directory, version directory, and tool in this project. Read this before asking "where is the doc for X?" or "what was done for Y?". Update it every time something is built or fixed.
 
 ---
 

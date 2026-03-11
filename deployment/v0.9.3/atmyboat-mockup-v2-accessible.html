@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AtMyBoat.com — Design Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   ATMYBOAT.COM — DESIGN MOCKUP
+   Dark nautical workshop × modern AI
+   AODA / WCAG 2.0 AA compliant
+═══════════════════════════════════════════════ */
+:root {
+  --bg-deep:       #0A2342;
+  --bg-surface:    #0D2A52;
+  --bg-card:       #112E58;
+  --bg-raised:     #163460;
+  --bg-darkest:    #061829;
+
+  --amber:         #B87800;
+  --amber-bright:  #D4920F;
+  --amber-pale:    #E8B84B;
+  --amber-glow:    rgba(212,146,15,0.12);
+  --amber-border:  rgba(212,146,15,0.28);
+
+  --teal:          #1A7A6E;
+  --teal-bright:   #22A090;
+  --teal-pale:     #3BBFB0;
+  --teal-glow:     rgba(34,160,144,0.10);
+  --teal-border:   rgba(34,160,144,0.28);
+
+  --text-primary:  #F0EAD8;
+  --text-secondary:#C8BEA8;
+  --text-muted:    #8A8070;
+  --text-faint:    #5A5448;
+
+  --border:        rgba(240,234,216,0.10);
+  --border-strong: rgba(240,234,216,0.18);
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'Nunito', 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 20px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Blueprint grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(34,160,144,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,160,144,0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+
+/* ── MOCKUP SWITCHER ── */
+.switcher {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: var(--bg-darkest);
+  border-bottom: 2px solid var(--amber-border);
+  padding: 0.5rem 1.5rem;
+  display: flex; align-items: center; gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.switcher-label {
+  font-family: var(--font-body); font-size: 0.75rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber-bright);
+}
+.sw-btn {
+  font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.03em;
+  padding: 5px 14px; border-radius: 2px; cursor: pointer; border: none;
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border-strong); transition: all 0.2s;
+}
+.sw-btn.active, .sw-btn:hover {
+  background: var(--amber-glow); color: var(--amber-bright); border-color: var(--amber-border);
+}
+
+/* ── PAGES ── */
+.page { display: none; position: relative; z-index: 1; padding-top: 44px; }
+.page.active { display: block; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ══════════════════════════════════
+   SHARED: HEADER / NAV
+══════════════════════════════════ */
+.site-header {
+  position: sticky; top: 44px; z-index: 100;
+  background: rgba(6,24,41,0.94);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-strong);
+  padding: 0.75rem 0;
+}
+.nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+}
+.logo { display: flex; align-items: center; gap: 0.85rem; text-decoration: none; }
+.logo-mark {
+  width: 44px; height: 44px; flex-shrink: 0; position: relative;
+}
+.logo-text {
+  font-family: var(--font-display); font-weight: 400; font-size: 1.5rem;
+  color: var(--text-primary); line-height: 1;
+  letter-spacing: -0.01em;
+}
+.logo-text em { font-style: normal; color: var(--amber-bright); }
+.logo-sub {
+  font-family: var(--font-body); font-size: 0.65rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--teal-pale); margin-top: 3px;
+}
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a {
+  font-family: var(--font-body); font-size: 1rem;
+  color: var(--text-secondary); text-decoration: none;
+  padding: 0.25rem 0; border-bottom: 2px solid transparent;
+  transition: all 0.2s; white-space: nowrap;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--text-primary); border-bottom-color: var(--amber-bright); }
+.nav-cta {
+  background: var(--amber-bright); color: #061829;
+  font-family: var(--font-body); font-weight: 800; font-size: 1rem;
+  padding: 0.6rem 1.5rem; border-radius: var(--r-sm);
+  text-decoration: none; white-space: nowrap; transition: background 0.2s;
+  min-height: 48px; display: flex; align-items: center;
+}
+.nav-cta:hover { background: var(--amber-pale); }
+
+/* ══════════════════════════════════
+   PAGE 1: HOMEPAGE / THE DOCK
+══════════════════════════════════ */
+
+/* Hero */
+.hero {
+  min-height: 88vh; display: flex; align-items: center;
+  position: relative; overflow: hidden; padding: 4rem 0;
+}
+.hero-glow-amber {
+  position: absolute; top: -15%; right: -8%; width: 65vw; height: 65vw;
+  background: radial-gradient(ellipse, rgba(212,146,15,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-glow-teal {
+  position: absolute; bottom: -10%; left: -5%; width: 50vw; height: 50vw;
+  background: radial-gradient(ellipse, rgba(34,160,144,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-inner {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+  position: relative; z-index: 1; width: 100%;
+}
+.hero-eyebrow {
+  font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--teal-pale);
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; font-weight: 600;
+}
+.hero-eyebrow::before {
+  content: ''; display: inline-block; width: 28px; height: 1px; background: var(--teal-pale);
+}
+.hero h1 {
+  font-family: var(--font-display); font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-weight: 400; line-height: 1.08; color: var(--text-primary); margin-bottom: 1.5rem;
+}
+.hero h1 em {
+  font-style: normal; color: var(--amber-bright); position: relative;
+}
+.hero h1 em::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -4px;
+  height: 3px; background: linear-gradient(90deg, var(--amber-bright), var(--teal-pale));
+  border-radius: 2px;
+}
+.hero-lead {
+  font-size: 1.1rem; color: var(--text-secondary); max-width: 520px;
+  margin-bottom: 2.5rem; line-height: 1.9;
+}
+.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--amber-bright); color: #061829;
+  font-family: var(--font-body); font-weight: 700; font-size: 1rem;
+  padding: 0.85rem 2rem; border-radius: var(--r-sm);
+  text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;
+  transition: all 0.2s; min-height: 48px; border: none; cursor: pointer;
+}
+.btn-primary:hover { background: var(--amber-pale); transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent; color: var(--text-primary);
+  font-family: var(--font-body); font-size: 1rem;
+  padding: 0.85rem 2rem; border-radius: var(--r-sm);
+  text-decoration: none; border: 1px solid var(--border-strong);
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  transition: all 0.2s; min-height: 48px;
+}
+.btn-ghost:hover { border-color: var(--teal-pale); color: var(--teal-pale); }
+
+.hero-stats {
+  margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+  display: flex; gap: 2.5rem;
+}
+.stat-val { font-family: var(--font-display); font-size: 1.9rem; font-weight: 400; color: var(--amber-bright); line-height: 1; }
+.stat-lbl { font-family: var(--font-body); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+
+/* Hero illustration — boat + circuit */
+.hero-visual { display: flex; justify-content: center; align-items: center; }
+
+/* Divider */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); margin: 0; }
+
+/* Section */
+.section { padding: 5rem 0; }
+.section-eyebrow {
+  font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--amber-bright); font-weight: 700;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;
+}
+.section-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--border-strong); }
+.section-title {
+  font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 400;
+  color: var(--text-primary); margin-bottom: 0.75rem;
+}
+.section-lead { font-size: 1.05rem; color: var(--text-secondary); max-width: 560px; line-height: 1.9; }
+
+/* Feature cards */
+.feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 3rem; }
+.feature-card {
+  background: var(--bg-card); border: 1px solid var(--amber-border);
+  border-radius: var(--r-lg); padding: 1.75rem; position: relative; overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.feature-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--amber-bright), var(--teal-pale));
+  opacity: 0; transition: opacity 0.25s;
+}
+.feature-card:hover { border-color: var(--amber-pale); transform: translateY(-3px); }
+.feature-card:hover::before { opacity: 1; }
+.fc-icon {
+  width: 48px; height: 48px; background: var(--amber-glow); border: 1px solid var(--amber-border);
+  border-radius: var(--r-md); display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; margin-bottom: 1.25rem;
+}
+.fc-icon.teal { background: var(--teal-glow); border-color: var(--teal-border); }
+.fc-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 400; color: var(--text-primary); margin-bottom: 0.5rem; }
+.fc-body { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.8; }
+
+/* Community section */
+.community-grid { display: grid; grid-template-columns: 1fr 400px; gap: 3rem; align-items: start; margin-top: 3rem; }
+
+/* Thread list */
+.thread-block {
+  background: var(--bg-card); border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg); overflow: hidden;
+}
+.thread-block-header {
+  padding: 1rem 1.5rem; background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.thread-block-header h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 400; display: flex; align-items: center; gap: 0.5rem; }
+.see-all { font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--teal-pale); text-decoration: none; font-weight: 600; }
+.thread-item {
+  display: grid; grid-template-columns: 44px 1fr auto;
+  gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.18s; cursor: pointer;
+}
+.thread-item:last-child { border-bottom: none; }
+.thread-item:hover { background: var(--bg-raised); }
+.t-avatar {
+  width: 44px; height: 44px; border-radius: 50%; background: var(--bg-raised);
+  border: 2px solid var(--amber-border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 400; font-size: 1rem; color: var(--amber-bright); flex-shrink: 0;
+}
+.t-avatar.teal { color: var(--teal-pale); border-color: var(--teal-border); }
+.t-title { font-family: var(--font-body); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.4; margin-bottom: 4px; }
+.t-meta { font-family: var(--font-body); font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.02em; }
+.t-tag {
+  display: inline-block; padding: 3px 8px; border-radius: 3px;
+  font-family: var(--font-body); font-size: 0.68rem; letter-spacing: 0.05em;
+  text-transform: uppercase; margin-right: 5px; font-weight: 700;
+}
+.tag-a { background: var(--amber-glow); color: var(--amber-pale); border: 1px solid var(--amber-border); }
+.tag-t { background: var(--teal-glow); color: var(--teal-pale); border: 1px solid var(--teal-border); }
+.t-replies { text-align: right; flex-shrink: 0; }
+.t-count { font-family: var(--font-display); font-size: 1.2rem; font-weight: 400; color: var(--text-secondary); line-height: 1; }
+.t-count-lbl { font-family: var(--font-body); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; }
+
+/* AI widget preview */
+.ai-widget {
+  background: var(--bg-card); border: 1px solid var(--teal-border);
+  border-radius: var(--r-lg); padding: 1.5rem; position: relative;
+}
+.ai-widget-label {
+  position: absolute; top: -11px; left: 1.25rem;
+  font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.15em;
+  background: var(--teal-pale); color: #061829; padding: 2px 10px; border-radius: 2px; font-weight: 600;
+}
+.ai-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 400; margin-bottom: 0.5rem; }
+.ai-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.75; margin-bottom: 1.25rem; }
+.ai-input-row { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+.ai-input {
+  flex: 1; background: var(--bg-raised); border: 1px solid var(--teal-border);
+  border-radius: var(--r-sm); padding: 0.65rem 0.9rem;
+  color: var(--text-primary); font-family: var(--font-body); font-size: 0.9rem;
+  outline: none;
+}
+.ai-ask {
+  background: var(--teal-bright); color: #061829;
+  font-family: var(--font-body); font-weight: 800; font-size: 0.9rem;
+  padding: 0 1rem; border: none; border-radius: var(--r-sm); cursor: pointer;
+  min-height: 48px; min-width: 48px; transition: background 0.2s; white-space: nowrap;
+}
+.ai-ask:hover { background: var(--teal-pale); }
+.ai-answer-block {
+  background: var(--bg-raised); border: 1px solid var(--teal-border);
+  border-radius: var(--r-md); padding: 1rem; margin-bottom: 0.75rem;
+}
+.ai-answer-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+.ai-orb {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--teal-glow); border: 1px solid var(--teal-border);
+  display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0;
+}
+.ai-who { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal-pale); font-weight: 700; }
+.ai-answer-text { font-size: 0.9rem; color: var(--text-primary); line-height: 1.8; }
+.ai-sources { margin-top: 0.6rem; }
+.ai-source-link { display: block; font-family: var(--font-body); font-size: 0.8rem; color: var(--teal-pale); text-decoration: none; margin-bottom: 3px; font-weight: 600; }
+.ai-source-link:hover { color: var(--teal-bright); }
+.ai-disclaimer { font-size: 0.78rem; color: var(--text-muted); line-height: 1.7; font-style: italic; }
+
+/* Tier comparison bar */
+.tier-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 3rem;
+}
+.tier-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 1.75rem 1.5rem; text-align: center;
+  transition: all 0.2s;
+}
+.tier-card.featured { border-color: var(--teal-border); background: var(--bg-raised); }
+.tier-badge { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 700; }
+.tier-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 400; margin-bottom: 0.4rem; }
+.tier-price { font-family: var(--font-body); font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem; }
+.tier-price strong { font-family: var(--font-display); font-size: 1.5rem; color: var(--amber-bright); }
+.tier-feat { font-size: 0.88rem; color: var(--text-secondary); line-height: 2.1; text-align: left; }
+.tier-feat li { list-style: none; padding-left: 1.25rem; position: relative; }
+.tier-feat li::before { content: '⚓'; position: absolute; left: 0; font-size: 0.65rem; top: 0.2rem; opacity: 0.6; }
+.tier-cta { margin-top: 1.5rem; display: block; }
+
+/* ══════════════════════════════════
+   PAGE 2: FORUM
+══════════════════════════════════ */
+.forum-hero {
+  background: var(--bg-surface); border-bottom: 1px solid var(--border-strong);
+  padding: 3rem 0 2rem;
+}
+.forum-hero h1 { font-family: var(--font-display); font-size: 2.2rem; font-weight: 400; margin-bottom: 0.5rem; }
+.forum-hero p { color: var(--text-secondary); font-size: 1rem; }
+.forum-meta-bar {
+  display: flex; gap: 2rem; margin-top: 1.5rem; flex-wrap: wrap;
+}
+.forum-stat { display: flex; align-items: baseline; gap: 0.4rem; }
+.forum-stat strong { font-family: var(--font-display); font-size: 1.4rem; font-weight: 400; color: var(--amber-bright); }
+.forum-stat span { font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+
+.forum-layout { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; padding: 2.5rem 0; }
+
+/* Category list */
+.cat-section { margin-bottom: 2.5rem; }
+.cat-section-title {
+  font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--amber-bright); font-weight: 800;
+  padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-strong);
+  margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.75rem;
+}
+.cat-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-md); margin-bottom: 0.5rem; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.cat-card:hover { border-color: var(--amber-border); }
+.cat-card-inner {
+  display: grid; grid-template-columns: 56px 1fr auto;
+  gap: 0; align-items: stretch; min-height: 72px;
+}
+.cat-icon-col {
+  background: var(--bg-raised); border-right: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.cat-body { padding: 0.9rem 1.25rem; }
+.cat-name { font-family: var(--font-body); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+.cat-desc { font-family: var(--font-body); font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.02em; }
+.cat-stats {
+  padding: 0 1.25rem; display: flex; flex-direction: column;
+  align-items: flex-end; justify-content: center; gap: 2px;
+}
+.cat-stat-num { font-family: var(--font-display); font-size: 1.1rem; font-weight: 400; color: var(--text-secondary); }
+.cat-stat-lbl { font-family: var(--font-body); font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.06em; font-weight: 600; }
+
+/* Forum sidebar */
+.forum-sidebar {}
+.sidebar-block {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); margin-bottom: 1.25rem; overflow: hidden;
+}
+.sb-header {
+  padding: 0.85rem 1.25rem; background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--amber-bright); font-weight: 800;
+}
+.sb-body { padding: 1rem 1.25rem; }
+.recent-thread {
+  padding: 0.65rem 0; border-bottom: 1px solid var(--border);
+  display: flex; gap: 0.75rem; align-items: flex-start;
+}
+.recent-thread:last-child { border-bottom: none; }
+.rt-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--teal-pale);
+  flex-shrink: 0; margin-top: 6px;
+}
+.rt-dot.amber { background: var(--amber-pale); }
+.rt-title { font-size: 0.88rem; color: var(--text-primary); line-height: 1.5; margin-bottom: 2px; }
+.rt-meta { font-family: var(--font-body); font-size: 0.72rem; color: var(--text-muted); }
+
+/* Member list */
+.member-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.member-row:last-child { border-bottom: none; }
+.m-avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--bg-raised);
+  border: 2px solid var(--amber-border); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 400; font-size: 0.85rem; color: var(--amber-bright); flex-shrink: 0;
+}
+.m-name { font-size: 0.92rem; font-weight: 700; color: var(--text-primary); }
+.m-posts { font-family: var(--font-body); font-size: 0.72rem; color: var(--text-muted); }
+.m-badge {
+  margin-left: auto; font-family: var(--font-body); font-size: 0.68rem; letter-spacing: 0.05em; font-weight: 700;
+  padding: 3px 9px; border-radius: 3px; background: var(--amber-glow); color: var(--amber-pale); border: 1px solid var(--amber-border);
+}
+
+/* ══════════════════════════════════
+   PAGE 3: PRODUCTS / d3kOS PAGE
+══════════════════════════════════ */
+.product-hero {
+  padding: 4rem 0; background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-strong);
+}
+.product-hero-inner { display: grid; grid-template-columns: 1fr 420px; gap: 4rem; align-items: center; }
+.product-tag { font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal-pale); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+.product-hero h1 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; margin-bottom: 1rem; }
+.product-hero-lead { font-size: 1.05rem; color: var(--text-secondary); line-height: 1.9; margin-bottom: 2rem; }
+
+.price-block {
+  background: var(--bg-card); border: 1px solid var(--amber-border);
+  border-radius: var(--r-lg); padding: 2rem;
+}
+.price-vs { font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.25rem; font-weight: 600; }
+.price-row { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.5rem; }
+.price-amount { font-family: var(--font-display); font-size: 2.5rem; font-weight: 400; line-height: 1; }
+.price-amount.theirs { color: var(--text-muted); text-decoration: line-through; font-size: 1.6rem; }
+.price-amount.ours { color: var(--amber-bright); }
+.price-label { font-size: 0.9rem; color: var(--text-secondary); }
+.price-divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+/* Spec table */
+.spec-section { padding: 4rem 0; }
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin-top: 2.5rem; }
+.spec-block {}
+.spec-block-title { font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber-bright); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); font-weight: 700; }
+.spec-row { display: flex; justify-content: space-between; align-items: baseline; padding: 0.65rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; }
+.spec-row:last-child { border-bottom: none; }
+.spec-key { color: var(--text-secondary); }
+.spec-val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-primary); text-align: right; }
+
+/* Features list */
+.features-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 2rem; }
+.feat-item {
+  display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.9rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-md); font-size: 0.9rem; color: var(--text-secondary);
+}
+.feat-check { color: var(--teal-pale); flex-shrink: 0; font-size: 0.95rem; }
+
+/* ══════════════════════════════════
+   SHARED: FOOTER
+══════════════════════════════════ */
+footer {
+  background: var(--bg-darkest); border-top: 1px solid var(--border-strong);
+  padding: 3.5rem 0 2rem;
+}
+.footer-grid { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+.footer-brand p { font-size: 0.92rem; color: var(--text-secondary); line-height: 1.8; margin-top: 1rem; max-width: 280px; }
+.footer-col h4 {
+  font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--amber-bright); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); font-weight: 800;
+}
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 0.55rem; }
+.footer-col a { font-size: 0.9rem; color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+.footer-col a:hover { color: var(--amber-pale); }
+.footer-bottom {
+  padding-top: 1.5rem; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;
+}
+.footer-legal { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.04em; color: var(--text-muted); }
+.gpl-badge {
+  font-family: var(--font-body); font-size: 0.68rem; letter-spacing: 0.06em; font-weight: 700;
+  background: var(--teal-glow); color: var(--teal-pale); border: 1px solid var(--teal-border);
+  padding: 3px 9px; border-radius: 3px;
+}
+
+/* Mobile hint bar */
+.mobile-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(6,24,41,0.96);
+  border-top: 1px solid var(--border-strong);
+  padding: 0.5rem 0 0.75rem;
+  display: none;
+  z-index: 200;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-darkest); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--amber-border); }
+
+/* Animated entrance */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page.active .hero-inner,
+.page.active .section { animation: fadeUp 0.4s ease both; }
+</style>
+</head>
+<body>
+
+<!-- PAGE SWITCHER -->
+<div class="switcher">
+  <span class="switcher-label">📐 Mockup View:</span>
+  <button class="sw-btn active" onclick="showPage('home',this)">🏠 Homepage</button>
+  <button class="sw-btn" onclick="showPage('forum',this)">⚓ Forum</button>
+  <button class="sw-btn" onclick="showPage('product',this)">🔧 d3kOS Product Page</button>
+  <button class="sw-btn" onclick="showPage('blog',this)">📖 Captain's Log (Blog)</button>
+</div>
+
+<!-- ═══════════════ PAGE 1: HOME ═══════════════ -->
+<div class="page active" id="page-home">
+
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="#">
+          <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <circle cx="22" cy="22" r="20" stroke="#D4920F" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <path d="M22 8 C14 8 8 14 8 22 C8 32 14 36 22 36 C30 36 36 32 36 22 C36 14 30 8 22 8 Z" fill="none" stroke="#1A7A6E" stroke-width="1" opacity="0.5"/>
+            <path d="M14 26 L18 18 L22 22 L26 16 L30 20" stroke="#D4920F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="22" cy="22" r="3.5" fill="#0A2342" stroke="#22A090" stroke-width="1.5"/>
+            <circle cx="22" cy="22" r="1.5" fill="#22A090"/>
+          </svg>
+          <div>
+            <div class="logo-text">At<em>My</em>Boat</div>
+            <div class="logo-sub">d3kOS Marine Intelligence</div>
+          </div>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#" class="active">Home</a></li>
+          <li><a href="#">d3kOS</a></li>
+          <li><a href="#">Hardware</a></li>
+          <li><a href="#">Forum</a></li>
+          <li><a href="#">Products</a></li>
+          <li><a href="#">Download</a></li>
+        </ul>
+        <a href="#" class="nav-cta">Join Free →</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-glow-amber"></div>
+    <div class="hero-glow-teal"></div>
+    <div class="container">
+      <div class="hero-inner">
+        <div>
+          <div class="hero-eyebrow">Open Source Marine OS</div>
+          <h1>Your boat deserves<br><em>smarter electronics</em><br>without the complexity.</h1>
+          <p class="hero-lead">d3kOS runs on the d3-k1 — a Raspberry Pi-based marine computer. Engine monitoring, GPS, voice commands, and AI diagnostics. Offline by default. Cloud-connected when you want it.</p>
+          <div class="hero-actions">
+            <a href="#" class="btn-primary">⬇ Download d3kOS — Free</a>
+            <a href="#" class="btn-ghost">See the Hardware →</a>
+          </div>
+          <div class="hero-stats">
+            <div>
+              <div class="stat-val">Open</div>
+              <div class="stat-lbl">Source · GPL v3</div>
+            </div>
+            <div>
+              <div class="stat-val">100%</div>
+              <div class="stat-lbl">offline capable</div>
+            </div>
+            <div>
+              <div class="stat-val">GPL v3</div>
+              <div class="stat-lbl">open source</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <!-- Decorative boat/instrument illustration -->
+          <svg width="420" height="380" viewBox="0 0 420 380" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 40px rgba(212,146,15,0.12)); animation: float 6s ease-in-out infinite;" >
+            <style>@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }</style>
+            <!-- Screen bezel -->
+            <rect x="60" y="40" width="300" height="220" rx="12" fill="#061829" stroke="#1C3558" stroke-width="2"/>
+            <rect x="70" y="50" width="280" height="200" rx="8" fill="#0A1F35"/>
+            <!-- Screen content: RPM gauge arc -->
+            <path d="M150 185 A80 80 0 0 1 270 185" stroke="#1C3558" stroke-width="18" stroke-linecap="round"/>
+            <path d="M150 185 A80 80 0 0 1 220 108" stroke="#D4920F" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
+            <text x="210" y="200" font-family="JetBrains Mono,monospace" font-size="32" fill="#F0EAD8" font-weight="600" text-anchor="middle">2,450</text>
+            <text x="210" y="216" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A8070" text-anchor="middle" letter-spacing="3">RPM</text>
+            <!-- Status chips -->
+            <rect x="90" y="65" width="55" height="22" rx="3" fill="rgba(34,160,144,0.15)" stroke="rgba(34,160,144,0.3)" stroke-width="1"/>
+            <text x="117" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#3BBFB0" text-anchor="middle" letter-spacing="1">● ONLINE</text>
+            <rect x="155" y="65" width="50" height="22" rx="3" fill="rgba(212,146,15,0.12)" stroke="rgba(212,146,15,0.25)" stroke-width="1"/>
+            <text x="180" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#D4920F" text-anchor="middle" letter-spacing="1">GPS ✓</text>
+            <rect x="215" y="65" width="55" height="22" rx="3" fill="rgba(212,146,15,0.12)" stroke="rgba(212,146,15,0.25)" stroke-width="1"/>
+            <text x="242" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#D4920F" text-anchor="middle" letter-spacing="1">NMEA ✓</text>
+            <!-- Mini gauges bottom -->
+            <rect x="90" y="210" width="55" height="28" rx="4" fill="#112E58" stroke="#163460"/>
+            <text x="117" y="222" font-family="JetBrains Mono,monospace" font-size="7" fill="#8A8070" text-anchor="middle">TEMP</text>
+            <text x="117" y="234" font-family="JetBrains Mono,monospace" font-size="10" fill="#F0EAD8" text-anchor="middle" font-weight="600">185°F</text>
+            <rect x="155" y="210" width="55" height="28" rx="4" fill="#112E58" stroke="#163460"/>
+            <text x="182" y="222" font-family="JetBrains Mono,monospace" font-size="7" fill="#8A8070" text-anchor="middle">FUEL</text>
+            <text x="182" y="234" font-family="JetBrains Mono,monospace" font-size="10" fill="#22A090" text-anchor="middle" font-weight="600">74%</text>
+            <rect x="220" y="210" width="55" height="28" rx="4" fill="#112E58" stroke="#163460"/>
+            <text x="247" y="222" font-family="JetBrains Mono,monospace" font-size="7" fill="#8A8070" text-anchor="middle">VOLTS</text>
+            <text x="247" y="234" font-family="JetBrains Mono,monospace" font-size="10" fill="#F0EAD8" text-anchor="middle" font-weight="600">13.4V</text>
+            <!-- Hardware base -->
+            <rect x="130" y="262" width="160" height="14" rx="4" fill="#163460" stroke="#1C3558"/>
+            <rect x="155" y="276" width="110" height="40" rx="6" fill="#0D2A52" stroke="#1C3558" stroke-width="1.5"/>
+            <!-- Pi board suggestion -->
+            <rect x="168" y="283" width="60" height="26" rx="3" fill="#0A1F35" stroke="#163460"/>
+            <rect x="172" y="287" width="6" height="4" rx="1" fill="#22A090" opacity="0.7"/>
+            <rect x="182" y="287" width="6" height="4" rx="1" fill="#22A090" opacity="0.5"/>
+            <rect x="192" y="287" width="22" height="14" rx="2" fill="#1C3558"/>
+            <text x="203" y="297" font-family="JetBrains Mono,monospace" font-size="6" fill="#D4920F" text-anchor="middle">Pi 4B</text>
+            <!-- Boat hull hint -->
+            <path d="M100 328 C120 318 175 312 210 312 C245 312 300 318 320 328 C310 342 280 348 210 348 C140 348 110 342 100 328 Z" fill="#0D2A52" stroke="#1C3558" stroke-width="1.5"/>
+            <path d="M160 312 L160 290 L200 265 L240 290 L240 312" fill="none" stroke="#D4920F" stroke-width="1.5" opacity="0.4"/>
+            <!-- Waterline -->
+            <path d="M85 342 Q130 336 210 336 Q290 336 335 342" stroke="#22A090" stroke-width="1" stroke-dasharray="8 4" opacity="0.35"/>
+            <!-- Ambient dots -->
+            <circle cx="68" cy="110" r="2" fill="#D4920F" opacity="0.3"/>
+            <circle cx="352" cy="155" r="2" fill="#22A090" opacity="0.3"/>
+            <circle cx="72" cy="240" r="1.5" fill="#22A090" opacity="0.25"/>
+            <circle cx="348" cy="210" r="1.5" fill="#D4920F" opacity="0.25"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- FEATURES SECTION -->
+  <section class="section">
+    <div class="container">
+      <div class="section-eyebrow">What d3kOS Does</div>
+      <h2 class="section-title">Everything your chartplotter does.<br>Plus AI. Plus open source.</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">🧭</div>
+          <div class="fc-title">GPS & Navigation</div>
+          <p class="fc-body">Real-time GPS tracking, route logging, voyage history. OpenSeaMap nautical chart overlay. Works fully offline.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">⚙️</div>
+          <div class="fc-title">Engine Monitoring</div>
+          <p class="fc-body">NMEA 2000 via CX5106 gateway. RPM, temperature, fuel, battery voltage — colour-coded gauges, live alerts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon teal">🤖</div>
+          <div class="fc-title">AI Diagnostics</div>
+          <p class="fc-body">Helm AI analyses your engine data, flags anomalies before they become failures, and explains what it found in plain English.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🎙️</div>
+          <div class="fc-title">Voice Commands</div>
+          <p class="fc-body">Hands-free control at the helm. Ask for RPM, speed, heading, or trigger a waypoint without touching the screen.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon teal">📡</div>
+          <div class="fc-title">Cloud Dashboard</div>
+          <p class="fc-body">T1 (free) connects to atmyboat.com. View your boat's status, voyage logs, and alerts from any browser.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🔒</div>
+          <div class="fc-title">T0 — 100% Private</div>
+          <p class="fc-body">Run in T0 mode and d3kOS never phones home. No account. No tracking. No cloud. A core legal and brand promise.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- COMMUNITY SECTION -->
+  <section class="section" style="background: var(--bg-surface);">
+    <div class="container">
+      <div class="section-eyebrow">The AtMyBoat Community</div>
+      <h2 class="section-title">A forum built for boaters,<br>powered by AI.</h2>
+      <div class="community-grid">
+        <div>
+          <div class="thread-block">
+            <div class="thread-block-header">
+              <h3>⚓ Recent Discussions</h3>
+              <a href="#" class="see-all">All threads →</a>
+            </div>
+            <a class="thread-item" href="#">
+              <div class="t-avatar">RK</div>
+              <div>
+                <div><span class="t-tag tag-a">d3kOS</span><span class="t-tag tag-t">AI-Assisted</span></div>
+                <div class="t-title">CX5106 DIP switch config for Mercruiser 4.3 — finally got it working</div>
+                <div class="t-meta">SkipperRon · 2h ago · d3kOS Support</div>
+              </div>
+              <div class="t-replies"><div class="t-count">23</div><div class="t-count-lbl">replies</div></div>
+            </a>
+            <a class="thread-item" href="#">
+              <div class="t-avatar teal">ML</div>
+              <div>
+                <div><span class="t-tag tag-a">Engine</span></div>
+                <div class="t-title">Yamaha F150 showing high temp warning — what does the AI say?</div>
+                <div class="t-meta">MarineLou · 5h ago · Engine & Mechanical</div>
+              </div>
+              <div class="t-replies"><div class="t-count">14</div><div class="t-count-lbl">replies</div></div>
+            </a>
+            <a class="thread-item" href="#">
+              <div class="t-avatar">PD</div>
+              <div>
+                <div><span class="t-tag tag-t">Wiring</span></div>
+                <div class="t-title">Best shore power setup for a 28' runabout — inverter sizing help</div>
+                <div class="t-meta">PontoonDave · 1d ago · Electrical & Wiring</div>
+              </div>
+              <div class="t-replies"><div class="t-count">31</div><div class="t-count-lbl">replies</div></div>
+            </a>
+            <a class="thread-item" href="#">
+              <div class="t-avatar teal">SB</div>
+              <div>
+                <div><span class="t-tag tag-a">Build</span></div>
+                <div class="t-title">My d3-k1 build diary — from scratch to first sail in 3 weekends</div>
+                <div class="t-meta">SailorBob · 2d ago · General Seamanship</div>
+              </div>
+              <div class="t-replies"><div class="t-count">58</div><div class="t-count-lbl">replies</div></div>
+            </a>
+          </div>
+        </div>
+
+        <!-- AI WIDGET -->
+        <div>
+          <div class="ai-widget">
+            <div class="ai-widget-label">AI ASSISTANT</div>
+            <div class="ai-title">Ask the AtMyBoat AI</div>
+            <p class="ai-desc">Searches the community forum and answers with cited thread links. Backed by real member knowledge.</p>
+            <div class="ai-input-row">
+              <input class="ai-input" type="text" value="Why is my Yamaha running rough at idle?" readonly>
+              <button class="ai-ask">Ask →</button>
+            </div>
+            <div class="ai-answer-block">
+              <div class="ai-answer-head">
+                <div class="ai-orb">🤖</div>
+                <span class="ai-who">AI Assistant</span>
+              </div>
+              <p class="ai-answer-text">Rough idle on a Yamaha F150 commonly points to fuel delivery issues — clogged VST filter or idle air control valve buildup. Check your IAC passages first. Two forum members fixed this exact issue last month.</p>
+              <div class="ai-sources">
+                <a href="#" class="ai-source-link">↗ Yamaha idle fix — IAC bypass method (8 replies)</a>
+                <a href="#" class="ai-source-link">↗ F150 rough idle after storage — solved (14 replies)</a>
+              </div>
+            </div>
+            <p class="ai-disclaimer">AI responses are based on community forum threads. Always verify advice before working on your vessel.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- TIER SECTION -->
+  <section class="section">
+    <div class="container">
+      <div class="section-eyebrow">Choose Your Tier</div>
+      <h2 class="section-title">Start free. Upgrade when you need it.</h2>
+      <div class="tier-row">
+        <div class="tier-card">
+          <div class="tier-badge" style="color:var(--text-muted)">T0 · Open Water</div>
+          <div class="tier-name">Open Water</div>
+          <div class="tier-price"><strong>Free</strong> forever</div>
+          <ul class="tier-feat">
+            <li>Full d3kOS on d3-k1</li>
+            <li>100% offline — no internet</li>
+            <li>No account required</li>
+            <li>GPS, engine, voice, AI</li>
+            <li>Complete privacy</li>
+          </ul>
+          <a href="#" class="btn-ghost tier-cta" style="text-align:center; font-size:0.85rem;">Download d3kOS</a>
+        </div>
+        <div class="tier-card featured">
+          <div class="tier-badge" style="color:var(--teal-pale)">T1 · First Mate ⭐ Most Popular</div>
+          <div class="tier-name">First Mate</div>
+          <div class="tier-price"><strong>Free</strong> always</div>
+          <ul class="tier-feat">
+            <li>Everything in T0</li>
+            <li>Web dashboard access</li>
+            <li>Voyage history & logs</li>
+            <li>Community forum</li>
+            <li>OTA firmware updates</li>
+          </ul>
+          <a href="#" class="btn-primary tier-cta" style="text-align:center; font-size:0.85rem; justify-content:center;">Join Free →</a>
+        </div>
+        <div class="tier-card">
+          <div class="tier-badge" style="color:var(--amber-pale)">T2 · Skipper</div>
+          <div class="tier-name">Skipper</div>
+          <div class="tier-price" style="color:var(--teal-pale);">Coming Soon</div>
+          <ul class="tier-feat">
+            <li>Everything in T1</li>
+            <li>Advanced analytics</li>
+            <li>Marine Vision video</li>
+            <li>SMS alerts via Twilio</li>
+            <li>Helm AI session history</li>
+          </ul>
+          <a href="#" class="btn-ghost tier-cta" style="text-align:center; font-size:0.85rem;">Subscribe →</a>
+        </div>
+        <div class="tier-card">
+          <div class="tier-badge" style="color:var(--amber-pale)">T3 · Admiral</div>
+          <div class="tier-name">Admiral</div>
+          <div class="tier-price" style="color:var(--teal-pale);">Coming Soon</div>
+          <ul class="tier-feat">
+            <li>Everything in T2</li>
+            <li>Fleet management</li>
+            <li>Fleet GPS map</li>
+            <li>Commercial data export</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="#" class="btn-ghost tier-cta" style="text-align:center; font-size:0.85rem;">Contact Us →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="logo" href="#">
+            <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+              <circle cx="22" cy="22" r="20" stroke="#D4920F" stroke-width="1.5" stroke-dasharray="5 3"/>
+              <path d="M14 26 L18 18 L22 22 L26 16 L30 20" stroke="#D4920F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="22" cy="22" r="3" fill="#0A2342" stroke="#22A090" stroke-width="1.5"/>
+              <circle cx="22" cy="22" r="1.2" fill="#22A090"/>
+            </svg>
+            <div><div class="logo-text" style="font-size:1.1rem">At<em>My</em>Boat</div></div>
+          </a>
+          <p>Open-source marine intelligence. Built by Skipper Don. For boaters who believe their boat deserves better electronics.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="#">d3kOS</a></li>
+            <li><a href="#">Hardware (d3-k1)</a></li>
+            <li><a href="#">Download</a></li>
+            <li><a href="#">Compatibility Checker</a></li>
+            <li><a href="#">Documentation</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Community</h4>
+          <ul>
+            <li><a href="#">Forum Home</a></li>
+            <li><a href="#">d3kOS Support</a></li>
+            <li><a href="#">Hall of Fame</a></li>
+            <li><a href="#">Challenges</a></li>
+            <li><a href="#">Blog — Captain's Log</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">GPL v3 License</a></li>
+            <li><a href="#">Accessibility</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-legal">© 2026 AtMyBoat.com · Donald Moskaluk · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f7849c9e87879285939899b796839a8e95989683d994989a">[email&#160;protected]</a> · AODA / WCAG 2.0 AA</div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <span class="gpl-badge">GPL v3 Open Source</span>
+          <span class="gpl-badge" style="background:var(--amber-glow);color:var(--amber-pale);border-color:var(--amber-border);">AI by Anthropic</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════ PAGE 2: FORUM ═══════════════ -->
+<div class="page" id="page-forum">
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="#">
+          <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <circle cx="22" cy="22" r="20" stroke="#D4920F" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <path d="M14 26 L18 18 L22 22 L26 16 L30 20" stroke="#D4920F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="22" cy="22" r="3.5" fill="#0A2342" stroke="#22A090" stroke-width="1.5"/>
+            <circle cx="22" cy="22" r="1.5" fill="#22A090"/>
+          </svg>
+          <div>
+            <div class="logo-text">At<em>My</em>Boat</div>
+            <div class="logo-sub">d3kOS Marine Intelligence</div>
+          </div>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#">← Back to Site</a></li>
+          <li><a href="#" class="active">Forum Home</a></li>
+          <li><a href="#">d3kOS Support</a></li>
+          <li><a href="#">Engine & Mechanical</a></li>
+          <li><a href="#">Members</a></li>
+        </ul>
+        <a href="#" class="nav-cta">New Thread +</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="forum-hero">
+    <div class="container">
+      <div class="section-eyebrow" style="margin-bottom:0.5rem">AtMyBoat Community</div>
+      <h1 class="forum-hero" style="background:none;border:none;padding:0;">The AtMyBoat Community Forum</h1>
+      <p>Ask questions, share builds, get AI-assisted answers. Boaters helping boaters since 2026.</p>
+      <div class="forum-meta-bar">
+        <div class="forum-stat"><strong>1,247</strong><span>Members</span></div>
+        <div class="forum-stat"><strong>3,891</strong><span>Threads</span></div>
+        <div class="forum-stat"><strong>28,440</strong><span>Replies</span></div>
+        <div class="forum-stat"><strong>● 34</strong><span>Online Now</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="forum-layout">
+      <!-- Categories -->
+      <div>
+        <div class="cat-section">
+          <div class="cat-section-title">d3kOS & Hardware</div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">🔧</div>
+              <div class="cat-body">
+                <div class="cat-name">d3kOS Support</div>
+                <div class="cat-desc">Installation · Configuration · Troubleshooting · Firmware · CX5106</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">847</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">🤖</div>
+              <div class="cat-body">
+                <div class="cat-name">AI-Assisted Fixes</div>
+                <div class="cat-desc">Share your AI-assisted repair wins · Before & after · Tips for better prompts</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">312</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-section">
+          <div class="cat-section-title">Boat Systems</div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">⚙️</div>
+              <div class="cat-body">
+                <div class="cat-name">Engine & Mechanical</div>
+                <div class="cat-desc">Engine diagnostics · NMEA 2000 · Outboards · Sterndrives · Inboards</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">1,024</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">⚡</div>
+              <div class="cat-body">
+                <div class="cat-name">Electrical & Wiring</div>
+                <div class="cat-desc">Marine wiring · Battery banks · Inverters · Shore power · Solar</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">756</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">🧭</div>
+              <div class="cat-body">
+                <div class="cat-name">Navigation & Charts</div>
+                <div class="cat-desc">GPS · Chartplotters · AIS · Routing · Weather overlays</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">489</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-section">
+          <div class="cat-section-title">General</div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">⛵</div>
+              <div class="cat-body">
+                <div class="cat-name">General Seamanship</div>
+                <div class="cat-desc">Boat care · Maintenance · Stories · Trips · The boating life</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">463</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+          <div class="cat-card">
+            <div class="cat-card-inner">
+              <div class="cat-icon-col">📡</div>
+              <div class="cat-body">
+                <div class="cat-name">Marine Electronics</div>
+                <div class="cat-desc">VHF radio · Sonar · FLIR · AIS receivers · General electronics</div>
+              </div>
+              <div class="cat-stats"><div class="cat-stat-num">390</div><div class="cat-stat-lbl">Threads</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="forum-sidebar">
+        <div class="sidebar-block">
+          <div class="ai-widget" style="border:none;border-radius:0;padding:1.25rem;">
+            <div class="ai-widget-label">AI ASSISTANT</div>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1rem;margin-top:0.5rem;">Ask a marine question — AI searches the forum and replies with sources.</p>
+            <div class="ai-input-row" style="flex-direction:column;gap:0.5rem;">
+              <input class="ai-input" type="text" placeholder="Ask a marine question…" style="width:100%">
+              <button class="ai-ask" style="width:100%">Ask AI Assistant →</button>
+            </div>
+            <p class="ai-disclaimer" style="margin-top:0.75rem;">Verify AI answers with the community before acting.</p>
+          </div>
+        </div>
+
+        <div class="sidebar-block">
+          <div class="sb-header">Recent Activity</div>
+          <div class="sb-body">
+            <div class="recent-thread">
+              <div class="rt-dot amber"></div>
+              <div>
+                <div class="rt-title">Evinrude 115 rough idle — solved with IAC clean</div>
+                <div class="rt-meta">SkipperRon · 14 min ago</div>
+              </div>
+            </div>
+            <div class="recent-thread">
+              <div class="rt-dot"></div>
+              <div>
+                <div class="rt-title">d3kOS v2.0 GPS accuracy — anyone tested Labrador?</div>
+                <div class="rt-meta">NLBoater · 31 min ago</div>
+              </div>
+            </div>
+            <div class="recent-thread">
+              <div class="rt-dot amber"></div>
+              <div>
+                <div class="rt-title">Battery bank sizing for a 32' powerboat</div>
+                <div class="rt-meta">ElectricalEd · 1h ago</div>
+              </div>
+            </div>
+            <div class="recent-thread">
+              <div class="rt-dot"></div>
+              <div>
+                <div class="rt-title">CX5106 setup success — Mercruiser 5.7L</div>
+                <div class="rt-meta">LakeRat · 2h ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-block">
+          <div class="sb-header">Top Members This Month</div>
+          <div class="sb-body">
+            <div class="member-row">
+              <div class="m-avatar">SD</div>
+              <div><div class="m-name">Skipper Don</div><div class="m-posts">847 posts</div></div>
+              <span class="m-badge">Mod</span>
+            </div>
+            <div class="member-row">
+              <div class="m-avatar" style="border-color:var(--teal-border);color:var(--teal-pale)">RK</div>
+              <div><div class="m-name">SkipperRon</div><div class="m-posts">234 posts</div></div>
+              <span class="m-badge">Expert</span>
+            </div>
+            <div class="member-row">
+              <div class="m-avatar">ML</div>
+              <div><div class="m-name">MarineLou</div><div class="m-posts">189 posts</div></div>
+            </div>
+            <div class="member-row">
+              <div class="m-avatar" style="border-color:var(--teal-border);color:var(--teal-pale)">SB</div>
+              <div><div class="m-name">SailorBob</div><div class="m-posts">142 posts</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <div class="footer-legal">© 2026 AtMyBoat.com Community Forum · Donald Moskaluk · AODA / WCAG 2.0 AA compliant</div>
+        <div style="display:flex;gap:0.5rem;"><span class="gpl-badge">Powered by bbPress</span><span class="gpl-badge" style="background:var(--amber-glow);color:var(--amber-pale);border-color:var(--amber-border);">AI by Anthropic Haiku</span></div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════ PAGE 3: PRODUCT ═══════════════ -->
+<div class="page" id="page-product">
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="#">
+          <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <circle cx="22" cy="22" r="20" stroke="#D4920F" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <path d="M14 26 L18 18 L22 22 L26 16 L30 20" stroke="#D4920F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="22" cy="22" r="3.5" fill="#0A2342" stroke="#22A090" stroke-width="1.5"/>
+            <circle cx="22" cy="22" r="1.5" fill="#22A090"/>
+          </svg>
+          <div>
+            <div class="logo-text">At<em>My</em>Boat</div>
+            <div class="logo-sub">d3kOS Marine Intelligence</div>
+          </div>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#">← Back to Site</a></li>
+          <li><a href="#" class="active">d3kOS</a></li>
+          <li><a href="#">Hardware BOM</a></li>
+          <li><a href="#">Download</a></li>
+          <li><a href="#">Forum Support</a></li>
+        </ul>
+        <a href="#" class="nav-cta">Download Free →</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="product-hero">
+    <div class="container">
+      <div class="product-hero-inner">
+        <div>
+          <div class="product-tag">⚓ Marine Operating System · Open Source · GPL v3</div>
+          <h1>d3kOS</h1>
+          <p class="product-hero-lead">The open-source marine intelligence platform built on Raspberry Pi 4B. Runs fully offline or connects to the cloud on your terms. Free to download, free to modify, free forever.</p>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+            <span class="t-tag tag-a" style="font-size:0.65rem;padding:4px 10px;">NMEA 2000</span>
+            <span class="t-tag tag-t" style="font-size:0.65rem;padding:4px 10px;">AI Diagnostics</span>
+            <span class="t-tag tag-a" style="font-size:0.65rem;padding:4px 10px;">GPS Tracking</span>
+            <span class="t-tag tag-t" style="font-size:0.65rem;padding:4px 10px;">Voice Commands</span>
+            <span class="t-tag tag-a" style="font-size:0.65rem;padding:4px 10px;">Offline-First</span>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+            <a href="#" class="btn-primary">⬇ Download d3kOS — Free</a>
+            <a href="#" class="btn-ghost" style="border-color:var(--teal-border);color:var(--teal-pale);">⚓ Forum Support →</a>
+            <a href="#" class="btn-ghost" style="border-color:var(--border);font-size:0.85rem;">GitHub →</a>
+          </div>
+        </div>
+        <div class="price-block">
+          <div style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--teal-pale);margin-bottom:1.25rem;">Current Release</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.85;margin-bottom:1.25rem;">
+            <div style="margin-bottom:0.5rem;">📦 <strong style="color:var(--text-primary)">Version:</strong> v2.0-T3 · February 22, 2026</div>
+            <div style="margin-bottom:0.5rem;">🔒 <strong style="color:var(--text-primary)">T0 Mode:</strong> 100% offline — zero cloud, zero account</div>
+            <div style="margin-bottom:0.5rem;">⭐ <strong style="color:var(--text-primary)">T1 Tier:</strong> Cloud dashboard — free, always</div>
+            <div>🌍 <strong style="color:var(--text-primary)">Licence:</strong> GPL v3 — free to use, fork &amp; modify</div>
+          </div>
+          <div class="price-divider"></div>
+          <a href="#" class="btn-primary" style="width:100%;justify-content:center;font-size:0.9rem;">⬇ Download v2.0-T3 — Free</a>
+          <p style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-top:0.6rem;">SHA256 verified · GPL v3 licence · No account required for T0</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="spec-section">
+    <div class="container">
+      <div class="section-eyebrow">What It Does</div>
+      <h2 class="section-title">Everything at the helm.</h2>
+      <div class="features-list">
+        <div class="feat-item"><span class="feat-check">✓</span> NMEA 2000 engine monitoring via CX5106</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Real-time GPS tracking + route logging</div>
+        <div class="feat-item"><span class="feat-check">✓</span> AI-powered engine diagnostics (Helm AI)</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Voice command control at the helm</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Marine Vision camera system</div>
+        <div class="feat-item"><span class="feat-check">✓</span> OpenSeaMap nautical chart overlay</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Offline-first — works without internet</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Cloud dashboard (T1 — free)</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Geofence alerts + engine threshold alerts</div>
+        <div class="feat-item"><span class="feat-check">✓</span> OTA firmware updates (T1+)</div>
+        <div class="feat-item"><span class="feat-check">✓</span> AIS receiver integration</div>
+        <div class="feat-item"><span class="feat-check">✓</span> Open-source — fork, contribute, modify</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Specs -->
+  <section class="spec-section" style="background:var(--bg-surface);padding:4rem 0;">
+    <div class="container">
+      <div class="section-eyebrow">Hardware Specifications</div>
+      <h2 class="section-title">The d3-k1 Reference Build</h2>
+      <div class="spec-grid">
+        <div class="spec-block">
+          <div class="spec-block-title">Core Hardware</div>
+          <div class="spec-row"><span class="spec-key">Compute</span><span class="spec-val">Raspberry Pi 4B · 8GB RAM</span></div>
+          <div class="spec-row"><span class="spec-key">Display</span><span class="spec-val">10.1" 1000-nit touchscreen</span></div>
+          <div class="spec-row"><span class="spec-key">Storage</span><span class="spec-val">64GB MicroSD (A2 class)</span></div>
+          <div class="spec-row"><span class="spec-key">Power</span><span class="spec-val">Victron Orion-Tr 12V→5V</span></div>
+          <div class="spec-row"><span class="spec-key">GPS</span><span class="spec-val">VK-162 USB GPS receiver</span></div>
+          <div class="spec-row"><span class="spec-key">AIS</span><span class="spec-val">dAISy 2+ dual-channel</span></div>
+        </div>
+        <div class="spec-block">
+          <div class="spec-block-title">NMEA 2000 / Engine</div>
+          <div class="spec-row"><span class="spec-key">HAT</span><span class="spec-val">PiCAN-M NMEA 2000</span></div>
+          <div class="spec-row"><span class="spec-key">Engine gateway</span><span class="spec-val">CX5106 NMEA2000</span></div>
+          <div class="spec-row"><span class="spec-key">Engine data</span><span class="spec-val">RPM, temp, fuel, voltage</span></div>
+          <div class="spec-row"><span class="spec-key">Current version</span><span class="spec-val">v2.0-T3 · Feb 22 2026</span></div>
+          <div class="spec-row"><span class="spec-key">Build approach</span><span class="spec-val">DIY · parts list provided</span></div>
+          <div class="spec-row"><span class="spec-key">License</span><span class="spec-val">GPL v3 — fully open source</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Forum CTA -->
+  <section class="section">
+    <div class="container" style="text-align:center;max-width:700px;">
+      <div class="section-eyebrow" style="justify-content:center">&#8203;</div>
+      <div style="background:var(--bg-card);border:1px solid var(--teal-border);border-radius:var(--r-lg);padding:3rem;">
+        <div class="ai-widget-label" style="position:relative;top:auto;left:auto;display:inline-block;margin-bottom:1rem;">Community Support</div>
+        <h2 style="font-family:var(--font-display);font-size:1.8rem;font-weight: 400;margin-bottom:0.75rem;">Questions about d3kOS?</h2>
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:2rem;">The AtMyBoat Community Forum has hundreds of d3kOS threads. Ask the AI assistant or post your question directly.</p>
+        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+          <a href="#" class="btn-primary">⚓ Go to d3kOS Support Forum</a>
+          <a href="#" class="btn-ghost" style="border-color:var(--border);font-size:0.9rem;">View Documentation →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <div class="footer-legal">© 2026 AtMyBoat.com · d3kOS is GPL v3 open source · github.com/SkipperDon/d3kOS</div>
+        <div style="display:flex;gap:0.5rem;"><span class="gpl-badge">GPL v3</span><span class="gpl-badge" style="background:var(--amber-glow);color:var(--amber-pale);border-color:var(--amber-border);">Raspberry Pi</span></div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+
+<!-- ═══════════════ PAGE 4: CAPTAIN'S LOG — MAGAZINE EDITION ═══════════════ -->
+<style>
+.blog-masthead {
+  padding: 3.5rem 0 0;
+  background: var(--bg-darkest);
+  border-bottom: 2px solid var(--amber-border);
+  position: relative; overflow: hidden;
+}
+.blog-masthead::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(212,146,15,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,146,15,0.035) 1px, transparent 1px);
+  background-size: 60px 60px; pointer-events: none;
+}
+.masthead-inner {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 1.5rem; padding-bottom: 2rem; position: relative; z-index: 1;
+}
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 900; line-height: 0.92; color: var(--text-primary); letter-spacing: -0.025em;
+}
+.masthead-title span { color: var(--amber-bright); }
+.masthead-rule { width: 60px; height: 3px; background: linear-gradient(90deg, var(--amber-bright), var(--teal-pale)); border-radius: 2px; margin: 0.9rem 0; }
+.masthead-sub { font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal-pale); margin-bottom: 0.75rem; font-weight: 700; }
+.masthead-tagline { font-family: var(--font-body); font-style: italic; font-size: 1rem; color: var(--text-secondary); max-width: 300px; line-height: 1.8; }
+.masthead-issue { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-top: 0.5rem; font-weight: 600; }
+.blog-nav-tabs { display: flex; gap: 0; border-top: 1px solid var(--border); position: relative; z-index: 1; }
+.blog-tab { font-family: var(--font-body); font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.85rem 1.35rem; color: var(--text-muted); text-decoration: none; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; font-weight: 600; }
+.blog-tab:hover { color: var(--text-secondary); }
+.blog-tab.active { color: var(--amber-bright); border-bottom-color: var(--amber-bright); }
+
+.ann-banner {
+  background: linear-gradient(135deg, rgba(212,146,15,0.13), rgba(34,160,144,0.07));
+  border: 1px solid var(--amber-border); border-left: 4px solid var(--amber-bright);
+  border-radius: var(--r-md); padding: 1.1rem 1.4rem;
+  display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem; cursor: pointer;
+  transition: background 0.2s;
+}
+.ann-banner:hover { background: linear-gradient(135deg, rgba(212,146,15,0.2), rgba(34,160,144,0.10)); }
+.ann-label { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber-bright); margin-bottom: 3px; font-weight: 800; }
+.ann-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 400; color: var(--text-primary); line-height: 1.3; }
+.ann-date { font-family: var(--font-body); font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+
+.story-hero {
+  border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border-strong);
+  display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 1.5rem;
+  min-height: 400px; transition: border-color 0.25s; cursor: pointer;
+}
+.story-hero:hover { border-color: var(--amber-border); }
+.story-hero-visual { position: relative; overflow: hidden; background: var(--bg-darkest); }
+.story-hero-body { background: var(--bg-card); padding: 2.5rem 2.25rem; display: flex; flex-direction: column; justify-content: center; }
+.story-issue-num { font-family: var(--font-body); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber-bright); margin-bottom: 1.1rem; display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }
+.story-issue-num::before { content: ''; display: block; width: 24px; height: 1px; background: var(--amber-bright); }
+.story-hero-title { font-family: var(--font-display); font-size: clamp(1.5rem, 2.8vw, 2.1rem); font-weight: 400; line-height: 1.15; color: var(--text-primary); margin-bottom: 1rem; }
+.story-hero-title em { font-style: italic; color: var(--amber-pale); }
+.story-hero-deck { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.85; margin-bottom: 1.5rem; }
+.story-byline { display: flex; align-items: center; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.byline-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--bg-raised); border: 2px solid var(--amber-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 400; font-size: 0.85rem; color: var(--amber-bright); flex-shrink: 0; }
+.byline-name { font-family: var(--font-body); font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+.byline-meta { font-family: var(--font-body); font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
+.story-read-btn { margin-left: auto; font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber-pale); text-decoration: none; border-bottom: 1px solid var(--amber-border); padding-bottom: 1px; font-weight: 700; }
+
+.story-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 1.5rem; }
+.story-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+.story-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; transition: border-color 0.2s, transform 0.2s; cursor: pointer; display: flex; flex-direction: column; }
+.story-card:hover { border-color: var(--amber-border); transform: translateY(-3px); }
+.story-card-img { position: relative; overflow: hidden; background: var(--bg-darkest); flex-shrink: 0; }
+.story-card-body { padding: 1.25rem 1.25rem 1rem; flex: 1; display: flex; flex-direction: column; }
+.story-type { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 700; }
+.type-voyage { color: var(--amber-pale); }
+.type-announce { color: var(--teal-pale); }
+.story-card-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 400; line-height: 1.3; color: var(--text-primary); margin-bottom: 0.6rem; }
+.story-card-deck { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.75; flex: 1; }
+.story-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.story-card-meta { font-family: var(--font-body); font-size: 0.72rem; color: var(--text-muted); }
+.story-card-link { font-family: var(--font-body); font-size: 0.78rem; color: var(--amber-pale); text-decoration: none; font-weight: 700; }
+
+.pull-quote { border-left: 3px solid var(--amber-bright); padding: 1rem 1.5rem; margin: 2rem 0; background: var(--amber-glow); border-radius: 0 var(--r-md) var(--r-md) 0; }
+.pull-quote p { font-family: var(--font-display); font-style: italic; font-size: 1.2rem; color: var(--text-primary); line-height: 1.6; }
+.pull-quote cite { font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--amber-pale); display: block; margin-top: 0.5rem; text-transform: uppercase; font-weight: 600; }
+
+.section-rule { display: flex; align-items: center; gap: 1rem; margin: 2.5rem 0 1.75rem; }
+.section-rule-label { font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--amber-bright); white-space: nowrap; font-weight: 700; }
+.section-rule::before, .section-rule::after { content: ''; flex: 1; height: 1px; background: var(--border-strong); }
+</style>
+
+<div class="page" id="page-blog">
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav">
+        <a class="logo" href="#">
+          <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <circle cx="22" cy="22" r="20" stroke="#D4920F" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <path d="M14 26 L18 18 L22 22 L26 16 L30 20" stroke="#D4920F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="22" cy="22" r="3.5" fill="#0A2342" stroke="#22A090" stroke-width="1.5"/>
+            <circle cx="22" cy="22" r="1.5" fill="#22A090"/>
+          </svg>
+          <div>
+            <div class="logo-text">At<em>My</em>Boat</div>
+            <div class="logo-sub">d3kOS Marine Intelligence</div>
+          </div>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#">← Back to Site</a></li>
+          <li><a href="#" class="active">Captain's Log</a></li>
+          <li><a href="#">d3kOS</a></li>
+          <li><a href="#">Forum</a></li>
+          <li><a href="#">Download</a></li>
+        </ul>
+        <a href="#" class="nav-cta">Join Free →</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAGAZINE MASTHEAD -->
+  <div class="blog-masthead">
+    <div class="container">
+      <div class="masthead-inner">
+        <div>
+          <div class="masthead-sub">AtMyBoat.com · By Skipper Don</div>
+          <div class="masthead-title">Captain's<br><span>Log</span></div>
+          <div class="masthead-rule"></div>
+          <div style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);letter-spacing:0.08em;font-weight:600;">VOL. II · MARCH 2026</div>
+        </div>
+        <div style="text-align:right;max-width:340px;">
+          <p class="masthead-tagline">"Voyages worth recording. Lessons worth sharing. A boater's log for the age of open-source marine intelligence."</p>
+          <div style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);letter-spacing:0.06em;margin-top:0.5rem;">Marine stories · Platform updates · Community dispatches</div>
+        </div>
+      </div>
+    </div>
+    <div class="blog-nav-tabs container" style="padding-left:1.5rem;padding-right:1.5rem;">
+      <a href="#" class="blog-tab active">All</a>
+      <a href="#" class="blog-tab">Voyages &amp; Stories</a>
+      <a href="#" class="blog-tab">Announcements</a>
+      <a href="#" class="blog-tab">From the Community</a>
+      <a href="#" class="blog-tab">Skipper's Notes</a>
+    </div>
+  </div>
+
+  <!-- BLOG BODY -->
+  <div style="padding:2.5rem 0 4rem;">
+    <div class="container">
+
+      <!-- ANNOUNCEMENT BANNER — pinned at top -->
+      <div class="ann-banner">
+        <div style="font-size:1.4rem;flex-shrink:0;">📣</div>
+        <div>
+          <div class="ann-label">Announcement · New Release</div>
+          <div class="ann-title">d3kOS v2.0-T3 is now available for download — the biggest update yet</div>
+          <div class="ann-date">March 1, 2026 · Skipper Don</div>
+        </div>
+        <div style="margin-left:auto;font-family:var(--font-body);font-size:0.82rem;color:var(--amber-pale);flex-shrink:0;font-weight:700;">Read →</div>
+      </div>
+
+      <!-- HERO STORY — full bleed editorial card -->
+      <div class="story-hero">
+        <!-- Visual panel: stylised nautical chart / voyage map -->
+        <div class="story-hero-visual">
+          <svg viewBox="0 0 480 400" xmlns="http://www.w3.org/2000/svg" style="min-height:380px;">
+            <rect width="480" height="400" fill="#061829"/>
+            <!-- Chart grid -->
+            <defs>
+              <pattern id="chartgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(34,160,144,0.07)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="480" height="400" fill="url(#chartgrid)"/>
+            <!-- Depth contours -->
+            <ellipse cx="240" cy="200" rx="180" ry="130" fill="none" stroke="rgba(34,160,144,0.12)" stroke-width="1"/>
+            <ellipse cx="240" cy="200" rx="130" ry="90" fill="none" stroke="rgba(34,160,144,0.10)" stroke-width="1"/>
+            <ellipse cx="240" cy="200" rx="80" ry="55" fill="none" stroke="rgba(34,160,144,0.08)" stroke-width="1"/>
+            <!-- Coastline blob left -->
+            <path d="M0 120 C30 100, 60 110, 80 95 C100 80, 95 60, 110 50 C125 40, 130 55, 120 70 C110 85, 115 100, 105 115 C95 130, 75 125, 60 140 C45 155, 50 175, 35 185 C20 195, 0 190, 0 190 Z" fill="rgba(212,146,15,0.06)" stroke="rgba(212,146,15,0.2)" stroke-width="1"/>
+            <!-- Coastline blob right -->
+            <path d="M480 50 C460 60, 445 50, 430 65 C415 80, 425 100, 410 110 C395 120, 380 110, 375 130 C370 150, 385 165, 380 185 C375 205, 355 210, 360 230 C365 250, 390 255, 400 275 C410 295, 400 315, 420 330 C440 345, 480 340, 480 340 Z" fill="rgba(212,146,15,0.06)" stroke="rgba(212,146,15,0.2)" stroke-width="1"/>
+            <!-- Route line with glow -->
+            <path d="M95 340 C130 310, 160 280, 185 255 C210 230, 225 210, 240 190 C255 170, 270 150, 295 135 C320 120, 350 115, 375 100" stroke="rgba(212,146,15,0.3)" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <path d="M95 340 C130 310, 160 280, 185 255 C210 230, 225 210, 240 190 C255 170, 270 150, 295 135 C320 120, 350 115, 375 100" stroke="#D4920F" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="8 5"/>
+            <!-- Waypoint dots -->
+            <circle cx="95" cy="340" r="7" fill="#0A2342" stroke="#D4920F" stroke-width="2"/>
+            <circle cx="95" cy="340" r="3" fill="#D4920F"/>
+            <circle cx="240" cy="190" r="5" fill="#0A2342" stroke="#22A090" stroke-width="1.5"/>
+            <circle cx="240" cy="190" r="2.5" fill="#22A090"/>
+            <circle cx="375" cy="100" r="7" fill="#0A2342" stroke="#D4920F" stroke-width="2"/>
+            <circle cx="375" cy="100" r="3" fill="#D4920F"/>
+            <!-- Waypoint labels -->
+            <text x="105" y="355" font-family="JetBrains Mono,monospace" font-size="9" fill="#D4920F" opacity="0.8">HOME PORT</text>
+            <text x="250" y="185" font-family="JetBrains Mono,monospace" font-size="8" fill="#22A090" opacity="0.8">OVERNIGHT</text>
+            <text x="350" y="92" font-family="JetBrains Mono,monospace" font-size="9" fill="#D4920F" opacity="0.8">DESTINATION</text>
+            <!-- Compass rose -->
+            <g transform="translate(52,60)">
+              <circle cx="0" cy="0" r="22" fill="none" stroke="rgba(212,146,15,0.2)" stroke-width="1"/>
+              <path d="M0 -18 L3 -6 L0 0 L-3 -6 Z" fill="rgba(212,146,15,0.6)"/>
+              <path d="M0 18 L3 6 L0 0 L-3 6 Z" fill="rgba(240,234,216,0.2)"/>
+              <path d="M18 0 L6 3 L0 0 L6 -3 Z" fill="rgba(240,234,216,0.2)"/>
+              <path d="M-18 0 L-6 3 L0 0 L-6 -3 Z" fill="rgba(240,234,216,0.2)"/>
+              <text x="0" y="-24" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(212,146,15,0.7)" text-anchor="middle">N</text>
+            </g>
+            <!-- Distance label on route -->
+            <rect x="185" y="268" width="60" height="18" rx="3" fill="rgba(10,35,66,0.85)" stroke="rgba(212,146,15,0.3)"/>
+            <text x="215" y="280" font-family="JetBrains Mono,monospace" font-size="8" fill="#D4920F" text-anchor="middle">142 nm</text>
+            <!-- Atmosphere: teal glow bottom -->
+            <ellipse cx="240" cy="400" rx="200" ry="80" fill="rgba(34,160,144,0.05)"/>
+            <!-- Amber corner glow -->
+            <ellipse cx="0" cy="0" rx="120" ry="120" fill="rgba(212,146,15,0.04)"/>
+          </svg>
+          <!-- Overlay label bottom -->
+          <div style="position:absolute;bottom:1rem;left:1.25rem;right:1.25rem;display:flex;justify-content:space-between;align-items:flex-end;">
+            <span style="font-family:var(--font-body);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber-pale);background:rgba(6,24,41,0.8);padding:3px 8px;border-radius:2px;font-weight:700;">3-Day Voyage · Georgian Bay</span>
+            <span style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);background:rgba(6,24,41,0.8);padding:3px 8px;border-radius:2px;">d3kOS track log</span>
+          </div>
+        </div>
+        <!-- Story body -->
+        <div class="story-hero-body">
+          <div class="story-issue-num">Voyage · Cover Story</div>
+          <h2 class="story-hero-title">Three Days on Georgian Bay With <em>Nothing But d3kOS</em> and an Old Chart</h2>
+          <p class="story-hero-deck">I left the marina with a plan to test d3kOS end-to-end — GPS, engine monitoring, voice commands, Helm AI — on a real three-day passage. No backup chartplotter. No paper charts. Just the d3-k1 bolted to the dash and 142 nautical miles of Georgian Bay ahead. Here's everything that worked, the one thing that didn't, and what I'd change for next time.</p>
+          <div class="story-byline">
+            <div class="byline-avatar">SD</div>
+            <div>
+              <div class="byline-name">Skipper Don</div>
+              <div class="byline-meta">Feb 28, 2026 · 14 min read · 3,800 views</div>
+            </div>
+            <a href="#" class="story-read-btn">Read →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PULL QUOTE -->
+      <div class="pull-quote">
+        <p>"The Helm AI flagged a coolant temp spike at hour six. I wouldn't have caught it until it was a problem — instead I throttled back, checked the impeller at anchor, and finished the passage without a tow."</p>
+        <cite>— Skipper Don · Georgian Bay passage log, February 2026</cite>
+      </div>
+
+      <!-- SECTION DIVIDER -->
+      <div class="section-rule">
+        <span class="section-rule-label">Latest Stories &amp; Voyages</span>
+      </div>
+
+      <!-- STORY GRID — 3 col -->
+      <div class="story-grid-3">
+
+        <!-- Story 1 -->
+        <div class="story-card">
+          <div class="story-card-img" style="height:155px;">
+            <svg width="100%" height="155" viewBox="0 0 320 155" fill="none">
+              <rect width="320" height="155" fill="#061829"/>
+              <!-- Sunset gradient -->
+              <defs>
+                <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0A2342"/>
+                  <stop offset="60%" stop-color="#1C2A0A" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#061829"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="155" fill="url(#sunset)"/>
+              <!-- Water reflection line -->
+              <path d="M0 100 Q80 95, 160 100 Q240 105, 320 100 L320 155 L0 155 Z" fill="rgba(212,146,15,0.06)"/>
+              <!-- Sun disc -->
+              <circle cx="160" cy="85" r="28" fill="none" stroke="rgba(212,146,15,0.25)" stroke-width="1"/>
+              <circle cx="160" cy="85" r="18" fill="rgba(212,146,15,0.15)" stroke="rgba(212,146,15,0.4)" stroke-width="1.5"/>
+              <!-- Boat silhouette -->
+              <path d="M110 100 C130 92, 160 90, 190 92 C220 94, 230 100, 230 100 L225 108 C210 112, 180 114, 160 114 C140 114, 110 112, 100 108 Z" fill="rgba(6,24,41,0.9)"/>
+              <path d="M160 90 L160 70 L150 85 Z" fill="rgba(6,24,41,0.8)"/>
+              <!-- Horizon glow -->
+              <ellipse cx="160" cy="100" rx="140" ry="15" fill="rgba(212,146,15,0.08)"/>
+            </svg>
+          </div>
+          <div class="story-card-body">
+            <div class="story-type type-voyage">⛵ Voyage</div>
+            <div class="story-card-title">Sunset Anchorage at Beausoleil Island — a Night to Remember</div>
+            <p class="story-card-deck">The kind of evening that reminds you why you bought the boat in the first place. Calm water, no bugs, d3kOS singing along quietly in the background.</p>
+            <div class="story-card-foot">
+              <span class="story-card-meta">Feb 14 · 5 min</span>
+              <a href="#" class="story-card-link">Read →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Story 2 — Announcement -->
+        <div class="story-card" style="border-color:var(--teal-border);">
+          <div class="story-card-img" style="height:155px;background:linear-gradient(135deg,var(--bg-darkest),var(--bg-surface));display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;">
+            <div style="font-size:2.2rem;">📣</div>
+            <div style="font-family:var(--font-body);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal-pale);font-weight:700;">Platform Update</div>
+          </div>
+          <div class="story-card-body">
+            <div class="story-type type-announce">📣 Announcement</div>
+            <div class="story-card-title">The AtMyBoat Community Forum Is Now Open — Join Us</div>
+            <p class="story-card-deck">After months of planning, the forum is live. Seven categories, an AI assistant, and a community of boaters ready to help each other out.</p>
+            <div class="story-card-foot">
+              <span class="story-card-meta">Feb 1 · 3 min</span>
+              <a href="#" class="story-card-link" style="color:var(--teal-pale);">Read →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Story 3 -->
+        <div class="story-card">
+          <div class="story-card-img" style="height:155px;">
+            <svg width="100%" height="155" viewBox="0 0 320 155" fill="none">
+              <rect width="320" height="155" fill="#061829"/>
+              <!-- Rain / storm mood -->
+              <defs>
+                <linearGradient id="storm" x1="0" y1="0" x2="0.3" y2="1">
+                  <stop offset="0%" stop-color="#0A1F35"/>
+                  <stop offset="100%" stop-color="#061222"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="155" fill="url(#storm)"/>
+              <!-- Rain lines -->
+              <line x1="40" y1="0" x2="20" y2="155" stroke="rgba(34,160,144,0.12)" stroke-width="1"/>
+              <line x1="90" y1="0" x2="70" y2="155" stroke="rgba(34,160,144,0.08)" stroke-width="1"/>
+              <line x1="140" y1="0" x2="120" y2="155" stroke="rgba(34,160,144,0.1)" stroke-width="1"/>
+              <line x1="190" y1="0" x2="170" y2="155" stroke="rgba(34,160,144,0.07)" stroke-width="1"/>
+              <line x1="240" y1="0" x2="220" y2="155" stroke="rgba(34,160,144,0.09)" stroke-width="1"/>
+              <line x1="290" y1="0" x2="270" y2="155" stroke="rgba(34,160,144,0.06)" stroke-width="1"/>
+              <!-- Lightning -->
+              <path d="M220 10 L205 55 L215 55 L198 100" stroke="rgba(212,146,15,0.5)" stroke-width="2" fill="none"/>
+              <!-- Horizon -->
+              <path d="M0 110 Q160 105, 320 110 L320 155 L0 155 Z" fill="rgba(6,24,29,0.8)"/>
+            </svg>
+          </div>
+          <div class="story-card-body">
+            <div class="story-type type-voyage">⛵ Voyage</div>
+            <div class="story-card-title">Caught in a Squall on Lake Simcoe — What d3kOS Got Right</div>
+            <p class="story-card-deck">The forecast said clear. It wasn't. Here's how the engine alerts and GPS log helped me debrief a hairy situation.</p>
+            <div class="story-card-foot">
+              <span class="story-card-meta">Jan 22 · 7 min</span>
+              <a href="#" class="story-card-link">Read →</a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end 3-col grid -->
+
+      <!-- SECTION DIVIDER -->
+      <div class="section-rule">
+        <span class="section-rule-label">Announcements &amp; Updates</span>
+      </div>
+
+      <!-- STORY GRID — 2 col, wider cards -->
+      <div class="story-grid-2">
+
+        <!-- Wide story 1 -->
+        <div class="story-card">
+          <div class="story-card-img" style="height:190px;">
+            <svg width="100%" height="190" viewBox="0 0 460 190" fill="none">
+              <rect width="460" height="190" fill="#061829"/>
+              <!-- Circuit board pattern for tech announcement -->
+              <line x1="50" y1="95" x2="200" y2="95" stroke="rgba(34,160,144,0.2)" stroke-width="1.5"/>
+              <line x1="200" y1="95" x2="200" y2="50" stroke="rgba(34,160,144,0.2)" stroke-width="1.5"/>
+              <line x1="200" y1="50" x2="320" y2="50" stroke="rgba(34,160,144,0.2)" stroke-width="1.5"/>
+              <line x1="320" y1="50" x2="320" y2="140" stroke="rgba(34,160,144,0.15)" stroke-width="1.5"/>
+              <line x1="100" y1="140" x2="320" y2="140" stroke="rgba(34,160,144,0.15)" stroke-width="1.5"/>
+              <line x1="100" y1="140" x2="100" y2="95" stroke="rgba(34,160,144,0.15)" stroke-width="1.5"/>
+              <!-- Nodes -->
+              <circle cx="200" cy="95" r="5" fill="rgba(34,160,144,0.4)" stroke="#22A090" stroke-width="1.5"/>
+              <circle cx="200" cy="50" r="4" fill="rgba(34,160,144,0.3)"/>
+              <circle cx="320" cy="50" r="6" fill="rgba(212,146,15,0.5)" stroke="#D4920F" stroke-width="1.5"/>
+              <circle cx="320" cy="140" r="4" fill="rgba(34,160,144,0.25)"/>
+              <circle cx="100" cy="140" r="4" fill="rgba(212,146,15,0.3)"/>
+              <!-- Version badge -->
+              <rect x="170" y="72" width="100" height="32" rx="4" fill="rgba(212,146,15,0.12)" stroke="rgba(212,146,15,0.3)"/>
+              <text x="220" y="85" font-family="JetBrains Mono,monospace" font-size="10" fill="#D4920F" text-anchor="middle" font-weight="600">v2.0-T3</text>
+              <text x="220" y="97" font-family="JetBrains Mono,monospace" font-size="7" fill="#8A8070" text-anchor="middle">Feb 22, 2026</text>
+              <!-- Ambient dots -->
+              <circle cx="50" cy="95" r="3" fill="rgba(212,146,15,0.4)"/>
+            </svg>
+          </div>
+          <div class="story-card-body">
+            <div class="story-type type-announce">📣 Release Announcement</div>
+            <div class="story-card-title" style="font-size:1.1rem;">d3kOS v2.0-T3 Released: Helm AI, Marine Vision, and a Better Onboarding Flow</div>
+            <p class="story-card-deck">The T3 testing build is out. Helm AI is smarter, the Marine Vision module is stable, and the QR registration flow finally works the way it should. Full changelog inside.</p>
+            <div class="story-card-foot">
+              <span class="story-card-meta">Feb 22 · 6 min · 2,940 views</span>
+              <a href="#" class="story-card-link">Read the changelog →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wide story 2 -->
+        <div class="story-card">
+          <div class="story-card-img" style="height:190px;">
+            <svg width="100%" height="190" viewBox="0 0 460 190" fill="none">
+              <rect width="460" height="190" fill="#061829"/>
+              <!-- Dock / marina mood -->
+              <rect x="0" y="130" width="460" height="60" fill="rgba(10,35,66,0.5)"/>
+              <!-- Dock posts -->
+              <rect x="60" y="100" width="8" height="90" rx="2" fill="rgba(212,146,15,0.15)" stroke="rgba(212,146,15,0.2)" stroke-width="1"/>
+              <rect x="140" y="85" width="8" height="105" rx="2" fill="rgba(212,146,15,0.12)"/>
+              <rect x="220" y="90" width="8" height="100" rx="2" fill="rgba(212,146,15,0.12)"/>
+              <rect x="300" y="80" width="8" height="110" rx="2" fill="rgba(212,146,15,0.12)"/>
+              <rect x="380" y="95" width="8" height="95" rx="2" fill="rgba(212,146,15,0.12)"/>
+              <!-- Dock planks -->
+              <path d="M30 130 L430 130" stroke="rgba(212,146,15,0.25)" stroke-width="2"/>
+              <path d="M30 138 L430 138" stroke="rgba(240,234,216,0.05)" stroke-width="1"/>
+              <!-- Water reflection -->
+              <path d="M0 150 Q115 145, 230 150 Q345 155, 460 150" stroke="rgba(34,160,144,0.2)" stroke-width="1" stroke-dasharray="20 8"/>
+              <!-- Warm light blobs from lamps -->
+              <ellipse cx="64" cy="103" rx="18" ry="8" fill="rgba(212,146,15,0.12)"/>
+              <ellipse cx="144" cy="88" rx="18" ry="8" fill="rgba(212,146,15,0.10)"/>
+              <ellipse cx="384" cy="98" rx="18" ry="8" fill="rgba(212,146,15,0.10)"/>
+              <!-- Text mood -->
+              <text x="230" y="65" font-family="Playfair Display,serif" font-size="18" fill="rgba(240,234,216,0.08)" text-anchor="middle" font-weight="700">atMyBoat · Community</text>
+            </svg>
+          </div>
+          <div class="story-card-body">
+            <div class="story-type type-voyage">⛵ Community Story</div>
+            <div class="story-card-title" style="font-size:1.1rem;">Hall of Fame: How SailorBob Wired a d3-k1 Into His 1989 Sea Ray in a Weekend</div>
+            <p class="story-card-deck">Bob didn't know PHP from a propeller shaft. Three weeks later he's posting engine telemetry from Penetanguishene. This is how that happened.</p>
+            <div class="story-card-foot">
+              <span class="story-card-meta">Feb 8 · 9 min · 1,740 views</span>
+              <a href="#" class="story-card-link">Read →</a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end 2-col grid -->
+
+      <!-- MORE STORIES ROW — compact list style below fold -->
+      <div class="section-rule">
+        <span class="section-rule-label">Previously in the Log</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <!-- Compact story rows -->
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.25rem;padding:1rem 0;border-bottom:1px solid var(--border);">
+          <div style="font-family:var(--font-body);font-size:0.8rem;letter-spacing:0.05em;color:var(--text-muted);white-space:nowrap;font-weight:600;">Jan 30</div>
+          <div>
+            <div style="font-family:var(--font-body);font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-bottom:2px;">Ice-Out on Lake Simcoe: First Passage of the Season With d3kOS Running</div>
+            <div style="display:flex;gap:0.5rem;align-items:center;"><span class="t-tag tag-a">Voyage</span><span style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);">6 min read</span></div>
+          </div>
+          <a href="#" style="font-family:var(--font-body);font-size:0.82rem;color:var(--amber-pale);text-decoration:none;white-space:nowrap;font-weight:700;">Read →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.25rem;padding:1rem 0;border-bottom:1px solid var(--border);">
+          <div style="font-family:var(--font-body);font-size:0.8rem;letter-spacing:0.05em;color:var(--text-muted);white-space:nowrap;font-weight:600;">Jan 15</div>
+          <div>
+            <div style="font-family:var(--font-body);font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-bottom:2px;">📣 New: The AtMyBoat Product Hub Is Live at atmyboat.com/products</div>
+            <div style="display:flex;gap:0.5rem;align-items:center;"><span class="t-tag tag-t">Announcement</span><span style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);">2 min read</span></div>
+          </div>
+          <a href="#" style="font-family:var(--font-body);font-size:0.82rem;color:var(--teal-pale);text-decoration:none;white-space:nowrap;font-weight:700;">Read →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.25rem;padding:1rem 0;border-bottom:1px solid var(--border);">
+          <div style="font-family:var(--font-body);font-size:0.8rem;letter-spacing:0.05em;color:var(--text-muted);white-space:nowrap;font-weight:600;">Jan 5</div>
+          <div>
+            <div style="font-family:var(--font-body);font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-bottom:2px;">Thirty Years on the Water: Why I Built d3kOS Instead of Buying Again</div>
+            <div style="display:flex;gap:0.5rem;align-items:center;"><span class="t-tag tag-a">Skipper's Notes</span><span style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);">11 min read</span></div>
+          </div>
+          <a href="#" style="font-family:var(--font-body);font-size:0.82rem;color:var(--amber-pale);text-decoration:none;white-space:nowrap;font-weight:700;">Read →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.25rem;padding:1rem 0;">
+          <div style="font-family:var(--font-body);font-size:0.8rem;letter-spacing:0.05em;color:var(--text-muted);white-space:nowrap;font-weight:600;">Dec 18</div>
+          <div>
+            <div style="font-family:var(--font-body);font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-bottom:2px;">Winter Layup With d3kOS: Battery Monitoring, Engine Checks, and Peace of Mind</div>
+            <div style="display:flex;gap:0.5rem;align-items:center;"><span class="t-tag tag-a">Voyage</span><span style="font-family:var(--font-body);font-size:0.72rem;color:var(--text-muted);">4 min read</span></div>
+          </div>
+          <a href="#" style="font-family:var(--font-body);font-size:0.82rem;color:var(--amber-pale);text-decoration:none;white-space:nowrap;font-weight:700;">Read →</a>
+        </div>
+      </div>
+
+      <!-- Load more -->
+      <div style="text-align:center;padding:2.5rem 0 0;border-top:1px solid var(--border);margin-top:0.5rem;">
+        <a href="#" class="btn-ghost" style="font-size:0.88rem;">Load Earlier Entries →</a>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <div class="footer-legal">© 2026 AtMyBoat.com · Captain's Log · Skipper Don · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="56253d3f262633243239381637223b2f343937227835393b">[email&#160;protected]</a> · AODA / WCAG 2.0 AA</div>
+        <div style="display:flex;gap:0.5rem;">
+          <span class="gpl-badge">WordPress + Yoast SEO</span>
+          <span class="gpl-badge" style="background:var(--amber-glow);color:var(--amber-pale);border-color:var(--amber-border);">d3kOS GPL v3</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+function

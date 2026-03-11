@@ -632,6 +632,12 @@
   </div>
 
   <script>
+    // === Window mode helpers ===
+    function goWindowed(cb) {
+      fetch('/window/windowed', { method: 'POST' }).catch(function() {});
+      setTimeout(cb, 350);
+    }
+
     // === Navigation ===
     function navigateToPage(page) {
       localStorage.setItem('d3kos-last-page', page);
@@ -641,8 +647,7 @@
           window.location.href = '/dashboard.html';
           break;
         case 'onboarding':
-          if (document.fullscreenElement) { document.exitFullscreen(); }
-          window.location.href = '/onboarding.html';
+          goWindowed(function() { window.location.href = '/onboarding.html'; });
           break;
         case 'benchmark':
           window.location.href = '/benchmark.html';
@@ -666,10 +671,10 @@
           window.location.href = '/settings.html';
           break;
         case 'helm':
-          window.location.href = '/helm.html';
+          goWindowed(function() { window.location.href = '/helm.html'; });
           break;
         case 'ai-assistant':
-          window.location.href = '/ai-assistant.html';
+          goWindowed(function() { window.location.href = '/ai-assistant.html'; });
           break;
         case 'upload-manual':
           window.location.href = '/upload-manual.html';
@@ -790,6 +795,7 @@
 
     // === Event Listeners ===
     document.addEventListener('DOMContentLoaded', () => {
+      fetch('/window/fullscreen', {method:'POST'}).catch(function(){});
       // Voice toggle button with touch support
       const voiceBtn = document.getElementById('voice-toggle');
       voiceBtn.addEventListener('click', toggleVoice);
