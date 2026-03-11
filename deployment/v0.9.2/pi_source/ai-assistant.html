@@ -34,7 +34,7 @@
     .container {
       display: flex;
       flex-direction: column;
-      height: 100dvh;
+      height: 100vh;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -289,7 +289,7 @@
   <div class="container">
     <!-- Top Navigation -->
     <div class="top-nav">
-      <a href="/" class="nav-button">← Main Menu</a>
+      <a href="/" class="nav-button" onclick="event.preventDefault(); fetch('/window/fullscreen',{method:'POST'}).catch(function(){}); setTimeout(function(){ window.location.href='/'; }, 200);">← Main Menu</a>
       <div class="page-title">AI Assistant</div>
       <div style="width: 150px;"></div> <!-- Spacer for centering -->
     </div>
@@ -314,11 +314,12 @@
         </div>
       </div>
       <div class="input-container">
-        <textarea 
-          id="inputBox" 
-          class="input-box" 
+        <textarea
+          id="inputBox"
+          class="input-box"
           placeholder="Ask a question about your boat..."
           rows="1"
+          inputmode="text"
         ></textarea>
         <button id="sendButton" class="send-button" onclick="sendMessage()">Send</button>
       </div>
@@ -471,6 +472,28 @@
       }
     });
 
+    // Keyboard coverage fix (Wayland / squeekboard ~380px):
+    // Shrink chat area BEFORE keyboard appears so no geometry change occurs
+    // after activation (post-activation geometry changes cause squeekboard
+    // to dismiss itself).
+    // keyboard-fix.js handles focus()+click() at document level (fires after
+    // this element-level handler, so layout is settled first).
+    inputBox.addEventListener('pointerup', function(e) {
+      if (e.pointerType !== 'touch') return;
+      var chat = document.querySelector('.chat-container');
+      if (chat) {
+        var navH = (document.querySelector('.top-nav') || {offsetHeight: 0}).offsetHeight;
+        var inputAreaH = (document.querySelector('.input-area') || {offsetHeight: 0}).offsetHeight;
+        chat.style.maxHeight = Math.max(120, window.innerHeight - 380 - navH - inputAreaH) + 'px';
+      }
+    });
+
+    // Restore layout when keyboard dismissed
+    inputBox.addEventListener('blur', function() {
+      var chat = document.querySelector('.chat-container');
+      if (chat) chat.style.maxHeight = '';
+    });
+
     // Focus input on load and check for query parameter
     window.addEventListener('load', () => {
       // Check for ?q= query parameter
@@ -486,16 +509,12 @@
       inputBox.focus();
     });
   </script>
-  <script>
-    // Keyboard visibility fix — shrinks container when virtual keyboard opens
-    if (window.visualViewport) {
-      function onViewportChange() {
-        document.querySelector('.container').style.height = window.visualViewport.height + 'px';
-      }
-      window.visualViewport.addEventListener('resize', onViewportChange);
-      window.visualViewport.addEventListener('scroll', onViewportChange);
-    }
-  </script>
   <script src="/js/touch-scroll.js"></script>
+  <script src="/js/keyboard-fix.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('/window/windowed', {method:'POST'}).catch(function(){});
+});
+</script>
 </body>
 </html>

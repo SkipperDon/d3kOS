@@ -512,6 +512,7 @@
               placeholder="Ask Helm anything... (e.g., 'What's the engine status?')"
               rows="1"
               maxlength="500"
+              inputmode="text"
             ></textarea>
             <button class="send-btn" id="send-btn" onclick="sendMessage()">
               Send
@@ -533,6 +534,7 @@
 
     // Load chat history on startup
     window.addEventListener('DOMContentLoaded', () => {
+      fetch('/window/windowed', {method:'POST'}).catch(function(){});
       loadChatHistory();
       connectSignalK();
       setupInputHandlers();
@@ -633,6 +635,31 @@
           e.preventDefault();
           sendMessage();
         }
+      });
+
+      // Keyboard coverage fix (Wayland / squeekboard ~380px):
+      // Shrink chat messages area BEFORE keyboard appears so no geometry
+      // change occurs after activation (post-activation geometry changes
+      // cause squeekboard to dismiss itself).
+      // keyboard-fix.js handles focus()+click() at document level (fires after
+      // this element-level handler, so layout is settled first).
+      input.addEventListener('pointerup', (e) => {
+        if (e.pointerType !== 'touch') return;
+        const msgs = document.querySelector('.chat-messages');
+        if (msgs) {
+          const reserved =
+            (document.querySelector('header') || {offsetHeight: 0}).offsetHeight +
+            (document.querySelector('.top-nav') || {offsetHeight: 0}).offsetHeight +
+            (document.querySelector('.quick-actions') || {offsetHeight: 0}).offsetHeight +
+            (document.querySelector('.chat-input-container') || {offsetHeight: 0}).offsetHeight;
+          msgs.style.maxHeight = Math.max(120, window.innerHeight - 380 - reserved) + 'px';
+        }
+      });
+
+      // Restore layout when keyboard dismissed
+      input.addEventListener('blur', () => {
+        const msgs = document.querySelector('.chat-messages');
+        if (msgs) msgs.style.maxHeight = '';
       });
     }
 
@@ -1029,7 +1056,8 @@
     }
 
     function goBack() {
-      window.location.href = '/';
+      fetch('/window/fullscreen', { method: 'POST' }).catch(function() {});
+      setTimeout(function() { window.location.href = '/'; }, 200);
     }
 
     // Auto-focus textarea on page load to trigger keyboard
@@ -1039,6 +1067,7 @@
     }, 500);
   </script>
   <script src="/js/touch-scroll.js"></script>
+  <script src="/js/keyboard-fix.js"></script>
 <button id="report-hazard-btn" class="hazard-btn">⚠ Report</button>
 
 <div id="hazard-sheet" class="hazard-sheet">

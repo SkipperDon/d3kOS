@@ -1,0 +1,1416 @@
+[
+  {
+    "id": "system-tab",
+    "type": "tab",
+    "label": "System",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "ui-base-new",
+    "type": "ui-base",
+    "name": "d3kOS Dashboard",
+    "path": "/dashboard",
+    "includeClientData": true,
+    "acceptsClientConfig": [
+      "ui-notification",
+      "ui-control"
+    ]
+  },
+  {
+    "id": "default-theme",
+    "type": "ui-theme",
+    "name": "Default Theme",
+    "colors": {
+      "surface": "#1a1a1a",
+      "primary": "#00CC00",
+      "bgPage": "#000000",
+      "groupBg": "#1a1a1a",
+      "groupOutline": "#00CC00"
+    },
+    "sizes": {
+      "density": "default",
+      "pagePadding": "12px",
+      "groupGap": "16px",
+      "groupBorderRadius": "4px",
+      "widgetGap": "16px"
+    }
+  },
+  {
+    "id": "page-system",
+    "type": "ui-page",
+    "name": "System",
+    "ui": "ui-base-new",
+    "path": "/system",
+    "icon": "home",
+    "layout": "grid",
+    "theme": "default-theme",
+    "order": 1
+  },
+  {
+    "id": "group-signalk",
+    "type": "ui-group",
+    "name": "Signal K Control",
+    "page": "page-system",
+    "width": 6,
+    "height": 1,
+    "order": 2,
+    "showTitle": true,
+    "className": "",
+    "visible": true,
+    "disabled": false,
+    "groupType": "default"
+  },
+  {
+    "id": "signalk-ws-config-108677",
+    "type": "websocket-client",
+    "path": "ws://localhost:3000/signalk/v1/stream?subscribe=none",
+    "tls": "",
+    "wholemsg": "true",
+    "hb": "0",
+    "subprotocol": ""
+  },
+  {
+    "id": "ws-config-613294",
+    "type": "websocket-client",
+    "path": "ws://localhost:3000/signalk/v1/stream?subscribe=none",
+    "tls": "",
+    "wholemsg": "true",
+    "hb": "0",
+    "subprotocol": ""
+  },
+  {
+    "id": "restart-button",
+    "type": "ui-button",
+    "z": "system-tab",
+    "group": "group-signalk",
+    "name": "Restart Signal K",
+    "label": "Restart Signal K",
+    "order": 1,
+    "width": 3,
+    "height": 1,
+    "tooltip": "Restart Signal K Server",
+    "color": "",
+    "bgcolor": "#FFA500",
+    "className": "",
+    "icon": "refresh",
+    "payload": "",
+    "payloadType": "str",
+    "topic": "topic",
+    "topicType": "msg",
+    "x": 140,
+    "y": 200,
+    "wires": [
+      [
+        "restart-exec"
+      ]
+    ]
+  },
+  {
+    "id": "stop-button",
+    "type": "ui-button",
+    "z": "system-tab",
+    "group": "group-signalk",
+    "name": "Stop Signal K",
+    "label": "Stop Signal K",
+    "order": 2,
+    "width": 3,
+    "height": 1,
+    "tooltip": "Stop Signal K Server",
+    "color": "",
+    "bgcolor": "#DC3545",
+    "className": "",
+    "icon": "stop",
+    "payload": "",
+    "payloadType": "str",
+    "topic": "topic",
+    "topicType": "msg",
+    "x": 140,
+    "y": 260,
+    "wires": [
+      [
+        "stop-exec"
+      ]
+    ]
+  },
+  {
+    "id": "start-button",
+    "type": "ui-button",
+    "z": "system-tab",
+    "group": "group-signalk",
+    "name": "Start Signal K",
+    "label": "Start Signal K",
+    "order": 3,
+    "width": 3,
+    "height": 1,
+    "tooltip": "Start Signal K Server",
+    "color": "",
+    "bgcolor": "#28A745",
+    "className": "",
+    "icon": "play_arrow",
+    "payload": "",
+    "payloadType": "str",
+    "topic": "topic",
+    "topicType": "msg",
+    "x": 140,
+    "y": 320,
+    "wires": [
+      [
+        "start-exec"
+      ]
+    ]
+  },
+  {
+    "id": "restart-exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "sudo systemctl restart signalk",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Restart SignalK",
+    "x": 340,
+    "y": 200,
+    "wires": [
+      [
+        "result-text"
+      ],
+      [
+        "result-text"
+      ],
+      [
+        "result-text"
+      ]
+    ]
+  },
+  {
+    "id": "stop-exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "sudo systemctl stop signalk",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Stop SignalK",
+    "x": 340,
+    "y": 260,
+    "wires": [
+      [
+        "result-text"
+      ],
+      [
+        "result-text"
+      ],
+      [
+        "result-text"
+      ]
+    ]
+  },
+  {
+    "id": "start-exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "sudo systemctl start signalk",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Start SignalK",
+    "x": 340,
+    "y": 320,
+    "wires": [
+      [
+        "result-text"
+      ],
+      [
+        "result-text"
+      ],
+      [
+        "result-text"
+      ]
+    ]
+  },
+  {
+    "id": "result-text",
+    "type": "ui-text",
+    "z": "system-tab",
+    "group": "group-signalk",
+    "order": 4,
+    "width": 6,
+    "height": 1,
+    "name": "Signal K Status",
+    "label": "Status:",
+    "format": "{{msg.payload}}",
+    "layout": "row-left",
+    "style": false,
+    "font": "",
+    "fontSize": 22,
+    "color": "#717171",
+    "className": "",
+    "x": 540,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "status-inject",
+    "type": "inject",
+    "z": "system-tab",
+    "name": "Check every 10s",
+    "props": [],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "2",
+    "topic": "",
+    "x": 150,
+    "y": 380,
+    "wires": [
+      [
+        "status-exec"
+      ]
+    ]
+  },
+  {
+    "id": "status-exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "systemctl is-active signalk 2>&1",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Check Status",
+    "x": 340,
+    "y": 380,
+    "wires": [
+      [
+        "status-parse"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "status-parse",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Parse Status",
+    "func": "var status = msg.payload.trim();\nif (status === 'active') {\n    msg.payload = '<span style=\"color:green; font-weight:bold;\">\u25cf RUNNING</span>';\n} else if (status === 'inactive') {\n    msg.payload = '<span style=\"color:red; font-weight:bold;\">\u25cf STOPPED</span>';\n} else if (status === 'failed') {\n    msg.payload = '<span style=\"color:red; font-weight:bold;\">\u25cf FAILED</span>';\n} else {\n    msg.payload = '<span style=\"color:orange; font-weight:bold;\">\u25cf UNKNOWN</span>';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 510,
+    "y": 380,
+    "wires": [
+      [
+        "status-display"
+      ]
+    ]
+  },
+  {
+    "id": "status-display",
+    "type": "ui-text",
+    "z": "system-tab",
+    "group": "group-signalk",
+    "order": 5,
+    "width": 6,
+    "height": 1,
+    "name": "Current Status",
+    "label": "Current Status:",
+    "format": "{{msg.payload}}",
+    "layout": "row-left",
+    "style": false,
+    "font": "",
+    "fontSize": 22,
+    "color": "#717171",
+    "className": "",
+    "x": 690,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "toggle_fs_http_in",
+    "type": "http in",
+    "z": "system-tab",
+    "name": "Toggle Fullscreen",
+    "url": "/toggle-fullscreen",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 700,
+    "wires": [
+      [
+        "toggle_fs_exec"
+      ]
+    ]
+  },
+  {
+    "id": "toggle_fs_exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "/usr/local/bin/toggle-fullscreen.sh",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Run Toggle Script",
+    "x": 350,
+    "y": 700,
+    "wires": [
+      [
+        "toggle_fs_http_response"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "toggle_fs_http_response",
+    "type": "http response",
+    "z": "system-tab",
+    "name": "Response",
+    "statusCode": "200",
+    "headers": {},
+    "x": 550,
+    "y": 700,
+    "wires": []
+  },
+  {
+    "id": "signalk-router-108677",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Route Signal K Data",
+    "func": "try {\n    const data = JSON.parse(msg.payload);\n    if (!data.updates) return null;\n\n    const msgs = [null, null, null, null];\n\n    data.updates.forEach(update => {\n        if (!update.values) return;\n\n        update.values.forEach(val => {\n            const path = val.path;\n            const value = val.value;\n\n            if (path && path.includes('revolutions')) {\n                msgs[0] = {payload: Math.round(value * 60 / (2 * Math.PI))};\n            }\n            else if (path && path.includes('oilPressure')) {\n                msgs[1] = {payload: Math.round(value / 6894.76)};\n            }\n            else if (path && path.includes('temperature')) {\n                msgs[2] = {payload: Math.round((value - 273.15) * 9/5 + 32)};\n            }\n            else if (path && path.includes('currentLevel')) {\n                msgs[3] = {payload: Math.round(value * 100)};\n            }\n        });\n    });\n\n    return msgs;\n} catch (e) {\n    return null;\n}",
+    "outputs": 4,
+    "x": 300,
+    "y": 160,
+    "wires": [
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "router-613294",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Route Signal K Data",
+    "func": "try {\n    const data = JSON.parse(msg.payload);\n    if (!data.updates) return null;\n\n    // 9 outputs: RPM, Trim, Temp, Voltage, Oil, Fresh, Black, Fuel, Battery\n    const msgs = [null, null, null, null, null, null, null, null, null];\n\n    data.updates.forEach(update => {\n        if (!update.values) return;\n\n        update.values.forEach(val => {\n            const path = val.path;\n            const value = val.value;\n\n            // Engine gauges\n            if (path && path.includes('revolutions')) {\n                msgs[0] = {payload: Math.round(value * 60 / (2 * Math.PI))};\n            }\n            else if (path && path.includes('trimState')) {\n                msgs[1] = {payload: Math.round(value * 100)};\n            }\n            else if (path && path.includes('temperature')) {\n                msgs[2] = {payload: Math.round((value - 273.15) * 9/5 + 32)};\n            }\n            else if (path && path.includes('voltage')) {\n                msgs[3] = {payload: value.toFixed(1)};\n            }\n            else if (path && path.includes('oilPressure')) {\n                msgs[4] = {payload: Math.round(value / 6894.76)};\n            }\n            // Tank levels\n            else if (path && path.includes('tanks.freshWater') && path.includes('currentLevel')) {\n                msgs[5] = {payload: Math.round(value * 100)};\n            }\n            else if (path && path.includes('tanks.blackWater') && path.includes('currentLevel')) {\n                msgs[6] = {payload: Math.round(value * 100)};\n            }\n            else if (path && path.includes('tanks.fuel') && path.includes('currentLevel')) {\n                msgs[7] = {payload: Math.round(value * 100)};\n            }\n            else if (path && path.includes('batteries') && path.includes('capacity')) {\n                msgs[8] = {payload: Math.round(value.stateOfCharge * 100)};\n            }\n        });\n    });\n\n    return msgs;\n} catch (e) {\n    return null;\n}",
+    "outputs": 9,
+    "x": 980,
+    "y": 140,
+    "wires": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "system-monitor-613294",
+    "type": "inject",
+    "z": "system-tab",
+    "name": "System Monitor",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "1",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 100,
+    "y": 600,
+    "wires": [
+      [
+        "sys-exec-613294"
+      ]
+    ]
+  },
+  {
+    "id": "sys-exec-613294",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "vcgencmd measure_temp && free -m | grep Mem && df -h / | tail -1 && vcgencmd measure_temp",
+    "name": "Get System Stats",
+    "x": 300,
+    "y": 600,
+    "wires": [
+      [
+        "sys-parse-613294"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "sys-parse-613294",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Parse System Stats",
+    "func": "const output = msg.payload.trim().split(/\\r?\\n/);\nconst cpuMatch = output[0] ? output[0].match(/[\\d.]+/) : null;\nconst cpu = cpuMatch ? cpuMatch[0] + '\u00b0C' : 'N/A';\nconst memParts = output[1] ? output[1].trim().split(/\\s+/) : [];\nconst memUsed = parseInt(memParts[2]) || 0;\nconst memTotal = parseInt(memParts[1]) || 1;\nconst memPercent = Math.round((memUsed / memTotal) * 100);\nconst diskParts = output[2] ? output[2].trim().split(/\\s+/) : [];\nconst diskUsed = diskParts[4] || 'N/A';\nconst gpuMatch = output[3] ? output[3].match(/[\\d.]+/) : null;\nconst gpu = gpuMatch ? gpuMatch[0] + '\u00b0C' : cpu;\nreturn [\n    {payload: cpu},\n    {payload: memPercent + '%'},\n    {payload: diskUsed + ' used'},\n    {payload: gpu}\n];",
+    "outputs": 4,
+    "x": 500,
+    "y": 600,
+    "wires": [
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "network-monitor-613294",
+    "type": "inject",
+    "z": "system-tab",
+    "name": "Network Monitor",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "2",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 100,
+    "y": 750,
+    "wires": [
+      [
+        "net-exec-613294"
+      ]
+    ]
+  },
+  {
+    "id": "net-exec-613294",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "iwconfig wlan0 2>&1 | grep -q 'ESSID' && echo 'Connected' || echo 'Disconnected'; ip addr show eth0 | grep -q 'state UP' && echo 'Connected' || echo 'Disconnected'; ifconfig can0 2>&1 | grep -q 'UP' && echo 'Active' || echo 'Down'; ping -c 1 -W 2 8.8.8.8 &>/dev/null && echo 'Online' || echo 'Offline'",
+    "name": "Check Network",
+    "x": 300,
+    "y": 750,
+    "wires": [
+      [
+        "net-parse-613294"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "net-parse-613294",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Parse Network Status",
+    "func": "const lines = msg.payload.trim().split('\\n');\nreturn [\n    {payload: lines[0] || 'Unknown'},\n    {payload: lines[1] || 'Unknown'},\n    {payload: lines[2] || 'Unknown'},\n    {payload: lines[3] || 'Unknown'}\n];",
+    "outputs": 4,
+    "x": 500,
+    "y": 750,
+    "wires": [
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "launch_opencpn_http_in",
+    "type": "http in",
+    "z": "system-tab",
+    "name": "POST /launch-opencpn",
+    "url": "/launch-opencpn",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 800,
+    "wires": [
+      [
+        "launch_opencpn_exec"
+      ]
+    ]
+  },
+  {
+    "id": "launch_opencpn_exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "/home/d3kos/install-opencpn.sh",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Launch OpenCPN",
+    "x": 370,
+    "y": 800,
+    "wires": [
+      [
+        "launch_opencpn_http_response"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "launch_opencpn_http_response",
+    "type": "http response",
+    "z": "system-tab",
+    "name": "Response",
+    "statusCode": "200",
+    "headers": {},
+    "x": 570,
+    "y": 800,
+    "wires": []
+  },
+  {
+    "id": "voice_status_http_in",
+    "type": "http in",
+    "z": "system-tab",
+    "name": "GET /voice/status",
+    "url": "/voice/status",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 900,
+    "wires": [
+      [
+        "voice_status_exec"
+      ]
+    ]
+  },
+  {
+    "id": "voice_status_exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "/usr/local/bin/voice-status.sh",
+    "addpay": "",
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Check Voice Service",
+    "x": 380,
+    "y": 900,
+    "wires": [
+      [
+        "voice_status_format"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "voice_status_format",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Format Status",
+    "func": "// Parse voice-status.sh JSON output\ntry {\n    const status = JSON.parse(msg.payload);\n    msg.payload = {\n        running: status.status === 'active',\n        paused: status.status === 'paused',\n        message: status.message\n    };\n} catch(e) {\n    // Fallback for non-JSON output\n    msg.payload = {running: false, error: 'Parse error'};\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 600,
+    "y": 900,
+    "wires": [
+      [
+        "voice_status_http_response"
+      ]
+    ]
+  },
+  {
+    "id": "voice_status_http_response",
+    "type": "http response",
+    "z": "system-tab",
+    "name": "Status Response",
+    "statusCode": "200",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 820,
+    "y": 900,
+    "wires": []
+  },
+  {
+    "id": "voice_toggle_http_in",
+    "type": "http in",
+    "z": "system-tab",
+    "name": "POST /voice/toggle",
+    "url": "/voice/toggle",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 1000,
+    "wires": [
+      [
+        "voice_toggle_check"
+      ]
+    ]
+  },
+  {
+    "id": "voice_toggle_check",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "/usr/local/bin/voice-status.sh",
+    "addpay": "",
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Check Current State",
+    "x": 380,
+    "y": 1000,
+    "wires": [
+      [
+        "voice_toggle_decide"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "voice_toggle_decide",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Decide Start/Stop",
+    "func": "const isActive = msg.payload.trim() === 'active';\nmsg.payload = isActive ? 'stop' : 'start';\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 600,
+    "y": 1000,
+    "wires": [
+      [
+        "voice_toggle_exec"
+      ]
+    ]
+  },
+  {
+    "id": "voice_toggle_exec",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "sudo systemctl",
+    "addpay": "payload",
+    "append": "d3kos-voice",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Toggle Service",
+    "x": 820,
+    "y": 1000,
+    "wires": [
+      [
+        "voice_toggle_http_response"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "voice_toggle_http_response",
+    "type": "http response",
+    "z": "system-tab",
+    "name": "Toggle Response",
+    "statusCode": "200",
+    "headers": {},
+    "x": 1040,
+    "y": 1000,
+    "wires": []
+  },
+  {
+    "id": "simulator_status_http",
+    "type": "http in",
+    "z": "system-tab",
+    "name": "Simulator Status",
+    "url": "/simulator/status",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 1100,
+    "wires": [
+      [
+        "simulator_check"
+      ]
+    ]
+  },
+  {
+    "id": "simulator_check",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "sudo systemctl is-active d3kos-simulator",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Check Simulator",
+    "x": 360,
+    "y": 1100,
+    "wires": [
+      [
+        "simulator_status_response"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "simulator_status_response",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Format Status",
+    "func": "const status = msg.payload.trim();\nmsg.payload = {\n    running: status === 'active',\n    status: status\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 580,
+    "y": 1100,
+    "wires": [
+      [
+        "simulator_status_out"
+      ]
+    ]
+  },
+  {
+    "id": "simulator_status_out",
+    "type": "http response",
+    "z": "system-tab",
+    "name": "",
+    "statusCode": "200",
+    "headers": {},
+    "x": 770,
+    "y": 1100,
+    "wires": []
+  },
+  {
+    "id": "simulator_toggle_http",
+    "type": "http in",
+    "z": "system-tab",
+    "name": "Simulator Toggle",
+    "url": "/simulator/toggle",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 1160,
+    "wires": [
+      [
+        "simulator_get_status"
+      ]
+    ]
+  },
+  {
+    "id": "simulator_get_status",
+    "type": "exec",
+    "z": "system-tab",
+    "command": "sudo systemctl is-active d3kos-simulator",
+    "addpay": false,
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Get Status",
+    "x": 350,
+    "y": 1160,
+    "wires": [
+      [
+        "simulator_decide"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "simulator_decide",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Decide Action",
+    "func": "const status = msg.payload.trim();\nif (status === 'active') {\n    msg.command = 'stop';\n} else {\n    msg.command = 'start';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 550,
+    "y": 1160,
+    "wires": [
+      [
+        "simulator_action",
+        "simulator_enable_signalk"
+      ]
+    ]
+  },
+  {
+    "id": "simulator_action",
+    "type": "exec",
+    "z": "system-tab",
+    "name": "Start/Stop Service",
+    "command": "sudo systemctl",
+    "addpay": "command",
+    "append": "d3kos-simulator",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "x": 770,
+    "y": 1140,
+    "wires": [
+      [
+        "simulator_toggle_response"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "simulator_enable_signalk",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Enable/Disable vcan0",
+    "func": "const action = msg.command;\nif (action === 'start') {\n    // Enable vcan0 in Signal K\n    msg.url = 'http://localhost:3000/signalk/v1/api/';\n    msg.method = 'PUT';\n    msg.payload = {\n        // Signal K configuration update\n    };\n}\nreturn null; // Skip for now",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 770,
+    "y": 1180,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "simulator_toggle_response",
+    "type": "function",
+    "z": "system-tab",
+    "name": "Format Response",
+    "func": "msg.payload = {\n    success: true,\n    message: msg.command === 'start' ? 'Simulator started' : 'Simulator stopped'\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 1140,
+    "wires": [
+      [
+        "simulator_toggle_out"
+      ]
+    ]
+  },
+  {
+    "id": "simulator_toggle_out",
+    "type": "http response",
+    "z": "system-tab",
+    "name": "",
+    "statusCode": "200",
+    "headers": {},
+    "x": 1210,
+    "y": 1140,
+    "wires": []
+  },
+  {
+    "id": "d3kos-cloud-telemetry-tab",
+    "type": "tab",
+    "label": "d3kOS Cloud Telemetry Push",
+    "disabled": false,
+    "info": "Pushes telemetry to atmyboat.com every 60s. Silent no-op when cloud-credentials.json is absent (T0 safe)."
+  },
+  {
+    "id": "inject-60s",
+    "type": "inject",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Every 60s",
+    "props": [],
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "10",
+    "topic": "",
+    "wires": [
+      [
+        "check-credentials"
+      ]
+    ]
+  },
+  {
+    "id": "check-credentials",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Check cloud-credentials.json",
+    "func": "var fs = global.get('fs') || require('fs');\nvar path = '/opt/d3kos/config/cloud-credentials.json';\ntry {\n  if (!fs.existsSync(path)) { msg.skip = true; return msg; }\n  msg.credentials = JSON.parse(fs.readFileSync(path, 'utf8'));\n  msg.skip = false;\n} catch(e) {\n  msg.skip = true;\n}\nreturn msg;",
+    "outputs": 1,
+    "wires": [
+      [
+        "skip-switch"
+      ]
+    ]
+  },
+  {
+    "id": "skip-switch",
+    "type": "switch",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Skip if not linked",
+    "property": "skip",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "false"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "wires": [
+      [
+        "fetch-signalk"
+      ]
+    ]
+  },
+  {
+    "id": "fetch-signalk",
+    "type": "http request",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "GET Signal K vessels/self",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://localhost:3000/signalk/v1/api/vessels/self",
+    "wires": [
+      [
+        "build-telemetry"
+      ]
+    ]
+  },
+  {
+    "id": "build-telemetry",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Build telemetry payload",
+    "func": "var fs = global.get('fs') || require('fs');\nvar sk = msg.payload || {};\nvar nav = (sk.navigation) || {};\nvar env = (sk.environment) || {};\nvar prop = (sk.propulsion && sk.propulsion.main) || {};\n\nvar firmware = 'unknown';\ntry { firmware = fs.readFileSync('/opt/d3kos/config/version.txt','utf8').trim(); } catch(e){}\n\nvar getValue = function(obj, key) {\n  try { return obj[key] && obj[key].value !== undefined ? obj[key].value : null; } catch(e){ return null; }\n};\n\nmsg.credentials = msg.credentials || {};\nmsg.payload = {\n  device_api_key: msg.credentials.device_api_key,\n  boat_uuid: msg.credentials.boat_uuid,\n  timestamp: new Date().toISOString(),\n  readings: {\n    rpm: getValue(prop, 'revolutions'),\n    coolant_temp_c: getValue(prop, 'coolantTemperature'),\n    fuel_level: getValue(env, 'fuel.level'),\n    battery_volts: getValue(env, 'electrical.batteries.house.voltage'),\n    gps_lat: getValue(nav, 'position') ? getValue(nav,'position').latitude : null,\n    gps_lon: getValue(nav, 'position') ? getValue(nav,'position').longitude : null,\n    speed_knots: getValue(nav, 'speedOverGround'),\n    heading_deg: getValue(nav, 'headingTrue'),\n    firmware_version: firmware\n  }\n};\nmsg.headers = {\n  'Content-Type': 'application/json',\n  'Authorization': 'Bearer ' + msg.credentials.device_api_key\n};\nreturn msg;",
+    "outputs": 1,
+    "wires": [
+      [
+        "push-to-atmyboat"
+      ]
+    ]
+  },
+  {
+    "id": "push-to-atmyboat",
+    "type": "http request",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "POST atmyboat.com/api/telemetry/push",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/telemetry/push",
+    "wires": [
+      [
+        "log-push"
+      ],
+      [
+        "buffer-offline"
+      ]
+    ]
+  },
+  {
+    "id": "log-push",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Log push timestamp",
+    "func": "var fs = global.get('fs') || require('fs');\ntry {\n  fs.writeFileSync('/opt/d3kos/data/telemetry-last-push.txt', new Date().toISOString());\n} catch(e){}\nreturn msg;",
+    "outputs": 1,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "buffer-offline",
+    "type": "function",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Buffer failed push (SQLite)",
+    "func": "// Log failed push for retry \u2014 write to buffer file\nvar fs = global.get('fs') || require('fs');\ntry {\n  var entry = JSON.stringify({timestamp: new Date().toISOString(), payload: msg.payload}) + '\\n';\n  fs.appendFileSync('/opt/d3kos/data/telemetry-buffer.jsonl', entry);\n} catch(e){}\nreturn null;",
+    "outputs": 1,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "catch-errors",
+    "type": "catch",
+    "z": "d3kos-cloud-telemetry-tab",
+    "name": "Catch all errors",
+    "scope": null,
+    "uncaught": false,
+    "wires": [
+      [
+        "buffer-offline"
+      ]
+    ]
+  },
+  {
+    "id": "a1b2c3d4",
+    "type": "tab",
+    "label": "Community Engine Benchmark"
+  },
+  {
+    "id": "e5f6g7h8",
+    "type": "inject",
+    "name": "",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "repeat": "600",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "z": "a1b2c3d4"
+  },
+  {
+    "id": "i9j0k1l2",
+    "type": "function",
+    "name": "Set Benchmark Data",
+    "func": "msg.payload = {\n    anon_token: msg.payload.anon_token,\n    engine_make: msg.payload.engine_make,\n    engine_model: msg.payload.engine_model,\n    rpm: msg.payload.rpm,\n    coolant_temp_c: msg.payload.coolant_temp_c,\n    fuel_burn_lph: msg.payload.fuel_burn_lph,\n    firmware_version: 'v0.9.2'\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "z": "a1b2c3d4"
+  },
+  {
+    "id": "m3n4o5p6",
+    "type": "http request",
+    "name": "Submit Benchmark",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/community/benchmark",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 540,
+    "y": 180,
+    "z": "a1b2c3d4",
+    "wires": [
+      [
+        "q7r8s9t0"
+      ]
+    ]
+  },
+  {
+    "id": "q7r8s9t0",
+    "type": "debug",
+    "name": "Response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "z": "a1b2c3d4"
+  },
+  {
+    "id": "i9j8k7l6",
+    "type": "function",
+    "z": "a1b2c3d4",
+    "name": "Prepare Data",
+    "func": "const fs = require('fs');\nconst path = require('path');\n\n// Read engine data from a file or fetch it via Signal K\nconst engineData = {\n  rpm: msg.payload.rpm || 0,\n  oilPressure: msg.payload.oilPressure || 0,\n  temperature: msg.payload.temperature || 0,\n  runTime: msg.payload.runTime || 0,\n  voltage: msg.payload.voltage || 0\n};\n\n// Get GPS location if available\nconst gps = msg.payload.gps || { lat: 0, lon: 0 };\n\n// Determine engine type from config or metadata\nconst engineType = msg.payload.engineType || 'unknown';\n\n// Construct final payload for posting\nmsg.payload = {\n  timestamp: new Date().toISOString(),\n  location: {\n    lat: gps.lat,\n    lon: gps.lon\n  },\n  engineData: engineData,\n  type: engineType,\n  event: 'maintenance_log_entry'\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "wires": [
+      [
+        "m5n4o3p2"
+      ]
+    ]
+  },
+  {
+    "id": "m5n4o3p2",
+    "type": "http request",
+    "z": "a1b2c3d4",
+    "name": "Post to Community DB",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "https://your-community-db-api.com/logs",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 500,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "bfd8f971",
+    "type": "tab",
+    "label": "Community Boat Map"
+  },
+  {
+    "id": "f91e7225",
+    "type": "inject",
+    "name": "",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "repeat": "3600",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "z": "bfd8f971"
+  },
+  {
+    "id": "90f12451",
+    "type": "function",
+    "name": "",
+    "func": "msg.payload = {\n    anon_token: msg.payload.anon_token,\n    lat_approx: Math.round(msg.payload.lat * 100)/100,\n    lon_approx: Math.round(msg.payload.lon * 100)/100,\n    firmware_version: 'v0.9.2',\n    timestamp: new Date().toISOString()\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 160,
+    "z": "bfd8f971",
+    "wires": [
+      [
+        "329829e7"
+      ]
+    ]
+  },
+  {
+    "id": "329829e7",
+    "type": "http request",
+    "name": "",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://atmyboat.com/api/community/position",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 640,
+    "y": 160,
+    "z": "bfd8f971",
+    "wires": [
+      [
+        "4a0cc946"
+      ]
+    ]
+  },
+  {
+    "id": "4a0cc946",
+    "type": "debug",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 850,
+    "y": 160,
+    "z": "bfd8f971",
+    "wires": []
+  },
+  {
+    "id": "c80b16d9",
+    "type": "tab",
+    "label": "Community Knowledge Log",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "c9e49173",
+    "type": "watch",
+    "z": "c80b16d9",
+    "path": "/path/to/maintenance.log",
+    "recursive": false,
+    "sendError": false,
+    "sendPayload": true,
+    "sendChange": false,
+    "sendComplete": false,
+    "sendStart": false,
+    "sendStop": false,
+    "sendRename": false,
+    "sendDelete": false,
+    "sendMove": false,
+    "sendCreate": false,
+    "sendRead": false,
+    "sendWrite": false,
+    "sendAppend": false,
+    "sendTruncate": false,
+    "sendUnlink": false,
+    "sendLink": false,
+    "sendSymlink": false,
+    "sendHardlink": false,
+    "sendStat": false,
+    "sendLstat": false,
+    "sendReadlink": false,
+    "sendFstat": false,
+    "sendFtruncate": false,
+    "sendFsync": false,
+    "sendFdatasync": false,
+    "sendFchmod": false,
+    "sendFchown": false,
+    "sendFutimes": false,
+    "sendFlock": false,
+    "sendFallocate": false,
+    "sendFstatfs": false,
+    "sendFpathconf": false,
+    "sendFsyncfs": false,
+    "sendFutimens": false,
+    "sendFchdir": false,
+    "sendFchroot": false,
+    "sendFchmodat": false,
+    "sendFchownat": false,
+    "sendFstatat": false,
+    "sendFutimesat": false,
+    "sendLinkat": false,
+    "sendReadlinkat": false,
+    "sendSymlinkat": false,
+    "sendRenameat": false,
+    "sendUnlinkat": false,
+    "sendMkdirat": false,
+    "sendMknodat": false,
+    "sendFaccessat": false,
+    "sendFexecve": false,
+    "sendFstatvfs": false,
+    "sendFpathconfat": false,
+    "sendFsyncfsat": false,
+    "sendFutimensat": false,
+    "sendFchdirat": false,
+    "sendFchrootat": false,
+    "sendFchmodat2": false,
+    "sendFchownat2": false,
+    "sendFstatat2": false,
+    "sendFutimesat2": false,
+    "sendLinkat2": false,
+    "sendReadlinkat2": false,
+    "sendSymlinkat2": false,
+    "sendRenameat2": false,
+    "sendUnlinkat2": false,
+    "sendMkdirat2": false,
+    "sendMknodat2": false,
+    "sendFaccessat2": false,
+    "sendFexecve2": false,
+    "sendFstatvfs2": false,
+    "sendFpathconfat2": false,
+    "sendFsyncfsat2": false,
+    "sendFutimensat2": false,
+    "sendFchdirat2": false,
+    "sendFchrootat2": false,
+    "sendFchmodat3": false,
+    "sendFchownat3": false,
+    "sendFstatat3": false,
+    "sendFutimesat3": false,
+    "sendLinkat3": false,
+    "sendReadlinkat3": false,
+    "sendSymlinkat3": false,
+    "sendRenameat3": false,
+    "sendUnlinkat3": false,
+    "sendMkdirat3": false,
+    "sendMknodat3": false,
+    "sendFaccessat3": false,
+    "sendFexecve3": false,
+    "sendFstatvfs3": false,
+    "sendFpathconfat3": false,
+    "sendFsyncfsat3": false,
+    "sendFutimensat3": false,
+    "sendFchdirat3": false,
+    "sendFchrootat3": false,
+    "name": "Watch Maintenance Log",
+    "wires": [
+      [
+        "a1b18139"
+      ]
+    ]
+  },
+  {
+    "id": "a1b18139",
+    "type": "function",
+    "z": "c80b16d9",
+    "name": "Prepare Data",
+    "func": "const fs = require('fs');\nconst path = require('path');\n\n// Read engine data from a file or fetch it via Signal K\nconst engineData = {\n  rpm: msg.payload.rpm || 0,\n  oilPressure: msg.payload.oilPressure || 0,\n  temperature: msg.payload.temperature || 0,\n  runTime: msg.payload.runTime || 0,\n  voltage: msg.payload.voltage || 0\n};\n\n// Get GPS location if available\nconst gps = msg.payload.gps || { lat: 0, lon: 0 };\n\n// Determine engine type from config or metadata\nconst engineType = msg.payload.engineType || 'unknown';\n\n// Construct final payload for posting\nmsg.payload = {\n  timestamp: new Date().toISOString(),\n  location: {\n    lat: gps.lat,\n    lon: gps.lon\n  },\n  engineData: engineData,\n  type: engineType,\n  event: 'maintenance_log_entry'\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "wires": [
+      [
+        "0deb007d"
+      ]
+    ]
+  },
+  {
+    "id": "0deb007d",
+    "type": "http request",
+    "z": "c80b16d9",
+    "name": "Post to Community DB",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "https://your-community-db-api.com/logs",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 500,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  }
+]
