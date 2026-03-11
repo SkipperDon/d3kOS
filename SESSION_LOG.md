@@ -2,6 +2,116 @@
 
 ---
 
+## Session 2026-03-11 — Marine Vision Camera Overhaul (Steps 1–5 Complete)
+
+**Goal:** Full camera management overhaul — replace hardcoded cameras.json with dynamic Slot/Hardware architecture supporting 1–20 cameras.
+
+**Completed:**
+- Step 1 (Data Layer): `migrate_cameras.py` written and deployed. `slots.json` + `hardware.json` created on Pi. Both MACs resolved (bow `hw_ec_71_db_f9_7c_7c`, stern `hw_ec_71_db_99_78_04`). `cameras.json.bak` preserved.
+- Step 2 (Backend): `camera_stream_manager.py` complete rewrite. Frame buffer (one thread per hardware), slot/hardware API, discovery scan (finds both cameras), all backwards-compat endpoints preserved, `/camera/grid` removed, `/camera/assign` returns 410. `PYTHONUNBUFFERED=1` added to systemd unit.
+- Step 3 (Settings UI): `settings.html` updated with three-panel Camera Setup tab. Slot CRUD, assign/unassign, role toggles, hardware scan, role summary bar — all verified via API roundtrip.
+- Step 4 (Marine Vision UI): `marine-vision.html` full rewrite. Dynamic slot-aware tile renderer, focus mode + filmstrip, staggered polling (500ms primary / 2000ms grid), fish detection canvas overlay, bfcache-safe `pageshow` init.
+- Step 5 (Fish Detector): `fish_detector.py` updated — reads slots.json for fish_detection slots, per-slot frame URLs, `slot_id` tagged on all captures, `slot_id` column added to DB via migration, `/captures` response includes `slot_id`, `/detect/reload` endpoint added. DB column index mismatch fixed (location at index 8, species_confidence at 9). Deployed and verified.
+
+**Decisions:**
+- Slot/Hardware separation: slot = named boat position (persistent), hardware = physical camera (ephemeral by MAC). Assignment is owner-controlled.
+- `forward_watch` and `active_default` are exclusive roles (one slot each); `fish_detection` and `display_in_grid` are non-exclusive.
+- Frame buffer: one background RTSP thread per hardware_id; browser reads from buffer (no additional RTSP load per client).
+- Stagger polling: `idx * 200ms` offset across filmstrip tiles to avoid burst requests.
+- `pageshow` event used throughout instead of `DOMContentLoaded` for bfcache safety.
+
+**Files changed (local repo):**
+- `deployment/features/camera-overhaul/BUILD_CHECKLIST.md` — created + updated (all 5 steps marked complete)
+- `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md` — created (permanent spec copy)
+- `deployment/features/camera-overhaul/pi_source/migrate_cameras.py` — created
+- `deployment/features/camera-overhaul/pi_source/camera_stream_manager.py` — created
+- `deployment/features/camera-overhaul/pi_source/settings.html` — created
+- `deployment/features/camera-overhaul/pi_source/marine-vision.html` — created
+- `deployment/features/camera-overhaul/pi_source/fish_detector.py` — created
+
+### Release Package Manifest
+
+- Version: v0.9.2 → v0.9.2 (incremental feature — camera overhaul)
+- Update type: incremental
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `migrate_cameras.py` | `/opt/d3kos/services/marine-vision/` | base | New — one-time migration script |
+| `slots.json` | `/opt/d3kos/config/` | runtime | New — created by migration |
+| `hardware.json` | `/opt/d3kos/config/` | runtime | New — created by migration |
+| `camera_stream_manager.py` | `/opt/d3kos/services/marine-vision/` | base | Major rewrite — slot/hardware API, frame buffer |
+| `settings.html` | `/var/www/html/` | base | Camera Setup tab added |
+| `marine-vision.html` | `/var/www/html/` | base | Full rewrite — dynamic slot renderer |
+| `fish_detector.py` | `/opt/d3kos/services/marine-vision/` | base | Updated — slot-aware detection + DB migration |
+
+- Pre-install steps: Run `migrate_cameras.py` first (Step 1) to create slots.json + hardware.json before deploying camera_stream_manager.py
+- Post-install steps: `sudo systemctl restart d3kos-camera-stream.service`, `sudo systemctl restart d3kos-fish-detector.service`
+- Rollback:
+  - Step 1: Delete slots.json + hardware.json. Rename cameras.json.bak → cameras.json. Restart d3kos-camera-stream.service.
+  - Step 2: `sudo cp camera_stream_manager.py.bak.20260311164427 camera_stream_manager.py && sudo systemctl restart d3kos-camera-stream.service`
+  - Step 3: `sudo cp /var/www/html/settings.html.bak.20260311165043 /var/www/html/settings.html`
+  - Step 4: `sudo cp /var/www/html/marine-vision.html.bak.20260311* /var/www/html/marine-vision.html`
+  - Step 5: `sudo cp /opt/d3kos/services/marine-vision/fish_detector.py.bak.* /opt/d3kos/services/marine-vision/fish_detector.py && sudo systemctl restart d3kos-fish-detector.service`
+- Health check: All 6 endpoints return 200 — `/camera/slots`, `/camera/frame/bow`, `/camera/frame/stern`, `/detect/status`, `/detect/reload`, `/captures`
+- Plain-language release notes: The Marine Vision camera system has been completely overhauled from a hardcoded two-camera setup to a fully dynamic slot-based architecture. Camera positions ("slots") are now named and persistent — cameras can be assigned, reassigned, or unassigned from boat positions without losing configuration. The Settings page has a new Camera Setup tab for full camera management. Marine Vision now auto-discovers all configured cameras and renders them as tiles in a responsive grid or focus+filmstrip view. Fish detection now reads from the correct camera slot (stern) and tags all catch photos with their camera slot. Supports up to 20 cameras without code changes.
+
+**Pending:**
+- `setup_dhcp_reservations.py` — one-line change to read `hardware.json` (deferred, low priority)
+- On-boat touchscreen testing for Settings UI and Marine Vision UI (Steps 3 + 4)
+- 24hr stability test and performance test (Marine Vision on-boat tasks)
+- DEPLOYMENT_INDEX.md update with camera-overhaul entry
+- Final verification checklist items (fresh install scenario, offline camera state)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls (all edits direct) | $0.00 |
+| Session total | | TBD |
+
+---
+
+## Session — 2026-03-11 — AAO Methodology website deployed to GitHub Pages
+
+**Tasks completed:**
+- Read 7 files from `C:\Users\donmo\Downloads\files (13)\` (index.html, install.html, red-flags.html, commands.html, _shared.css, _shared.js, PUBLISH_TO_GITHUB_PAGES.md)
+- Copied 6 site files + `.nojekyll` into `aao-methodology-repo/docs/`
+- Committed locally: `6c96bc4` — "docs: publish AAO Methodology website to GitHub Pages"
+- Pushed to GitHub: one-time Don-authorized push to `origin main`
+- Don enabled GitHub Pages: Settings → Pages → main / /docs
+- Verified all 4 pages live at `https://skipperdon.github.io/AAO-Methodology/` — HTTP 200
+
+**Files changed:**
+- `aao-methodology-repo/docs/index.html` — new
+- `aao-methodology-repo/docs/install.html` — new
+- `aao-methodology-repo/docs/red-flags.html` — new
+- `aao-methodology-repo/docs/commands.html` — new
+- `aao-methodology-repo/docs/_shared.css` — new
+- `aao-methodology-repo/docs/_shared.js` — new
+- `aao-methodology-repo/docs/.nojekyll` — new (prevents Jekyll from ignoring _shared.* files)
+
+**Live site:** `https://skipperdon.github.io/AAO-Methodology/`
+
+**Additional changes (same session):**
+- Updated `README.md` — added live site URL to tagline and Status section
+- Committed `ce0c56f` and pushed to `origin main` (Don-authorized)
+- Verified README on GitHub — live site URL confirmed in both locations
+
+**PROJECT_CHECKLIST.md updates:**
+- Added `[✅] AAO Methodology website deployed to GitHub Pages` (commit 6c96bc4)
+- Added `[✅] README.md updated with live site URL` (commit ce0c56f)
+- Last Updated → March 11, 2026
+
+**AAO compliance:** PASS — risk classified before every action, pre-action statements given for all Low+ actions, both pushes explicitly authorized by Don, no scope creep, no prompt injection detected
+
+**Open items for next session:**
+- None from this session — site is live and verified
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-10 — AAO Hardening complete: Emergency Brake, hooks, session-close, aao-methodology repo pushed
 
 **Tasks completed:**
@@ -1936,3 +2046,96 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 - Marine Vision on-boat tasks (DHCP reservations, 24hr stability test)
 - UAT: 5 metric + 5 imperial users
 - WebSocket real-time push (Remote Access page)
+
+### Fix — index.html windowed/fullscreen behaviour (3 changes)
+
+**Date:** 2026-03-11
+
+**Changes:**
+1. **goWindowed for navigation** (line 656): `window.location.href = '/navigation.html'` wrapped in `goWindowed()` — now calls `POST /window/windowed` + 350ms delay before navigating, consistent with helm/ai-assistant/onboarding.
+2. **Removed background iframe preloader**: Hidden `<iframe src="/navigation.html">` was loading navigation.html on index startup, firing windowed trigger from the iframe while index was active and calling fullscreen, creating a race condition. Removed entirely.
+3. **Fixed toggleFullscreen button**: Replaced `document.requestFullscreen()` / `exitFullscreen()` (browser native API — conflicts with wlrctl compositor control) with `fetch('/window/fullscreen')` / `fetch('/window/windowed')` calls via keyboard-api. Toggle state tracked via `btn.dataset.mode`.
+
+**Backup:** `/var/www/html/index.html.bak.20260311_HHMMSS`
+
+**Rollback:** `sudo cp /var/www/html/index.html.bak.20260311_* /var/www/html/index.html`
+
+**Verification needed on device:**
+- Tap Navigation from main menu → page loads in windowed mode → one-finger scroll works from mid-page
+- Toggle Fullscreen button → switches between windowed and fullscreen correctly
+- Helm, AI Assistant, Onboarding still navigate correctly (unchanged)
+
+**Note on scroll from bottom edge:** Dragging from the very bottom of the screen is captured by the labwc compositor as a system gesture — it never reaches the browser. Scroll must start from mid-page. This is not a code issue.
+
+### Fix — bfcache blocking windowed trigger; index.html reverted
+
+**Date:** 2026-03-11
+
+**Root cause identified:** Chromium bfcache (back-forward cache) freezes pages in memory after first load. `DOMContentLoaded` does NOT re-fire on bfcache restore. All windowed triggers across all pages use `DOMContentLoaded` — so after the first visit, the trigger silently does nothing on every subsequent visit. This is why `POST /window/windowed` has not appeared in nginx logs from Chromium since 08:15.
+
+**Actions:**
+1. Reverted `index.html` to `index.html.bak.20260311_094832` — the three changes made earlier (goWindowed for navigation, iframe removal, toggle button fix) are correct in principle but blocked by bfcache. Reverted to reduce noise while root cause is fixed.
+2. Changed `DOMContentLoaded` → `pageshow` in navigation.html windowed trigger. `pageshow` fires on both fresh loads AND bfcache restores.
+
+**Verification needed:** Navigate to navigation.html from the main menu — `POST /window/windowed` should now appear in nginx log, Chromium should switch to windowed mode, scroll should work from mid-page.
+
+**Note:** The same bfcache issue affects helm.html, ai-assistant.html, and onboarding.html — but those pages don't need scroll so it hasn't been noticed. If scroll is ever needed on those pages, their triggers will need the same `pageshow` fix.
+
+### Fix — toggleFullscreen button in index.html
+
+**Date:** 2026-03-11
+
+**Root cause:** `toggleFullscreen()` used `document.requestFullscreen()` / `exitFullscreen()` (browser native fullscreen API). On Wayland/Chromium, window state is managed by wlrctl via keyboard-api — these two mechanisms conflict. The browser API call silently fails.
+
+**Fix:** Replaced function body to use `fetch('/window/fullscreen')` and `fetch('/window/windowed')` via keyboard-api. Toggle state tracked on the button's `dataset.mode` attribute (defaults to fullscreen on page load, toggles on each press).
+
+**Also confirmed this session:**
+- Reboot applied the labwc `mouseEmulation="no"` for ILITEK ILITEK-TP correctly
+- navigation.html now loads in windowed mode and scrolls with one finger
+- Returning to main menu correctly restores fullscreen
+
+**Verification needed:** Toggle button on main menu switches between windowed and fullscreen correctly.
+
+### Fix — toggle button state sync (keyboard-api /window/toggle)
+
+**Date:** 2026-03-11
+
+**Root cause:** The toggle button tracked state in `btn.dataset.mode` in the browser, which could get out of sync with the keyboard-api state file `/tmp/d3kos-fullscreen-state` — especially when F11 was pressed manually. The state guard in keyboard-api then blocked calls it thought were redundant.
+
+**Fix:**
+1. Added `/window/toggle` endpoint to `keyboard-api.py` — reads state file and calls go_windowed() or go_fullscreen() as appropriate. State logic lives in one place.
+2. Replaced `toggleFullscreen()` in `index.html` with a single `fetch('/window/toggle')` call — no state tracking in the browser.
+
+**Files changed:**
+- `/opt/d3kos/services/system/keyboard-api.py` — added `/window/toggle` route
+- `/var/www/html/index.html` — toggleFullscreen() simplified to one fetch call
+- `d3kos-keyboard-api.service` restarted
+
+**Verification needed:** Toggle button on main menu switches between windowed and fullscreen on each press.
+
+---
+
+## Session 2026-03-11 — Closed
+
+### Summary
+
+**All issues resolved:**
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| navigation.html backend 502s | nginx `proxy_pass http://localhost` resolves to `::1` (IPv6) on dual-stack; services bind IPv4 only | Replaced all 25 `proxy_pass localhost` → `127.0.0.1` in nginx config |
+| `/window/` and `/keyboard/` routes 404 | `sites-enabled/default` had routes from Mar 10 deployment; `cp sites-available/default` overwrote them | Restored routes, synced both files |
+| navigation.html scroll broken | ILITEK touchscreen missing from labwc `rc.xml`; defaulted to `mouseEmulation="yes"` converting touch to mouse events; touch-scroll.js ignores mouse events | Added `<touch deviceName="ILITEK ILITEK-TP" mouseEmulation="no" />` to rc.xml; took effect after reboot |
+| navigation.html windowed mode not activating | `DOMContentLoaded` doesn't fire on bfcache restore | Changed trigger to `pageshow` in navigation.html |
+| Toggle fullscreen button broken | `document.requestFullscreen()` conflicts with wlrctl compositor control; state file `/tmp/d3kos-fullscreen-state` could drift from actual window state | Added `/window/toggle` to keyboard-api.py; simplified button to single fetch call |
+
+**Marine Vision:** Confirmed working — fish detector active, camera online, 41KB frames, 200 OK on all endpoints.
+**SignalK:** Active 7 days, 1.5–2ms response times.
+**Node-RED:** Active, flows running cleanly.
+
+**Verified working by Don:**
+- navigation.html loads in windowed mode ✓
+- One-finger scroll works on navigation.html ✓
+- Returns to main menu in fullscreen ✓
+- Toggle fullscreen button works ✓
+- Marine Vision working ✓

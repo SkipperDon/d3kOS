@@ -128,6 +128,10 @@
 
 - \[✅\] `aao-methodology-repo` updated and pushed to GitHub — governing-docs/, config/, remediation/DRIFT\_INCIDENT\_001.md, remediation/EMERGENCY\_BRAKE\_PROTOCOL.md (commit 5e19b73)
 
+- \[✅\] AAO Methodology website deployed to GitHub Pages — 4-page static site (index, install, red-flags, commands) live at https://skipperdon.github.io/AAO-Methodology/ (commit 6c96bc4)
+
+- \[✅\] README.md updated with live site URL — tagline and Status section (commit ce0c56f)
+
 ## v0.9.1 — Voice AI Assistant \[Effort: Large\]
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.1.x (multiple sessions) | **Priority:** HIGH
@@ -346,11 +350,34 @@
 
 **Deliverable:** d3kOS v0.9.2 with full metric/imperial support
 
-## v0.9.2 — Marine Vision: Live IP Camera System (Bow + Stern) \[Effort: Large\]
+## v0.9.2 — Marine Vision: Camera Overhaul — Slot/Hardware Architecture \[Effort: Large\]
 
-**What this is:** Live video feeds from two IP cameras mounted on the boat (bow and stern), displayed in the Marine Vision page of d3kOS. Includes camera switching, side-by-side grid view, fish species detector (YOLOv8n, 483 species), and graceful offline handling when not on the boat network.
+**What this is:** Full replacement of the hardcoded cameras.json system with a dynamic Slot/Hardware architecture supporting 1–20 cameras. Slots are named boat positions (persistent). Hardware is physical cameras (assigned by MAC). Owner manages assignments via Settings UI.
 
-**Status:** \[✅\] Core complete — both cameras live, nginx fixed, fish detector running | **Priority:** HIGH
+**Status:** \[✅\] Complete — all 5 steps deployed 2026-03-11 | **Priority:** HIGH
+**Feature dir:** `deployment/features/camera-overhaul/` | **Build checklist:** `deployment/features/camera-overhaul/BUILD_CHECKLIST.md`
+**Spec:** `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md`
+
+- \[✅\] Step 1 — migrate_cameras.py: slots.json + hardware.json created, both MACs resolved
+- \[✅\] Step 2 — camera_stream_manager.py rewrite: frame buffer, slot/hardware API, discovery scan, backwards compat
+- \[✅\] Step 3 — Settings UI: Camera Setup tab (3-panel), slot CRUD, assign/unassign, role toggles, scan
+- \[✅\] Step 4 — marine-vision.html rewrite: dynamic tile renderer, focus+filmstrip, staggered polling, fish detection canvas overlay
+- \[✅\] Step 5 — fish_detector.py: reads slots.json, per-slot frame fetch, slot_id on captures, /detect/reload endpoint
+- \[⚠️\] On-boat: touchscreen test Settings UI + Marine Vision (location dependency)
+- \[⚠️\] On-boat: 24hr stability test + performance test (CPU <35%, memory <970MB)
+- [ ] DEPLOYMENT_INDEX.md updated ✅ (done 2026-03-11)
+- [ ] setup_dhcp_reservations.py: one-line update to read hardware.json (deferred — low priority)
+
+**Note on "On-Boat Tasks":** Some tasks are marked as on-boat tasks. These can only be done physically on the boat with cameras connected to the boat's hotspot network (10.42.0.x). They cannot be done from home or over Tailscale.
+
+---
+
+## v0.9.2 — Marine Vision: Live IP Camera System (Bow + Stern) — SUPERSEDED \[Effort: Large\]
+
+> **SUPERSEDED — 2026-03-11 by camera-overhaul.** Retained as history. See section above.
+
+**What this was:** Original two-camera cameras.json system — camera switching, grid view, fish detector.
+**Status:** \[✅\] Complete at time of overhaul. Now replaced.
 
 **Note on "On-Boat Tasks":** Some tasks below are marked as on-boat tasks. These can only be done physically on the boat with cameras connected to the boat's hotspot network (10.42.0.x). They cannot be done from home or over Tailscale.
 
@@ -538,7 +565,7 @@
 
   - [ ] Train user on camera switching and grid view
 
-**Deliverable:** d3kOS v0.9.2 — Marine Vision live with bow + stern cameras, grid view, fish detector, camera position labels. Cameras 3 & 4: update `cameras.json` when purchased — no code changes needed.
+**Deliverable:** d3kOS v0.9.2 — Marine Vision live with bow + stern cameras. Now superseded by camera-overhaul. Cameras 3 & 4: add via Settings → Camera Setup → Scan + Assign. No code changes needed — overhaul supports up to 20 cameras via UI.
 
 **Also fixed this session:**
 
@@ -1854,7 +1881,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** March 10, 2026 (AAO Hardening session) | **Maintained By:** Development team + Claude Code
+**Last Updated:** March 11, 2026 (AAO Methodology GitHub Pages deployment session) | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 

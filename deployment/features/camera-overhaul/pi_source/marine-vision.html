@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marine Vision - d3kOS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --accent:   #00CC00;
+      --bg:       #000000;
+      --text:     #FFFFFF;
+      --warning:  #FFA500;
+      --danger:   #FF4444;
+      --disabled: #333333;
+      --font:     "Roboto", Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 22px;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 10px 16px;
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      min-height: 60px;
+    }
+
+    .nav-btn {
+      padding: 10px 20px;
+      background: rgba(0,204,0,0.15);
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 48px;
+      touch-action: manipulation;
+    }
+    .nav-btn:active { background: rgba(0,204,0,0.35); }
+
+    .header-title { font-size: 22px; font-weight: 700; color: var(--accent); }
+
+    .mode-toggle-btn {
+      padding: 10px 20px;
+      background: rgba(0,100,200,0.15);
+      border: 2px solid #0088FF;
+      border-radius: 8px;
+      color: #0088FF;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 48px;
+      touch-action: manipulation;
+    }
+    .mode-toggle-btn.focus-mode { background: rgba(0,204,0,0.15); border-color: var(--accent); color: var(--accent); }
+    .mode-toggle-btn:active { opacity: 0.7; }
+
+    /* ── Empty state ── */
+    #mv-empty {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      gap: 20px;
+      padding: 40px;
+    }
+    #mv-empty p { color: rgba(255,255,255,0.6); font-size: 22px; }
+    #mv-empty button {
+      padding: 20px 40px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 80px;
+    }
+
+    /* ── Focus mode ── */
+    #mv-focus {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Primary feed */
+    #mv-primary-wrap {
+      position: relative;
+      background: #111;
+      width: 100%;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    #mv-primary-img {
+      width: 100%;
+      display: block;
+      min-height: 200px;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* Fish detection canvas overlay */
+    #mv-detect-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    .mv-tile-label {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      background: rgba(0,0,0,0.65);
+      color: var(--text);
+      font-size: 18px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .mv-tile-status {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .mv-tile-status.online  { background: var(--accent); }
+    .mv-tile-status.offline { background: var(--danger); }
+    .mv-tile-status.unassigned { background: var(--disabled); }
+
+    .mv-offline-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--warning);
+      border: 3px solid var(--warning);
+      pointer-events: none;
+    }
+
+    /* Filmstrip */
+    #mv-filmstrip {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      overflow-x: auto;
+      background: #0a0a0a;
+      border-top: 1px solid rgba(0,204,0,0.3);
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      min-height: 110px;
+      align-items: center;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) #111;
+    }
+
+    .mv-strip-tile {
+      position: relative;
+      flex-shrink: 0;
+      width: 160px;
+      height: 90px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid rgba(0,204,0,0.4);
+      cursor: pointer;
+      background: #111;
+      touch-action: manipulation;
+    }
+    .mv-strip-tile:active { border-color: var(--accent); }
+    .mv-strip-tile.fish-active { border-color: var(--accent); box-shadow: 0 0 10px rgba(0,204,0,0.6); }
+
+    .mv-strip-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mv-strip-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-size: 14px;
+      padding: 3px 6px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* ── Grid mode ── */
+    #mv-grid {
+      display: none;
+      padding: 12px;
+    }
+
+    #mv-grid-container {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mv-grid-tile {
+      position: relative;
+      background: #111;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(0,204,0,0.3);
+      cursor: pointer;
+      aspect-ratio: 16/9;
+      touch-action: manipulation;
+    }
+    .mv-grid-tile:active { border-color: var(--accent); }
+
+    .mv-grid-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mv-grid-tile .mv-tile-label { font-size: 16px; }
+
+    /* ── Controls ── */
+    .mv-controls {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-top: 1px solid rgba(0,204,0,0.2);
+      flex-wrap: wrap;
+    }
+
+    .ctrl-btn {
+      flex: 1;
+      min-width: 140px;
+      padding: 14px 10px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 80px;
+      touch-action: manipulation;
+    }
+    .ctrl-btn:disabled { background: var(--disabled); color: #666; cursor: not-allowed; }
+    .ctrl-btn.secondary {
+      background: var(--bg);
+      color: var(--accent);
+      border: 2px solid var(--accent);
+    }
+    .ctrl-btn.recording { background: var(--danger); color: #fff; }
+
+    /* ── Info sections (scrollable below controls) ── */
+    .mv-scroll-body {
+      padding: 16px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    .mv-section {
+      background: rgba(0,204,0,0.07);
+      border: 1px solid rgba(0,204,0,0.35);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .mv-section h2 { color: var(--accent); font-size: 22px; margin-bottom: 12px; }
+
+    .mv-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 20px;
+    }
+    .mv-row:last-child { border-bottom: none; }
+    .mv-row-label  { color: rgba(255,255,255,0.65); }
+    .mv-row-value  { font-weight: 700; color: var(--accent); }
+    .mv-row-value.err  { color: var(--danger); }
+    .mv-row-value.warn { color: var(--warning); }
+
+    .recordings-list {
+      max-height: 240px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 12px;
+      touch-action: pan-y;
+    }
+
+    .rec-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(0,204,0,0.25);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+    }
+    .rec-name { color: var(--accent); }
+    .rec-size { color: rgba(255,255,255,0.5); }
+
+    /* d3kOS Scrollbars */
+    ::-webkit-scrollbar { width: 40px !important; height: 40px !important; }
+    ::-webkit-scrollbar-track { background: #111 !important; border-radius: 8px !important; }
+    ::-webkit-scrollbar-thumb { background: var(--accent) !important; border-radius: 8px !important; min-height: 60px !important; }
+    ::-webkit-scrollbar-thumb:active { background: #00FF00 !important; }
+    * { scrollbar-width: auto !important; scrollbar-color: var(--accent) #111 !important; }
+    html, body { touch-action: pan-y; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <button class="nav-btn" onclick="window.location.href='/'">← Menu</button>
+    <span class="header-title">Marine Vision</span>
+    <button class="mode-toggle-btn focus-mode" id="mv-mode-btn" onclick="mvToggleMode()">
+      Grid View
+    </button>
+  </header>
+
+  <!-- Empty state -->
+  <div id="mv-empty">
+    <p>No cameras configured.</p>
+    <p style="font-size:18px;">Visit Settings → Camera Setup to add your first camera.</p>
+    <button onclick="window.location.href='/settings.html'">Go to Settings</button>
+  </div>
+
+  <!-- Focus mode (default) -->
+  <div id="mv-focus">
+
+    <!-- Primary feed -->
+    <div id="mv-primary-wrap" onclick="mvToggleMode()">
+      <img id="mv-primary-img" alt="Primary camera feed" />
+      <canvas id="mv-detect-canvas"></canvas>
+      <span class="mv-tile-label" id="mv-primary-label">--</span>
+      <span class="mv-tile-status" id="mv-primary-dot"></span>
+      <div class="mv-offline-overlay" id="mv-primary-offline" style="display:none;">
+        Camera offline
+      </div>
+    </div>
+
+    <!-- Filmstrip -->
+    <div id="mv-filmstrip">
+      <!-- populated by JS -->
+    </div>
+
+  </div><!-- /mv-focus -->
+
+  <!-- Grid mode (hidden by default) -->
+  <div id="mv-grid">
+    <div id="mv-grid-container">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="mv-controls">
+    <button class="ctrl-btn recording" id="btn-record" disabled onclick="mvToggleRecord()">
+      Start Recording
+    </button>
+    <button class="ctrl-btn" id="btn-capture" disabled onclick="mvCapture()">
+      Capture Photo
+    </button>
+    <button class="ctrl-btn secondary" onclick="mvRefresh()">Refresh</button>
+  </div>
+
+  <!-- Scrollable info sections -->
+  <div class="mv-scroll-body">
+
+    <!-- Camera status -->
+    <div class="mv-section">
+      <h2>Active Camera</h2>
+      <div class="mv-row">
+        <span class="mv-row-label">Connection</span>
+        <span class="mv-row-value" id="st-conn">Checking...</span>
+      </div>
+      <div class="mv-row">
+        <span class="mv-row-label">Camera</span>
+        <span class="mv-row-value" id="st-name">--</span>
+      </div>
+      <div class="mv-row">
+        <span class="mv-row-label">IP</span>
+        <span class="mv-row-value" id="st-ip">--</span>
+      </div>
+      <div class="mv-row">
+        <span class="mv-row-label">Recording</span>
+        <span class="mv-row-value" id="st-rec">Stopped</span>
+      </div>
+    </div>
+
+    <!-- Fish detection -->
+    <div class="mv-section">
+      <h2>Fish Detection</h2>
+      <div class="mv-row">
+        <span class="mv-row-label">Status</span>
+        <span class="mv-row-value" id="det-status">Checking...</span>
+      </div>
+      <div class="mv-row">
+        <span class="mv-row-label">Model</span>
+        <span class="mv-row-value" id="det-model">--</span>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="ctrl-btn" id="btn-detect" disabled onclick="mvRunDetection()"
+                style="min-height:64px;font-size:20px;">
+          Run Detection Now
+        </button>
+      </div>
+      <div id="det-results" style="display:none;margin-top:12px;background:rgba(0,204,0,0.05);
+           border-radius:8px;padding:12px;font-size:18px;"></div>
+    </div>
+
+    <!-- Recordings -->
+    <div class="mv-section">
+      <h2>Recent Recordings</h2>
+      <div class="recordings-list" id="mv-recordings">
+        <div style="color:rgba(255,255,255,0.4);text-align:center;padding:16px;">No recordings yet</div>
+      </div>
+    </div>
+
+  </div><!-- /mv-scroll-body -->
+
+  <script>
+    // ══════════════════════════════════════════════════════════
+    // Marine Vision — Slot/Hardware Architecture
+    // ══════════════════════════════════════════════════════════
+
+    // ── State ──────────────────────────────────────────────────
+
+    var mvSlots       = [];   // all slots from /camera/slots
+    var mvGridMode    = false; // false = focus+filmstrip, true = equal grid
+    var mvPrimaryId   = null;  // slot_id currently in primary view
+    var mvIsRecording = false;
+
+    // Polling timers: slot_id → interval handle
+    var mvTimers = {};
+
+    // Polling intervals (ms)
+    var POLL_PRIMARY     = 500;
+    var POLL_GRID_ACTIVE = 2000;
+    var POLL_STAGGER_MS  = 200;  // offset between grid tile starts
+
+    // ── Init ───────────────────────────────────────────────────
+
+    // Use pageshow (not DOMContentLoaded) — bfcache safe
+    window.addEventListener('pageshow', function() {
+      mvInit();
+    });
+
+    function mvInit() {
+      mvStopAllPolling();
+      mvLoadSlots();
+      mvUpdateStatus();
+      mvUpdateDetectionStatus();
+      mvLoadRecordings();
+
+      setInterval(mvUpdateStatus,          5000);
+      setInterval(mvUpdateDetectionStatus, 5000);
+      setInterval(mvLoadRecordings,       15000);
+    }
+
+    // ── Slot load + layout ─────────────────────────────────────
+
+    function mvLoadSlots() {
+      fetch('/camera/slots')
+        .then(function(r) { return r.json(); })
+        .then(function(slots) {
+          mvSlots = slots;
+          var gridSlots = slots.filter(function(s) { return s.roles.display_in_grid; });
+          if (!gridSlots.length) {
+            mvShowEmpty();
+            return;
+          }
+          document.getElementById('mv-empty').style.display = 'none';
+
+          // Determine primary: prefer forward_watch, else first display_in_grid slot
+          var fw = slots.find(function(s) { return s.roles.forward_watch; });
+          if (!mvPrimaryId || !slots.find(function(s) { return s.slot_id === mvPrimaryId; })) {
+            mvPrimaryId = fw ? fw.slot_id : gridSlots[0].slot_id;
+          }
+
+          if (mvGridMode) {
+            mvBuildGrid(gridSlots);
+          } else {
+            mvBuildFocus(gridSlots);
+          }
+        })
+        .catch(function() {
+          document.getElementById('mv-focus').style.display = 'none';
+          document.getElementById('mv-grid').style.display  = 'none';
+        });
+    }
+
+    function mvShowEmpty() {
+      document.getElementById('mv-empty').style.display = 'flex';
+      document.getElementById('mv-focus').style.display = 'none';
+      document.getElementById('mv-grid').style.display  = 'none';
+      document.getElementById('mv-mode-btn').style.display = 'none';
+    }
+
+    // ── Focus mode ─────────────────────────────────────────────
+
+    function mvBuildFocus(gridSlots) {
+      mvStopAllPolling();
+      document.getElementById('mv-focus').style.display = 'flex';
+      document.getElementById('mv-grid').style.display  = 'none';
+
+      var primarySlot = gridSlots.find(function(s) { return s.slot_id === mvPrimaryId; })
+                     || gridSlots[0];
+      mvPrimaryId = primarySlot.slot_id;
+
+      // Set primary label + dot
+      document.getElementById('mv-primary-label').textContent = primarySlot.label;
+      var dot = document.getElementById('mv-primary-dot');
+      dot.className = 'mv-tile-status ' + (primarySlot.status || 'unassigned');
+
+      var offline = document.getElementById('mv-primary-offline');
+      if (primarySlot.status === 'offline' || primarySlot.status === 'unassigned') {
+        offline.style.display = 'flex';
+        if (primarySlot.status === 'unassigned') offline.textContent = 'No camera assigned';
+        else offline.textContent = 'Camera offline';
+      } else {
+        offline.style.display = 'none';
+      }
+
+      // Start primary polling
+      if (primarySlot.status === 'online' || primarySlot.status === 'connecting') {
+        mvStartPolling(primarySlot.slot_id, 'mv-primary-img', POLL_PRIMARY);
+      }
+
+      // Enable record/capture if primary is online
+      var canUse = (primarySlot.status === 'online');
+      document.getElementById('btn-record').disabled  = !canUse;
+      document.getElementById('btn-capture').disabled = !canUse;
+
+      // Build filmstrip (all other display_in_grid slots)
+      var filmSlots = gridSlots.filter(function(s) { return s.slot_id !== mvPrimaryId; });
+      var strip = document.getElementById('mv-filmstrip');
+      if (!filmSlots.length) {
+        strip.innerHTML = '<span style="color:rgba(255,255,255,0.3);font-size:18px;padding:0 12px;">Only one camera</span>';
+        return;
+      }
+
+      strip.innerHTML = filmSlots.map(function(s) {
+        var imgId = 'mv-strip-img-' + s.slot_id;
+        var offline = (s.status === 'offline' || s.status === 'unassigned');
+        var fishClass = s.roles.fish_detection ? ' fish-active' : '';
+        return '<div class="mv-strip-tile' + fishClass + '" onclick="mvSwapPrimary(\'' + s.slot_id + '\')" ' +
+               'title="' + s.label + '">' +
+               (offline
+                 ? '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;' +
+                   'color:' + (s.status === 'offline' ? 'var(--warning)' : '#555') + ';font-size:13px;">' +
+                   (s.status === 'offline' ? '⚠ Offline' : '○') + '</div>'
+                 : '<img id="' + imgId + '" style="width:100%;height:100%;object-fit:cover;" alt="' + s.label + '" />') +
+               '<div class="mv-strip-label">' + s.label + '</div>' +
+               '</div>';
+      }).join('');
+
+      // Start staggered polling for filmstrip tiles
+      filmSlots.forEach(function(s, idx) {
+        if (s.status === 'online' || s.status === 'connecting') {
+          setTimeout(function() {
+            mvStartPolling(s.slot_id, 'mv-strip-img-' + s.slot_id, POLL_GRID_ACTIVE);
+          }, idx * POLL_STAGGER_MS);
+        }
+      });
+    }
+
+    function mvSwapPrimary(slotId) {
+      mvPrimaryId = slotId;
+      var gridSlots = mvSlots.filter(function(s) { return s.roles.display_in_grid; });
+      mvBuildFocus(gridSlots);
+    }
+
+    // ── Grid mode ──────────────────────────────────────────────
+
+    function mvBuildGrid(gridSlots) {
+      mvStopAllPolling();
+      document.getElementById('mv-focus').style.display = 'none';
+      document.getElementById('mv-grid').style.display  = 'block';
+
+      var n    = gridSlots.length;
+      var cols = Math.ceil(Math.sqrt(n));
+      var container = document.getElementById('mv-grid-container');
+      container.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+
+      container.innerHTML = gridSlots.map(function(s) {
+        var imgId   = 'mv-grid-img-' + s.slot_id;
+        var offline = (s.status === 'offline' || s.status === 'unassigned');
+        return '<div class="mv-grid-tile" onclick="mvGridTapToFocus(\'' + s.slot_id + '\')">' +
+               (offline
+                 ? '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;' +
+                   'color:' + (s.status === 'offline' ? 'var(--warning)' : '#444') + ';font-size:18px;">' +
+                   (s.status === 'offline' ? '⚠ Offline' : '○ No camera') + '</div>'
+                 : '<img id="' + imgId + '" style="width:100%;height:100%;object-fit:cover;" alt="' + s.label + '" />') +
+               '<span class="mv-tile-label">' + s.label + '</span>' +
+               '<span class="mv-tile-status ' + (s.status || 'unassigned') + '"></span>' +
+               (s.status === 'offline' ? '<div class="mv-offline-overlay" style="border:none;background:none;"></div>' : '') +
+               '</div>';
+      }).join('');
+
+      // Staggered polling for grid tiles
+      gridSlots.forEach(function(s, idx) {
+        if (s.status === 'online' || s.status === 'connecting') {
+          setTimeout(function() {
+            mvStartPolling(s.slot_id, 'mv-grid-img-' + s.slot_id, POLL_GRID_ACTIVE);
+          }, idx * POLL_STAGGER_MS);
+        }
+      });
+    }
+
+    function mvGridTapToFocus(slotId) {
+      mvPrimaryId = slotId;
+      mvGridMode = false;
+      document.getElementById('mv-mode-btn').textContent = 'Grid View';
+      document.getElementById('mv-mode-btn').classList.add('focus-mode');
+      var gridSlots = mvSlots.filter(function(s) { return s.roles.display_in_grid; });
+      mvBuildFocus(gridSlots);
+    }
+
+    // ── Mode toggle ────────────────────────────────────────────
+
+    function mvToggleMode() {
+      mvGridMode = !mvGridMode;
+      var btn = document.getElementById('mv-mode-btn');
+      if (mvGridMode) {
+        btn.textContent = 'Focus View';
+        btn.classList.remove('focus-mode');
+      } else {
+        btn.textContent = 'Grid View';
+        btn.classList.add('focus-mode');
+      }
+      var gridSlots = mvSlots.filter(function(s) { return s.roles.display_in_grid; });
+      if (mvGridMode) {
+        mvBuildGrid(gridSlots);
+      } else {
+        mvBuildFocus(gridSlots);
+      }
+    }
+
+    // ── Polling engine ─────────────────────────────────────────
+
+    function mvStartPolling(slotId, imgId, intervalMs) {
+      // Stop any existing timer for this slot
+      if (mvTimers[slotId]) {
+        clearInterval(mvTimers[slotId]);
+        delete mvTimers[slotId];
+      }
+      // Immediate first fetch
+      mvUpdateTile(slotId, imgId);
+      // Then on interval
+      mvTimers[slotId] = setInterval(function() {
+        mvUpdateTile(slotId, imgId);
+      }, intervalMs);
+    }
+
+    function mvUpdateTile(slotId, imgId) {
+      var img = document.getElementById(imgId);
+      if (!img) {
+        // Image element gone (DOM rebuilt) — stop this timer
+        if (mvTimers[slotId]) { clearInterval(mvTimers[slotId]); delete mvTimers[slotId]; }
+        return;
+      }
+      img.src = '/camera/frame/' + slotId + '?t=' + Date.now();
+    }
+
+    function mvStopAllPolling() {
+      Object.keys(mvTimers).forEach(function(k) {
+        clearInterval(mvTimers[k]);
+      });
+      mvTimers = {};
+    }
+
+    // ── Refresh ────────────────────────────────────────────────
+
+    function mvRefresh() {
+      mvStopAllPolling();
+      mvLoadSlots();
+      mvUpdateStatus();
+      mvLoadRecordings();
+    }
+
+    // ── Status ─────────────────────────────────────────────────
+
+    function mvUpdateStatus() {
+      fetch('/camera/status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var conn = document.getElementById('st-conn');
+          if (data.connected && data.has_frame) {
+            conn.textContent = 'Connected';
+            conn.className   = 'mv-row-value';
+          } else if (data.connected) {
+            conn.textContent = 'Connected (No Frame)';
+            conn.className   = 'mv-row-value warn';
+          } else {
+            conn.textContent = 'Offline — not on boat network';
+            conn.className   = 'mv-row-value err';
+          }
+          document.getElementById('st-name').textContent = data.camera_name || '--';
+          document.getElementById('st-ip').textContent   = data.camera_ip   || '--';
+
+          mvIsRecording = data.recording;
+          var recEl = document.getElementById('st-rec');
+          recEl.textContent = data.recording ? 'Recording' : 'Stopped';
+          recEl.className   = 'mv-row-value' + (data.recording ? ' err' : '');
+          mvUpdateRecordBtn();
+
+          var canUse = data.connected && data.has_frame;
+          document.getElementById('btn-capture').disabled = !canUse;
+        })
+        .catch(function() {
+          document.getElementById('st-conn').textContent = 'Error';
+          document.getElementById('st-conn').className   = 'mv-row-value err';
+        });
+    }
+
+    // ── Fish detection ─────────────────────────────────────────
+
+    function mvUpdateDetectionStatus() {
+      fetch('/detect/status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var el = document.getElementById('det-status');
+          var ready = data.ready && data.status === 'active';
+          el.textContent = ready ? 'Ready' : 'Not Ready';
+          el.className   = 'mv-row-value' + (ready ? '' : ' warn');
+          document.getElementById('det-model').textContent = data.model || '--';
+          document.getElementById('btn-detect').disabled   = !ready;
+        })
+        .catch(function() {
+          document.getElementById('det-status').textContent = 'Error';
+          document.getElementById('det-status').className   = 'mv-row-value err';
+        });
+    }
+
+    function mvRunDetection() {
+      var btn = document.getElementById('btn-detect');
+      var res = document.getElementById('det-results');
+      btn.disabled    = true;
+      btn.textContent = 'Detecting...';
+      res.style.display = 'block';
+      res.innerHTML     = '<div style="color:var(--accent);">Running detection...</div>';
+
+      fetch('/detect/frame', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var html = '';
+          html += '<div style="margin-bottom:8px;">';
+          html += '<strong>Fish:</strong> ' + (data.fish_detected
+            ? '✓ Detected (' + (data.fish_confidence * 100).toFixed(1) + '%)'
+            : '✗ Not detected') + '<br>';
+          if (data.capture_triggered) {
+            html += '<strong style="color:var(--accent);">📸 Capture triggered! ID: ' + data.capture_id + '</strong>';
+          }
+          html += '</div>';
+          if (data.detections && data.detections.length) {
+            html += '<div><strong>' + data.detections.length + ' object(s):</strong></div>';
+            data.detections.forEach(function(d) {
+              html += '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+                      d.class_name + ' (' + (d.confidence * 100).toFixed(1) + '%)</div>';
+            });
+            // Draw bounding boxes on primary canvas
+            mvDrawBboxes(data.detections);
+          }
+          res.innerHTML     = html;
+          btn.textContent   = 'Run Detection Now';
+          btn.disabled      = false;
+        })
+        .catch(function(err) {
+          res.innerHTML     = '<div style="color:var(--danger);">Detection failed: ' + err.message + '</div>';
+          btn.textContent   = 'Run Detection Now';
+          btn.disabled      = false;
+        });
+    }
+
+    function mvDrawBboxes(detections) {
+      var canvas = document.getElementById('mv-detect-canvas');
+      var img    = document.getElementById('mv-primary-img');
+      if (!canvas || !img || !img.naturalWidth) return;
+
+      canvas.width  = img.clientWidth;
+      canvas.height = img.clientHeight;
+      var ctx   = canvas.getContext('2d');
+      var scaleX = img.clientWidth  / img.naturalWidth;
+      var scaleY = img.clientHeight / img.naturalHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      detections.forEach(function(d) {
+        if (!d.bbox) return;
+        var x = d.bbox[0] * scaleX;
+        var y = d.bbox[1] * scaleY;
+        var w = (d.bbox[2] - d.bbox[0]) * scaleX;
+        var h = (d.bbox[3] - d.bbox[1]) * scaleY;
+        ctx.strokeStyle = '#00CC00';
+        ctx.lineWidth   = 3;
+        ctx.strokeRect(x, y, w, h);
+        ctx.fillStyle = 'rgba(0,204,0,0.8)';
+        ctx.font      = '16px Arial';
+        ctx.fillText(d.class_name + ' ' + (d.confidence * 100).toFixed(0) + '%', x + 4, y - 6 > 0 ? y - 6 : y + 18);
+      });
+
+      // Auto-clear bboxes after 4 seconds
+      setTimeout(function() { ctx.clearRect(0, 0, canvas.width, canvas.height); }, 4000);
+    }
+
+    // ── Recording ──────────────────────────────────────────────
+
+    function mvUpdateRecordBtn() {
+      var btn = document.getElementById('btn-record');
+      if (mvIsRecording) {
+        btn.textContent = 'Stop Recording';
+        btn.classList.add('recording');
+        btn.disabled = false;
+      } else {
+        btn.textContent = 'Start Recording';
+        btn.classList.remove('recording');
+      }
+    }
+
+    function mvToggleRecord() {
+      var btn = document.getElementById('btn-record');
+      var ep  = mvIsRecording ? '/camera/record/stop' : '/camera/record/start';
+      btn.disabled = true;
+      fetch(ep, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+          mvUpdateStatus();
+          setTimeout(mvLoadRecordings, mvIsRecording ? 0 : 2000);
+        })
+        .catch(function() { alert('Recording action failed'); })
+        .finally(function() { btn.disabled = false; });
+    }
+
+    function mvCapture() {
+      var btn = document.getElementById('btn-capture');
+      btn.disabled = true;
+      fetch('/camera/capture', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { alert('Photo captured: ' + data.filename); mvLoadRecordings(); })
+        .catch(function() { alert('Failed to capture photo'); })
+        .finally(function() { btn.disabled = false; });
+    }
+
+    // ── Recordings ─────────────────────────────────────────────
+
+    function mvLoadRecordings() {
+      fetch('/camera/recordings')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var list = document.getElementById('mv-recordings');
+          if (data.recordings && data.recordings.length) {
+            list.innerHTML = data.recordings.map(function(r) {
+              return '<div class="rec-item">' +
+                     '<span class="rec-name">' + r.filename + '</span>' +
+                     '<span class="rec-size">' + r.size_mb + ' MB</span></div>';
+            }).join('');
+          } else {
+            list.innerHTML = '<div style="color:rgba(255,255,255,0.4);text-align:center;padding:16px;">No recordings yet</div>';
+          }
+        })
+        .catch(function() {});
+    }
+  </script>
+
+  <script src="/js/touch-scroll.js"></script>
+  <script src="/js/keyboard-fix.js"></script>
+</body>
+</html>
