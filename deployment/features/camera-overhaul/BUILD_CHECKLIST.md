@@ -149,10 +149,10 @@
 
 ## Final Verification (all steps complete)
 
-- [ ] Fresh install scenario: delete slots.json + hardware.json, visit Marine Vision → "No cameras configured" empty state — ON-BOAT TASK
-- [ ] Scan finds both cameras, add them to slots → both feed correctly — ON-BOAT TASK
-- [ ] Camera offline scenario: confirmed amber state shown — ON-BOAT TASK
-- [ ] Performance: CPU <35%, memory <970MB, scan <3sec — ON-BOAT TASK
+- [ ] Fresh install scenario: delete slots.json + hardware.json, visit Marine Vision → "No cameras configured" empty state — requires cameras
+- [ ] Scan finds both cameras, add them to slots → both feed correctly — requires cameras
+- [ ] Camera offline scenario: confirmed amber state shown — requires cameras
+- [ ] Performance: CPU <35%, memory <970MB, scan <3sec — requires cameras
 - [x] DEPLOYMENT_INDEX.md updated with camera-overhaul feature entry — COMPLETE 2026-03-11
 
 ---

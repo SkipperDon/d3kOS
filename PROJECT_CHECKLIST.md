@@ -363,8 +363,8 @@
 - \[✅\] Step 3 — Settings UI: Camera Setup tab (3-panel), slot CRUD, assign/unassign, role toggles, scan
 - \[✅\] Step 4 — marine-vision.html rewrite: dynamic tile renderer, focus+filmstrip, staggered polling, fish detection canvas overlay
 - \[✅\] Step 5 — fish_detector.py: reads slots.json, per-slot frame fetch, slot_id on captures, /detect/reload endpoint
-- \[⚠️\] On-boat: touchscreen test Settings UI + Marine Vision (location dependency)
-- \[⚠️\] On-boat: 24hr stability test + performance test (CPU <35%, memory <970MB)
+- \[⚠️\] Touchscreen test Settings UI + Marine Vision (requires Pi touchscreen)
+- \[⚠️\] 24hr stability test + performance test — requires cameras (lab cameras will cover this)
 - [ ] DEPLOYMENT_INDEX.md updated ✅ (done 2026-03-11)
 - [ ] setup_dhcp_reservations.py: one-line update to read hardware.json (deferred — low priority)
 
