@@ -1044,7 +1044,9 @@
 
 - \[🔄\] o-charts chart activation — o-charts plugin upgraded v2.1.6 → v2.1.10 (2026-03-12, server was rejecting v2.1.6 as obsolete). Fingerprint file `oc03L_1773315591.fpr` created and copied to `/home/d3kos/Downloads/`. Don must: go to o-charts.org → My Charts → Assign Device → upload fingerprint file → download charts. See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
 
-- \[🔄\] Charts button → windowed mode → charts.html — PARTIAL FIX 2026-03-12. index.html charts case now calls `goWindowed()` → `/charts.html` (correct). charts.html loads and shows Launch button. BUT: Launch button does not trigger OpenCPN. Root cause: `http://localhost:1880/launch-opencpn` fetch is not reaching Node-RED from Chromium — Node-RED is the only service not proxied through nginx. **Pending fix (next session):** (1) Add `location /launch-opencpn` nginx proxy → `127.0.0.1:1880`; (2) Update charts.html to call `/launch-opencpn` relative path; (3) Audit all `localhost:1880` calls across HTML files for same issue; (4) nginx reload + test.
+- \[🔄\] **[v0.9.2]** Charts button → windowed mode → OpenCPN launch — PARTIAL FIX 2026-03-12. Tasks 1+2 of `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` complete: index.html charts case calls `goWindowed()` → `/charts.html`; charts.html `launchOpenCPN()` rewritten (no alerts, `/window/windowed` defensive call, 400ms delay). BUT: Launch button does not trigger OpenCPN. Root cause: `http://localhost:1880/launch-opencpn` fetch fails — Node-RED (port 1880) is the only service not proxied through nginx; Chromium cannot reach `localhost:1880` from page context. **Pending fix:** (1) Add `location /launch-opencpn { proxy_pass http://127.0.0.1:1880; }` to nginx default config; (2) Update `charts.html` to call `/launch-opencpn` relative path; (3) Audit all other `http://localhost:1880` calls across HTML files for same issue; (4) `sudo nginx -t && sudo systemctl reload nginx` + test. Spec: `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md`
+
+- \[ \] Verify and fix main menu (index.html) — confirm ALL menu card touch targets navigate correctly in windowed-maximized mode. **Background:** `--start-fullscreen` (browser fullscreen) breaks touch on menu item cards in normal page flow — only `position:fixed` elements (toggle button) receive touch in kiosk mode. **Auto-toggle fix deployed Mar 11** — index.html uses `pageshow` → `goFullscreen()` (compositor windowed-maximized, not browser fullscreen); sub-pages use `pageshow` → `goWindowed()`. Don confirmed toggle button works and navigation returns to fullscreen. **Pending verification:** tap every menu card on the touchscreen and confirm it navigates — if any card fails, investigate switching index.html `pageshow` trigger from `goFullscreen()` to `goWindowed()` so the menu operates in windowed mode where all touch targets are reliable. No dedicated spec doc — see MEMORY.md auto-toggle architecture and SESSION_LOG.md 2026-03-10 Part 9 / 2026-03-11.
 
 ### 9. Boat Setup Wizard — Gemini API Configuration Step
 
@@ -1944,7 +1946,7 @@
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
 
-**Last Updated:** 2026-03-12 | Session: NMEA2000 Simulator Removal task created (14-phase, all open), instructions filed to deployment/docs/
+**Last Updated:** 2026-03-12 | Session: Charts/OpenCPN fix doc indexed, main menu touch item added to checklist, Charts button item updated with v0.9.2 tag and spec doc reference
 
 ## 📝 NOTES & CONVENTIONS
 
