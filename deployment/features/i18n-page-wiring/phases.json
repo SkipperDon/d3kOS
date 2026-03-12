@@ -52,5 +52,29 @@
     "source_file": "helm.html",
     "spec_section": "PHASE 9: helm.html — i18n-helm",
     "keywords": ["Listening", "Processing", "Ready", "Helm", "helm-status"]
+  },
+  {
+    "name": "i18n-history",
+    "source_file": "history.html",
+    "spec_section": "PHASE 10: history.html — i18n-history",
+    "keywords": ["page-title", "Conversation History", "filter-button", "loading", "stat-item", "Total", "Online", "Onboard"]
+  },
+  {
+    "name": "i18n-upload-manual",
+    "source_file": "upload-manual.html",
+    "spec_section": "PHASE 11: upload-manual.html — i18n-upload-manual",
+    "keywords": ["page-title", "Upload Manual", "form-label", "Manual Type", "Boat Manual", "Engine Manual", "file-input-button", "info-box"]
+  },
+  {
+    "name": "i18n-qrcode",
+    "source_file": "qrcode.html",
+    "spec_section": "PHASE 12: qrcode.html — i18n-qrcode",
+    "keywords": ["qr-title", "qr-pairing", "subtitle", "nav-button", "step-text", "info-header", "Connection Details", "System Information"]
+  },
+  {
+    "name": "i18n-initial-setup",
+    "source_file": "initial-setup.html",
+    "spec_section": "PHASE 13: initial-setup.html — i18n-initial-setup",
+    "keywords": ["BLOCKED — file not yet located"]
   }
 ]

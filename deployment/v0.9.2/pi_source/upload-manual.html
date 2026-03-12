@@ -209,30 +209,30 @@
 </head>
 <body>
   <div class="top-nav">
-    <a href="/" class="nav-button">← Main Menu</a>
+    <a href="/" class="nav-button">← <span data-i18n="ui.back">Back</span></a>
   </div>
 
   <div class="container">
-    <h1 class="page-title">📄 Upload Manual</h1>
+    <h1 class="page-title">📄 <span data-i18n="ui.manuals">Upload Manual</span></h1>
     <p class="page-subtitle">Add manuals, regulations, and reference documents to your knowledge base</p>
 
     <div class="upload-card">
       <form id="uploadForm">
         <div class="form-group">
-          <label class="form-label">Manual Type</label>
+          <label class="form-label" data-i18n="ui.manual_type">Manual Type</label>
           <select id="manualType" class="form-select">
-            <option value="boat">Boat Manual</option>
-            <option value="engine">Engine Manual</option>
-            <option value="electronics">Electronics Manual</option>
-            <option value="safety">Safety Equipment Manual</option>
+            <option value="boat" data-i18n="ui.manual_boat">Boat Manual</option>
+            <option value="engine" data-i18n="ui.manual_engine">Engine Manual</option>
+            <option value="electronics" data-i18n="ui.manual_electronics">Electronics Manual</option>
+            <option value="safety" data-i18n="ui.manual_safety">Safety Equipment Manual</option>
             <option value="regulations">Regulations</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Select PDF File</label>
+          <label class="form-label" data-i18n="ui.select_file">Select PDF File</label>
           <div class="file-input-wrapper">
-            <button type="button" class="file-input-button" onclick="document.getElementById('fileInput').click()">
+            <button type="button" class="file-input-button" onclick="document.getElementById('fileInput').click()" data-i18n="ui.choose_file">
               Choose PDF File
             </button>
             <input type="file" id="fileInput" accept=".pdf" onchange="updateFileName()">
@@ -249,7 +249,7 @@
     </div>
 
     <div class="info-box">
-      <h3>What Happens When You Upload?</h3>
+      <h3 data-i18n="ui.upload_info_title">What Happens When You Upload?</h3>
       <ul>
         <li>The PDF will be processed and text extracted</li>
         <li>Key specifications will be identified automatically</li>
@@ -260,6 +260,7 @@
     </div>
   </div>
 
+  <script src="/js/i18n.js"></script>
   <script>
     let selectedFile = null;
 

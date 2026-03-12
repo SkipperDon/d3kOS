@@ -265,8 +265,8 @@
 </head>
 <body>
   <div class="top-nav">
-    <a href="/" class="nav-button">← Main Menu</a>
-    <div class="page-title">Conversation History</div>
+    <a href="/" class="nav-button">← <span data-i18n="ui.back">Back</span></a>
+    <div class="page-title" data-i18n="ui.history">Conversation History</div>
     <div style="width: 150px;"></div>
   </div>
 
@@ -275,31 +275,32 @@
 
     <div class="stats-bar" id="statsBar">
       <div class="stat-item">
-        <span>Total:</span>
+        <span data-i18n="ui.total">Total:</span>
         <span class="stat-value" id="totalCount">-</span>
       </div>
       <div class="stat-item">
-        <span>Online:</span>
+        <span data-i18n="ui.online_label">Online:</span>
         <span class="stat-value" id="onlineCount">-</span>
       </div>
       <div class="stat-item">
-        <span>Onboard:</span>
+        <span data-i18n="ui.onboard_label">Onboard:</span>
         <span class="stat-value" id="onboardCount">-</span>
       </div>
     </div>
 
     <div class="filter-bar">
-      <button class="filter-button active" data-filter="all" onclick="setFilter('all')">All</button>
-      <button class="filter-button" data-filter="online" onclick="setFilter('online')">Online Only</button>
-      <button class="filter-button" data-filter="onboard" onclick="setFilter('onboard')">Onboard Only</button>
-      <input type="text" class="search-box" id="searchBox" placeholder="Search conversations..." oninput="filterConversations()">
+      <button class="filter-button active" data-filter="all" onclick="setFilter('all')" data-i18n="ui.filter_all">All</button>
+      <button class="filter-button" data-filter="online" onclick="setFilter('online')" data-i18n="ui.filter_online">Online Only</button>
+      <button class="filter-button" data-filter="onboard" onclick="setFilter('onboard')" data-i18n="ui.filter_onboard">Onboard Only</button>
+      <input type="text" class="search-box" id="searchBox" placeholder="Search conversations..." data-i18n-placeholder="ui.search_placeholder" oninput="filterConversations()">
     </div>
 
     <div class="conversation-list" id="conversationList">
-      <div class="loading">Loading conversations...</div>
+      <div class="loading" data-i18n="ui.loading">Loading conversations...</div>
     </div>
   </div>
 
+  <script src="/js/i18n.js"></script>
   <script>
     let allConversations = [];
     let currentFilter = 'all';
