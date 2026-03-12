@@ -168,3 +168,138 @@ Target elements:
 - Status text showing "Ready" or "Helm ready" → data-i18n="ui.ready"
 - "Back" button text → data-i18n="ui.back"
 - "Settings" nav text → data-i18n="ui.settings"
+
+---
+
+## GAP ANALYSIS — Phases 1–9
+
+### Phase 1 (index.html) — 3 missing button-labels
+The following tiles exist in index.html and were not included in the Phase 1 target list:
+- "Voice AI" → data-i18n="ui.voice_ai"
+- "Manuals" → data-i18n="ui.manuals"
+- "Export Data" → data-i18n="ui.export_data"
+
+### Phase 8 (onboarding.html) — onboarding namespace
+Phase 8 uses keys like onboarding.welcome, onboarding.wizard_complete, onboarding.select_engine,
+onboarding.engine_model. These exist in the translations file under the "onboarding" namespace
+(confirmed present in en.json). No action needed.
+
+### Phases 2–7, 9 — no gaps found
+
+---
+
+## EMOJI + TRANSLATION PATTERN (applies to all phases)
+
+Elements with emoji prefixes require the span-wrap pattern to preserve the emoji when
+i18n.js sets textContent:
+
+Before: `<h1>📱 QR Code Pairing</h1>`
+After:  `<h1>📱 <span data-i18n="ui.qr_pairing">QR Code Pairing</span></h1>`
+
+The emoji sits outside the span as a literal character. i18n.js only touches the span textContent.
+Apply this pattern wherever an emoji precedes translatable text.
+
+Back button arrow pattern (same principle):
+Before: `<a class="nav-button">← Main Menu</a>`
+After:  `<a class="nav-button">← <span data-i18n="ui.back">Back</span></a>`
+
+---
+
+## PLACEHOLDER NOTE — history.html search box
+
+i18n.js already supports data-i18n-placeholder (confirmed in /var/www/html/js/i18n.js).
+Use: `<input data-i18n-placeholder="ui.search_placeholder" ...>`
+Key: ui.search_placeholder = "Search conversations..."
+
+---
+
+## ELEMENTS SKIPPED — REASON LOG
+
+| File | Element / Text | Reason skipped |
+|------|---------------|----------------|
+| history.html | "View and search past AI conversations" | No matching key, do not invent |
+| history.html | "No conversations found" | JS-generated innerHTML, rule 4 |
+| history.html | "Failed to load conversations..." | JS-generated innerHTML, rule 4 |
+| history.html | "📋 Copy", "🔄 Re-ask", "🗑️ Delete" | JS-generated innerHTML, rule 4 |
+| history.html | "🌐 Online", "💻 Onboard" badges | JS-generated innerHTML, rule 4 |
+| upload-manual.html | "Add manuals, regulations..." subtitle | No matching key, do not invent |
+| upload-manual.html | "Regulations" option | No matching key, do not invent |
+| upload-manual.html | "Upload and Process Manual" submit button | JS sets textContent dynamically, rule 4 |
+| upload-manual.html | All li info-box items | No matching keys, do not invent |
+| qrcode.html | `<p class="qr-description">Scan this QR code...` | Long description, no matching key |
+| qrcode.html | `<div id="installation-id">Loading...</div>` | JS-populated, rule 4 |
+| qrcode.html | `<li>System IP: <strong id="system-ip">...` | Contains dynamic JS-populated child, rule 4 |
+| qrcode.html | `<li>Web Interface: ...` | Contains hardcoded IP, skip |
+| qrcode.html | Manual step 3 IP address line | Contains inline HTML, rule 4 |
+| qrcode.html | Manual step 4 Installation ID line | JS-populated child, rule 4 |
+
+---
+
+## PHASE 10: history.html — i18n-history
+
+Wire data-i18n onto conversation history page static text elements.
+Status: COMPLETE — deployed 2026-03-11
+
+Elements wired (8 data-i18n + 1 data-i18n-placeholder):
+- `<div class="page-title">` → data-i18n="ui.history"
+- `<a class="nav-button">← ...` → span-wrap: `← <span data-i18n="ui.back">Back</span>`
+- `<span>Total:</span>` → data-i18n="ui.total"
+- `<span>Online:</span>` → data-i18n="ui.online_label"
+- `<span>Onboard:</span>` → data-i18n="ui.onboard_label"
+- filter-button All → data-i18n="ui.filter_all"
+- filter-button Online Only → data-i18n="ui.filter_online"
+- filter-button Onboard Only → data-i18n="ui.filter_onboard"
+- search-box input → data-i18n-placeholder="ui.search_placeholder"
+- `<div class="loading">` → data-i18n="ui.loading"
+- Added `<script src="/js/i18n.js"></script>`
+
+---
+
+## PHASE 11: upload-manual.html — i18n-upload-manual
+
+Wire data-i18n onto upload manual page static text elements.
+Status: COMPLETE — deployed 2026-03-11
+
+Elements wired (10):
+- `<h1 class="page-title">📄 ...` → span-wrap: `📄 <span data-i18n="ui.manuals">Upload Manual</span>`
+- `<a class="nav-button">← ...` → span-wrap: `← <span data-i18n="ui.back">Back</span>`
+- `<label class="form-label">Manual Type` → data-i18n="ui.manual_type"
+- option Boat Manual → data-i18n="ui.manual_boat"
+- option Engine Manual → data-i18n="ui.manual_engine"
+- option Electronics Manual → data-i18n="ui.manual_electronics"
+- option Safety Equipment Manual → data-i18n="ui.manual_safety"
+- `<label class="form-label">Select PDF File` → data-i18n="ui.select_file"
+- file-input-button → data-i18n="ui.choose_file"
+- info-box h3 → data-i18n="ui.upload_info_title"
+- Added `<script src="/js/i18n.js"></script>`
+
+---
+
+## PHASE 12: qrcode.html — i18n-qrcode
+
+Wire data-i18n onto QR code pairing page static text elements.
+Status: COMPLETE — deployed 2026-03-11
+
+Elements wired (20):
+- `<h1>📱 ...` → span-wrap: `📱 <span data-i18n="ui.qr_pairing">QR Code Pairing</span>`
+- `<p class="subtitle">` → data-i18n="ui.qr_subtitle"
+- back button → span-wrap: `← <span data-i18n="ui.back">Back</span>`
+- share config button → data-i18n="ui.share_config"
+- `<h2 class="qr-title">` → data-i18n="ui.qr_scan_title"
+- regenerate button → span-wrap with data-i18n="ui.qr_regenerate"
+- download button → span-wrap with data-i18n="ui.qr_download"
+- print button → span-wrap with data-i18n="ui.qr_print"
+- Connection Details span → data-i18n="ui.connection_details"
+- System Information span → data-i18n="ui.system_info"
+- Direct Connection URL span → data-i18n="ui.direct_url"
+- How to Connect h3 → span-wrap with data-i18n="ui.qr_how_to_connect"
+- QR step 1–5 .step-text spans → data-i18n="ui.qr_step_1" through qr_step_5
+- Manual Connection h3 → span-wrap with data-i18n="ui.qr_manual_connect"
+- Manual step 1, 2, 5 .step-text spans → data-i18n="ui.qr_manual_step_1/2/5"
+- Added `<script src="/js/i18n.js"></script>`
+
+---
+
+## PHASE 13: initial-setup.html — i18n-initial-setup
+
+Status: BLOCKED — file not found in repo or on Pi. Phase cannot proceed until file is located.

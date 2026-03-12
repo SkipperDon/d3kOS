@@ -384,19 +384,19 @@
   <div class="container">
     <!-- Header -->
     <header>
-      <h1>📱 QR Code Pairing</h1>
-      <p class="subtitle">Connect Mobile Devices & Share Configuration</p>
+      <h1>📱 <span data-i18n="ui.qr_pairing">QR Code Pairing</span></h1>
+      <p class="subtitle" data-i18n="ui.qr_subtitle">Connect Mobile Devices & Share Configuration</p>
     </header>
 
     <!-- Top Navigation -->
     <nav class="top-nav">
       <button class="nav-button" onclick="goBack()" aria-label="Go back to main menu">
-        ← Main Menu
+        ← <span data-i18n="ui.back">Back</span>
       </button>
 
       <span class="status-text"></span>
 
-      <button class="nav-button" onclick="shareConfig()" aria-label="Share configuration">
+      <button class="nav-button" onclick="shareConfig()" aria-label="Share configuration" data-i18n="ui.share_config">
         Share Config
       </button>
     </nav>
@@ -407,7 +407,7 @@
 
         <!-- QR Code Display -->
         <div class="qr-section">
-          <h2 class="qr-title">Scan to Connect</h2>
+          <h2 class="qr-title" data-i18n="ui.qr_scan_title">Scan to Connect</h2>
           <p class="qr-description">
             Scan this QR code with the d3kOS mobile app or any QR code reader to connect to your system
           </p>
@@ -419,9 +419,9 @@
           <div class="installation-id" id="installation-id">Loading...</div>
 
           <div class="btn-group">
-            <button class="btn btn-primary" onclick="regenerateQR()">🔄 Regenerate Code</button>
-            <button class="btn" onclick="downloadQR()">💾 Download QR</button>
-            <button class="btn" onclick="printQR()">🖨️ Print QR</button>
+            <button class="btn btn-primary" onclick="regenerateQR()">🔄 <span data-i18n="ui.qr_regenerate">Regenerate Code</span></button>
+            <button class="btn" onclick="downloadQR()">💾 <span data-i18n="ui.qr_download">Download QR</span></button>
+            <button class="btn" onclick="printQR()">🖨️ <span data-i18n="ui.qr_print">Print QR</span></button>
           </div>
         </div>
 
@@ -430,7 +430,7 @@
           <div class="info-section">
             <div class="info-header">
               <span>🌐</span>
-              <span>Connection Details</span>
+              <span data-i18n="ui.connection_details">Connection Details</span>
             </div>
             <ul class="info-list">
               <li>System IP: <strong id="system-ip">192.168.1.237</strong></li>
@@ -443,7 +443,7 @@
           <div class="info-section">
             <div class="info-header">
               <span>📊</span>
-              <span>System Information</span>
+              <span data-i18n="ui.system_info">System Information</span>
             </div>
             <ul class="info-list">
               <li>System: <strong>d3kOS v2.0</strong></li>
@@ -456,7 +456,7 @@
           <div class="info-section">
             <div class="info-header">
               <span>🔗</span>
-              <span>Direct Connection URL</span>
+              <span data-i18n="ui.direct_url">Direct Connection URL</span>
             </div>
             <div class="connection-url" id="connection-url">
               d3kos://connect?host=192.168.1.237&id=XXXX-XXXX-XXXX
@@ -467,49 +467,49 @@
         <!-- Instructions -->
         <div class="instructions">
           <h3 style="font-size: var(--font-heading); color: var(--color-accent); margin-bottom: 20px;">
-            📱 How to Connect Your Mobile Device
+            📱 <span data-i18n="ui.qr_how_to_connect">How to Connect Your Mobile Device</span>
           </h3>
 
           <div class="step-item">
             <span class="step-number">1</span>
-            <span class="step-text">Download the d3kOS mobile app from your app store (iOS/Android)</span>
+            <span class="step-text" data-i18n="ui.qr_step_1">Download the d3kOS mobile app from your app store (iOS/Android)</span>
           </div>
 
           <div class="step-item">
             <span class="step-number">2</span>
-            <span class="step-text">Open the app and tap "Scan QR Code" or "Add System"</span>
+            <span class="step-text" data-i18n="ui.qr_step_2">Open the app and tap "Scan QR Code" or "Add System"</span>
           </div>
 
           <div class="step-item">
             <span class="step-number">3</span>
-            <span class="step-text">Point your camera at the QR code above</span>
+            <span class="step-text" data-i18n="ui.qr_step_3">Point your camera at the QR code above</span>
           </div>
 
           <div class="step-item">
             <span class="step-number">4</span>
-            <span class="step-text">Confirm the connection and wait for data sync</span>
+            <span class="step-text" data-i18n="ui.qr_step_4">Confirm the connection and wait for data sync</span>
           </div>
 
           <div class="step-item">
             <span class="step-number">5</span>
-            <span class="step-text">Your mobile device is now paired! View real-time engine data, trips, and alerts</span>
+            <span class="step-text" data-i18n="ui.qr_step_5">Your mobile device is now paired! View real-time engine data, trips, and alerts</span>
           </div>
         </div>
 
         <!-- Manual Connection -->
         <div class="instructions">
           <h3 style="font-size: var(--font-heading); color: var(--color-accent); margin-bottom: 20px;">
-            🔧 Manual Connection (Without QR Code)
+            🔧 <span data-i18n="ui.qr_manual_connect">Manual Connection (Without QR Code)</span>
           </h3>
 
           <div class="step-item">
             <span class="step-number">1</span>
-            <span class="step-text">Ensure your mobile device is on the same WiFi network</span>
+            <span class="step-text" data-i18n="ui.qr_manual_step_1">Ensure your mobile device is on the same WiFi network</span>
           </div>
 
           <div class="step-item">
             <span class="step-number">2</span>
-            <span class="step-text">In the d3kOS app, select "Manual Setup"</span>
+            <span class="step-text" data-i18n="ui.qr_manual_step_2">In the d3kOS app, select "Manual Setup"</span>
           </div>
 
           <div class="step-item">
@@ -524,7 +524,7 @@
 
           <div class="step-item">
             <span class="step-number">5</span>
-            <span class="step-text">Tap "Connect" and wait for verification</span>
+            <span class="step-text" data-i18n="ui.qr_manual_step_5">Tap "Connect" and wait for verification</span>
           </div>
         </div>
 
@@ -690,5 +690,6 @@
     }, 2000);
   </script>
   <script src="/js/touch-scroll.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>
