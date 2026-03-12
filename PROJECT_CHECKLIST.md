@@ -1042,7 +1042,9 @@
 
 - \[✅\] Touchscreen touch and pinch-zoom confirmed working in Flatpak OpenCPN — twofing patched for Wayland XInput fallback, ILITEK touchscreen symlinked via udev rule to `/dev/twofingtouch`, autostarted in labwc before OpenCPN
 
-- \[ \] o-charts chart activation — Don's manual task: open OpenCPN → Options → Plugins → O-Charts → Preferences → Log in with o-charts.org account → download charts. Alternative: fingerprint file `oc03L\\\_1772818229.fpr` at `C:\\Users\\donmo\\Downloads\\` for web registration at o-charts.org → My Charts → Assign Device. See `deployment/docs/OPENCPN\_FLATPAK\_OCHARTS.md`
+- \[🔄\] o-charts chart activation — o-charts plugin upgraded v2.1.6 → v2.1.10 (2026-03-12, server was rejecting v2.1.6 as obsolete). Fingerprint file `oc03L_1773315591.fpr` created and copied to `/home/d3kos/Downloads/`. Don must: go to o-charts.org → My Charts → Assign Device → upload fingerprint file → download charts. See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
+
+- \[🔄\] Charts button → windowed mode → charts.html — PARTIAL FIX 2026-03-12. index.html charts case now calls `goWindowed()` → `/charts.html` (correct). charts.html loads and shows Launch button. BUT: Launch button does not trigger OpenCPN. Root cause: `http://localhost:1880/launch-opencpn` fetch is not reaching Node-RED from Chromium — Node-RED is the only service not proxied through nginx. **Pending fix (next session):** (1) Add `location /launch-opencpn` nginx proxy → `127.0.0.1:1880`; (2) Update charts.html to call `/launch-opencpn` relative path; (3) Audit all `localhost:1880` calls across HTML files for same issue; (4) nginx reload + test.
 
 ### 9. Boat Setup Wizard — Gemini API Configuration Step
 
@@ -1210,6 +1212,88 @@
 - \[✅\] Store `password\_changed: true` in `onboarding.json` once confirmed
 
 **Deliverable:** Pi fully cloud-ready. T0 devices unaffected. T1+ register via website and push telemetry automatically.
+
+
+## v0.9.2 — NMEA2000 Simulator Removal \[Effort: Small\]
+
+**Status:** \[ \] Not Started | **Priority:** HIGH — Safety & Liability Risk
+**Instructions:** `deployment/docs/SIMULATOR_REMOVAL_INSTRUCTIONS.md`
+**Authority:** Don / Skipper — 2026-03-12
+**AAO Risk Level:** MEDIUM — modifies production web pages and systemd services
+
+> Execute phases in order. Confirm each phase is complete before proceeding. Stop and report on any failure. Do not start until Claude Code is instructed to execute this task.
+
+### Phase 0 — Archive
+- [ ] Create archive directory `/home/boatiq/archive/simulator-2026-02-21/`
+- [ ] Copy all 7 simulator files to archive
+- [ ] Verify 7+ files listed in archive before continuing
+
+### Phase 1 — Stop and Disable Services
+- [ ] Stop and disable `d3kos-simulator-api` and `d3kos-simulator` services
+- [ ] Verify both show `inactive` or `failed`
+
+### Phase 2 — Remove Service Files
+- [ ] Remove service files and run `systemctl daemon-reload`
+- [ ] Verify no simulator service files remain
+
+### Phase 3 — Remove Scripts and API
+- [ ] Remove `/opt/d3kos/simulator/` and `/opt/d3kos/services/simulator/`
+- [ ] Verify both paths return `No such file or directory`
+
+### Phase 4 — Remove Web UI Page
+- [ ] Remove `/var/www/html/settings-simulator.html`
+- [ ] Verify file gone
+
+### Phase 5 — Remove Simulator Link from settings.html
+- [ ] Edit `/var/www/html/settings.html` — remove simulator menu item
+- [ ] Verify `grep -i "simulat" settings.html` returns no output
+
+### Phase 6 — Remove Simulator Banner from dashboard.html and helm.html
+- [ ] Remove orange banner, polling JS, and simulator CSS from `dashboard.html`
+- [ ] Verify no simulator references in `dashboard.html`
+- [ ] Remove all simulator references from `helm.html`
+- [ ] Verify no simulator references in `helm.html`
+
+### Phase 7 — Remove Nginx Proxy Block
+- [ ] Remove `/simulator/` location block from `/etc/nginx/sites-enabled/default`
+- [ ] Verify `nginx -t` passes, then reload nginx
+
+### Phase 8 — Remove Signal K Provider
+- [ ] Remove `vcan0-simulator` from `pipedProviders` in `~/.signalk/settings.json`
+- [ ] Validate JSON before restarting (`python3 -m json.tool settings.json`)
+- [ ] Restart Signal K and confirm `active`
+
+### Phase 9 — Full Scan for Remaining References
+- [ ] Confirm all `grep -ri "simulat"` scans return no output across web root, opt, signalk, nginx
+
+### Phase 10 — Network Traffic Verification
+- [ ] Confirm `vcan0` is DOWN or does not exist
+- [ ] Confirm no PGN 127488 frames from source 0x40 in candump output
+
+### Phase 11 — Browser Verification
+- [ ] `dashboard.html` — no orange banner, no cycling RPM, no simulator JS errors
+- [ ] `helm.html` — no orange banner, no simulator errors
+- [ ] `settings.html` — no simulator link or button
+- [ ] `settings-simulator.html` — returns 404
+
+### Phase 12 — Signal K Data Browser Verification
+- [ ] `propulsion.0.revs` — null or 0, not cycling
+- [ ] `propulsion.0.boostPressure` — null or 0, not constant 150000
+- [ ] No `vcan0-simulator` source in any data path
+
+### Phase 13 — Git Commit
+- [ ] Review `git status` — only simulator files affected
+- [ ] Commit with prescribed message from instructions (local only — no push)
+
+### Phase 14 — Update Governance Documents
+- [ ] Update SESSION_LOG.md with removal entry
+- [ ] Mark this checklist section complete
+- [ ] Update DEPLOYMENT_INDEX.md — mark simulator files REMOVED 2026-03-12
+
+### Future Task
+- [ ] Evaluate `tkurki/signalk-simulator` as standalone Signal K plugin for bench testing
+
+**Deliverable:** NMEA2000 simulator fully removed from d3kOS. Archive at `/home/boatiq/archive/simulator-2026-02-21/`. No live impact on real NMEA2000 data.
 
 
 ## v0.9.3 — AtMyBoat.com Community Platform \[Effort: Large\]
@@ -1860,7 +1944,7 @@
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
 
-**Last Updated:** 2026-03-11 | Session: Marine Vision Camera Overhaul complete (Steps 1–5), DEPLOYMENT_INDEX updated
+**Last Updated:** 2026-03-12 | Session: NMEA2000 Simulator Removal task created (14-phase, all open), instructions filed to deployment/docs/
 
 ## 📝 NOTES & CONVENTIONS
 

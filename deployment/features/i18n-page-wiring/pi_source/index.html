@@ -686,15 +686,7 @@
           window.location.href = '/history.html';
           break;
         case 'charts':
-          // Launch OpenCPN (auto-install if needed)
-          alert('Launching Charts...\n\nOpenCPN will open in a moment.\nFirst time may take 30-60 seconds to install.');
-          fetch('http://localhost:1880/launch-opencpn', {
-            method: 'POST',
-            mode: 'no-cors'
-          }).catch((error) => {
-            console.error('Failed to launch Charts:', error);
-            alert('Failed to launch Charts. Please check the system.');
-          });
+          goWindowed(function() { window.location.href = '/charts.html'; });
           break;
         default:
           console.error('Unknown page:', page);

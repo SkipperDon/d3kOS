@@ -177,13 +177,16 @@ tar -xzf ~/Downloads/oesenc_pi-*-linux-arm64.tar.gz
 
   <script>
     function launchOpenCPN() {
-      fetch('http://localhost:1880/launch-opencpn', { method: 'POST', mode: 'no-cors' })
-        .then(() => {
-          alert('🗺️ Launching OpenCPN...\n\n✓ GPS data automatically connected\n✓ Access via VNC or connected display\n\nNote: O-charts plugin requires manual installation (see instructions above)');
-        })
-        .catch(() => {
-          alert('🗺️ Launching OpenCPN...\n\nIf it doesn\'t appear:\n• Check VNC connection\n• Launch from desktop menu');
-        });
+      // Ensure Chromium is windowed so OpenCPN is visible on the Pi desktop.
+      // The user can freely switch between OpenCPN and this browser window.
+      fetch('/window/windowed', { method: 'POST' }).catch(function() {});
+      // Small delay to let the window compositor settle before firing the launch.
+      setTimeout(function() {
+        fetch('http://localhost:1880/launch-opencpn', { method: 'POST', mode: 'no-cors' })
+          .catch(function(error) {
+            console.error('Failed to launch OpenCPN:', error);
+          });
+      }, 400);
     }
   </script>
   <script src="/js/touch-scroll.js"></script>
