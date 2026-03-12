@@ -58,33 +58,89 @@ If genuinely blocked with two meaningfully different paths that produce differen
 
 ## Session Reports
 
-At the end of every session (user says "done", "that's it", "end", "wrap up", "commit and close"):
+At the end of every session (user says "done", "that's it", "end", "wrap up",
+"commit and close"), perform the full session close sequence in order.
+Do not skip steps. If a file does not need updating, state that in the chat summary.
 
-1. Write an entry to `SESSION_LOG.md` in the project root
-2. Present a concise summary in chat
+**Step 1 — SESSION_LOG.md**
+Write a new entry to SESSION_LOG.md in the project root.
 
-Format for SESSION_LOG.md entry:
+Format:
 ```
 ## Session YYYY-MM-DD
 **Goal:** <one line>
-**Completed:** <bullet list>
-**Decisions:** <bullet list — each decision with brief rationale>
+**Completed:**
+- <bullet list>
+**Decisions:**
+- <each decision with brief rationale>
 **Ollama:** <N initial calls + N corrections; auto-applied X, corrected Y, flagged Z>
 **Costs:**
 | Source | Metric | Cost |
 |--------|--------|------|
 | Claude API | check console.anthropic.com → Usage → YYYY-MM-DD | TBD |
-| Ollama (qwen3-coder:30b) | N calls (copy from executor report) | $0.00 |
+| Ollama (qwen3-coder:30b) | N calls | $0.00 |
 | Session total | | TBD |
-**Pending:** <bullet list>
+**Pending:**
+- <bullet list>
 ---
 ```
 
-Cost notes:
-- Ollama is always $0 (local GPU at 192.168.1.36)
-- Claude API cost: log into console.anthropic.com, go to Usage, filter by date
-- Executor prints Ollama stats at end of run — copy the call count into the log
-- Over time this builds a cost-per-feature baseline for planning
+Never edit or delete prior entries. Append only.
+
+**Step 2 — PROJECT_CHECKLIST.md**
+Update /home/boatiq/Helm-OS/PROJECT_CHECKLIST.md:
+- Mark any tasks completed this session as done
+- Add any new tasks discovered during this session
+- Update the status of any in-progress items
+- Do not remove existing entries — update status only
+
+**Step 3 — DEPLOYMENT_INDEX.md**
+Update /home/boatiq/Helm-OS/deployment/docs/DEPLOYMENT_INDEX.md:
+- Add every new file created this session (full Pi path or repo path, description, version)
+- Add every new document created this session
+- Add every new feature built or bug fixed
+- Update version numbers if a milestone was reached
+Rule: if it was built or fixed this session, it must appear in this index.
+
+**Step 4 — CHANGELOG.md** (conditional)
+Update /home/boatiq/Helm-OS/CHANGELOG.md only if a version milestone was
+reached or a significant feature was completed.
+Skip and state "no changelog entry needed" if not applicable.
+
+**Step 5 — MEMORY.md**
+Update /home/boatiq/.claude/projects/-home-boatiq/memory/MEMORY.md:
+- Add stable patterns confirmed this session
+- Add corrections to prior wrong assumptions
+- Add key facts that must persist across future sessions
+- Do not add transient or session-specific details
+
+**Step 6 — BUILD_CHECKLIST.md** (conditional)
+If an active feature build was in progress, update:
+/home/boatiq/Helm-OS/deployment/features/<feature>/BUILD_CHECKLIST.md
+- Mark completed build steps
+- Note any blocked or deferred steps
+Skip and state "no active build checklist" if not applicable.
+
+**Step 7 — Feature or Solution Docs** (conditional)
+If any feature document (e.g. MARINE_VISION_CAMERA_SYSTEM.md,
+MARINE_VISION_CAMERA_OVERHAUL.md) was affected by work done this session,
+update it to reflect current state. Version bump the document header.
+Skip and state which docs were not affected if not applicable.
+
+**Step 8 — Git Commit**
+Stage and commit all session changes with a clear commit message.
+Never push — local only. See Git Policy above.
+
+**Step 9 — Chat Summary**
+Present a concise summary in chat covering:
+- What was accomplished
+- What was deferred or blocked
+- Which governance files were updated (list them)
+- Which governance files were skipped and why
+- Cost note (remind operator to check console.anthropic.com for actual Claude cost)
+- Any decisions the operator should be aware of
+
+The chat summary is the final step. It is not optional.
 
 ---
 
