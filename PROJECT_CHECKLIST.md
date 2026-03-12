@@ -1940,7 +1940,7 @@
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
 
-**Last Updated:** 2026-03-12 | Session: Charts/OpenCPN fix doc indexed, main menu touch item added to checklist, Charts button item updated with v0.9.2 tag and spec doc reference
+**Last Updated:** 2026-03-12 | Session: NMEA2000 Simulator Removal complete (all 14 phases) — commit a2b05b4. Phases 11–12 (browser/SK verify) are Don's manual task.
 
 ## 📝 NOTES & CONVENTIONS
 

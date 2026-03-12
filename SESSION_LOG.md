@@ -2,6 +2,25 @@
 
 ---
 
+## Session — 2026-03-12 — Full Session Close (Simulator Removal + Housekeeping)
+
+**Session arc:** Two work blocks this session — (1) Charts/OpenCPN fix doc indexed, main menu touch item added to checklist; (2) NMEA2000 Simulator fully removed from d3kOS (14 phases). Both blocks had their own detailed log entries written during execution (see below). This entry is the AAO session-close sign-off.
+
+**Commits this session:** `a2b05b4` (simulator removal), `ea3d075` (governance docs)
+
+**Don's outstanding manual tasks:**
+- Phase 11: Browser verify — dashboard.html (no orange banner), helm.html (no banner), settings.html (no simulator link), settings-simulator.html (404)
+- Phase 12: SK Data Browser — `propulsion.0.revs` null/0, no `vcan0-simulator` source
+
+**PROJECT_CHECKLIST.md updates (this close):**
+- Last Updated line → 2026-03-12, simulator removal complete, commit a2b05b4
+
+**AAO compliance:** PASS — full detail in simulator removal entry below
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-12 — NMEA2000 Simulator Removal (All 14 Phases Complete)
 
 **Tasks completed:**
