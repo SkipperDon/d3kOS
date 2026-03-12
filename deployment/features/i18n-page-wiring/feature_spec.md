@@ -300,6 +300,25 @@ Elements wired (20):
 
 ---
 
-## PHASE 13: initial-setup.html — i18n-initial-setup
+## PHASE 13: onboarding.html — i18n-initial-setup
 
-Status: BLOCKED — file not found in repo or on Pi. Phase cannot proceed until file is located.
+Wire data-i18n onto onboarding wizard text elements.
+Status: COMPLETE — deployed 2026-03-11
+
+Elements already wired (Phase 8, carried forward):
+- `<h2 data-i18n="onboarding.welcome">Welcome to d3kOS Setup</h2>` (step0)
+- `<h2 data-i18n="onboarding.wizard_complete">Setup Complete! 🎉</h2>` (step21)
+- Language overlay confirm button: `data-i18n="ui.confirm"` on `#obLangConfirm`
+- `<script src="/js/i18n.js"></script>` already present
+
+Elements fixed this phase (2):
+- Nav-bar button: `← Main Menu` → `← <span data-i18n="ui.back">Back</span>` (span-wrap pattern)
+- Bottom back button: removed `data-i18n` from `<button>` (would have overwritten "← Back" with bare "Back"), moved to inner span: `← <span data-i18n="ui.back">Back</span>`
+
+Elements skipped — Phase 8 spec targets not found in actual HTML:
+| Element | Spec target | Actual h2 text | Reason skipped |
+|---------|-------------|----------------|----------------|
+| step5 h2 | onboarding.select_engine | "Who makes your engine?" | Text does not match key value — rule 6 |
+| step6 h2 | onboarding.engine_model | "What's your engine model?" | Text does not match key value — rule 6 |
+
+Note: Phase 13 = initial-setup.html in phases.json — clarified by user as onboarding.html (the Boat Setup Wizard).

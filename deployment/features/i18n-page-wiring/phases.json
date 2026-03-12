@@ -73,8 +73,10 @@
   },
   {
     "name": "i18n-initial-setup",
-    "source_file": "initial-setup.html",
-    "spec_section": "PHASE 13: initial-setup.html — i18n-initial-setup",
-    "keywords": ["BLOCKED — file not yet located"]
+    "source_file": "onboarding.html",
+    "spec_section": "PHASE 13: onboarding.html — i18n-initial-setup",
+    "keywords": ["ui.back", "onboarding.welcome", "onboarding.wizard_complete", "ui.confirm"],
+    "status": "complete",
+    "deployed": "2026-03-11"
   }
 ]
