@@ -2,6 +2,40 @@
 
 ---
 
+## Session — 2026-03-11 — Expand session close procedure in both CLAUDE.md files
+
+**Goal:** Apply Don's CLAUDE_MD_UPDATES.md — replace minimal session end instructions with full 9-step governance file sequence in both CLAUDE.md files.
+
+**Completed:**
+- Read `C:\Users\donmo\Downloads\CLAUDE_MD_UPDATES.md` (via `/mnt/c/Users/donmo/Downloads/`)
+- `/home/boatiq/CLAUDE.md`: `### Session End` replaced with 8-step sequence covering all 7 governance files; AAO Compliance Checklist expanded with 6 new items
+- `/home/boatiq/Helm-OS/CLAUDE.md`: `## Session Reports` replaced with full 9-step sequence — Steps 2–9 now explicitly name each governance file with paths and rules
+
+**Decisions:**
+- Root `/home/boatiq/CLAUDE.md` is not git tracked — edited in place only; no commit possible
+- Kept `## Session Reports` header (double hash) in Helm-OS CLAUDE.md to match existing doc structure — instructions showed `###` but that would break hierarchy
+- MEMORY.md not updated — new procedure is in CLAUDE.md (auto-loaded), no need to duplicate
+
+**Ollama:** 0 calls — no code generation needed
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Same v0.9.2 open tasks as prior session (keyboard live test, i18n 4 pages, boatlog voice note, WebSocket push, UAT, data export, CHANGELOG)
+
+**AAO compliance:** PASS — all actions Low risk, pre-stated, no Pi deploy, no push, no scope creep, no injection patterns.
+
+**No Release Package Manifest** — no Pi deployment this session.
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-11 — Governance doc housekeeping (CLAUDE.md + PROJECT_CHECKLIST.md)
 
 **Goal:** Review and update stale content in Helm-OS/CLAUDE.md and PROJECT_CHECKLIST.md.
