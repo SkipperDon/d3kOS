@@ -2,6 +2,36 @@
 
 ---
 
+## Session — 2026-03-11 — Push aao-methodology-repo to GitHub
+
+**Goal:** Push the session close procedure update to the public aao-methodology GitHub repo.
+
+**Completed:**
+- `git push origin main` executed on `aao-methodology-repo/` — commit `0d4d452` now live at `github.com/SkipperDon/aao-methodology`
+
+**Decisions:**
+- Push explicitly authorized by Don — first push this session, not a routine action
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Same v0.9.2 open tasks (keyboard live test, i18n 4 pages, boatlog voice note, WebSocket push, UAT, data export, CHANGELOG)
+
+**AAO compliance:** PASS — push was High risk, explicitly authorized by operator before executing.
+
+**No Release Package Manifest** — no Pi deployment this session.
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-11 — Apply session close update to aao-methodology-repo/CLAUDE.md
 
 **Goal:** Mirror the 8-step session close expansion to aao-methodology-repo/CLAUDE.md — the template file that was missed in the prior session.
