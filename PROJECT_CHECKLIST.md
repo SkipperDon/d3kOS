@@ -1272,10 +1272,10 @@
 - \[✅\] `vcan0` — `Device "vcan0" does not exist` — confirmed gone
 
 ### Phase 11 — Browser Verification
-- \[ \] **DON'S TASK** — verify on Pi touchscreen: dashboard.html (no orange banner, no cycling RPM), helm.html (no banner), settings.html (no simulator link), settings-simulator.html (404)
+- \[✅\] Verified 2026-03-12 by Don — dashboard.html (no orange banner, no cycling RPM), helm.html (no banner), settings.html (no simulator link), settings-simulator.html (404)
 
 ### Phase 12 — Signal K Data Browser Verification
-- \[ \] **DON'S TASK** — verify at `http://192.168.1.237:3000` Data Browser: `propulsion.0.revs` null/0, no `vcan0-simulator` source
+- \[✅\] Verified 2026-03-12 by Don — `propulsion.0.revs` null/0, no `vcan0-simulator` source
 
 ### Phase 13 — Git Commit
 - \[✅\] Reviewed `git status` — only simulator + governance files affected
