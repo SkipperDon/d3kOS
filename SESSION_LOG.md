@@ -2,6 +2,47 @@
 
 ---
 
+## Session — 2026-03-11 — i18n Phase 13 + Checklist Close
+
+**Goal:** Complete i18n page wiring Phase 13 (onboarding.html) — the final missing page — and close v0.9.2 i18n task.
+
+**Completed:**
+- Phase 13 i18n wiring on `onboarding.html` (Boat Setup Wizard)
+  - Fixed nav-bar button: `← Main Menu` → `← <span data-i18n="ui.back">Back</span>` (span-wrap pattern)
+  - Fixed bottom back button: `data-i18n` was on `<button>` (would destroy "← " on translation), moved to inner `<span>`
+  - Phase 8 elements already present from prior session: `onboarding.welcome`, `onboarding.wizard_complete`, `ui.confirm`, `i18n.js` script tag
+  - 5 `data-i18n` attributes total — verified on Pi
+- Deployed `onboarding.html` to Pi `/var/www/html/` via tmp_deploy staging workaround
+- Updated `feature_spec.md`: Phase 13 COMPLETE, added skipped-elements log (two Phase 8 spec targets had mismatched h2 text — not wired per Rule 6)
+- Updated `phases.json`: removed BLOCKED status, set `status:complete`, corrected `source_file` to `onboarding.html`
+- Updated `PROJECT_CHECKLIST.md`: Layer 0 page wiring marked complete, "4 still missing" item resolved
+- Committed `6de577c` — Phase 13 complete
+
+**Decisions:**
+- Phase 8 spec expected "Select Engine Manufacturer" and "Engine Model" as h2 text but actual HTML uses "Who makes your engine?" and "What's your engine model?" — not wired (Rule 6: text must exactly match key value)
+- "← Main Menu" text on nav button changed to "← Back" via span-wrap — semantically correct and consistent with all other pages; English fallback reads "← Back"
+
+**Ollama:** 0 calls this session — all changes were direct file edits (no code generation needed)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- On-screen keyboard: keyboard-fix.js v2.0 deployed — needs live Pi touchscreen confirmation
+- Boatlog voice note: verify record → transcribe → save → view full flow on Pi
+- WebSocket real-time push: Remote Access page
+- UAT: 5 metric + 5 imperial users
+- Data export: test with unit metadata
+- CHANGELOG.md: update for v0.9.2
+- o-charts chart activation: Don's task
+- Phase 1 gap: 3 index.html button-labels still unwiried (Voice AI, Manuals, Export Data) — keys exist, just not applied
+
+---
+
 ## Session — 2026-03-11 — Push aao-methodology-repo to GitHub
 
 **Goal:** Push the session close procedure update to the public aao-methodology GitHub repo.
