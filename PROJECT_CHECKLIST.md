@@ -1044,7 +1044,7 @@
 
 - \[🔄\] o-charts chart activation — o-charts plugin upgraded v2.1.6 → v2.1.10 (2026-03-12, server was rejecting v2.1.6 as obsolete). Fingerprint file `oc03L_1773315591.fpr` created and copied to `/home/d3kos/Downloads/`. Don must: go to o-charts.org → My Charts → Assign Device → upload fingerprint file → download charts. See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
 
-- \[✅\] **[v0.9.2]** Charts button → windowed mode → OpenCPN launch — COMPLETE 2026-03-12. Tap Charts → Chromium exits fullscreen → charts.html loads → tap Launch → OpenCPN opens on Pi desktop. Confirmed by Don. nginx proxy `/launch-opencpn` → `127.0.0.1:1880` added; charts.html updated to relative path. Commit `83b91c8`. Spec: `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md`. **Audit note:** `navigation.html:973` has same `localhost:1880/launch-opencpn` issue — separate task.
+- \[✅\] **[v0.9.2]** Charts button → windowed mode → OpenCPN launch — COMPLETE 2026-03-12. Tap Charts → Chromium exits fullscreen → charts.html loads → tap Launch → OpenCPN opens on Pi desktop. Confirmed by Don. nginx proxy `/launch-opencpn` → `127.0.0.1:1880` added; charts.html updated to relative path. Commit `83b91c8`. Spec: `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md`.
 
 - \[ \] Verify and fix main menu (index.html) — confirm ALL menu card touch targets navigate correctly in windowed-maximized mode. **Background:** `--start-fullscreen` (browser fullscreen) breaks touch on menu item cards in normal page flow — only `position:fixed` elements (toggle button) receive touch in kiosk mode. **Auto-toggle fix deployed Mar 11** — index.html uses `pageshow` → `goFullscreen()` (compositor windowed-maximized, not browser fullscreen); sub-pages use `pageshow` → `goWindowed()`. Don confirmed toggle button works and navigation returns to fullscreen. **Pending verification:** tap every menu card on the touchscreen and confirm it navigates — if any card fails, investigate switching index.html `pageshow` trigger from `goFullscreen()` to `goWindowed()` so the menu operates in windowed mode where all touch targets are reliable. No dedicated spec doc — see MEMORY.md auto-toggle architecture and SESSION_LOG.md 2026-03-10 Part 9 / 2026-03-11.
 
@@ -1940,7 +1940,7 @@
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
 
-**Last Updated:** 2026-03-12 | Session: NMEA2000 Simulator Removal complete (all 14 phases) — commit a2b05b4. Phases 11–12 (browser/SK verify) are Don's manual task.
+**Last Updated:** 2026-03-12 | Session: Charts/OpenCPN fix complete — nginx proxy + charts.html relative path. OpenCPN confirmed opening on Pi desktop by Don. Commit 83b91c8.
 
 ## 📝 NOTES & CONVENTIONS
 
