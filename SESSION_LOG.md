@@ -2,6 +2,41 @@
 
 ---
 
+## Session — 2026-03-12 — Charts/OpenCPN Fix Complete
+
+**Goal:** Fix Charts button so tapping Launch on charts.html opens OpenCPN on Pi desktop.
+
+**Tasks completed:**
+- Added nginx proxy block: `location /launch-opencpn { proxy_pass http://127.0.0.1:1880; }` to `/etc/nginx/sites-enabled/default`
+- Updated `charts.html` `launchOpenCPN()` — `http://localhost:1880/launch-opencpn` → `/launch-opencpn`
+- nginx -t passed, reloaded, curl POST `/launch-opencpn` returned 200
+- Confirmed by Don: tap Charts → windowed mode → charts.html → tap Launch → OpenCPN opens on Pi desktop
+
+**Files changed:**
+- Pi: `/etc/nginx/sites-enabled/default` — `/launch-opencpn` proxy block added (Medium)
+- Pi: `/var/www/html/charts.html` — relative path fix (Low)
+- Repo: `deployment/v0.9.2/pi_source/charts.html` — pulled from Pi (Low)
+- `PROJECT_CHECKLIST.md` — Charts item `[🔄]` → `[✅]`, audit note removed, Last Updated line (Low)
+
+**PROJECT_CHECKLIST.md updates:**
+- Line 1047: `[🔄]` → `[✅]` Charts button item — confirmed complete by Don
+- Line 1943: Last Updated line updated
+
+**AAO compliance:** PASS
+
+**Open items for next session:**
+- Main menu touch verification (all menu cards)
+- On-screen keyboard live test confirmation
+- Boatlog voice note end-to-end verify
+- WebSocket real-time push (Remote Access page)
+- UAT (5 metric + 5 imperial users)
+- Data export test with unit metadata
+- CHANGELOG.md full v0.9.2 release entry (when v0.9.2 closes)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-12 — Full Session Close (Simulator Removal + Housekeeping)
 
 **Session arc:** Two work blocks this session — (1) Charts/OpenCPN fix doc indexed, main menu touch item added to checklist; (2) NMEA2000 Simulator fully removed from d3kOS (14 phases). Both blocks had their own detailed log entries written during execution (see below). This entry is the AAO session-close sign-off.

@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NMEA2000 Simulator** (2026-03-12) — Removed all simulator components from d3kOS due to safety and liability risk. Removed: `d3kos-simulator-api.service`, `d3kos-simulator.service`, `/opt/d3kos/simulator/`, `/opt/d3kos/services/simulator/`, `settings-simulator.html`, simulator banner from dashboard.html and helm.html, nginx `/simulator/` proxy block, `vcan0-simulator` Signal K provider. Archive preserved at `/home/boatiq/archive/simulator-2026-02-21/`. Replacement: `tkurki/signalk-simulator` standalone SK plugin (future evaluation).
 
 ### Fixed
-- Charts button now calls `goWindowed()` before navigating to `charts.html` — Chromium exits fullscreen so OpenCPN is visible on Pi desktop (2026-03-12, partial — OpenCPN launch pending nginx proxy fix)
+- Charts button fully working (2026-03-12) — tap Charts → Chromium exits fullscreen → charts.html loads → tap Launch → OpenCPN opens on Pi desktop. nginx proxy `/launch-opencpn` → Node-RED port 1880 added; charts.html updated to relative path.
 
 ---
 
