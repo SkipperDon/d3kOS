@@ -340,7 +340,7 @@
 
 - \[✅\] Tag release as v0.9.2
 
-- Update CHANGELOG.md
+- \[🔄\] Update CHANGELOG.md — v0.9.2 unreleased section started 2026-03-12 (simulator removal + Charts button fix entries added). Full v0.9.2 release entry (all features) to be written when v0.9.2 closes.
 
 - \[✅\] Deploy to production Pi
 
