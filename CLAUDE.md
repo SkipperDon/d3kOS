@@ -49,7 +49,7 @@ If genuinely blocked with two meaningfully different paths that produce differen
 
 - Ollama runs at `192.168.1.36:11434`, model `qwen3-coder:30b`
 - SSH key for Pi (192.168.1.237): `~/.ssh/id_d3kos`
-- Ollama executor: `deployment/v0.9.2/scripts/ollama_execute.py`
+- Ollama executor: `deployment/scripts/ollama_execute_v3.py`
 - Helm-OS context file for Ollama prompts: `deployment/docs/helm_os_context.md`
 - Let Ollama generate code — review the output, correct where wrong, apply, deploy
 - Do not write the entire solution and then ask Ollama to format it
@@ -119,26 +119,26 @@ Don runs Windows. When giving Don instructions:
 
 ---
 
-## Active Build — Marine Vision Camera Overhaul
+## Active Build — v0.9.2 Open Tasks
 
-**Spec:** `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md`
-**Feature dir:** `deployment/features/camera-overhaul/`
-**Build checklist:** `deployment/features/camera-overhaul/BUILD_CHECKLIST.md`
-**Status:** Step 1 in progress (migrate_cameras.py)
+**Status:** v0.9.2 is the active version. All camera overhaul work (5 steps) is COMPLETE as of 2026-03-11.
+**Camera overhaul history:** `deployment/features/camera-overhaul/BUILD_CHECKLIST.md`
+**Camera overhaul spec:** `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md`
 
-### Pre-deploy rules for this build
-- Run `migrate_cameras.py` on Pi FIRST before deploying camera_stream_manager.py (Step 2)
-- Verify `slots.json` and `hardware.json` exist and are correct before Step 2 deploy
-- Keep `cameras.json.bak` intact — it is the rollback source for Step 1
-- Each step must be verified working before the next step begins
-- Rollback for any step: redeploy from `deployment/v0.9.2-multicam/pi_source/`
+### Remaining open tasks before v0.9.2 closes
+- **On-screen keyboard**: keyboard-fix.js v2.0 deployed — needs live test confirmation on Pi
+- **i18n keys**: 4 pages missing translations (Initial Setup, QR Code, Upload Manual, History)
+- **Boatlog voice note**: verify record → transcribe → save → view full flow on Pi
+- **WebSocket real-time push**: Remote Access page
+- **UAT**: 5 metric + 5 imperial users
+- **Data export**: test with unit metadata
+- **CHANGELOG.md**: update for v0.9.2
+- **o-charts chart activation**: Don's task — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
 
-### New config files (Pi paths)
-- `/opt/d3kos/config/slots.json` — owner-defined positions (created by migration)
-- `/opt/d3kos/config/hardware.json` — discovered hardware (created by migration)
-- `/opt/d3kos/config/cameras.json.bak` — original config backup (never delete)
-
-### Service locations (unchanged)
+### Camera overhaul — completed config (Pi reference)
+- `/opt/d3kos/config/slots.json` — owner-defined positions
+- `/opt/d3kos/config/hardware.json` — discovered hardware
+- `/opt/d3kos/config/cameras.json.bak` — original backup (never delete)
 - `camera_stream_manager.py` → `/opt/d3kos/services/camera/camera_stream_manager.py`
 - `fish_detector.py` → `/opt/d3kos/services/camera/fish_detector.py`
-- Port 8084 (camera), Port 8086 (fish detector) — unchanged
+- Port 8084 (camera), Port 8086 (fish detector)
