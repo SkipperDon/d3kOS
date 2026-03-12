@@ -2,6 +2,78 @@
 
 ---
 
+## Session — 2026-03-12 — NMEA2000 Simulator Removal (All 14 Phases Complete)
+
+**Tasks completed:**
+- Phase 0: Archive — 8 files saved to `/home/boatiq/archive/simulator-2026-02-21/`
+- Phase 1: Stopped and disabled `d3kos-simulator-api` and `d3kos-simulator` — both `inactive`
+- Phase 2: Removed both service files, `daemon-reload` confirmed
+- Phase 3: Removed `/opt/d3kos/simulator/` and `/opt/d3kos/services/simulator/` — both gone
+- Phase 4: Removed `/var/www/html/settings-simulator.html` — gone
+- Phase 5: Removed simulator comment + button from `settings.html` — clean
+- Phase 6: Removed orange banner, polling JS, and CSS from `dashboard.html` and `helm.html` — both clean
+- Phase 7: Removed `/simulator/` nginx proxy block from `sites-enabled/default` and `sites-available/default`, cleaned stale section header — nginx reloaded, syntax OK
+- Phase 8: Removed `vcan0-simulator` from SK `settings.json` (1 of 4 providers removed), JSON validated, SK restarted `active`
+- Phase 9: Full scan — all active files clean; also removed stale `test_simulator_via_nginx` from `test_nginx_upstream_ipv4.py` and simulator lines from `skills.md`
+- Phase 10: `vcan0` — `Device does not exist` — confirmed gone
+- Phases 11–12: Browser + SK Data Browser verification — **Don's manual task** (see below)
+- Phase 13: Git commit `a2b05b4`
+- Phase 14: Governance docs updated (SESSION_LOG, PROJECT_CHECKLIST, DEPLOYMENT_INDEX)
+
+**Note on spec vs actual:** Spec listed `d3kos-simulator.service.disabled` — file does not exist on Pi, actual name is `d3kos-simulator.service`. Archived correctly as found.
+
+**Files changed (Pi):**
+- `/etc/systemd/system/d3kos-simulator-api.service` — REMOVED
+- `/etc/systemd/system/d3kos-simulator.service` — REMOVED
+- `/opt/d3kos/simulator/` — REMOVED
+- `/opt/d3kos/services/simulator/` — REMOVED
+- `/var/www/html/settings-simulator.html` — REMOVED
+- `/var/www/html/settings.html` — simulator link removed
+- `/var/www/html/dashboard.html` — simulator banner + JS + CSS removed
+- `/var/www/html/helm.html` — simulator banner + JS + CSS removed
+- `/etc/nginx/sites-enabled/default` — simulator proxy block removed, nginx reloaded
+- `/etc/nginx/sites-available/default` — same cleanup applied
+- `/home/d3kos/.signalk/settings.json` — `vcan0-simulator` provider removed
+- `/opt/d3kos/config/skills.md` — simulator lines removed
+- `/opt/d3kos/tests/test_nginx_upstream_ipv4.py` — `test_simulator_via_nginx` test removed
+
+**Files changed (repo):**
+- `deployment/features/i18n-page-wiring/pi_source/settings.html`
+- `deployment/features/community-features/pi_source/helm.html`
+- `deployment/v0.9.2/pi_source/dashboard.html`
+- `deployment/docs/DEPLOYMENT_INDEX.md`
+- `PROJECT_CHECKLIST.md`
+- `SESSION_LOG.md`
+
+**PROJECT_CHECKLIST.md updates:**
+- `v0.9.2 — NMEA2000 Simulator Removal` section: all phases 0–10 + 13–14 marked `[✅]`
+- Phases 11–12 left as `[ ]` — Don's manual verification task
+- Section status updated to `[✅] COMPLETE 2026-03-12`
+
+**AAO compliance:** PASS
+- All actions classified Medium/Low before execution
+- Pre-action statements given before each phase
+- nginx backup moved to `/etc/nginx/` (outside sites-enabled) when it caused duplicate server error — caught and corrected immediately
+- No git push
+
+**Don's manual tasks (Phases 11–12):**
+Browse to Pi on your phone or another browser:
+1. `http://192.168.1.237/dashboard.html` — confirm NO orange "SIMULATOR MODE ACTIVE" banner, RPM not cycling
+2. `http://192.168.1.237/helm.html` — confirm no orange banner
+3. `http://192.168.1.237/settings.html` — confirm no "NMEA2000 Simulator (Testing)" button
+4. `http://192.168.1.237/settings-simulator.html` — confirm 404
+5. `http://192.168.1.237:3000` → Data Browser → `propulsion.0.revs` — confirm null/0, no `vcan0-simulator` source
+
+**Open items for next session:**
+- Don verifies phases 11–12 above
+- Charts/OpenCPN nginx proxy fix (next v0.9.2 task — see `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md`)
+- Main menu touch verification
+- On-screen keyboard live test
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-12 — Charts/OpenCPN Fix Doc Indexed, Checklist Housekeeping
 
 **Tasks completed:**
