@@ -2,6 +2,38 @@
 
 ---
 
+## Session — 2026-03-11 — Apply session close update to aao-methodology-repo/CLAUDE.md
+
+**Goal:** Mirror the 8-step session close expansion to aao-methodology-repo/CLAUDE.md — the template file that was missed in the prior session.
+
+**Completed:**
+- `aao-methodology-repo/CLAUDE.md`: `### Session End` replaced with 8-step sequence
+- `aao-methodology-repo/CLAUDE.md`: AAO Compliance Checklist expanded with 6 new governance file items
+- Committed `0d4d452` to aao-methodology-repo
+
+**Decisions:**
+- All three CLAUDE.md files now have identical session close procedures — root, Helm-OS, and aao-methodology-repo are in sync
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Same v0.9.2 open tasks (keyboard live test, i18n 4 pages, boatlog voice note, WebSocket push, UAT, data export, CHANGELOG)
+
+**AAO compliance:** PASS — Low risk only, pre-stated, no Pi deploy, no push, no scope creep.
+
+**No Release Package Manifest** — no Pi deployment this session.
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-11 — Expand session close procedure in both CLAUDE.md files
 
 **Goal:** Apply Don's CLAUDE_MD_UPDATES.md — replace minimal session end instructions with full 9-step governance file sequence in both CLAUDE.md files.
