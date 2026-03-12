@@ -1,6 +1,6 @@
 # d3kOS Project Implementation Checklist
 
-**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.5 → Target: v1.0.0
+**Version:** 1.0 | **Status:** Active Development | **Current Version:** v0.9.2 → Target: v1.0.0
 
 ## 📋 LEGEND
 
@@ -264,13 +264,13 @@
 
 - Update Boatlog display
 
-  - [ ] 
+  - \[🔍\]
 
-  - Display entries in user's preferred units
+  - Display entries in user's preferred units — verification needed, not confirmed done
 
-  - [ ] 
+  - \[🔍\]
 
-  - Stored data remains in imperial (no conversion on storage)
+  - Stored data remains in imperial (no conversion on storage) — verification needed
 
 ### Voice Assistant & Testing
 
@@ -375,6 +375,7 @@
 ## v0.9.2 — Marine Vision: Live IP Camera System (Bow + Stern) — SUPERSEDED \[Effort: Large\]
 
 > **SUPERSEDED — 2026-03-11 by camera-overhaul.** Retained as history. See section above.
+> **All open `[ ]` items below are superseded. Do not action them — the camera overhaul section replaces this entire build.**
 
 **What this was:** Original two-camera cameras.json system — camera switching, grid view, fish detector.
 **Status:** \[✅\] Complete at time of overhaul. Now replaced.
@@ -666,7 +667,7 @@
 
 - \[✅\] `data-i18n` wired: `index.html`, `dashboard.html`, `navigation.html`, `boatlog.html`, `settings.html`, `onboarding.html`
 
-- [ ] Wire 14 remaining pages: `weather.html`, `marine-vision.html`, `helm.html`, `ai-assistant.html`, `charts.html`, `manuals.html`, `manual-search.html`, `history.html`, `settings-network.html`, `settings-data.html`, `settings-healing.html`, `settings-simulator.html`, `remote-access.html`, `upload-manual.html`
+- \[🔄\] Wire remaining pages — 10 of 14 wired (Mar 7 i18n session). **4 still missing:** Initial Setup, QR Code, `upload-manual.html`, `history.html`
 
 - [ ] Expand translation keys in all 18 JSON files to cover new pages
 
@@ -754,7 +755,7 @@
 
 #### Latin-script languages (fr, de, es, it, nl, sv, no, da, fi, pt, hr, tr, uk)
 
-- [ ] Fix existing English on-screen keyboard bug (pre-condition)
+- \[🔍\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0 deployed, pending live test confirmation on Pi
 
 - [ ] Implement per-language virtual keyboard layouts (AZERTY, QWERTZ, accented characters: é, ü, ø, ç, ğ, і, etc.)
 
