@@ -2,6 +2,42 @@
 
 ---
 
+## Session — 2026-03-11 — OpenCPN APT Removal + Launch Verification
+
+**Goal:** Remove old APT OpenCPN 5.10.2, verify Flatpak 5.12.4 is the sole working version and Charts tile can launch it.
+
+**Completed:**
+- Detected two OpenCPN versions: APT 5.10.2 at `/usr/bin/opencpn` and Flatpak 5.12.4 via `org.opencpn.OpenCPN`
+- Confirmed Flatpak desktop entry at `/var/lib/flatpak/exports/share/applications/org.opencpn.OpenCPN.desktop` before removal
+- Removed APT packages `opencpn` + `opencpn-data` — freed 73MB, `/usr/bin/opencpn` gone, `/usr/share/applications/opencpn.desktop` gone
+- Verified `detect-opencpn.sh` still returns `true` (falls through to flatpak check)
+- Verified Node-RED `launch-opencpn` handler already calling `flatpak run org.opencpn.OpenCPN` — no change needed
+- Launched Flatpak OpenCPN — confirmed running as `pid 57149` via `bwrap` sandbox
+- Fixed `pgrep -f 'opencpn'` false-positive in `/home/d3kos/install-opencpn.sh` — SSH command strings containing 'opencpn' were triggering the "already running" branch. Changed to `pgrep -x opencpn` (exact process name match)
+- Retested launch script raise-to-foreground path — clean exit 0
+
+**Decisions:**
+- `/opt/d3kos/scripts/detect-opencpn.sh` left unchanged — it checks flatpak as last resort and returns correctly
+- `/opt/d3kos/scripts/install-opencpn.sh` (old apt-based install script) left in place — it is not called by any active flow, only the `/home/d3kos/install-opencpn.sh` launcher is active
+
+**Ollama:** 0 calls — all direct investigation and edits
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- o-charts chart activation — Don's manual task (log in to o-charts.org in OpenCPN plugin manager)
+- On-screen keyboard live test confirmation
+- Boatlog voice note full flow verification
+- WebSocket real-time push (Remote Access page)
+- UAT, data export test, CHANGELOG.md
+
+---
+
 ## Session — 2026-03-11 — i18n Phase 13 + Checklist Close
 
 **Goal:** Complete i18n page wiring Phase 13 (onboarding.html) — the final missing page — and close v0.9.2 i18n task.

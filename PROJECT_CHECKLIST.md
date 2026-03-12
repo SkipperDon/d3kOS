@@ -1028,13 +1028,13 @@
 
 - \[✅\] **Phase 2 — Export current settings**: Back up `~/.opencpn/` (charts, config, plugins) before removing native package
 
-- \[✅\] **Phase 3 — Remove native package**: `sudo apt remove opencpn` (retain config backup)
+- \[✅\] **Phase 3 — Remove native package**: `sudo apt remove --purge opencpn opencpn-data` — confirmed complete 2026-03-11. Both packages purged, `/usr/bin/opencpn` gone, 73MB freed. APT `opencpn.desktop` removed.
 
 - \[✅\] **Phase 4 — Install Flatpak OpenCPN**: `flatpak install flathub org.opencpn.OpenCPN` — Flatpak 5.12.4 confirmed installed system-wide
 
 - \[✅\] **Phase 5 — Migrate settings**: Flatpak config already initialised with touchscreen settings at `~/.var/app/org.opencpn.OpenCPN/config/opencpn/`
 
-- \[✅\] **Phase 6 — Update launcher**: `install-opencpn.sh` fixed — uses `flatpak run org.opencpn.OpenCPN` (no --user); DISPLAY/XAUTHORITY set correctly
+- \[✅\] **Phase 6 — Update launcher**: `install-opencpn.sh` fixed — uses `flatpak run org.opencpn.OpenCPN` (no --user); DISPLAY/XAUTHORITY set correctly. Bug fix 2026-03-11: `pgrep -f 'opencpn'` → `pgrep -x opencpn` (SSH strings were triggering false "already running" match)
 
 - \[✅\] **Phase 7 — Plugins**: o-charts and AIS Radar View installed via Flatpak plugin manager; AIS pipeline active (Signal K → signalk-to-nmea0183 → TCP 10110 → OpenCPN)
 
