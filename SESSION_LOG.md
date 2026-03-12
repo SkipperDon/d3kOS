@@ -2,6 +2,44 @@
 
 ---
 
+## Session — 2026-03-12 — Charts/OpenCPN Fix Doc Indexed, Checklist Housekeeping
+
+**Tasks completed:**
+- Confirmed CHARTS_OPENCPN_FIX_INSTRUCTIONS.md (from Don's Downloads) matches the 2026-03-12 fix work already applied to index.html and charts.html
+- Saved doc as permanent reference: `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` (includes STATUS section documenting what is done and what remains)
+- Added entry to DEPLOYMENT_INDEX.md — labeled `[v0.9.2 — ACTIVE]`
+- Updated PROJECT_CHECKLIST.md `[🔄]` Charts button item with `[v0.9.2]` tag, spec doc reference, and exact nginx pending fix steps
+- Added new `[ ]` checklist item for main menu touch verification (auto-toggle deployed Mar 11, all cards need live touch confirmation)
+
+**Files changed:**
+- `PROJECT_CHECKLIST.md` — `/home/boatiq/Helm-OS/PROJECT_CHECKLIST.md` — Charts item enriched, main menu touch item added, Last Updated line updated
+- `CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` — `/home/boatiq/Helm-OS/deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` — New file (from Don's Downloads + STATUS section)
+- `DEPLOYMENT_INDEX.md` — `/home/boatiq/Helm-OS/deployment/docs/DEPLOYMENT_INDEX.md` — New index entry added
+
+**PROJECT_CHECKLIST.md updates:**
+- Line 1047: `[🔄]` Charts button item — added `[v0.9.2]` tag, spec doc reference (`deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md`), exact 4-step nginx pending fix
+- Line 1048–1049: New `[ ]` — main menu touch verification item added
+- Line 1949: Last Updated line updated
+
+**AAO compliance:** PASS
+- All actions Low risk, pre-stated before execution
+- No destructive actions, no git push, no scope creep
+
+**Open items for next session:**
+- NEXT TASK (v0.9.2): Complete Charts/OpenCPN fix — nginx proxy for Node-RED `/launch-opencpn`. Steps in `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` STATUS section. 4 steps: nginx config edit, charts.html relative path update, localhost:1880 audit, nginx reload + test.
+- Main menu touch verification — tap all menu cards on Pi touchscreen, confirm all navigate
+- On-screen keyboard live test confirmation (keyboard-fix.js v2.0 deployed)
+- o-charts activation — Don's manual task (upload fingerprint file at o-charts.org)
+- Boatlog voice note flow verification
+- WebSocket real-time push (Remote Access page)
+- UAT (5 metric + 5 imperial users)
+- Data export test with unit metadata
+- CHANGELOG.md for v0.9.2
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-12 — Diagnostic File Collection from Pi to Windows Downloads
 
 **Tasks completed:**

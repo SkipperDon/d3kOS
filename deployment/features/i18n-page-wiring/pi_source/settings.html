@@ -571,28 +571,245 @@
         <div style="margin: 20px 0;"><button onclick="window.location.href='/language-menu.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">🌐 Language Settings</button></div>
         <!-- Remote Access Settings -->
         <div style="margin: 20px 0;"><button onclick="window.location.href='/remote-access.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📡 Remote Access &amp; QR Code</button></div>
-        <!-- Simulator Settings -->
-        <div style="margin: 20px 0;"><button onclick="window.location.href='/settings-simulator.html'" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">🔧 NMEA2000 Simulator (Testing)</button></div>
         
-                <h2 class="section-header" data-i18n="ui.section_camera">📹 Camera Management</h2>
-        <div id="camera-cards-container">
-          <div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">Loading cameras...</div>
+                <!-- ═══════════════════════════════════════════════════════════
+             CAMERA SETUP — Slot/Hardware Architecture
+             ═══════════════════════════════════════════════════════════ -->
+        <h2 class="section-header" data-i18n="ui.section_camera">
+          📹 Camera Setup
+          <button class="btn btn-primary cs-scan-btn" onclick="csRunScan()" style="min-height:48px;font-size:18px;padding:8px 20px;">
+            Scan for Cameras
+          </button>
+        </h2>
+
+        <!-- Three-panel grid -->
+        <div class="cs-grid">
+
+          <!-- Panel 1: Slot list -->
+          <div class="cs-panel">
+            <div class="cs-panel-header">
+              POSITIONS
+              <button class="btn btn-primary" onclick="csShowNewSlotModal()"
+                      style="min-height:48px;font-size:18px;padding:8px 16px;">+ New Position</button>
+            </div>
+            <div id="cs-slot-list">
+              <div class="cs-empty">Loading...</div>
+            </div>
+          </div>
+
+          <!-- Panel 2: Slot detail -->
+          <div class="cs-panel" id="cs-detail-panel">
+            <div class="cs-panel-header">SLOT DETAIL</div>
+            <div id="cs-detail-body" class="cs-empty" style="padding:20px;text-align:center;">
+              Select a position to edit it.
+            </div>
+          </div>
+
+          <!-- Panel 3: Unassigned hardware -->
+          <div class="cs-panel">
+            <div class="cs-panel-header">UNASSIGNED CAMERAS</div>
+            <div id="cs-hw-list">
+              <div class="cs-empty">Loading...</div>
+            </div>
+            <div style="padding:12px;">
+              <button class="btn btn-primary" onclick="csRunScan()"
+                      style="width:100%;min-height:64px;font-size:20px;">
+                Scan for Cameras
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /cs-grid -->
+
+        <!-- Role summary bar -->
+        <div id="cs-role-summary" class="cs-role-bar">
+          Loading role summary...
         </div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" onclick="window.location.href='/marine-vision.html'">
-            <span class="btn-icon">📹</span>
-            Open Marine Vision
+
+        <!-- Open Marine Vision shortcut -->
+        <div class="btn-group" style="margin-top:16px;">
+          <button class="btn btn-secondary" onclick="window.location.href='/marine-vision.html'"
+                  style="min-height:64px;font-size:20px;">
+            📹 Open Marine Vision
           </button>
         </div>
-        <div id="camera-cards-container">
-          <div class="setting-card" style="color:rgba(255,255,255,0.5);text-align:center;padding:20px;">Loading cameras...</div>
+
+        <!-- New Position modal -->
+        <div id="cs-new-modal" class="cs-modal" style="display:none;">
+          <div class="cs-modal-box">
+            <h3 style="color:var(--color-accent);margin-bottom:16px;">New Position</h3>
+            <label class="setting-label">Name</label>
+            <input id="cs-new-name" type="text" class="form-control" placeholder="e.g. Engine Room"
+                   style="margin-bottom:16px;" />
+            <div style="margin-bottom:16px;">
+              <label style="display:flex;align-items:center;gap:12px;min-height:48px;font-size:20px;margin-bottom:10px;">
+                <input type="checkbox" id="cs-new-fw" style="width:28px;height:28px;" />
+                Forward Watch
+              </label>
+              <label style="display:flex;align-items:center;gap:12px;min-height:48px;font-size:20px;margin-bottom:10px;">
+                <input type="checkbox" id="cs-new-fish" style="width:28px;height:28px;" />
+                Fish Detection
+              </label>
+              <label style="display:flex;align-items:center;gap:12px;min-height:48px;font-size:20px;">
+                <input type="checkbox" id="cs-new-grid" checked style="width:28px;height:28px;" />
+                Show in Grid
+              </label>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="csSaveNewSlot()"
+                      style="min-height:80px;flex:1;font-size:22px;">Save</button>
+              <button class="btn" onclick="csCloseNewModal()"
+                      style="min-height:80px;flex:1;font-size:22px;">Cancel</button>
+            </div>
+          </div>
         </div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" onclick="window.location.href='/marine-vision.html'">
-            <span class="btn-icon">📹</span>
-            Open Marine Vision
-          </button>
+
+        <!-- Reassign modal -->
+        <div id="cs-reassign-modal" class="cs-modal" style="display:none;">
+          <div class="cs-modal-box">
+            <h3 style="color:var(--color-accent);margin-bottom:16px;">Assign Camera to Position</h3>
+            <p id="cs-reassign-slot-name" style="font-size:20px;margin-bottom:16px;"></p>
+            <div id="cs-reassign-hw-list"></div>
+            <button class="btn" onclick="csCloseReassignModal()"
+                    style="min-height:64px;width:100%;margin-top:16px;font-size:20px;">Cancel</button>
+          </div>
         </div>
+
+        <!-- Camera Setup styles -->
+        <style>
+          .cs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr 1fr;
+            gap: 12px;
+            margin: 12px 0;
+            align-items: start;
+          }
+          @media (max-width: 900px) {
+            .cs-grid { grid-template-columns: 1fr; }
+          }
+          .cs-panel {
+            border: 2px solid var(--color-disabled);
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          .cs-panel-header {
+            background: rgba(0,204,0,0.1);
+            border-bottom: 2px solid var(--color-accent);
+            padding: 10px 14px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .cs-empty {
+            color: rgba(255,255,255,0.5);
+            font-size: 18px;
+            padding: 20px;
+            text-align: center;
+          }
+          .cs-slot-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            min-height: 64px;
+            font-size: 20px;
+            touch-action: manipulation;
+          }
+          .cs-slot-row:hover, .cs-slot-row.selected {
+            background: rgba(0,204,0,0.12);
+          }
+          .cs-dot { font-size: 22px; flex-shrink: 0; }
+          .cs-slot-label { flex: 1; }
+          .cs-hw-card {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 18px;
+          }
+          .cs-hw-thumb {
+            width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #111;
+            margin-bottom: 8px;
+            display: block;
+          }
+          .cs-detail-thumb {
+            width: 100%;
+            max-height: 160px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: #111;
+            margin-bottom: 12px;
+            display: block;
+          }
+          .cs-role-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 20px;
+            min-height: 52px;
+          }
+          .cs-role-bar {
+            background: rgba(0,204,0,0.08);
+            border: 1px solid rgba(0,204,0,0.3);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 18px;
+            margin-top: 8px;
+            line-height: 2;
+          }
+          .cs-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+          .cs-modal-box {
+            background: #1a1a1a;
+            border: 2px solid var(--color-accent);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+          }
+          .cs-scan-btn { display: none; }
+          .cs-action-btn {
+            width: 100%;
+            min-height: 80px;
+            font-size: 20px;
+            margin-bottom: 8px;
+            display: block;
+          }
+          .cs-edit-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+          }
+          .cs-edit-name input {
+            flex: 1;
+            padding: 10px;
+            font-size: 22px;
+            background: #000;
+            color: #fff;
+            border: 2px solid var(--color-accent);
+            border-radius: 8px;
+          }
+        </style>
 
         <h2 class="section-header">💾 Data Management</h2>
 <div style="margin: 20px 0;"><button onclick="window.location.href=047/settings-data.html047" style="background: #00CC00; color: #000; border: none; padding: 20px 40px; font-size: 24px; cursor: pointer; width: 100%;">📦 Data Management & Export</button></div>
@@ -1164,70 +1381,356 @@
   </script>
 
   <script>
-    // Camera Management Functions
-// Camera Management Functions
-    var POSITIONS = ['bow', 'stern', 'port', 'starboard'];
+    // ═══════════════════════════════════════════════════════════
+    // Camera Setup — Slot/Hardware Architecture
+    // ═══════════════════════════════════════════════════════════
 
-    function positionLabel(pos) {
-      if (!pos || pos === 'unassigned') return 'Unassigned';
-      return pos.charAt(0).toUpperCase() + pos.slice(1);
-    }
+    var csSlots    = [];   // current slots from /camera/slots
+    var csHardware = [];   // current hardware from /camera/hardware
+    var csSelectedSlotId = null;
+    var csThumbTimers    = {};  // slot_id → setInterval handle
 
-    function assignPosition(camId, position) {
-      fetch('/camera/assign', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({camera_id: camId, position: position})
-      })
-        .then(function(r) { return r.json(); })
-        .then(function() { updateCameraStatus(); })
-        .catch(function(err) { console.error('Assign failed:', err); });
-    }
+    // ── Data load ──────────────────────────────────────────────
 
-    function renderAssignButtons(camId) {
-      return POSITIONS.map(function(pos) {
-        return '<button onclick="assignPosition(\'' + camId + '\',\'' + pos + '\')" ' +
-          'style="margin:4px;padding:8px 14px;background:#333;color:#fff;border:1px solid #555;' +
-          'border-radius:6px;font-size:16px;cursor:pointer;">' +
-          positionLabel(pos) + '</button>';
-      }).join('') +
-      '<button onclick="assignPosition(\'' + camId + '\',\'unassigned\')" ' +
-        'style="margin:4px;padding:8px 14px;background:#333;color:#888;border:1px solid #444;' +
-        'border-radius:6px;font-size:16px;cursor:pointer;">Clear</button>';
-    }
-
-function updateCameraStatus() {
-  fetch('/camera/status')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      const camList = document.getElementById('camera-list');
-      camList.innerHTML = '';
-      data.cameras.forEach(function(cam) {
-        const camDiv = document.createElement('div');
-        camDiv.className = 'camera-item';
-        camDiv.innerHTML = `
-          <span>${cam.name} (${cam.id})</span>
-          <select onchange="assignPosition('${cam.id}', this.value)">
-            <option value="">Assign Position</option>
-            <option value="bow">Bow</option>
-            <option value="stern">Stern</option>
-            <option value="port">Port</option>
-            <option value="starboard">Starboard</option>
-          </select>
-        `;
-        camList.appendChild(camDiv);
+    function csLoad() {
+      Promise.all([
+        fetch('/camera/slots').then(function(r){ return r.json(); }),
+        fetch('/camera/hardware').then(function(r){ return r.json(); })
+      ]).then(function(results) {
+        csSlots    = results[0];
+        csHardware = results[1];
+        csRenderSlotList();
+        csRenderHwPanel();
+        csRenderRoleSummary();
+        if (csSelectedSlotId) {
+          var still = csSlots.find(function(s){ return s.slot_id === csSelectedSlotId; });
+          if (still) csShowDetail(csSelectedSlotId);
+        }
+      }).catch(function(err) {
+        console.error('Camera load failed:', err);
+        document.getElementById('cs-slot-list').innerHTML =
+          '<div class="cs-empty">Could not reach camera service.</div>';
       });
-    })
-    .catch(function(err) { console.error('Status failed:', err); });
-}
-    }
     }
 
-    // Update camera status on page load
-    window.addEventListener('load', function() {
-      updateCameraStatus();
-      // Update every 10 seconds
-      setInterval(updateCameraStatus, 10000);
+    // ── Slot list panel ────────────────────────────────────────
+
+    function csStatusDot(status) {
+      if (status === 'online')      return '<span class="cs-dot" style="color:#00CC00;">&#9679;</span>';
+      if (status === 'offline')     return '<span class="cs-dot" style="color:#FF4444;">&#9679;</span>';
+      if (status === 'connecting')  return '<span class="cs-dot" style="color:#FFA500;">&#9679;</span>';
+      return '<span class="cs-dot" style="color:#555;">&#9675;</span>'; // unassigned
+    }
+
+    function csRenderSlotList() {
+      var el = document.getElementById('cs-slot-list');
+      if (!csSlots.length) {
+        el.innerHTML = '<div class="cs-empty">No positions yet.<br>Tap + New Position.</div>';
+        return;
+      }
+      var sorted = csSlots.slice().sort(function(a,b){ return a.display_order - b.display_order; });
+      el.innerHTML = sorted.map(function(s) {
+        var sel = s.slot_id === csSelectedSlotId ? ' selected' : '';
+        var roles = [];
+        if (s.roles.forward_watch)  roles.push('FW');
+        if (s.roles.fish_detection) roles.push('Fish');
+        var roleTag = roles.length ? ' <small style="color:#888;font-size:15px;">['+roles.join(',')+']</small>' : '';
+        return '<div class="cs-slot-row' + sel + '" onclick="csShowDetail(\'' + s.slot_id + '\')">' +
+               csStatusDot(s.status) +
+               '<span class="cs-slot-label">' + csEsc(s.label) + roleTag + '</span>' +
+               '</div>';
+      }).join('');
+    }
+
+    // ── Slot detail panel ──────────────────────────────────────
+
+    function csShowDetail(slotId) {
+      csSelectedSlotId = slotId;
+      csRenderSlotList(); // update selection highlight
+      csClearThumbTimers();
+
+      var s  = csSlots.find(function(x){ return x.slot_id === slotId; });
+      var hw = s && s.hardware_id ? csHardware.find(function(h){ return h.hardware_id === s.hardware_id; }) : null;
+      var el = document.getElementById('cs-detail-body');
+
+      if (!s) { el.innerHTML = '<div class="cs-empty">Slot not found.</div>'; return; }
+
+      var thumbId = 'cs-thumb-' + slotId;
+      var hwInfo  = hw ?
+        '<div style="font-size:18px;color:rgba(255,255,255,0.7);line-height:1.8;">' +
+        '<div>' + csEsc(hw.model || 'Unknown model') + '</div>' +
+        '<div>' + csEsc(hw.ip || '') + ' &nbsp; ' +
+        (hw.connected ? '<span style="color:#00CC00;">&#9679; online</span>' : '<span style="color:#888;">&#9675; offline</span>') +
+        '</div></div>' :
+        '<div style="color:rgba(255,255,255,0.4);font-size:18px;">No camera assigned</div>';
+
+      el.innerHTML =
+        // Label edit
+        '<div class="cs-edit-name">' +
+        '<input id="cs-label-input" value="' + csEsc(s.label) + '" />' +
+        '<button class="btn btn-primary" onclick="csRenameSlot(\'' + slotId + '\')" ' +
+        'style="min-height:48px;padding:8px 16px;font-size:18px;">Save</button>' +
+        '</div>' +
+
+        // Thumbnail
+        (s.assigned ?
+          '<img id="' + thumbId + '" class="cs-detail-thumb" src="/camera/frame/' + slotId + '?t=' + Date.now() + '" alt="Camera feed" />' :
+          '<div style="height:120px;background:#111;border-radius:4px;display:flex;align-items:center;' +
+          'justify-content:center;color:#555;font-size:18px;margin-bottom:12px;">No camera assigned</div>') +
+
+        // Roles
+        '<div style="font-weight:700;color:var(--color-accent);margin-bottom:8px;">Roles</div>' +
+        csRoleRow('forward_watch',  'Forward Watch',  s, true)  +
+        csRoleRow('fish_detection', 'Fish Detection', s, false) +
+        csRoleRow('active_default', 'Active Default', s, true)  +
+        csRoleRow('display_in_grid','Show in Grid',   s, false) +
+
+        // Hardware info
+        '<div style="font-weight:700;color:var(--color-accent);margin:12px 0 8px;">Hardware</div>' +
+        hwInfo +
+
+        // Actions
+        '<div style="margin-top:16px;">' +
+        '<button class="btn btn-primary cs-action-btn" onclick="csOpenReassign(\'' + slotId + '\')">' +
+        (s.assigned ? 'Reassign Camera' : 'Assign Camera') + '</button>' +
+        (s.assigned ?
+          '<button class="btn btn-warning cs-action-btn" onclick="csUnassign(\'' + slotId + '\')">Unassign Camera</button>' : '') +
+        '<button class="btn btn-danger cs-action-btn" onclick="csDeleteSlot(\'' + slotId + '\')"' +
+        ' style="border-color:var(--color-critical);color:var(--color-critical);">Delete Position</button>' +
+        '</div>';
+
+      // Start live thumbnail refresh if assigned
+      if (s.assigned) {
+        csThumbTimers[slotId] = setInterval(function() {
+          var img = document.getElementById(thumbId);
+          if (img) img.src = '/camera/frame/' + slotId + '?t=' + Date.now();
+        }, 1000);
+      }
+    }
+
+    function csRoleRow(role, label, slot, exclusive) {
+      var checked = slot.roles[role] ? 'checked' : '';
+      var type    = exclusive ? 'radio' : 'checkbox';
+      var name    = exclusive ? 'cs-role-excl' : '';
+      return '<div class="cs-role-row">' +
+             '<span>' + label + (exclusive ? ' <small style="color:#888;font-size:15px;">(one only)</small>' : '') + '</span>' +
+             '<label class="toggle-switch" style="flex-shrink:0;">' +
+             '<input type="checkbox" ' + checked + ' onchange="csToggleRole(\'' + slot.slot_id + '\',\'' + role + '\',this.checked,' + exclusive + ')" />' +
+             '<span class="toggle-slider"></span></label>' +
+             '</div>';
+    }
+
+    function csClearThumbTimers() {
+      Object.keys(csThumbTimers).forEach(function(k) { clearInterval(csThumbTimers[k]); });
+      csThumbTimers = {};
+    }
+
+    // ── Unassigned hardware panel ──────────────────────────────
+
+    function csRenderHwPanel() {
+      var el       = document.getElementById('cs-hw-list');
+      var unassigned = csHardware.filter(function(h){ return !h.assigned_to_slot; });
+      if (!unassigned.length) {
+        el.innerHTML = '<div class="cs-empty">No unassigned cameras detected.</div>';
+        return;
+      }
+      el.innerHTML = unassigned.map(function(hw) {
+        var thumbSrc = hw.connected ? ('/camera/frame/' + hw.hardware_id + '?t=' + Date.now()) : '';
+        return '<div class="cs-hw-card">' +
+          (hw.connected ?
+            '<img src="' + thumbSrc + '" class="cs-hw-thumb" alt="camera" />' :
+            '<div class="cs-hw-thumb" style="height:80px;display:flex;align-items:center;' +
+            'justify-content:center;color:#555;font-size:16px;">Offline</div>') +
+          '<div style="font-size:18px;margin-bottom:4px;">' + csEsc(hw.ip || '') + '</div>' +
+          '<div style="font-size:16px;color:rgba(255,255,255,0.5);margin-bottom:8px;">' + csEsc(hw.model || 'Unknown') + '</div>' +
+          '<button class="btn btn-primary" onclick="csOpenReassignFromHw(\'' + hw.hardware_id + '\')" ' +
+          'style="width:100%;min-height:64px;font-size:18px;">Assign to Position</button>' +
+          '</div>';
+      }).join('');
+    }
+
+    // ── Role summary bar ───────────────────────────────────────
+
+    function csRenderRoleSummary() {
+      var fw    = csSlots.find(function(s){ return s.roles.forward_watch; });
+      var def   = csSlots.find(function(s){ return s.roles.active_default; });
+      var fish  = csSlots.filter(function(s){ return s.roles.fish_detection; });
+
+      var fwTxt   = fw   ? (csEsc(fw.label)  + (fw.status  === 'online' ? ' <span style="color:#00CC00;">&#9679;</span>' : ' <span style="color:#FF4444;">&#9651;</span>'))
+                        : '<span style="color:#FFA500;">&#9651; Not assigned</span>';
+      var defTxt  = def  ? csEsc(def.label)  + (def.status === 'online' ? ' <span style="color:#00CC00;">&#9679;</span>' : '') : '(none)';
+      var fishTxt = fish.length ? fish.map(function(s){ return csEsc(s.label); }).join(', ') : '(none)';
+
+      document.getElementById('cs-role-summary').innerHTML =
+        '<strong>Forward Watch:</strong> ' + fwTxt + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '<strong>Fish Detection:</strong> ' + fishTxt + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '<strong>Active Default:</strong> ' + defTxt;
+    }
+
+    // ── Actions ────────────────────────────────────────────────
+
+    function csToggleRole(slotId, role, val, exclusive) {
+      fetch('/camera/slots/' + slotId, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ roles: { [role]: val } })
+      }).then(function(){ csLoad(); }).catch(console.error);
+    }
+
+    function csRenameSlot(slotId) {
+      var newLabel = (document.getElementById('cs-label-input').value || '').trim();
+      if (!newLabel) return;
+      fetch('/camera/slots/' + slotId, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ label: newLabel })
+      }).then(function(){ csLoad(); showToast('Position renamed.'); }).catch(console.error);
+    }
+
+    function csUnassign(slotId) {
+      if (!confirm('Unassign camera from this position?')) return;
+      fetch('/camera/slots/' + slotId + '/unassign', { method: 'POST' })
+        .then(function(){ csLoad(); showToast('Camera unassigned.'); }).catch(console.error);
+    }
+
+    function csDeleteSlot(slotId) {
+      var s = csSlots.find(function(x){ return x.slot_id === slotId; });
+      if (!confirm('Delete position "' + (s ? s.label : slotId) + '"?\n\nThis cannot be undone. The camera (if any) will return to the unassigned pool.')) return;
+      fetch('/camera/slots/' + slotId, { method: 'DELETE' })
+        .then(function(){
+          csSelectedSlotId = null;
+          csClearThumbTimers();
+          document.getElementById('cs-detail-body').innerHTML = '<div class="cs-empty">Select a position to edit it.</div>';
+          csLoad();
+          showToast('Position deleted.');
+        }).catch(console.error);
+    }
+
+    function csRunScan() {
+      showToast('Scanning for cameras...');
+      fetch('/camera/scan', { method: 'POST' })
+        .then(function(){ setTimeout(csLoad, 3500); })
+        .catch(console.error);
+    }
+
+    function csAssignHw(slotId, hwId) {
+      fetch('/camera/slots/' + slotId + '/assign', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ hardware_id: hwId })
+      }).then(function(){
+        csCloseReassignModal();
+        csLoad();
+        showToast('Camera assigned.');
+        csShowDetail(slotId);
+      }).catch(console.error);
+    }
+
+    // ── New Position modal ─────────────────────────────────────
+
+    function csShowNewSlotModal() {
+      document.getElementById('cs-new-name').value = '';
+      document.getElementById('cs-new-fw').checked   = false;
+      document.getElementById('cs-new-fish').checked = false;
+      document.getElementById('cs-new-grid').checked = true;
+      document.getElementById('cs-new-modal').style.display = 'flex';
+      setTimeout(function(){ document.getElementById('cs-new-name').focus(); }, 100);
+    }
+
+    function csCloseNewModal() {
+      document.getElementById('cs-new-modal').style.display = 'none';
+    }
+
+    function csSaveNewSlot() {
+      var label = (document.getElementById('cs-new-name').value || '').trim();
+      if (!label) { showToast('Please enter a name.'); return; }
+      fetch('/camera/slots', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          label: label,
+          roles: {
+            forward_watch:  document.getElementById('cs-new-fw').checked,
+            fish_detection: document.getElementById('cs-new-fish').checked,
+            display_in_grid: document.getElementById('cs-new-grid').checked
+          }
+        })
+      }).then(function(r){ return r.json(); })
+        .then(function(slot){
+          csCloseNewModal();
+          csLoad();
+          showToast('Position "' + label + '" created.');
+          if (slot.slot_id) setTimeout(function(){ csShowDetail(slot.slot_id); }, 400);
+        }).catch(console.error);
+    }
+
+    // ── Reassign modal ─────────────────────────────────────────
+
+    var csReassignTargetSlot = null;
+
+    function csOpenReassign(slotId) {
+      csReassignTargetSlot = slotId;
+      var s    = csSlots.find(function(x){ return x.slot_id === slotId; });
+      var name = s ? s.label : slotId;
+      document.getElementById('cs-reassign-slot-name').textContent = 'Slot: ' + name;
+      var unassigned = csHardware.filter(function(h){ return !h.assigned_to_slot || h.assigned_to_slot === slotId; });
+      var el = document.getElementById('cs-reassign-hw-list');
+      if (!unassigned.length) {
+        el.innerHTML = '<div class="cs-empty">No cameras available.<br>Tap Scan for Cameras first.</div>';
+      } else {
+        el.innerHTML = unassigned.map(function(hw) {
+          return '<button onclick="csAssignHw(\'' + slotId + '\',\'' + hw.hardware_id + '\')" ' +
+            'style="width:100%;min-height:80px;margin-bottom:8px;background:#1a1a1a;' +
+            'color:#fff;border:2px solid #00CC00;border-radius:8px;font-size:18px;' +
+            'cursor:pointer;text-align:left;padding:12px;">' +
+            '<strong>' + csEsc(hw.ip || hw.hardware_id) + '</strong><br>' +
+            '<span style="color:#888;font-size:16px;">' + csEsc(hw.model || 'Unknown') + ' &mdash; ' +
+            (hw.connected ? '<span style="color:#00CC00;">online</span>' : '<span style="color:#888;">offline</span>') +
+            '</span></button>';
+        }).join('');
+      }
+      document.getElementById('cs-reassign-modal').style.display = 'flex';
+    }
+
+    function csOpenReassignFromHw(hwId) {
+      // Pick a slot first — open reassign on all slots that are unassigned
+      var unassignedSlots = csSlots.filter(function(s){ return !s.assigned; });
+      if (!unassignedSlots.length) {
+        showToast('All positions already have cameras. Create a new position first.');
+        return;
+      }
+      // Show a quick slot picker if multiple unassigned slots
+      var slotId = unassignedSlots[0].slot_id;
+      if (unassignedSlots.length > 1) {
+        var choice = prompt(
+          'Which position?\n' +
+          unassignedSlots.map(function(s,i){ return (i+1)+'. '+s.label; }).join('\n') +
+          '\n\nEnter number:'
+        );
+        var idx = parseInt(choice) - 1;
+        if (isNaN(idx) || !unassignedSlots[idx]) return;
+        slotId = unassignedSlots[idx].slot_id;
+      }
+      csAssignHw(slotId, hwId);
+    }
+
+    function csCloseReassignModal() {
+      document.getElementById('cs-reassign-modal').style.display = 'none';
+      csReassignTargetSlot = null;
+    }
+
+    // ── Utility ────────────────────────────────────────────────
+
+    function csEsc(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Init ───────────────────────────────────────────────────
+
+    window.addEventListener('pageshow', function() {
+      csLoad();
     });
   </script>
 
