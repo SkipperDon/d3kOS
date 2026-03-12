@@ -182,7 +182,7 @@ tar -xzf ~/Downloads/oesenc_pi-*-linux-arm64.tar.gz
       fetch('/window/windowed', { method: 'POST' }).catch(function() {});
       // Small delay to let the window compositor settle before firing the launch.
       setTimeout(function() {
-        fetch('http://localhost:1880/launch-opencpn', { method: 'POST', mode: 'no-cors' })
+        fetch('/launch-opencpn', { method: 'POST', mode: 'no-cors' })
           .catch(function(error) {
             console.error('Failed to launch OpenCPN:', error);
           });
