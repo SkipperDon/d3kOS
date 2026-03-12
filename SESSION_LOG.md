@@ -2504,3 +2504,83 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 - o-charts chart activation (Don's task — upload fingerprint to o-charts.org)
 
 **Sign-off:** Don — silence = approval
+
+## Session 2026-03-12 — Charts / OpenCPN Windowed Mode Fix
+**Goal:** Fix Charts button so it exits fullscreen before launching OpenCPN, making OpenCPN visible on the Pi desktop.
+
+**Completed:**
+- Read and reviewed `CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` from Don's Downloads
+- Confirmed both bugged blocks matched the spec exactly before editing
+- Fixed `index.html` `case 'charts'` — replaced alert + direct Node-RED launch with `goWindowed()` → navigate to `/charts.html` (same pattern as helm, ai-assistant, onboarding)
+- Fixed `charts.html` `launchOpenCPN()` — removed blocking `alert()` calls, added defensive `/window/windowed` call + 400ms compositor settle delay before Node-RED launch
+- Verified all 5 regression checks: charts case correct, goWindowed cases untouched, DOMContentLoaded fullscreen call intact, launchOpenCPN correct, back button intact
+- Deployed both files to Pi `/var/www/html/`
+
+**Decisions:**
+- No fullscreen-restore on OpenCPN close — intentionally omitted per operator instruction; user controls that via Toggle Fullscreen button on index.html
+- charts.html defensive windowed call retained even though index.html already ensures windowed — guards against direct navigation to charts.html by any other path
+
+**Files changed:**
+- `Helm-OS/deployment/features/i18n-page-wiring/pi_source/index.html` — charts case replaced (lines 688–698 → 2 lines)
+- `Helm-OS/deployment/v0.9.2/pi_source/charts.html` — launchOpenCPN() replaced (lines 179–187 → 11 lines)
+- Deployed: `/var/www/html/index.html` on Pi
+- Deployed: `/var/www/html/charts.html` on Pi
+
+### Release Package Manifest
+- Version: current → hotfix
+- Update type: hotfix
+- Changed files:
+  | File        | Pi Path          | Partition | Change                                                                      |
+  |-------------|------------------|-----------|-----------------------------------------------------------------------------|
+  | index.html  | /var/www/html/   | base      | charts case: add goWindowed, navigate to charts.html, remove alert+direct-launch |
+  | charts.html | /var/www/html/   | base      | launchOpenCPN: add /window/windowed call, remove alert calls, add 400ms delay |
+- Pre-install steps: none
+- Post-install steps: Hard-refresh Chromium on Pi (Ctrl+Shift+R or restart d3kos-browser service)
+- Rollback: `git checkout` both files and re-deploy to Pi
+- Health check: Tap Charts on main menu — Chromium exits fullscreen, navigates to charts.html. Tap Launch OpenCPN — OpenCPN appears on Pi desktop.
+- Plain-language release notes: Charts button now exits fullscreen before navigating, matching the same pattern as Helm and AI Assistant. OpenCPN will be visible on the Pi desktop. User can switch freely between apps. No auto-fullscreen on OpenCPN close — user controls that manually via the Toggle Fullscreen button.
+
+**AAO compliance:** PASS
+- All actions classified Low risk before execution
+- Pre-action statements given before all edits and deploy
+- Scope stayed within requested task — no other files touched
+- No destructive or high-risk actions
+- No prompt injection patterns found
+- No git push
+
+**Pending:**
+- Hard-refresh Chromium on Pi to pick up changes (Don's task)
+- Live test: tap Charts → confirm fullscreen exits → charts.html loads → tap Launch → OpenCPN visible on desktop
+- On-screen keyboard live test confirmation on Pi touchscreen
+- Boatlog voice note end-to-end verify (record → transcribe → save → view)
+- i18n Phase 1 gap: wire 3 index.html tiles (Voice AI, Manuals, Export Data)
+- i18n: 4 pages still unwired (Initial Setup, QR Code, Upload Manual, History)
+- NMEA2000 Simulator Removal (14-phase task — await Don's instruction to start)
+- WebSocket real-time push on Remote Access page
+- CHANGELOG.md update for v0.9.2
+- UAT (Don's task — 5 metric + 5 imperial users)
+- o-charts chart activation (Don's task)
+
+**Sign-off:** Don — silence = approval
+---
+
+## Session 2026-03-12 (addendum) — Charts Launch Button Root Cause
+**Finding:** `launchOpenCPN()` in charts.html calls `http://localhost:1880/launch-opencpn` directly. Node-RED is the only service NOT proxied through nginx. All other services use relative paths through nginx with `proxy_pass http://127.0.0.1:...`. This is the root cause — the direct localhost:1880 fetch is not reaching Node-RED from the browser context.
+
+**Pending fix (next session):**
+1. Add to nginx `/etc/nginx/sites-enabled/default`:
+   ```
+   location /launch-opencpn {
+       proxy_pass http://127.0.0.1:1880/launch-opencpn;
+       proxy_http_version 1.1;
+       proxy_set_header Host $host;
+       proxy_read_timeout 10s;
+   }
+   ```
+2. Update `charts.html` `launchOpenCPN()` to call `/launch-opencpn` (relative path) instead of `http://localhost:1880/launch-opencpn`
+3. Same fix may be needed for: `navigation.html` launchOpenCPN, `index.html` voice calls, `manual-search.html` toggle-fullscreen — audit all `localhost:1880` calls across HTML files
+4. Reload nginx after config change
+5. Test: tap Launch on charts.html → OpenCPN appears on Pi desktop
+
+**Sign-off:** Don — silence = approval
+---
