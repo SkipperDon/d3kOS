@@ -2,6 +2,40 @@
 
 ---
 
+## Session — 2026-03-11 — Governance doc housekeeping (CLAUDE.md + PROJECT_CHECKLIST.md)
+
+**Goal:** Review and update stale content in Helm-OS/CLAUDE.md and PROJECT_CHECKLIST.md.
+
+**Completed:**
+- Audited all three CLAUDE.md files (`/home/boatiq/`, `Helm-OS/`, `aao-methodology-repo/`) — documented what is unique to each
+- Updated `Helm-OS/CLAUDE.md`: corrected Ollama executor path (`deployment/scripts/ollama_execute_v3.py`); replaced stale "Active Build — Marine Vision Camera Overhaul Step 1 in progress" section with current v0.9.2 open task list
+- Updated `PROJECT_CHECKLIST.md`: version header corrected (v0.9.5 → v0.9.2); boatlog units items marked [🔍] verification needed; SUPERSEDED camera section given explicit "do not action" warning; i18n Layer 0 updated to show 4 specific pages remaining (Initial Setup, QR Code, upload-manual.html, history.html); keyboard Layer 4 pre-condition updated to reflect fix deployed, pending live test
+
+**Files changed:**
+- `Helm-OS/CLAUDE.md` — Ollama path + Active Build section — commit `0f29b9e`
+- `PROJECT_CHECKLIST.md` — 5 outdated items corrected — commit `6413910`
+
+**Decisions:**
+- No Pi deployment this session — all changes are local governance docs only
+- Boatlog units display items left as [🔍] not [✅] — cannot confirm done without live test
+
+**Ollama:** 0 calls — no code generation needed this session
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-11 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**AAO compliance:** PASS — all actions None/Low risk, pre-stated, no Pi deploy, no push, no scope creep, no injection patterns detected.
+
+**No Release Package Manifest** — no Pi deployment this session.
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-11 — Marine Vision Camera Overhaul complete + DEPLOYMENT_INDEX updated
 
 **Tasks completed:**
