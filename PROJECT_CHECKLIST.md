@@ -651,7 +651,7 @@
 
 ### Layer 0 — UI Foundation (Translation JSON + Display)
 
-**Status:** \[🔄\] Partial — 6 of 20 pages wired, 14 remaining
+**Status:** \[✅\] Layer 0 page wiring complete — all 13 pages wired (v0.9.2, 2026-03-11)
 
 - \[✅\] 18 JSON translation files deployed at `/opt/d3kos/config/i18n/`
 
@@ -667,9 +667,9 @@
 
 - \[✅\] `data-i18n` wired: `index.html`, `dashboard.html`, `navigation.html`, `boatlog.html`, `settings.html`, `onboarding.html`
 
-- \[🔄\] Wire remaining pages — 10 of 14 wired (Mar 7 i18n session). **4 still missing:** Initial Setup, QR Code, `upload-manual.html`, `history.html`
+- \[✅\] Wire remaining pages — all 13 pages wired. Phases 10–13 complete 2026-03-11: `history.html`, `upload-manual.html`, `qrcode.html`, `onboarding.html`
 
-- [ ] Expand translation keys in all 18 JSON files to cover new pages
+- \[✅\] Expand translation keys in all 18 JSON files — 36 new ui.* keys added 2026-03-11
 
 - [ ] Noto fonts installed on Pi for Arabic, CJK, Greek, Cyrillic: `sudo apt install fonts-noto fonts-noto-cjk fonts-noto-extra`
 
