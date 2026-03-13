@@ -195,7 +195,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] `ai-bridge/features/voyage_logger.py` — Feature 3: GPX summarization
 - [x] `ai-bridge/features/anchor_watch.py` — Feature 4: drag detection + alert
 - [x] `ai-bridge/utils/signalk_client.py` — REST polling (no WebSocket dep) for localhost:8099
-- [x] `ai-bridge/utils/avnav_client.py` — POST-only client for avnav_navi.php
+- [x] `ai-bridge/utils/avnav_client.py` — POST-only client for avnav_navi.php (fixed 2026-03-13: get_nav_data() rewrote to use request=gps + request=api&type=route&command=getleg)
 - [x] `ai-bridge/utils/tts.py` — espeak-ng wrapper
 - [x] `ai-bridge/utils/geo.py` — haversine, bearing, unit conversions
 - [x] `ai-bridge/tests/test_ai_bridge.py` — full test suite (unit + @integration markers)
@@ -207,12 +207,12 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] Service listed in `After=` after d3kos-dashboard and d3kos-gemini
 
 ### Feature 1 — Route Analysis Widget
-- [ ] Route widget visible in dashboard above AvNav iframe
+- [x] Route widget visible in dashboard above AvNav iframe (voyage widget also added 2026-03-13)
 - [ ] Updates every 5 minutes when route is active
-- [ ] Shows "NO ROUTE" when AvNav has no active route
-- [ ] Re-triggers immediately when route or next waypoint changes
-- [ ] "Analyze Now" button triggers immediate analysis
-- [ ] Shows "OFFLINE AI" badge when using Ollama
+- [x] Shows "NO ROUTE" when AvNav has no active route
+- [x] Re-triggers immediately when route or next waypoint changes
+- [x] "Analyze Now" button triggers immediate analysis (bench verified 2026-03-13)
+- [ ] Shows "OFFLINE AI" badge when using Ollama (untested — Ollama not tried this session)
 
 ### Feature 2 — Port Arrival Briefing
 - [ ] Briefing fires exactly at 2nm from final destination waypoint
@@ -228,6 +228,9 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] Raw GPS coordinates NOT sent to AI (summary stats only — privacy enforced, test verifies)
 - [x] Summaries saved to LOG_DIR/voyage-summaries/ (LOG_DIR=/home/d3kos/logs on Pi)
 - [x] /voyages endpoint returns 5 most recent summaries (for settings page)
+- [x] SUMMARIZE LAST VOYAGE button added to AI panel (voyage widget in index.html — 2026-03-13)
+- [x] summarizeVoyage() JS function — fetches /summarize-voyage, displays in panel
+- [x] End-to-end verified: Gemini returned Toronto Harbour → Ashbridges Bay from synthetic test GPX
 - [ ] Most recent 5 summaries shown in settings page (settings UI update deferred)
 
 ### Feature 4 — Anchor Watch AI Alerts
