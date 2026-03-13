@@ -2,6 +2,97 @@
 
 ---
 
+## Session — 2026-03-13 — AvNav Install Complete + Phase 5 AI Bridge Deployed
+
+**Goal:** Install AvNav on Pi (Stage A-F gates), then deploy Phase 5 AI Bridge (:3002).
+
+**Completed:**
+- **AvNav v20250822 installed** from `http://www.free-x.de/debian trixie main` (GPG: `[trusted=yes]`). OpenPlotter not on this Pi — no install conflict.
+- **Python 3.13 patch applied** to `/usr/lib/avnav/server/handler/httphandler.py` line 108: `cgi.parse_qs(` → `urllib.parse.parse_qs(` (cgi module removed in Python 3.13; `python3-legacy-cgi` does not restore it).
+- **ai_api.py moved to port 8089** (was 8080) to free port 8080 for AvNav. nginx `/ai/` proxy updated to 127.0.0.1:8089.
+- **AvNav Stage A-F gate checks** all passed: service active, port 8080 HTTP 200, 25 handlers loaded, SK connected at http://localhost:8099/signalk/v1/api/, GPS lat/lon live, track recording to /var/lib/avnav/tracks/2026-03-13.gpx.
+- **Signal K port config**: Added `port="8099"` to AVNSignalKHandler in `/var/lib/avnav/avnav_server.xml` (default was 3000, which conflicted with SK running on 8099 on this Pi).
+- **AvNav API key facts confirmed**: POST only (GET = 501), `request=navigate` does NOT exist (use `request=gps`), GPS data at `signalk.navigation.position.latitude/longitude`. All docs corrected.
+- **AVNAV_API_REFERENCE.md created** with verified live responses at `deployment/d3kOS/docs/AVNAV_API_REFERENCE.md`.
+- **Phase 5 AI Bridge deployed** (all files from `build-v0.9.2.1` branch, merged into main):
+  - `/opt/d3kos/services/ai-bridge/` — ai_bridge.py + features/ + utils/ (10 Python files)
+  - `/opt/d3kos/services/ai-bridge/config/ai-bridge.env` — NOT in git
+  - `/etc/systemd/system/d3kos-ai-bridge.service` — enabled, starts on boot
+  - `sudoers.d/d3kos` updated (deduplicated): NOPASSWD restart for ai-bridge
+- **AI Bridge verified**: `systemctl is-active d3kos-ai-bridge` = active; `/status` returns avnav:up, gemini_proxy:up, signalk:up, tts_available:true (espeak-ng); SSE `/stream` sending heartbeat events.
+- **Dashboard files updated** (app.py, index.html, d3kos.css, ai-bridge.js, connectivity-check.js, panel-toggle.js) — redeployed to Pi from `deployment/d3kOS/dashboard/`; d3kos-dashboard.service restarted.
+- **espeak-ng** selected as TTS engine (piper unavailable — no voice model package); AUDIO_DEVICE=plughw:S330,0.
+- **Branch merge**: `build-v0.9.2.1` merged into `main`. Three conflicts resolved: SESSION_CONTEXT.md + PROJECT_CHECKLIST.md took `--ours`; SESSION_LOG.md merged both branches' entries via Python script.
+
+**Decisions:**
+- AvNav REST API is POST-only — confirmed via live Pi test. All docs corrected from `request=navigate` (invalid) to `request=gps`. Key stored in MEMORY.md and AVNAV_API_REFERENCE.md.
+- `[trusted=yes]` in apt source: free-x.de GPG key not on keyservers. Acceptable for private/home use.
+- piper TTS unavailable (no voice model package for Debian Trixie arm64) — espeak-ng v1.52.0 used instead. Acceptable quality for anchor watch / arrival alerts.
+- E2 (AvNav test route) deferred — Don can test at leisure (long-press chart to place waypoint).
+
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Files changed on Pi:**
+- `/usr/lib/avnav/server/handler/httphandler.py` — Python 3.13 cgi patch
+- `/opt/d3kos/services/ai/ai_api.py` — port 8080 → 8089
+- `/etc/nginx/sites-available/default` + `sites-enabled/default` — /ai/ proxy 8089
+- `/etc/apt/sources.list.d/avnav.list` — new (AvNav apt source)
+- `/var/lib/avnav/avnav_server.xml` — SK port 8099
+- `/opt/d3kos/services/ai-bridge/` — all new files (ai_bridge.py, 4 features, 4 utils)
+- `/opt/d3kos/services/ai-bridge/config/ai-bridge.env` — new (not in git)
+- `/etc/systemd/system/d3kos-ai-bridge.service` — new, enabled
+- `/etc/sudoers.d/d3kos` — deduplicated + ai-bridge restart added
+- `/opt/d3kos/services/dashboard/` — app.py, templates/index.html, static/css/d3kos.css, static/js/ai-bridge.js + connectivity-check.js + panel-toggle.js updated
+
+**Files changed in repo:**
+- `deployment/d3kOS/docs/AVNAV_API_REFERENCE.md` — new v1.0.0
+- `deployment/d3kOS/docs/AVNAV_INSTALL_AND_API.md` — corrected (request=gps, signalk.* paths)
+- `deployment/d3kOS/docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` — line 142 corrected (request=gps)
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Phases 0–5 status updated
+- `deployment/d3kOS/dashboard/` — all files updated (merged from build-v0.9.2.1)
+- `deployment/d3kOS/ai-bridge/` — all files (merged from build-v0.9.2.1)
+
+**Pending:**
+- Phase 5 feature verification (requires live voyage with GPS movement): route widget, arrival briefing, voyage log, voyage summarize, anchor watch
+- pytest test suite for ai_bridge.py (test_ai_bridge.py not yet written)
+- P5.1: Signal K path audit (10 paths from D3KOS_PHASE5 spec)
+- P5.2: Node-RED flow audit for AvNav/SK conflicts
+- Phase 1 remaining: menu category registration, desktop-file-validate, MENU_STRUCTURE.md
+- Helm-OS v0.9.2: boatlog voice note E2E, WebSocket push (Remote Access), UAT, data export test
+
+### Release Package Manifest
+- **Version:** d3kOS v0.9.2.1 — Phase 5 deployment
+- **Update type:** incremental
+- **Changed files:**
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| httphandler.py | /usr/lib/avnav/server/handler/ | base | cgi.parse_qs → urllib.parse.parse_qs (Python 3.13 patch) |
+| ai_api.py | /opt/d3kos/services/ai/ | base | port 8080 → 8089 |
+| default (nginx) | /etc/nginx/sites-available/ + sites-enabled/ | base | /ai/ proxy_pass 8089 |
+| avnav.list | /etc/apt/sources.list.d/ | base | new: AvNav apt source |
+| avnav_server.xml | /var/lib/avnav/ | runtime | AVNSignalKHandler port=8099 |
+| ai_bridge.py | /opt/d3kos/services/ai-bridge/ | base | new: Phase 5 AI Bridge Flask app |
+| features/ (4 files) | /opt/d3kos/services/ai-bridge/features/ | base | new: route_analyzer, port_arrival, voyage_logger, anchor_watch |
+| utils/ (4 files) | /opt/d3kos/services/ai-bridge/utils/ | base | new: avnav_client, signalk_client, tts, geo |
+| ai-bridge.env | /opt/d3kos/services/ai-bridge/config/ | runtime | new: environment config (not in git) |
+| d3kos-ai-bridge.service | /etc/systemd/system/ | base | new: systemd unit, enabled |
+| d3kos (sudoers) | /etc/sudoers.d/ | base | ai-bridge restart added, deduplicated |
+| dashboard app.py + templates + static | /opt/d3kos/services/dashboard/ | base | AI Bridge status check + SSE client integration |
+
+- **Pre-install steps:** none
+- **Post-install steps:** `systemctl daemon-reload && systemctl restart avnav d3kos-ai-bridge d3kos-dashboard nginx` (all done in session)
+- **Rollback:** Restore ai_api.py port 8080, revert nginx /ai/ proxy, disable/remove d3kos-ai-bridge.service, revert avnav_server.xml (remove port attr). AvNav uninstall: `apt remove avnav`.
+- **Health check:** `systemctl is-active avnav d3kos-ai-bridge d3kos-dashboard` all = active; `curl -s http://localhost:3002/status` shows all three upstreams up; `curl -s http://localhost:3000/` returns 200.
+- **Plain-language release notes:** AvNav nautical chart software is now installed and running on the Pi. The AI Bridge service connects AvNav GPS data and Signal K to the AI systems — enabling route analysis, port arrival briefings, voyage log summaries, and anchor watch alerts. All three background services (AvNav, Gemini proxy, AI Bridge) are confirmed running. Feature alerts and voice output will activate when the boat is underway. No changes to existing v0.9.2 navigation or camera functionality.
+
+---
+
 ## Session — 2026-03-13 — Phase 5 Activation, Worktrees, Port 8087 Fix
 
 **Tasks completed:**

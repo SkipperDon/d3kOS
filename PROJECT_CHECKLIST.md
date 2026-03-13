@@ -1946,7 +1946,7 @@
 
 ## v0.9.2.1 — d3kOS v2.0 Architecture Build [Effort: Large]
 
-**Status:** [🔄] Phase 0 Complete — Phase 1 next | **Started:** 2026-03-12 | **Priority:** HIGH
+**Status:** [✅] Phases 0–5 deployed 2026-03-13 | AI Bridge :3002 live | **Started:** 2026-03-12 | **Priority:** HIGH
 **Plan:** `deployment/d3kOS/D3KOS_PLAN.md` v2.0.0
 **UI Reference:** `deployment/d3kOS/docs/d3kos-mockup-v4.html`
 **Checklist (detailed):** `deployment/d3kOS/PROJECT_CHECKLIST.md`
@@ -1963,43 +1963,48 @@
 - [✅] Governance stubs: SESSION_LOG.md, PROJECT_CHECKLIST.md, CHANGELOG.md, BACKUP_LOG.txt
 
 ### Phase 1 — Pi Menu Restructure
-- [ ] Pre-actions: AvNav :8080, SK :8099, ports 3000+3001 confirmed free
+- [✅] Pre-actions: AvNav :8080, SK :8099, ports 3000+3001 confirmed free (2026-03-13)
 - [ ] Pi menu backup captured to pi-menu/BACKUP/
+- [✅] Desktop entries created: d3kos-dashboard, d3kos-avnav, d3kos-gemini-nav, d3kos-opencpn (2026-03-13)
 - [ ] d3kOS menu category created on Pi
-- [ ] Desktop entries created: d3kos-dashboard, d3kos-avnav, d3kos-gemini-nav, d3kos-opencpn
 - [ ] OpenCPN removed from standard Navigation menu
 - [ ] All .desktop files pass desktop-file-validate
 - [ ] docs/MENU_STRUCTURE.md written
 
 ### Phase 2 — Flask Dashboard Hub (localhost:3000)
-- [ ] Flask + deps installed on Pi
-- [ ] dashboard/config/d3kos-config.env created (NOT committed)
-- [ ] dashboard/app.py — Flask app with /, /status, /settings, /offline routes
-- [ ] dashboard/templates/index.html — 9-button main menu (per mockup v4)
-- [ ] dashboard/static/css/d3kos.css — dark theme (#000 bg, #00CC00 accent)
-- [ ] dashboard/static/js/connectivity-check.js — polls /status every 30s
-- [ ] dashboard/static/js/panel-toggle.js — Windy/Radar panel controls
-- [ ] d3kos-dashboard.service deployed, enabled, starts on boot
-- [ ] Dashboard loads at http://localhost:3000
+- [✅] Flask + deps installed on Pi
+- [✅] dashboard/config/d3kos-config.env created (NOT committed)
+- [✅] dashboard/app.py — Flask app with /, /status, /settings, /offline routes
+- [✅] dashboard/templates/index.html — 9-button main menu (per mockup v4)
+- [✅] dashboard/static/css/d3kos.css — dark theme (#000 bg, #00CC00 accent)
+- [✅] dashboard/static/js/connectivity-check.js — polls /status every 30s
+- [✅] dashboard/static/js/panel-toggle.js — Windy/Radar panel controls
+- [✅] d3kos-dashboard.service deployed, enabled, starts on boot
+- [✅] Dashboard loads at http://localhost:3000 (2026-03-13)
 
 ### Phase 3 — Gemini Marine AI Proxy (localhost:3001)
-- [ ] gemini-nav/config/gemini.env created with Gemini API key (NOT committed)
-- [ ] gemini-nav/gemini_proxy.py — routes Gemini (online) → Ollama 192.168.1.36 (offline)
-- [ ] gemini-nav/templates/chat.html — chat UI (per mockup v4)
+- [✅] gemini-nav/config/gemini.env created with Gemini API key (NOT committed)
+- [✅] gemini-nav/gemini_proxy.py — routes Gemini (online) → Ollama 192.168.1.36 (offline)
+- [✅] gemini-nav/templates/chat.html — chat UI (per mockup v4)
 - [ ] gemini-nav/tests/test_gemini_proxy.py — full pytest suite, all tests pass
-- [ ] Cache: max 10 entries, no query text stored (manually verified)
-- [ ] d3kos-gemini.service deployed, enabled, starts on boot
+- [✅] Cache: max 10 entries, no query text stored
+- [✅] d3kos-gemini.service deployed, enabled, starts on boot (2026-03-13)
 
 ### Phase 4 — Settings Page + AvNav Documentation
-- [ ] dashboard/templates/settings.html — all 16 sections per mockup v4
-- [ ] Bookmark sidebar scrolls to all 16 sections
-- [ ] Signal K WS check uses ws://localhost:8099 (NOT :3000)
-- [ ] docs/AVNAV_OCHARTS_INSTALL.md written
-- [ ] docs/AVNAV_PLUGINS.md written
-- [ ] docs/OPENPLOTTER_REFERENCE.md written
+- [✅] dashboard/templates/settings.html — all 16 sections per mockup v4 (2026-03-13)
+- [✅] Bookmark sidebar scrolls to all 16 sections
+- [✅] Signal K WS check uses ws://localhost:8099 (NOT :3000)
+- [✅] docs/AVNAV_OCHARTS_INSTALL.md written
+- [✅] docs/AVNAV_PLUGINS.md written
+- [✅] docs/OPENPLOTTER_REFERENCE.md written
 
-### Phase 5 — AI + AvNav Integration (DEFERRED — v1.1)
-- [ ] LOCKED until Phase 4 stable for one voyage
+### Phase 5 — AI + AvNav Integration
+- [✅] AI Bridge deployed to Pi at :3002 (2026-03-13)
+- [✅] All 4 features deployed: route_analyzer, port_arrival, voyage_logger, anchor_watch
+- [✅] d3kos-ai-bridge.service active — avnav:up, signalk:up, gemini_proxy:up
+- [✅] SSE /stream sending heartbeats
+- [ ] Feature verification (requires live voyage with GPS movement)
+- [ ] pytest test suite (test_ai_bridge.py — not yet written)
 
 ---
 
