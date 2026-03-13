@@ -624,7 +624,7 @@
 
 - [ ] Camera stream relay RTSP → HLS (implement when cameras 3 & 4 purchased)
 
-- [ ] WebSocket real-time push — implement push notifications instead of polling `/remote/status`
+- \[✅\] WebSocket real-time push — SSE endpoint `/remote/status-stream` deployed 2026-03-13. EventSource listener in remote-access.html updates status badge + QR code live. Verified: stream delivers {"connected":true,"ip":"100.88.112.63"}.
 
 - \[✅\] **"My Remote Access" settings page** (`remote-access.html`) — commit `06a6a94`
 
@@ -755,7 +755,7 @@
 
 #### Latin-script languages (fr, de, es, it, nl, sv, no, da, fi, pt, hr, tr, uk)
 
-- \[✅\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0. API test 2026-03-13: squeekboard running, DBus ok:true on show+hide, ILITEK mouseEmulation=no confirmed. Physical touch test required on Pi screen.
+- \[✅\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0. API test 2026-03-13: squeekboard running, DBus ok:true on show+hide, ILITEK mouseEmulation=no confirmed. Physical touch test confirmed working by Don 2026-03-13.
 
 - [ ] Implement per-language virtual keyboard layouts (AZERTY, QWERTZ, accented characters: é, ü, ø, ç, ğ, і, etc.)
 
@@ -992,7 +992,7 @@
 
 - \[✅\] recordVoiceNote() replaced — real MediaRecorder implementation deployed 2026-03-06 (verify agent corrected Ollama placeholder regeneration)
 
-- \[🔍\] Test voice note record → transcribe → save → view cycle on Pi at dock
+- \[✅\] Test voice note record → transcribe → save → view cycle — 2026-03-13: onstop handler fixed to POST to /api/boatlog/voice-note. API verified: {"success":true,"filename":"voice_note_...webm"}. Don confirmed working.
 
 ### 6. Weather — GPS Centering & Wind/Clouds Overlay
 
