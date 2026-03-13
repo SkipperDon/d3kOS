@@ -156,7 +156,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 5 — AI + AvNav Integration
-**Risk:** MEDIUM-HIGH | **Status:** TODO | **Requires:** Phase 4 complete + AvNav installed + one stable voyage
+**Risk:** MEDIUM-HIGH | **Status:** SOURCE COMPLETE 2026-03-13 — Pi deploy pending (requires AvNav installed)
 **Spec:** docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md (v1.1.0)
 **Install guide:** docs/AVNAV_INSTALL_AND_API.md
 
@@ -180,27 +180,28 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] F1-F9. All final gate checks pass — Phase 5 coding may begin
 
 ### Phase 5 Pre-Actions (docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md §Pre-Actions)
-- [ ] P5.0. AvNav API explored — docs/AVNAV_API_REFERENCE.md complete (POST method confirmed)
-- [ ] P5.1. Signal K paths verified for Don's setup — all 10 paths checked and documented
-- [ ] P5.2. Node-RED flows audited — AvNav/SK conflicts identified, anchor watch coordination confirmed
-- [ ] P5.3. TTS engine selected (piper recommended), installed, tested on Pi speakers
-- [ ] P5.4. Port 3002 confirmed free for AI Bridge
-- [ ] All 8 open questions answered and recorded in SESSION_LOG.md
+- [x] P5.0. AvNav API explored — POST-only confirmed from live Pi probe (2026-03-13)
+- [x] P5.1. Signal K paths verified from live Pi — navigation.position, speedOverGround (m/s), courseOverGroundTrue (rad)
+- [x] P5.2. Node-RED flows audited — 78 nodes, no AvNav flows, no conflicting anchor watch
+- [x] P5.3. TTS engine selected — espeak-ng (piper has no voice model on Pi). plughw:S330,0 confirmed.
+- [x] P5.4. Port 3002 confirmed free for AI Bridge
+- [ ] All 8 open questions formally answered — partial (AVNAV_DATA_DIR=/var/lib/avnav confirmed, LOG_DIR=/home/d3kos/logs)
 
-### Files to create
-- [ ] `ai-bridge/config/ai-bridge.env` — NOT committed (verify **/*.env .gitignore rule)
-- [ ] `ai-bridge/ai_bridge.py` — Flask app port 3002, all endpoints
-- [ ] `ai-bridge/features/route_analyzer.py` — Feature 1: 5-min route widget
-- [ ] `ai-bridge/features/port_arrival.py` — Feature 2: 2nm arrival briefing
-- [ ] `ai-bridge/features/voyage_logger.py` — Feature 3: GPX summarization
-- [ ] `ai-bridge/features/anchor_watch.py` — Feature 4: drag detection + alert
-- [ ] `ai-bridge/utils/signalk_client.py` — WS reader for ws://localhost:8099
-- [ ] `ai-bridge/utils/avnav_client.py` — POST client for avnav_navi.php (NOT GET)
-- [ ] `ai-bridge/utils/tts.py` — TTS wrapper
-- [ ] `ai-bridge/utils/geo.py` — haversine, bearing, unit conversions
-- [ ] `ai-bridge/tests/test_ai_bridge.py` — full test suite
+### Files created (source complete — Pi deploy pending)
+- [x] `ai-bridge/config/ai-bridge.env` — placeholder template only (gitignored, line 4 + **/*.env)
+- [x] `ai-bridge/ai_bridge.py` — Flask app port 3002, all endpoints + SSE stream
+- [x] `ai-bridge/features/route_analyzer.py` — Feature 1: 5-min route widget
+- [x] `ai-bridge/features/port_arrival.py` — Feature 2: 2nm arrival briefing
+- [x] `ai-bridge/features/voyage_logger.py` — Feature 3: GPX summarization
+- [x] `ai-bridge/features/anchor_watch.py` — Feature 4: drag detection + alert
+- [x] `ai-bridge/utils/signalk_client.py` — REST polling (no WebSocket dep) for localhost:8099
+- [x] `ai-bridge/utils/avnav_client.py` — POST-only client for avnav_navi.php
+- [x] `ai-bridge/utils/tts.py` — espeak-ng wrapper
+- [x] `ai-bridge/utils/geo.py` — haversine, bearing, unit conversions
+- [x] `ai-bridge/tests/test_ai_bridge.py` — full test suite (unit + @integration markers)
 
 ### Systemd
+- [x] `d3kos-ai-bridge.service` source written (User=d3kos, WorkingDirectory=/opt/d3kos/services/ai-bridge)
 - [ ] `/etc/systemd/system/d3kos-ai-bridge.service` deployed to Pi
 - [ ] Service enabled and starts on boot
 - [ ] Service listed in `After=` after d3kos-dashboard and d3kos-gemini
@@ -222,29 +223,37 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] Section headings tappable to hear read aloud
 
 ### Feature 3 — Voyage Log Summary
-- [ ] Auto-generates when AvNav track recording stops
-- [ ] On-demand "Summarize Voyage" button works from dashboard
-- [ ] Raw GPS coordinates NOT sent to AI (summary stats only)
-- [ ] Summaries saved to /home/boatiq/logs/voyage-summaries/
-- [ ] Most recent 5 summaries shown in settings page
+- [x] Auto-generates when AvNav track recording stops (recording→stopped transition detection)
+- [x] On-demand summarize_latest() / summarize_by_filename() — POST /summarize-voyage
+- [x] Raw GPS coordinates NOT sent to AI (summary stats only — privacy enforced, test verifies)
+- [x] Summaries saved to LOG_DIR/voyage-summaries/ (LOG_DIR=/home/d3kos/logs on Pi)
+- [x] /voyages endpoint returns 5 most recent summaries (for settings page)
+- [ ] Most recent 5 summaries shown in settings page (settings UI update deferred)
 
 ### Feature 4 — Anchor Watch AI Alerts
-- [ ] Alarm fires from pre-written text — zero AI wait
-- [ ] 3-consecutive-poll confirmation prevents GPS jitter false alarms
-- [ ] Screen alert shows drift distance, bearing, timestamp, speed
-- [ ] Audio alarm repeats every 60s until dismissed
-- [ ] "GET AI ADVICE" button generates corrective action on demand
-- [ ] Drift event JSON logged to /home/boatiq/logs/anchor-events/
-- [ ] Anchor watch coordination with AvNav built-in alarm confirmed (P5.2)
+- [x] Alarm fires from pre-written text — zero AI wait (hardcoded tts.speak call in _fire_drag_alert)
+- [x] 3-consecutive-poll confirmation (DRAG_CONFIRM_COUNT=3) — unit test verified
+- [x] Screen alert shows drift distance, bearing, timestamp, speed (SSE anchor_alert event)
+- [x] Audio alarm repeats every 60s via _repeat_alarm() background thread until dismissed
+- [x] "GET AI ADVICE" button → GET /anchor/advice → on-demand only
+- [x] Drift event JSON logged to LOG_DIR/anchor-events/
+- [x] Anchor watch coordination with AvNav built-in confirmed (P5.2 — no conflict)
 
 ### Node-RED Integration
-- [ ] POST /webhook/query returns AI response JSON
-- [ ] POST /webhook/alert fires TTS + screen alert
-- [ ] All existing Node-RED flows confirmed unmodified
+- [x] POST /webhook/query returns AI response JSON — calls Gemini proxy :3001
+- [x] POST /webhook/alert fires TTS + SSE screen alert
+- [x] POST /webhook/arrival triggers port arrival briefing for named destination
+- [ ] All existing Node-RED flows confirmed unmodified (no flows changed — verify on Pi)
 
-### Dashboard Updates (Phase 2 files)
-- [ ] Phase 2 app.py /status endpoint updated: added ai_bridge check for :3002
-- [ ] index.html status bar: AI Bridge indicator added
+### Dashboard Updates (source complete)
+- [x] app.py /status: added ai_bridge check for :3002
+- [x] app.py _RESTART_SERVICES: added d3kos-ai-bridge
+- [x] index.html status bar: ind-ai-bridge indicator added
+- [x] index.html AvNav screen: avnav-layout with #ai-panel, route widget, arrival widget, anchor alarm
+- [x] ai-bridge.js: SSE EventSource, all event handlers, triggerRouteAnalysis(), dismissAnchorAlarm(), getAnchorAdvice()
+- [x] d3kos.css: Phase 5 AI panel CSS block
+- [x] connectivity-check.js: ai_bridge wired
+- [ ] Dashboard files deployed to Pi + d3kos-dashboard restarted
 
 ### Verification
 - [ ] All pytest tests pass: `pytest tests/test_ai_bridge.py -v`

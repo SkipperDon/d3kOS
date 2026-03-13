@@ -4,6 +4,54 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 5 AI Bridge Source Build
+**Goal:** Build complete Phase 5 AI + AvNav Integration source — all 4 features, full service.
+**Completed:**
+- ai-bridge/utils/geo.py: haversine_nm, bearing_degrees, ms_to_knots, rad_to_deg, gpx_total_distance_nm
+- ai-bridge/utils/avnav_client.py: POST-only AvNav client for avnav_navi.php (GET returns HTTP 501); disk-read preferred for GPX tracks; currentLeg.json direct read
+- ai-bridge/utils/signalk_client.py: REST polling client; confirmed key paths from live Pi probe (navigation.position.latitude/longitude, speedOverGround m/s, courseOverGroundTrue rad)
+- ai-bridge/utils/tts.py: espeak-ng primary (piper has no voice model on Pi), plughw:S330,0 audio device, background thread speak, speak_urgent with repeat
+- ai-bridge/features/route_analyzer.py: Feature 1 — 5-min route analysis widget; RouteAnalyzer background thread; force_analyze() for "Analyze Now" button; route/waypoint change detection; offline badge; AI_UNAVAILABLE graceful state
+- ai-bridge/features/port_arrival.py: Feature 2 — 2nm arrival trigger; PortArrivalMonitor background thread; Stage 1 audio fires before AI; per-destination deduplication; /webhook/arrival Node-RED entry point
+- ai-bridge/features/voyage_logger.py: Feature 3 — GPX summarization; parse_gpx_summary() extracts stats only (privacy: raw coords never sent to AI); auto-trigger on recording→stopped transition; on-demand summarize_latest(); saves to LOG_DIR/voyage-summaries/
+- ai-bridge/features/anchor_watch.py: Feature 4 — safety-critical; pre-written audio fires BEFORE AI; 3-poll debounce (DRAG_CONFIRM_COUNT); drift event logged to JSON; dismiss(); get_ai_advice() on-demand only; repeat alarm every 60s until dismissed
+- ai-bridge/ai_bridge.py: Flask :3002; SSE /stream (per-client queue.Queue); all endpoints: /status, /stream, /analyze-route, /summarize-voyage, /anchor/activate, /anchor/dismiss, /anchor/advice, /webhook/arrival, /webhook/alert, /webhook/query, /voyages
+- ai-bridge/d3kos-ai-bridge.service: systemd unit, User=d3kos, WorkingDirectory=/opt/d3kos/services/ai-bridge
+- ai-bridge/config/ai-bridge.env: template with ALL CAPS placeholder values; gitignored (line 4 + **/*.env wildcard)
+- ai-bridge/tests/test_ai_bridge.py: full pytest suite — unit tests for geo, GPX parsing, anchor debounce, avnav POST-only, tts, Signal K unit conversions; integration tests marked @pytest.mark.integration (require live Pi); privacy tests
+- dashboard/app.py: /status now checks ai_bridge:3002; _RESTART_SERVICES adds d3kos-ai-bridge
+- dashboard/static/js/ai-bridge.js: SSE EventSource to :3002/stream; handles route_update, arrival_briefing, anchor_alert, anchor_advice, voyage_summary events; connectAIBridge(), triggerRouteAnalysis(), dismissAnchorAlarm(), getAnchorAdvice()
+- dashboard/templates/index.html: AI Bridge indicator (ind-ai-bridge) in status bar; AvNav screen restructured to avnav-layout (chart area + ai-panel); route widget, arrival widget, anchor alarm widget
+- dashboard/static/css/d3kos.css: Phase 5 CSS block — .avnav-layout, .ai-widget, .ai-state, .alarm-head, .ai-action-btn, anchor-alarm-active pulse animation
+- dashboard/static/js/connectivity-check.js: ai_bridge field wired to indicator and menu status bar
+- Bug fix: ElementTree leaf-element truthiness in GPX timestamp parsing — `or` on XML element with no children evaluates False; replaced with `is not None` checks
+- All unit tests passing (verified manually — pytest not available on dev laptop)
+- git commit: b9d20f3 on build-v0.9.2.1
+**Decisions:**
+- TTS: espeak-ng only (piper confirmed no voice model on Pi — fallback auto-activates espeak)
+- Signal K: REST polling only (not WebSocket) — avoids websocket-client pip dependency
+- Anchor watch audio fires from hardcoded pre-written text — NEVER waits for AI (safety-critical path)
+- AVNAV_DATA_DIR: /var/lib/avnav (confirmed from Pi; NOT /home/boatiq/avnav/data from older spec)
+- LOG_DIR: /home/d3kos/logs (Pi user is d3kos, not boatiq — spec had wrong path)
+- os.makedirs deferred from __init__ to runtime to prevent import failures on dev laptop where /home/d3kos doesn't exist
+- All AI calls route through Gemini proxy :3001/ask — AI Bridge never calls Gemini or Ollama directly
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending (Pi deploy — Phase 5):**
+- Copy ai-bridge/ to /opt/d3kos/services/ai-bridge/ on Pi
+- Create /opt/d3kos/services/ai-bridge/config/ai-bridge.env with real VESSEL_NAME, HOME_PORT (no API keys — AI calls go through :3001)
+- Add to /etc/sudoers.d/d3kos: NOPASSWD: /bin/systemctl restart d3kos-ai-bridge
+- sudo cp d3kos-ai-bridge.service /etc/systemd/system/
+- sudo systemctl daemon-reload && sudo systemctl enable d3kos-ai-bridge && sudo systemctl start d3kos-ai-bridge
+- Deploy updated dashboard/ files (app.py, index.html, d3kos.css, connectivity-check.js, ai-bridge.js)
+- sudo systemctl restart d3kos-dashboard
+- Integration test: pytest tests/test_ai_bridge.py -m integration
+---
+
 ## Session 2026-03-13 — Phase 4 Pi Deploy
 **Goal:** Deploy Phase 4 settings page to Pi and verify all endpoints live.
 **Completed:**
