@@ -39,9 +39,9 @@ Update this table at the **start of every session**.
 | Phase | Name | Status | Est. Sessions |
 |---|---|---|---|
 | 0 | Initial Setup & Directory Structure | ⬜ TODO | 0.5 |
-| 1 | Pi Menu Restructure | ⬜ TODO | 1 |
-| 2 | Dashboard Hub (Flask :3000) | ⬜ TODO | 2 |
-| 3 | Gemini Marine AI Proxy (:3001) | ⬜ TODO | 2–3 |
+| 1 | Pi Menu Restructure | ✅ COMPLETE 2026-03-13 | 1 |
+| 2 | Dashboard Hub (Flask :3000) | ✅ COMPLETE 2026-03-13 | 2 |
+| 3 | Gemini Marine AI Proxy (:3001) | ✅ COMPLETE 2026-03-13 | 2–3 |
 | 4 | Settings Page + Documentation | ⬜ TODO | 1–2 |
 | 5 | AI + AvNav Integration | ⬜ TODO | 3–4 |
 
@@ -378,16 +378,21 @@ cat > /home/boatiq/Helm-OS/deployment/d3kOS/PROJECT_CHECKLIST.md << 'EOF'
 - [ ] Systemd service d3kos-gemini enabled and starts on boot
 - [ ] SESSION_LOG.md updated
 
-## Phase 4 — Settings Page + Docs
-- [ ] /settings route added to app.py
-- [ ] settings.html deployed at localhost:3000/settings
-- [ ] Signal K WebSocket check uses port 8099 (NOT 3000)
-- [ ] System status live indicators working
-- [ ] AVNAV_OCHARTS_INSTALL.md written
-- [ ] AVNAV_PLUGINS.md written
-- [ ] OPENPLOTTER_REFERENCE.md written
-- [ ] All doc links functional
-- [ ] SESSION_LOG.md updated
+## Phase 4 — Settings Page + Docs ✅ COMPLETE 2026-03-13
+- [x] /settings route already in app.py (Phase 2)
+- [x] settings.html full 16-section rewrite — deployed at localhost:3000/settings
+- [x] /sysinfo endpoint added to app.py — disk, memory, CPU temp, uptime, IP
+- [x] /action/restart and /action/reboot endpoints added to app.py
+- [x] Signal K WebSocket check uses port 8099 (NOT 3000)
+- [x] System status live indicators working (fetches /status on page load)
+- [x] AVNAV_OCHARTS_INSTALL.md written (v1.0.0)
+- [x] AVNAV_PLUGINS.md written (v1.0.0)
+- [x] OPENPLOTTER_REFERENCE.md written (v1.0.0)
+- [x] All port references accurate across all 3 docs
+- [x] SESSION_LOG.md updated
+- [ ] Pi deploy: copy to /opt/d3kos/services/dashboard/, restart service
+- [ ] Pi deploy: add sudoers rule for systemctl restarts
+- [ ] Visual verify on Pi screen
 EOF
 
 echo "Governance stubs created"

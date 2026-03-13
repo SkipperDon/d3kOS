@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS Marine Dashboard — localhost:3000
+After=network.target avnav.service
+Wants=avnav.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/home/boatiq/Helm-OS/deployment/d3kOS/dashboard
+ExecStart=/usr/bin/python3 app.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
