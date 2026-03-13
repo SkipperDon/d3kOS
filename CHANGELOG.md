@@ -7,13 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.9.2] - Unreleased (In Progress)
+## [0.9.2.1] - 2026-03-13 (Code Complete — Pi verification pending)
+
+### Summary
+
+**v0.9.2.1 — d3kOS v2.0 Flask Dashboard Architecture: All 6 Phases Deployed**
+
+Complete replacement of the OpenCPN-centric Pi menu with a web-first Flask dashboard. All five service phases deployed to Pi in a single day. AvNav is the primary chart viewer; Gemini AI proxy (with Ollama offline fallback) handles navigation AI; AI Bridge service at :3002 provides real-time SSE intelligence to the dashboard. OpenCPN remains as emergency fallback.
+
+**Phase 0 (2026-03-12):** Directory tree and governance deployed.
+**Phase 1 (2026-03-13):** Pi menu restructured. SK migrated :3000→:8099. issue_detector moved :8099→:8199. Four .desktop entries created (d3kOS menu category). MENU_STRUCTURE.md written.
+**Phase 2 (2026-03-13):** Flask dashboard live at localhost:3000. 9-button 3×3 grid (mockup v4). Five status indicators (internet/AvNav/Gemini/SK/Ollama). AvNav iframe, Windy/Radar panels. d3kos-dashboard.service active.
+**Phase 3 (2026-03-13):** Gemini Marine AI Proxy live at localhost:3001. Routes Gemini (online) → Ollama qwen3-coder:30b (offline fallback). Marine chat UI with typing indicator. 10 pytest tests pass on Pi (Python 3.13.5). Gemini key sourced from existing api-keys.json.
+**Phase 4 (2026-03-13):** Full 16-section settings page at localhost:3000/settings. Live /sysinfo endpoint (disk/mem/CPU temp/uptime/IP). /action/restart + /action/reboot endpoints with sudoers. Three AvNav documentation files: AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md.
+**Phase 5 (2026-03-13):** AvNav 20250822 installed (apt, free-x.de trixie). AVNAV_API_REFERENCE.md created from live Pi (request=gps, signalk.* key paths). AI Bridge live at localhost:3002 — 4 features: Route Analysis (5-min auto), Port Arrival Briefing (2nm trigger), Voyage Log Summary (GPX→AI), Anchor Watch (pre-written safety audio, 3-poll debounce). SSE /stream. espeak-ng TTS via plughw:S330,0. ~100 unit tests. Route analysis and voyage log summary verified on bench.
+
+**Key technical decisions:**
+- Signal K port 8099 throughout — migrated from :3000 (Flask dashboard now owns :3000)
+- AvNav installed via apt (OpenPlotter not installed on this Pi — standalone .deb is safe here)
+- request=navigate does not exist in AvNav v20250822 — use request=gps with signalk.* key paths
+- Anchor watch audio fires from pre-written text before AI — safety-critical path never waits for AI
+- All AI calls route through Gemini proxy :3001/ask — AI Bridge never calls Gemini or Ollama directly
+
+**Remaining (Don's tasks):** visual verify on Pi screen, live GPS voyage test, Phase 5 integration tests with real navigation data.
+
+---
+
+## [0.9.2] - Unreleased (Code Complete — UAT + on-Pi verification pending)
 
 ### Summary
 
 **v0.9.2 — Marine Vision Camera Overhaul, i18n, Signal K Upgrade, Voice Fixes, Simulator Removal**
 
-This release introduces the Slot/Hardware camera architecture replacing the hardcoded 2-camera system, full 18-language i18n wiring across all 13 pages, Signal K v2.22.1 upgrade, voice performance improvements, and removes the NMEA2000 simulator. The d3kOS v2.0 Flask dashboard architecture (v0.9.2.1) is planned as the successor.
+This release introduces the Slot/Hardware camera architecture replacing the hardcoded 2-camera system, full 18-language i18n wiring across all 13 pages, Signal K v2.22.1 upgrade, voice performance improvements, and removes the NMEA2000 simulator. The d3kOS v2.0 Flask dashboard architecture (v0.9.2.1) is the active successor.
+
+**2026-03-13 additions to v0.9.2:** boatlog voice note onstop fix, WebSocket real-time push for remote-access.html, data export unit_metadata (CSV + JSON), keyboard-api moved to port 8087, ai_api.py moved to port 8089.
 
 ---
 

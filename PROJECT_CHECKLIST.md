@@ -1986,7 +1986,7 @@
 - [✅] gemini-nav/config/gemini.env created with Gemini API key (NOT committed)
 - [✅] gemini-nav/gemini_proxy.py — routes Gemini (online) → Ollama 192.168.1.36 (offline)
 - [✅] gemini-nav/templates/chat.html — chat UI (per mockup v4)
-- [ ] gemini-nav/tests/test_gemini_proxy.py — full pytest suite, all tests pass
+- [✅] gemini-nav/tests/test_gemini_proxy.py — 10 tests, all pass on Pi (pytest 9.0.2, Python 3.13.5, 2026-03-13)
 - [✅] Cache: max 10 entries, no query text stored
 - [✅] d3kos-gemini.service deployed, enabled, starts on boot (2026-03-13)
 
@@ -2008,7 +2008,7 @@
 - [✅] Voyage log SUMMARIZE LAST VOYAGE button added to AI panel in dashboard (2026-03-13)
 - [✅] Voyage log summary verified end-to-end — Gemini identified Toronto Harbour → Ashbridges Bay from synthetic GPX, 8.0nm/3.5h/2.3kts (2026-03-13)
 - [ ] Feature verification (requires live voyage with GPS movement)
-- [🔄] pytest test suite — conftest.py created 2026-03-13, test_ai_bridge.py not yet written
+- [✅] pytest test suite — ~100 tests in test_ai_bridge.py; conftest.py; all unit tests pass 2026-03-13
 
 ---
 
@@ -2097,7 +2097,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-13 — Task B (test suite ~100 tests) + Task C (Phase 1 menu backup, MENU_STRUCTURE.md, all Phase 1 items closed). Commits b944d4b. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-13 — v0.9.2 ALL CODE COMPLETE + v0.9.2.1 Phases 0–5 ALL DEPLOYED. Remaining tasks with Don (UAT, on-Pi visual verify, o-charts, live voyage test). | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
