@@ -302,52 +302,56 @@ http://localhost:8080/viewer/avnav_navi.php
 
 All requests are POST to the base URL with a JSON body or form data.
 
-#### Navigate — Get Live Navigation Data
+#### GPS — Get Live Navigation Data
+
+⚠️ **UPDATED 2026-03-13:** `request=navigate` does NOT exist in AvNav v20250822.
+Use `request=gps`. Key names use Signal K path notation (see below).
+Full verified response: `docs/AVNAV_API_REFERENCE.md`
 
 ```bash
 # POST request — get current GPS and navigation state
 curl -s -X POST "http://localhost:8080/viewer/avnav_navi.php" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "request=navigate&keys=gps.lat,gps.lon,gps.speed,gps.track,nav.wp.lat,nav.wp.lon,nav.wp.name,nav.route.name,nav.route.numpoints,nav.anchor.distance,nav.anchor.heading"
+  -d "request=gps"
 ```
 
-Expected response shape:
+Expected response shape (verified on Pi 2026-03-13, AvNav 20250822):
 ```json
 {
-  "status": "OK",
-  "data": {
-    "gps.lat": 43.8421,
-    "gps.lon": -76.3142,
-    "gps.speed": 3.4,
-    "gps.track": 245.0,
-    "nav.wp.name": "Duck Island",
-    "nav.wp.lat": 43.9102,
-    "nav.wp.lon": -76.6233,
-    "nav.route.name": "Kingston Run",
-    "nav.route.numpoints": 5,
-    "nav.anchor.distance": null,
-    "nav.anchor.heading": null
+  "version": "20250822",
+  "signalk": {
+    "navigation": {
+      "position": {
+        "latitude": 43.68619666666667,
+        "longitude": -79.52087666666667
+      },
+      "courseOverGroundTrue": 0,
+      "speedOverGround": 0,
+      "datetime": "2026-03-13T15:54:42.000Z",
+      "gnss": {
+        "satellitesInView": { "count": 16, "gnss": "GPS" }
+      }
+    },
+    "propulsion": { "port": { "revolutions": 0 } }
   }
 }
 ```
 
-**Key name reference (verify on live Pi — names may vary by AvNav version):**
+**Actual key names (verified on Pi — NOT the original spec values):**
 
-| Data | Key Name | Unit |
+| Data | Actual Key Path | Unit |
 |---|---|---|
-| GPS latitude | `gps.lat` | decimal degrees |
-| GPS longitude | `gps.lon` | decimal degrees |
-| Speed over ground | `gps.speed` | m/s — multiply × 1.944 for knots |
-| Course over ground | `gps.track` | degrees true |
-| Active waypoint name | `nav.wp.name` | string |
-| Waypoint latitude | `nav.wp.lat` | decimal degrees |
-| Waypoint longitude | `nav.wp.lon` | decimal degrees |
-| Distance to waypoint | `nav.wp.distance` | metres |
-| Bearing to waypoint | `nav.wp.bearing` | degrees |
-| Active route name | `nav.route.name` | string |
-| Route waypoint count | `nav.route.numpoints` | integer |
-| Anchor drift distance | `nav.anchor.distance` | metres |
-| Anchor drift bearing | `nav.anchor.heading` | degrees |
+| GPS latitude | `signalk.navigation.position.latitude` | decimal degrees |
+| GPS longitude | `signalk.navigation.position.longitude` | decimal degrees |
+| Speed over ground | `signalk.navigation.speedOverGround` | m/s — multiply × 1.944 for knots |
+| Course over ground | `signalk.navigation.courseOverGroundTrue` | radians (convert to degrees) |
+| GPS datetime | `signalk.navigation.datetime` | ISO-8601 string |
+| Satellites in view | `signalk.navigation.gnss.satellitesInView.count` | integer |
+| Engine RPM | `signalk.propulsion.port.revolutions` | rev/s |
+
+**NOTE:** Route/waypoint keys (`nav.wp.*`, `nav.route.*`, `nav.anchor.*`) were not present
+in live response — these likely appear only when a route is active in AvNav.
+Verify by loading a route in AvNav and repeating `request=gps`.
 
 #### Status Check
 
@@ -406,7 +410,7 @@ from pathlib import Path
 # ── File-based access (preferred for routes and tracks) ──
 
 # Read active navigation leg
-AVNAV_DATA = Path("/home/boatiq/avnav/data")  # confirm this path after install
+AVNAV_DATA = Path("/var/lib/avnav")  # confirmed path on this Pi (2026-03-13)
 
 def get_current_leg() -> dict:
     """Read active route/waypoint from AvNav currentLeg.json."""

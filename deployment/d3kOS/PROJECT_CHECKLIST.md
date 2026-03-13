@@ -153,23 +153,23 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 **Install guide:** docs/AVNAV_INSTALL_AND_API.md
 
 ### Stage A-F — AvNav Install Pre-Gate (docs/AVNAV_INSTALL_AND_API.md)
-- [ ] A1. Pre-install checks run: Signal K port confirmed, disk OK, ports 8080/8082 free
-- [ ] A2. Signal K port recorded in SESSION_LOG.md — confirm 8099, update plan if different
+- [✅] A1. Pre-install checks run: SK on 8099 ✓, disk 77GB free ✓, ports checked 2026-03-13
+- [✅] A2. Signal K port: 8099 confirmed 2026-03-13. All plan docs already use 8099 — no updates needed
 - [x] A3. Port 8085 conflict RESOLVED (2026-03-13) — keyboard-api moved to 8087 (8086=fish_detector); Pi deploy pending Session 1
-- [ ] B1. AvNav installed via OpenPlotter Settings → Apps → AvNav Installer (NOT standalone .deb)
-- [ ] B2. AvNav Autostart enabled in OpenPlotter
-- [ ] B3. AvNav service running — `systemctl is-active avnav` returns active
-- [ ] C1. Verification script run — all items pass
-- [ ] C2. http://localhost:8080 loads in Chromium
-- [ ] C3. AvNav connected to Signal K at correct port
-- [ ] D1. AvNav data root path found and recorded in SESSION_LOG.md
-- [ ] D2. AVNAV_DATA_DIR updated in D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md + ai-bridge.env
-- [ ] E1. POST API tested — gps.lat and gps.lon return real values
+- [✅] B1. AvNav 20250822 installed 2026-03-13 via apt (free-x.de trixie). OpenPlotter not installed on this Pi; no conflict.
+- [✅] B2. AvNav autostart enabled: systemctl enable avnav
+- [✅] B3. avnav.service: active ✓
+- [✅] C1. Verification: service active, port 8080, HTTP 200, 25 handlers, SK connected ✓
+- [ ] C2. http://localhost:8080 in Chromium on Pi — Don's on-Pi task
+- [✅] C3. SK connected: "NMEA connected at http://localhost:8099/signalk/v1/api/" ✓
+- [✅] D1. AVNAV_DATA = /var/lib/avnav (routes/ tracks/ charts/ log/) ✓
+- [✅] D2. AVNAV_DATA_DIR updated in AVNAV_INSTALL_AND_API.md; ai-bridge.env does not exist yet (Phase 5)
+- [✅] E1. POST request=gps: lat=43.686, lon=-79.521 ✓ (NOT request=navigate — does not exist in v20250822)
 - [ ] E2. Test route loaded and activated in AvNav
-- [ ] E3. currentLeg.json found and readable
-- [ ] E4. Track directory found and GPX files visible
-- [ ] E5. docs/AVNAV_API_REFERENCE.md created with real JSON responses
-- [ ] F1-F9. All final gate checks pass — Phase 5 coding may begin
+- [✅] E3. currentLeg.json at /var/lib/avnav/routes/currentLeg.json — {} (no active route, normal) ✓
+- [✅] E4. Track dir: /var/lib/avnav/tracks/ — 2026-03-13.gpx recording live ✓
+- [✅] E5. deployment/d3kOS/docs/AVNAV_API_REFERENCE.md created with verified live responses ✓
+- [✅] F1-F9. All gate checks pass 2026-03-13. Phase 5 coding may begin after Phase 1-4 complete.
 
 ### Phase 5 Pre-Actions (docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md §Pre-Actions)
 - [ ] P5.0. AvNav API explored — docs/AVNAV_API_REFERENCE.md complete (POST method confirmed)

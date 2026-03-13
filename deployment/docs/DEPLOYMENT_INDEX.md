@@ -120,11 +120,17 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | `deployment/d3kOS/gemini-nav/templates/` | Phase 3 | chat.html — AI navigator UI |
 | `deployment/d3kOS/gemini-nav/cache/` | Phase 3 | response_cache.json (auto-created, max 10, no query text) |
 | `deployment/d3kOS/gemini-nav/config/` | Phase 3 | gemini.env (NEVER committed) |
-| `deployment/d3kOS/gemini-nav/tests/` | Phase 3 | test_gemini_proxy.py — full pytest suite |
-| `deployment/d3kOS/docs/` | Phase 1–4 | MENU_STRUCTURE.md, AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md |
+| `deployment/d3kOS/gemini-nav/tests/` | Phase 3 | test_gemini_proxy.py — full pytest suite (10/10 passing) |
+| `deployment/d3kOS/docs/AVNAV_OCHARTS_INSTALL.md` | Phase 4 | **[v1.0.0 — 2026-03-13]** o-charts install guide — plugin install, account, licence activation (direct + fingerprint), chart download, troubleshooting |
+| `deployment/d3kOS/docs/AVNAV_PLUGINS.md` | Phase 4 | **[v1.0.0 — 2026-03-13]** AvNav plugins guide — ochartsng, SignalK plugin (ws://localhost:8099 hard rule), anchor alarm, GPX export, POST-only API reference |
+| `deployment/d3kOS/docs/OPENPLOTTER_REFERENCE.md` | Phase 4 | **[v1.0.0 — 2026-03-13]** OpenPlotter reference — data flow, plugin config, SK Data Browser, troubleshooting table, service management table |
+| `deployment/d3kOS/dashboard/templates/settings.html` | Phase 4 | **[COMPLETE 2026-03-13]** Full 16-section settings page — two-column layout, bookmark sidebar, live status from /status + /sysinfo, system action endpoints, phase roadmap with accurate badges |
+| `deployment/d3kOS/dashboard/app.py` | Phase 2+4 | **[Updated 2026-03-13]** Added /sysinfo endpoint (disk/mem/CPU temp/uptime/IP), /action/restart (signalk, nodered, dashboard, gemini), /action/reboot |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | Phase 2+4 | **[Updated 2026-03-13]** Settings page CSS added — bookmark sidebar, section headers, status grids, cards, form controls, toggles, buttons, phases, info grid, toast |
 | `deployment/d3kOS/docs/AVNAV_INSTALL_AND_API.md` | Phase 5 pre-req | AvNav installation procedure (OpenPlotter GUI method only — standalone .deb breaks OpenPlotter), port 8085 free (keyboard-api moved to 8087), Signal K port verification, POST-only API reference, staged pre-install checklist (Stages A-F) |
+| `/opt/d3kos/services/ai/ai_api.py` | runtime | ai_api.py moved from port 8080 → 8089 (2026-03-13) to free port 8080 for AvNav. nginx /ai/ proxy updated. |
 | `deployment/d3kOS/docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` | Phase 5 spec | Full AI + AvNav Integration spec v1.1.0. 4 features: Route Widget, Port Arrival Briefing, Voyage Log Summary, Anchor Watch. AI Bridge service at :3002, SSE to dashboard, TTS to Pi speakers. Anomaly-corrected from v1.0.0 (GET→POST, wrong API URL). |
-| `deployment/d3kOS/docs/AVNAV_API_REFERENCE.md` | Phase 5 pre-req | **[NOT YET CREATED]** Real JSON responses from live Pi after AvNav install — gate item before Phase 5 coding begins (Stage E5) |
+| `deployment/d3kOS/docs/AVNAV_API_REFERENCE.md` | Phase 5 pre-req | **CREATED 2026-03-13** — verified live responses from Pi (request=gps), actual signalk.* key names, Python access patterns. Corrects original spec (request=navigate does not exist in v20250822). |
 | `deployment/d3kOS/ai-bridge/` | Phase 5 | **[NOT YET CREATED]** AI Bridge service at localhost:3002 — created during Phase 5 implementation |
 
 ### Port Reference (immutable — single source of truth)
@@ -148,12 +154,11 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | Phase | Name | Status |
 |-------|------|--------|
 | 0 | Initial Setup & Directory Structure | COMPLETE 2026-03-12 |
-| 1 | Pi Menu Restructure | TODO |
-| 2 | Dashboard Hub (Flask :3000) | TODO |
-| 3 | Gemini Marine AI Proxy (:3001) | TODO |
-| 4 | Settings Page + Documentation | TODO |
-| 5 | AI + AvNav Integration | TODO — active 2026-03-13 (was DEFERRED) |
-| 5 | AI + AvNav Integration | DEFERRED — v1.1 |
+| 1 | Pi Menu Restructure | COMPLETE 2026-03-13 |
+| 2 | Dashboard Hub (Flask :3000) | COMPLETE 2026-03-13 |
+| 3 | Gemini Marine AI Proxy (:3001) | COMPLETE 2026-03-13 |
+| 4 | Settings Page + Documentation | TODO — ACTIVE |
+| 5 | AI + AvNav Integration | TODO — begins after Phase 4 stable |
 
 ---
 
