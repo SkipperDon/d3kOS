@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Gemini Marine AI Proxy — localhost:3001
+After=network.target d3kos-dashboard.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/gemini-nav
+ExecStart=/usr/bin/python3 gemini_proxy.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
