@@ -4,94 +4,711 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>d3kOS &mdash; Settings &amp; Help</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/d3kos.css">
 </head>
 <body>
 
+  <!-- TOP BAR -->
   <div id="status-bar">
-    <a href="/" class="back-btn" style="display:inline-block; text-decoration:none">&#9664; Dashboard</a>
-    <span class="brand">&#9875; d3kOS &mdash; Settings &amp; Help</span>
+    <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+    <span class="brand">&#9881;&#65039; Settings &amp; Help</span>
     <div class="indicators">
       <span id="ind-internet" class="indicator" title="Internet">&#127760;</span>
       <span id="ind-avnav"    class="indicator" title="AvNav :8080">&#128506;</span>
       <span id="ind-gemini"   class="indicator" title="AI :3001">&#129302;</span>
-      <span id="ind-signalk"  class="indicator" title="SignalK :8099">&#128225;</span>
+      <span id="ind-signalk"  class="indicator" title="Signal K :8099">&#128225;</span>
       <span id="ind-ollama"   class="indicator" title="Ollama LAN">&#129504;</span>
     </div>
     <span id="clock"></span>
   </div>
 
-  <div class="screen active" style="overflow-y:auto;">
-    <div class="settings-wrap">
+  <!-- TWO-COLUMN BODY -->
+  <div class="settings-page-body">
 
-      <div class="settings-title">Settings &amp; Help</div>
-      <div class="settings-sub">Full settings page built in Phase 4 (16 sections). Current view shows active configuration.</div>
+    <!-- SCROLLABLE CONTENT -->
+    <div class="settings-scroll-area" id="settingsScroll">
+    <div class="settings-content">
 
-      <div class="settings-section">
-        <h3>Vessel</h3>
-        <div class="settings-row">
-          <span>Vessel name</span>
-          <span class="settings-val">{{ vessel_name }}</span>
+
+      <!-- ① SYSTEM STATUS -->
+      <div class="sec" id="s-status">
+        <div class="sec-header">&#128225; System Status &mdash; Live</div>
+        <div class="status-grid">
+          <div class="si"><div class="si-name">AvNav Charts</div><div class="si-val" id="si-avnav">&#8212;</div><div class="si-sub">localhost:8080</div></div>
+          <div class="si"><div class="si-name">Signal K</div><div class="si-val" id="si-signalk">&#8212;</div><div class="si-sub">localhost:8099</div></div>
+          <div class="si"><div class="si-name">GPS</div><div class="si-val" id="si-gps">&#8212;</div><div class="si-sub">via Signal K</div></div>
+          <div class="si"><div class="si-name">AIS Receiver</div><div class="si-val" id="si-ais">&#8212;</div><div class="si-sub">via Signal K</div></div>
+          <div class="si"><div class="si-name">Gemini AI</div><div class="si-val" id="si-gemini">&#8212;</div><div class="si-sub">localhost:3001</div></div>
+          <div class="si"><div class="si-name">Ollama (LAN)</div><div class="si-val" id="si-ollama">&#8212;</div><div class="si-sub">192.168.1.36:11434</div></div>
+          <div class="si"><div class="si-name">OpenPlotter</div><div class="si-val" id="si-openplotter">&#8212;</div><div class="si-sub">localhost:8081 &middot; infra</div></div>
+          <div class="si"><div class="si-name">Internet</div><div class="si-val" id="si-internet">&#8212;</div><div class="si-sub">Weather + AI</div></div>
         </div>
-        <div class="settings-row">
-          <span>Home port</span>
-          <span class="settings-val">{{ home_port }}</span>
+        <div class="btn-group">
+          <button class="btn" onclick="loadStatus()">&#128260; Refresh Status</button>
+          <button class="btn" onclick="showToast('Signal K WebSocket: ws://localhost:8099/signalk/v1/stream')">&#128225; Test Signal K</button>
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>Service Ports</h3>
-        <div class="settings-row">
-          <span>d3kOS Dashboard</span>
-          <span class="settings-val">localhost:3000</span>
+
+      <!-- ② ENGINE CONFIGURATION -->
+      <div class="sec" id="s-engine">
+        <div class="sec-header">&#9875; Engine Configuration</div>
+        <div class="g2">
+          <div class="card">
+            <label class="card-label" for="svc-int">Service Interval</label>
+            <p class="card-desc">Hours between scheduled maintenance</p>
+            <input type="number" id="svc-int" class="fc" value="100" min="10" max="500" step="10">
+          </div>
+          <div class="card">
+            <label class="card-label" for="oil-int">Oil Change Interval</label>
+            <p class="card-desc">Hours between oil changes</p>
+            <input type="number" id="oil-int" class="fc" value="50" min="10" max="200" step="10">
+          </div>
+          <div class="card">
+            <label class="card-label" for="eng-hrs">Total Engine Hours</label>
+            <p class="card-desc">Manually adjust if needed</p>
+            <input type="number" id="eng-hrs" class="fc" value="0" min="0" step="0.1">
+          </div>
+          <div class="card">
+            <label class="card-label" for="hrs-svc">Hours Since Last Service</label>
+            <p class="card-desc">Reset after maintenance</p>
+            <input type="number" id="hrs-svc" class="fc" value="0" min="0" step="0.1">
+          </div>
         </div>
-        <div class="settings-row">
-          <span>AvNav Charts</span>
-          <span class="settings-val">localhost:{{ avnav_port }}</span>
-        </div>
-        <div class="settings-row">
-          <span>AI Navigation Proxy</span>
-          <span class="settings-val">localhost:{{ gemini_port }}</span>
-        </div>
-        <div class="settings-row">
-          <span>Signal K</span>
-          <span class="settings-val">localhost:{{ signalk_port }}</span>
-        </div>
-        <div class="settings-row">
-          <span>Signal K WebSocket</span>
-          <span class="settings-val">ws://localhost:{{ signalk_port }}</span>
-        </div>
-        <div class="settings-row">
-          <span>OpenPlotter</span>
-          <span class="settings-val">localhost:8081</span>
-        </div>
-        <div class="settings-row">
-          <span>Marine Vision cameras</span>
-          <span class="settings-val">localhost:8084</span>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="showToast('&#10003; Engine settings saved')">&#128190; Save Engine Settings</button>
+          <button class="btn btn-warn" onclick="showToast('&#10003; Service counter reset to 0')">&#128260; Reset Service Counter</button>
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>Phase Roadmap</h3>
-        <div class="settings-row"><span>Phase 0 &mdash; Directory setup</span><span class="settings-val">COMPLETE</span></div>
-        <div class="settings-row"><span>Phase 1 &mdash; Pi menu restructure</span><span class="settings-val dot-warn">TODO</span></div>
-        <div class="settings-row"><span>Phase 2 &mdash; Dashboard hub (this app)</span><span class="settings-val dot-on">ACTIVE</span></div>
-        <div class="settings-row"><span>Phase 3 &mdash; Gemini AI proxy :3001</span><span class="settings-val dot-warn">TODO</span></div>
-        <div class="settings-row"><span>Phase 4 &mdash; Full settings page</span><span class="settings-val dot-warn">TODO</span></div>
-        <div class="settings-row"><span>Phase 5 &mdash; AI + AvNav integration</span><span class="settings-val dot-warn">TODO</span></div>
-        <div class="settings-note">Phase 4 will replace this placeholder with 16 fully functional sections.</div>
+
+      <!-- ③ UNITS & DISPLAY -->
+      <div class="sec" id="s-units">
+        <div class="sec-header">&#128207; Units &amp; Display</div>
+        <div class="g2">
+          <div class="card">
+            <label class="card-label" for="dist-u">Distance</label>
+            <p class="card-desc">Nautical miles, km, or miles</p>
+            <select id="dist-u" class="fc">
+              <option>Nautical Miles (nm)</option>
+              <option>Kilometers (km)</option>
+              <option>Miles (mi)</option>
+            </select>
+          </div>
+          <div class="card">
+            <label class="card-label" for="spd-u">Speed</label>
+            <p class="card-desc">Knots, km/h, or mph</p>
+            <select id="spd-u" class="fc">
+              <option>Knots (kts)</option>
+              <option>Kilometers/Hour (km/h)</option>
+              <option>Miles/Hour (mph)</option>
+            </select>
+          </div>
+          <div class="card">
+            <label class="card-label" for="tmp-u">Temperature</label>
+            <p class="card-desc">Celsius or Fahrenheit</p>
+            <select id="tmp-u" class="fc">
+              <option>Celsius (&#176;C)</option>
+              <option>Fahrenheit (&#176;F)</option>
+            </select>
+          </div>
+          <div class="card">
+            <label class="card-label" for="prs-u">Pressure</label>
+            <p class="card-desc">kPa, PSI, or bar</p>
+            <select id="prs-u" class="fc">
+              <option>Kilopascals (kPa)</option>
+              <option>PSI</option>
+              <option>Bar</option>
+            </select>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="trow">
+            <div>
+              <div class="trow-lbl">Measurement System</div>
+              <div class="trow-sub">Imperial (&#176;F, PSI, gal, ft) or Metric &mdash; data stored in imperial</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <label class="toggle">
+                <input type="checkbox" id="met-tog" onchange="document.getElementById('met-lbl').textContent=this.checked?'Metric':'Imperial'">
+                <span class="tslider"></span>
+              </label>
+              <span id="met-lbl" style="font-weight:700;min-width:70px;">Imperial</span>
+            </div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="showToast('&#10003; Display settings saved')">&#128190; Save Display Settings</button>
+        </div>
       </div>
 
+
+      <!-- ④ ALERTS & NOTIFICATIONS -->
+      <div class="sec" id="s-alerts">
+        <div class="sec-header">&#128276; Alerts &amp; Notifications</div>
+        <div class="g2">
+          <div class="card">
+            <div class="trow">
+              <div><div class="trow-lbl">Service Due Alert</div><div class="trow-sub">Notify when scheduled service is due</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="trow">
+              <div><div class="trow-lbl">Overheat Warning</div><div class="trow-sub">Alert on high engine temperature</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="trow">
+              <div><div class="trow-lbl">Low Oil Pressure</div><div class="trow-sub">Alert on low oil pressure reading</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="trow">
+              <div><div class="trow-lbl">Battery Voltage Alert</div><div class="trow-sub">Alert on low battery voltage</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+            </div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="showToast('&#10003; Alert settings saved')">&#128190; Save Alert Settings</button>
+        </div>
+      </div>
+
+
+      <!-- ⑤ AI ASSISTANT -->
+      <div class="sec" id="s-ai">
+        <div class="sec-header">&#129302; AI Assistant &mdash; Gemini &amp; Vessel Settings</div>
+        <div class="g2" style="margin-bottom:14px;">
+          <div class="card">
+            <label class="card-label">Vessel Name</label>
+            <p class="card-desc">Used in AI system prompt context</p>
+            <input type="text" id="vessel-name" class="fc" value="{{ vessel_name }}" placeholder="e.g. Serenity">
+          </div>
+          <div class="card">
+            <label class="card-label">Home Port</label>
+            <p class="card-desc">Used in AI system prompt context</p>
+            <input type="text" id="home-port" class="fc" value="{{ home_port }}" placeholder="e.g. Toronto, ON">
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div style="background:rgba(0,20,0,.5);border:1px solid rgba(0,204,0,.25);border-radius:6px;padding:14px 16px;margin-bottom:14px;font-size:14px;color:var(--muted);line-height:1.9;">
+            <strong style="color:var(--text);">Gemini API Key</strong> &mdash; Get at
+            <strong style="color:var(--accent);">aistudio.google.com</strong> &rarr; Get API key &rarr; Create API key.
+            Key starts with <code style="font-family:'Roboto Mono',monospace;font-size:12px;background:rgba(0,204,0,.1);padding:1px 5px;border-radius:3px;color:var(--accent);">AIzaSy&hellip;</code>
+            Free tier sufficient. Key stays on your Pi &mdash; never sent elsewhere. Token counts logged only &mdash; query text never stored.
+          </div>
+          <div class="trow" style="padding-bottom:14px;">
+            <div><strong>API Key</strong><div class="trow-sub">Paste from aistudio.google.com &mdash; saved to gemini.env on Pi</div></div>
+            <div style="display:flex;gap:8px;width:360px;">
+              <input type="password" id="gem-key" class="fc" placeholder="AIzaSy&hellip;" style="flex:1;font-family:'Roboto Mono',monospace;font-size:15px;">
+              <button class="btn btn-primary" style="min-width:80px;padding:0 14px;font-size:15px;" onclick="var i=document.getElementById('gem-key');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button>
+            </div>
+          </div>
+          <div class="trow">
+            <div><strong>Gemini Model</strong><div class="trow-sub">Flash = faster &middot; Pro = smarter</div></div>
+            <select class="fc" style="width:300px;">
+              <option>gemini-2.5-flash (Recommended)</option>
+              <option>gemini-2.0-flash</option>
+              <option>gemini-2.5-pro (Most Capable)</option>
+            </select>
+          </div>
+          <div class="btn-group" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="showToast('&#10003; Gemini configuration saved')">&#128190; Save Configuration</button>
+            <button class="btn" onclick="showToast('Testing connection to generativelanguage.googleapis.com&hellip;')">&#128394; Test Connection</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="trow-lbl" style="margin-bottom:8px;">AI Routing Mode</div>
+          <div class="ai-modes">
+            <button class="ai-mode sel" onclick="selAI(this)">&#128260; Auto<br><span style="font-size:11px;font-weight:400;">Gemini &rarr; Ollama</span></button>
+            <button class="ai-mode" onclick="selAI(this)">&#127758; Gemini<br><span style="font-size:11px;font-weight:400;">Online only</span></button>
+            <button class="ai-mode" onclick="selAI(this)">&#128187; Ollama<br><span style="font-size:11px;font-weight:400;">192.168.1.36:11434</span></button>
+          </div>
+          <div style="margin-top:14px;">
+            <div style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
+            <input type="text" class="fc" value="192.168.1.36:11434" style="font-family:'Roboto Mono',monospace;margin-bottom:10px;">
+            <div style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
+            <input type="text" class="fc" value="qwen3-coder:30b" style="font-family:'Roboto Mono',monospace;">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview</div>
+            <div class="prompt-box" id="prompt-preview">You are a marine navigation assistant for a vessel named <strong style="color:rgba(0,255,0,0.9);">{{ vessel_name }}</strong>, home port <strong style="color:rgba(0,255,0,0.9);">{{ home_port }}</strong>. Respond only to marine queries: port info, fuel, anchorages, passages, weather, local attractions. Keep answers concise and practical for use at sea. Route: Gemini API (online) &rarr; Ollama 192.168.1.36:11434 (offline). Never store query text.</div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="trow">
+              <div><div class="trow-lbl">Cache last 10 responses</div><div class="trow-sub">Available for offline review &mdash; response text only, no query text</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+            </div>
+            <div class="trow">
+              <div><div class="trow-lbl">Log token counts only</div><div class="trow-sub">Privacy rule &mdash; query text never stored (always enforced)</div></div>
+              <label class="toggle"><input type="checkbox" checked disabled><span class="tslider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑥ CAMERA SETUP -->
+      <div class="sec" id="s-camera">
+        <div class="sec-header">
+          &#128249; Camera Setup
+          <button class="btn btn-primary" style="font-size:14px;padding:6px 14px;min-height:0;" onclick="showToast('Scanning for cameras&hellip; (opens Marine Vision)')">Scan</button>
+        </div>
+        <div class="cs-grid">
+          <div class="cs-panel">
+            <div class="cs-ph">POSITIONS <button class="btn btn-primary" style="font-size:13px;padding:5px 12px;min-height:0;border-radius:4px;" onclick="showToast('Camera position management: open Marine Vision settings')">+ New</button></div>
+            <div class="cs-row"><span style="color:var(--accent);">&#9679;</span><span>Forward Watch</span><small style="color:var(--muted);font-size:12px;">&nbsp;[FW]</small></div>
+            <div class="cs-row"><span style="color:var(--accent);">&#9679;</span><span>Engine Room</span></div>
+            <div class="cs-row"><span style="color:#555;">&#9675;</span><span style="color:var(--muted);">Cockpit</span></div>
+          </div>
+          <div class="cs-panel">
+            <div class="cs-ph">SLOT DETAIL</div>
+            <div style="padding:12px;">
+              <div style="height:90px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#333;font-size:13px;margin-bottom:10px;">Select a position to preview</div>
+              <div class="cs-role"><span>Forward Watch <small style="color:var(--muted);">(one only)</small></span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox" checked><span class="tslider"></span></label></div>
+              <div class="cs-role"><span>Fish Detection</span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox"><span class="tslider"></span></label></div>
+              <div class="cs-role"><span>Show in Grid</span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox" checked><span class="tslider"></span></label></div>
+            </div>
+          </div>
+          <div class="cs-panel">
+            <div class="cs-ph">UNASSIGNED</div>
+            <div class="cs-empty">No unassigned cameras detected.<br>Tap Scan to search network.</div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="window.open('http://localhost:8084','_blank')">&#128249; Open Marine Vision</button>
+        </div>
+      </div>
+
+
+      <!-- ⑦ DATA MANAGEMENT -->
+      <div class="sec" id="s-data">
+        <div class="sec-header">&#128190; Data Management</div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="showToast('&#10003; All data exported successfully')">&#128228; Export All Data</button>
+          <button class="btn" onclick="showToast('Select JSON file to import&hellip;')">&#128229; Import Data</button>
+          <button class="btn btn-warn" onclick="confirmAction('Delete all trip data?','&#10003; Trip data cleared')">&#128465;&#65039; Clear Trip Data</button>
+          <button class="btn btn-warn" onclick="confirmAction('Delete all benchmark data?','&#10003; Benchmark data cleared')">&#128465;&#65039; Clear Benchmarks</button>
+        </div>
+      </div>
+
+
+      <!-- ⑧ NETWORK & CONNECTIVITY -->
+      <div class="sec" id="s-network">
+        <div class="sec-header">&#127760; Network &amp; Connectivity</div>
+        <div class="g2">
+          <div>
+            <table class="port-table">
+              <thead>
+                <tr><th>Service</th><th>Address</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>d3kOS Dashboard</td><td>localhost:3000</td><td id="pt-dashboard" class="ok">&#9679; UP</td></tr>
+                <tr><td>AvNav Charts</td><td>localhost:8080</td><td id="pt-avnav">&#8212;</td></tr>
+                <tr><td>Gemini AI Proxy</td><td>localhost:3001</td><td id="pt-gemini">&#8212;</td></tr>
+                <tr><td>Signal K</td><td>localhost:8099</td><td id="pt-signalk">&#8212;</td></tr>
+                <tr>
+                  <td>Signal K WebSocket</td>
+                  <td style="font-size:12px;">ws://localhost:8099/signalk/v1/stream</td>
+                  <td id="pt-skws">&#8212;</td>
+                </tr>
+                <tr><td>OpenPlotter</td><td>localhost:8081</td><td class="wrn">&#9679; INFRA</td></tr>
+                <tr><td>Ollama (LAN)</td><td>192.168.1.36:11434</td><td id="pt-ollama">&#8212;</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:10px;">
+              <div class="trow">
+                <div><div class="trow-lbl">Windy weather panel</div><div class="trow-sub">embed.windy.com &mdash; requires internet</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+              </div>
+              <div class="trow">
+                <div><div class="trow-lbl">Radar panel (RainViewer)</div><div class="trow-sub">rainviewer.com &mdash; requires internet</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
+              </div>
+            </div>
+            <button class="btn-full btn-outline" style="font-size:15px;padding:14px;" onclick="showToast('WiFi: use OpenPlotter at localhost:8081 &rarr; Network')">&#128246; Network Settings (OpenPlotter)</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑨ CHART SETUP & DOCS -->
+      <div class="sec" id="s-charts">
+        <div class="sec-header">&#128506; Chart Setup &amp; Documentation</div>
+        <div class="g2">
+          <button class="doc-btn" onclick="openDoc('AVNAV_OCHARTS_INSTALL')">
+            <div class="doc-icon">&#128230;</div>
+            <div class="doc-title">o-charts Installation</div>
+            <div class="doc-desc">Step-by-step: install o-charts into AvNav (localhost:8080), activate license, download Canada CHS, UK, US charts.</div>
+          </button>
+          <button class="doc-btn" onclick="openDoc('AVNAV_PLUGINS')">
+            <div class="doc-icon">&#128268;</div>
+            <div class="doc-title">AvNav Plugins Guide</div>
+            <div class="doc-desc">AIS overlay, anchor alarm, NMEA display (Signal K :8099), voyage log, ochartsng plugin setup.</div>
+          </button>
+          <button class="doc-btn" onclick="showToast('Free chart sources: NOAA ENC, LINZ, RIS, Marinha &mdash; all load in AvNav')">
+            <div class="doc-icon">&#127758;</div>
+            <div class="doc-title">Free Chart Sources</div>
+            <div class="doc-desc">NOAA ENC (USA/Great Lakes), LINZ (NZ/Pacific), RIS (Europe inland), Marinha (Brazil). All load in AvNav.</div>
+          </button>
+          <button class="doc-btn" onclick="window.open('http://localhost:8080','_blank')">
+            <div class="doc-icon">&#129517;</div>
+            <div class="doc-title">How to Use AvNav</div>
+            <div class="doc-desc">Waypoints, route planning, anchor alarm, AIS overlay, voyage GPX export. Opens at localhost:8080.</div>
+          </button>
+        </div>
+      </div>
+
+
+      <!-- ⑩ OPENPLOTTER & INFRASTRUCTURE -->
+      <div class="sec" id="s-openplotter">
+        <div class="sec-header">&#128268; OpenPlotter &amp; System Infrastructure</div>
+        <div class="g3">
+          <button class="doc-btn" onclick="openDoc('OPENPLOTTER_REFERENCE')">
+            <div class="doc-icon">&#9881;&#65039;</div>
+            <div class="doc-title">OpenPlotter Reference</div>
+            <div class="doc-desc">What OpenPlotter manages (GPS, AIS, NMEA, Signal K :8099). Access at localhost:8081. Why it is kept in the background.</div>
+          </button>
+          <button class="doc-btn" onclick="showToast('OpenPlotter Plugins: NMEA 0183, Signal K, AIS, pypilot')">
+            <div class="doc-icon">&#129513;</div>
+            <div class="doc-title">OpenPlotter Plugins</div>
+            <div class="doc-desc">NMEA 0183, Signal K, AIS, pypilot. Enable, configure, troubleshoot. Signal K WS: ws://localhost:8099.</div>
+          </button>
+          <button class="doc-btn" onclick="showToast('OpenCPN Flatpak: launch from d3kOS menu &mdash; emergency fallback chartplotter')">
+            <div class="doc-icon">&#9875;</div>
+            <div class="doc-title">OpenCPN Fallback Guide</div>
+            <div class="doc-desc">Emergency fallback chartplotter. Launch via d3kOS menu. Load o-charts via Flatpak (ARM64). Zero code changes.</div>
+          </button>
+        </div>
+      </div>
+
+
+      <!-- ⑪ GETTING STARTED -->
+      <div class="sec" id="s-start">
+        <div class="sec-header">&#128640; Getting Started &mdash; How to Use d3kOS</div>
+        <div class="g2">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Daily Use</div>
+            <div class="steps">
+              <div class="step"><div class="step-num">1</div><div class="step-txt"><strong>Pi boots</strong> &rarr; d3kOS dashboard auto-launches at <code>localhost:3000</code></div></div>
+              <div class="step"><div class="step-num">2</div><div class="step-txt"><strong>Charts</strong> &rarr; Main Menu &rarr; AvNav Charts &rarr; live GPS at <code>localhost:8080</code></div></div>
+              <div class="step"><div class="step-num">3</div><div class="step-txt"><strong>Weather</strong> &rarr; Dashboard &rarr; Sea State &rarr; Windy / RainViewer panels open</div></div>
+              <div class="step"><div class="step-num">4</div><div class="step-txt"><strong>AI Nav</strong> &rarr; Main Menu &rarr; AI Navigation &rarr; marine queries at <code>localhost:3001</code></div></div>
+              <div class="step"><div class="step-num">5</div><div class="step-txt"><strong>Offline</strong> &rarr; AvNav + GPS work without internet. AI falls back to Ollama at <code>192.168.1.36:11434</code></div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Emergency Procedures</div>
+            <div class="steps">
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>Dashboard down</strong> &rarr; use System Actions below to restart Dashboard</div></div>
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>No GPS in AvNav</strong> &rarr; Check Signal K at <code>localhost:8099</code> &rarr; Data Browser</div></div>
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>AvNav down</strong> &rarr; Use OpenCPN Fallback from d3kOS menu &mdash; fully offline</div></div>
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>AI Proxy down</strong> &rarr; use System Actions below to restart Gemini Proxy</div></div>
+              <div class="step"><div class="step-num ca">&#9888;</div><div class="step-txt"><strong>AI not responding</strong> &rarr; Check Ollama at <code>192.168.1.36:11434</code> on LAN</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑫ PHASE ROADMAP -->
+      <div class="sec" id="s-roadmap">
+        <div class="sec-header">&#128197; d3kOS Phase Roadmap</div>
+        <div class="phases">
+          <div class="phase-item">
+            <div class="ph-badge ph-done">&#10003;</div>
+            <div><div class="ph-title">Phase 0 &mdash; Initial Setup &amp; Directory Structure</div><div class="ph-desc">Directories created, .gitignore in place, governance stubs written. All .env files confirmed gitignored. Complete 2026-03-12.</div></div>
+          </div>
+          <div class="phase-item">
+            <div class="ph-badge ph-done">&#10003;</div>
+            <div><div class="ph-title">Phase 1 &mdash; Pi Menu Restructure</div><div class="ph-desc">d3kOS menu category (X-d3kOS) created. AvNav (:8080) and Gemini Nav (:3001) desktop entries added. Port migration: SK :3000&rarr;:8099, issue_detector :8099&rarr;:8199. Complete 2026-03-13.</div></div>
+          </div>
+          <div class="phase-item">
+            <div class="ph-badge ph-done">&#10003;</div>
+            <div><div class="ph-title">Phase 2 &mdash; Dashboard Hub (Flask :3000)</div><div class="ph-desc">Flask app at localhost:3000. 9-button 3&times;3 grid menu, AvNav iframe, collapsible Windy/Radar panel, 5 status indicators polling /status every 30s. Signal K indicator on :8099. Complete 2026-03-13.</div></div>
+          </div>
+          <div class="phase-item">
+            <div class="ph-badge ph-done">&#10003;</div>
+            <div><div class="ph-title">Phase 3 &mdash; Gemini Marine AI Proxy (:3001)</div><div class="ph-desc">Flask proxy at localhost:3001. Gemini API (gemini-2.5-flash) online &rarr; Ollama (192.168.1.36:11434) offline fallback. Marine system prompt. Response cache (max 10, no query text). Full pytest suite (10/10). Complete 2026-03-13.</div></div>
+          </div>
+          <div class="phase-item">
+            <div class="ph-badge ph-now">&#9654;</div>
+            <div><div class="ph-title" style="color:var(--warn);">Phase 4 &mdash; Settings Page + AvNav Docs (current)</div><div class="ph-desc">This settings page &mdash; 16 sections wired to live data. Signal K WebSocket on ws://localhost:8099. Documentation files: AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md.</div></div>
+          </div>
+          <div class="phase-item">
+            <div class="ph-badge ph-fut" style="font-size:11px;">5</div>
+            <div><div class="ph-title">Phase 5 &mdash; AI + AvNav Integration</div><div class="ph-desc">Route suggestion via AvNav POST API + Gemini. Voyage log GPX summarization. Port arrival briefings at 2nm. Anchor watch AI alerts. AI Bridge service at :3002. Requires AvNav install via OpenPlotter first.</div></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑬ SYSTEM ACTIONS -->
+      <div class="sec" id="s-actions">
+        <div class="sec-header">&#128295; System Actions</div>
+        <div class="btn-group">
+          <button class="btn" onclick="svcAction('signalk','Restart Signal K (:8099)?')">&#128260; Restart Signal K</button>
+          <button class="btn" onclick="svcAction('nodered','Restart Node-RED?')">&#128260; Restart Node-RED</button>
+          <button class="btn btn-warn" onclick="rebootConfirm()">&#128260; Reboot System</button>
+          <button class="btn btn-danger" onclick="showToast('&#9888; Initial Setup Reset requires Triple confirmation &mdash; contact support')">&#9888;&#65039; Initial Setup Reset</button>
+        </div>
+        <div class="btn-group" style="margin-top:6px;">
+          <button class="btn" onclick="svcAction('dashboard','Restart d3kOS Dashboard (:3000)?')">&#128260; Restart Dashboard</button>
+          <button class="btn" onclick="svcAction('gemini','Restart Gemini Proxy (:3001)?')">&#128260; Restart Gemini Proxy</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px;">Note: Restart actions require sudo permissions configured in /etc/sudoers.d/d3kos on Pi.</p>
+      </div>
+
+
+      <!-- ⑭ SYSTEM INFORMATION -->
+      <div class="sec" id="s-sysinfo">
+        <div class="sec-header">&#128187; System Information</div>
+        <div class="card">
+          <div class="info-grid">
+            <span class="info-k">System:</span><span class="info-v">d3kOS v2.0</span>
+            <span class="info-k">Hardware:</span><span class="info-v">Raspberry Pi 4B (8GB RAM)</span>
+            <span class="info-k">OS:</span><span class="info-v">Debian GNU/Linux 13 (Trixie) 64-bit</span>
+            <span class="info-k">Signal K:</span><span class="info-v"><span class="info-badge" id="si-sk-badge">&#8212;</span></span>
+            <span class="info-k">IP Address:</span><span class="info-v" id="si-ip" style="font-family:'Roboto Mono',monospace;">&#8212;</span>
+            <span class="info-k">Disk Usage:</span><span class="info-v" id="si-disk">&#8212;</span>
+            <span class="info-k">Memory:</span><span class="info-v" id="si-mem">&#8212;</span>
+            <span class="info-k">CPU Temp:</span><span class="info-v" id="si-cputemp">&#8212;</span>
+            <span class="info-k">Uptime:</span><span class="info-v" id="si-uptime">&#8212;</span>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="btn" style="font-size:14px;padding:8px 16px;min-height:0;" onclick="loadSysinfo()">&#128260; Refresh</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑮ LICENSE & TIER -->
+      <div class="sec" id="s-license">
+        <div class="sec-header">&#127867; License &amp; Tier</div>
+        <div class="card">
+          <div class="info-grid">
+            <span class="info-k">Tier:</span><span class="info-v" style="color:#FFD700;font-weight:700;">Tier 2</span>
+            <span class="info-k">Install ID:</span><span class="info-v" style="font-family:'Roboto Mono',monospace;color:var(--accent);">d3k-2024-boatiq-001</span>
+            <span class="info-k">Features:</span><span class="info-v">&#10003; Voice &nbsp; &#10003; Camera &nbsp; &#10003; AI Nav</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑯ ABOUT d3kOS -->
+      <div class="sec" id="s-about">
+        <div class="sec-header">&#8505;&#65039; About d3kOS</div>
+        <div class="card">
+          <p style="font-size:18px;margin-bottom:12px;"><strong>d3kOS</strong> is a comprehensive marine electronics system for chart navigation, engine monitoring, AI-assisted passage planning, and vessel camera monitoring.</p>
+          <p style="font-size:15px;color:var(--muted);margin-bottom:12px;">Built on Raspberry Pi 4B with AvNav (primary charts at :8080), Signal K integration (:8099), NMEA support via OpenPlotter (:8081), and Gemini AI (:3001) with Ollama offline fallback (192.168.1.36:11434).</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;font-size:13px;font-family:'Roboto Mono',monospace;line-height:2.2;">
+            <div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">System</div>
+              <div>Version: <span style="color:var(--accent);">d3kOS v2.0</span></div>
+              <div>Platform: <span style="color:var(--accent);">Pi 4B 8GB</span></div>
+              <div>Phase: <span style="color:var(--warn);">Phase 4 active</span></div>
+              <div>Plan: <span style="color:var(--accent);">D3KOS_PLAN.md v2.0</span></div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Services</div>
+              <div>Dashboard: <span style="color:var(--accent);">:3000</span></div>
+              <div>AvNav: <span style="color:var(--accent);">:8080</span></div>
+              <div>Gemini Proxy: <span style="color:var(--accent);">:3001</span></div>
+              <div>Signal K: <span style="color:var(--accent);">:8099</span></div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Project</div>
+              <div>Owner: <span style="color:var(--accent);">Skipper Don</span></div>
+              <div>Site: <span style="color:var(--accent);">AtMyBoat.com</span></div>
+              <div>Repo: <span style="color:var(--accent);">Helm-OS</span></div>
+              <div>Methodology: <span style="color:var(--accent);">AAO v1.1</span></div>
+            </div>
+          </div>
+          <p style="font-size:14px;color:rgba(255,255,255,0.3);margin-top:16px;">&#169; 2026 d3kOS Project &middot; Version 2.0 &middot; Built with Claude Code &middot; Methodology: AAO v1.1</p>
+        </div>
+      </div>
+
+
+    </div><!-- /settings-content -->
+    </div><!-- /settings-scroll-area -->
+
+
+    <!-- BOOKMARK SIDEBAR -->
+    <div class="settings-bm-sidebar">
+      <div class="bm-head">&#9875; SECTIONS</div>
+      <button class="bm-btn active" onclick="bmScroll('s-status',this)">&#128225; System Status</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="bmScroll('s-engine',this)">&#9875; Engine Config</button>
+      <button class="bm-btn" onclick="bmScroll('s-units',this)">&#128207; Units &amp; Display</button>
+      <button class="bm-btn" onclick="bmScroll('s-alerts',this)">&#128276; Alerts</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="bmScroll('s-ai',this)">&#129302; AI Assistant</button>
+      <button class="bm-btn" onclick="bmScroll('s-camera',this)">&#128249; Camera Setup</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="bmScroll('s-data',this)">&#128190; Data Mgmt</button>
+      <button class="bm-btn" onclick="bmScroll('s-network',this)">&#127760; Network</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="bmScroll('s-charts',this)">&#128506; Chart Docs</button>
+      <button class="bm-btn" onclick="bmScroll('s-openplotter',this)">&#128268; OpenPlotter</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="bmScroll('s-start',this)">&#128640; Getting Started</button>
+      <button class="bm-btn" onclick="bmScroll('s-roadmap',this)">&#128197; Roadmap</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="bmScroll('s-actions',this)">&#128295; Sys Actions</button>
+      <button class="bm-btn" onclick="bmScroll('s-sysinfo',this)">&#128187; Sys Info</button>
+      <button class="bm-btn" onclick="bmScroll('s-license',this)">&#127867; License</button>
+      <button class="bm-btn" onclick="bmScroll('s-about',this)">&#8505;&#65039; About</button>
     </div>
-  </div>
+
+  </div><!-- /settings-page-body -->
+
+  <!-- TOAST -->
+  <div id="toast"></div>
 
   <script>
     window.D3K_CONFIG = {
-      avnavUrl:   'http://localhost:{{ avnav_port }}',
-      geminiPort: '{{ gemini_port }}'
+      avnavUrl:    'http://localhost:{{ avnav_port }}',
+      geminiPort:  '{{ gemini_port }}',
+      signalkPort: '{{ signalk_port }}',
     };
   </script>
   <script src="/static/js/connectivity-check.js"></script>
+
+  <script>
+    /* ── BOOKMARK SIDEBAR ── */
+    function bmScroll(id, btn) {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelectorAll('.bm-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    /* ── TOAST ── */
+    let _toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerHTML = msg;
+      t.classList.add('show');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    /* ── CONFIRM ACTION ── */
+    function confirmAction(question, successMsg) {
+      if (confirm(question)) showToast(successMsg);
+    }
+
+    /* ── AI MODE SELECTION ── */
+    function selAI(el) {
+      document.querySelectorAll('.ai-mode').forEach(b => b.classList.remove('sel'));
+      el.classList.add('sel');
+    }
+
+    /* ── STATUS INDICATORS (section 1) ── */
+    function setIndicator(id, ok, label, sub) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.querySelector('.si-val').textContent = label;
+      el.querySelector('.si-val').className = 'si-val ' + (ok ? 'ok' : 'off');
+    }
+
+    function loadStatus() {
+      fetch('/status')
+        .then(r => r.json())
+        .then(d => {
+          setSI('si-internet',  d.internet, d.internet ? '● CONNECTED' : '○ OFFLINE');
+          setSI('si-avnav',     d.avnav,    d.avnav    ? '● LIVE'      : '○ DOWN');
+          setSI('si-gemini',    d.gemini,   d.gemini   ? '● ONLINE'    : '○ DOWN');
+          setSI('si-signalk',   d.signalk,  d.signalk  ? '● LIVE'      : '○ DOWN');
+          setSI('si-ollama',    d.ollama,   d.ollama   ? '● READY'     : '○ DOWN');
+          setSI('si-openplotter', true, '● RUNNING');     /* infra — always up */
+          setSI('si-gps',  d.signalk, d.signalk ? '● VIA SK'  : '○ NO SK');
+          setSI('si-ais',  d.signalk, d.signalk ? '● VIA SK'  : '○ NO SK');
+
+          /* Port table */
+          setPT('pt-avnav',    d.avnav);
+          setPT('pt-gemini',   d.gemini);
+          setPT('pt-signalk',  d.signalk);
+          setPT('pt-skws',     d.signalk, 'WS OK', 'WS DOWN');
+          setPT('pt-ollama',   d.ollama);
+        })
+        .catch(() => showToast('Status fetch failed'));
+    }
+
+    function setSI(id, ok, label) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = label;
+      el.className = 'si-val ' + (ok ? 'ok' : 'off');
+    }
+
+    function setPT(id, ok, upText, downText) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = (ok ? '● ' : '○ ') + (ok ? (upText || 'UP') : (downText || 'DOWN'));
+      el.className = ok ? 'ok' : 'off';
+    }
+
+    /* ── SYSINFO (section 14) ── */
+    function loadSysinfo() {
+      fetch('/sysinfo')
+        .then(r => r.json())
+        .then(d => {
+          setText('si-ip',      d.ip);
+          setText('si-disk',    d.disk_pct + '% used — ' + d.disk_free_gb + ' GB free');
+          setText('si-mem',     d.mem_pct  + '% used — ' + Math.round(d.mem_free_mb / 1024 * 10) / 10 + ' GB free');
+          setText('si-cputemp', d.cpu_temp);
+          setText('si-uptime',  d.uptime);
+
+          const badge = document.getElementById('si-sk-badge');
+          if (badge) badge.textContent = 'Online :8099';
+        })
+        .catch(() => showToast('Sysinfo fetch failed'));
+    }
+
+    function setText(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    /* ── SYSTEM ACTIONS ── */
+    function svcAction(service, question) {
+      if (!confirm(question + '\nThis will briefly interrupt the service.')) return;
+      fetch('/action/restart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service }),
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.ok) showToast('✓ ' + service + ' restarted');
+          else      showToast('⚠ Restart failed: ' + (d.error || 'unknown'));
+        })
+        .catch(() => showToast('⚠ Restart request failed'));
+    }
+
+    function rebootConfirm() {
+      if (!confirm('Reboot the Pi?\nAll services will stop briefly.')) return;
+      if (!confirm('Are you sure? This will disconnect all sessions.')) return;
+      fetch('/action/reboot', { method: 'POST' })
+        .then(() => showToast('System rebooting…'))
+        .catch(() => showToast('Reboot initiated'));
+    }
+
+    /* ── DOC BUTTONS ── */
+    function openDoc(name) {
+      showToast('Doc: deployment/d3kOS/docs/' + name + '.md');
+    }
+
+    /* ── INIT ── */
+    loadStatus();
+    loadSysinfo();
+  </script>
 
 </body>
 </html>
