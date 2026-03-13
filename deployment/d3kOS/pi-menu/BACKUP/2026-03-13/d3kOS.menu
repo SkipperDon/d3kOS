@@ -1,0 +1,12 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+  "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+<Menu>
+  <Name>Applications</Name>
+  <Menu>
+    <Name>d3kOS</Name>
+    <Directory>d3kOS.directory</Directory>
+    <Include>
+      <Category>X-d3kOS</Category>
+    </Include>
+  </Menu>
+</Menu>

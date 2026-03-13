@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenCPN (Fallback)
+Comment=Traditional Chart Plotter — Emergency Use Only
+Exec=flatpak run org.opencpn.OpenCPN
+Icon=applications-internet
+Categories=X-d3kOS;Network;
+Terminal=false

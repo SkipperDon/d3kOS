@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=d3kOS Dashboard
+Comment=Marine Navigation Dashboard — http://localhost:3000
+Exec=/usr/bin/chromium --app=http://localhost:3000 --start-fullscreen
+Icon=applications-internet
+Categories=X-d3kOS;Network;
+Terminal=false
