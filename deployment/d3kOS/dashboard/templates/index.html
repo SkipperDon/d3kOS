@@ -154,6 +154,19 @@
         </div>
       </div>
 
+      <!-- Voyage Log Summary -->
+      <div id="voyage-widget" class="ai-widget">
+        <div class="ai-widget-head">
+          <span>&#128203; Voyage Log</span>
+          <button class="ai-widget-btn" onclick="togglePanel('voyage-body')" title="Collapse">&#9660;</button>
+        </div>
+        <div id="voyage-body" class="ai-widget-body">
+          <div id="voyage-state" class="ai-state dim">Tap to summarize last voyage</div>
+          <div id="voyage-text" class="ai-text"></div>
+          <button class="ai-action-btn" onclick="summarizeVoyage()">SUMMARIZE LAST VOYAGE</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
