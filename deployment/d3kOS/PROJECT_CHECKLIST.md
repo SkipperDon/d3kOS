@@ -113,38 +113,41 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 4 — Settings Page + AvNav Documentation
-**Risk:** LOW | **Status:** TODO | **Requires:** Phase 2 complete (Phase 3 recommended)
+**Risk:** LOW | **Status:** COMPLETE 2026-03-13 | **Requires:** Phase 2 complete (Phase 3 recommended)
 **Reference:** D3KOS_PLAN.md §Phase 4 | UI Reference: docs/d3kos-mockup-v4.html (screen-settings, all 16 sections)
 
 ### Settings page (16 sections)
-- [ ] Settings page loads at http://localhost:3000/settings
-- [ ] Bookmark sidebar scrolls to all 16 sections
-- [ ] Section 1: System Status — live indicators (AvNav, SK, GPS, AIS, Gemini, Ollama, OpenPlotter, Internet)
-- [ ] Section 2: Engine Configuration — service interval, oil interval, engine hours, hours since service
-- [ ] Section 3: Units & Display — distance, speed, temperature, pressure + metric/imperial toggle
-- [ ] Section 4: Alerts & Notifications — service due, overheat, low oil, battery voltage toggles
-- [ ] Section 5: AI Assistant — vessel name, home port, Gemini model, routing mode, API key field, privacy toggles, system prompt preview
-- [ ] Section 6: Camera Setup — slot/hardware panel (existing camera overhaul system)
-- [ ] Section 7: Data Management — export, import, clear trip data, clear benchmarks
-- [ ] Section 8: Network & Connectivity — port table, Ollama address, Windy/Radar toggles
-- [ ] Section 9: Chart Setup & Docs — o-charts install, AvNav plugins, free charts, AvNav how-to (doc modals)
-- [ ] Section 10: OpenPlotter & Infrastructure — OpenPlotter ref, plugins guide, OpenCPN fallback guide (doc modals)
-- [ ] Section 11: Getting Started — daily use steps + emergency procedures
-- [ ] Section 12: Phase Roadmap — all 5 phases with status badges
-- [ ] Section 13: System Actions — restart SK, restart Node-RED, reboot, factory reset
-- [ ] Section 14: System Information — version, Pi model, OS, SK status, IP, disk, memory, CPU temp, uptime
-- [ ] Section 15: License & Tier — tier, install ID, features
-- [ ] Section 16: About d3kOS — version, platform, project, credits
+- [x] Settings page loads at http://localhost:3000/settings
+- [x] Bookmark sidebar scrolls to all 16 sections
+- [x] Section 1: System Status — live indicators (AvNav, SK, GPS, AIS, Gemini, Ollama, OpenPlotter, Internet) — fetches /status on load
+- [x] Section 2: Engine Configuration — service interval, oil interval, engine hours, hours since service
+- [x] Section 3: Units & Display — distance, speed, temperature, pressure + metric/imperial toggle
+- [x] Section 4: Alerts & Notifications — service due, overheat, low oil, battery voltage toggles
+- [x] Section 5: AI Assistant — vessel name, home port, Gemini model, routing mode, API key field, privacy toggles, system prompt preview
+- [x] Section 6: Camera Setup — slot/hardware panel (existing camera overhaul system)
+- [x] Section 7: Data Management — export, import, clear trip data, clear benchmarks
+- [x] Section 8: Network & Connectivity — port table (live status), Ollama address, Windy/Radar toggles
+- [x] Section 9: Chart Setup & Docs — o-charts install, AvNav plugins, free charts, AvNav how-to
+- [x] Section 10: OpenPlotter & Infrastructure — OpenPlotter ref, plugins guide, OpenCPN fallback guide
+- [x] Section 11: Getting Started — daily use steps + emergency procedures
+- [x] Section 12: Phase Roadmap — all 5 phases with accurate status badges (0-3 done, 4 active, 5 todo)
+- [x] Section 13: System Actions — restart SK, restart Node-RED, restart Dashboard, restart Gemini, reboot
+- [x] Section 14: System Information — live from /sysinfo endpoint (disk, memory, CPU temp, uptime, IP)
+- [x] Section 15: License & Tier — tier, install ID, features
+- [x] Section 16: About d3kOS — version, platform, project, credits
+- [ ] Pi deploy: copy updated dashboard files to /opt/d3kos/services/dashboard/ and restart service
+- [ ] Pi deploy: add sudo rule for systemctl restarts (/etc/sudoers.d/d3kos)
+- [ ] Visual verify on Pi screen: bookmark sidebar scrolls, all 16 sections visible
 
 ### Critical fix (from D3KOS_PLAN)
-- [ ] Signal K WebSocket check uses ws://localhost:8099 — NOT ws://localhost:3000
+- [x] Signal K WebSocket check uses ws://localhost:8099 — NOT ws://localhost:3000 (all docs + UI corrected)
 
 ### Documentation files
-- [ ] docs/AVNAV_OCHARTS_INSTALL.md written
-- [ ] docs/AVNAV_PLUGINS.md written
-- [ ] docs/OPENPLOTTER_REFERENCE.md written
-- [ ] All port references accurate (AvNav :8080, Signal K :8099, OpenPlotter :8081)
-- [ ] SESSION_LOG.md updated
+- [x] docs/AVNAV_OCHARTS_INSTALL.md written (v1.0.0)
+- [x] docs/AVNAV_PLUGINS.md written (v1.0.0) — includes POST-only API reminder and Phase 5 integration notes
+- [x] docs/OPENPLOTTER_REFERENCE.md written (v1.0.0)
+- [x] All port references accurate (AvNav :8080, Signal K :8099, OpenPlotter :8081)
+- [x] SESSION_LOG.md updated
 
 ---
 

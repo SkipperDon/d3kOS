@@ -4,6 +4,58 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 4 Settings Page + AvNav Documentation
+**Goal:** Build full 16-section settings page at localhost:3000/settings and three AvNav documentation files.
+**Completed:**
+- settings.html: full rewrite — 16 sections, two-column layout (scrollable content + 168px bookmark sidebar)
+  - Section 1: System Status — 8 live indicators, fetches /status on page load; Signal K WS explicitly ws://localhost:8099
+  - Section 2: Engine Configuration — service interval, oil interval, total hours, hours-since-service form
+  - Section 3: Units & Display — distance, speed, temperature, pressure selects; metric/imperial toggle
+  - Section 4: Alerts & Notifications — 4 toggle rows (service due, overheat, low oil, battery)
+  - Section 5: AI Assistant — vessel name, home port, API key field (password masked, show/hide), Gemini model select, routing mode (Auto/Gemini/Ollama), Ollama address + model, system prompt preview, privacy toggles
+  - Section 6: Camera Setup — 3-panel cs-grid (positions, slot detail, unassigned); open Marine Vision button
+  - Section 7: Data Management — export all, import, clear trip data, clear benchmarks
+  - Section 8: Network & Connectivity — port table (7 rows, live status from /status), Windy/Radar toggles
+  - Section 9: Chart Setup & Docs — 4 doc-buttons (AVNAV_OCHARTS_INSTALL, AVNAV_PLUGINS, free charts, AvNav howto)
+  - Section 10: OpenPlotter & Infrastructure — 3 doc-buttons (OPENPLOTTER_REFERENCE, plugins, OpenCPN fallback)
+  - Section 11: Getting Started — 5 daily use steps + 5 emergency procedures
+  - Section 12: Phase Roadmap — 6 phase items with accurate ph-done/ph-now/ph-fut badges
+  - Section 13: System Actions — restart SK, Node-RED, Dashboard, Gemini Proxy; reboot (double-confirm); initial reset (blocked)
+  - Section 14: System Information — live from /sysinfo: disk, memory, CPU temp, uptime, IP
+  - Section 15: License & Tier — static display
+  - Section 16: About d3kOS — 3-column grid (system, services, project)
+- app.py: added /sysinfo endpoint — disk, memory, CPU temp (vcgencmd + fallback to /sys/class/thermal), uptime, IP; standard library only
+- app.py: added /action/restart POST endpoint — allows restart of signalk, nodered, d3kos-dashboard, d3kos-gemini via sudo systemctl
+- app.py: added /action/reboot POST endpoint — requires sudo rights; uses Popen for non-blocking reboot
+- d3kos.css: added full settings-page CSS block (~300 lines) — bookmark sidebar, section headers, status grids, cards, form controls, toggles, buttons, AI modes, prompt box, port table, doc buttons, steps, phases, info grid, camera panels, toast
+- docs/AVNAV_OCHARTS_INSTALL.md: v1.0.0 — 5-step guide: plugin install, account creation, licence activation (direct login + fingerprint methods), chart download, verification + troubleshooting table
+- docs/AVNAV_PLUGINS.md: v1.0.0 — 5 plugins covered: ochartsng, SignalK plugin (ws://localhost:8099 hard rule), anchor alarm (Phase 5 coordination note), voyage log/GPX export, NMEA display; POST-only API table
+- docs/OPENPLOTTER_REFERENCE.md: v1.0.0 — data flow diagram (GPS→OpenPlotter→SK→AvNav/AI Bridge), plugin guide, SK Data Browser, troubleshooting table, service management table
+- py_compile: app.py syntax verified clean
+- Critical fix applied: Signal K WebSocket is ws://localhost:8099 throughout all docs, settings page, and port table — never :3000
+**Decisions:**
+- Section 1 GPS/AIS indicators show "VIA SK" with Signal K status — actual GPS/AIS data reading deferred to Phase 5 (requires SK WebSocket polling)
+- /action endpoints require sudo sudoers rule on Pi — added install note in settings page UI and SESSION_LOG (see Pi deploy checklist below)
+- /sysinfo uses standard library only — no psutil dependency; vcgencmd for Pi CPU temp with thermal_zone0 fallback for non-Pi
+- App.py /settings route already existed (Phase 2 placeholder) — no route change needed, only settings.html replaced
+- Signal K WebSocket reference confirmed correct everywhere: ws://localhost:8099/signalk/v1/stream
+**Pi Deploy Required (next session):**
+- Copy dashboard/ to /opt/d3kos/services/dashboard/ (app.py, templates/settings.html, static/css/d3kos.css)
+- sudo systemctl restart d3kos-dashboard
+- Add sudoers rule: `d3kos ALL=(ALL) NOPASSWD: /bin/systemctl restart signalk, /bin/systemctl restart nodered, /bin/systemctl restart d3kos-dashboard, /bin/systemctl restart d3kos-gemini, /bin/systemctl reboot`
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending:**
+- Phase 4: Pi deploy + visual verify
+- Phase 4: Pi sudoers rule for /action endpoints
+- Phase 5: AvNav install via OpenPlotter → Apps → AvNav Installer (port 8085 free)
+- Phase 5: keyboard-api on 8087 (already done) — port 8085 confirmed free
+---
+
 ## Session 2026-03-13 — Phase 3 Gemini Marine AI Proxy
 **Goal:** Build and deploy d3kOS Gemini Marine AI Proxy at localhost:3001.
 **Completed:**
