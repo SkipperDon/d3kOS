@@ -114,6 +114,10 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | `deployment/d3kOS/gemini-nav/config/` | Phase 3 | gemini.env (NEVER committed) |
 | `deployment/d3kOS/gemini-nav/tests/` | Phase 3 | test_gemini_proxy.py — full pytest suite |
 | `deployment/d3kOS/docs/` | Phase 1–4 | MENU_STRUCTURE.md, AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md |
+| `deployment/d3kOS/docs/AVNAV_INSTALL_AND_API.md` | Phase 5 pre-req | AvNav installation procedure (OpenPlotter GUI method only — standalone .deb breaks OpenPlotter), port conflict warnings (8085), Signal K port verification, POST-only API reference, staged pre-install checklist (Stages A-F) |
+| `deployment/d3kOS/docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` | Phase 5 spec | Full AI + AvNav Integration spec v1.1.0. 4 features: Route Widget, Port Arrival Briefing, Voyage Log Summary, Anchor Watch. AI Bridge service at :3002, SSE to dashboard, TTS to Pi speakers. Anomaly-corrected from v1.0.0 (GET→POST, wrong API URL). |
+| `deployment/d3kOS/docs/AVNAV_API_REFERENCE.md` | Phase 5 pre-req | **[NOT YET CREATED]** Real JSON responses from live Pi after AvNav install — gate item before Phase 5 coding begins (Stage E5) |
+| `deployment/d3kOS/ai-bridge/` | Phase 5 | **[NOT YET CREATED]** AI Bridge service at localhost:3002 — created during Phase 5 implementation |
 
 ### Port Reference (immutable — single source of truth)
 
@@ -121,7 +125,10 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 |---------|-----|------|
 | d3kOS Dashboard | localhost:3000 | Flask app — Phase 2 |
 | d3kOS Gemini Proxy | localhost:3001 | Flask proxy — Phase 3 |
-| AvNav Charts | localhost:8080 | Primary chart viewer |
+| d3kOS AI Bridge | localhost:3002 | Flask service — Phase 5 |
+| AvNav Charts | localhost:8080 | Primary chart viewer — Phase 5 prerequisite |
+| AvNav REST API | POST http://localhost:8080/viewer/avnav_navi.php | POST only — GET returns 501 |
+| AvNav updater | localhost:8085 | CONFLICT with keyboard-api — resolve before Phase 5 |
 | OpenPlotter | localhost:8081 | Infrastructure only — do NOT touch |
 | Signal K | localhost:8099 | Read-only data broker |
 | Signal K WebSocket | ws://localhost:8099/signalk/v1/stream | NOT :3000 |
@@ -137,6 +144,7 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | 2 | Dashboard Hub (Flask :3000) | TODO |
 | 3 | Gemini Marine AI Proxy (:3001) | TODO |
 | 4 | Settings Page + Documentation | TODO |
+| 5 | AI + AvNav Integration | TODO — active 2026-03-13 (was DEFERRED) |
 | 5 | AI + AvNav Integration | DEFERRED — v1.1 |
 
 ---
