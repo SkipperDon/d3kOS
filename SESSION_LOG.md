@@ -2,6 +2,31 @@
 
 ---
 
+## Session — 2026-03-13 — Don's Personal TODO List added to PROJECT_CHECKLIST.md
+
+**Tasks completed:**
+- Added `DON'S PERSONAL TODO LIST` section to PROJECT_CHECKLIST.md
+- Section covers: dock verification steps (dashboard, AvNav, anchor watch speaker test, AI Bridge indicator), on-water feature tests (route widget, arrival briefing, voyage log, anchor drag alarm), and existing v0.9.2 tasks (o-charts, UAT)
+- Each item has plain-English click-by-click steps so Don doesn't need to recall context
+
+**Files changed:**
+- `PROJECT_CHECKLIST.md` — DON'S PERSONAL TODO LIST section added (63 lines), Last Updated updated
+
+**PROJECT_CHECKLIST.md updates:**
+- New section `DON'S PERSONAL TODO LIST` added after Phase 5 block
+- Last Updated line → 2026-03-13 final, commits e1ab7a6 d7991d5 5447928 ad9a1b4
+
+**AAO compliance:** PASS
+
+**Open items for next session:**
+- Task B: write `deployment/d3kOS/ai-bridge/tests/test_ai_bridge.py` (conftest.py stub ready)
+- Task C: Phase 1 Pi menu cleanup — category registration, desktop-file-validate, MENU_STRUCTURE.md
+- Don's on-boat tasks: see DON'S PERSONAL TODO LIST in PROJECT_CHECKLIST.md
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-13 — Close: pytest conftest stub, session end
 
 **Tasks completed:**
