@@ -24,10 +24,10 @@ If it has moved, every URL in D3KOS_PLAN.md and D3KOS_PHASE5 must be updated.
 Confirmed from live test on this Pi — `GET` returns HTTP 501.
 All API calls in Phase 5 code must use `curl -X POST` or `requests.post()`.
 
-**WARNING 4 — Port 8085 conflict:**
+**WARNING 4 — Port 8085 conflict: RESOLVED 2026-03-13**
 AvNav updater process uses port **8085**.
-`d3kos-keyboard-api.service` also runs on port **8085**.
-Resolve this conflict before installing AvNav — see Section 3 Step 2a.
+`d3kos-keyboard-api.service` moved to port **8087** (8086 was taken by fish_detector). Port 8085 is now free.
+Pi deploy required before AvNav install — Session 1 deploys updated keyboard-api.py and nginx.
 
 ---
 
@@ -40,11 +40,11 @@ Each step references the section in this document where the full details live.
 STAGE A — BEFORE INSTALLING AVNAV
 ──────────────────────────────────
 [ ] A1. Run all pre-install checks → Section 2
-        Confirm: port 8080 free, port 8085 conflict assessed, Signal K port known, disk space OK
+        Confirm: port 8080 free, port 8085 free (keyboard-api moved to 8087), Signal K port known, disk space OK
 [ ] A2. Record Signal K port in SESSION_LOG.md (8099 or 3000?)
         If NOT 8099, update D3KOS_PLAN.md master URL table before continuing
-[ ] A3. Assess port 8085 conflict (keyboard-api vs AvNav updater) → Section 2 check #7
-        Decision: move keyboard-api to 8086 OR accept that AvNav updater won't run
+[x] A3. Port 8085 conflict RESOLVED (2026-03-13) — keyboard-api moved to 8087, port 8085 free for AvNav updater
+        (Verify Pi deploy before install: ss -tlnp | grep :8087 should show keyboard-api)
 
 STAGE B — INSTALL AVNAV
 ────────────────────────
@@ -88,7 +88,7 @@ STAGE F — FINAL GATE CHECK BEFORE PHASE 5
 [ ] F5. API POST returns valid gps.lat and gps.lon ✓
 [ ] F6. Signal K port confirmed and all plan documents updated ✓
 [ ] F7. AVNAV_API_REFERENCE.md exists with real responses ✓
-[ ] F8. Port 8085 conflict resolved and documented ✓
+[x] F8. Port 8085 conflict resolved — keyboard-api at 8087, port 8085 free ✓
 [ ] F9. SESSION_LOG.md updated with all findings ✓
 
 → ALL F items checked? Phase 5 implementation may begin.
@@ -124,7 +124,7 @@ AvNav's built-in alarm.
 |---|---|---|
 | AvNav web interface | **8080** | Primary chart viewer — d3kOS iframe |
 | AvNav o-charts process | **8082** | Auto-started by AvNav when needed |
-| AvNav updater | **8085** | ⚠️ CONFLICT — keyboard-api.service also on 8085 |
+| AvNav updater | **8085** | keyboard-api moved to **8087** — port 8085 free ✓ |
 | Signal K (this Pi) | **8099** | Verify with command in Section 2 |
 
 ---
@@ -162,12 +162,11 @@ df -h /
 apt-cache search openplotter-avnav
 # If nothing returned, the OpenPlotter repo may need updating (Section 3, step 1)
 
-# 7. ⚠️ ASSESS PORT 8085 CONFLICT
-ss -tlnp | grep :8085
-# keyboard-api.service will appear here — this conflicts with AvNav updater
-# Decision required: move keyboard-api to port 8086 before installing AvNav
-# To move keyboard-api: update keyboard-api.py port + nginx proxy_pass + d3kos-keyboard-api.service
-# Document the decision in SESSION_LOG.md before proceeding
+# 7. Port 8085 conflict — RESOLVED 2026-03-13
+# keyboard-api.service moved to port 8087 — port 8085 is free for AvNav updater
+# Verify Pi deploy is complete before AvNav install:
+ss -tlnp | grep :8087 && echo "keyboard-api on 8087 — OK" || echo "WARN: Session 1 deploy not yet done"
+ss -tlnp | grep :8085 && echo "WARN: port 8085 still occupied" || echo "Port 8085 free — OK"
 ```
 
 **Stop and resolve before continuing if:**
@@ -175,7 +174,7 @@ ss -tlnp | grep :8085
 - Signal K is not responding on 8099 (or 3000)
 - Disk space is under 500MB free
 - OpenPlotter version is unclear
-- Port 8085 conflict decision has not been made and documented
+- Port 8085 is still occupied (keyboard-api must be deployed to Pi on 8087 before install)
 
 ---
 
@@ -507,8 +506,9 @@ curl -s --max-time 3 http://localhost:8099/signalk \
   || echo "⚠ Signal K NOT on 8099 — check port"
 
 echo ""
-echo "--- Port 8085 Conflict Check ---"
-ss -tlnp | grep :8085 && echo "⚠ Something is on 8085 — verify keyboard-api vs AvNav updater decision" || echo "✓ Port 8085 clear"
+echo "--- Port 8085 / 8087 Check ---"
+ss -tlnp | grep :8087 && echo "✓ keyboard-api on 8087" || echo "⚠ keyboard-api NOT on 8087 — Session 1 deploy needed"
+ss -tlnp | grep :8085 && echo "⚠ Port 8085 occupied — check before AvNav install" || echo "✓ Port 8085 clear"
 
 echo ""
 echo "=== Done ==="
@@ -550,9 +550,9 @@ cat $(find /home /var /opt -name "currentLeg.json" 2>/dev/null | head -1)
 ```
 This confirms the file is created and readable — essential for the route widget feature.
 
-**6. Resolve port 8085 conflict**
-Decide: move keyboard-api to 8086 (recommended) or accept AvNav updater won't run.
-Document decision in SESSION_LOG.md. Update nginx and service file if moving.
+**6. Port 8085 conflict — RESOLVED 2026-03-13**
+keyboard-api.service moved to port 8087 (8086 was taken by fish_detector). Port 8085 is free for AvNav updater.
+Session 1 deploys updated keyboard-api.py and nginx to Pi — verify before AvNav install.
 
 ---
 

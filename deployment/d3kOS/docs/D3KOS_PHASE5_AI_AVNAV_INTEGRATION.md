@@ -19,7 +19,7 @@ existing d3kOS plan. All are corrected in this document (v1.1.0):
 |---|---|---|---|
 | A1 | P5.0 pre-actions | All curl commands used `GET http://localhost:8080/api/...` — GET returns HTTP 501 | Replaced with `POST http://localhost:8080/viewer/avnav_navi.php` throughout |
 | A2 | Architecture, ai-bridge.env, avnav_client.py | `AVNAV_API=http://localhost:8080/api` (wrong URL, wrong method) | Corrected to `AVNAV_API=http://localhost:8080/viewer/avnav_navi.php` (POST) |
-| A3 | Port table | AvNav updater port 8085 not flagged as conflicting with keyboard-api.service | Conflict noted in port table and pre-action P5.4 |
+| A3 | Port table | AvNav updater port 8085 not flagged as conflicting with keyboard-api.service | Conflict noted; RESOLVED 2026-03-13 — keyboard-api moved to 8087 (8086 taken by fish_detector) |
 | A4 | Feature 4 | AvNav built-in anchor watch not acknowledged | Added coordination note — Phase 5 is additive, not replacement |
 
 ---
@@ -111,7 +111,7 @@ The AI Bridge never calls Gemini or Ollama directly — it always goes through p
 | **d3kOS AI Bridge** | **3002** | NEW — Phase 5 |
 | AvNav Charts | **8080** | Read-only — never modified |
 | AvNav o-charts | **8082** | Auto-started by AvNav |
-| AvNav updater | **8085** | ⚠️ Conflicts with keyboard-api.service — resolve before AvNav install |
+| AvNav updater | **8085** | keyboard-api moved to **8087** — port 8085 free ✓ (resolved 2026-03-13) |
 | Signal K | **8099** | Read-only — never modified |
 | OpenPlotter | **8081** | Infrastructure — never touched |
 | Ollama (LAN) | **192.168.1.36:11434** | Via :3001 proxy only |
@@ -275,11 +275,10 @@ if Pi 4B has sufficient RAM headroom after all other services are running.
 # Port 3002 — must be free for AI Bridge
 ss -tlnp | grep :3002 && echo "PORT 3002 IN USE — STOP" || echo "Port 3002 free"
 
-# Port 8085 — keyboard-api vs AvNav updater conflict (must be resolved before AvNav install)
-ss -tlnp | grep :8085
-# If keyboard-api.service is here, decide: move to 8086 before AvNav install
-# Moving keyboard-api: update keyboard-api.py (PORT=8086), update nginx proxy_pass,
-# update d3kos-keyboard-api.service EnvironmentFile, reload nginx, restart service
+# Port 8085 — RESOLVED 2026-03-13: keyboard-api moved to 8087, port 8085 free for AvNav
+# Verify Pi deploy complete before AvNav install:
+ss -tlnp | grep :8087 && echo "keyboard-api on 8087 — OK" || echo "WARN: keyboard-api not on 8087 yet"
+ss -tlnp | grep :8085 && echo "WARN: something still on 8085" || echo "Port 8085 free — OK"
 ```
 
 ---
@@ -941,7 +940,7 @@ All tests must pass before Phase 5 is marked DONE.
 ## PHASE 5 — DEFINITION OF DONE
 
 - [ ] AvNav installed via OpenPlotter (not standalone .deb)
-- [ ] Port 8085 conflict (keyboard-api vs AvNav updater) resolved and documented
+- [x] Port 8085 conflict RESOLVED — keyboard-api moved to 8087 (2026-03-13); Pi deploy pending
 - [ ] AvNav REST API reference documented in `docs/AVNAV_API_REFERENCE.md` with real responses
 - [ ] Signal K paths verified and documented for Don's exact setup
 - [ ] Node-RED flows audited — no conflicts identified, anchor watch coordination confirmed
@@ -1005,7 +1004,7 @@ The AI corrective action is advisory and on-demand only.
 | 5 | What Ollama model is currently installed and working at 192.168.1.36? | Needed for offline testing |
 | 6 | Should port arrival briefings be cached? (offshore, approaching same port repeatedly) | UX improvement |
 | 7 | What is the actual AvNav data directory path after installation? | Needed for AVNAV_DATA_DIR in ai-bridge.env |
-| 8 | Does keyboard-api.service need to move from 8085 to 8086 before AvNav install? | Must resolve before AvNav install |
+| 8 | Does keyboard-api.service need to move from 8085 to 8086 before AvNav install? | **RESOLVED 2026-03-13** — moved to 8087 (8086 was taken by fish_detector). Port 8085 free for AvNav. |
 
 Resolve all eight during Phase 5 pre-actions and document answers in SESSION_LOG.md.
 

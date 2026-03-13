@@ -8,7 +8,7 @@
 
 ## CONTEXT — Read Before Touching Any File
 
-d3kOS runs Chromium as a kiosk application on a Raspberry Pi under a Wayland compositor (labwc). The main menu (`index.html`) runs fullscreen. Some menu items need Chromium to step back to **windowed mode** so the Pi desktop is exposed alongside the browser — this is done by calling `POST /window/windowed` on the keyboard API (port 8085, proxied by nginx).
+d3kOS runs Chromium as a kiosk application on a Raspberry Pi under a Wayland compositor (labwc). The main menu (`index.html`) runs fullscreen. Some menu items need Chromium to step back to **windowed mode** so the Pi desktop is exposed alongside the browser — this is done by calling `POST /window/windowed` on the keyboard API (port 8087, proxied by nginx).
 
 The established pattern for buttons that require windowed mode is `goWindowed()` followed by a 350 ms delay then navigation. This pattern is already working and in production for **Helm**, **AI Assistant**, and **Onboarding**. Do not change those buttons.
 

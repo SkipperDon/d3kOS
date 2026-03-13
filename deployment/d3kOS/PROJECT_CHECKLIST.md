@@ -155,7 +155,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ### Stage A-F — AvNav Install Pre-Gate (docs/AVNAV_INSTALL_AND_API.md)
 - [ ] A1. Pre-install checks run: Signal K port confirmed, disk OK, ports 8080/8082 free
 - [ ] A2. Signal K port recorded in SESSION_LOG.md — confirm 8099, update plan if different
-- [ ] A3. Port 8085 conflict resolved — keyboard-api moved to 8086 before AvNav install
+- [x] A3. Port 8085 conflict RESOLVED (2026-03-13) — keyboard-api moved to 8087 (8086=fish_detector); Pi deploy pending Session 1
 - [ ] B1. AvNav installed via OpenPlotter Settings → Apps → AvNav Installer (NOT standalone .deb)
 - [ ] B2. AvNav Autostart enabled in OpenPlotter
 - [ ] B3. AvNav service running — `systemctl is-active avnav` returns active
@@ -257,7 +257,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 | d3kOS AI Bridge | localhost:3002 | Phase 5 |
 | AvNav Charts | localhost:8080 | Phase 5 prerequisite |
 | AvNav o-charts | localhost:8082 | Auto-started by AvNav |
-| AvNav updater | localhost:8085 | CONFLICT with keyboard-api — resolve before Phase 5 |
+| AvNav updater | localhost:8085 | keyboard-api moved to :8087 — port 8085 free ✓ |
 | OpenPlotter | localhost:8081 | Infrastructure |
 | Signal K | localhost:8099 | Read-only |
 | Signal K WS | ws://localhost:8099/signalk/v1/stream | Read-only |
