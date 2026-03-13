@@ -4,7 +4,7 @@ d3kOS Keyboard API
 Controls squeekboard on-screen keyboard via DBus (sm.puri.OSK0.SetVisible).
 Bypasses zwp_text_input_v3 which Chromium does not trigger on real touch events
 when labwc mouseEmulation="no".
-Port: 8085 (localhost only, proxied by nginx at /keyboard/)
+Port: 8087 (localhost only, proxied by nginx at /keyboard/)
 """
 
 import subprocess
@@ -107,5 +107,13 @@ def go_fullscreen():
     return jsonify({'ok': True})
 
 
+@app.route('/window/toggle', methods=['POST'])
+def toggle_window():
+    if _read_window_state() == 'windowed':
+        return go_fullscreen()
+    else:
+        return go_windowed()
+
+
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8085, debug=False)
+    app.run(host='127.0.0.1', port=8087, debug=False)
