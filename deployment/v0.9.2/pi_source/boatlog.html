@@ -775,14 +775,20 @@
         setRecIndicator('saving');
         _activeMediaRecorder = null;
         var audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        var audioUrl  = URL.createObjectURL(audioBlob);
-        var link = document.createElement('a');
-        link.href = audioUrl;
-        link.download = 'voice-note-' + new Date().toISOString().replace(/:/g, '-') + '.webm';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
         stream.getTracks().forEach(function(track) { track.stop(); });
+        var fd = new FormData();
+        fd.append('audio', audioBlob, 'voice-note.webm');
+        try {
+          var resp = await fetch('/api/boatlog/voice-note', { method: 'POST', body: fd });
+          var data = await resp.json();
+          if (data.success) {
+            alert('Voice note saved' + (data.transcript ? ': ' + data.transcript : '.'));
+          } else {
+            alert('Failed to save voice note.');
+          }
+        } catch (e) {
+          alert('Upload failed — check connection.');
+        }
         await resumeVoice();
       };
 
