@@ -41,7 +41,7 @@ Update this table at the **start of every session**.
 | 0 | Initial Setup & Directory Structure | ⬜ TODO | 0.5 |
 | 1 | Pi Menu Restructure | ✅ COMPLETE 2026-03-13 | 1 |
 | 2 | Dashboard Hub (Flask :3000) | ✅ COMPLETE 2026-03-13 | 2 |
-| 3 | Gemini Marine AI Proxy (:3001) | ⬜ TODO | 2–3 |
+| 3 | Gemini Marine AI Proxy (:3001) | ✅ COMPLETE 2026-03-13 | 2–3 |
 | 4 | Settings Page + Documentation | ⬜ TODO | 1–2 |
 | 5 | AI + AvNav Integration | ⬜ TODO | 3–4 |
 

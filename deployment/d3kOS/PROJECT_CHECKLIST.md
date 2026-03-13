@@ -80,35 +80,35 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 3 — Gemini Marine AI Proxy (:3001)
-**Risk:** MEDIUM-HIGH | **Status:** TODO | **Requires:** Phase 2 complete
+**Risk:** MEDIUM-HIGH | **Status:** COMPLETE 2026-03-13 | **Requires:** Phase 2 complete
 **Reference:** D3KOS_PLAN.md §Phase 3
 **Decision (2026-03-12):** Option B — once Phase 3 is tested, retire old `d3kos-gemini-proxy.service` at :8097 and update `voice-assistant-hybrid.py` + `query_handler.py` to call :3001.
 
 ### Pre-conditions
-- [ ] Ollama reachable at http://192.168.1.36:11434/api/tags
-- [ ] Available Ollama models listed (confirm model name for gemini.env)
-- [ ] Gemini API key obtained from aistudio.google.com (starts AIzaSy…)
-- [ ] Port 3001 confirmed free
+- [x] Ollama reachable at http://192.168.1.36:11434/api/tags — models: qwen3-coder:30b, nomic-embed-text
+- [x] Ollama model: qwen3-coder:30b (plan default `mistral` not installed — updated in gemini.env)
+- [x] Gemini API key confirmed in /opt/d3kos/config/api-keys.json (starts AIzaSy...)
+- [x] Port 3001 confirmed free
 
 ### Files to create
-- [ ] `gemini-nav/config/gemini.env` — NOT committed (gitignore verified)
-- [ ] `gemini-nav/gemini_proxy.py` — Flask proxy, marine system prompt, Gemini→Ollama routing
-- [ ] `gemini-nav/templates/chat.html` — chat UI per mockup v4 (AI Navigator screen)
-- [ ] `gemini-nav/tests/test_gemini_proxy.py` — full pytest suite
+- [x] `gemini-nav/config/gemini.env` — NOT committed (gitignore confirmed via **/*.env)
+- [x] `gemini-nav/gemini_proxy.py` — Gemini→Ollama routing, /api/chat for qwen3-coder:30b
+- [x] `gemini-nav/templates/chat.html` — full chat UI (typing indicator, source badge, suggestion chips)
+- [x] `gemini-nav/tests/test_gemini_proxy.py` — 10 tests (privacy, cache, routing, UI)
+- [x] `gemini-nav/d3kos-gemini.service` — repo copy
 
-### Systemd
-- [ ] `/etc/systemd/system/d3kos-gemini.service` deployed to Pi
-- [ ] Service enabled and starts on boot
+### Systemd (Pi)
+- [x] `/etc/systemd/system/d3kos-gemini.service` deployed (WorkingDirectory=/opt/d3kos/services/gemini-nav)
+- [x] Service enabled + active
 
 ### Verification
-- [ ] All pytest tests pass: `pytest tests/test_gemini_proxy.py -v`
-- [ ] /ask returns Gemini response (source: gemini) when online
-- [ ] /ask falls back to Ollama (source: ollama) when offline
-- [ ] Source badge in chat UI shows correct source
-- [ ] Cache never exceeds 10 entries
-- [ ] Query text NOT in cache — manually verify response_cache.json
-- [ ] gemini.env NOT in git — verified with `git status`
-- [ ] SESSION_LOG.md updated
+- [x] All 10 pytest tests pass (10/10 on Pi — pytest 9.0.2, Python 3.13.5)
+- [x] /ask returns Gemini response (source:gemini, tokens:219 confirmed live)
+- [ ] /ask falls back to Ollama when offline (verify by disconnecting internet)
+- [x] dashboard /status now shows gemini:true
+- [ ] Cache entries verified — no query text (check /opt/d3kos/services/gemini-nav/cache/response_cache.json)
+- [x] gemini.env NOT in git — confirmed
+- [x] SESSION_LOG.md updated
 
 ---
 

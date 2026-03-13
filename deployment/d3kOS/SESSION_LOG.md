@@ -4,6 +4,40 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 3 Gemini Marine AI Proxy
+**Goal:** Build and deploy d3kOS Gemini Marine AI Proxy at localhost:3001.
+**Completed:**
+- gemini_proxy.py: Flask :3001, routes /, /status, /ask
+  - Gemini route: generativelanguage.googleapis.com (online + key)
+  - Ollama fallback: /api/chat endpoint (qwen3-coder:30b — mistral not installed on this Ollama)
+  - Privacy: query text never logged or cached; cache stores timestamp/source/tokens/response only
+  - Cache max 10 entries enforced
+- chat.html: full marine chat UI — typing indicator (3-dot bounce), source badge (gemini/ollama),
+  suggestion chips, Enter to send, Shift+Enter for newline, auto-resize textarea
+- test_gemini_proxy.py: 10 tests — all pass on Pi (pytest 9.0.2, Python 3.13.5)
+  - test_ask_no_body: fixed to accept 415 (Flask 3.x returns 415 for wrong content-type, not 400)
+- gemini.env written on Pi by reading key from /opt/d3kos/config/api-keys.json (key never left Pi)
+- d3kos-gemini.service deployed to /etc/systemd/system/, enabled, active
+- Live verification: /ask → source:gemini, tokens:219
+- dashboard /status now returns gemini:true
+**Decisions:**
+- Ollama uses /api/chat (not /api/generate) — required for qwen3-coder:30b chat format
+- OLLAMA_MODEL changed from plan default `mistral` → `qwen3-coder:30b` (only full model available)
+- Gemini key sourced from existing /opt/d3kos/config/api-keys.json (not re-entered)
+- test_ask_no_body updated: expects 400 or 415 (Flask 3.x behavior)
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com -> Usage -> 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending:**
+- Phase 3: verify offline Ollama fallback (internet disconnect test)
+- Phase 3: verify cache file has no query text after live use
+- Phase 4: Full settings page (16 sections)
+- Phase 5: AI + AvNav integration
+---
+
 ## Session 2026-03-13 — Phase 1 + Phase 2 Pi Deploy
 **Goal:** Deploy Phase 2 Flask dashboard to Pi. Execute Phase 1 Pi menu restructure. Resolve port 3000/8099 conflict.
 **Completed:**
