@@ -1,0 +1,13 @@
+# Secret config files — NEVER commit these
+dashboard/config/d3kos-config.env
+gemini-nav/config/gemini.env
+**/*.env
+.env
+
+# Python cache
+**/__pycache__/
+*.pyc
+*.pyo
+
+# AI response cache — contains server data
+gemini-nav/cache/

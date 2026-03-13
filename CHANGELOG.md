@@ -9,11 +9,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.2] - Unreleased (In Progress)
 
-### Removed
-- **NMEA2000 Simulator** (2026-03-12) — Removed all simulator components from d3kOS due to safety and liability risk. Removed: `d3kos-simulator-api.service`, `d3kos-simulator.service`, `/opt/d3kos/simulator/`, `/opt/d3kos/services/simulator/`, `settings-simulator.html`, simulator banner from dashboard.html and helm.html, nginx `/simulator/` proxy block, `vcan0-simulator` Signal K provider. Archive preserved at `/home/boatiq/archive/simulator-2026-02-21/`. Replacement: `tkurki/signalk-simulator` standalone SK plugin (future evaluation).
+### Summary
 
-### Fixed
-- Charts button fully working (2026-03-12) — tap Charts → Chromium exits fullscreen → charts.html loads → tap Launch → OpenCPN opens on Pi desktop. nginx proxy `/launch-opencpn` → Node-RED port 1880 added; charts.html updated to relative path.
+**v0.9.2 — Marine Vision Camera Overhaul, i18n, Signal K Upgrade, Voice Fixes, Simulator Removal**
+
+This release introduces the Slot/Hardware camera architecture replacing the hardcoded 2-camera system, full 18-language i18n wiring across all 13 pages, Signal K v2.22.1 upgrade, voice performance improvements, and removes the NMEA2000 simulator. The d3kOS v2.0 Flask dashboard architecture (v0.9.2.1) is planned as the successor.
+
+---
+
+### Added
+
+#### Marine Vision Camera Overhaul (2026-03-11)
+- **Slot/Hardware architecture** — named positions (slots) decouple from physical cameras (hardware). Slots persist forever; hardware comes and goes. `/opt/d3kos/config/slots.json` + `hardware.json` replace `cameras.json`.
+- **camera_stream_manager.py** rewritten — frame buffer (1 background thread per hardware, zero extra RTSP decode per browser client), full CRUD API (`/camera/slot`, `/camera/hardware`, `/camera/assign`, `/camera/unassign`, `/camera/scan`, `/camera/list`), discovery scan (probes 10.42.0.50–200 TCP 554, reads ARP for MAC), backwards-compat `/camera/feed` preserved.
+- **Settings Camera Setup tab** — three-panel UI (active slots, hardware inventory, role summary bar). CRUD flows for add/rename/delete slots, hardware scan, slot-to-hardware assignment, role toggles (`forward_watch`, `active_default`, `fish_detection`, `display_in_grid`).
+- **Marine Vision dynamic tile renderer** — focus+filmstrip default, grid mode, staggered polling (500ms primary / 2000ms grid / 200ms stagger), canvas fish bbox overlay, `pageshow` event (bfcache-safe), zero `/camera/grid` calls.
+- **fish_detector.py multi-slot** — reads slots.json, per-slot frame URL, `slot_id` on captures, `/detect/reload` endpoint, DB migration script.
+- **migrate_cameras.py** — one-shot migration from cameras.json to slots.json+hardware.json. MACs resolved: bow `hw_ec_71_db_f9_7c_7c`, stern `hw_ec_71_db_99_78_04`.
+
+#### i18n — 18-Language Wiring (2026-03-07 to 2026-03-12)
+- **All 13 HTML pages wired** with `data-i18n` attributes (Phases 1–13).
+- **36 new translation keys** added to all 18 language JSON files in v0.9.2 feature work.
+- **2 additional keys added** (2026-03-12): `ui.initial_setup`, `ui.upload_manual` — all 18 language files updated.
+- **All 15 index.html menu tiles** now have `data-i18n` on button-label spans — wiring 100% complete.
+- Languages: ar, da, de, el, en, es, fi, fr, hr, it, ja, nl, no, pt, sv, tr, uk, zh.
+- Span-wrap pattern applied for emoji/arrow elements.
+
+#### signalk-forward-watch v0.2.0 (2026-03-11)
+- YOLOv8 obstacle detection SK plugin via bow camera.
+- **v0.2.0**: onnxruntime moved to Node.js Worker thread (`detector-worker.js`) — SK main heap isolated (~470MB removed from SK process). Published npm + GitHub.
+
+#### OpenCPN Flatpak + o-charts Upgrade (2026-03-12)
+- APT OpenCPN 5.10.2 removed; only Flatpak 5.12.4 (`org.opencpn.OpenCPN`) remains.
+- o-charts plugin upgraded v2.1.6 → v2.1.10 (server rejected obsolete v2.1.6).
+- `install-opencpn.sh`: `pgrep -f` → `pgrep -x` bug fix (SSH false-positive prevention).
+
+#### Export Boot Service Fix (2026-03-11)
+- `d3kos-export-boot.service` had been FAILED since 2026-03-04. Root cause: `set -e` + `curl` exit 7 before Flask bound port 8094. Fix: `nc -z` port-ready loop, removed `set -e`, guarded curl/jq. See `deployment/docs/EXPORT_BOOT_RACE_FIX.md`.
+
+#### Charts Button + OpenCPN Launch (2026-03-12)
+- Tap Charts → Chromium exits fullscreen via `goWindowed()` → `charts.html` loads → tap Launch → OpenCPN opens on Pi desktop.
+- nginx proxy `/launch-opencpn` → Node-RED port 1880 added; `charts.html` updated to use relative path.
+
+---
+
+### Changed
+
+#### Signal K v2.22.1 Upgrade (2026-03-05)
+- Upgraded from v2.20.3 → v2.22.1. AIS memory leak fixed. SK heap: `--max-old-space-size=2048`. cx5106 N2K plugin removed (incompatible). mDNS disabled (`false` in settings.json) — eliminates 5300ms response time. See `deployment/docs/SIGNALK_UPGRADE.md`.
+
+#### Voice AI Performance (2026-03-07)
+- Voice query time: 7.6s → 0.9s via lazy PDF import + bulk Signal K fetch. Audio device fixed: HDMI → Roland S-330 USB (`plughw:S330,0`). See `deployment/docs/VOICE_QUERY_SPEED.md` and `VOICE_AUDIO_FIX.md`.
+
+#### Touch Scroll Fix (2026-03-05)
+- labwc `mouseEmulation="no"` in `/etc/xdg/labwc/rc.xml` for ILITEK touchscreen. Fixed scroll-to-mouse conversion that broke all page scroll. See `deployment/docs/TOUCH_SCROLL_FIX.md`.
+
+#### OpenCPN Pinch Zoom (2026-03-06)
+- twofing daemon deployed — two-finger pinch zoom working in OpenCPN Flatpak via XWayland. See `deployment/docs/OPENCPN_PINCH_ZOOM.md`.
+
+---
+
+### Removed
+- **NMEA2000 Simulator** (2026-03-12) — Removed all simulator components due to safety and liability risk. Removed: `d3kos-simulator-api.service`, `d3kos-simulator.service`, `/opt/d3kos/simulator/`, `/opt/d3kos/services/simulator/`, `settings-simulator.html`, simulator banners, nginx proxy block, `vcan0-simulator` SK provider. Archive: `/home/boatiq/archive/simulator-2026-02-21/`. Commit `a2b05b4`. See `deployment/docs/SIMULATOR_REMOVAL_INSTRUCTIONS.md`.
+
+---
+
+### Pending Before Release
+- On-screen keyboard: keyboard-fix.js v2.0 deployed — live test confirmation on Pi touchscreen needed
+- Boatlog voice note: record → transcribe → save → view flow on Pi
+- WebSocket real-time push: Remote Access page
+- UAT: 5 metric + 5 imperial users
+- Data export: test with unit metadata
+- o-charts chart activation: Don's task (see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`)
 
 ---
 

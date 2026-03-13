@@ -77,10 +77,75 @@ Each directory in `deployment/features/` contains a `feature_spec.md`, `phases.j
 
 ---
 
+## v0.9.2.1 — d3kOS v2.0 Architecture (deployment/d3kOS/)
+
+New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replacing the OpenCPN-centric Pi menu. AvNav is primary charts, Gemini AI proxy handles navigation AI, OpenCPN is emergency fallback only.
+
+**Plan:** `deployment/d3kOS/D3KOS_PLAN.md` v2.0.0 (canonical implementation plan)
+**UI Reference:** `deployment/d3kOS/docs/d3kos-mockup-v4.html` (interactive mockup — all screens)
+**Detailed Checklist:** `deployment/d3kOS/PROJECT_CHECKLIST.md`
+
+### Governance Files (d3kOS-specific)
+
+| File | Purpose |
+|------|---------|
+| `deployment/d3kOS/D3KOS_PLAN.md` | Canonical implementation plan — Phases 0–5, all code, port reference, rollback procedures |
+| `deployment/d3kOS/docs/d3kos-mockup-v4.html` | Full interactive UI mockup — main menu, AI nav, settings (16 sections), design system |
+| `deployment/d3kOS/PROJECT_CHECKLIST.md` | Phase-by-phase task tracking (detailed) |
+| `deployment/d3kOS/SESSION_LOG.md` | Append-only session log for d3kOS build sessions |
+| `deployment/d3kOS/CHANGELOG.md` | Milestone entries only |
+| `deployment/d3kOS/.gitignore` | Excludes all .env files and cache from git |
+| `deployment/d3kOS/pi-menu/BACKUP/BACKUP_LOG.txt` | Timestamped record of all Pi menu backups |
+
+### Directory Structure (to be populated per phase)
+
+| Directory | Phase | Contents |
+|-----------|-------|---------|
+| `deployment/d3kOS/pi-menu/` | Phase 1 | .desktop and .menu files for Pi menu restructure |
+| `deployment/d3kOS/pi-menu/BACKUP/` | Phase 1 | Originals backed up before any edit |
+| `deployment/d3kOS/dashboard/` | Phase 2 | Flask app at localhost:3000 |
+| `deployment/d3kOS/dashboard/templates/` | Phase 2 | index.html (9-button menu), settings.html (16 sections), offline.html |
+| `deployment/d3kOS/dashboard/static/css/` | Phase 2 | d3kos.css — dark theme (#000 bg, #00CC00 accent, Roboto) |
+| `deployment/d3kOS/dashboard/static/js/` | Phase 2 | connectivity-check.js (status polling), panel-toggle.js (Windy/Radar) |
+| `deployment/d3kOS/dashboard/config/` | Phase 2 | d3kos-config.env (NEVER committed) |
+| `deployment/d3kOS/gemini-nav/` | Phase 3 | Flask proxy at localhost:3001 |
+| `deployment/d3kOS/gemini-nav/templates/` | Phase 3 | chat.html — AI navigator UI |
+| `deployment/d3kOS/gemini-nav/cache/` | Phase 3 | response_cache.json (auto-created, max 10, no query text) |
+| `deployment/d3kOS/gemini-nav/config/` | Phase 3 | gemini.env (NEVER committed) |
+| `deployment/d3kOS/gemini-nav/tests/` | Phase 3 | test_gemini_proxy.py — full pytest suite |
+| `deployment/d3kOS/docs/` | Phase 1–4 | MENU_STRUCTURE.md, AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md |
+
+### Port Reference (immutable — single source of truth)
+
+| Service | URL | Note |
+|---------|-----|------|
+| d3kOS Dashboard | localhost:3000 | Flask app — Phase 2 |
+| d3kOS Gemini Proxy | localhost:3001 | Flask proxy — Phase 3 |
+| AvNav Charts | localhost:8080 | Primary chart viewer |
+| OpenPlotter | localhost:8081 | Infrastructure only — do NOT touch |
+| Signal K | localhost:8099 | Read-only data broker |
+| Signal K WebSocket | ws://localhost:8099/signalk/v1/stream | NOT :3000 |
+| Ollama (LAN) | 192.168.1.36:11434 | Offline AI fallback |
+| Gemini API | generativelanguage.googleapis.com | gemini-2.5-flash |
+
+### Phase Status
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | Initial Setup & Directory Structure | COMPLETE 2026-03-12 |
+| 1 | Pi Menu Restructure | TODO |
+| 2 | Dashboard Hub (Flask :3000) | TODO |
+| 3 | Gemini Marine AI Proxy (:3001) | TODO |
+| 4 | Settings Page + Documentation | TODO |
+| 5 | AI + AvNav Integration | DEFERRED — v1.1 |
+
+---
+
 ## Version Release Docs
 
 | Directory | What It Contains |
 |-----------|-----------------|
+| `deployment/d3kOS/` | **[v0.9.2.1 — ACTIVE BUILD]** d3kOS v2.0 Flask dashboard architecture — Phase 0 complete 2026-03-12. See section above for full index. |
 | `deployment/v0.9.2/` | Core v0.9.2 source files — metric/imperial, unit API, scripts, nginx config, systemd units |
 | `deployment/v0.9.2/docs/UNITS_API_REFERENCE.md` | Units API — all endpoints, request/response format |
 | `deployment/v0.9.2/docs/UNITS_FEATURE_README.md` | Metric/Imperial feature — what it does, how to test |

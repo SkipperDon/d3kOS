@@ -1,0 +1,6 @@
+d3kOS Pi Menu Backup Log
+Append-only. Every backup operation must be recorded here with timestamp.
+
+Format: YYYY-MM-DD HH:MM — <what was backed up> — <operator>
+
+---
