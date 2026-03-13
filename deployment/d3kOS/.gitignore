@@ -1,6 +1,7 @@
 # Secret config files — NEVER commit these
 dashboard/config/d3kos-config.env
 gemini-nav/config/gemini.env
+ai-bridge/config/ai-bridge.env
 **/*.env
 .env
 

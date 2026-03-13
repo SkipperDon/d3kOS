@@ -43,7 +43,7 @@ Update this table at the **start of every session**.
 | 2 | Dashboard Hub (Flask :3000) | ⬜ TODO | 2 |
 | 3 | Gemini Marine AI Proxy (:3001) | ⬜ TODO | 2–3 |
 | 4 | Settings Page + Documentation | ⬜ TODO | 1–2 |
-| 5 | AI + AvNav Integration | 🔒 DEFERRED v1.1 | — |
+| 5 | AI + AvNav Integration | ⬜ TODO | 3–4 |
 
 > ⬜ TODO → 🔄 IN PROGRESS → ✅ DONE
 
@@ -72,6 +72,8 @@ Update this table at the **start of every session**.
 | **Internet check** | `http://captive.apple.com` | HTTP | Lightweight connectivity probe |
 | **Windy embed** | `https://embed.windy.com/embed2.html` | HTTPS | Sea state weather panel |
 | **Radar embed** | `https://www.rainviewer.com/map.html` | HTTPS | Weather radar panel |
+| **d3kOS AI Bridge** | `http://localhost:3002` | HTTP | Phase 5 — AI+AvNav integration service |
+| **AvNav REST API** | `http://localhost:8080/viewer/avnav_navi.php` | HTTP POST | Phase 5 — POST only, GET returns 501 |
 
 ### Known Bugs Fixed in This Plan
 
@@ -79,6 +81,8 @@ Update this table at the **start of every session**.
 |---|---|---|---|
 | 1 | `settings.html` line 1357 | `ws://localhost:3000/signalk/v1/stream` — port 3000 is the dashboard, not Signal K | Changed to `ws://localhost:8099/signalk/v1/stream` |
 | 2 | `gemini_proxy.py` | `GEMINI_MODEL = 'gemini-1.5-flash'` — outdated model | Changed to `gemini-2.5-flash` |
+| 3 | Phase 5 spec v1.0.0 P5.0 | All AvNav pre-action curl commands used GET to `/api/...` — returns HTTP 501 | Fixed in v1.1.0: use POST to `/viewer/avnav_navi.php` |
+| 4 | Phase 5 spec v1.0.0 config | `AVNAV_API=http://localhost:8080/api` — wrong URL and method | Fixed in v1.1.0: `http://localhost:8080/viewer/avnav_navi.php` (POST) |
 
 ---
 
@@ -142,11 +146,31 @@ Create this entire tree at Phase 0 before any other work begins.
 │   └── tests/
 │       └── test_gemini_proxy.py
 │
+├── ai-bridge/                       ← Phase 5 — AI Bridge at :3002
+│   ├── ai_bridge.py
+│   ├── features/
+│   │   ├── route_analyzer.py        ← Feature 1: route widget
+│   │   ├── port_arrival.py          ← Feature 2: arrival briefing
+│   │   ├── voyage_logger.py         ← Feature 3: log summarization
+│   │   └── anchor_watch.py          ← Feature 4: anchor alerts
+│   ├── utils/
+│   │   ├── signalk_client.py        ← WebSocket reader for ws://localhost:8099
+│   │   ├── avnav_client.py          ← POST client for avnav_navi.php
+│   │   ├── tts.py                   ← TTS wrapper (espeak-ng / piper)
+│   │   └── geo.py                   ← haversine, bearing, unit conversions
+│   ├── config/
+│   │   └── ai-bridge.env            ← NEVER commit — covered by **/*.env gitignore
+│   └── tests/
+│       └── test_ai_bridge.py
+│
 └── docs/
     ├── MENU_STRUCTURE.md            ← Phase 1: before/after + rollback
     ├── AVNAV_OCHARTS_INSTALL.md     ← Phase 4
     ├── AVNAV_PLUGINS.md             ← Phase 4
-    └── OPENPLOTTER_REFERENCE.md     ← Phase 4
+    ├── OPENPLOTTER_REFERENCE.md     ← Phase 4
+    ├── AVNAV_INSTALL_AND_API.md     ← Phase 5 pre-req: AvNav install + API reference
+    ├── D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md  ← Phase 5 full spec (v1.1.0)
+    └── AVNAV_API_REFERENCE.md       ← Phase 5 pre-req: real API responses from live Pi (create in P5.0)
 ```
 
 ---
@@ -206,6 +230,15 @@ sudo rm -f /etc/systemd/system/d3kos-gemini.service
 sudo systemctl daemon-reload
 ```
 
+### Rollback Phase 5 (AI Bridge)
+```bash
+sudo systemctl stop    d3kos-ai-bridge
+sudo systemctl disable d3kos-ai-bridge
+sudo rm -f /etc/systemd/system/d3kos-ai-bridge.service
+sudo systemctl daemon-reload
+# Dashboard reverts to Phase 4 state — SSE connection to :3002 fails silently
+```
+
 ---
 
 ---
@@ -253,6 +286,7 @@ Create `/home/boatiq/Helm-OS/deployment/d3kOS/.gitignore`:
 # Secret config files — NEVER commit these
 dashboard/config/d3kos-config.env
 gemini-nav/config/gemini.env
+ai-bridge/config/ai-bridge.env
 **/*.env
 .env
 
@@ -1762,29 +1796,87 @@ Content must include:
 
 ---
 
-# PHASE 5 — AI + AvNav Integration *(Planning Only — v1.1)*
+# PHASE 5 — AI + AvNav Integration
 
-**Status:** 🔒 DEFERRED — do not implement until Phase 4 is complete and stable for at least one voyage.
+**Risk Level:** MEDIUM-HIGH
+**Reversible:** YES — Phase 5 is fully additive; rollback stops AI Bridge only
+**Internet Required:** NO (Ollama fallback required for offline operation)
+**Estimated Sessions:** 3–4
+**Depends on:** Phase 4 complete + AvNav installed + AVNAV_API_REFERENCE.md exists
 
-### Planned Features
-
-| Feature | Description | Dependencies |
-|---|---|---|
-| Route suggestion | AvNav waypoints → Gemini → passage brief | AvNav API + Gemini proxy |
-| Voyage log summarization | GPX export → Gemini → plain-English summary | AvNav log export |
-| Condition-aware routing | Windy data + Gemini → go/no-go recommendation | Internet + Windy API |
-| Port arrival briefing | Waypoint proximity trigger → Gemini port brief | Signal K position feed |
-| Anchor watch AI alerts | Drift detected → Gemini natural language alert | Signal K anchor data |
-| Chart object explanation | Tap chart symbol → Gemini explains what it means | AvNav click API |
-
-### How to Start Phase 5
-
-When Phase 4 is stable:
-1. Update PHASE STATUS TRACKER at top of this file
-2. Research AvNav REST API endpoints at `http://localhost:8080/api`
-3. Design integration spec before writing any code
-4. Create new section in this document: `PHASE 5 — Implementation`
+**Full spec:** `docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` (v1.1.0)
+**AvNav install guide:** `docs/AVNAV_INSTALL_AND_API.md`
 
 ---
 
-*Auto-loaded by Claude Code. Version 2.0.0. All URLs and ports verified 2026-03-12.*
+### Phase 5 Architecture Summary
+
+New service `d3kos-ai-bridge` at **localhost:3002**. Reads Signal K + AvNav, calls Gemini
+proxy (:3001) for all AI, streams results to dashboard side panel via SSE and Pi speakers via TTS.
+
+```
+Signal K :8099 ──WS──┐
+AvNav :8080 ──POST───┼──► AI Bridge :3002 ──► Gemini Proxy :3001 ──► Gemini/Ollama
+Node-RED ──Webhook───┘         │
+                               ├── SSE → Dashboard :3000
+                               └── TTS → Pi speakers
+```
+
+### Features Built in Phase 5
+
+| Feature | Trigger | AI Source | Audio |
+|---|---|---|---|
+| Route Analysis Widget | Every 5 min (auto) + "Analyze Now" tap | :3001 → Gemini/Ollama | No |
+| Port Arrival Briefing | 2nm from destination waypoint | :3001 → Gemini/Ollama | Yes — Stage 1 summary |
+| Voyage Log Summary | AvNav track stops OR on-demand | :3001 → Gemini/Ollama | No |
+| Anchor Watch Alerts | Signal K drag > maxRadius × 3 polls | Pre-written (no AI wait) + advisory | Yes — repeated alarm |
+
+### CRITICAL: Phase 5 Pre-Actions (Complete Before Coding)
+
+All 8 Stages in `docs/AVNAV_INSTALL_AND_API.md` must be DONE first:
+
+| Stage | What | Gate Item |
+|---|---|---|
+| A | Pre-install checks | Ports 8080, 8082, 8085, Signal K port confirmed |
+| B | Install AvNav via OpenPlotter GUI | Service active, port 8080 listening |
+| C | Verify installation | All verification script items pass |
+| D | Find data directory | AVNAV_DATA_DIR known and recorded |
+| E | Verify API and file access | POST API returns gps.lat; currentLeg.json found |
+| F | Final gate check | All 9 F-items checked before any Phase 5 code |
+| P5.0 | AvNav API exploration | `docs/AVNAV_API_REFERENCE.md` created with real responses |
+| P5.1–P5.4 | SK audit, Node-RED audit, TTS, port check | All documented in SESSION_LOG.md |
+
+### CRITICAL: AvNav API Rules (Do Not Get Wrong)
+
+> **API uses POST, not GET.** GET returns HTTP 501.
+> **Base URL:** `http://localhost:8080/viewer/avnav_navi.php`
+> **NOT:** `http://localhost:8080/api` (this URL does not exist)
+
+All `avnav_client.py` code must use `requests.post()`. See Section 4 of `AVNAV_INSTALL_AND_API.md`.
+
+### Port 8085 Conflict — Must Resolve Before AvNav Install
+
+`d3kos-keyboard-api.service` runs on port 8085. AvNav updater also wants port 8085.
+**Resolution required:** Move keyboard-api to port 8086 before installing AvNav.
+Steps: update `keyboard-api.py` (PORT=8086) + nginx proxy_pass + service EnvironmentFile
+→ reload nginx, restart `d3kos-keyboard-api.service`, verify toggle still works.
+
+### Phase 5 — Definition of Done
+
+See `docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` for the full 27-item definition of done.
+
+Key non-negotiables:
+- [ ] AvNav API reference doc exists (`docs/AVNAV_API_REFERENCE.md`) with real Pi responses
+- [ ] Port 8085 conflict resolved before AvNav install
+- [ ] All API calls in code use POST to `/viewer/avnav_navi.php`
+- [ ] Anchor watch: alarm fires from pre-written text — never waits for AI
+- [ ] Full offline test passes with Ollama at 192.168.1.36:11434
+- [ ] Phase 2 `/status` endpoint updated to include AI Bridge :3002
+- [ ] `ai-bridge.env` NOT in git
+- [ ] All pytest tests pass including `test_avnav_client_uses_post`
+- [ ] SESSION_LOG.md entry written
+- [ ] PROJECT_CHECKLIST.md updated
+
+---
+
+*Auto-loaded by Claude Code. Version 2.0.0 → updated 2026-03-13 with Phase 5 (was DEFERRED, now active). All URLs and ports verified 2026-03-12/13.*
