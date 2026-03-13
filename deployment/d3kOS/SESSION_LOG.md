@@ -4,6 +4,28 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Correction Note 2026-03-13 — Port 8085 → 8087 (not 8086)
+
+**Correction to 2026-03-13 session entries:**
+The session entry above recorded "move keyboard-api to port 8086" — this was wrong.
+Port 8086 is already occupied by `fish_detector.py`.
+The correct target port is **8087** (confirmed free after full nginx port map grep).
+
+**All documents updated 2026-03-13:**
+- `deployment/v0.9.2/python/keyboard-api.py` → port 8087
+- `deployment/v0.9.2/nginx/d3kos-nginx.conf` → proxy_pass 8087
+- `deployment/d3kOS/D3KOS_PLAN.md` → Port 8085 Conflict section updated to RESOLVED, 8087
+- `deployment/d3kOS/docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` → anomaly table, port table, P5.0 checks, DoD, open question 8 — all updated to 8087 RESOLVED
+- `deployment/d3kOS/docs/AVNAV_INSTALL_AND_API.md` → Warning 4, port table, A3, F8, section 2 check #7, verification script, section 6 — all updated to 8087 RESOLVED
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` → A3 item, port reference table — updated to 8087
+- `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` → updated to 8087
+- `deployment/docs/DEPLOYMENT_INDEX.md` → AVNAV doc entry, port reference table — updated
+- `memory/MEMORY.md` → Phase 5 pre-work and auto-toggle architecture entries — updated to 8087
+
+**Pi deploy still required (Session 1 task):** reload nginx, restart d3kos-keyboard-api.service, verify /keyboard/show and /window/toggle still work on 8087.
+
+---
+
 ## Session 2026-03-13 — Phase 5 Activation + Anomaly Review
 **Goal:** Add Phase 5 (AI + AvNav Integration) to v0.9.2.1 plan; cross-check phases 0–4 vs 5 for anomalies.
 **Completed:**

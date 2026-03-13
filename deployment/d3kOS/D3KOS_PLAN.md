@@ -1837,7 +1837,7 @@ All 8 Stages in `docs/AVNAV_INSTALL_AND_API.md` must be DONE first:
 
 | Stage | What | Gate Item |
 |---|---|---|
-| A | Pre-install checks | Ports 8080, 8082, 8085, Signal K port confirmed |
+| A | Pre-install checks | Ports 8080, 8082, Signal K port confirmed (8085 free — keyboard-api moved to 8087) |
 | B | Install AvNav via OpenPlotter GUI | Service active, port 8080 listening |
 | C | Verify installation | All verification script items pass |
 | D | Find data directory | AVNAV_DATA_DIR known and recorded |
@@ -1854,12 +1854,12 @@ All 8 Stages in `docs/AVNAV_INSTALL_AND_API.md` must be DONE first:
 
 All `avnav_client.py` code must use `requests.post()`. See Section 4 of `AVNAV_INSTALL_AND_API.md`.
 
-### Port 8085 Conflict — Must Resolve Before AvNav Install
+### Port 8085 Conflict — RESOLVED 2026-03-13
 
-`d3kos-keyboard-api.service` runs on port 8085. AvNav updater also wants port 8085.
-**Resolution required:** Move keyboard-api to port 8086 before installing AvNav.
-Steps: update `keyboard-api.py` (PORT=8086) + nginx proxy_pass + service EnvironmentFile
-→ reload nginx, restart `d3kos-keyboard-api.service`, verify toggle still works.
+`d3kos-keyboard-api.service` moved from port 8085 → **8087**. Port 8085 is now free for AvNav updater.
+Note: 8086 was already taken by fish_detector.py — correct port is 8087.
+Files updated: `keyboard-api.py` (port=8087) + nginx proxy_pass (8087).
+Pi deploy required (Session 1): reload nginx, restart `d3kos-keyboard-api.service`, verify /keyboard/show and /window/toggle still work.
 
 ### Phase 5 — Definition of Done
 
@@ -1867,7 +1867,7 @@ See `docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` for the full 27-item definition 
 
 Key non-negotiables:
 - [ ] AvNav API reference doc exists (`docs/AVNAV_API_REFERENCE.md`) with real Pi responses
-- [ ] Port 8085 conflict resolved before AvNav install
+- [x] Port 8085 conflict RESOLVED — keyboard-api moved to 8087 (2026-03-13); Pi deploy pending (Session 1)
 - [ ] All API calls in code use POST to `/viewer/avnav_navi.php`
 - [ ] Anchor watch: alarm fires from pre-written text — never waits for AI
 - [ ] Full offline test passes with Ollama at 192.168.1.36:11434
