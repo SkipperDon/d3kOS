@@ -2003,6 +2003,10 @@
 - [✅] All 4 features deployed: route_analyzer, port_arrival, voyage_logger, anchor_watch
 - [✅] d3kos-ai-bridge.service active — avnav:up, signalk:up, gemini_proxy:up
 - [✅] SSE /stream sending heartbeats
+- [✅] `avnav_client.py` fixed — `request=navigate` doesn't exist; replaced with `request=gps` + `request=api&type=route&command=getleg` (2026-03-13)
+- [✅] Route analysis widget verified on bench — SSE `route_update` ACTIVE state with Gemini passage brief confirmed (Toronto test route, Western Gap waypoint) (2026-03-13)
+- [✅] Voyage log SUMMARIZE LAST VOYAGE button added to AI panel in dashboard (2026-03-13)
+- [✅] Voyage log summary verified end-to-end — Gemini identified Toronto Harbour → Ashbridges Bay from synthetic GPX, 8.0nm/3.5h/2.3kts (2026-03-13)
 - [ ] Feature verification (requires live voyage with GPS movement)
 - [🔄] pytest test suite — conftest.py created 2026-03-13, test_ai_bridge.py not yet written
 
@@ -2093,7 +2097,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-13 — DON'S PERSONAL TODO LIST added (dock + on-water + v0.9.2 tasks). Commits e1ab7a6, d7991d5, 5447928, ad9a1b4. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-13 — Phase 5 bench verification complete: avnav_client.py fixed, route analysis widget verified, voyage log button added and tested. Commits 34b0585, 3312ffb. | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
