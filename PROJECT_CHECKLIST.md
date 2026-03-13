@@ -340,7 +340,7 @@
 
 - \[✅\] Tag release as v0.9.2
 
-- \[🔄\] Update CHANGELOG.md — v0.9.2 unreleased section started 2026-03-12 (simulator removal + Charts button fix entries added). Full v0.9.2 release entry (all features) to be written when v0.9.2 closes.
+- \[✅\] Update CHANGELOG.md — Full v0.9.2 release entry written 2026-03-12: Marine Vision overhaul, i18n, SK upgrade, voice fixes, simulator removal, charts fix, export boot fix, FW worker thread.
 
 - \[✅\] Deploy to production Pi
 
@@ -665,11 +665,11 @@
 
 - \[✅\] Language overlay on `onboarding.html`
 
-- \[✅\] `data-i18n` wired: `index.html`, `dashboard.html`, `navigation.html`, `boatlog.html`, `settings.html`, `onboarding.html`
+- \[✅\] `data-i18n` wired: `index.html`, `dashboard.html`, `navigation.html`, `boatlog.html`, `settings.html`, `onboarding.html`. All 15 index.html button-label tiles wired 2026-03-12 — i18n wiring 100% complete.
 
 - \[✅\] Wire remaining pages — all 13 pages wired. Phases 10–13 complete 2026-03-11: `history.html`, `upload-manual.html`, `qrcode.html`, `onboarding.html`
 
-- \[✅\] Expand translation keys in all 18 JSON files — 36 new ui.* keys added 2026-03-11
+- \[✅\] Expand translation keys in all 18 JSON files — 36 new ui.* keys added 2026-03-11; +2 keys (ui.initial_setup, ui.upload_manual) added 2026-03-12. Total: 38 new keys.
 
 - [ ] Noto fonts installed on Pi for Arabic, CJK, Greek, Cyrillic: `sudo apt install fonts-noto fonts-noto-cjk fonts-noto-extra`
 
@@ -2025,7 +2025,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-12 — v0.9.2.1 plan session: d3kOS directory scaffolding, D3KOS_PLAN.md v2.0.0 + mockup v4 deployed, Phase 0 complete | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-12 — i18n wiring 100% complete (all 15 index.html tiles, +2 keys), CHANGELOG.md v0.9.2 full entry written, Option B documented in D3KOS_PLAN.md. Commit f9c3101. | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
