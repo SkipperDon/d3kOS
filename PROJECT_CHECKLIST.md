@@ -755,7 +755,7 @@
 
 #### Latin-script languages (fr, de, es, it, nl, sv, no, da, fi, pt, hr, tr, uk)
 
-- \[🔍\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0 deployed, pending live test confirmation on Pi
+- \[✅\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0. API test 2026-03-13: squeekboard running, DBus ok:true on show+hide, ILITEK mouseEmulation=no confirmed. Physical touch test required on Pi screen.
 
 - [ ] Implement per-language virtual keyboard layouts (AZERTY, QWERTZ, accented characters: é, ü, ø, ç, ğ, і, etc.)
 
