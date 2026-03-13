@@ -156,7 +156,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 5 — AI + AvNav Integration
-**Risk:** MEDIUM-HIGH | **Status:** SOURCE COMPLETE 2026-03-13 — Pi deploy pending (requires AvNav installed)
+**Risk:** MEDIUM-HIGH | **Status:** DEPLOYED 2026-03-13 — service active at :3002
 **Spec:** docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md (v1.1.0)
 **Install guide:** docs/AVNAV_INSTALL_AND_API.md
 
@@ -202,9 +202,9 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 
 ### Systemd
 - [x] `d3kos-ai-bridge.service` source written (User=d3kos, WorkingDirectory=/opt/d3kos/services/ai-bridge)
-- [ ] `/etc/systemd/system/d3kos-ai-bridge.service` deployed to Pi
-- [ ] Service enabled and starts on boot
-- [ ] Service listed in `After=` after d3kos-dashboard and d3kos-gemini
+- [x] `/etc/systemd/system/d3kos-ai-bridge.service` deployed to Pi — 2026-03-13
+- [x] Service enabled and starts on boot — enabled via systemctl enable
+- [x] Service listed in `After=` after d3kos-dashboard and d3kos-gemini
 
 ### Feature 1 — Route Analysis Widget
 - [ ] Route widget visible in dashboard above AvNav iframe
@@ -253,7 +253,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] ai-bridge.js: SSE EventSource, all event handlers, triggerRouteAnalysis(), dismissAnchorAlarm(), getAnchorAdvice()
 - [x] d3kos.css: Phase 5 AI panel CSS block
 - [x] connectivity-check.js: ai_bridge wired
-- [ ] Dashboard files deployed to Pi + d3kos-dashboard restarted
+- [x] Dashboard files deployed to Pi + d3kos-dashboard restarted — 2026-03-13
 
 ### Verification
 - [ ] All pytest tests pass: `pytest tests/test_ai_bridge.py -v`

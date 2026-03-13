@@ -4,6 +4,60 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 5 Pi Deploy
+**Goal:** Deploy d3kOS AI Bridge to Pi at /opt/d3kos/services/ai-bridge/, start service, verify live.
+**Completed:**
+- rsync ai-bridge/ to /opt/d3kos/services/ai-bridge/ (13 source files)
+- ai-bridge.env created on Pi with correct paths (AVNAV_DATA_DIR=/var/lib/avnav, LOG_DIR=/home/d3kos/logs, AUDIO_DEVICE=plughw:S330,0, TTS_ENGINE=espeak-ng). Vessel name = "My Vessel" placeholder — Don to update.
+- Log dirs created: /home/d3kos/logs/voyage-summaries/, /home/d3kos/logs/anchor-events/
+- d3kos-ai-bridge.service installed to /etc/systemd/system/ — enabled + started. systemctl is-active: ACTIVE
+- sudoers /etc/sudoers.d/d3kos: d3kos-ai-bridge restart rule appended, visudo -c: parsed OK
+- Dashboard files deployed: app.py, index.html, d3kos.css, connectivity-check.js, ai-bridge.js
+- d3kos-dashboard restarted. systemctl is-active: ACTIVE
+- Verification: GET :3002/status → {signalk:up, avnav:up, gemini_proxy:up, tts_available:true, tts_engine:espeak-ng} ✓
+- Verification: GET :3000/status → {ai_bridge:true, avnav:true, gemini:true, internet:true, ollama:true, signalk:true} ✓
+- Bug found and fixed: all _call_ai() were sending {"prompt":...} but Gemini proxy expects {"message":...} — corrected in 5 files, re-deployed, verified. Commit 2e457ea.
+- End-to-end test: POST :3002/webhook/query → :3001/ask → Gemini → VHF ch16 response ✓
+**Decisions:**
+- VESSEL_NAME="My Vessel" placeholder — Don must edit /opt/d3kos/services/ai-bridge/config/ai-bridge.env and restart d3kos-ai-bridge to set real vessel name
+- ai-bridge.env NOT committed — on Pi only
+**Release Package Manifest:**
+- Version: Phase 5 source → Phase 5 Pi deployed
+- Update type: incremental
+- Changed files:
+  | File | Pi Path | Partition | Change |
+  |------|---------|-----------|--------|
+  | ai_bridge.py | /opt/d3kos/services/ai-bridge/ | base | new service |
+  | features/*.py | /opt/d3kos/services/ai-bridge/features/ | base | 4 feature modules |
+  | utils/*.py | /opt/d3kos/services/ai-bridge/utils/ | base | 4 utility modules |
+  | tests/test_ai_bridge.py | /opt/d3kos/services/ai-bridge/tests/ | base | pytest suite |
+  | config/ai-bridge.env | /opt/d3kos/services/ai-bridge/config/ | runtime | env config (on Pi only) |
+  | d3kos-ai-bridge.service | /etc/systemd/system/ | runtime | systemd unit |
+  | /etc/sudoers.d/d3kos | /etc/sudoers.d/d3kos | runtime | d3kos-ai-bridge restart rule appended |
+  | app.py | /opt/d3kos/services/dashboard/ | base | /status adds ai_bridge, _RESTART_SERVICES adds d3kos-ai-bridge |
+  | index.html | /opt/d3kos/services/dashboard/templates/ | base | AI panel layout, AI Bridge indicator |
+  | d3kos.css | /opt/d3kos/services/dashboard/static/css/ | base | Phase 5 AI panel CSS |
+  | connectivity-check.js | /opt/d3kos/services/dashboard/static/js/ | base | ai_bridge indicator wired |
+  | ai-bridge.js | /opt/d3kos/services/dashboard/static/js/ | base | new SSE client |
+- Pre-install steps: none
+- Post-install steps: sudo systemctl restart d3kos-dashboard ✓, sudo systemctl start d3kos-ai-bridge ✓
+- Rollback: sudo systemctl stop d3kos-ai-bridge; sudo systemctl disable d3kos-ai-bridge; git revert dashboard changes + restart d3kos-dashboard
+- Health check: curl localhost:3002/status → service:d3kos-ai-bridge; curl localhost:3000/status → ai_bridge:true
+- Plain-language release notes: Phase 5 AI Bridge is now live at localhost:3002. The dashboard at :3000 now shows an AI Bridge indicator (green when running). The AvNav screen has a new AI side panel with a route analysis widget that will update every 5 minutes when a route is active. Port arrival briefings, anchor watch alerts, and voyage log summaries are all active. Node-RED can call /webhook/query, /webhook/alert, and /webhook/arrival. One config item remaining: Don should set VESSEL_NAME and HOME_PORT in /opt/d3kos/services/ai-bridge/config/ai-bridge.env.
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending:**
+- Set VESSEL_NAME and HOME_PORT in ai-bridge.env on Pi (Don's task)
+- Run integration tests on Pi: cd /opt/d3kos/services/ai-bridge && python3 -m pytest tests/test_ai_bridge.py -m integration -v
+- Load a route in AvNav — verify route widget populates with AI analysis
+- Full offline test: disconnect internet, verify Ollama fallback works
+- Settings page voyage summaries panel (deferred from Phase 5 source build)
+---
+
 ## Session 2026-03-13 — Phase 5 AI Bridge Source Build
 **Goal:** Build complete Phase 5 AI + AvNav Integration source — all 4 features, full service.
 **Completed:**
