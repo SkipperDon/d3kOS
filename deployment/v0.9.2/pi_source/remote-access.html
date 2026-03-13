@@ -536,7 +536,51 @@
       link.click();
     }
 
-    document.addEventListener('DOMContentLoaded', loadConfig);
+    function updateStatusBadge(connected, ip) {
+      var badge = document.getElementById('status-badge');
+      var notConnectedBox = document.getElementById('not-connected-box');
+      if (connected && ip) {
+        badge.textContent = '✓ Tailscale Connected';
+        badge.className = 'status-badge connected';
+        notConnectedBox.style.display = 'none';
+        // Re-render if IP changed (refreshes QR code and URLs)
+        if (cfg && cfg.tailscale_ip !== ip) {
+          cfg.tailscale_ip = ip;
+          cfg.tailscale_url = 'http://' + ip;
+          cfg.tailscale_connected = true;
+          renderConfig(cfg);
+        }
+      } else {
+        badge.textContent = '⚠ Tailscale Off';
+        badge.className = 'status-badge disconnected';
+        notConnectedBox.style.display = 'block';
+        if (cfg && cfg.tailscale_connected) {
+          cfg.tailscale_connected = false;
+          cfg.tailscale_ip = null;
+          cfg.tailscale_url = null;
+          renderConfig(cfg);
+        }
+      }
+    }
+
+    function startStatusStream() {
+      if (!window.EventSource) { return; }  // fallback: Refresh button still works
+      var evtSource = new EventSource('/remote/status-stream');
+      evtSource.onmessage = function(e) {
+        try {
+          var state = JSON.parse(e.data);
+          updateStatusBadge(state.connected, state.ip);
+        } catch (_) {}
+      };
+      evtSource.onerror = function() {
+        // Browser auto-retries after error — no action needed
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadConfig();
+      startStatusStream();
+    });
   </script>
 </body>
 </html>

@@ -107,5 +107,13 @@ def go_fullscreen():
     return jsonify({'ok': True})
 
 
+@app.route('/window/toggle', methods=['POST'])
+def toggle_window():
+    if _read_window_state() == 'windowed':
+        return go_fullscreen()
+    else:
+        return go_windowed()
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8087, debug=False)

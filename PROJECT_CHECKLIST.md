@@ -306,7 +306,7 @@
 
   - \[✅\] Test voice responses in both units
 
-  - Test data export (includes unit metadata)
+  - [✅] Test data export (includes unit metadata) — 2026-03-13: CSV header rows + JSON unit_metadata in settings category. Verified metric: km/h, °C, bar, L.
 
 - \[✅\] Accuracy Verification — 25/25 unit tests passing
 
@@ -624,7 +624,7 @@
 
 - [ ] Camera stream relay RTSP → HLS (implement when cameras 3 & 4 purchased)
 
-- [ ] WebSocket real-time push — implement push notifications instead of polling `/remote/status`
+- \[✅\] WebSocket real-time push — SSE endpoint `/remote/status-stream` deployed 2026-03-13. EventSource listener in remote-access.html updates status badge + QR code live. Verified: stream delivers {"connected":true,"ip":"100.88.112.63"}.
 
 - \[✅\] **"My Remote Access" settings page** (`remote-access.html`) — commit `06a6a94`
 
@@ -755,7 +755,7 @@
 
 #### Latin-script languages (fr, de, es, it, nl, sv, no, da, fi, pt, hr, tr, uk)
 
-- \[🔍\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0 deployed, pending live test confirmation on Pi
+- \[✅\] Fix existing English on-screen keyboard bug — keyboard-fix.js v2.0. API test 2026-03-13: squeekboard running, DBus ok:true on show+hide, ILITEK mouseEmulation=no confirmed. Physical touch test confirmed working by Don 2026-03-13.
 
 - [ ] Implement per-language virtual keyboard layouts (AZERTY, QWERTZ, accented characters: é, ü, ø, ç, ğ, і, etc.)
 
@@ -992,7 +992,7 @@
 
 - \[✅\] recordVoiceNote() replaced — real MediaRecorder implementation deployed 2026-03-06 (verify agent corrected Ollama placeholder regeneration)
 
-- \[🔍\] Test voice note record → transcribe → save → view cycle on Pi at dock
+- \[✅\] Test voice note record → transcribe → save → view cycle — 2026-03-13: onstop handler fixed to POST to /api/boatlog/voice-note. API verified: {"success":true,"filename":"voice_note_...webm"}. Don confirmed working.
 
 ### 6. Weather — GPS Centering & Wind/Clouds Overlay
 
@@ -1946,7 +1946,7 @@
 
 ## v0.9.2.1 — d3kOS v2.0 Architecture Build [Effort: Large]
 
-**Status:** [🔄] Phase 2 Complete — Phase 3 next | **Started:** 2026-03-12 | **Priority:** HIGH
+**Status:** [🔄] Phase 0 Complete — Phase 1 next | **Started:** 2026-03-12 | **Priority:** HIGH
 **Plan:** `deployment/d3kOS/D3KOS_PLAN.md` v2.0.0
 **UI Reference:** `deployment/d3kOS/docs/d3kos-mockup-v4.html`
 **Checklist (detailed):** `deployment/d3kOS/PROJECT_CHECKLIST.md`
@@ -1962,25 +1962,25 @@
 - [✅] .gitignore created (env files + cache excluded)
 - [✅] Governance stubs: SESSION_LOG.md, PROJECT_CHECKLIST.md, CHANGELOG.md, BACKUP_LOG.txt
 
-### Phase 1 — Pi Menu Restructure (COMPLETE 2026-03-13)
-- [✅] Pre-actions: AvNav :8080, SK :8099, ports 3000+3001 confirmed free
-- [✅] Pi menu backup captured to pi-menu/BACKUP/
-- [✅] d3kOS menu category created on Pi
-- [✅] Desktop entries created: d3kos-dashboard, d3kos-avnav, d3kos-gemini-nav, d3kos-opencpn
-- [✅] OpenCPN removed from standard Navigation menu — SK migrated :3000→:8099, issue_detector :8099→:8199
-- [✅] All .desktop files pass desktop-file-validate
-- [✅] docs/MENU_STRUCTURE.md written
+### Phase 1 — Pi Menu Restructure
+- [ ] Pre-actions: AvNav :8080, SK :8099, ports 3000+3001 confirmed free
+- [ ] Pi menu backup captured to pi-menu/BACKUP/
+- [ ] d3kOS menu category created on Pi
+- [ ] Desktop entries created: d3kos-dashboard, d3kos-avnav, d3kos-gemini-nav, d3kos-opencpn
+- [ ] OpenCPN removed from standard Navigation menu
+- [ ] All .desktop files pass desktop-file-validate
+- [ ] docs/MENU_STRUCTURE.md written
 
-### Phase 2 — Flask Dashboard Hub (localhost:3000) (COMPLETE 2026-03-13)
-- [✅] Flask + deps installed on Pi
-- [✅] dashboard/config/d3kos-config.env created (NOT committed)
-- [✅] dashboard/app.py — Flask app with /, /status, /settings, /offline routes
-- [✅] dashboard/templates/index.html — 9-button main menu (per mockup v4)
-- [✅] dashboard/static/css/d3kos.css — dark theme (#000 bg, #00CC00 accent)
-- [✅] dashboard/static/js/connectivity-check.js — polls /status every 30s
-- [✅] dashboard/static/js/panel-toggle.js — Windy/Radar panel controls
-- [✅] d3kos-dashboard.service deployed, enabled, starts on boot
-- [✅] Dashboard loads at http://localhost:3000
+### Phase 2 — Flask Dashboard Hub (localhost:3000)
+- [ ] Flask + deps installed on Pi
+- [ ] dashboard/config/d3kos-config.env created (NOT committed)
+- [ ] dashboard/app.py — Flask app with /, /status, /settings, /offline routes
+- [ ] dashboard/templates/index.html — 9-button main menu (per mockup v4)
+- [ ] dashboard/static/css/d3kos.css — dark theme (#000 bg, #00CC00 accent)
+- [ ] dashboard/static/js/connectivity-check.js — polls /status every 30s
+- [ ] dashboard/static/js/panel-toggle.js — Windy/Radar panel controls
+- [ ] d3kos-dashboard.service deployed, enabled, starts on boot
+- [ ] Dashboard loads at http://localhost:3000
 
 ### Phase 3 — Gemini Marine AI Proxy (localhost:3001)
 - [ ] gemini-nav/config/gemini.env created with Gemini API key (NOT committed)
@@ -1998,9 +1998,8 @@
 - [ ] docs/AVNAV_PLUGINS.md written
 - [ ] docs/OPENPLOTTER_REFERENCE.md written
 
-### Phase 5 — AI + AvNav Integration (ACTIVE 2026-03-13)
-- [ ] All Phase 4 items verified stable for one voyage before Phase 5 coding begins
-- [ ] See `deployment/d3kOS/PROJECT_CHECKLIST.md` for full 50+ item Phase 5 checklist
+### Phase 5 — AI + AvNav Integration (DEFERRED — v1.1)
+- [ ] LOCKED until Phase 4 stable for one voyage
 
 ---
 
@@ -2026,7 +2025,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-13 — Phase 5 activated (ACTIVE), Phases 1 and 2 complete, port 8085→8087 fix committed (3d2bed9), 3 worktree sessions established. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-12 — i18n wiring 100% complete (all 15 index.html tiles, +2 keys), CHANGELOG.md v0.9.2 full entry written, Option B documented in D3KOS_PLAN.md. Commit f9c3101. | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
