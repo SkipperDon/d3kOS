@@ -2,6 +2,48 @@
 
 ---
 
+## Session — 2026-03-12 — v0.9.2 Close: i18n 100% Complete, CHANGELOG Written, Option B Documented
+
+**Tasks completed:**
+- Wired `data-i18n` on all 4 remaining index.html button-label spans: Initial Setup (`ui.initial_setup`), QR Code (`ui.qr_pairing`), Upload Manual (`ui.upload_manual`), History (`ui.history`). All 15 menu tiles now wired — i18n 100% complete.
+- Added 2 new translation keys (`ui.initial_setup`, `ui.upload_manual`) to all 18 language JSON files on Pi (`/opt/d3kos/config/i18n/`). Translations provided for all 18 languages.
+- Deployed live to Pi: `/var/www/html/index.html` updated with 4 `data-i18n` attributes.
+- Wrote full v0.9.2 CHANGELOG.md entry — covers Marine Vision overhaul (Slot/Hardware architecture), i18n (13 pages, 38 keys), SK v2.22.1 upgrade, voice audio + speed fixes, touch scroll fix, pinch zoom, export boot race fix, FW worker thread, charts button fix, simulator removal, o-charts upgrade.
+- Documented Option B decision in `deployment/d3kOS/D3KOS_PLAN.md` Phase 3 and `deployment/d3kOS/PROJECT_CHECKLIST.md` Phase 3: retire old Gemini proxy at :8097 once :3001 is tested, update query_handler.py + voice-assistant-hybrid.py.
+- Committed all session changes: commit `f9c3101`.
+
+**Files changed:**
+- `deployment/features/i18n-page-wiring/pi_source/index.html` — 4 data-i18n attributes added
+- `deployment/v0.9.2/pi_source/index.html` — 4 data-i18n attributes added
+- Pi live: `/var/www/html/index.html` — 4 data-i18n attributes deployed
+- Pi live: `/opt/d3kos/config/i18n/*.json` (all 18 files) — ui.initial_setup + ui.upload_manual added
+- `CHANGELOG.md` — full v0.9.2 release entry written
+- `deployment/d3kOS/D3KOS_PLAN.md` — Option B decision note added to Phase 3
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Option B note added to Phase 3
+- `PROJECT_CHECKLIST.md` — 3 items updated to ✅, Last Updated line updated
+- (Committed from prior session) `deployment/docs/DEPLOYMENT_INDEX.md`, `SESSION_LOG.md`, `PROJECT_CHECKLIST.md`, `deployment/d3kOS/` tree (7 new files)
+
+**PROJECT_CHECKLIST.md updates:**
+- `[🔄] Update CHANGELOG.md` → `[✅]` — full v0.9.2 entry written 2026-03-12
+- `[✅] data-i18n wired: index.html...` → updated with note: all 15 tiles wired 2026-03-12, i18n 100% complete
+- `[✅] Expand translation keys...36 new keys` → updated with note: +2 keys 2026-03-12, total 38 new keys
+- Last Updated → 2026-03-12, references commit f9c3101
+
+**AAO compliance:** PASS — all actions classified Low/None, pre-action statements given, no git push, no High-risk actions, no prompt injection found
+
+**Open items for next session:**
+- On-screen keyboard: keyboard-fix.js v2.0 on Pi — needs live touchscreen confirmation (requires Pi physical access)
+- Boatlog voice note: record → transcribe → save → view end-to-end flow (requires Pi with microphone)
+- WebSocket real-time push: Remote Access page (needs implementation)
+- UAT: 5 metric + 5 imperial users
+- Data export: test with unit metadata
+- o-charts chart activation: Don's task — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
+- v0.9.2.1 Phase 1: Pi menu restructure (requires Pi connection)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-12 — v0.9.2.1 Plan Created, d3kOS Architecture Scaffolded
 
 **Tasks completed:**
