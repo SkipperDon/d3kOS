@@ -306,7 +306,7 @@
 
   - \[✅\] Test voice responses in both units
 
-  - Test data export (includes unit metadata)
+  - [✅] Test data export (includes unit metadata) — 2026-03-13: CSV header rows + JSON unit_metadata in settings category. Verified metric: km/h, °C, bar, L.
 
 - \[✅\] Accuracy Verification — 25/25 unit tests passing
 
