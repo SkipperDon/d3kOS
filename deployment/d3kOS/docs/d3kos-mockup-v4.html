@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>d3kOS v2.0 — Marine Dashboard Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   d3kOS DESIGN SYSTEM
+═══════════════════════════════════════════════ */
+:root {
+  --bg:         #000000;
+  --surface:    #0a0a0a;
+  --surface2:   #111111;
+  --surface3:   #181818;
+  --accent:     #00CC00;
+  --accent-hi:  #00FF00;
+  --accent-dim: rgba(0,204,0,0.12);
+  --accent-bdr: rgba(0,204,0,0.35);
+  --warn:       #FFA500;
+  --danger:     #FF3333;
+  --text:       #FFFFFF;
+  --muted:      rgba(255,255,255,0.5);
+  --muted2:     rgba(255,255,255,0.3);
+  --r:          8px;
+  --bar:        56px;
+  --bm-w:       168px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Roboto',sans-serif;user-select:none;}
+
+/* ── SCREEN SYSTEM ── */
+.screen{display:none;width:100vw;height:100vh;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* ── TOPBAR ── */
+.topbar{
+  height:var(--bar);flex-shrink:0;
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  background:var(--surface2);border-bottom:2px solid var(--accent);
+}
+.topbar-back{
+  padding:10px 18px;min-height:42px;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--accent);border-radius:var(--r);
+  font-size:16px;font-weight:700;font-family:'Roboto',sans-serif;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.topbar-back:hover{background:var(--accent-dim);}
+.topbar-title{font-size:18px;font-weight:700;color:var(--accent);flex:1;text-align:center;}
+.topbar-right{
+  padding:10px 18px;min-height:42px;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--accent);border-radius:var(--r);
+  font-size:15px;font-weight:700;font-family:'Roboto',sans-serif;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.topbar-right:hover{background:var(--accent-dim);}
+.topbar-meta{font-size:12px;color:var(--muted);font-family:'Roboto Mono',monospace;white-space:nowrap;}
+
+/* ═══════════════════════════════════════════════
+   MAIN MENU SCREEN
+═══════════════════════════════════════════════ */
+#screen-menu header{
+  padding:20px 24px 16px;text-align:center;
+  border-bottom:2px solid var(--accent);flex-shrink:0;
+  background:linear-gradient(180deg,rgba(0,204,0,.05) 0%,transparent 100%);
+}
+.brand-logo{font-size:14px;font-family:'Roboto Mono',monospace;color:var(--muted);letter-spacing:.2em;margin-bottom:4px;}
+.brand-name{font-size:38px;font-weight:900;color:var(--accent);letter-spacing:.06em;line-height:1;}
+.brand-sub{font-size:13px;color:var(--muted);margin-top:5px;letter-spacing:.08em;}
+.menu-body{flex:1;overflow-y:auto;padding:20px;}
+.menu-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  max-width:900px;margin:0 auto;
+}
+.menu-btn{
+  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--surface2);border:2px solid var(--accent-bdr);border-radius:12px;
+  cursor:pointer;transition:all .15s;padding:16px;gap:8px;
+}
+.menu-btn:hover{background:var(--accent-dim);border-color:var(--accent);transform:translateY(-2px);}
+.menu-btn:active{transform:translateY(0);}
+.menu-btn-icon{font-size:32px;}
+.menu-btn-label{font-size:13px;font-weight:700;color:var(--text);text-align:center;line-height:1.3;}
+.menu-btn-sub{font-size:10px;color:var(--muted);text-align:center;}
+.menu-btn.primary{border-color:var(--accent);background:rgba(0,204,0,.08);}
+.menu-status{
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  padding:12px 24px;border-top:1px solid var(--accent-bdr);
+  font-size:12px;font-family:'Roboto Mono',monospace;color:var(--muted);flex-shrink:0;
+}
+.dot-on{color:var(--accent);}
+.dot-warn{color:var(--warn);}
+
+/* ═══════════════════════════════════════════════
+   SETTINGS SCREEN — TWO-COLUMN LAYOUT
+═══════════════════════════════════════════════ */
+#screen-settings .page-body{
+  display:flex;flex:1;overflow:hidden;
+}
+
+/* ── SCROLL AREA ── */
+.scroll-area{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:20px 20px 60px 20px;
+  -webkit-overflow-scrolling:touch;
+}
+.content-wrap{max-width:1080px;margin:0 auto;}
+
+/* ── BOOKMARK SIDEBAR ── */
+.bm-sidebar{
+  width:var(--bm-w);flex-shrink:0;
+  border-left:2px solid var(--accent-bdr);
+  background:var(--surface);
+  display:flex;flex-direction:column;
+  overflow-y:auto;padding:8px 6px;gap:3px;
+}
+.bm-head{
+  font-size:9px;font-weight:700;color:rgba(0,204,0,.5);
+  letter-spacing:.14em;text-transform:uppercase;text-align:center;
+  padding:6px 0 8px;border-bottom:1px solid var(--accent-bdr);margin-bottom:4px;
+  flex-shrink:0;
+}
+.bm-btn{
+  display:block;width:100%;padding:8px 8px;
+  background:var(--surface2);border:1px solid var(--accent-bdr);
+  border-radius:5px;color:var(--muted);
+  font-size:11px;font-family:'Roboto',sans-serif;font-weight:700;
+  text-align:left;cursor:pointer;transition:all .12s;line-height:1.3;
+}
+.bm-btn:hover,.bm-btn.active{
+  background:var(--accent-dim);border-color:var(--accent);color:var(--accent);
+}
+.bm-sep{height:1px;background:var(--accent-bdr);margin:3px 0;flex-shrink:0;}
+
+/* ── SECTION HEADERS ── */
+.sec{scroll-margin-top:8px;margin-bottom:20px;}
+.sec-header{
+  font-size:20px;font-weight:700;color:var(--accent);
+  margin:0 0 14px 0;padding:10px 14px;
+  border-left:4px solid var(--accent);
+  background:rgba(0,204,0,.05);
+  border-radius:0 var(--r) var(--r) 0;
+  display:flex;justify-content:space-between;align-items:center;
+}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.gflex{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+
+/* ── STATUS GRID ── */
+.status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.si{
+  background:var(--surface2);border:1px solid var(--accent-bdr);
+  border-radius:6px;padding:12px 10px;text-align:center;
+}
+.si-name{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;font-family:'Roboto Mono',monospace;}
+.si-val{font-size:13px;font-weight:700;}
+.si-sub{font-size:10px;color:var(--muted2);margin-top:3px;font-family:'Roboto Mono',monospace;}
+.ok{color:var(--accent);}
+.wrn{color:var(--warn);}
+.off{color:var(--danger);}
+
+/* ── CARDS ── */
+.card{
+  background:rgba(255,255,255,.04);border:2px solid #333;
+  border-radius:var(--r);padding:18px;
+}
+.card-label{font-size:18px;font-weight:700;margin-bottom:5px;display:block;}
+.card-desc{font-size:14px;color:var(--muted);margin-bottom:10px;}
+
+/* ── FORM CONTROLS ── */
+.fc{
+  width:100%;padding:11px 12px;
+  font-size:18px;font-family:'Roboto',sans-serif;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--accent);border-radius:var(--r);outline:none;
+}
+.fc:focus{box-shadow:0 0 0 3px rgba(0,204,0,.2);}
+select.fc{cursor:pointer;}
+
+/* ── TOGGLES ── */
+.trow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);gap:12px;
+}
+.trow:last-child{border-bottom:none;}
+.trow-lbl{font-size:17px;font-weight:700;}
+.trow-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+.toggle{position:relative;display:inline-block;width:72px;height:38px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.tslider{
+  position:absolute;inset:0;cursor:pointer;
+  background:#333;transition:.25s;border-radius:38px;border:2px solid rgba(255,255,255,.2);
+}
+.tslider:before{
+  content:'';position:absolute;height:26px;width:26px;
+  left:4px;bottom:4px;background:#fff;transition:.25s;border-radius:50%;
+}
+input:checked+.tslider{background:var(--accent);border-color:var(--accent);}
+input:checked+.tslider:before{transform:translateX(34px);}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:11px 20px;min-height:48px;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--accent);border-radius:var(--r);
+  font-size:17px;font-weight:700;font-family:'Roboto',sans-serif;
+  cursor:pointer;transition:all .15s;display:inline-block;
+}
+.btn:hover{background:var(--accent-dim);transform:translateY(-1px);}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-primary:hover{background:var(--accent-hi);}
+.btn-warn{border-color:var(--warn);color:var(--warn);}
+.btn-warn:hover{background:rgba(255,165,0,.1);}
+.btn-danger{border-color:var(--danger);color:var(--danger);}
+.btn-danger:hover{background:rgba(255,51,51,.1);}
+.btn-full{
+  display:block;width:100%;padding:18px;
+  background:var(--accent);color:var(--bg);
+  border:none;border-radius:var(--r);
+  font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;
+  cursor:pointer;margin-bottom:10px;transition:all .15s;text-align:center;
+}
+.btn-full:hover{background:var(--accent-hi);}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+
+/* ── AI MODE ── */
+.ai-modes{display:flex;gap:8px;margin-top:6px;}
+.ai-mode{
+  flex:1;padding:11px 8px;
+  background:var(--surface2);border:2px solid var(--accent-bdr);
+  border-radius:6px;color:var(--muted);cursor:pointer;
+  font-size:13px;font-family:'Roboto',sans-serif;text-align:center;
+  line-height:1.4;transition:all .12s;
+}
+.ai-mode.sel{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700;}
+
+/* ── PROMPT PREVIEW ── */
+.prompt-box{
+  padding:12px 14px;background:rgba(0,20,0,.6);
+  border:1px solid rgba(0,204,0,.2);border-radius:6px;
+  font-size:12px;font-family:'Roboto Mono',monospace;
+  color:rgba(0,204,0,.75);line-height:1.9;margin-top:8px;
+}
+
+/* ── PORT TABLE ── */
+.port-table{width:100%;border-collapse:collapse;font-family:'Roboto Mono',monospace;font-size:14px;}
+.port-table th{
+  padding:8px 10px;background:rgba(0,204,0,.08);
+  color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  text-align:left;border-bottom:1px solid var(--accent-bdr);
+}
+.port-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--muted);}
+.port-table td:first-child{color:var(--accent);font-weight:700;}
+.port-table tr:last-child td{border-bottom:none;}
+
+/* ── DOC BUTTONS ── */
+.doc-btn{
+  padding:16px;background:var(--surface2);
+  border:2px solid var(--accent-bdr);border-radius:var(--r);
+  color:var(--text);cursor:pointer;text-align:left;
+  font-family:'Roboto',sans-serif;transition:all .12s;width:100%;
+}
+.doc-btn:hover{border-color:var(--accent);background:var(--accent-dim);}
+.doc-icon{font-size:24px;margin-bottom:6px;}
+.doc-title{font-size:15px;font-weight:700;color:var(--accent);margin-bottom:3px;}
+.doc-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+
+/* ── HOWTO STEPS ── */
+.steps{display:flex;flex-direction:column;gap:9px;}
+.step{display:flex;align-items:flex-start;gap:12px;}
+.step-num{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  background:var(--accent-dim);border:1px solid var(--accent-bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;color:var(--accent);margin-top:1px;
+}
+.step-num.em{background:rgba(255,51,51,.12);border-color:var(--danger);color:var(--danger);}
+.step-num.ca{background:rgba(255,165,0,.12);border-color:var(--warn);color:var(--warn);}
+.step-txt{font-size:14px;color:var(--muted);line-height:1.7;}
+.step-txt strong{color:var(--text);}
+.step-txt code{
+  font-family:'Roboto Mono',monospace;font-size:11px;
+  background:rgba(0,204,0,.1);padding:1px 5px;border-radius:3px;color:var(--accent);
+}
+
+/* ── PHASE LIST ── */
+.phases{display:flex;flex-direction:column;gap:9px;}
+.phase-item{
+  display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+  background:var(--surface2);border:1px solid var(--accent-bdr);border-radius:var(--r);
+}
+.ph-badge{
+  flex-shrink:0;width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;
+}
+.ph-done{background:rgba(0,204,0,.2);border:2px solid var(--accent);color:var(--accent);}
+.ph-now {background:rgba(255,165,0,.2);border:2px solid var(--warn);color:var(--warn);}
+.ph-fut {background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:var(--muted2);}
+.ph-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.ph-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 20px;font-size:18px;}
+.info-k{font-weight:700;color:var(--accent);}
+.info-v{color:var(--text);}
+
+/* ── CAMERA PANEL ── */
+.cs-grid{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px;margin-bottom:10px;}
+.cs-panel{border:2px solid #333;border-radius:var(--r);overflow:hidden;}
+.cs-ph{
+  background:rgba(0,204,0,.1);border-bottom:2px solid var(--accent);
+  padding:9px 12px;font-size:14px;font-weight:700;color:var(--accent);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.cs-row{
+  display:flex;align-items:center;gap:8px;padding:11px 12px;
+  border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer;font-size:16px;
+}
+.cs-row:hover{background:rgba(0,204,0,.1);}
+.cs-empty{color:var(--muted);font-size:14px;padding:18px;text-align:center;}
+.cs-role{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;
+}
+
+/* ── DOC MODAL ── */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);
+  z-index:9000;align-items:flex-start;justify-content:center;
+  padding:28px 20px;overflow-y:auto;
+}
+.modal-bg.open{display:flex;}
+.modal-box{
+  background:var(--surface);border:2px solid var(--accent);
+  border-radius:12px;padding:26px;max-width:680px;width:100%;
+  box-shadow:0 0 60px rgba(0,204,0,.18);
+}
+.modal-box h2{font-size:20px;color:var(--accent);margin-bottom:3px;}
+.modal-ver{font-size:11px;color:var(--muted2);font-family:'Roboto Mono',monospace;margin-bottom:16px;}
+.modal-box h3{font-size:14px;color:var(--accent);margin:14px 0 7px;text-transform:uppercase;letter-spacing:.05em;}
+.modal-box p{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:7px;}
+.modal-box ol,.modal-box ul{padding-left:18px;}
+.modal-box li{font-size:14px;color:var(--muted);line-height:2.1;}
+.modal-box code{
+  font-family:'Roboto Mono',monospace;font-size:12px;
+  background:rgba(0,204,0,.1);border:1px solid rgba(0,204,0,.25);
+  border-radius:3px;padding:1px 5px;color:var(--accent);
+}
+.modal-close{
+  margin-top:20px;padding:12px 28px;
+  background:var(--accent);color:var(--bg);
+  border:none;border-radius:var(--r);
+  font-weight:700;font-size:17px;cursor:pointer;font-family:'Roboto',sans-serif;
+  min-height:50px;
+}
+
+/* ── GEMINI STATUS ── */
+.gemini-status{
+  margin-top:10px;padding:10px 12px;border-radius:5px;
+  font-size:13px;font-family:'Roboto Mono',monospace;display:none;
+}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:#222;color:#fff;padding:14px 26px;
+  border-radius:10px;font-size:18px;z-index:9999;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);display:none;
+  border:1px solid var(--accent);
+}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar{width:28px;}
+::-webkit-scrollbar-track{background:#111;border-radius:6px;}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:6px;min-height:50px;}
+::-webkit-scrollbar-thumb:active{background:var(--accent-hi);}
+
+/* ── OTHER SCREENS (simplified) ── */
+.iframe-mock{
+  flex:1;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+}
+.iframe-label{font-size:24px;font-weight:900;color:var(--accent-bdr);}
+.iframe-url{font-size:14px;color:var(--muted);font-family:'Roboto Mono',monospace;}
+</style>
+</head>
+<body>
+
+<!-- ═══ SCREEN: MAIN MENU ═══ -->
+<div id="screen-menu" class="screen active">
+  <header>
+    <div class="brand-logo">HELM-OS / RASPBERRY PI 4B</div>
+    <div class="brand-name">d3kOS</div>
+    <div class="brand-sub">MARINE NAVIGATION DASHBOARD  ·  v2.0</div>
+  </header>
+
+  <div class="menu-body">
+    <div class="menu-grid">
+      <div class="menu-btn primary" onclick="go('avnav')">
+        <div class="menu-btn-icon">🗺️</div>
+        <div class="menu-btn-label">AvNav Charts</div>
+        <div class="menu-btn-sub">localhost:8080</div>
+      </div>
+      <div class="menu-btn primary" onclick="go('ai')">
+        <div class="menu-btn-icon">🤖</div>
+        <div class="menu-btn-label">AI Navigation ✦</div>
+        <div class="menu-btn-sub">Gemini · Ollama</div>
+      </div>
+      <div class="menu-btn" onclick="go('settings')">
+        <div class="menu-btn-icon">⚙️</div>
+        <div class="menu-btn-label">Settings & Help</div>
+        <div class="menu-btn-sub">Config · Docs · Status</div>
+      </div>
+      <div class="menu-btn" onclick="alert('Opens Windy weather panel')">
+        <div class="menu-btn-icon">🌤</div>
+        <div class="menu-btn-label">Sea State</div>
+        <div class="menu-btn-sub">embed.windy.com</div>
+      </div>
+      <div class="menu-btn" onclick="alert('Opens RainViewer radar panel')">
+        <div class="menu-btn-icon">🌧</div>
+        <div class="menu-btn-label">Radar</div>
+        <div class="menu-btn-sub">rainviewer.com</div>
+      </div>
+      <div class="menu-btn" onclick="alert('Opens Engine dashboard')">
+        <div class="menu-btn-icon">⚓</div>
+        <div class="menu-btn-label">Engine Monitor</div>
+        <div class="menu-btn-sub">Hours · Temp · Oil</div>
+      </div>
+      <div class="menu-btn" onclick="alert('Opens Trip Log')">
+        <div class="menu-btn-icon">📋</div>
+        <div class="menu-btn-label">Trip Log</div>
+        <div class="menu-btn-sub">Voyage history</div>
+      </div>
+      <div class="menu-btn" onclick="alert('Opens Marine Vision cameras')">
+        <div class="menu-btn-icon">📹</div>
+        <div class="menu-btn-label">Marine Vision</div>
+        <div class="menu-btn-sub">Forward · Fish detect</div>
+      </div>
+      <div class="menu-btn" style="border-color:rgba(255,165,0,.3);" onclick="alert('Launches OpenCPN fallback')">
+        <div class="menu-btn-icon">⛵</div>
+        <div class="menu-btn-label">OpenCPN</div>
+        <div class="menu-btn-sub" style="color:var(--warn);">Emergency fallback</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="menu-status">
+    <span><span class="dot-on">●</span> AvNav :8080</span>
+    <span><span class="dot-on">●</span> Signal K :8099</span>
+    <span><span class="dot-on">●</span> Gemini :3001</span>
+    <span><span class="dot-on">●</span> Ollama 192.168.1.36</span>
+    <span><span class="dot-warn">●</span> OpenPlotter :8081</span>
+    <span id="menu-clock" style="margin-left:auto;color:var(--accent);"></span>
+  </div>
+</div>
+
+
+<!-- ═══ SCREEN: AVNAV (simplified) ═══ -->
+<div id="screen-avnav" class="screen">
+  <div class="topbar">
+    <button class="topbar-back" onclick="go('menu')">← Menu</button>
+    <span class="topbar-title">🗺️ AvNav Charts — localhost:8080</span>
+    <span class="topbar-meta">GPS ● 4 sats</span>
+  </div>
+  <div class="iframe-mock">
+    <div class="iframe-label">🗺️</div>
+    <div class="iframe-label" style="font-size:18px;">AvNav Chart Viewer</div>
+    <div class="iframe-url">http://localhost:8080</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:8px;">Live in production — embedded iframe</div>
+  </div>
+</div>
+
+
+<!-- ═══ SCREEN: AI NAVIGATOR (simplified) ═══ -->
+<div id="screen-ai" class="screen">
+  <div class="topbar">
+    <button class="topbar-back" onclick="go('menu')">← Menu</button>
+    <span class="topbar-title">🤖 Gemini Marine AI — localhost:3001</span>
+    <span class="topbar-meta">gemini-2.5-flash</span>
+  </div>
+  <div class="iframe-mock">
+    <div class="iframe-label">🤖</div>
+    <div class="iframe-label" style="font-size:18px;">Gemini Marine AI Proxy</div>
+    <div class="iframe-url">http://localhost:3001</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:8px;">Routes: Gemini API → Ollama (192.168.1.36:11434) → 503</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN: SETTINGS & HELP — FULL 16 SECTIONS
+═══════════════════════════════════════════════ -->
+<div id="screen-settings" class="screen">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="topbar-back" onclick="go('menu')">← Main Menu</button>
+    <span class="topbar-title">⚙️ Settings & Help</span>
+    <button class="topbar-right" onclick="diagAlert()">🔍 Diagnostics</button>
+  </div>
+
+  <!-- TWO-COLUMN BODY -->
+  <div class="page-body">
+
+    <!-- ── SCROLLABLE CONTENT ── -->
+    <div class="scroll-area" id="settingsScroll">
+    <div class="content-wrap">
+
+
+      <!-- ① SYSTEM STATUS -->
+      <div class="sec" id="s-status">
+        <div class="sec-header">📡 System Status — Live</div>
+        <div class="status-grid">
+          <div class="si"><div class="si-name">AvNav Charts</div><div class="si-val ok">● LIVE</div><div class="si-sub">localhost:8080</div></div>
+          <div class="si"><div class="si-name">Signal K</div><div class="si-val ok">● LIVE</div><div class="si-sub">localhost:8099</div></div>
+          <div class="si"><div class="si-name">GPS</div><div class="si-val ok">● FIXED</div><div class="si-sub">4 satellites</div></div>
+          <div class="si"><div class="si-name">AIS Receiver</div><div class="si-val ok">● ACTIVE</div><div class="si-sub">2 targets</div></div>
+          <div class="si"><div class="si-name">Gemini AI</div><div class="si-val ok">● ONLINE</div><div class="si-sub">gemini-2.5-flash</div></div>
+          <div class="si"><div class="si-name">Ollama (LAN)</div><div class="si-val ok">● READY</div><div class="si-sub">192.168.1.36:11434</div></div>
+          <div class="si"><div class="si-name">OpenPlotter</div><div class="si-val wrn">● RUNNING</div><div class="si-sub">localhost:8081 · infra</div></div>
+          <div class="si"><div class="si-name">Internet</div><div class="si-val ok">● CONNECTED</div><div class="si-sub">Weather + AI enabled</div></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="showToast('Refreshing status…')">🔄 Refresh Status</button>
+          <button class="btn" onclick="showToast('Signal K WebSocket: ws://localhost:8099/signalk/v1/stream')">📡 Test Signal K</button>
+        </div>
+      </div>
+
+
+      <!-- ② ENGINE CONFIGURATION -->
+      <div class="sec" id="s-engine">
+        <div class="sec-header">⚓ Engine Configuration</div>
+        <div class="g2">
+          <div class="card"><label class="card-label" for="svc-int">Service Interval</label><p class="card-desc">Hours between scheduled maintenance</p><input type="number" id="svc-int" class="fc" value="100" min="10" max="500" step="10"></div>
+          <div class="card"><label class="card-label" for="oil-int">Oil Change Interval</label><p class="card-desc">Hours between oil changes</p><input type="number" id="oil-int" class="fc" value="50" min="10" max="200" step="10"></div>
+          <div class="card"><label class="card-label" for="eng-hrs">Total Engine Hours</label><p class="card-desc">Manually adjust if needed</p><input type="number" id="eng-hrs" class="fc" value="127.5" min="0" step="0.1"></div>
+          <div class="card"><label class="card-label" for="hrs-svc">Hours Since Last Service</label><p class="card-desc">Reset after maintenance</p><input type="number" id="hrs-svc" class="fc" value="27.5" min="0" step="0.1"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="showToast('✅ Engine settings saved')">💾 Save Engine Settings</button>
+          <button class="btn btn-warn" onclick="showToast('✅ Service counter reset to 0')">🔄 Reset Service Counter</button>
+        </div>
+      </div>
+
+
+      <!-- ③ UNITS & DISPLAY -->
+      <div class="sec" id="s-units">
+        <div class="sec-header">📏 Units & Display</div>
+        <div class="g2">
+          <div class="card"><label class="card-label" for="dist-u">Distance</label><p class="card-desc">Nautical miles, km, or miles</p><select id="dist-u" class="fc"><option>Nautical Miles (nm)</option><option>Kilometers (km)</option><option>Miles (mi)</option></select></div>
+          <div class="card"><label class="card-label" for="spd-u">Speed</label><p class="card-desc">Knots, km/h, or mph</p><select id="spd-u" class="fc"><option>Knots (kts)</option><option>Kilometers/Hour (km/h)</option><option>Miles/Hour (mph)</option></select></div>
+          <div class="card"><label class="card-label" for="tmp-u">Temperature</label><p class="card-desc">Celsius or Fahrenheit</p><select id="tmp-u" class="fc"><option>Celsius (°C)</option><option>Fahrenheit (°F)</option></select></div>
+          <div class="card"><label class="card-label" for="prs-u">Pressure</label><p class="card-desc">kPa, PSI, or bar</p><select id="prs-u" class="fc"><option>Kilopascals (kPa)</option><option>PSI</option><option>Bar</option></select></div>
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="trow">
+            <div><div class="trow-lbl">Measurement System</div><div class="trow-sub">Imperial (°F, PSI, gal, ft) or Metric — data always stored in imperial</div></div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <label class="toggle"><input type="checkbox" id="met-tog" onchange="document.getElementById('met-lbl').textContent=this.checked?'Metric':'Imperial'"><span class="tslider"></span></label>
+              <span id="met-lbl" style="font-weight:700;min-width:70px;">Imperial</span>
+            </div>
+          </div>
+        </div>
+        <div class="btn-group"><button class="btn btn-primary" onclick="showToast('✅ Display settings saved')">💾 Save Display Settings</button></div>
+      </div>
+
+
+      <!-- ④ ALERTS & NOTIFICATIONS -->
+      <div class="sec" id="s-alerts">
+        <div class="sec-header">🔔 Alerts & Notifications</div>
+        <div class="g2">
+          <div class="card"><div class="trow"><div><div class="trow-lbl">Service Due Alert</div><div class="trow-sub">Notify when scheduled service is due</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div></div>
+          <div class="card"><div class="trow"><div><div class="trow-lbl">Overheat Warning</div><div class="trow-sub">Alert on high engine temperature</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div></div>
+          <div class="card"><div class="trow"><div><div class="trow-lbl">Low Oil Pressure</div><div class="trow-sub">Alert on low oil pressure reading</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div></div>
+          <div class="card"><div class="trow"><div><div class="trow-lbl">Battery Voltage Alert</div><div class="trow-sub">Alert on low battery voltage</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div></div>
+        </div>
+        <div class="btn-group"><button class="btn btn-primary" onclick="showToast('✅ Alert settings saved')">💾 Save Alert Settings</button></div>
+      </div>
+
+
+      <!-- ⑤ AI ASSISTANT -->
+      <div class="sec" id="s-ai">
+        <div class="sec-header">🤖 AI Assistant — Gemini & Vessel Settings</div>
+        <div class="g2" style="margin-bottom:14px;">
+          <div class="card"><label class="card-label">Vessel Name</label><p class="card-desc">Used in AI system prompt context</p><input type="text" class="fc" placeholder="e.g. Serenity" value="Serenity"></div>
+          <div class="card"><label class="card-label">Home Port</label><p class="card-desc">Used in AI system prompt context</p><input type="text" class="fc" placeholder="e.g. Toronto, ON" value="Toronto, ON"></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div style="background:rgba(0,20,0,.5);border:1px solid rgba(0,204,0,.25);border-radius:6px;padding:14px 16px;margin-bottom:14px;font-size:14px;color:var(--muted);line-height:1.9;">
+            <strong style="color:var(--text);">Gemini API Key</strong> — Get at <strong style="color:var(--accent);">aistudio.google.com</strong> → Get API key → Create API key. Key starts with <code>AIzaSy…</code> Free tier sufficient. Key stays on your Pi, never sent elsewhere. Token counts logged only — query text never stored.
+          </div>
+          <div class="trow" style="padding-bottom:14px;">
+            <div><strong>API Key</strong><div class="trow-sub">Paste from aistudio.google.com</div></div>
+            <div style="display:flex;gap:8px;width:360px;">
+              <input type="password" id="gem-key" class="fc" placeholder="AIzaSy…" style="flex:1;font-family:'Roboto Mono',monospace;font-size:15px;">
+              <button class="btn btn-primary" style="min-width:80px;padding:0 14px;" onclick="var i=document.getElementById('gem-key');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button>
+            </div>
+          </div>
+          <div class="trow">
+            <div><strong>Gemini Model</strong><div class="trow-sub">Flash = faster · Pro = smarter</div></div>
+            <select class="fc" style="width:300px;">
+              <option>gemini-2.5-flash (Recommended)</option>
+              <option>gemini-2.0-flash</option>
+              <option>gemini-2.5-pro (Most Capable)</option>
+            </select>
+          </div>
+          <div class="btn-group" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="showToast('✅ Gemini configuration saved')">💾 Save Configuration</button>
+            <button class="btn" onclick="showToast('Testing connection to generativelanguage.googleapis.com…')">🔌 Test Connection</button>
+          </div>
+          <div id="gem-status" class="gemini-status"></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="trow-lbl" style="margin-bottom:8px;">AI Routing Mode</div>
+          <div class="ai-modes">
+            <div class="ai-mode sel" onclick="selAI(this)">🔄 Auto<br><span style="font-size:11px;font-weight:400;">Gemini → Ollama</span></div>
+            <div class="ai-mode" onclick="selAI(this)">🌐 Gemini<br><span style="font-size:11px;font-weight:400;">Online only</span></div>
+            <div class="ai-mode" onclick="selAI(this)">🖥 Ollama<br><span style="font-size:11px;font-weight:400;">192.168.1.36:11434</span></div>
+          </div>
+          <div style="margin-top:14px;">
+            <div class="trow-lbl" style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
+            <input type="text" class="fc" value="192.168.1.36:11434" style="font-family:'Roboto Mono',monospace;margin-bottom:10px;">
+            <div class="trow-lbl" style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
+            <input type="text" class="fc" value="mistral">
+          </div>
+          <div>
+            <div class="trow-lbl" style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview (marine lock)</div>
+            <div class="prompt-box">You are a marine navigation assistant for a vessel named <strong style="color:var(--accent-hi);">Serenity</strong>, home port <strong style="color:var(--accent-hi);">Toronto, ON</strong>. Respond only to marine queries: port info, fuel, anchorages, passages, weather, local attractions. Keep answers concise and practical for use at sea. Route: Gemini API (online) → Ollama 192.168.1.36:11434 (offline). Never store query text.</div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="trow"><div><div class="trow-lbl">Cache last 10 responses</div><div class="trow-sub">Available for offline review — response text only, no query text</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+            <div class="trow"><div><div class="trow-lbl">Log token counts only</div><div class="trow-sub">Privacy rule — query text never stored (always enforced)</div></div><label class="toggle"><input type="checkbox" checked disabled><span class="tslider"></span></label></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑥ CAMERA SETUP -->
+      <div class="sec" id="s-camera">
+        <div class="sec-header">📹 Camera Setup
+          <button class="btn btn-primary" style="font-size:14px;padding:6px 14px;min-height:0;" onclick="showToast('Scanning for cameras…')">Scan for Cameras</button>
+        </div>
+        <div class="cs-grid">
+          <div class="cs-panel">
+            <div class="cs-ph">POSITIONS <button class="btn btn-primary" style="font-size:13px;padding:5px 12px;min-height:0;" onclick="showToast('New position modal')">+ New</button></div>
+            <div class="cs-row"><span style="color:var(--accent);">●</span><span>Forward Watch</span><small style="color:var(--muted);font-size:12px;">[FW]</small></div>
+            <div class="cs-row"><span style="color:var(--accent);">●</span><span>Engine Room</span></div>
+            <div class="cs-row"><span style="color:#555;">○</span><span style="color:var(--muted);">Cockpit</span></div>
+          </div>
+          <div class="cs-panel">
+            <div class="cs-ph">SLOT DETAIL</div>
+            <div style="padding:12px;">
+              <div style="height:90px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#333;font-size:13px;margin-bottom:10px;">Live camera feed</div>
+              <div class="cs-role"><span>Forward Watch <small style="color:var(--muted);">(one only)</small></span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox" checked><span class="tslider"></span></label></div>
+              <div class="cs-role"><span>Fish Detection</span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox"><span class="tslider"></span></label></div>
+              <div class="cs-role"><span>Show in Grid</span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox" checked><span class="tslider"></span></label></div>
+            </div>
+          </div>
+          <div class="cs-panel">
+            <div class="cs-ph">UNASSIGNED</div>
+            <div class="cs-empty">No unassigned cameras detected.<br>Tap Scan to find cameras.</div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="go('cameras')">📹 Open Marine Vision</button>
+        </div>
+      </div>
+
+
+      <!-- ⑦ DATA MANAGEMENT -->
+      <div class="sec" id="s-data">
+        <div class="sec-header">💾 Data Management</div>
+        <button class="btn-full" onclick="showToast('Opening Data Management & Export…')">📦 Data Management & Export</button>
+        <div class="btn-group" style="margin-top:4px;">
+          <button class="btn btn-primary" onclick="showToast('✅ All data exported successfully')">📤 Export All Data</button>
+          <button class="btn" onclick="showToast('Select JSON file to import…')">📥 Import Data</button>
+          <button class="btn btn-warn" onclick="showToast('⚠️ Confirm: delete all trip data?')">🗑️ Clear Trip Data</button>
+          <button class="btn btn-warn" onclick="showToast('⚠️ Confirm: delete benchmark data?')">🗑️ Clear Benchmarks</button>
+        </div>
+      </div>
+
+
+      <!-- ⑧ NETWORK & CONNECTIVITY -->
+      <div class="sec" id="s-network">
+        <div class="sec-header">🌐 Network & Connectivity</div>
+        <div class="g2">
+          <div>
+            <table class="port-table">
+              <thead><tr><th>Service</th><th>Address</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>d3kOS Dashboard</td><td>localhost:3000</td><td class="ok">● UP</td></tr>
+                <tr><td>AvNav Charts</td><td>localhost:8080</td><td class="ok">● UP</td></tr>
+                <tr><td>Gemini AI Proxy</td><td>localhost:3001</td><td class="ok">● UP</td></tr>
+                <tr><td>Signal K</td><td>localhost:8099</td><td class="ok">● UP</td></tr>
+                <tr><td>Signal K WebSocket</td><td>ws://…:8099/signalk/v1/stream</td><td class="ok">● WS OK</td></tr>
+                <tr><td>OpenPlotter</td><td>localhost:8081</td><td class="wrn">● INFRA</td></tr>
+                <tr><td>Ollama (LAN)</td><td>192.168.1.36:11434</td><td class="ok">● READY</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="card">
+              <div class="trow"><div><div class="trow-lbl">Windy weather panel</div><div class="trow-sub">embed.windy.com — requires internet</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+              <div class="trow"><div><div class="trow-lbl">Radar panel (RainViewer)</div><div class="trow-sub">rainviewer.com — requires internet</div></div><label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label></div>
+            </div>
+            <div class="btn-group" style="margin-top:10px;">
+              <button class="btn-full" style="font-size:16px;padding:12px;" onclick="window.open('https://aistudio.google.com')">🔑 Get Gemini API Key<br><small style="font-size:12px;font-weight:400;">aistudio.google.com</small></button>
+              <button class="btn-full" style="font-size:16px;padding:12px;background:var(--surface2);color:var(--text);border:2px solid var(--accent);" onclick="showToast('Network Settings → WiFi/Hotspot…')">📶 Network Settings (WiFi/Hotspot)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑨ CHART SETUP & DOCS -->
+      <div class="sec" id="s-charts">
+        <div class="sec-header">🗺️ Chart Setup & Documentation</div>
+        <div class="g2">
+          <button class="doc-btn" onclick="openDoc('ocharts')"><div class="doc-icon">📦</div><div class="doc-title">o-charts Installation</div><div class="doc-desc">Step-by-step: install o-charts into AvNav (localhost:8080), activate license, download Canada CHS, UK, US charts.</div></button>
+          <button class="doc-btn" onclick="openDoc('avnav-plugins')"><div class="doc-icon">🔌</div><div class="doc-title">AvNav Plugins Guide</div><div class="doc-desc">AIS overlay, anchor alarm, NMEA display (Signal K :8099), voyage log, ochartsng plugin setup.</div></button>
+          <button class="doc-btn" onclick="openDoc('free-charts')"><div class="doc-icon">🌐</div><div class="doc-title">Free Chart Sources</div><div class="doc-desc">NOAA ENC (USA/Great Lakes), LINZ (NZ/Pacific), RIS (Europe inland), Marinha (Brazil). All load in AvNav.</div></button>
+          <button class="doc-btn" onclick="openDoc('avnav-howto')"><div class="doc-icon">🧭</div><div class="doc-title">How to Use AvNav</div><div class="doc-desc">Waypoints, route planning, anchor alarm, AIS overlay, voyage GPX export. Opens at localhost:8080.</div></button>
+        </div>
+      </div>
+
+
+      <!-- ⑩ OPENPLOTTER & INFRASTRUCTURE -->
+      <div class="sec" id="s-openplotter">
+        <div class="sec-header">🔌 OpenPlotter & System Infrastructure</div>
+        <div class="g3">
+          <button class="doc-btn" onclick="openDoc('openplotter')"><div class="doc-icon">⚙️</div><div class="doc-title">OpenPlotter Reference</div><div class="doc-desc">What OpenPlotter manages (GPS, AIS, NMEA, Signal K :8099). Access at localhost:8081. Why it's hidden.</div></button>
+          <button class="doc-btn" onclick="openDoc('op-plugins')"><div class="doc-icon">🧩</div><div class="doc-title">OpenPlotter Plugins</div><div class="doc-desc">NMEA 0183, Signal K, AIS, pypilot. Enable, configure, troubleshoot. Signal K WebSocket: ws://localhost:8099.</div></button>
+          <button class="doc-btn" onclick="openDoc('opencpn')"><div class="doc-icon">⚓</div><div class="doc-title">OpenCPN Fallback Guide</div><div class="doc-desc">Emergency fallback chartplotter. Launch via d3kOS menu. Load o-charts via Flatpak (ARM64). Zero changes to code.</div></button>
+        </div>
+      </div>
+
+
+      <!-- ⑪ GETTING STARTED -->
+      <div class="sec" id="s-start">
+        <div class="sec-header">🚀 Getting Started — How to Use d3kOS</div>
+        <div class="g2">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Daily Use</div>
+            <div class="steps">
+              <div class="step"><div class="step-num">1</div><div class="step-txt"><strong>Pi boots</strong> → d3kOS dashboard auto-launches at <code>localhost:3000</code></div></div>
+              <div class="step"><div class="step-num">2</div><div class="step-txt"><strong>Charts</strong> → Main Menu → AvNav Charts → live GPS at <code>localhost:8080</code></div></div>
+              <div class="step"><div class="step-num">3</div><div class="step-txt"><strong>Weather</strong> → Dashboard → 🌤 Weather → Windy / RainViewer panels open</div></div>
+              <div class="step"><div class="step-num">4</div><div class="step-txt"><strong>AI Nav</strong> → Main Menu → AI Navigation → marine queries at <code>localhost:3001</code></div></div>
+              <div class="step"><div class="step-num">5</div><div class="step-txt"><strong>Offline</strong> → AvNav + GPS work without internet. AI falls back to Ollama at <code>192.168.1.36:11434</code></div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Emergency Procedures</div>
+            <div class="steps">
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>Dashboard down</strong> → <code>sudo systemctl restart d3kos-dashboard</code></div></div>
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>No GPS in AvNav</strong> → Check Signal K at <code>localhost:8099</code> → Data Browser</div></div>
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>AvNav down</strong> → Use OpenCPN Fallback from d3kOS menu — fully offline</div></div>
+              <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>AI Proxy down</strong> → <code>sudo systemctl restart d3kos-gemini</code></div></div>
+              <div class="step"><div class="step-num ca">⚠</div><div class="step-txt"><strong>AI not responding</strong> → Check Ollama at <code>192.168.1.36:11434</code> on LAN</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑫ PHASE ROADMAP -->
+      <div class="sec" id="s-roadmap">
+        <div class="sec-header">🗓️ d3kOS Phase Roadmap</div>
+        <div class="phases">
+          <div class="phase-item"><div class="ph-badge ph-done">✓</div><div><div class="ph-title">Phase 0 — Initial Setup & Directory Structure</div><div class="ph-desc">Directories created, .gitignore in place, governance stubs written. All .env files confirmed gitignored.</div></div></div>
+          <div class="phase-item"><div class="ph-badge ph-done">✓</div><div><div class="ph-title">Phase 1 — Pi Menu Restructure</div><div class="ph-desc">d3kOS menu category created. AvNav (:8080) and Gemini Nav (:3001) added. OpenCPN moved to fallback-only. All .desktop files validated.</div></div></div>
+          <div class="phase-item"><div class="ph-badge ph-now">▶</div><div><div class="ph-title" style="color:var(--warn);">Phase 2 — Dashboard Hub (current)</div><div class="ph-desc">Flask app at localhost:3000. AvNav iframe, collapsible Windy/Radar panel, status indicators polling /status every 30s. Signal K indicator on :8099.</div></div></div>
+          <div class="phase-item"><div class="ph-badge ph-fut">3</div><div><div class="ph-title">Phase 3 — Gemini Marine AI Proxy</div><div class="ph-desc">Flask proxy at localhost:3001. Gemini API (gemini-2.5-flash) online → Ollama (192.168.1.36:11434) offline. Marine system prompt. Response cache. Full pytest suite.</div></div></div>
+          <div class="phase-item"><div class="ph-badge ph-fut">4</div><div><div class="ph-title">Phase 4 — Settings Page + AvNav Docs</div><div class="ph-desc">This settings page fully wired to live data. Signal K WebSocket on ws://localhost:8099 (not 3000). All 3 documentation files written. Gemini API key save to gemini.env.</div></div></div>
+          <div class="phase-item"><div class="ph-badge ph-fut" style="font-size:11px;">5</div><div><div class="ph-title">Phase 5 — AI + AvNav Integration (v1.1 — deferred)</div><div class="ph-desc">Route suggestion via AvNav API + Gemini. Voyage log summarization. Condition-aware passage planning (Windy + Gemini). Port arrival briefings. Anchor watch AI alerts. Chart object AI explanation on tap.</div></div></div>
+        </div>
+      </div>
+
+
+      <!-- ⑬ SYSTEM ACTIONS -->
+      <div class="sec" id="s-actions">
+        <div class="sec-header">🔧 System Actions</div>
+        <div class="btn-group">
+          <button class="btn" onclick="showToast('Restarting Signal K at localhost:8099…')">🔄 Restart Signal K</button>
+          <button class="btn" onclick="showToast('Restarting Node-RED…')">🔄 Restart Node-RED</button>
+          <button class="btn btn-warn" onclick="showToast('Rebooting system…')">🔄 Reboot System</button>
+          <button class="btn btn-danger" onclick="showToast('⚠️ Factory reset requires triple confirmation')">⚠️ Initial Setup Reset</button>
+        </div>
+        <div class="btn-group" style="margin-top:6px;">
+          <button class="btn" onclick="showToast('Restarting d3kos-dashboard at localhost:3000…')">🔄 Restart Dashboard</button>
+          <button class="btn" onclick="showToast('Restarting d3kos-gemini at localhost:3001…')">🔄 Restart Gemini Proxy</button>
+        </div>
+      </div>
+
+
+      <!-- ⑭ SYSTEM INFORMATION -->
+      <div class="sec" id="s-sysinfo">
+        <div class="sec-header">💻 System Information</div>
+        <div class="card">
+          <div class="info-grid">
+            <span class="info-k">System:</span><span class="info-v">d3kOS v2.0</span>
+            <span class="info-k">Hardware:</span><span class="info-v">Raspberry Pi 4B (8GB RAM)</span>
+            <span class="info-k">OS:</span><span class="info-v">Debian GNU/Linux 13 (Trixie) 64-bit</span>
+            <span class="info-k">Signal K:</span><span class="info-v"><span style="background:var(--accent);color:#000;padding:3px 12px;border-radius:10px;font-size:16px;font-weight:700;">Online :8099</span></span>
+            <span class="info-k">Node-RED:</span><span class="info-v">v4.1.4</span>
+            <span class="info-k">IP Address:</span><span class="info-v" style="font-family:'Roboto Mono',monospace;">192.168.1.237</span>
+            <span class="info-k">Disk Usage:</span><span class="info-v">78% — 3.1 GB free</span>
+            <span class="info-k">Memory:</span><span class="info-v">43% — 4.6 GB free</span>
+            <span class="info-k">CPU Temp:</span><span class="info-v">72.5 °C</span>
+            <span class="info-k">Uptime:</span><span class="info-v">12h 24m</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑮ LICENSE & TIER -->
+      <div class="sec" id="s-license">
+        <div class="sec-header">🎫 License & Tier</div>
+        <div class="card">
+          <div class="info-grid">
+            <span class="info-k">Tier:</span><span class="info-v" style="color:#FFD700;font-weight:700;">Tier 2</span>
+            <span class="info-k">Install ID:</span><span class="info-v" style="font-family:'Roboto Mono',monospace;color:var(--accent);">d3k-2024-boatiq-001</span>
+            <span class="info-k">Features:</span><span class="info-v">✅ Voice &nbsp; ✅ Camera &nbsp; ✅ AI Nav</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ⑯ ABOUT d3kOS -->
+      <div class="sec" id="s-about">
+        <div class="sec-header">ℹ️ About d3kOS</div>
+        <div class="card">
+          <p style="font-size:18px;margin-bottom:12px;"><strong>d3kOS</strong> is a comprehensive marine electronics system for chart navigation, engine monitoring, AI-assisted passage planning, and vessel camera monitoring.</p>
+          <p style="font-size:15px;color:var(--muted);margin-bottom:12px;">Built on Raspberry Pi 4B with AvNav (primary charts at :8080), Signal K integration (:8099), NMEA support via OpenPlotter (:8081), and Gemini AI (:3001) with Ollama offline fallback (192.168.1.36:11434).</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;font-size:13px;font-family:'Roboto Mono',monospace;line-height:2.2;">
+            <div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">System</div>
+              <div>Version: <span style="color:var(--accent);">d3kOS v2.0</span></div>
+              <div>Platform: <span style="color:var(--accent);">Pi 4B 8GB</span></div>
+              <div>Phase: <span style="color:var(--warn);">Phase 2 active</span></div>
+              <div>Plan: <span style="color:var(--accent);">D3KOS_PLAN.md v2.0</span></div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Services</div>
+              <div>Dashboard: <span style="color:var(--accent);">:3000</span></div>
+              <div>AvNav: <span style="color:var(--accent);">:8080</span></div>
+              <div>Gemini Proxy: <span style="color:var(--accent);">:3001</span></div>
+              <div>Signal K: <span style="color:var(--accent);">:8099</span></div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Project</div>
+              <div>Owner: <span style="color:var(--accent);">Skipper Don</span></div>
+              <div>Site: <span style="color:var(--accent);">AtMyBoat.com</span></div>
+              <div>Repo: <span style="color:var(--accent);">Helm-OS</span></div>
+              <div>Methodology: <span style="color:var(--accent);">AAO v1.1</span></div>
+            </div>
+          </div>
+          <p style="font-size:14px;color:var(--muted2);margin-top:16px;">© 2026 d3kOS Project · Version 2.0 · Built with Claude Code · Methodology: AAO v1.1</p>
+        </div>
+      </div>
+
+
+    </div><!-- /content-wrap -->
+    </div><!-- /scroll-area -->
+
+
+    <!-- ── BOOKMARK SIDEBAR ── -->
+    <div class="bm-sidebar" id="bmSidebar">
+      <div class="bm-head">⚓ SECTIONS</div>
+      <button class="bm-btn active" onclick="scrollTo('s-status',this)">📡 System Status</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="scrollTo('s-engine',this)">⚓ Engine Config</button>
+      <button class="bm-btn" onclick="scrollTo('s-units',this)">📏 Units & Display</button>
+      <button class="bm-btn" onclick="scrollTo('s-alerts',this)">🔔 Alerts</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="scrollTo('s-ai',this)">🤖 AI Assistant</button>
+      <button class="bm-btn" onclick="scrollTo('s-camera',this)">📹 Camera Setup</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="scrollTo('s-data',this)">💾 Data Mgmt</button>
+      <button class="bm-btn" onclick="scrollTo('s-network',this)">🌐 Network</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="scrollTo('s-charts',this)">🗺️ Chart Docs</button>
+      <button class="bm-btn" onclick="scrollTo('s-openplotter',this)">🔌 OpenPlotter</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="scrollTo('s-start',this)">🚀 Getting Started</button>
+      <button class="bm-btn" onclick="scrollTo('s-roadmap',this)">🗓️ Roadmap</button>
+      <div class="bm-sep"></div>
+      <button class="bm-btn" onclick="scrollTo('s-actions',this)">🔧 Sys Actions</button>
+      <button class="bm-btn" onclick="scrollTo('s-sysinfo',this)">💻 Sys Info</button>
+      <button class="bm-btn" onclick="scrollTo('s-license',this)">🎫 License</button>
+      <button class="bm-btn" onclick="scrollTo('s-about',this)">ℹ️ About</button>
+    </div>
+
+  </div><!-- /page-body -->
+</div><!-- /screen-settings -->
+
+
+<!-- ═══ DOC MODAL ═══ -->
+<div class="modal-bg" id="docModal">
+  <div class="modal-box" id="docContent"></div>
+</div>
+
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+
+<script>
+/* ── SCREEN NAVIGATION ── */
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const t = document.getElementById('screen-' + id);
+  if (t) { t.classList.add('active'); if (id === 'settings') updateBmActive(); }
+}
+
+/* ── CLOCK ── */
+function tick() {
+  const el = document.getElementById('menu-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString();
+}
+setInterval(tick, 1000); tick();
+
+/* ── AI MODE SELECTOR ── */
+function selAI(btn) {
+  btn.closest('.ai-modes').querySelectorAll('.ai-mode').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+/* ── BOOKMARK SCROLL ── */
+function scrollTo(id, btn) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.bm-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+/* ── ACTIVE BM ON SCROLL ── */
+const sections = ['s-status','s-engine','s-units','s-alerts','s-ai','s-camera',
+  's-data','s-network','s-charts','s-openplotter','s-start','s-roadmap',
+  's-actions','s-sysinfo','s-license','s-about'];
+
+function updateBmActive() {
+  const scroll = document.getElementById('settingsScroll');
+  if (!scroll) return;
+  const scrollTop = scroll.scrollTop;
+  let active = sections[0];
+  for (const id of sections) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop - scroll.offsetTop <= scrollTop + 40) active = id;
+  }
+  const btns = document.querySelectorAll('.bm-btn');
+  btns.forEach(b => {
+    const onclick = b.getAttribute('onclick') || '';
+    if (onclick.includes("'" + active + "'")) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const scroll = document.getElementById('settingsScroll');
+  if (scroll) scroll.addEventListener('scroll', updateBmActive, {passive:true});
+});
+
+/* ── DIAGNOSTICS ── */
+function diagAlert() {
+  showToast('Diagnostics: AvNav :8080 ✓ | Signal K :8099 ✓ | Gemini :3001 ✓ | Ollama 192.168.1.36:11434 ✓');
+}
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, 3800);
+}
+
+/* ── DOC MODAL ── */
+const docs = {
+  ocharts: {
+    title: '📦 o-charts Installation for AvNav',
+    ver:   'Reference v1.0 · d3kOS Phase 4',
+    html:  `<h3>Access AvNav</h3><p>AvNav runs at <code>http://localhost:8080</code>. Open in Chromium or via the d3kOS dashboard iframe.</p>
+<h3>Install ochartsng Plugin</h3><ol><li>In AvNav → Settings → Plugins → Install <strong>ochartsng</strong></li><li>Restart AvNav after install</li><li>Plugin appears in AvNav Plugin Manager</li></ol>
+<h3>Activate License</h3><ol><li>Create account at <code>https://www.o-charts.org</code></li><li>In AvNav → ochartsng → Get System ID</li><li>Paste System ID on o-charts website → assign to your chart set</li><li>Download the license file (.slip) and import into AvNav</li></ol>
+<h3>Download Charts</h3><ul><li><strong>Canada CHS</strong> — Canadian Hydrographic Service (ENC format)</li><li><strong>UK UKHO</strong> — UK Hydrographic Office AVCS</li><li><strong>NOAA ENC</strong> — US Coast Guard (free at nauticalcharts.noaa.gov)</li></ul>
+<h3>Chart Directory</h3><p>Place chart files in <code>/home/boatiq/charts/</code> — AvNav scans this directory automatically on restart.</p>
+<h3>Note</h3><p>OpenCPN and AvNav share the same o-charts account but require <strong>separate device activations</strong>. Purchase two activations if using both on the same Pi.</p>`
+  },
+  'avnav-plugins': {
+    title: '🔌 AvNav Plugins Guide',
+    ver:   'Reference v1.0 · d3kOS Phase 4',
+    html:  `<h3>AIS Overlay Plugin</h3><p>Displays AIS vessel traffic on the chart. Feeds from OpenPlotter → Signal K at <code>localhost:8099</code>. Enable in AvNav → Plugins → AIS. Targets show as orange triangles.</p>
+<h3>Anchor Alarm Plugin</h3><p>Set drag alarm radius when anchoring. AvNav toolbar → Anchor icon → Set radius in metres → Activate. Alarm sounds on GPS drift beyond radius.</p>
+<h3>NMEA Data Display</h3><p>Shows live instrument data (speed, heading, depth, wind). Reads from Signal K via WebSocket at <code>ws://localhost:8099/signalk/v1/stream</code>. Enable in AvNav → Plugins → NMEA Display.</p>
+<h3>Voyage Log (Track Recording)</h3><p>AvNav records your GPS track automatically. Export as GPX: Settings → Tracks → Export. Store in <code>/home/boatiq/logs/</code> for archival.</p>
+<h3>SignalK Integration</h3><p>Links AvNav to Signal K server at <code>http://localhost:8099</code>. Provides all NMEA2000 instrument data to AvNav displays and overlays.</p>
+<h3>ochartsng</h3><p>Required for encrypted o-charts ENC files. Install before activating your o-charts license. See o-charts Installation guide.</p>`
+  },
+  'free-charts': {
+    title: '🌐 Free Chart Sources',
+    ver:   'Reference v1.0 · d3kOS Phase 4',
+    html:  `<h3>NOAA ENC — USA & Great Lakes</h3><p>Free from <code>nauticalcharts.noaa.gov/charts/encs.html</code>. Download as .zip, extract to <code>/home/boatiq/charts/NOAA/</code>. Covers all US coastal waters, Great Lakes, Puerto Rico.</p>
+<h3>LINZ — New Zealand & Pacific</h3><p>Land Information NZ. Download ENCs at <code>data.linz.govt.nz</code>. Covers NZ, Fiji, Tonga, Pacific islands.</p>
+<h3>RIS — European Inland Waterways</h3><p>Rhine, Danube, and European inland routes. Free download via RIS portal. Load into AvNav chart directory.</p>
+<h3>Marinha — Brazil</h3><p>Brazilian Navy Hydrographic Centre. Free ENCs at <code>www.marinha.mil.br</code>. Covers all Brazilian coastal waters.</p>
+<h3>Loading into AvNav</h3><ol><li>Copy chart folders to <code>/home/boatiq/charts/</code></li><li>In AvNav → Settings → Chart Directories → Rescan</li><li>Charts appear in the region selector</li></ol>`
+  },
+  'avnav-howto': {
+    title: '🧭 How to Use AvNav',
+    ver:   'Reference v1.0 · d3kOS Phase 4',
+    html:  `<h3>Opening AvNav</h3><p>Access at <code>http://localhost:8080</code> — embedded in d3kOS dashboard as iframe, or open directly in Chromium for full screen.</p>
+<h3>Setting Waypoints</h3><ol><li>Long-press on the chart to place a waypoint</li><li>Tap the waypoint → Add to Route</li><li>Routes panel → Activate Route → guidance begins</li><li>DTW (Distance to Waypoint) and BTW (Bearing to Waypoint) show in bottom bar</li></ol>
+<h3>Anchor Alarm</h3><ol><li>Drop anchor → AvNav toolbar → ⚓ Anchor icon</li><li>Set radius in metres → Activate</li><li>Alarm fires if GPS drifts beyond radius</li></ol>
+<h3>AIS Targets</h3><p>AIS targets appear as orange triangles when the AIS layer is enabled. Tap any target for vessel name, MMSI, speed, and course. Data feeds from OpenPlotter → Signal K at <code>localhost:8099</code>.</p>
+<h3>Voyage Log Export</h3><p>AvNav records track automatically. Export GPX: Settings → Tracks → Export. Save to <code>/home/boatiq/logs/</code>.</p>`
+  },
+  openplotter: {
+    title: '⚙️ OpenPlotter Reference',
+    ver:   'Reference v1.0 · d3kOS Phase 4',
+    html:  `<h3>What OpenPlotter Manages</h3><ul><li><strong>GPS</strong> — reads USB/serial GPS receiver, feeds position to Signal K</li><li><strong>AIS</strong> — decodes AIS transponder traffic, sends to Signal K</li><li><strong>NMEA 0183</strong> — routes instrument data (depth, wind, speed) to Signal K</li><li><strong>Signal K Server</strong> — central data broker at <code>http://localhost:8099</code></li></ul>
+<h3>Accessing OpenPlotter</h3><p>OpenPlotter UI is at <code>http://localhost:8081</code>. It is intentionally hidden from the d3kOS Pi menu — access via Chromium directly if configuration changes are needed.</p>
+<h3>Signal K Server</h3><p>Signal K runs at <code>http://localhost:8099</code>. Data browser at <code>http://localhost:8099/signalk</code>. WebSocket stream at <code>ws://localhost:8099/signalk/v1/stream</code>. AvNav and the d3kOS dashboard both read from this endpoint.</p>
+<h3>Why It's Hidden</h3><p>OpenPlotter is infrastructure. Exposing it in the main menu would confuse normal navigation use. It runs silently and automatically. Only access it for configuration or troubleshooting.</p>
+<h3>Do Not Touch</h3><p>Never modify OpenPlotter configuration during normal d3kOS operation. Changes to OpenPlotter plugin settings or port assignments could break GPS, AIS, and all instrument data flowing to AvNav.</p>`
+  },
+  'op-plugins': {
+    title: '🧩 OpenPlotter Plugins Guide',
+    ver:   'Reference v1.0 · d3kOS Phase 4',
+    html:  `<h3>Core Plugins (Required)</h3><ul><li><strong style="color:var(--accent);">NMEA 0183</strong> — reads GPS/NMEA from serial port (e.g. <code>/dev/ttyUSB0</code>). Must be enabled and pointed at your GPS device.</li><li><strong style="color:var(--accent);">Signal K</strong> — runs the Signal K server at <code>localhost:8099</code>. Always running — do not disable.</li><li><strong style="color:var(--accent);">AIS</strong> — decodes AIS receiver, sends vessel traffic to Signal K → AvNav overlay.</li></ul>
+<h3>Optional Plugins</h3><ul><li><strong>pypilot</strong> — autopilot integration. Only needed with pypilot motor controller hardware.</li><li><strong>IMU</strong> — uses Pi accelerometer for heel, pitch, electronic compass (if IMU board fitted).</li><li><strong>Moitessier HAT</strong> — for users with Moitessier HAT (combined GPS+AIS+IMU board).</li></ul>
+<h3>Troubleshooting</h3><ul><li><strong>No GPS in AvNav</strong> → OpenPlotter NMEA plugin → check device path and baud rate</li><li><strong>No AIS targets</strong> → OpenPlotter AIS plugin → check serial port assignment</li><li><strong>Signal K not starting</strong> → <code>sudo systemctl restart signalk</code></li><li><strong>Data browser</strong> → <code>http://localhost:8099/signalk</code> → confirm keys are updating</li></ul>`
+  },
+  opencpn: {
+    title: '⚓ OpenCPN Fallback Guide',
+    ver:   'Reference v1.0 · d3kOS Phase 1',
+    html:  `<h3>Role of OpenCPN in d3kOS</h3><p>OpenCPN is the <strong style="color:var(--warn);">emergency fallback chartplotter only</strong>. Zero code changes. Kept frozen. Use if AvNav is unavailable.</p>
+<h3>Launching OpenCPN</h3><ol><li>Pi Menu → d3kOS → OpenCPN (Fallback)</li><li>Or from d3kOS Main Menu → OpenCPN button</li><li>OpenCPN opens on the Pi desktop</li></ol>
+<h3>o-charts in OpenCPN (Flatpak ARM64)</h3><ol><li>OpenCPN installed via Flatpak</li><li>Plugins → install oeSENC plugin inside OpenCPN</li><li>Activate o-charts license — same account as AvNav but <strong>requires separate device activation</strong></li><li>Chart directory: <code>~/.var/app/org.opencpn.OpenCPN/data/charts/</code></li></ol>
+<h3>Important Note</h3><p>OpenCPN and AvNav use the same o-charts account but need separate device licenses. Two activations required for the same chart set on the same Pi.</p>`
+  }
+};
+
+function openDoc(key) {
+  const d = docs[key];
+  if (!d) return;
+  document.getElementById('docContent').innerHTML =
+    `<h2>${d.title}</h2><div class="modal-ver">${d.ver}</div>${d.html}
+     <button class="modal-close" onclick="closeDoc()">✕ Close</button>`;
+  document.getElementById('docModal').classList.add('open');
+}
+function closeDoc() {
+  document.getElementById('docModal').classList.remove('open');
+}
+document.getElementById('docModal').addEventListener('click', function(e){
+  if (e.target === this) closeDoc();
+});
+</script>
+</body>
+</html>

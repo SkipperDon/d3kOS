@@ -2,6 +2,58 @@
 
 ---
 
+## Session — 2026-03-12 — v0.9.2.1 Plan Created, d3kOS Architecture Scaffolded
+
+**Tasks completed:**
+- Read and analysed D3KOS_CLAUDE_CODE_PLAN_v2.md (5-phase Flask dashboard plan, Phases 0–5)
+- Read and analysed d3kos-mockup-v4.html (full interactive UI mockup — 9-button menu, 16-section settings)
+- Created full deployment/d3kOS/ directory tree (13 subdirectories)
+- Deployed D3KOS_PLAN.md v2.0.0 to repo (copied from Downloads)
+- Deployed d3kos-mockup-v4.html to docs/ as canonical UI design reference
+- Created .gitignore (excludes d3kos-config.env, gemini.env, cache/)
+- Created governance stubs: d3kOS/SESSION_LOG.md, d3kOS/PROJECT_CHECKLIST.md, d3kOS/CHANGELOG.md, pi-menu/BACKUP/BACKUP_LOG.txt
+- Appended v0.9.2.1 section to Helm-OS/PROJECT_CHECKLIST.md
+- Appended full d3kOS index section to deployment/docs/DEPLOYMENT_INDEX.md
+- Updated MEMORY.md with v0.9.2.1 key facts
+- Answered question: what changes in the main menu for v0.9.2.1 (15-button current → 9-button new, with full before/after comparison)
+
+**Files changed:**
+- CREATED: `deployment/d3kOS/D3KOS_PLAN.md`
+- CREATED: `deployment/d3kOS/docs/d3kos-mockup-v4.html`
+- CREATED: `deployment/d3kOS/.gitignore`
+- CREATED: `deployment/d3kOS/SESSION_LOG.md`
+- CREATED: `deployment/d3kOS/CHANGELOG.md`
+- CREATED: `deployment/d3kOS/pi-menu/BACKUP/BACKUP_LOG.txt`
+- CREATED: `deployment/d3kOS/PROJECT_CHECKLIST.md`
+- APPENDED: `PROJECT_CHECKLIST.md` — v0.9.2.1 section (Phases 0–5 task lists)
+- APPENDED: `deployment/docs/DEPLOYMENT_INDEX.md` — d3kOS section + port reference table + phase status
+- UPDATED: `.claude/projects/-home-boatiq/memory/MEMORY.md` — v0.9.2.1 block added
+
+**PROJECT_CHECKLIST.md updates:**
+- v0.9.2.1 Phase 0 items × 5: `[x]` → `[✅]` (directory tree, D3KOS_PLAN.md, mockup, .gitignore, governance stubs)
+- Last Updated line refreshed to 2026-03-12
+
+**AAO compliance:** PASS
+- All actions Low risk (new file creation, governance appends)
+- Pre-action statement given before batch file creation
+- No High-risk actions
+- No git push
+- No scope creep — all files within stated task scope
+- No prompt injection patterns found in either source document
+
+**Open items for next session:**
+- Phase 1: Pi menu restructure — REQUIRES Pi connection (192.168.1.237)
+  - Run pre-actions to confirm AvNav :8080, SK :8099, ports 3000+3001 free
+  - Back up current Pi menu/desktop files to pi-menu/BACKUP/
+  - Create d3kOS menu category + 4 desktop entries
+  - Write docs/MENU_STRUCTURE.md
+- Phase 2: Flask dashboard at localhost:3000 (after Phase 1 complete)
+- Note: existing v0.9.2 services on Pi are NOT affected — this is additive
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-12 — Charts/OpenCPN Fix Complete
 
 **Goal:** Fix Charts button so tapping Launch on charts.html opens OpenCPN on Pi desktop.
