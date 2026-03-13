@@ -13,12 +13,21 @@
 
 ## DO FIRST — Unblocks Session 2
 
-**Move keyboard-api.service from port 8085 → 8086** (Session 2 cannot install AvNav until this is done)
-- Update `keyboard-api.py`: change `PORT = 8085` → `PORT = 8086`
-- Update nginx proxy_pass for keyboard-api: `proxy_pass http://127.0.0.1:8086`
+**Move keyboard-api.service from port 8085 → 8087** (Session 2 cannot install AvNav until this is done)
+- 8086 is taken by fish_detector. 8087 is free.
+- Update `keyboard-api.py`: change port 8085 → 8087
+- Update nginx proxy_pass for keyboard-api block: `proxy_pass http://127.0.0.1:8087`
 - Update `d3kos-keyboard-api.service` EnvironmentFile if port is set there
 - Reload nginx, restart service, verify `/keyboard/show` and `/window/toggle` still work
 - Commit to `close-v0.9.2` and tell Don to merge — unblocks Session 2 Phase 1
+
+**Also check: port 8080 occupancy before AvNav install**
+- Existing nginx config proxies `/query` → 8080 (AI query API, old v0.9.2 service)
+- AvNav needs port 8080 to itself
+- Run on Pi: `ss -tlnp | grep :8080`
+- If occupied: identify the service, determine if it has been superseded (likely by gemini proxy at 8097)
+  and stop/disable it, OR reassign it — document in SESSION_LOG.md
+- This is a pre-condition for Session 2 Phase 1
 
 ## Remaining v0.9.2 Tasks
 
