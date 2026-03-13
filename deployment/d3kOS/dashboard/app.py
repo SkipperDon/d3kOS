@@ -4,10 +4,11 @@ Serves the main marine navigation hub at http://localhost:3000
 
 Port assignments (from d3kos-config.env):
   Dashboard:    localhost:3000  (this app)
-  AvNav:        localhost:8080
   Gemini Proxy: localhost:3001
-  Signal K:     localhost:8099
+  AI Bridge:    localhost:3002  (Phase 5)
+  AvNav:        localhost:8080
   OpenPlotter:  localhost:8081  (infrastructure — not referenced here)
+  Signal K:     localhost:8099
   Ollama:       192.168.1.36:11434 (LAN AI server)
 
 CRITICAL: Signal K WebSocket is ws://localhost:8099 — NOT ws://localhost:3000.
@@ -74,16 +75,15 @@ def status():
     """
     Live system status — polled by the frontend every 30 s.
     Checks: internet, AvNav (:8080), Gemini proxy (:3001),
-            Signal K (:8099), Ollama (LAN 192.168.1.36:11434).
-
-    Phase 5 will add: ai_bridge — check_service('3002')
+            AI Bridge (:3002), Signal K (:8099), Ollama (LAN 192.168.1.36:11434).
     """
     return jsonify({
-        'internet': check_internet(),
-        'avnav':    check_service(AVNAV_PORT),    # localhost:8080
-        'gemini':   check_service(GEMINI_PORT),   # localhost:3001
-        'signalk':  check_service(SIGNALK_PORT),  # localhost:8099
-        'ollama':   check_ollama(),               # 192.168.1.36:11434
+        'internet':  check_internet(),
+        'avnav':     check_service(AVNAV_PORT),    # localhost:8080
+        'gemini':    check_service(GEMINI_PORT),   # localhost:3001
+        'ai_bridge': check_service('3002'),        # localhost:3002 (Phase 5)
+        'signalk':   check_service(SIGNALK_PORT),  # localhost:8099
+        'ollama':    check_ollama(),               # 192.168.1.36:11434
     })
 
 
@@ -175,10 +175,11 @@ def sysinfo():
 
 # Service name map — only these may be restarted via the API
 _RESTART_SERVICES = {
-    'signalk':   'signalk',
-    'nodered':   'nodered',
-    'dashboard': 'd3kos-dashboard',
-    'gemini':    'd3kos-gemini',
+    'signalk':    'signalk',
+    'nodered':    'nodered',
+    'dashboard':  'd3kos-dashboard',
+    'gemini':     'd3kos-gemini',
+    'ai_bridge':  'd3kos-ai-bridge',   # Phase 5
 }
 
 

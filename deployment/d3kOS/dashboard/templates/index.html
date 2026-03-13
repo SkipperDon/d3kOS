@@ -13,11 +13,12 @@
     <button id="btn-back" class="back-btn" onclick="goMenu()" style="display:none">&#9664; Menu</button>
     <span class="brand">&#9875; d3kOS &mdash; {{ vessel_name }}</span>
     <div class="indicators">
-      <span id="ind-internet" class="indicator" title="Internet">&#127760;</span>
-      <span id="ind-avnav"    class="indicator" title="AvNav :8080">&#128506;</span>
-      <span id="ind-gemini"   class="indicator" title="AI :3001">&#129302;</span>
-      <span id="ind-signalk"  class="indicator" title="SignalK :8099">&#128225;</span>
-      <span id="ind-ollama"   class="indicator" title="Ollama LAN">&#129504;</span>
+      <span id="ind-internet"  class="indicator" title="Internet">&#127760;</span>
+      <span id="ind-avnav"     class="indicator" title="AvNav :8080">&#128506;</span>
+      <span id="ind-gemini"    class="indicator" title="AI :3001">&#129302;</span>
+      <span id="ind-ai-bridge" class="indicator" title="AI Bridge :3002">&#129504;</span>
+      <span id="ind-signalk"   class="indicator" title="SignalK :8099">&#128225;</span>
+      <span id="ind-ollama"    class="indicator" title="Ollama LAN">&#9881;</span>
     </div>
     <span id="clock"></span>
   </div>
@@ -98,13 +99,62 @@
 
   </div>
 
-  <!-- === SCREEN: AVNAV === -->
-  <div id="screen-avnav" class="screen">
-    <!-- src set lazily by showAvNav() in panel-toggle.js -->
-    <iframe id="avnav-frame" src=""
-      title="AvNav Chart Viewer"
-      allowfullscreen>
-    </iframe>
+  <!-- === SCREEN: AVNAV + AI SIDE PANEL === -->
+  <div id="screen-avnav" class="screen avnav-layout">
+
+    <!-- AvNav chart iframe — left/main area -->
+    <div id="avnav-chart-area">
+      <!-- src set lazily by showAvNav() in panel-toggle.js -->
+      <iframe id="avnav-frame" src=""
+        title="AvNav Chart Viewer"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <!-- AI side panel — right column (Phase 5) -->
+    <div id="ai-panel">
+
+      <!-- Route Analysis Widget -->
+      <div id="route-widget" class="ai-widget">
+        <div class="ai-widget-head">
+          <span>&#9973; Route Analysis</span>
+          <button class="ai-widget-btn" onclick="triggerRouteAnalysis()" title="Analyze now">&#8635;</button>
+          <button class="ai-widget-btn" onclick="togglePanel('route-body')" title="Collapse">&#9660;</button>
+        </div>
+        <div id="route-body" class="ai-widget-body">
+          <div id="route-state" class="ai-state">Connecting...</div>
+          <div id="route-text" class="ai-text"></div>
+          <div id="route-meta" class="ai-meta"></div>
+        </div>
+      </div>
+
+      <!-- Arrival Briefing (shown on trigger) -->
+      <div id="arrival-widget" class="ai-widget" style="display:none">
+        <div class="ai-widget-head">
+          <span>&#9875; Port Arrival</span>
+          <button class="ai-widget-btn" onclick="closeWidget('arrival-widget')">&#10005;</button>
+        </div>
+        <div class="ai-widget-body">
+          <div id="arrival-dest" class="ai-meta"></div>
+          <div id="arrival-text" class="ai-text"></div>
+        </div>
+      </div>
+
+      <!-- Anchor Alert (shown on drag detection) -->
+      <div id="anchor-widget" class="ai-widget anchor-alarm" style="display:none">
+        <div class="ai-widget-head alarm-head">
+          <span>&#9875; ANCHOR DRAG</span>
+          <button class="ai-widget-btn" onclick="dismissAnchorAlarm()">DISMISS</button>
+        </div>
+        <div class="ai-widget-body">
+          <div id="anchor-text" class="ai-text alarm-text"></div>
+          <div id="anchor-meta" class="ai-meta"></div>
+          <button class="ai-action-btn" onclick="getAnchorAdvice()">GET AI ADVICE</button>
+          <div id="anchor-advice" class="ai-text" style="display:none"></div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- === SCREEN: WEATHER === -->
@@ -142,6 +192,7 @@
 
   <script src="/static/js/connectivity-check.js"></script>
   <script src="/static/js/panel-toggle.js"></script>
+  <script src="/static/js/ai-bridge.js"></script>
 
 </body>
 </html>
