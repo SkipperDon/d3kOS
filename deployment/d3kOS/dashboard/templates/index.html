@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>d3kOS &mdash; Marine Dashboard</title>
+  <link rel="stylesheet" href="/static/css/d3kos.css">
+</head>
+<body>
+
+  <!-- STATUS BAR — always visible -->
+  <div id="status-bar">
+    <button id="btn-back" class="back-btn" onclick="goMenu()" style="display:none">&#9664; Menu</button>
+    <span class="brand">&#9875; d3kOS &mdash; {{ vessel_name }}</span>
+    <div class="indicators">
+      <span id="ind-internet" class="indicator" title="Internet">&#127760;</span>
+      <span id="ind-avnav"    class="indicator" title="AvNav :8080">&#128506;</span>
+      <span id="ind-gemini"   class="indicator" title="AI :3001">&#129302;</span>
+      <span id="ind-signalk"  class="indicator" title="SignalK :8099">&#128225;</span>
+      <span id="ind-ollama"   class="indicator" title="Ollama LAN">&#129504;</span>
+    </div>
+    <span id="clock"></span>
+  </div>
+
+  <!-- === SCREEN: MAIN MENU (9-button 3x3 grid) === -->
+  <div id="screen-menu" class="screen active">
+
+    <header class="menu-header">
+      <div class="brand-logo">HELM-OS / RASPBERRY PI 4B</div>
+      <div class="brand-name">d3kOS</div>
+      <div class="brand-sub">MARINE NAVIGATION DASHBOARD &middot; v2.0</div>
+    </header>
+
+    <div class="menu-body">
+      <div class="menu-grid">
+
+        <button class="menu-btn primary" onclick="showAvNav()">
+          <span class="menu-icon">&#128506;</span>
+          <span class="menu-label">AvNav Charts</span>
+          <span class="menu-sub">localhost:{{ avnav_port }}</span>
+        </button>
+
+        <button class="menu-btn primary" onclick="openAI()">
+          <span class="menu-icon">&#129302;</span>
+          <span class="menu-label">AI Navigation &#10022;</span>
+          <span class="menu-sub">Gemini &middot; Ollama</span>
+        </button>
+
+        <button class="menu-btn" onclick="window.location='/settings'">
+          <span class="menu-icon">&#9881;</span>
+          <span class="menu-label">Settings &amp; Help</span>
+          <span class="menu-sub">Config &middot; Docs &middot; Status</span>
+        </button>
+
+        <button class="menu-btn" onclick="showWeather('windy')">
+          <span class="menu-icon">&#127780;</span>
+          <span class="menu-label">Sea State</span>
+          <span class="menu-sub">embed.windy.com</span>
+        </button>
+
+        <button class="menu-btn" onclick="showWeather('radar')">
+          <span class="menu-icon">&#127783;</span>
+          <span class="menu-label">Radar</span>
+          <span class="menu-sub">rainviewer.com</span>
+        </button>
+
+        <button class="menu-btn" onclick="showPlaceholder('Engine Monitor', 'Phase 4')">
+          <span class="menu-icon">&#9875;</span>
+          <span class="menu-label">Engine Monitor</span>
+          <span class="menu-sub">Hours &middot; Temp &middot; Oil</span>
+        </button>
+
+        <button class="menu-btn" onclick="showPlaceholder('Trip Log', 'Phase 4')">
+          <span class="menu-icon">&#128203;</span>
+          <span class="menu-label">Trip Log</span>
+          <span class="menu-sub">Voyage history</span>
+        </button>
+
+        <button class="menu-btn" onclick="openCameras()">
+          <span class="menu-icon">&#128249;</span>
+          <span class="menu-label">Marine Vision</span>
+          <span class="menu-sub">Forward &middot; Fish detect</span>
+        </button>
+
+        <button class="menu-btn warn-border" onclick="launchOpenCPN()">
+          <span class="menu-icon">&#9973;</span>
+          <span class="menu-label">OpenCPN</span>
+          <span class="menu-sub warn-text">Emergency fallback</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Status row at foot of menu -->
+    <div class="menu-status" id="menu-status-bar">
+      <!-- Populated by connectivity-check.js -->
+    </div>
+
+  </div>
+
+  <!-- === SCREEN: AVNAV === -->
+  <div id="screen-avnav" class="screen">
+    <!-- src set lazily by showAvNav() in panel-toggle.js -->
+    <iframe id="avnav-frame" src=""
+      title="AvNav Chart Viewer"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <!-- === SCREEN: WEATHER === -->
+  <div id="screen-weather" class="screen">
+    <div id="weather-tabs">
+      <button class="tab-btn" id="tab-windy" onclick="switchWeatherTab('windy')">Sea State</button>
+      <button class="tab-btn" id="tab-radar" onclick="switchWeatherTab('radar')">Radar</button>
+    </div>
+    <div id="weather-content">
+      <div id="offline-notice" style="display:none">
+        Internet required for weather panels &mdash; check connection
+      </div>
+      <!-- src set lazily by switchWeatherTab() in panel-toggle.js -->
+      <iframe id="windy-frame" src="" title="Windy Sea State" style="display:none"></iframe>
+      <iframe id="radar-frame" src="" title="Weather Radar"   style="display:none"></iframe>
+    </div>
+  </div>
+
+  <!-- === SCREEN: PLACEHOLDER === -->
+  <div id="screen-placeholder" class="screen">
+    <div class="placeholder-body">
+      <div class="placeholder-icon">&#128295;</div>
+      <div class="placeholder-title" id="ph-title">Feature</div>
+      <div class="placeholder-sub"   id="ph-sub">Coming soon</div>
+    </div>
+  </div>
+
+  <!-- Pass Flask config to JS without hardcoding in static files -->
+  <script>
+    window.D3K_CONFIG = {
+      avnavUrl:   'http://localhost:{{ avnav_port }}',
+      geminiPort: '{{ gemini_port }}'
+    };
+  </script>
+
+  <script src="/static/js/connectivity-check.js"></script>
+  <script src="/static/js/panel-toggle.js"></script>
+
+</body>
+</html>

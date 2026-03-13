@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS &mdash; Offline</title>
+  <link rel="stylesheet" href="/static/css/d3kos.css">
+</head>
+<body>
+
+  <div id="status-bar">
+    <a href="/" class="back-btn" style="display:inline-block; text-decoration:none">&#9664; Dashboard</a>
+    <span class="brand">&#9875; d3kOS</span>
+    <span id="clock"></span>
+  </div>
+
+  <div class="screen active">
+    <div class="offline-wrap">
+      <div class="offline-icon">&#128268;</div>
+      <div class="offline-title">Service Unreachable</div>
+      <div class="offline-sub">
+        AvNav or a required service is not responding.<br>
+        Check that all services are running on the Pi.<br><br>
+        AvNav: <code>sudo systemctl status avnav</code><br>
+        Signal K: <code>sudo systemctl status signalk</code>
+      </div>
+      <a href="/" class="offline-btn">Return to Dashboard</a>
+    </div>
+  </div>
+
+  <script src="/static/js/connectivity-check.js"></script>
+
+</body>
+</html>
