@@ -2970,3 +2970,97 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 - o-charts
 
 ---
+
+## Session 2026-03-13 (continued) — d3kOS v2.0 Phase 1: AvNav Install
+**Goal:** Install AvNav on Pi, complete all Stage A–F gate checks before Phase 5 coding begins
+
+**Completed:**
+
+- **Stage A — Pre-install checks**
+  - Port 8080: OCCUPIED by d3kos-ai-api.service — resolved by moving to 8089
+  - Port 8085: FREE ✓ (for AvNav updater)
+  - Signal K: confirmed on port 8099 (v2.22.1) ✓
+  - Disk: 77GB free of 117GB ✓
+  - OpenPlotter: NOT installed — apt install path used instead of GUI
+  - OS: Debian Trixie 13 (not Raspberry Pi OS)
+
+- **Port move: ai_api.py 8080 → 8089**
+  - `/opt/d3kos/services/ai/ai_api.py`: `port = 8080` → `port = 8089`
+  - nginx `/ai/` proxy_pass: `localhost:8080` → `127.0.0.1:8089`
+  - Both sites-available/default and sites-enabled/default updated
+  - d3kos-ai-api.service restarted, nginx reloaded
+  - AI API confirmed running on 8089
+
+- **Stage B — AvNav installation**
+  - Added apt source: `deb [arch=arm64 trusted=yes] http://www.free-x.de/debian trixie main`
+    (OpenPlotter cloud DNS fails; free-x.de has avnav 20250822 for Debian Trixie arm64)
+    (GPG key 06B67AB0E988310475E75A2746E95F3C8A61623B — not on keyservers; trusted=yes used)
+  - `sudo apt install avnav` — installed avnav 20250822 + deps (bluetooth, python3-gdal, python3-websocket etc.)
+  - `sudo systemctl enable avnav && sudo systemctl start avnav`
+
+- **Python 3.13 compatibility patch**
+  - Error: `cgi.parse_qs` removed in Python 3.13; python3-legacy-cgi does not restore parse_qs
+  - Fix: `/usr/lib/avnav/server/handler/httphandler.py` line 108:
+    `cgi.parse_qs(...)` → `urllib.parse.parse_qs(...)` (urllib.parse already imported)
+  - AvNav restarted — API returns HTTP 200 ✓
+
+- **Stage C — Verification**
+  - Service: active ✓
+  - Port 8080: listening ✓
+  - HTTP 200 at /viewer/avnav_viewer.html ✓
+  - API POST request=status: returns 25 handlers JSON ✓
+  - avnav_server.xml found at /var/lib/avnav/ ✓
+  - Signal K connected: `SignalKHandler NMEA connected at http://localhost:8099/signalk/v1/api/` ✓
+  - Port 8085: FREE ✓, Port 8087: keyboard-api active ✓
+
+- **Stage D — Data paths recorded**
+  - AVNAV_DATA_DIR = `/var/lib/avnav/`
+  - Subdirs: charts/ import/ layout/ log/ overlays/ routes/ settings/ tracks/ user/ work/
+  - Signal K port: **8099** confirmed — all plan documents already use 8099 ✓
+
+- **Stage E — API and file access verified**
+  - request=navigate: DOES NOT EXIST in v20250822 — use `request=gps`
+  - Actual key names: `signalk.navigation.position.latitude` / `.longitude` (NOT gps.lat/gps.lon)
+  - Live GPS: lat=43.68619, lon=-79.52087, 16 satellites ✓
+  - currentLeg.json: present at /var/lib/avnav/routes/currentLeg.json ({} — no active route) ✓
+  - Track: /var/lib/avnav/tracks/2026-03-13.gpx recording live ✓
+  - AVNAV_API_REFERENCE.md: created at deployment/d3kOS/docs/ ✓
+
+- **Stage F — All gate checks pass**
+  - F1 ✓ AvNav loads HTTP 200, F2 ✓ GPS 43.686/-79.521 from SK
+  - F3 ✓ currentLeg.json found, F4 ✓ tracks dir + GPX active
+  - F5 ✓ API POST returns lat/lon, F6 ✓ SK 2.22.1 on 8099
+  - F7 ✓ AVNAV_API_REFERENCE.md created, F8 ✓ port 8085 free
+  - F9 ✓ SESSION_LOG.md updated
+
+- **Docs updated**
+  - AVNAV_INSTALL_AND_API.md: Section 4 corrected (request=navigate→gps, key names updated, AVNAV_DATA path set)
+  - D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md: request=navigate line corrected
+  - AVNAV_API_REFERENCE.md: created with all verified live responses
+
+**Decisions:**
+- AvNav installed from free-x.de trixie repo (not OpenPlotter — not installed on this Pi)
+  Rationale: OpenPlotter warning was about conflict with OpenPlotter network config, which doesn't exist here
+- [trusted=yes] used in apt source — GPG key not on public keyservers; package origin known and trusted
+- avnav httphandler.py patched for Python 3.13 (cgi.parse_qs → urllib.parse.parse_qs)
+  This is a known Python 3.13 breakage — AvNav 20250822 predates the trixie Debian release timeline
+- ai_api.py moved to port 8089 (8085 reserved for AvNav updater, 8086 fish_detector, 8087 keyboard-api)
+- Signal K port 8099 confirmed — no updates needed to D3KOS_PLAN.md master URL table
+
+**Ollama:** 0 calls — all changes were direct file edits and ssh commands
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- E2: Load a test 2-waypoint route in AvNav — requires Don to open AvNav in Chromium
+- C2: Verify AvNav loads in Chromium on Pi touchscreen (Don's on-Pi task)
+- Phase 1 Pi menu restructure (next build task — no Pi connectivity blocker)
+- UAT — 5 metric + 5 imperial users (requires users — Don's task)
+- o-charts chart activation — Don's task
+
+---

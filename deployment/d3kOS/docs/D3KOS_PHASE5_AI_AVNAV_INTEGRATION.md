@@ -139,7 +139,7 @@ curl -s -X POST "http://localhost:8080/viewer/avnav_navi.php" \
 # 2. Get current GPS and navigation state
 curl -s -X POST "http://localhost:8080/viewer/avnav_navi.php" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "request=navigate&keys=gps.lat,gps.lon,gps.speed,gps.track,nav.wp.name,nav.wp.lat,nav.wp.lon,nav.wp.distance,nav.route.name,nav.route.numpoints,nav.anchor.distance,nav.anchor.heading" \
+  -d "request=gps" \  # NOTE: request=navigate does not exist. Use request=gps. Keys use signalk.* notation. See AVNAV_API_REFERENCE.md
   | python3 -m json.tool
 
 # 3. List all routes
