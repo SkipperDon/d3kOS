@@ -2,6 +2,47 @@
 
 ---
 
+## Session — 2026-03-13 — v0.9.2 + v0.9.2.1 ALL CODE WORK COMPLETE — Remaining tasks with Don
+
+**Goal:** Close all code work for v0.9.2 and v0.9.2.1. All remaining tasks are on-Pi / on-boat verification by Don.
+
+**v0.9.2 code tasks completed this session:**
+- keyboard-api /window/toggle endpoint restored; port 8087 deployed
+- On-screen keyboard: keyboard-fix.js v2.0, Don confirmed physical touch working
+- Boatlog voice note: onstop handler fixed → POST /api/boatlog/voice-note; Don confirmed working
+- WebSocket real-time push: SSE /remote/status-stream + EventSource in remote-access.html; verified live
+- Data export: unit_metadata added to CSV + JSON (measurement_system, speed/temp/pressure/volume)
+- ai_api.py moved from port 8080 → 8089 to free port for AvNav
+
+**v0.9.2.1 Phases 0–5 all deployed — completed across multiple sub-sessions today:**
+- Phase 1: SK :3000→:8099, issue_detector :8099→:8199, nginx, .desktop files, menu backup, MENU_STRUCTURE.md
+- Phase 2: Flask dashboard :3000, 9-button grid, 5 status indicators, AvNav iframe, d3kos-dashboard.service
+- Phase 3: Gemini proxy :3001, chat.html, Ollama fallback (qwen3-coder:30b), 10 pytest tests pass on Pi
+- Phase 4: 16-section settings.html, /sysinfo, /action/restart + /action/reboot, 3 AvNav docs — deployed + sudoers
+- Phase 5 pre-gate: AvNav 20250822 installed via apt (free-x.de trixie), AVNAV_API_REFERENCE.md from live Pi
+- Phase 5 source + deploy: ai_bridge.py :3002, 4 features (route, arrival, voyage, anchor), SSE, d3kos-ai-bridge.service
+- Phase 5 bench verified: route analysis widget, Gemini passage brief, voyage log GPX→AI summary end-to-end
+- pytest test suite: ~100 tests written (test_ai_bridge.py), conftest.py, all unit tests pass
+- Critical fixes: request=navigate→request=gps; {"prompt"→"message"} for Gemini proxy /ask
+
+**All remaining tasks now with Don (no code needed):**
+- keyboard-api 8087 Pi deploy (files in repo — copy + nginx reload)
+- UAT: 5 metric + 5 imperial users
+- o-charts chart activation (fingerprint file in Downloads)
+- Marine Vision camera tests (dock — DHCP, 24hr stability)
+- Visual verify on Pi screen: dashboard, AvNav iframe, settings page, anchor watch audio
+- Phase 5 live voyage test (GPS movement required)
+
+**PROJECT_CHECKLIST.md updates:** Phase 3 pytest ✅, Phase 5 test ✅, v0.9.2.1 status ✅, Last Updated
+**AAO compliance:** PASS
+**Costs:** check console.anthropic.com → Usage → 2026-03-13
+
+**Open items for next session:** Don's on-Pi tasks → formally tag v0.9.2 when verified → v0.9.3 AtMyBoat.com
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-13 — Task B (pytest suite) + Task C (Phase 1 menu cleanup)
 
 **Tasks completed:**
