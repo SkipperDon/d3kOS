@@ -2008,6 +2008,69 @@
 
 ---
 
+## 🧑‍✈️ DON'S PERSONAL TODO LIST
+> These are tasks only Don can do — either on the boat, on the Pi touchscreen, or requiring Don's accounts/decisions.
+> Claude cannot complete these. Check them off when done.
+
+### At the Dock (Pi powered on, no movement needed)
+
+- [ ] **Confirm dashboard loads on Pi touchscreen**
+  Open browser on Pi → go to `http://localhost:3000`
+  You should see the 9-button main menu with a green status bar showing AvNav, Signal K, Gemini, AI Bridge all green.
+
+- [ ] **Confirm AvNav loads inside dashboard**
+  On the dashboard, tap the AvNav button. The AvNav chart viewer should open in the main panel.
+  You should see your GPS position on the chart (blue dot near Toronto).
+
+- [ ] **Test Anchor Watch activation at dock**
+  In the dashboard, find the Anchor Watch button. Tap "Activate Anchor Watch".
+  You should hear espeak-ng say "Anchor watch active" through the Jabra S330 speaker.
+  Tap "Dismiss" to turn it off.
+
+- [ ] **Confirm AI Bridge status indicator is green**
+  In the status bar at the top of the dashboard, "AI Bridge" should show green.
+  If it shows red, tell Claude — the service may need a restart.
+
+### On the Water (first trip out)
+
+- [ ] **Test Route Analysis Widget (Feature 1)**
+  In AvNav, long-press on the chart to place a waypoint → tap "Set as destination".
+  Wait up to 5 minutes. The route analysis widget above the AvNav panel should appear
+  with a summary like "X nm to [waypoint], estimated Y hours, [advice]".
+  Tap "Analyze Now" to force it immediately.
+
+- [ ] **Test Port Arrival Briefing (Feature 2)**
+  Set a route to a destination. When you are within 2 nautical miles of the final waypoint,
+  you should hear a spoken arrival briefing through the speaker.
+  The full briefing text should appear in the dashboard side panel.
+  *Only fires once per destination — if you want to re-test, set a new route.*
+
+- [ ] **Test Voyage Log Summary (Feature 3)**
+  After completing a trip (track recording was running in AvNav):
+  Open the dashboard → tap "Summarize Voyage".
+  A written voyage log entry should appear within 30–60 seconds.
+  Check Settings → Trip Data to see the last 5 summaries.
+
+- [ ] **Test Anchor Watch drag alarm (Feature 4)**
+  *At anchor, once anchor is set:*
+  Tap "Activate Anchor Watch" in the dashboard.
+  If the boat moves beyond the set radius (Signal K anchor watch radius),
+  you should hear a loud "Anchor drag detected" alarm repeating every 60 seconds.
+  Tap "Dismiss" to silence. Tap "Get AI Advice" for corrective action suggestions.
+
+### Existing v0.9.2 Tasks (still open)
+
+- [ ] **o-charts chart activation**
+  See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` for full steps.
+  You need to upload the fingerprint file to o-charts.org to activate your purchased charts.
+  The fingerprint file `oc03L_1773315591.fpr` is in your Downloads folder on the Pi.
+
+- [ ] **UAT — 5 metric + 5 imperial users**
+  Have 5 people test the system with metric settings and 5 with imperial.
+  Specifically verify: weather display, speed units, temperature units, export CSV.
+
+---
+
 ## 📝 NOTES & CONVENTIONS
 
 ### Checklist Update Protocol
