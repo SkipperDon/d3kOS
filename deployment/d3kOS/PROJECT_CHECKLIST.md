@@ -148,7 +148,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 5 — AI + AvNav Integration
-**Risk:** MEDIUM-HIGH | **Status:** READY — all pre-gates pass. Begin after Phases 1-4 stable for one voyage.
+**Risk:** MEDIUM-HIGH | **Status:** ✅ DEPLOYED 2026-03-13 | AI Bridge live at :3002, SSE stream active, all upstreams up
 **Spec:** docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md (v1.1.0)
 **Install guide:** docs/AVNAV_INSTALL_AND_API.md
 
@@ -172,30 +172,30 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] F1-F9. All gate checks pass 2026-03-13. Phase 5 coding may begin after Phase 1-4 complete.
 
 ### Phase 5 Pre-Actions (docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md §Pre-Actions)
-- [ ] P5.0. AvNav API explored — docs/AVNAV_API_REFERENCE.md complete (POST method confirmed)
+- [✅] P5.0. AvNav API explored — docs/AVNAV_API_REFERENCE.md complete (POST method confirmed) ✓ 2026-03-13
 - [ ] P5.1. Signal K paths verified for Don's setup — all 10 paths checked and documented
 - [ ] P5.2. Node-RED flows audited — AvNav/SK conflicts identified, anchor watch coordination confirmed
-- [ ] P5.3. TTS engine selected (piper recommended), installed, tested on Pi speakers
-- [ ] P5.4. Port 3002 confirmed free for AI Bridge
+- [✅] P5.3. TTS engine: espeak-ng v1.52.0 installed (piper unavailable), tested on plughw:S330,0 ✓ 2026-03-13
+- [✅] P5.4. Port 3002 confirmed free and in use by d3kos-ai-bridge ✓ 2026-03-13
 - [ ] All 8 open questions answered and recorded in SESSION_LOG.md
 
 ### Files to create
-- [ ] `ai-bridge/config/ai-bridge.env` — NOT committed (verify **/*.env .gitignore rule)
-- [ ] `ai-bridge/ai_bridge.py` — Flask app port 3002, all endpoints
-- [ ] `ai-bridge/features/route_analyzer.py` — Feature 1: 5-min route widget
-- [ ] `ai-bridge/features/port_arrival.py` — Feature 2: 2nm arrival briefing
-- [ ] `ai-bridge/features/voyage_logger.py` — Feature 3: GPX summarization
-- [ ] `ai-bridge/features/anchor_watch.py` — Feature 4: drag detection + alert
-- [ ] `ai-bridge/utils/signalk_client.py` — WS reader for ws://localhost:8099
-- [ ] `ai-bridge/utils/avnav_client.py` — POST client for avnav_navi.php (NOT GET)
-- [ ] `ai-bridge/utils/tts.py` — TTS wrapper
-- [ ] `ai-bridge/utils/geo.py` — haversine, bearing, unit conversions
-- [ ] `ai-bridge/tests/test_ai_bridge.py` — full test suite
+- [✅] `ai-bridge/config/ai-bridge.env` — deployed to Pi (NOT in git) ✓ 2026-03-13
+- [✅] `ai-bridge/ai_bridge.py` — Flask app port 3002, all endpoints ✓ 2026-03-13
+- [✅] `ai-bridge/features/route_analyzer.py` — Feature 1 ✓ 2026-03-13
+- [✅] `ai-bridge/features/port_arrival.py` — Feature 2 ✓ 2026-03-13
+- [✅] `ai-bridge/features/voyage_logger.py` — Feature 3 ✓ 2026-03-13
+- [✅] `ai-bridge/features/anchor_watch.py` — Feature 4 ✓ 2026-03-13
+- [✅] `ai-bridge/utils/signalk_client.py` — WS reader ✓ 2026-03-13
+- [✅] `ai-bridge/utils/avnav_client.py` — POST client ✓ 2026-03-13
+- [✅] `ai-bridge/utils/tts.py` — TTS wrapper (espeak-ng) ✓ 2026-03-13
+- [✅] `ai-bridge/utils/geo.py` — haversine, bearing, unit conversions ✓ 2026-03-13
+- [ ] `ai-bridge/tests/test_ai_bridge.py` — full test suite (not yet written)
 
 ### Systemd
-- [ ] `/etc/systemd/system/d3kos-ai-bridge.service` deployed to Pi
-- [ ] Service enabled and starts on boot
-- [ ] Service listed in `After=` after d3kos-dashboard and d3kos-gemini
+- [✅] `/etc/systemd/system/d3kos-ai-bridge.service` deployed to Pi ✓ 2026-03-13
+- [✅] Service enabled and starts on boot ✓ 2026-03-13
+- [✅] Service listed in `After=` after d3kos-dashboard and d3kos-gemini ✓ 2026-03-13
 
 ### Feature 1 — Route Analysis Widget
 - [ ] Route widget visible in dashboard above AvNav iframe
@@ -235,16 +235,18 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] All existing Node-RED flows confirmed unmodified
 
 ### Dashboard Updates (Phase 2 files)
-- [ ] Phase 2 app.py /status endpoint updated: added ai_bridge check for :3002
-- [ ] index.html status bar: AI Bridge indicator added
+- [✅] Phase 2 app.py /status endpoint updated: ai_bridge :3002 check deployed ✓ 2026-03-13
+- [✅] index.html status bar: AI Bridge indicator deployed ✓ 2026-03-13
 
 ### Verification
-- [ ] All pytest tests pass: `pytest tests/test_ai_bridge.py -v`
+- [ ] All pytest tests pass: `pytest tests/test_ai_bridge.py -v` (test suite not yet written)
 - [ ] test_avnav_client_uses_post() passes — verifies POST not GET
 - [ ] Full offline test: internet disconnected, all features work via Ollama
-- [ ] ai-bridge.env NOT in git — verified with `git status`
-- [ ] SESSION_LOG.md updated
-- [ ] docs/AVNAV_API_REFERENCE.md committed with real responses
+- [✅] ai-bridge.env NOT in git — verified 2026-03-13 (config/ excluded by .gitignore)
+- [✅] SESSION_LOG.md updated 2026-03-13
+- [✅] docs/AVNAV_API_REFERENCE.md committed with verified live responses ✓ 2026-03-13
+- [✅] /status endpoint: avnav:up, gemini_proxy:up, signalk:up, tts_available:true ✓ 2026-03-13
+- [✅] SSE /stream: heartbeat events flowing ✓ 2026-03-13
 
 ---
 
