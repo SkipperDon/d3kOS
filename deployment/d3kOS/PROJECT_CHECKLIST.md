@@ -147,24 +147,120 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 
 ---
 
-## Phase 5 — AI + AvNav Integration (DEFERRED — v1.1)
-**Status:** LOCKED — do not implement until Phase 4 is stable for one voyage
+## Phase 5 — AI + AvNav Integration
+**Risk:** MEDIUM-HIGH | **Status:** TODO | **Requires:** Phase 4 complete + AvNav installed + one stable voyage
+**Spec:** docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md (v1.1.0)
+**Install guide:** docs/AVNAV_INSTALL_AND_API.md
 
-- [ ] Research AvNav REST API at http://localhost:8080/api
-- [ ] Design integration spec
-- [ ] Implement: route suggestion, voyage log summarization, condition-aware routing, port arrival briefing, anchor watch AI alerts, chart object explanation
+### Stage A-F — AvNav Install Pre-Gate (docs/AVNAV_INSTALL_AND_API.md)
+- [ ] A1. Pre-install checks run: Signal K port confirmed, disk OK, ports 8080/8082 free
+- [ ] A2. Signal K port recorded in SESSION_LOG.md — confirm 8099, update plan if different
+- [ ] A3. Port 8085 conflict resolved — keyboard-api moved to 8086 before AvNav install
+- [ ] B1. AvNav installed via OpenPlotter Settings → Apps → AvNav Installer (NOT standalone .deb)
+- [ ] B2. AvNav Autostart enabled in OpenPlotter
+- [ ] B3. AvNav service running — `systemctl is-active avnav` returns active
+- [ ] C1. Verification script run — all items pass
+- [ ] C2. http://localhost:8080 loads in Chromium
+- [ ] C3. AvNav connected to Signal K at correct port
+- [ ] D1. AvNav data root path found and recorded in SESSION_LOG.md
+- [ ] D2. AVNAV_DATA_DIR updated in D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md + ai-bridge.env
+- [ ] E1. POST API tested — gps.lat and gps.lon return real values
+- [ ] E2. Test route loaded and activated in AvNav
+- [ ] E3. currentLeg.json found and readable
+- [ ] E4. Track directory found and GPX files visible
+- [ ] E5. docs/AVNAV_API_REFERENCE.md created with real JSON responses
+- [ ] F1-F9. All final gate checks pass — Phase 5 coding may begin
+
+### Phase 5 Pre-Actions (docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md §Pre-Actions)
+- [ ] P5.0. AvNav API explored — docs/AVNAV_API_REFERENCE.md complete (POST method confirmed)
+- [ ] P5.1. Signal K paths verified for Don's setup — all 10 paths checked and documented
+- [ ] P5.2. Node-RED flows audited — AvNav/SK conflicts identified, anchor watch coordination confirmed
+- [ ] P5.3. TTS engine selected (piper recommended), installed, tested on Pi speakers
+- [ ] P5.4. Port 3002 confirmed free for AI Bridge
+- [ ] All 8 open questions answered and recorded in SESSION_LOG.md
+
+### Files to create
+- [ ] `ai-bridge/config/ai-bridge.env` — NOT committed (verify **/*.env .gitignore rule)
+- [ ] `ai-bridge/ai_bridge.py` — Flask app port 3002, all endpoints
+- [ ] `ai-bridge/features/route_analyzer.py` — Feature 1: 5-min route widget
+- [ ] `ai-bridge/features/port_arrival.py` — Feature 2: 2nm arrival briefing
+- [ ] `ai-bridge/features/voyage_logger.py` — Feature 3: GPX summarization
+- [ ] `ai-bridge/features/anchor_watch.py` — Feature 4: drag detection + alert
+- [ ] `ai-bridge/utils/signalk_client.py` — WS reader for ws://localhost:8099
+- [ ] `ai-bridge/utils/avnav_client.py` — POST client for avnav_navi.php (NOT GET)
+- [ ] `ai-bridge/utils/tts.py` — TTS wrapper
+- [ ] `ai-bridge/utils/geo.py` — haversine, bearing, unit conversions
+- [ ] `ai-bridge/tests/test_ai_bridge.py` — full test suite
+
+### Systemd
+- [ ] `/etc/systemd/system/d3kos-ai-bridge.service` deployed to Pi
+- [ ] Service enabled and starts on boot
+- [ ] Service listed in `After=` after d3kos-dashboard and d3kos-gemini
+
+### Feature 1 — Route Analysis Widget
+- [ ] Route widget visible in dashboard above AvNav iframe
+- [ ] Updates every 5 minutes when route is active
+- [ ] Shows "NO ROUTE" when AvNav has no active route
+- [ ] Re-triggers immediately when route or next waypoint changes
+- [ ] "Analyze Now" button triggers immediate analysis
+- [ ] Shows "OFFLINE AI" badge when using Ollama
+
+### Feature 2 — Port Arrival Briefing
+- [ ] Briefing fires exactly at 2nm from final destination waypoint
+- [ ] Triggers once per destination (no re-fire until new route)
+- [ ] Covers all 6 required categories: fuel, marina, customs, anchorage, provisioning, hazards
+- [ ] Stage 1 audio (short summary) plays on Pi speakers
+- [ ] Full briefing text visible in side panel
+- [ ] Section headings tappable to hear read aloud
+
+### Feature 3 — Voyage Log Summary
+- [ ] Auto-generates when AvNav track recording stops
+- [ ] On-demand "Summarize Voyage" button works from dashboard
+- [ ] Raw GPS coordinates NOT sent to AI (summary stats only)
+- [ ] Summaries saved to /home/boatiq/logs/voyage-summaries/
+- [ ] Most recent 5 summaries shown in settings page
+
+### Feature 4 — Anchor Watch AI Alerts
+- [ ] Alarm fires from pre-written text — zero AI wait
+- [ ] 3-consecutive-poll confirmation prevents GPS jitter false alarms
+- [ ] Screen alert shows drift distance, bearing, timestamp, speed
+- [ ] Audio alarm repeats every 60s until dismissed
+- [ ] "GET AI ADVICE" button generates corrective action on demand
+- [ ] Drift event JSON logged to /home/boatiq/logs/anchor-events/
+- [ ] Anchor watch coordination with AvNav built-in alarm confirmed (P5.2)
+
+### Node-RED Integration
+- [ ] POST /webhook/query returns AI response JSON
+- [ ] POST /webhook/alert fires TTS + screen alert
+- [ ] All existing Node-RED flows confirmed unmodified
+
+### Dashboard Updates (Phase 2 files)
+- [ ] Phase 2 app.py /status endpoint updated: added ai_bridge check for :3002
+- [ ] index.html status bar: AI Bridge indicator added
+
+### Verification
+- [ ] All pytest tests pass: `pytest tests/test_ai_bridge.py -v`
+- [ ] test_avnav_client_uses_post() passes — verifies POST not GET
+- [ ] Full offline test: internet disconnected, all features work via Ollama
+- [ ] ai-bridge.env NOT in git — verified with `git status`
+- [ ] SESSION_LOG.md updated
+- [ ] docs/AVNAV_API_REFERENCE.md committed with real responses
 
 ---
 
 ## Known Port Reference (from D3KOS_PLAN — immutable)
 
-| Service | Port/URL |
-|---------|----------|
-| d3kOS Dashboard | localhost:3000 |
-| d3kOS Gemini Proxy | localhost:3001 |
-| AvNav Charts | localhost:8080 |
-| OpenPlotter | localhost:8081 |
-| Signal K | localhost:8099 |
-| Signal K WS | ws://localhost:8099/signalk/v1/stream |
-| Ollama (LAN) | 192.168.1.36:11434 |
-| Gemini API | generativelanguage.googleapis.com |
+| Service | Port/URL | Notes |
+|---------|----------|-------|
+| d3kOS Dashboard | localhost:3000 | Phase 2 |
+| d3kOS Gemini Proxy | localhost:3001 | Phase 3 |
+| d3kOS AI Bridge | localhost:3002 | Phase 5 |
+| AvNav Charts | localhost:8080 | Phase 5 prerequisite |
+| AvNav o-charts | localhost:8082 | Auto-started by AvNav |
+| AvNav updater | localhost:8085 | CONFLICT with keyboard-api — resolve before Phase 5 |
+| OpenPlotter | localhost:8081 | Infrastructure |
+| Signal K | localhost:8099 | Read-only |
+| Signal K WS | ws://localhost:8099/signalk/v1/stream | Read-only |
+| AvNav REST API | POST http://localhost:8080/viewer/avnav_navi.php | POST only — GET returns 501 |
+| Ollama (LAN) | 192.168.1.36:11434 | Offline AI fallback |
+| Gemini API | generativelanguage.googleapis.com | Online AI |
