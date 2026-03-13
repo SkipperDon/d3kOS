@@ -2,6 +2,45 @@
 
 ---
 
+## Session — 2026-03-13 — Phase 5 bench verification: voyage button, route widget, avnav_client fix
+
+**Tasks completed:**
+- Deployed `voyage_logger.py` fix: `summarize_latest()` now sorts tracks by `time` field descending before picking `tracks[0]` — prevents empty daily GPX being chosen over a populated named track
+- Added SUMMARIZE LAST VOYAGE button and `summarizeVoyage()` JS function to AI panel in `index.html` and `ai-bridge.js`
+- Verified voyage log summary end-to-end: Gemini correctly identified Toronto Harbour → Ashbridges Bay from synthetic test GPX (8.0nm, 3.5h, 2.3kts)
+- Discovered and fixed critical bug in `avnav_client.py`: `request=navigate` does not exist in AvNav (returns HTTP 500); `get_nav_data()` silently returned all-None. Rewrote to use `request=gps` (for GPS via embedded SignalK data) + `request=api&type=route&command=getleg` (for route/waypoint data). Waypoint distance now computed locally via haversine.
+- Verified route analysis widget end-to-end on bench: SSE `route_update` ACTIVE state confirmed with Gemini passage brief ("Our Time, for your approach to Western Gap (7.0nm): Expect significant recreational and commercial traffic, particularly Toronto Island ferries...")
+- Loaded test route `toronto-test-route.gpx` into AvNav (`/var/lib/avnav/routes/`) with 5 waypoints: Toronto Island Marina → Western Gap → Harbour Centre → Cherry Beach → Ashbridges Bay
+
+**Files changed:**
+- `deployment/d3kOS/ai-bridge/features/voyage_logger.py` — track sort fix in `summarize_latest()`
+- `deployment/d3kOS/dashboard/static/js/ai-bridge.js` — added `summarizeVoyage()` + `voyage_summary` SSE handler
+- `deployment/d3kOS/dashboard/templates/index.html` — added voyage widget with SUMMARIZE LAST VOYAGE button
+- `deployment/d3kOS/ai-bridge/utils/avnav_client.py` — rewrote `get_nav_data()` with correct AvNav endpoints
+
+**Commits:** `34b0585` (voyage button + track fix), `3312ffb` (avnav_client fix)
+
+**PROJECT_CHECKLIST.md updates:**
+- Line 2006: `[ ]` → `[✅]` `avnav_client.py` fixed (correct endpoints)
+- Line 2007: `[ ]` → `[✅]` Route analysis widget verified on bench
+- Line 2008: `[ ]` → `[✅]` Voyage log SUMMARIZE LAST VOYAGE button added
+- Line 2009: `[ ]` → `[✅]` Voyage log summary verified end-to-end
+- Line 2100: Last Updated bumped
+
+**AAO compliance:** PASS — all actions Low or None risk, no High-risk actions, no git push, no prompt injection found.
+
+**Open items for next session:**
+- pytest test suite for AI Bridge (`test_ai_bridge.py`) — not yet written
+- Port arrival briefing bench test — needs a route set with destination within 2nm
+- Anchor watch test — needs Signal K anchor position set
+- Don to confirm dashboard loads on Pi touchscreen
+- Don to confirm AI Bridge indicator is green in status bar
+- Feature verification with live GPS on the water (lake opens in spring)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-13 — Don's Personal TODO List added to PROJECT_CHECKLIST.md
 
 **Tasks completed:**
