@@ -271,7 +271,7 @@ def webhook_query():
     try:
         resp = requests.post(
             f'{GEMINI_PROXY_URL}/ask',
-            json={'prompt': query},
+            json={'message': query},
             timeout=60,
         )
         resp.raise_for_status()
