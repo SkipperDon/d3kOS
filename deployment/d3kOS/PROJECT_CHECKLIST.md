@@ -41,7 +41,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 2 — Dashboard Hub (Flask :3000)
-**Risk:** MEDIUM | **Status:** TODO | **Requires:** Phase 1 complete
+**Risk:** MEDIUM | **Status:** IN PROGRESS 2026-03-13 | **Requires:** Phase 1 complete
 **Reference:** D3KOS_PLAN.md §Phase 2 | UI Reference: docs/d3kos-mockup-v4.html (screen-menu + iframe panes)
 
 ### Pre-conditions
@@ -51,14 +51,15 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] 500MB+ RAM free
 
 ### Files to create
-- [ ] `dashboard/config/d3kos-config.env` — NOT committed (verify gitignore)
-- [ ] `dashboard/app.py` — Flask app, routes: /, /status, /settings, /offline
-- [ ] `dashboard/templates/index.html` — main menu (9-button grid per mockup v4)
-- [ ] `dashboard/templates/settings.html` — placeholder (full build in Phase 4)
-- [ ] `dashboard/templates/offline.html` — shown when AvNav unreachable
-- [ ] `dashboard/static/css/d3kos.css` — dark nautical theme (black bg, #00CC00 accent)
-- [ ] `dashboard/static/js/connectivity-check.js` — polls /status every 30s
-- [ ] `dashboard/static/js/panel-toggle.js` — Windy/Radar side panel controls
+- [x] `dashboard/config/d3kos-config.env` — NOT committed (gitignore confirmed)
+- [x] `dashboard/app.py` — Flask app, routes: /, /status, /settings, /offline, /launch/opencpn
+- [x] `dashboard/templates/index.html` — 9-button 3x3 grid per mockup v4, JS screen navigation
+- [x] `dashboard/templates/settings.html` — placeholder (full build in Phase 4)
+- [x] `dashboard/templates/offline.html` — shown when AvNav unreachable
+- [x] `dashboard/static/css/d3kos.css` — dark nautical theme (black bg, #00CC00 accent, mockup v4 grid)
+- [x] `dashboard/static/js/connectivity-check.js` — polls /status every 30s, Ollama indicator added
+- [x] `dashboard/static/js/panel-toggle.js` — screen navigation + Windy/Radar weather screens
+- [x] `dashboard/d3kos-dashboard.service` — systemd unit (deploy to Pi /etc/systemd/system/)
 
 ### Systemd
 - [ ] `/etc/systemd/system/d3kos-dashboard.service` deployed to Pi

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>d3kOS &mdash; Settings &amp; Help</title>
+  <link rel="stylesheet" href="/static/css/d3kos.css">
+</head>
+<body>
+
+  <div id="status-bar">
+    <a href="/" class="back-btn" style="display:inline-block; text-decoration:none">&#9664; Dashboard</a>
+    <span class="brand">&#9875; d3kOS &mdash; Settings &amp; Help</span>
+    <div class="indicators">
+      <span id="ind-internet" class="indicator" title="Internet">&#127760;</span>
+      <span id="ind-avnav"    class="indicator" title="AvNav :8080">&#128506;</span>
+      <span id="ind-gemini"   class="indicator" title="AI :3001">&#129302;</span>
+      <span id="ind-signalk"  class="indicator" title="SignalK :8099">&#128225;</span>
+      <span id="ind-ollama"   class="indicator" title="Ollama LAN">&#129504;</span>
+    </div>
+    <span id="clock"></span>
+  </div>
+
+  <div class="screen active" style="overflow-y:auto;">
+    <div class="settings-wrap">
+
+      <div class="settings-title">Settings &amp; Help</div>
+      <div class="settings-sub">Full settings page built in Phase 4 (16 sections). Current view shows active configuration.</div>
+
+      <div class="settings-section">
+        <h3>Vessel</h3>
+        <div class="settings-row">
+          <span>Vessel name</span>
+          <span class="settings-val">{{ vessel_name }}</span>
+        </div>
+        <div class="settings-row">
+          <span>Home port</span>
+          <span class="settings-val">{{ home_port }}</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Service Ports</h3>
+        <div class="settings-row">
+          <span>d3kOS Dashboard</span>
+          <span class="settings-val">localhost:3000</span>
+        </div>
+        <div class="settings-row">
+          <span>AvNav Charts</span>
+          <span class="settings-val">localhost:{{ avnav_port }}</span>
+        </div>
+        <div class="settings-row">
+          <span>AI Navigation Proxy</span>
+          <span class="settings-val">localhost:{{ gemini_port }}</span>
+        </div>
+        <div class="settings-row">
+          <span>Signal K</span>
+          <span class="settings-val">localhost:{{ signalk_port }}</span>
+        </div>
+        <div class="settings-row">
+          <span>Signal K WebSocket</span>
+          <span class="settings-val">ws://localhost:{{ signalk_port }}</span>
+        </div>
+        <div class="settings-row">
+          <span>OpenPlotter</span>
+          <span class="settings-val">localhost:8081</span>
+        </div>
+        <div class="settings-row">
+          <span>Marine Vision cameras</span>
+          <span class="settings-val">localhost:8084</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Phase Roadmap</h3>
+        <div class="settings-row"><span>Phase 0 &mdash; Directory setup</span><span class="settings-val">COMPLETE</span></div>
+        <div class="settings-row"><span>Phase 1 &mdash; Pi menu restructure</span><span class="settings-val dot-warn">TODO</span></div>
+        <div class="settings-row"><span>Phase 2 &mdash; Dashboard hub (this app)</span><span class="settings-val dot-on">ACTIVE</span></div>
+        <div class="settings-row"><span>Phase 3 &mdash; Gemini AI proxy :3001</span><span class="settings-val dot-warn">TODO</span></div>
+        <div class="settings-row"><span>Phase 4 &mdash; Full settings page</span><span class="settings-val dot-warn">TODO</span></div>
+        <div class="settings-row"><span>Phase 5 &mdash; AI + AvNav integration</span><span class="settings-val dot-warn">TODO</span></div>
+        <div class="settings-note">Phase 4 will replace this placeholder with 16 fully functional sections.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    window.D3K_CONFIG = {
+      avnavUrl:   'http://localhost:{{ avnav_port }}',
+      geminiPort: '{{ gemini_port }}'
+    };
+  </script>
+  <script src="/static/js/connectivity-check.js"></script>
+
+</body>
+</html>

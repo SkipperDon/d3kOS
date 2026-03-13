@@ -4,6 +4,53 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 2 Flask Dashboard Build
+**Goal:** Build all Phase 2 source files — Flask app, 9-button grid UI, CSS, JS, templates.
+**Completed:**
+- Created deployment/d3kOS/dashboard/ directory tree (9 files)
+- app.py: Flask app, routes /, /status, /settings, /offline, /launch/opencpn
+  - /status checks: internet, AvNav :8080, Gemini :3001, Signal K :8099, Ollama LAN 192.168.1.36:11434
+- templates/index.html: 9-button 3x3 grid (mockup v4), JS screen navigation
+  - Screens: menu, avnav (iframe), weather (Windy/Radar tabs), placeholder
+  - D3K_CONFIG inline script passes Flask vars (avnavUrl, geminiPort) to static JS
+- templates/settings.html: placeholder with vessel config + port reference + phase roadmap
+- templates/offline.html: service unreachable page
+- static/css/d3kos.css: black bg (#000000), #00CC00 accent, Roboto, responsive grid
+- static/js/connectivity-check.js: 30s poll, 5 indicators (internet/avnav/gemini/signalk/ollama), clock, menu status bar
+- static/js/panel-toggle.js: showScreen(), showAvNav(), showWeather(), switchWeatherTab(), showPlaceholder(), openAI(), openCameras(), launchOpenCPN()
+- d3kos-dashboard.service: systemd unit (user d3kos, WorkingDirectory Helm-OS path)
+- d3kos-config.env: gitignore confirmed (matched by deployment/d3kOS/.gitignore line 5)
+- app.py syntax verified: python3 -m py_compile passes
+- PROJECT_CHECKLIST.md: Phase 2 status updated to IN PROGRESS, files marked done
+- D3KOS_PLAN.md: Phase Status Tracker updated to IN PROGRESS
+**Decisions:**
+- Implemented 9-button 3x3 grid (mockup v4) rather than plan's split-pane HTML sketch — checklist requires "9 menu buttons match mockup v4". Mockup is canonical UI reference.
+- Screen navigation is JS-based (show/hide divs) within single index.html — avoids full-page reloads on Pi touch
+- AvNav iframe lazy-loads on first click (not on page load) — avoids slowing initial render
+- Windy and Radar iframes lazy-load on first weather tab open
+- Ollama added to /status endpoint (checklist requires it); Phase 5 will add ai_bridge :3002
+- /launch/opencpn proxies POST to Node-RED localhost:1880 (nginx proxy exists from v0.9.2)
+- Marine Vision opens localhost:8084 in new tab (camera_stream_manager.py port from v0.9.2)
+- Engine Monitor + Trip Log show placeholder screen — Phase 4
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com -> Usage -> 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending (Phase 2 Pi verification):**
+- pip3 install flask python-dotenv requests on Pi
+- Port 3000 confirm free on Pi
+- Deploy files + systemd unit to Pi
+- Verify: python3 app.py runs, dashboard loads at localhost:3000
+- Verify: 9 buttons render, AvNav iframe loads at localhost:8080
+- Verify: Sea State (Windy) and Radar panels open when internet available
+- Verify: offline notice shown when internet down
+- Verify: all 5 status indicators update every 30s
+- Verify: clock ticks
+- Verify: d3kos-config.env not in git (git status clean)
+---
+
 ## Session 2026-03-13 — Phase 5 Activation + Anomaly Review
 **Goal:** Add Phase 5 (AI + AvNav Integration) to v0.9.2.1 plan; cross-check phases 0–4 vs 5 for anomalies.
 **Completed:**
