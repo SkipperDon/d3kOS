@@ -2842,3 +2842,81 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 
 **Sign-off:** Don — silence = approval
 ---
+
+## Session 2026-03-13 — v0.9.2 Close Session
+**Goal:** Complete remaining v0.9.2 open tasks on close-v0.9.2 branch in worktree /home/boatiq/worktrees/v0.9.2/
+
+**Completed:**
+- **keyboard-api port move 8085 → 8087** (8086 already in use by fish detector — caught conflict before applying)
+  - keyboard-api.py: port updated, /window/toggle endpoint restored (was missing from repo vs Pi)
+  - d3kos-nginx.conf: /window/ and /keyboard/ proxy_pass updated to 8087
+  - Both sites-available/default and sites-enabled/default updated (were diverged)
+  - Verified: all 4 endpoints return {"ok":true}
+  - Port 8085 now free — unblocks Session 2 Phase 1 AvNav install
+  - Commit: c47b286
+
+- **Boatlog voice note — onstop handler fixed**
+  - Previous onstop: downloaded audio file locally (wrong)
+  - Fixed onstop: POST multipart/form-data to /api/boatlog/voice-note
+  - Keeps good parts: voice pause/resume, setRecIndicator, 30s auto-stop, tap-to-stop
+  - API smoke-tested: {"success":true,"transcript":"","filename":"voice_note_...webm"}
+  - Storage dir confirmed: /opt/d3kos/data/boatlog-audio/
+  - Don confirmed working on Pi
+  - Commit: 724c7a3
+
+- **WebSocket real-time push — Remote Access page (SSE)**
+  - Backend: extracted _tailscale_status() helper, added /remote/status-stream SSE endpoint
+  - SSE: checks every 5s, pushes on state change, keepalive every 15s
+  - Added threaded=True to app.run() — streaming no longer blocks other requests
+  - Frontend: EventSource('/remote/status-stream') updates badge + re-renders QR if IP changes
+  - No nginx change — X-Accel-Buffering: no header handles proxy buffering
+  - Tested: stream delivers {"connected":true,"ip":"100.88.112.63"}
+  - remote_api.py added to repo (was Pi-only before)
+  - Commit: cd35ad0
+
+- **Data export with unit metadata**
+  - export_categories.py collect_settings(): added user-preferences.json + unit_metadata block
+    (measurement_system, speed_unit, temperature_unit, pressure_unit, volume_unit)
+  - boatlog-export-api.py: added _get_unit_metadata() helper, writes 3-row metadata section
+    before data header in CSV (# UNIT METADATA / keys / values / blank separator)
+  - Created test boatlog DB with 2 entries for testing
+  - CSV verified: metric/km/h/C/bar/L in header rows
+  - JSON export verified: unit_metadata in settings.data
+  - Checklist item marked ✅
+  - Commit: 39ef99f
+
+- **On-screen keyboard — full verification**
+  - squeekboard process: running (pid 1657)
+  - ILITEK mouseEmulation="no" confirmed in /etc/xdg/labwc/rc.xml line 179
+  - keyboard-api on port 8087: active, DBus ok:true on /keyboard/show and /keyboard/hide
+  - keyboard-fix.js v2.0: deployed, pointerup+pointerType=touch pattern confirmed
+  - Pages wired: helm.html, ai-assistant.html, marine-vision.html, settings.html
+  - **Don confirmed physical touch test working on Pi screen 2026-03-13**
+  - Commit: 4f99212
+
+**Decisions:**
+- Port 8087 chosen for keyboard-api (8086 already fish detector, 8085 was original, 8087 is next free)
+- SSE used instead of WebSocket — one-way push is sufficient, no extra deps needed, works through nginx with X-Accel-Buffering header
+- Export unit metadata written as CSV header rows (3 rows: label / keys / values) — parseable without breaking standard CSV readers of the data section
+- boatlog-export-api.py and remote_api.py brought into repo for the first time (were Pi-only)
+- Test boatlog DB created at /opt/d3kos/data/boatlog/boatlog.db with 2 sample entries
+
+**Ollama:** 0 calls this session — all changes were direct edits
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending (v0.9.2 not yet closeable):**
+- UAT — 5 metric + 5 imperial users (requires users — Don's task)
+- o-charts chart activation — Don's task (see deployment/docs/OPENCPN_FLATPAK_OCHARTS.md)
+
+**Remaining open for Don (physical/user tasks):**
+- Tap keyboard on Pi to confirm (done ✅ this session)
+- UAT users
+- o-charts
+
+---
