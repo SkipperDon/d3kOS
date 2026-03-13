@@ -2,6 +2,56 @@
 
 ---
 
+## Session — 2026-03-13 — Phase 5 Activation, Worktrees, Port 8087 Fix
+
+**Tasks completed:**
+- Phase 5 (AI + AvNav Integration) added to d3kOS v0.9.2.1 plan — no longer deferred. Full spec v1.1.0 deployed to `deployment/d3kOS/docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md`.
+- Cross-checked Phase 5 spec against Phases 0–4 — 7 anomalies found, 2 critical corrected: (1) all P5.0 curl commands GET→POST to `/viewer/avnav_navi.php`; (2) `AVNAV_API` URL corrected from `/api` (doesn't exist) to `/viewer/avnav_navi.php`.
+- 5 lower-severity anomalies flagged in appropriate documents (port 8085 conflict, dual anchor alarm, directory tree gap, /status endpoint gap, .gitignore coverage).
+- AvNav install guide deployed to `deployment/d3kOS/docs/AVNAV_INSTALL_AND_API.md`.
+- `D3KOS_PLAN.md` updated: Phase 5 DEFERRED→TODO, master URL table, Known Bugs, directory tree, rollback, full Phase 5 section replacing stub.
+- `deployment/d3kOS/PROJECT_CHECKLIST.md`: Phase 5 stub replaced with 50+ item checklist (Stages A-F, P5.0-P5.4, all 4 features, verification).
+- Set up 3 git worktrees for parallel sessions: `close-v0.9.2` at `/home/boatiq/worktrees/v0.9.2/`, `build-v0.9.2.1` at `/home/boatiq/worktrees/v0.9.2.1/`, `build-v0.9.3` at `/home/boatiq/worktrees/v0.9.3/`. SESSION_CONTEXT.md files created for each.
+- Inter-session dependencies mapped: B1 (keyboard-api port move) blocks Session 2 Phase 1 AvNav install; port 8080 occupancy flagged as second pre-condition.
+- Port conflict investigation: 8086 already taken by fish_detector — correct target is 8087. All documents updated.
+- Updated all 9 files referencing keyboard-api as port 8085 → 8087. Commit `3d2bed9`.
+- v0.9.2.1 Session 2 completed Phases 1 and 2: .desktop files deployed, SK migrated :3000→:8099, issue_detector :8099→:8199, Flask dashboard live at :3000.
+
+**Files changed:**
+- `deployment/v0.9.2/python/keyboard-api.py` — port 8087
+- `deployment/v0.9.2/nginx/d3kos-nginx.conf` — proxy_pass 8087
+- `deployment/d3kOS/D3KOS_PLAN.md` — Phase 5 full section, port conflict RESOLVED
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Phase 5 50+ items, A3 updated to 8087
+- `deployment/d3kOS/SESSION_LOG.md` — Phase 5 session entry + 8087 correction note
+- `deployment/d3kOS/docs/D3KOS_PHASE5_AI_AVNAV_INTEGRATION.md` — new v1.1.0 (7 anomalies corrected)
+- `deployment/d3kOS/docs/AVNAV_INSTALL_AND_API.md` — new v1.0.0 with port conflict warnings
+- `deployment/d3kOS/.gitignore` — ai-bridge/config/ai-bridge.env added
+- `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` — port 8087 updated
+- `deployment/docs/DEPLOYMENT_INDEX.md` — Phase 5 docs, AI Bridge :3002, port table updated
+- `PROJECT_CHECKLIST.md` — v0.9.2.1 Phase 5 ACTIVE, Phases 1 and 2 complete
+- Commits: `f927f4d` (Phase 5 activation), `3d2bed9` (port 8087 fix)
+
+**Decisions:**
+- Phase 5 is active — no longer deferred. Begins after Phase 4 stable for one voyage.
+- Port 8087 confirmed as keyboard-api target (8086 taken by fish_detector, 8085 needed by AvNav updater).
+- 3 parallel worktree sessions established: v0.9.2 close, v0.9.2.1 build, v0.9.3 build.
+- Session 1 must deploy keyboard-api port change to Pi before Session 2 can install AvNav.
+- Port 8080 occupancy on Pi must be verified before AvNav install (old AI query API may still be running there).
+
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Session 1 (worktree v0.9.2): deploy keyboard-api.py + nginx to Pi (port 8087), verify /keyboard/show and /window/toggle, check port 8080 occupancy, then complete remaining v0.9.2 tasks (boatlog voice, WebSocket push, UAT, data export)
+- Session 2 (worktree v0.9.2.1): Phase 3 (Gemini proxy :3001), Phase 4 (settings page + docs), Phase 5 pre-work (AvNav install after Session 1 clears ports)
+- Session 3 (worktree v0.9.3): Clone atmyboat-forum, Phase 0 staging setup
+
+---
+
 ## Session — 2026-03-12 — v0.9.2 Close: i18n 100% Complete, CHANGELOG Written, Option B Documented
 
 **Tasks completed:**
