@@ -4,6 +4,52 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 1 + Phase 2 Pi Deploy
+**Goal:** Deploy Phase 2 Flask dashboard to Pi. Execute Phase 1 Pi menu restructure. Resolve port 3000/8099 conflict.
+**Completed:**
+- Port migration (prerequisite):
+  - issue_detector.py: :8099 → :8199 (sed edit in /opt/d3kos/services/self-healing/issue_detector.py)
+  - Signal K: :3000 → :8099 (Environment=PORT=8099 added to /etc/systemd/system/signalk.service)
+  - nginx updated: /healing/ proxy_pass → 127.0.0.1:8199, /signalk/ proxy_pass → 127.0.0.1:8099
+  - Both sites-available/default and sites-enabled/default updated
+  - All three services restarted/reloaded — all confirmed active
+  - SK confirmed at :8099 via curl: signalk-server v2.22.1
+- Phase 2 — Flask dashboard deployed to Pi:
+  - Files at /opt/d3kos/services/dashboard/ (app.py, templates/, static/, config/)
+  - d3kos-config.env written at /opt/d3kos/services/dashboard/config/
+  - /etc/systemd/system/d3kos-dashboard.service installed (User=d3kos, WorkingDirectory=/opt/d3kos/services/dashboard)
+  - Service enabled + started: active
+  - Verified: curl http://localhost:3000 returns HTML, /status returns JSON
+  - /status: internet:true, avnav:true (ai_api.py on :8080), signalk:true, ollama:true, gemini:false
+- Phase 1 — Pi menu restructure:
+  - Pre-actions: SK:8099 confirmed, port 3000 free, port 3001 free, port 8085 free
+  - Backup: /home/d3kos/backups/d3kos-menu-backup-2026-03-13/ (3 .menu files)
+  - Created: d3kos-dashboard.desktop, d3kos-opencpn.desktop, d3kos-avnav.desktop, d3kos-gemini-nav.desktop
+  - Created: d3kOS.directory, d3kOS.menu (Category: X-d3kOS — freedesktop-compliant)
+  - All 4 .desktop files pass desktop-file-validate
+  - OpenCPN system .desktop override: N/A — OpenCPN is Flatpak, no system .desktop exists
+  - docs/MENU_STRUCTURE.md written with port migration rollback instructions
+**Decisions:**
+- issue_detector.py port moved to 8199 (not 8199 or any other — 8199 chosen as simple increment)
+- Signal K port configured via Environment= in systemd service, not settings.json — cleaner, no JSON edit risk
+- nginx proxy_pass updated to 127.0.0.1 (not localhost) per memory rule
+- Pi deploy path: /opt/d3kos/services/dashboard/ (follows existing Pi service convention)
+- .desktop Categories use X-d3kOS prefix (required by freedesktop spec)
+- OpenCPN system override step skipped — Flatpak install has no /usr/share/applications .desktop
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com -> Usage -> 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending:**
+- Phase 2: visual verify on Pi screen (9 buttons, clock, AvNav iframe once AvNav installed, weather panels)
+- Phase 2: reboot test for d3kos-dashboard.service
+- Phase 3: Gemini AI proxy at :3001
+- Phase 4: Full settings page (16 sections)
+- Phase 5: AI + AvNav integration (AvNav install required first — port 8085 now free)
+---
+
 ## Session 2026-03-13 — Phase 2 Flask Dashboard Build
 **Goal:** Build all Phase 2 source files — Flask app, 9-button grid UI, CSS, JS, templates.
 **Completed:**

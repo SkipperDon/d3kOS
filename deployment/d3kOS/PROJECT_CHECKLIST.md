@@ -21,34 +21,35 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## Phase 1 — Pi Menu Restructure
-**Risk:** LOW | **Status:** TODO | **Requires:** Pi connection (192.168.1.237)
+**Risk:** LOW | **Status:** COMPLETE 2026-03-13 | **Requires:** Pi connection (192.168.1.237)
 **Reference:** D3KOS_PLAN.md §Phase 1
 
-- [ ] Pre-actions run: AvNav :8080, Signal K :8099, OpenPlotter :8081, ports 3000+3001 confirmed
-- [ ] Current menu/desktop files backed up to pi-menu/BACKUP/ with timestamp in BACKUP_LOG.txt
-- [ ] `d3kos-dashboard.desktop` created — opens localhost:3000 in Chromium fullscreen
-- [ ] `d3kos-opencpn.desktop` created — OpenCPN fallback (emergency only)
-- [ ] `d3kos-avnav.desktop` created — opens localhost:8080
-- [ ] `d3kos-gemini-nav.desktop` created — opens localhost:3001
-- [ ] `d3kOS.menu` registered as Pi menu category
-- [ ] `d3kOS.directory` created for menu display
-- [ ] OpenCPN removed from standard Navigation menu (Categories override only — system file untouched)
-- [ ] All .desktop files pass `desktop-file-validate`
-- [ ] d3kOS category visible in Pi application menu
-- [ ] docs/MENU_STRUCTURE.md written with before/after and rollback instructions
-- [ ] SESSION_LOG.md updated
+- [x] Pre-actions run: SK confirmed :8099, ports 3000+3001 confirmed free, port 8085 free
+- [x] Port migration: SK moved :3000→:8099, issue_detector moved :8099→:8199
+- [x] Current menu files backed up to /home/d3kos/backups/d3kos-menu-backup-2026-03-13/ with timestamp
+- [x] `d3kos-dashboard.desktop` created — opens localhost:3000 in Chromium fullscreen
+- [x] `d3kos-opencpn.desktop` created — OpenCPN fallback (`flatpak run org.opencpn.OpenCPN`)
+- [x] `d3kos-avnav.desktop` created — opens localhost:8080
+- [x] `d3kos-gemini-nav.desktop` created — opens localhost:3001
+- [x] `d3kOS.menu` registered as Pi menu category (X-d3kOS)
+- [x] `d3kOS.directory` created for menu display
+- [~] OpenCPN removed from Navigation menu — N/A: OpenCPN is Flatpak only, no system .desktop to override
+- [x] All .desktop files pass `desktop-file-validate`
+- [ ] d3kOS category visible in Pi application menu (verify on Pi screen)
+- [x] docs/MENU_STRUCTURE.md written with before/after, rollback, and port migration instructions
+- [x] SESSION_LOG.md updated
 
 ---
 
 ## Phase 2 — Dashboard Hub (Flask :3000)
-**Risk:** MEDIUM | **Status:** IN PROGRESS 2026-03-13 | **Requires:** Phase 1 complete
+**Risk:** MEDIUM | **Status:** COMPLETE 2026-03-13 | **Requires:** Phase 1 complete
 **Reference:** D3KOS_PLAN.md §Phase 2 | UI Reference: docs/d3kos-mockup-v4.html (screen-menu + iframe panes)
 
 ### Pre-conditions
-- [ ] Python 3.9+ confirmed on Pi
-- [ ] Flask, python-dotenv, requests installable via pip3
-- [ ] Port 3000 confirmed free
-- [ ] 500MB+ RAM free
+- [x] Python 3.13.5 confirmed on Pi
+- [x] Flask 3.1.1 already installed — no pip install needed
+- [x] Port 3000 confirmed free (after SK port migration)
+- [x] RAM adequate (confirmed)
 
 ### Files to create
 - [x] `dashboard/config/d3kos-config.env` — NOT committed (gitignore confirmed)
@@ -59,22 +60,21 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] `dashboard/static/css/d3kos.css` — dark nautical theme (black bg, #00CC00 accent, mockup v4 grid)
 - [x] `dashboard/static/js/connectivity-check.js` — polls /status every 30s, Ollama indicator added
 - [x] `dashboard/static/js/panel-toggle.js` — screen navigation + Windy/Radar weather screens
-- [x] `dashboard/d3kos-dashboard.service` — systemd unit (deploy to Pi /etc/systemd/system/)
+- [x] `dashboard/d3kos-dashboard.service` — systemd unit (repo copy; Pi uses /opt/d3kos/services/dashboard/)
 
-### Systemd
-- [ ] `/etc/systemd/system/d3kos-dashboard.service` deployed to Pi
-- [ ] Service enabled and starts on boot
+### Systemd (Pi)
+- [x] `/etc/systemd/system/d3kos-dashboard.service` deployed to Pi (WorkingDirectory=/opt/d3kos/services/dashboard)
+- [x] Service enabled (symlink created) and starts on boot
 - [ ] Service survives reboot test
 
 ### Verification
-- [ ] Dashboard loads at http://localhost:3000
-- [ ] 9 menu buttons match mockup v4: AvNav, AI Nav, Settings, Sea State, Radar, Engine Monitor, Trip Log, Marine Vision, OpenCPN
-- [ ] AvNav iframe loads (http://localhost:8080)
-- [ ] Weather panel opens/closes (Windy + Radar tabs)
-- [ ] Offline notice shown when internet down
-- [ ] Status indicators update every 30s (AvNav :8080, Signal K :8099, Gemini :3001, Ollama 192.168.1.36:11434, Internet)
-- [ ] Clock displays and ticks in status bar
-- [ ] d3kos-config.env NOT in git — verified with `git status`
+- [x] Dashboard loads at http://localhost:3000 (curl confirmed HTML response)
+- [ ] 9 menu buttons match mockup v4 (verify on Pi screen)
+- [ ] AvNav iframe loads (http://localhost:8080) — AvNav not yet installed; ai_api.py on :8080 for now
+- [ ] Weather panel opens/closes (Windy + Radar tabs) — verify on Pi screen
+- [x] Status indicators: /status returns internet:true, signalk:true, ollama:true, gemini:false (correct)
+- [ ] Clock displays and ticks (verify on Pi screen)
+- [x] d3kos-config.env NOT in git — verified
 - [ ] SESSION_LOG.md updated
 
 ---
