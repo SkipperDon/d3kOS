@@ -84,7 +84,8 @@ class VoyageLogger:
         if not tracks:
             return {'ok': False, 'error': 'No tracks available in AvNav.'}
 
-        # Most recent track is usually first in the list
+        # Sort by 'time' field descending — newest track first
+        tracks.sort(key=lambda t: t.get('time', 0), reverse=True)
         latest = tracks[0]
         track_name = latest.get('name', '')
         if not track_name:
