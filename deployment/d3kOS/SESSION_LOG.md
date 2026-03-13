@@ -4,6 +4,45 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — Phase 4 Pi Deploy
+**Goal:** Deploy Phase 4 settings page to Pi and verify all endpoints live.
+**Completed:**
+- app.py deployed to /opt/d3kos/services/dashboard/app.py (syntax OK on Pi)
+- templates/settings.html deployed to /opt/d3kos/services/dashboard/templates/settings.html
+- static/css/d3kos.css deployed to /opt/d3kos/services/dashboard/static/css/d3kos.css
+- /etc/sudoers.d/d3kos created: NOPASSWD systemctl restart signalk, nodered, d3kos-dashboard, d3kos-gemini, reboot. visudo -c: parsed OK. chmod 440.
+- d3kos-dashboard.service restarted — active
+- Verification: /settings → 200 HTML ✓ | /sysinfo → CPU 63.3°C, disk 30%, mem 31%, uptime 21h 28m, IP 192.168.1.237 ✓ | /status → all 5 services true ✓
+- /action/restart tested: POST {service:gemini} → {ok:true}, d3kos-gemini back to active ✓
+**Decisions:**
+- AvNav is now at :8080 (confirmed from memory update) — /status avnav:true is genuinely AvNav, not ai_api.py
+- sudoers uses /bin/systemctl explicit path — more restrictive than ALL
+**Release Package Manifest:**
+- Version: Phase 4 source → Phase 4 Pi deployed
+- Update type: incremental
+- Changed files:
+  | File | Pi Path | Partition | Change |
+  |------|---------|-----------|--------|
+  | app.py | /opt/d3kos/services/dashboard/app.py | base | /sysinfo, /action/restart, /action/reboot added |
+  | settings.html | /opt/d3kos/services/dashboard/templates/settings.html | base | Full 16-section rewrite |
+  | d3kos.css | /opt/d3kos/services/dashboard/static/css/d3kos.css | base | Settings page CSS block added |
+  | /etc/sudoers.d/d3kos | /etc/sudoers.d/d3kos | runtime | New file — systemctl restart permissions |
+- Pre-install steps: none (non-breaking additions)
+- Post-install steps: sudo systemctl restart d3kos-dashboard ✓
+- Rollback: restore previous app.py from git tag + restart service; rm /etc/sudoers.d/d3kos
+- Health check: curl localhost:3000/settings → HTML, curl localhost:3000/sysinfo → JSON, curl localhost:3000/status → all true
+- Plain-language release notes: Phase 4 settings page is now live at localhost:3000/settings. It shows all 16 sections including live system status and system information from the Pi. System action buttons (restart Signal K, Node-RED, Dashboard, Gemini Proxy) now work via the settings page. All AvNav documentation is included. Signal K WebSocket reference is correct throughout (ws://localhost:8099).
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending:**
+- Phase 4: visual verify on Pi screen (bookmark sidebar, 16 sections)
+- Phase 5: begin — AvNav installed, all pre-gate checks complete, AVNAV_API_REFERENCE.md exists
+---
+
 ## Session 2026-03-13 — Phase 4 Settings Page + AvNav Documentation
 **Goal:** Build full 16-section settings page at localhost:3000/settings and three AvNav documentation files.
 **Completed:**

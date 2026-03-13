@@ -135,8 +135,12 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] Section 14: System Information — live from /sysinfo endpoint (disk, memory, CPU temp, uptime, IP)
 - [x] Section 15: License & Tier — tier, install ID, features
 - [x] Section 16: About d3kOS — version, platform, project, credits
-- [ ] Pi deploy: copy updated dashboard files to /opt/d3kos/services/dashboard/ and restart service
-- [ ] Pi deploy: add sudo rule for systemctl restarts (/etc/sudoers.d/d3kos)
+- [x] Pi deploy: app.py, settings.html, d3kos.css copied to /opt/d3kos/services/dashboard/ — 2026-03-13
+- [x] Pi deploy: /etc/sudoers.d/d3kos created — NOPASSWD systemctl restart for signalk, nodered, d3kos-dashboard, d3kos-gemini, reboot. Verified: `visudo -c` OK
+- [x] /settings loads HTML on Pi (curl confirmed)
+- [x] /sysinfo returns live data: CPU 63.3°C, disk 30%, mem 31%, uptime 21h 28m, IP 192.168.1.237
+- [x] /status: avnav:true, gemini:true, internet:true, ollama:true, signalk:true — all live
+- [x] /action/restart tested: {"ok":true,"service":"gemini"} — d3kos-gemini restarts and returns active
 - [ ] Visual verify on Pi screen: bookmark sidebar scrolls, all 16 sections visible
 
 ### Critical fix (from D3KOS_PLAN)
