@@ -2,6 +2,35 @@
 
 ---
 
+## Session — 2026-03-13 — Task B (pytest suite) + Task C (Phase 1 menu cleanup)
+
+**Tasks completed:**
+- **Task B — test_ai_bridge.py written** (~100 tests): geo, avnav POST-only + request=navigate bug test, signalk, tts, anchor 3-poll debounce full sequence, voyage logger GPX parsing + privacy, Flask routes (/status, /stream, /webhook/alert, /webhook/arrival, /anchor/*, /voyages, /analyze-route, /webhook/query). Integration tests @pytest.mark.integration, skipped by default.
+- **Task C — Phase 1 menu cleanup**: 6 Pi menu files backed up to deployment/d3kOS/pi-menu/BACKUP/2026-03-13/. BACKUP_LOG.txt updated. MENU_STRUCTURE.md corrected. d3kOS checklist Phase 1 all items closed (✅ or ⏭). PROJECT_CHECKLIST.md Last Updated updated.
+
+**Files changed:**
+- deployment/d3kOS/ai-bridge/tests/test_ai_bridge.py — full pytest suite
+- deployment/d3kOS/pi-menu/BACKUP/2026-03-13/ — 6 files backed up from Pi
+- deployment/d3kOS/pi-menu/BACKUP/BACKUP_LOG.txt — entry appended
+- deployment/d3kOS/docs/MENU_STRUCTURE.md — backup path corrected
+- deployment/d3kOS/PROJECT_CHECKLIST.md — Phase 1 fully closed
+- PROJECT_CHECKLIST.md — Last Updated updated
+
+**PROJECT_CHECKLIST.md updates:**
+- Phase 1 backup, d3kOS.menu, d3kOS.directory, desktop-file-validate, category visible, MENU_STRUCTURE.md → all [✅]
+- OpenCPN remove from system menu → [⏭] skipped (labwc kiosk never shows system menu)
+
+**AAO compliance:** PASS
+
+**Open items for next session:**
+- Run pytest tests/ -v to confirm test suite passes (requires: pip install pytest flask requests python-dotenv)
+- Phase 5 live feature verification — requires boat underway
+- Don TODO list: dock tests + on-water tests in PROJECT_CHECKLIST.md
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-13 — Phase 5 bench verification: voyage button, route widget, avnav_client fix
 
 **Tasks completed:**
