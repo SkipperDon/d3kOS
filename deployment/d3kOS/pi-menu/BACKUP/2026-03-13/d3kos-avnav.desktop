@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AvNav Charts
+Comment=Web-based Chart Viewer — http://localhost:8080
+Exec=/usr/bin/chromium --app=http://localhost:8080 --start-maximized
+Icon=applications-internet
+Categories=X-d3kOS;Network;
+Terminal=false

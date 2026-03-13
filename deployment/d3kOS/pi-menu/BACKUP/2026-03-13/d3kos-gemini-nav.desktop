@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Gemini Marine Assistant
+Comment=AI Navigation Assistant — http://localhost:3001
+Exec=/usr/bin/chromium --app=http://localhost:3001 --start-maximized
+Icon=applications-internet
+Categories=X-d3kOS;Network;
+Terminal=false

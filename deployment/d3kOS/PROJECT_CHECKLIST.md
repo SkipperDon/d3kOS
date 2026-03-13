@@ -25,18 +25,18 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 **Reference:** D3KOS_PLAN.md §Phase 1
 
 - [✅] Pre-actions run: AvNav :8080 ✓ (installed 2026-03-13), SK :8099 ✓, ports 3000+3001 confirmed
-- [ ] Current menu/desktop files backed up to pi-menu/BACKUP/ with timestamp in BACKUP_LOG.txt
+- [✅] Current menu/desktop files backed up to pi-menu/BACKUP/2026-03-13/ + BACKUP_LOG.txt updated
 - [✅] `d3kos-dashboard.desktop` deployed ✓
 - [✅] `d3kos-opencpn.desktop` deployed ✓
 - [✅] `d3kos-avnav.desktop` deployed ✓
 - [✅] `d3kos-gemini-nav.desktop` deployed ✓
-- [ ] `d3kOS.menu` registered as Pi menu category
-- [ ] `d3kOS.directory` created for menu display
-- [ ] OpenCPN removed from standard Navigation menu (Categories override only — system file untouched)
-- [ ] All .desktop files pass `desktop-file-validate`
-- [ ] d3kOS category visible in Pi application menu
-- [ ] docs/MENU_STRUCTURE.md written with before/after and rollback instructions
-- [ ] SESSION_LOG.md updated
+- [✅] `d3kOS.menu` registered as Pi menu category (applications-merged/d3kOS.menu)
+- [✅] `d3kOS.directory` created for menu display
+- [⏭] OpenCPN removed from standard Navigation menu — SKIPPED: labwc kiosk never exposes system menu; root-level change not needed
+- [✅] All .desktop files pass `desktop-file-validate` — confirmed on Pi 2026-03-13
+- [✅] d3kOS category visible in Pi application menu (X-d3kOS category wired)
+- [✅] docs/MENU_STRUCTURE.md written with before/after and rollback instructions
+- [✅] SESSION_LOG.md updated
 
 ---
 

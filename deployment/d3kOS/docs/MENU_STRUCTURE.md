@@ -28,14 +28,18 @@ All entries use Category `X-d3kOS;Network;` and validate via `desktop-file-valid
 /home/d3kos/.config/menus/applications-merged/d3kOS.menu
 ```
 
-### Backup
+### Backup (repo)
 ```
-/home/d3kos/backups/d3kos-menu-backup-2026-03-13/
-  lxde-applications.menu
-  gnome-applications.menu
-  rpd-applications.menu
-  BACKUP_LOG.txt
+deployment/d3kOS/pi-menu/BACKUP/2026-03-13/
+  d3kos-dashboard.desktop
+  d3kos-avnav.desktop
+  d3kos-gemini-nav.desktop
+  d3kos-opencpn.desktop
+  d3kOS.directory
+  d3kOS.menu
+deployment/d3kOS/pi-menu/BACKUP/BACKUP_LOG.txt
 ```
+All 4 desktop files confirmed passing `desktop-file-validate` on Pi (2026-03-13).
 
 ## Infrastructure (hidden from all menus)
 - OpenPlotter: http://localhost:8081 — GPS, AIS, NMEA

@@ -4,3 +4,12 @@ Append-only. Every backup operation must be recorded here with timestamp.
 Format: YYYY-MM-DD HH:MM — <what was backed up> — <operator>
 
 ---
+2026-03-13 17:30 — Initial backup: 4 d3kOS desktop files + d3kOS.directory + d3kOS.menu captured from Pi d3kos@192.168.1.237 — Claude Code
+  Files in: deployment/d3kOS/pi-menu/BACKUP/2026-03-13/
+  d3kos-dashboard.desktop  (Chromium --app http://localhost:3000)
+  d3kos-avnav.desktop      (Chromium --app http://localhost:8080)
+  d3kos-gemini-nav.desktop (Chromium --app http://localhost:3001)
+  d3kos-opencpn.desktop    (flatpak run org.opencpn.OpenCPN)
+  d3kOS.directory          (menu category label)
+  d3kOS.menu               (XDG menu registration for X-d3kOS category)
+  All 4 desktop files pass desktop-file-validate.
