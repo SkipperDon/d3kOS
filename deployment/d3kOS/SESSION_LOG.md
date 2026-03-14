@@ -4,6 +4,32 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-14 (verification close) — Step 0 + Session 1 + Session 2 all verified by Don
+**Goal:** Close out all pending Pi screen verifications.
+
+**Completed:**
+- Step 0 Pi verifications confirmed by Don: Squeekboard on input focus ✓, Windowed Mode toggle ✓, Chromium auto-launch on reboot ✓
+- Session 1 v12 layout confirmed on Pi screen ✓
+- Session 2 deployed (commit 7097664) — Signal K wiring, AvNav iframe, AI panel, Route AI SSE all live
+
+**Decisions:**
+- Step 0 fully closed — no outstanding items
+- v0.9.2.2 Sessions 1 + 2 code complete and running
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Session 3: cameras tab, More menu production items, onboarding wizard
+- Don visual verify: live Signal K data on screen, AI panel response bubble
+
+---
+
 ## Session 2026-03-14 (close) — v0.9.2.1 Closed + v0.9.2.2 Session 1 + Step 0 Deployed
 **Goal:** Close v0.9.2.1, complete v0.9.2.2 Session 1 static template, deploy to Pi, run Step 0 prerequisites.
 
