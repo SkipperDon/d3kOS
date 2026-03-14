@@ -8,7 +8,6 @@ Port: 8087 (localhost only, proxied by nginx at /keyboard/)
 """
 
 import subprocess
-import time
 from flask import Flask, jsonify
 from flask_cors import CORS
 
@@ -85,8 +84,10 @@ def go_windowed():
     """Restore Chromium to a normal windowed state (unmaximize)."""
     if _read_window_state() != 'windowed':
         try:
-            subprocess.Popen(['wlrctl', 'toplevel', 'maximize', 'off',
-                              'app_id:chromium'], env=_WAYLAND_ENV)
+            # Trigger labwc UnMaximize via virtual keypress (C-A-Down keybinding in rc.xml)
+            # wlrctl v0.2.2 has no unmaximize action -- wtype + labwc keybinding is correct
+            subprocess.run(['wtype', '-M', 'ctrl', '-M', 'alt', '-k', 'Down'],
+                           env=_WAYLAND_ENV, capture_output=True, timeout=3)
             _write_window_state('windowed')
         except Exception:
             return jsonify({'ok': False, 'windowed': False})
@@ -95,11 +96,13 @@ def go_windowed():
 
 @app.route('/window/fullscreen', methods=['POST'])
 def go_fullscreen():
-    """Maximize Chromium (normal window layer — not Wayland fullscreen layer)."""
+    """Maximize Chromium at OS level (normal Wayland layer, not fullscreen layer)."""
     if _read_window_state() != 'fullscreen':
         try:
-            subprocess.Popen(['wlrctl', 'toplevel', 'maximize', 'on',
-                              'app_id:chromium'], env=_WAYLAND_ENV)
+            # OS-level maximize (normal Wayland layer) -- NOT wlrctl fullscreen which
+            # places Chromium on Wayland FULLSCREEN layer, hiding Squeekboard permanently
+            subprocess.run(['wlrctl', 'toplevel', 'maximize', 'app_id:chromium'],
+                           env=_WAYLAND_ENV, capture_output=True, timeout=3)
             _write_window_state('fullscreen')
         except Exception:
             return jsonify({'ok': False, 'windowed': True})
