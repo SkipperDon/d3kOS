@@ -2158,7 +2158,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-14 — Mobile app strategy complete (v2.0.0 brief written). v0.9.2.2 Step 0 code complete. Session 1 code complete and deployed to Pi. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-14 — Mobile app strategy complete (v2.0.0 brief written). Node-RED stale SK URLs fixed. v0.9.2.2 Step 0 + Session 1 code complete and deployed to Pi. | **Maintained By:** Development team + Claude Code
 
 ---
 
