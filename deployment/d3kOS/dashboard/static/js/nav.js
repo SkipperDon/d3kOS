@@ -1,29 +1,9 @@
 /**
  * nav.js — d3kOS v0.9.2.2
- * Theme (day/night with manual override fix), clock, ticker,
- * bottom nav, split pane, More menu, window toggle,
+ * Clock, ticker, bottom nav, split pane, More menu, window toggle,
  * keyboard shortcuts, connectivity status polling.
+ * Theme functions are in theme.js (loaded before this file).
  */
-
-/* ── THEME — Bug 1 fix: manual selection persists across autoTheme ticks ── */
-let manualTheme = false;
-
-function setTheme(t, manual) {
-  if (manual) manualTheme = true;
-  if (t === 'night') document.body.setAttribute('data-night', '');
-  else               document.body.removeAttribute('data-night');
-  document.getElementById('btnD').classList.toggle('on', t === 'day');
-  document.getElementById('btnN').classList.toggle('on', t === 'night');
-}
-
-function autoTheme() {
-  if (manualTheme) return;
-  const h = new Date().getHours();
-  setTheme(h >= 7 && h < 20 ? 'day' : 'night');
-}
-
-autoTheme();
-setInterval(autoTheme, 60000);
 
 /* ── CLOCK ── */
 function tick() {

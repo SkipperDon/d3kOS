@@ -448,10 +448,11 @@
 
 <div id="toast"></div>
 
-<!-- JS load order: instruments &rarr; helm &rarr; overlays &rarr; nav &rarr; ai-bridge -->
+<!-- JS load order: instruments &rarr; theme &rarr; overlays &rarr; helm &rarr; nav &rarr; ai-bridge -->
 <script src="{{ url_for('static', filename='js/instruments.js') }}"></script>
-<script src="{{ url_for('static', filename='js/helm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/overlays.js') }}"></script>
+<script src="{{ url_for('static', filename='js/helm.js') }}"></script>
 <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ai-bridge.js') }}"></script>
 
