@@ -45,7 +45,7 @@ Complete replacement of the v0.9.2.1 frontend with the v12 design. Backend servi
 
 ---
 
-## [0.9.2.1] - 2026-03-13 (Code Complete — Pi verification pending)
+## [0.9.2.1] - 2026-03-14 (Closed — Code complete, on-boat verification pending)
 
 ### Summary
 
