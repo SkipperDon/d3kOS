@@ -2,6 +2,48 @@
 
 ---
 
+## Session — 2026-03-14 — v0.9.2.2: AvNav fix, Windy weather, chart wizard step, CHANGELOG
+
+**Tasks completed:**
+- AvNav white screen fixed: rewrote `/var/lib/avnav/charts/osm-online.xml` — removed European bounding box (`minlon=-20, maxlon=30`), global coverage, HTTPS tile URLs. Don at lon=-79.5 (Canada) was completely outside original bounds.
+- Fake AI chat bubbles removed from index.html — AI panel starts empty, live responses only.
+- Live Windy weather wired: `nav.js` — `loadWindy()`, `_windyUrl()`, `setWxView()`. Uses `window.d3kGpsLat`/`d3kGpsLon` from instruments.js (exposed on each SK position update). Falls back to Toronto (43.65, -79.38).
+- `helm.js` `sendAI()`: updates `aiSourceLbl` after response (GEMINI 2.5 FLASH or OLLAMA).
+- `d3kos.css`: added `.wx-sub` button styles. CSS link bumped to `?v=3`.
+- `setup.html` chart section added: FREE CHARTS CONFIGURED — OSM + OpenSeaMap listed, live JS fetch to `/status` shows green dot when AvNav :8080 is up. Deployed to Pi, HTTP 200.
+- `CHANGELOG.md`: v0.9.2.2 full milestone entry written (all 4 sessions).
+- Commits: 05f5203 (AvNav fix, Windy, fake demo removal), c409aef (chart wizard step, CHANGELOG).
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/templates/index.html` — fake bubbles removed, aiSourceLbl added, Windy tab HTML, CSS ?v=3
+- `deployment/d3kOS/dashboard/static/js/nav.js` — Windy functions added
+- `deployment/d3kOS/dashboard/static/js/instruments.js` — GPS globals exposed
+- `deployment/d3kOS/dashboard/static/js/helm.js` — aiSourceLbl update after response
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — .wx-sub styles
+- `deployment/d3kOS/dashboard/templates/setup.html` — chart info section (CSS + HTML + JS)
+- `deployment/d3kOS/CHANGELOG.md` — v0.9.2.2 milestone entry
+- `deployment/d3kOS/SESSION_LOG.md` — session entries appended
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — chart wizard + CHANGELOG marked complete
+- Pi deployed: `/var/lib/avnav/charts/osm-online.xml`, `/opt/d3kos/services/dashboard/templates/setup.html`
+
+**PROJECT_CHECKLIST.md updates:**
+- Session 2 → COMPLETE [✅] all items (Signal K, alerts, AvNav, AI, Route AI)
+- Session 3 → COMPLETE [✅] all items (cameras.js, more menu, setup wizard)
+- Post-Session 3 block added [✅] (AvNav fix, Windy, CHANGELOG, chart wizard)
+- Known Issues added: [❌] settings layout, [❌] settings camera section, [🔄] weather fullscreen
+
+**AAO compliance:** PASS — one methodology note: asked Don five design questions that should not have been asked (design decisions already made). Documented and corrected.
+
+**Open items for next session:**
+1. Settings page — touch-first layout redesign. CSS/layout ONLY — all 16 sections and all content unchanged. Match v12 design system (Chakra Petch/Bebas Neue, dark theme). Remove two-column sidebar, use large touch targets.
+2. Settings camera section (§6) — wire to `:8084/camera/slots` for live slot and hardware data.
+3. Weather — fullscreen mode as 4th row toggle option (BOTH/ENGINE/NAV/WX). Windy fills full chart area. Sub-overlay buttons above map. Don approved concept.
+4. Don visual verify: cameras tab shows live cameras (service at :8084 must be running), AI panel response bubble, Windy weather loads.
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session Close — 2026-03-14 — Planning: version sequencing, mobile app strategy, Node-RED fix
 
 **Tasks completed:**

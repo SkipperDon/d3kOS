@@ -2123,16 +2123,31 @@
 - [✅] Deployed to Pi 2026-03-14 — d3kos-dashboard.service active, HTTP 200 confirmed
 - [ ] Don visual verify: v12 layout on Pi screen (row toggle, day/night, shortcuts, windowed toggle)
 
-### Session 2 — Live Data (TODO)
-- [ ] instruments.js wired to Signal K WebSocket ws://localhost:8099
-- [ ] Alert thresholds + flood cell backgrounds active
-- [ ] Next Waypoint cell from AvNav POST getleg
-- [ ] AI Nav panel sends/receives from :3001
+### Session 2 — Live Data (COMPLETE 2026-03-14 — Commit 7097664)
+- [✅] instruments.js wired to Signal K WebSocket ws://localhost:8099 — auto-reconnect 5s
+- [✅] Alert thresholds + flood cell backgrounds active (advisory/alert/critical)
+- [✅] Next Waypoint cell from AvNav POST getleg — haversine dist + ETA
+- [✅] AI Nav panel sends/receives from :3001 — real responses, no fake content
+- [✅] AvNav iframe live (replaced chart-mock placeholder)
+- [✅] Route AI widget — SSE from :3002/stream
+- [ ] Don visual verify: AI panel — type question → response bubble appears
 
-### Session 3 — Cameras + Onboarding (TODO)
-- [ ] Cameras tab wired to :8084 slot system
-- [ ] More menu production items (no demo buttons)
-- [ ] First-run wizard
+### Session 3 — Cameras + Onboarding (COMPLETE 2026-03-14 — Commit c6fd43e)
+- [✅] cameras.js: polls /camera/slots at :8084 — forward_watch full-width, grid slots 2×2
+- [✅] More menu: demo buttons removed — Engine Monitor, Trip Log, Settings, OpenCPN, Windowed Mode
+- [✅] First-run wizard (setup.html): vessel name, home port, language, chart confirmation section
+
+### Post-Session 3 — Fixes + Windy + CHANGELOG (COMPLETE 2026-03-14 — Commits 05f5203, c409aef)
+- [✅] AvNav white screen fix: osm-online.xml rewritten — global coverage, no bounding box (was Europe-only)
+- [✅] Fake AI chat bubbles removed — AI panel starts empty, live responses only
+- [✅] Windy weather wired: live GPS from instruments.js, 3 overlays (waves/rain/wind)
+- [✅] CHANGELOG.md v0.9.2.2 milestone entry written
+- [✅] setup.html chart section: FREE CHARTS CONFIGURED + live AvNav status dot
+
+### Known Issues — Requires Fix Next Session
+- [❌] Settings page layout: desktop two-column sidebar — not touch-friendly. Fix: rebuild CSS layout only, ALL 16 sections + content unchanged, match v12 design system (Chakra Petch/Bebas Neue)
+- [❌] Settings camera section (§6): shows hardcoded static slots — must fetch from :8084/camera/slots for real slot/hardware data
+- [🔄] Weather tab: Windy in split pane too narrow — approved for fullscreen redesign as 4th row toggle option (WX)
 
 ---
 
@@ -2158,7 +2173,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-14 — Mobile app strategy complete (v2.0.0 brief written). Node-RED stale SK URLs fixed. v0.9.2.2 Step 0 + Session 1 code complete and deployed to Pi. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-14 — v0.9.2.2 Sessions 2+3 marked complete. AvNav fix, Windy wiring, setup wizard chart section complete. Settings layout (touch) + settings camera section (live :8084) + weather fullscreen flagged for next session. | **Maintained By:** Development team + Claude Code
 
 ---
 
