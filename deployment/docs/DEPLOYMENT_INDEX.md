@@ -146,6 +146,16 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | `deployment/d3kOS/ai-bridge/config/ai-bridge.env` | Phase 5 | **[DEPLOYED 2026-03-13]** Live on Pi at `/opt/d3kos/services/ai-bridge/config/ai-bridge.env`. NEVER committed. gitignored. |
 | `deployment/d3kOS/dashboard/static/js/ai-bridge.js` | Phase 5 | **[DEPLOYED 2026-03-13]** SSE EventSource to :3002/stream. Handles all 5 event types. triggerRouteAnalysis(), dismissAnchorAlarm(), getAnchorAdvice(). Pi: `/opt/d3kos/services/dashboard/static/js/ai-bridge.js` |
 
+### v0.9.2.2 Session 3 — Cameras, More Menu, Onboarding (2026-03-14, commit c6fd43e)
+
+| File | Purpose |
+|------|---------|
+| `deployment/d3kOS/dashboard/static/js/cameras.js` | **[NEW 2026-03-14]** Cameras tab logic. `loadCameras()` fetches `/camera/slots` from :8084; renders forward-watch slot as full-width primary; display_in_grid slots in 2×2 grid. Frame polling at 500ms via `/camera/frame/<slot_id>`. `clearCamIntervals()` called by `closeSplit()`. Graceful "unavailable" fallback. Pi: `/opt/d3kos/services/dashboard/static/js/cameras.js` |
+| `deployment/d3kOS/dashboard/templates/setup.html` | **[NEW 2026-03-14]** First-run onboarding wizard. Shows when `vessel.env` is missing. Form: vessel name, home port, language (18 options). POST to `/setup` writes vessel.env. d3kOS design system + auto night mode. Pi: `/opt/d3kos/services/dashboard/templates/setup.html` |
+| `deployment/d3kOS/dashboard/templates/index.html` | **[UPDATED 2026-03-14]** Cameras tab wired to cameras.js. More menu: removed Demo:EngDiag/PosReport/Arrival; added real Engine Monitor, Trip Log, Settings, OpenCPN. Load order adds cameras.js between nav.js and ai-bridge.js. |
+| `deployment/d3kOS/dashboard/static/js/nav.js` | **[UPDATED 2026-03-14]** showTab() calls loadCameras() on cam tab; closeSplit() calls clearCamIntervals(); launchOpenCPN() added → POST /launch/opencpn. |
+| `deployment/d3kOS/dashboard/app.py` | **[UPDATED 2026-03-14]** index() redirects to /setup when vessel.env absent. /setup GET renders setup.html. /setup POST writes vessel.env, reloads runtime env vars, redirects to /. |
+
 ### v0.9.2.2 Session 1 — Frontend Rebuild (2026-03-14, commit d94b2f9)
 
 | File | Purpose |
@@ -185,7 +195,7 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | 3 | Gemini Marine AI Proxy (:3001) | COMPLETE 2026-03-13 |
 | 4 | Settings Page + Documentation | COMPLETE 2026-03-13 |
 | 5 | AI + AvNav Integration | SOURCE COMPLETE 2026-03-13 — Pi deploy pending |
-| **v0.9.2.2** | **Frontend UI Rebuild** | **IN PLANNING 2026-03-13** |
+| **v0.9.2.2** | **Frontend UI Rebuild** | **CODE COMPLETE 2026-03-14 — Don verify pending** |
 
 ---
 
