@@ -163,6 +163,53 @@
   }
   .btn-submit:active { opacity: .85; }
 
+  /* ── Chart info block ── */
+  .chart-info {
+    background: var(--g-dim);
+    border: 1px solid var(--g-bdr);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+  }
+  .chart-info-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .chart-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--g-dim);
+    border: 2px solid var(--g-bdr);
+    flex-shrink: 0;
+    transition: background .3s, border-color .3s;
+  }
+  .chart-dot.ok {
+    background: var(--g-txt);
+    border-color: var(--g-txt);
+  }
+  .chart-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: var(--g-txt);
+  }
+  .chart-source {
+    font-size: 13px;
+    color: var(--ink2);
+    padding: 3px 0;
+    letter-spacing: .02em;
+  }
+  .chart-note {
+    font-size: 11px;
+    color: var(--ink3);
+    margin-top: 8px;
+    letter-spacing: .04em;
+    line-height: 1.5;
+  }
+
   /* ── Night mode ── */
   [data-night] {
     --bg:    #020702;
@@ -247,6 +294,17 @@
           <div class="hint">Sets the HELM voice recognition language (BCP 47 tag).</div>
         </div>
 
+        <!-- Chart Configuration — free charts are pre-configured via osm-online.xml -->
+        <div class="chart-info">
+          <div class="chart-info-head">
+            <div class="chart-dot" id="chartDot"></div>
+            <div class="chart-label">FREE CHARTS CONFIGURED</div>
+          </div>
+          <div class="chart-source">&bull; OpenStreetMap &mdash; global coverage, all zoom levels</div>
+          <div class="chart-source">&bull; OpenSeaMap &mdash; nautical marks, lights &amp; hazards overlay</div>
+          <div class="chart-note" id="chartNote">Charts stream live when internet is connected. Tile data is cached as you navigate.</div>
+        </div>
+
         <button type="submit" class="btn-submit">SAVE &amp; LAUNCH d3kOS</button>
       </form>
     </div>
@@ -258,6 +316,23 @@
   (function () {
     const h = new Date().getHours();
     if (h < 7 || h >= 20) document.body.setAttribute('data-night', '');
+  })();
+
+  /* Check AvNav status and update chart readiness indicator */
+  (function checkCharts() {
+    fetch('/status')
+      .then(r => r.json())
+      .then(d => {
+        const dot  = document.getElementById('chartDot');
+        const note = document.getElementById('chartNote');
+        if (d.avnav) {
+          if (dot)  dot.classList.add('ok');
+          if (note) note.textContent = 'Chart system ready \u2014 AvNav connected at :8080. Charts stream live; tile data cached as you navigate.';
+        } else {
+          if (note) note.textContent = 'AvNav not yet running \u2014 charts will be available once the system fully starts.';
+        }
+      })
+      .catch(function () { /* leave default note text */ });
   })();
 </script>
 </body>
