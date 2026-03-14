@@ -501,21 +501,22 @@ html, body {
 
 /* ── HELM BUTTON ── */
 .nb.helm {
-  background: var(--g-txt);
-  border-right: 2px solid rgba(0,0,0,.15);
-  border-left: 2px solid rgba(0,0,0,.15);
+  background: var(--panel);
+  border-right: 2px solid var(--g-bdr);
+  border-left: 2px solid var(--g-bdr);
+  border-top: 3px solid var(--g-txt);
   margin-top: calc(-1 * var(--helm-rise));
   height: calc(var(--bot-h) + var(--helm-rise));
   border-radius: 18px 18px 0 0;
-  box-shadow: 0 -8px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15);
+  box-shadow: 0 -6px 20px rgba(0,68,0,.18);
   position: relative; z-index: 10;
-  transition: background .2s;
+  transition: background .2s, border-color .2s;
 }
-.nb.helm .nb-icon { font-size: 38px; color: #fff; }
+.nb.helm .nb-icon { font-size: 38px; color: var(--g-txt); }
 .nb.helm .nb-lbl {
-  font-size: 20px; font-weight: 700; letter-spacing: .06em; color: rgba(255,255,255,.92);
+  font-size: 20px; font-weight: 700; letter-spacing: .06em; color: var(--g-txt);
 }
-.nb.helm:active { background: var(--g-mid); }
+.nb.helm:active { background: var(--g-dim); }
 .nb.helm::after { display: none; }
 .nb.helm.live {
   background: var(--alrt);
