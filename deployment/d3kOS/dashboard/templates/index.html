@@ -51,17 +51,17 @@
         <div class="rt-bar"></div>
         <div class="rt-lbl">Engine</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'RPM')">
+      <div class="ic" id="cellRpm" oncontextmenu="openCtx(event,'RPM')">
         <div class="ic-l">RPM</div>
         <div class="ic-v">2250</div>
         <div class="ic-u">rev / min</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Trim')">
+      <div class="ic" id="cellTrim" oncontextmenu="openCtx(event,'Trim')">
         <div class="ic-l">Trim</div>
         <div class="ic-v">+8&deg;</div>
         <div class="ic-u">degrees</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Oil Pressure')">
+      <div class="ic" id="cellOil" oncontextmenu="openCtx(event,'Oil Pressure')">
         <div class="ic-l">Oil Press</div>
         <div class="ic-v">52</div>
         <div class="ic-u">PSI &middot; normal</div>
@@ -72,12 +72,12 @@
         <div class="ic-v">92&deg;</div>
         <div class="ic-u">C &middot; advisory &uarr; tap for AI</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Fuel')">
+      <div class="ic" id="cellFuel" oncontextmenu="openCtx(event,'Fuel')">
         <div class="ic-l">Fuel</div>
         <div class="ic-v">68%</div>
         <div class="ic-u">84 L &middot; 2h 40m</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Battery')">
+      <div class="ic" id="cellBat" oncontextmenu="openCtx(event,'Battery')">
         <div class="ic-l">Battery</div>
         <div class="ic-v">13.8</div>
         <div class="ic-u">V &middot; charging</div>
@@ -90,26 +90,26 @@
         <div class="rt-bar"></div>
         <div class="rt-lbl">Nav</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Speed SOG')">
+      <div class="ic" id="cellSpeed" oncontextmenu="openCtx(event,'Speed SOG')">
         <div class="ic-l">Speed</div>
         <div class="ic-v">18.4</div>
         <div class="ic-u">kts &middot; SOG</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Depth')">
+      <div class="ic" id="cellDepth" oncontextmenu="openCtx(event,'Depth')">
         <div class="ic-l">Depth</div>
         <div class="ic-v">12.1</div>
         <div class="ic-u">metres</div>
       </div>
-      <div class="ic" oncontextmenu="openCtx(event,'Course COG')">
+      <div class="ic" id="cellCourse" oncontextmenu="openCtx(event,'Course COG')">
         <div class="ic-l">Course</div>
         <div class="ic-v">245&deg;</div>
         <div class="ic-u">true</div>
       </div>
-      <div class="ic ic-gps" oncontextmenu="openCtx(event,'GPS Position')">
+      <div class="ic ic-gps" id="cellPos" oncontextmenu="openCtx(event,'GPS Position')">
         <div class="ic-l">Position</div>
         <div class="ic-v">43&deg;50.5N<br>76&deg;19.2W</div>
       </div>
-      <div class="ic ic-wp" oncontextmenu="openCtx(event,'Active Waypoint')">
+      <div class="ic ic-wp" id="cellWp" oncontextmenu="openCtx(event,'Active Waypoint')">
         <div class="ic-l">&#9658; NEXT WAYPOINT</div>
         <div class="ic-dest">Duck Island</div>
         <div class="ic-v">8.3 <span style="font-size:28px;opacity:.6">nm</span></div>
@@ -122,14 +122,11 @@
   <!-- ══ 3 · MAIN ══ -->
   <div id="main">
     <div id="chart">
-      <!-- Session 1: chart placeholder. Session 2: replace with AvNav iframe src="http://localhost:{{ avnav_port }}" -->
-      <div class="chart-mock">
-        <div class="chart-mock-txt">
-          AvNav Chart Viewer<br>
-          localhost : {{ avnav_port }}<br>
-          <span style="font-size:11px">[ live iframe wired in Session 2 ]</span>
-        </div>
-      </div>
+      <!-- Session 2: live AvNav iframe -->
+      <iframe id="avnav-frame"
+              src="http://localhost:{{ avnav_port }}"
+              style="width:100%;height:100%;border:none;display:block;"
+              title="AvNav Chart Viewer"></iframe>
 
       <!-- Route AI strip &mdash; Phase 5 AI Bridge ids -->
       <div class="rw" id="rw">
