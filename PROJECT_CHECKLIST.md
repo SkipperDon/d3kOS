@@ -2075,6 +2075,61 @@
 
 ---
 
+## v0.9.2.2 — d3kOS Frontend UI Rebuild [Effort: 3 Sessions]
+
+**Status:** [🔄] In Planning | **Started:** 2026-03-13 | **Priority:** HIGH
+**Spec:** `deployment/d3kOS/docs/D3KOS_UI_SPEC.md` v1.0.0
+**Addendum:** `deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md` v1.0.0
+**Reference mockup:** `deployment/d3kOS/docs/d3kos-mockup-v12.html`
+**Findings:** `deployment/d3kOS/docs/D3KOS_V12_FINDINGS.md`
+**Detailed checklist:** `deployment/d3kOS/PROJECT_CHECKLIST.md`
+
+> Complete replacement of the 9-button hub UI with the v12 marine-grade instrument dashboard.
+> Backend services (Flask :3000, Gemini :3001, AI Bridge :3002) unchanged.
+> New design: white day / dark night, Bebas Neue + Chakra Petch, instrument rows, split pane, HELM button.
+> Wayland architecture fix: --kiosk → --app --start-maximized (Squeekboard compatibility).
+
+### Spec & Planning (COMPLETE 2026-03-13)
+- [✅] D3KOS_UI_SPEC.md v1.0.0 deployed to docs/
+- [✅] D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0 deployed to docs/ (Wayland kiosk fix)
+- [✅] d3kos-mockup-v12.html deployed to docs/ (canonical reference — build 2)
+- [✅] D3KOS_V12_FINDINGS.md deployed to docs/ (design review)
+- [✅] scripts/launch-d3kos.sh created (chmod +x)
+- [✅] D3KOS_PLAN.md updated with v0.9.2.2 3-session build plan
+- [✅] PROJECT_CHECKLIST.md updated to v0.9.2.2
+- [✅] CHANGELOG.md [0.9.2.2] entry added
+- [✅] Commit b6c0476 — all spec docs committed
+
+### Step 0 — Pi System Prerequisites (TODO)
+- [ ] `sudo apt install wlrctl` (squeekboard already installed)
+- [ ] Edit `~/.config/labwc/rc.xml` — add windowRules (preserve ILITEK touch rule)
+- [ ] Edit `~/.config/labwc/autostart` — add launch-d3kos.sh entry
+- [ ] `labwc --reconfigure`
+- [ ] Deploy scripts/launch-d3kos.sh to Pi, chmod +x
+- [ ] Verify Squeekboard appears on input focus
+
+### Session 1 — Static Template (TODO)
+- [ ] d3kos.css replaced with v12 design (white/night, Bebas Neue + Chakra Petch)
+- [ ] index.html rebuilt from v12 mockup structure
+- [ ] Bug 1 fixed: manualTheme flag prevents auto-theme overriding manual selection
+- [ ] Bug 2 fixed: nav row hidden class removed (BOTH default)
+- [ ] All 5 overlays working via keyboard shortcuts
+- [ ] Windowed mode toggle in More menu position 9
+- [ ] UI_LANG injected from vessel.env into helm.js
+
+### Session 2 — Live Data (TODO)
+- [ ] instruments.js wired to Signal K WebSocket ws://localhost:8099
+- [ ] Alert thresholds + flood cell backgrounds active
+- [ ] Next Waypoint cell from AvNav POST getleg
+- [ ] AI Nav panel sends/receives from :3001
+
+### Session 3 — Cameras + Onboarding (TODO)
+- [ ] Cameras tab wired to :8084 slot system
+- [ ] More menu production items (no demo buttons)
+- [ ] First-run wizard
+
+---
+
 ## 📝 NOTES & CONVENTIONS
 
 ### Checklist Update Protocol
@@ -2097,7 +2152,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-13 — v0.9.2 ALL CODE COMPLETE + v0.9.2.1 Phases 0–5 ALL DEPLOYED. Remaining tasks with Don (UAT, on-Pi visual verify, o-charts, live voyage test). | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-13 — v0.9.2.2 spec committed (UI_SPEC + addendum + mockup + findings + launch script). v0.9.2.2 build plan in place — 3 sessions. Session 1 begins next session. | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 

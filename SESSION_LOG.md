@@ -2,6 +2,51 @@
 
 ---
 
+## Session — 2026-03-13 — v0.9.2.2 spec committed — UI rebuild in planning, build starts next session
+
+**Tasks completed:**
+- Read and reviewed D3KOS_UI_SPEC.md (v1.0.0), d3kos-mockup-v12 (build 1 + build 2), D3KOS_UI_SPEC_ADDENDUM_01.md
+- Declared d3kos-mockup-v12 build 2 canonical (3-way BOTH/ENGINE/NAV toggle, all overlays)
+- Created D3KOS_V12_FINDINGS.md — design review, 2 bugs with fixes, gap analysis, 3-session build plan
+- Deployed all spec docs to repo: D3KOS_UI_SPEC.md, D3KOS_UI_SPEC_ADDENDUM_01.md, d3kos-mockup-v12.html, D3KOS_V12_FINDINGS.md
+- Created scripts/launch-d3kos.sh (Chromium --app --start-maximized, chmod +x)
+- Updated D3KOS_PLAN.md: phase status corrected (Phases 0-5 all COMPLETE), v0.9.2.2 section added
+- Updated deployment/d3kOS/PROJECT_CHECKLIST.md: header v0.9.2.2, Step 0 + 3-session checklist
+- Updated DEPLOYMENT_INDEX.md: v0.9.2.2 section, 5 new files indexed
+- Updated CHANGELOG.md: [0.9.2.2] entry
+- Updated root PROJECT_CHECKLIST.md: v0.9.2.2 section added
+- Updated MEMORY.md: v0.9.2.2 Wayland facts, design system, bugs, wlrctl, UI_LANG
+- Committed b6c0476 — 10 files, 3,710 insertions
+
+**Files changed:**
+- NEW: deployment/d3kOS/docs/D3KOS_UI_SPEC.md
+- NEW: deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md
+- NEW: deployment/d3kOS/docs/d3kos-mockup-v12.html
+- NEW: deployment/d3kOS/docs/D3KOS_V12_FINDINGS.md
+- NEW: deployment/d3kOS/scripts/launch-d3kos.sh
+- MODIFIED: deployment/d3kOS/D3KOS_PLAN.md
+- MODIFIED: deployment/d3kOS/PROJECT_CHECKLIST.md
+- MODIFIED: deployment/d3kOS/SESSION_LOG.md
+- MODIFIED: deployment/docs/DEPLOYMENT_INDEX.md
+- MODIFIED: CHANGELOG.md
+- MODIFIED: PROJECT_CHECKLIST.md (root)
+- MODIFIED: /home/boatiq/.claude/projects/-home-boatiq/memory/MEMORY.md
+
+**PROJECT_CHECKLIST.md updates:**
+- Root checklist: v0.9.2.2 section added (spec/planning tasks all [✅]; Step 0 + Sessions 1-3 all [ ])
+- Root checklist: Last Updated line updated to 2026-03-13 v0.9.2.2
+- d3kOS/PROJECT_CHECKLIST.md: header updated to v0.9.2.2; v0.9.2.2 checklist section added
+
+**AAO compliance:** PASS — all Low risk, pre-stated, no push, no scope creep
+
+**Open items for next session:**
+- Step 0 on Pi: `sudo apt install wlrctl`, rc.xml windowRules, autostart, labwc --reconfigure, deploy launch-d3kos.sh
+- Session 1: Rebuild index.html + d3kos.css from v12 mockup; fix 2 bugs; split JS; inject UI_LANG
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-13 — v0.9.2 + v0.9.2.1 ALL CODE WORK COMPLETE — Remaining tasks with Don
 
 **Goal:** Close all code work for v0.9.2 and v0.9.2.1. All remaining tasks are on-Pi / on-boat verification by Don.
