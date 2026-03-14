@@ -4,6 +4,39 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-14 — v0.9.2.2 Session 3: Cameras, More Menu, Onboarding Wizard
+**Goal:** Complete v0.9.2.2 — cameras tab live, more menu production-ready, first-run wizard.
+
+**Completed:**
+- cameras.js (new): loads /camera/slots from :8084; forward-watch slot shown full-width primary; display_in_grid slots in 2×2 grid; 500ms frame polling via /camera/frame/<slot_id>; graceful "unavailable" fallback when :8084 not reachable
+- index.html: cameras tab wired to cameras.js; more menu cleaned up — removed Demo:EngDiag, Demo:PosReport, Demo:Arrival; added real Engine Monitor (openDiag), Trip Log, Settings, OpenCPN
+- nav.js: showTab() calls loadCameras() on cam tab open; closeSplit() clears cam intervals; launchOpenCPN() added
+- app.py: / redirects to /setup when vessel.env missing; /setup GET+POST routes write vessel.env + reload runtime env vars
+- setup.html (new): first-run onboarding — vessel name, home port, language; 18 language options; d3kOS design system; auto night mode
+- Deployed to Pi: HTTP 200, /status all 6 indicators up, /setup HTTP 200, cameras.js HTTP 200
+- Commit: c6fd43e
+
+**Decisions:**
+- Camera API endpoint is /camera/slots (not /camera/slot/list — updated from checklist); frame polling via /camera/frame/<slot_id> (no MJPEG stream in overhaul spec)
+- More menu: kept Demo:AIS + Demo:Critical for testing; added OpenCPN as 6th production slot (checklist implied 3 new, added 4 useful items total)
+- Onboarding wizard triggers ONLY on missing vessel.env — existing Pi install is unaffected
+- cameras.js loaded as separate script file (after nav.js) per separation of concerns
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don visual verify on Pi screen: cameras tab loads (needs camera system :8084 active), more menu production items, /setup wizard flow
+- v0.9.2.2 version milestone and CHANGELOG entry
+- UAT (5 metric + 5 imperial users) — open from v0.9.2
+
+---
+
 ## Session 2026-03-14 (verification close) — Step 0 + Session 1 + Session 2 all verified by Don
 **Goal:** Close out all pending Pi screen verifications.
 

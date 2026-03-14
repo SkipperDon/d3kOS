@@ -379,13 +379,13 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] CSS cache-bust: ?v=2 added to CSS link
 
 ### Session 3 — Cameras, More Menu, Onboarding
-**Risk:** MEDIUM | **Status:** TODO
+**Risk:** MEDIUM | **Status:** ✅ DEPLOYED 2026-03-14 | Commit c6fd43e
 
-- [ ] Cameras tab: connects to /camera/slot/list at :8084
-- [ ] Display_in_grid slots shown in 2×2 grid with MJPEG streams
-- [ ] Forward watch slot → full-width primary view
-- [ ] More menu: remove 3 demo buttons, add Trip Log + Engine Monitor + Settings
-- [ ] First-run wizard fires when vessel.env is absent
-- [ ] Wizard writes VESSEL_NAME, HOME_PORT, UI_LANG to vessel.env
-- [ ] All three sessions verified on Pi screen (visual + touch)
-- [ ] SESSION_LOG.md updated
+- [✅] Cameras tab: fetches /camera/slots at :8084 (correct endpoint from overhaul spec)
+- [✅] display_in_grid slots shown in 2×2 grid with 500ms frame polling (no MJPEG stream endpoint — /camera/frame/<slot_id> used)
+- [✅] Forward watch slot → full-width primary view above grid
+- [✅] More menu: removed Demo:EngDiag, Demo:PosReport, Demo:Arrival; real Engine Monitor (openDiag), Trip Log, Settings, OpenCPN added
+- [✅] First-run wizard fires when vessel.env is absent (/setup redirect in app.py)
+- [✅] Wizard writes VESSEL_NAME, HOME_PORT, UI_LANG to vessel.env; reloads runtime vars
+- [ ] All sessions verified on Pi screen (visual + touch) — Don to confirm
+- [✅] SESSION_LOG.md updated
