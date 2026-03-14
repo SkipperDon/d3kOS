@@ -8,7 +8,7 @@
 /* ── CONFIG ── */
 const SK_WS_URL    = 'ws://localhost:8099/signalk/v1/stream';
 const AVNAV_API    = 'http://localhost:8080/viewer/avnav_navi.php';
-const AI_BRIDGE    = 'http://localhost:3002';
+const _BRIDGE_URL  = 'http://localhost:3002'; // prefixed to avoid conflict with ai-bridge.js
 const FUEL_CAP_L   = 150;   // TODO: expose in vessel.env when settings page covers it
 const WP_POLL_MS   = 15000; // waypoint cell refresh interval
 const SK_RECONNECT = 5000;  // WebSocket reconnect delay
@@ -365,7 +365,7 @@ let _routeSSE = null;
 function _connectRouteSSE() {
   if (_routeSSE) return;
   try {
-    _routeSSE = new EventSource(AI_BRIDGE + '/stream');
+    _routeSSE = new EventSource(_BRIDGE_URL + '/stream');
     _routeSSE.addEventListener('route', (evt) => {
       try { _updateRouteWidget(JSON.parse(evt.data)); } catch { /* ignore */ }
     });
@@ -390,7 +390,7 @@ function _updateRouteWidget(d) {
 /* exposed for Route AI widget "Analyze Now" tap */
 function triggerRouteAnalysis() {
   toast('Route analysis requested…');
-  fetch(AI_BRIDGE + '/route/analyze', { method: 'POST' })
+  fetch(_BRIDGE_URL + '/route/analyze', { method: 'POST' })
     .catch(() => toast('AI Bridge unavailable'));
 }
 
@@ -441,6 +441,7 @@ function hideCtx() { document.getElementById('ctx').classList.remove('show'); }
 /* ── INIT ── */
 function _init() {
   showRow('both');
+  _markAllDash();       // clear demo values — SK will fill in once connected
   _connectSK();
   _pollWaypoint();
   setInterval(_pollWaypoint, WP_POLL_MS);

@@ -42,20 +42,26 @@ function openHelm() {
       closeHelm();
       setTimeout(() => { openSplit('ai'); sendAI(text); }, 200);
     };
-    r.onerror = () => { if (_helmOn) closeHelm(); };
-    r.onend   = () => { if (_helmOn) closeHelm(); };
-    r.start();
-    _helmRec   = r;
-    _helmTimer = setTimeout(closeHelm, 10000); // safety: close after 10s silence
-  } else {
-    // No Web Speech API — demo fallback (development / no microphone)
-    _helmTimer = setTimeout(() => {
+    r.onerror = () => {
+      // Mic unavailable or permission denied — open AI panel for text input
       closeHelm();
-      setTimeout(() => {
-        openSplit('ai');
-        sendAI('What is my fuel range at current speed?');
-      }, 350);
-    }, 3500);
+      setTimeout(() => { openSplit('ai'); toast('Voice unavailable — type your question'); }, 200);
+    };
+    r.onend = () => { if (_helmOn) closeHelm(); };
+    try {
+      r.start();
+      _helmRec   = r;
+      _helmTimer = setTimeout(closeHelm, 10000); // safety: close after 10s silence
+    } catch {
+      // r.start() threw synchronously — fall back immediately
+      closeHelm();
+      setTimeout(() => { openSplit('ai'); toast('Voice unavailable — type your question'); }, 200);
+    }
+  } else {
+    // No Web Speech API — open AI panel for text input
+    closeHelm();
+    openSplit('ai');
+    toast('Voice unavailable — type your question');
   }
 }
 
