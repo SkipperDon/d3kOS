@@ -2,6 +2,43 @@
 
 ---
 
+## Session Close — 2026-03-14 — Planning: version sequencing, mobile app strategy, Node-RED fix
+
+**Tasks completed:**
+- Analysed dependencies between v0.9.2.1, v0.9.2.2, v0.9.3 — sequencing confirmed
+- Conducted 9-question mobile app strategy Q&A with Don
+- Created MOBILE_APP_STRATEGY_BRIEF.md v2.0.0 — complete strategy document
+- Created strategy context zip → C:\Users\donmo\Downloads\d3kos-mobile-strategy-2026-03-14.zip
+- Added mobile app 5-stage build checklist to PROJECT_CHECKLIST.md
+- Fixed Node-RED 4 stale Signal K :3000 URLs → :8099 on Pi. Node-RED restarted, clean.
+- Added Node-RED flow verification task block to v0.9.3/PROJECT_CHECKLIST.md
+
+**Files changed:**
+- `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` — CREATED new, v2.0.0 (Low)
+- `deployment/docs/DEPLOYMENT_INDEX.md` — brief added to index (Low)
+- `SESSION_LOG.md` — planning entry + Node-RED bug fix entry added (Low)
+- `PROJECT_CHECKLIST.md` — mobile app 5-stage section added, Last Updated line (Low)
+- `deployment/v0.9.3/PROJECT_CHECKLIST.md` — Node-RED verification tasks added, stale URL marked complete (Low)
+- `MEMORY.md` — mobile app strategy stable facts added (Low)
+- `~/.node-red/flows.json` (Pi only) — 4 stale SK URLs fixed. Backup written. (Low)
+
+**PROJECT_CHECKLIST.md updates:**
+- Added mobile app section with 5 stages and Phase 2 items (all [ ] — not yet started)
+- Updated Last Updated line to 2026-03-14
+
+**AAO compliance:** PASS — all actions Low or None risk. No High-risk actions. No push. No injection detected.
+
+**Open items for next session:**
+- Mobile app implementation spec (use MOBILE_APP_STRATEGY_BRIEF.md as input)
+- v0.9.2.1 close-out — test suite for ai_bridge.py + Phase 5 Pi feature verification
+- v0.9.2.2 Session 2 — live Signal K + AvNav wiring (Step 0 Pi prerequisites still pending)
+- v0.9.3 Phase 0+1 — staging activation + child theme (run /clear before starting)
+- Node-RED remaining verification tasks — deferred to v0.9.3 session
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Bug Fix — 2026-03-14 — Node-RED flows: stale Signal K :3000 URLs corrected to :8099
 
 **Bug:** Node-RED flows contained 4 stale Signal K URL references to `localhost:3000`
