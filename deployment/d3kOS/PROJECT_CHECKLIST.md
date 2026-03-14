@@ -286,7 +286,8 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] PROJECT_CHECKLIST.md updated to v0.9.2.2 ✓ 2026-03-13
 
 ### Step 0 — Pi System Prerequisites (run once)
-**Risk:** LOW | **Status:** TODO
+**Risk:** LOW | **Status:** CODE COMPLETE 2026-03-14 — Pi-side deploy pending (after v0.9.2.1)
+- [x] keyboard-api.py: added /window/state, /window/maximize, /window/restore per Addendum 19.7. Fixed go_windowed to use `wlrctl toplevel maximize off app_id:chromium` (removed wtype F11 + old maximize on). 2026-03-14
 - [ ] `sudo apt install squeekboard wlrctl unclutter-xfixes`
 - [ ] Edit `~/.config/labwc/rc.xml` — add windowRules block (preserve ILITEK touch rule: `mouseEmulation="no"`)
 - [ ] Edit `~/.config/labwc/autostart` — add `sleep 3 && ...launch-d3kos.sh &` entry
@@ -312,7 +313,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] Day/night keyboard shortcuts: D / N
 
 #### JS file split
-- [⏭] static/js/theme.js — MERGED INTO nav.js (manualTheme flag + autoTheme live in nav.js alongside clock/ticker)
+- [✅] static/js/theme.js — CREATED (extracted from nav.js). manualTheme flag + setTheme() + autoTheme(). Loads before nav.js. Bug 1 fix. 2026-03-14
 - [✅] static/js/nav.js — theme (Bug 1 fix), clock, ticker, split pane, windowed toggle, connectivity polling
 - [✅] static/js/helm.js — HELM voice overlay, `HELM_LANG = document.documentElement.lang`
 - [✅] static/js/overlays.js — all modal/overlay logic + toast
@@ -322,14 +323,17 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] app.py: inject `UI_LANG` from vessel.env into Jinja2 template context
 - [✅] config/vessel.env: VESSEL_NAME, HOME_PORT, UI_LANG=en-GB
 
-#### Session 1 Deploy + Verify (Pi — PENDING)
-- [ ] index.html loads v12 layout at localhost:3000
-- [ ] d3kos.css: white bg day, `#020702` night, Bebas Neue + Chakra Petch
-- [ ] Row toggle BOTH default — no nav row flash on load
-- [ ] Day/night manual override not overwritten by setInterval autoTheme
-- [ ] All keyboard demo shortcuts working
-- [ ] Windowed mode toggle in More menu position 9 working
-- [ ] Squeekboard appears on input focus (Pi only)
+#### Session 1 Deploy + Verify
+- [✅] Files deployed to Pi 2026-03-14 — 9 files to /opt/d3kos/services/dashboard/ + vessel.env created
+- [✅] d3kos-dashboard.service restarted and active
+- [✅] HTTP 200 at localhost:3000 — Flask serving new template ✓
+- [✅] /status: all 6 indicators up (avnav, gemini, ai_bridge, signalk, ollama, internet) ✓
+- [ ] Visual verify: v12 layout on Pi screen (Don)
+- [ ] Row toggle BOTH default — no nav row flash (Pi screen, Don)
+- [ ] Day/night manual override persists across 60s tick (Pi screen, Don)
+- [ ] Keyboard demo shortcuts d/n/h/m/1/2/3 (Pi screen, Don)
+- [ ] Windowed mode toggle in More menu position 9 (Pi screen, Don)
+- [ ] Squeekboard appears on input focus (Pi only — after Step 0)
 - [✅] SESSION_LOG.md updated
 
 ---
