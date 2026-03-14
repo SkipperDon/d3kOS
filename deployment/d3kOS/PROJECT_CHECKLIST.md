@@ -1,7 +1,7 @@
 # d3kOS Project Checklist
 **Version:** v0.9.2.2 | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
 **Spec:** docs/D3KOS_UI_SPEC.md v1.0.0 | **Addendum:** docs/D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0
-**Updated:** 2026-03-14 — Session 2 post-deploy fixes + bug fixes
+**Updated:** 2026-03-14 — Recovery planning session (V0922_RECOVERY_PLAN.md created)
 
 Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entries).
 
@@ -391,3 +391,34 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] All sessions verified on Pi screen (visual + touch) — Don to confirm
 - [✅] SESSION_LOG.md updated
 - [✅] CHANGELOG.md v0.9.2.2 milestone entry written 2026-03-14
+
+---
+
+## v0.9.2.2 Recovery — Planning Session
+**Risk:** NONE (planning only) | **Status:** 🔄 IN PROGRESS 2026-03-14
+**Plan:** docs/V0922_RECOVERY_PLAN.md v1.0.0 (canonical — read before every recovery session)
+**AAO:** Methodology committed in plan document
+
+### Planning completed
+- [✅] Gap analysis complete — all missing functionality identified
+- [✅] Assumption register complete — 17 assumptions, all approved by Don
+- [✅] Recovery plan written: docs/V0922_RECOVERY_PLAN.md v1.0.0
+- [✅] AAO methodology section embedded in plan — binding on all sessions
+
+### Wave 1 — Foundation (INC-01 + INC-02)
+- [ ] INC-01: CSS Foundation — fix HELM button, nav labels, restore settings CSS, add page CSS for 6 new pages
+- [ ] INC-02: Flask Routing — add 6 new routes, remove OpenCPN route, remove Remote Access from More menu
+
+### Wave 2 — Page Redesigns (parallel after Wave 1)
+- [ ] INC-03: Settings page — v12 CSS + community section
+- [ ] INC-04: Marine Vision — 4-camera grid, single focus, fish detection overlay
+- [ ] INC-05: Boat Log — voice note + entry list
+- [ ] INC-06: Onboarding wizard — 6-step flow, QR pairing, equipment/RAG, Tier 0 counter (10 runs max)
+- [ ] INC-07: Upload Documents page
+- [ ] INC-08: Manage Documents page
+- [ ] INC-09: AI Navigation page
+- [ ] INC-10: Engine Monitor page
+
+### Wave 3 — Deploy and Verify
+- [ ] INC-11: Deploy all to Pi + cache-bust
+- [ ] INC-12: Full verification checklist (12 items — see plan doc)
