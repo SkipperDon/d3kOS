@@ -51,6 +51,7 @@ function openSplit(t) {
 function closeSplit() {
   document.getElementById('split').classList.remove('open');
   document.querySelectorAll('.nb').forEach((b, i) => b.classList.toggle('on', i === 0));
+  if (typeof clearCamIntervals === 'function') clearCamIntervals();
 }
 
 function showTab(btn, t) {
@@ -61,11 +62,20 @@ function showTab(btn, t) {
   document.querySelectorAll('.sp-tab').forEach(b =>
     b.classList.toggle('on', b.getAttribute('onclick')?.includes("'" + t + "'"))
   );
+  if (t === 'cam' && typeof loadCameras === 'function') loadCameras();
 }
 
 /* ── MORE MENU ── */
 function openMenu()  { document.getElementById('menuBack').classList.add('open');  }
 function closeMenu() { document.getElementById('menuBack').classList.remove('open'); }
+
+/* ── OPENCPN LAUNCH (Node-RED via /launch/opencpn) ── */
+function launchOpenCPN() {
+  fetch('/launch/opencpn', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => toast(d.ok ? 'OpenCPN launching\u2026' : 'OpenCPN unavailable'))
+    .catch(() => toast('OpenCPN unavailable'));
+}
 
 /* ── WINDOWED MODE TOGGLE (keyboard-api.py :8087) ── */
 function toggleWindowedMode() {

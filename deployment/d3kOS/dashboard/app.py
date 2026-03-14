@@ -13,7 +13,7 @@ Port assignments (from d3kos-config.env):
 
 CRITICAL: Signal K WebSocket is ws://localhost:8099 — NOT ws://localhost:3000.
 """
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
 import requests
 import os
 import shutil
@@ -22,9 +22,10 @@ import subprocess
 from dotenv import load_dotenv
 
 _cfg_dir = os.path.join(os.path.dirname(__file__), 'config')
+_VESSEL_ENV_PATH = os.path.join(_cfg_dir, 'vessel.env')
 load_dotenv(os.path.join(_cfg_dir, 'd3kos-config.env'))
 # vessel.env is owner-config: VESSEL_NAME, HOME_PORT, UI_LANG — override if present
-load_dotenv(os.path.join(_cfg_dir, 'vessel.env'), override=True)
+load_dotenv(_VESSEL_ENV_PATH, override=True)
 
 app = Flask(__name__)
 
@@ -66,6 +67,9 @@ def check_ollama() -> bool:
 
 @app.route('/')
 def index():
+    # First-run: show onboarding wizard if vessel.env is missing
+    if not os.path.exists(_VESSEL_ENV_PATH):
+        return redirect('/setup')
     return render_template(
         'index.html',
         avnav_port=AVNAV_PORT,
@@ -73,6 +77,37 @@ def index():
         vessel_name=VESSEL_NAME,
         ui_lang=UI_LANG,
     )
+
+
+@app.route('/setup', methods=['GET'])
+def setup_get():
+    """First-run onboarding wizard."""
+    return render_template('setup.html', error=None)
+
+
+@app.route('/setup', methods=['POST'])
+def setup_post():
+    """Save vessel.env from onboarding form and redirect to dashboard."""
+    global VESSEL_NAME, HOME_PORT_VAL, UI_LANG
+    vessel_name = request.form.get('vessel_name', '').strip()
+    home_port   = request.form.get('home_port', '').strip()
+    ui_lang     = request.form.get('ui_lang', 'en-GB').strip()
+
+    if not vessel_name:
+        return render_template('setup.html', error='Vessel name is required.')
+
+    content = f'VESSEL_NAME={vessel_name}\nHOME_PORT={home_port}\nUI_LANG={ui_lang}\n'
+    os.makedirs(_cfg_dir, exist_ok=True)
+    with open(_VESSEL_ENV_PATH, 'w') as f:
+        f.write(content)
+
+    # Reload runtime values without restarting Flask
+    load_dotenv(_VESSEL_ENV_PATH, override=True)
+    VESSEL_NAME   = os.getenv('VESSEL_NAME',  vessel_name)
+    HOME_PORT_VAL = os.getenv('HOME_PORT',    home_port)
+    UI_LANG       = os.getenv('UI_LANG',      ui_lang)
+
+    return redirect('/')
 
 
 @app.route('/status')

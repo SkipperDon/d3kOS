@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>d3kOS &mdash; First Run Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:     #FFFFFF;
+    --panel:  #F0F4F0;
+    --cell:   #FFFFFF;
+    --ink:    #040C04;
+    --ink2:   rgba(4,12,4,.52);
+    --ink3:   rgba(4,12,4,.28);
+    --g:      #003A00;
+    --g-txt:  #004400;
+    --g-dim:  rgba(0,58,0,.06);
+    --g-bdr:  rgba(0,58,0,.20);
+    --bar:    #003200;
+    --rule:   rgba(0,0,0,.08);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: 'Chakra Petch', sans-serif;
+    color: var(--ink);
+  }
+
+  /* ── Status bar ── */
+  #sb {
+    height: 48px;
+    background: var(--bar);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+  }
+  .sb-brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: .15em;
+    color: #fff;
+  }
+  .sb-sep { width: 1px; height: 24px; background: rgba(255,255,255,.2); }
+  .sb-title {
+    font-size: 13px;
+    letter-spacing: .1em;
+    color: rgba(255,255,255,.75);
+  }
+
+  /* ── Setup card ── */
+  #setup-wrap {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px 60px;
+    min-height: calc(100vh - 48px);
+  }
+  #setup-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--cell);
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .card-head {
+    background: var(--panel);
+    border-bottom: 1px solid var(--rule);
+    padding: 28px 32px 24px;
+  }
+  .card-head-over {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--ink3);
+    margin-bottom: 6px;
+  }
+  .card-head-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: .1em;
+    color: var(--g-txt);
+    line-height: 1.1;
+  }
+  .card-head-sub {
+    font-size: 13px;
+    color: var(--ink2);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+  .card-body { padding: 28px 32px 32px; }
+
+  /* ── Error banner ── */
+  .error-banner {
+    background: #FFF2EC;
+    border: 1px solid #C03A00;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #8B2A00;
+    margin-bottom: 24px;
+  }
+
+  /* ── Form fields ── */
+  .field { margin-bottom: 22px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    color: var(--ink3);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .field input,
+  .field select {
+    display: block;
+    width: 100%;
+    height: 56px;
+    padding: 0 16px;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--bg);
+    border: 2px solid var(--rule);
+    border-radius: 10px;
+    outline: none;
+    appearance: none;
+    transition: border-color .2s;
+  }
+  .field input:focus,
+  .field select:focus {
+    border-color: var(--g-txt);
+  }
+  .field .hint {
+    font-size: 11px;
+    color: var(--ink3);
+    margin-top: 6px;
+    letter-spacing: .03em;
+  }
+
+  /* ── Submit button ── */
+  .btn-submit {
+    width: 100%;
+    height: 64px;
+    background: var(--g-txt);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    cursor: pointer;
+    transition: opacity .15s;
+    margin-top: 8px;
+  }
+  .btn-submit:active { opacity: .85; }
+
+  /* ── Night mode ── */
+  [data-night] {
+    --bg:    #020702;
+    --panel: #070E07;
+    --cell:  #0B130B;
+    --ink:   #D6EDD6;
+    --ink2:  rgba(214,237,214,.55);
+    --ink3:  rgba(214,237,214,.30);
+    --g:     #00C400;
+    --g-txt: #00CC00;
+    --g-dim: rgba(0,196,0,.08);
+    --g-bdr: rgba(0,196,0,.22);
+    --bar:   #001A00;
+    --rule:  rgba(255,255,255,.08);
+  }
+</style>
+</head>
+<body>
+
+<!-- Status bar -->
+<div id="sb">
+  <div class="sb-brand">d3kOS</div>
+  <div class="sb-sep"></div>
+  <div class="sb-title">First Run Setup</div>
+</div>
+
+<div id="setup-wrap">
+  <div id="setup-card">
+    <div class="card-head">
+      <div class="card-head-over">Welcome to d3kOS</div>
+      <div class="card-head-title">Let&rsquo;s set up<br>your vessel</div>
+      <div class="card-head-sub">
+        This information personalises your dashboard and AI First Officer.
+        You can change these settings at any time in Settings.
+      </div>
+    </div>
+
+    <div class="card-body">
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="/setup">
+        <div class="field">
+          <label for="vessel_name">Vessel Name</label>
+          <input type="text" id="vessel_name" name="vessel_name"
+                 placeholder="e.g. MV SERENITY" autocomplete="off"
+                 value="{{ request.form.get('vessel_name', '') }}">
+          <div class="hint">Used in the status bar, AI prompts, and voyage logs.</div>
+        </div>
+
+        <div class="field">
+          <label for="home_port">Home Port</label>
+          <input type="text" id="home_port" name="home_port"
+                 placeholder="e.g. Kingston" autocomplete="off"
+                 value="{{ request.form.get('home_port', '') }}">
+          <div class="hint">Used in AI navigation prompts for local knowledge.</div>
+        </div>
+
+        <div class="field">
+          <label for="ui_lang">Dashboard Language</label>
+          <select id="ui_lang" name="ui_lang">
+            <option value="en-GB" {% if request.form.get('ui_lang','en-GB')=='en-GB' %}selected{% endif %}>English (UK)</option>
+            <option value="en-US" {% if request.form.get('ui_lang')=='en-US' %}selected{% endif %}>English (US)</option>
+            <option value="fr-FR" {% if request.form.get('ui_lang')=='fr-FR' %}selected{% endif %}>Fran&ccedil;ais</option>
+            <option value="de-DE" {% if request.form.get('ui_lang')=='de-DE' %}selected{% endif %}>Deutsch</option>
+            <option value="es-ES" {% if request.form.get('ui_lang')=='es-ES' %}selected{% endif %}>Espa&ntilde;ol</option>
+            <option value="it-IT" {% if request.form.get('ui_lang')=='it-IT' %}selected{% endif %}>Italiano</option>
+            <option value="pt-PT" {% if request.form.get('ui_lang')=='pt-PT' %}selected{% endif %}>Portugu&ecirc;s</option>
+            <option value="nl-NL" {% if request.form.get('ui_lang')=='nl-NL' %}selected{% endif %}>Nederlands</option>
+            <option value="sv-SE" {% if request.form.get('ui_lang')=='sv-SE' %}selected{% endif %}>Svenska</option>
+            <option value="no-NO" {% if request.form.get('ui_lang')=='no-NO' %}selected{% endif %}>Norsk</option>
+            <option value="da-DK" {% if request.form.get('ui_lang')=='da-DK' %}selected{% endif %}>Dansk</option>
+            <option value="fi-FI" {% if request.form.get('ui_lang')=='fi-FI' %}selected{% endif %}>Suomi</option>
+            <option value="ja-JP" {% if request.form.get('ui_lang')=='ja-JP' %}selected{% endif %}>&#26085;&#26412;&#35486;</option>
+            <option value="zh-CN" {% if request.form.get('ui_lang')=='zh-CN' %}selected{% endif %}>&#20013;&#25991;&#65288;&#31616;&#20307;&#65289;</option>
+            <option value="ar-SA" {% if request.form.get('ui_lang')=='ar-SA' %}selected{% endif %}>&#1575;&#1604;&#1593;&#1585;&#1576;&#1610;&#1577;</option>
+            <option value="uk-UA" {% if request.form.get('ui_lang')=='uk-UA' %}selected{% endif %}>&#1059;&#1082;&#1088;&#1072;&#1111;&#1085;&#1089;&#1100;&#1082;&#1072;</option>
+            <option value="ru-RU" {% if request.form.get('ui_lang')=='ru-RU' %}selected{% endif %}>&#1056;&#1091;&#1089;&#1089;&#1082;&#1080;&#1081;</option>
+            <option value="el-GR" {% if request.form.get('ui_lang')=='el-GR' %}selected{% endif %}>&#917;&#955;&#955;&#951;&#957;&#953;&#954;&#940;</option>
+          </select>
+          <div class="hint">Sets the HELM voice recognition language (BCP 47 tag).</div>
+        </div>
+
+        <button type="submit" class="btn-submit">SAVE &amp; LAUNCH d3kOS</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Apply night mode if after 20:00 or before 07:00 */
+  (function () {
+    const h = new Date().getHours();
+    if (h < 7 || h >= 20) document.body.setAttribute('data-night', '');
+  })();
+</script>
+</body>
+</html>
