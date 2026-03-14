@@ -2,6 +2,43 @@
 
 ---
 
+## Session — 2026-03-14 — v0.9.2.2 Session 2 — Signal K live data, AI panel, AvNav iframe deployed
+
+**Tasks completed:**
+- Session 2 code written and deployed to Pi: instruments.js, helm.js, index.html
+- instruments.js: Signal K WebSocket ws://localhost:8099, all 10 instrument cells wired to SK paths, alert thresholds (coolant/oil/battery/depth/fuel), flood cell states, ticker updates, updateAlertDots(), tap-to-diag, AvNav 15s waypoint poll + haversine/ETA, Route AI SSE :3002/stream
+- helm.js: Web Speech API (HELM overlay + split pane mic), sendAI() → POST :3001/ask → chat bubbles, _sanitizeAI(), Enter key wire on text field
+- index.html: IDs added to all 10 instrument cells, chart-mock replaced with live AvNav iframe
+- d3kos-dashboard restarted, HTTP 200 confirmed, /status all 6 indicators up
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/static/js/instruments.js` — Session 2 full rewrite (52 → 270 lines)
+- `deployment/d3kOS/dashboard/static/js/helm.js` — Session 2 full rewrite (69 → 148 lines)
+- `deployment/d3kOS/dashboard/templates/index.html` — cell IDs + AvNav iframe
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Session 2 marked deployed
+
+**PROJECT_CHECKLIST.md updates:**
+- Session 2 status: TODO → ✅ DEPLOYED 2026-03-14 | Commit 7097664
+- All 12 code items marked [✅]
+- 2 Don visual verify items remain [ ]
+
+**AAO compliance:** PASS — Medium risk pre-stated, no High-risk actions, no push
+
+**Open items for next session:**
+- Don to visually verify: live SK data on cells, AI panel text → response bubble
+- Session 3: cameras tab, More menu production items, first-run wizard
+- Step 0 Pi-side deploy still blocked on v0.9.2.1 (apt install wlrctl, rc.xml, labwc)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-14 — v0.9.2.2 Step 0 + Session 1 code complete — Pi deploy pending v0.9.2.1
 
 **Tasks completed:**

@@ -341,19 +341,24 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ### Session 2 — Live Signal K + AvNav + AI Wiring
-**Risk:** MEDIUM | **Status:** TODO
+**Risk:** MEDIUM | **Status:** ✅ DEPLOYED 2026-03-14 | Commit 7097664 — service active, HTTP 200
 
-- [ ] instruments.js: Signal K WebSocket `ws://localhost:8099/signalk/v1/stream`
-- [ ] All instrument cells wired to Signal K paths (Section 22 of spec)
-- [ ] Alert thresholds active: advisory/alert/critical flood states (Section 23)
-- [ ] `---` shown for null/disconnected values
-- [ ] Status bar ticker updates on alert/critical
-- [ ] `updateAlertDots()` — amber dot on hidden tab if alert present
-- [ ] Tap advisory/alert cell → Engine Diagnostic overlay opens
-- [ ] Next Waypoint cell: polls AvNav POST getleg every 15s
-- [ ] Route AI widget: SSE from :3002/stream
-- [ ] AI Nav panel: text + voice → POST :3001/ask → chat bubbles
-- [ ] SESSION_LOG.md updated
+- [✅] instruments.js: Signal K WebSocket `ws://localhost:8099/signalk/v1/stream` — auto-reconnect 5s
+- [✅] All instrument cells wired to Signal K paths (Section 22) — all 10 cells
+- [✅] Alert thresholds active: advisory/alert/critical flood states (Section 23)
+- [✅] `---` shown for null/disconnected values
+- [✅] Status bar ticker updates on alert/critical (amber #FFD454)
+- [✅] `updateAlertDots()` — called on every state change + row toggle
+- [✅] Advisory/alert/critical cells: onclick → openDiag()
+- [✅] Next Waypoint cell: polls AvNav POST getleg every 15s + haversine dist + ETA
+- [✅] Route AI widget: SSE from :3002/stream → updates text + badge
+- [✅] AI Nav panel: text + voice → POST :3001/ask → chat bubbles (_sanitizeAI + meta line)
+- [✅] AvNav iframe live at localhost:{{ avnav_port }} (replaced chart-mock placeholder)
+- [✅] Deployed to Pi 2026-03-14 — 3 files to /opt/d3kos/services/dashboard/
+- [✅] d3kos-dashboard restarted, HTTP 200, /status all 6 indicators up
+- [ ] Don visual verify: live data flowing on Pi screen
+- [ ] Don visual verify: AI panel text input → response bubble
+- [✅] SESSION_LOG.md updated
 
 ---
 
