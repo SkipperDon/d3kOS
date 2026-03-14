@@ -2158,7 +2158,48 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-14 — v0.9.2.2 Step 0 code complete (keyboard-api.py endpoints fixed + added). Session 1 code complete and deployed to Pi. Pi-side Step 0 deploy blocked on v0.9.2.1 completion. Don visual verify of v12 layout pending. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-14 — Mobile app strategy complete (v2.0.0 brief written). v0.9.2.2 Step 0 code complete. Session 1 code complete and deployed to Pi. | **Maintained By:** Development team + Claude Code
+
+---
+
+## Mobile App — d3kOS Companion (Strategy Complete — Build Not Started)
+
+**Brief:** `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0
+**Status:** Strategy complete 2026-03-14. Implementation spec not yet written. Build not started.
+
+### Stage 1 — Foundation
+- [ ] Complete Pi export-manager (all 8 data categories — currently 3/8)
+- [ ] Build AtMyBoat.com PHP data ingress + command queue endpoints
+- [ ] Build Pi Command Consumer Agent (d3kos-cloud-agent.service)
+- [ ] Build device registration + QR pairing on AtMyBoat.com
+
+### Stage 2 — Core PWA (GitHub Pages)
+- [ ] Account creation + QR pairing screen
+- [ ] Home screen (boat status, Find My Boat, health dashboard, update available)
+- [ ] OTA upgrade flow (version check, release notes, progress bar)
+- [ ] Engine + alerts view
+
+### Stage 3 — Fix My Pi
+- [ ] Pi diagnostic + repair script (all services, configs, files, DB)
+- [ ] Fix My Pi command + report flow (Pi → AtMyBoat.com → app)
+- [ ] Stripe $29.99 payment on AtMyBoat.com for T0/T1
+- [ ] Report storage + display in app
+
+### Stage 4 — PDF Boat Reports
+- [ ] Install mPDF on HostPapa
+- [ ] Build PDF report generation PHP script
+- [ ] Gemini 2.5 Flash AI recommendations (MAX_TOKENS 1000)
+- [ ] Report storage + download in app
+
+### Stage 5 — OS Lockdown
+- [ ] Finalise apt-mark hold package list
+- [ ] Deploy pre-upgrade hook on Pi
+- [ ] Fix My Pi extended to detect + repair OS-level breakage
+
+### Phase 2 (deferred — needs VPS budget)
+- [ ] Push notifications for critical alerts
+- [ ] Live screen viewing via Tailscale
+- [ ] T3 fleet management (multiple Pis, one account)
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 
