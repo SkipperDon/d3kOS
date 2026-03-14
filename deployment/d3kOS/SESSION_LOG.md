@@ -43,9 +43,15 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 - d3kos-dashboard.service restarted → active
 - Smoke test: HTTP 200 at localhost:3000 ✓, /status all 6 indicators up ✓
 
+**Step 0 Deploy (same session — 2026-03-14):**
+- `unclutter-xfixes` installed on Pi (wlrctl + squeekboard already present)
+- `~/.config/labwc/rc.xml` updated: `<windowRules><windowRule identifier="chromium" serverDecoration="no"/></windowRules>` added; ILITEK `mouseEmulation="no"` and theme preserved; backup at rc.xml.bak
+- `~/.config/labwc/autostart` updated: unclutter-xfixes + d3kOS launch block (curl waits for :3000 before launching Chromium); backup at autostart.bak
+- `/opt/d3kos/scripts/launch-d3kos.sh` deployed (Pi version — `/home/d3kos/` prefs path, `chmod +x`)
+- `labwc` reloaded live — SIGUSR1 sent to PID 1264 (rc.xml windowRules active now)
+
 **Pending:**
-- Visual verification on Pi screen (Don): v12 layout, row toggle, day/night, keyboard shortcuts, Windowed Mode toggle
-- Step 0 Pi prerequisites: `sudo apt install squeekboard wlrctl unclutter-xfixes`, rc.xml windowRules (preserve ILITEK rule), autostart entry, `labwc --reconfigure`
+- Visual verification on Pi screen (Don): v12 layout, Squeekboard on input focus, Windowed Mode toggle, auto-launch on reboot
 - Session 2: instruments.js Signal K WebSocket wiring, AvNav iframe, AI chat → :3001, Route AI SSE from :3002
 - Session 3: cameras tab, More menu production items, onboarding wizard
 

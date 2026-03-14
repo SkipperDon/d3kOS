@@ -286,16 +286,18 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [x] PROJECT_CHECKLIST.md updated to v0.9.2.2 ✓ 2026-03-13
 
 ### Step 0 — Pi System Prerequisites (run once)
-**Risk:** LOW | **Status:** CODE COMPLETE 2026-03-14 — Pi-side deploy pending (after v0.9.2.1)
-- [x] keyboard-api.py: added /window/state, /window/maximize, /window/restore per Addendum 19.7. Fixed go_windowed to use `wlrctl toplevel maximize off app_id:chromium` (removed wtype F11 + old maximize on). 2026-03-14
-- [ ] `sudo apt install squeekboard wlrctl unclutter-xfixes`
-- [ ] Edit `~/.config/labwc/rc.xml` — add windowRules block (preserve ILITEK touch rule: `mouseEmulation="no"`)
-- [ ] Edit `~/.config/labwc/autostart` — add `sleep 3 && ...launch-d3kos.sh &` entry
-- [ ] Run `labwc --reconfigure`
-- [ ] Deploy `scripts/launch-d3kos.sh` to Pi at same path, `chmod +x`
-- [ ] Verify: tap input field → Squeekboard appears
-- [ ] Verify: `wlrctl toplevel list` responds without error
-- [ ] Verify: wlrctl windowed toggle endpoints work via keyboard-api.py
+**Risk:** LOW | **Status:** ✅ COMPLETE 2026-03-14
+- [✅] keyboard-api.py: /window/state, /window/maximize, /window/restore per Addendum 19.7. Already live on Pi. ✓
+- [✅] `squeekboard` v1.43.1 — already installed ✓
+- [✅] `wlrctl` v0.2.2 — already installed ✓
+- [✅] `unclutter-xfixes` — installed 2026-03-14 ✓
+- [✅] `~/.config/labwc/rc.xml` — `<windowRules><windowRule identifier="chromium" serverDecoration="no"/></windowRules>` added. ILITEK `mouseEmulation="no"` preserved. Backup: rc.xml.bak ✓
+- [✅] `~/.config/labwc/autostart` — unclutter-xfixes + launch-d3kos.sh block added (waits for :3000 before launch). Backup: autostart.bak ✓
+- [✅] `labwc` reloaded — SIGUSR1 sent to PID 1264 ✓
+- [✅] `/opt/d3kos/scripts/launch-d3kos.sh` deployed, chmod +x ✓
+- [ ] Verify on Pi screen: tap input field → Squeekboard appears (Don)
+- [ ] Verify on Pi screen: wlrctl windowed toggle works via More menu (Don)
+- [ ] Verify on reboot: Chromium auto-launches to localhost:3000 (Don)
 
 ### Session 1 — Static Template
 **Risk:** MEDIUM | **Status:** ✅ COMPLETE 2026-03-14 | Commit d94b2f9
