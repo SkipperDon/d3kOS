@@ -387,5 +387,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] More menu: removed Demo:EngDiag, Demo:PosReport, Demo:Arrival; real Engine Monitor (openDiag), Trip Log, Settings, OpenCPN added
 - [✅] First-run wizard fires when vessel.env is absent (/setup redirect in app.py)
 - [✅] Wizard writes VESSEL_NAME, HOME_PORT, UI_LANG to vessel.env; reloads runtime vars
+- [✅] Wizard: "FREE CHARTS CONFIGURED" section added — OSM + OpenSeaMap sources, live AvNav status dot
 - [ ] All sessions verified on Pi screen (visual + touch) — Don to confirm
 - [✅] SESSION_LOG.md updated
+- [✅] CHANGELOG.md v0.9.2.2 milestone entry written 2026-03-14

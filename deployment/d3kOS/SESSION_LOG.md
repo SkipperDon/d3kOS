@@ -4,6 +4,44 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-14 — v0.9.2.2 Complete: Fixes, Windy, Chart Wizard Step, CHANGELOG
+
+**Goal:** Fix AvNav white screen, remove fake demo content, wire live Windy weather, add chart step to setup wizard, write CHANGELOG.md v0.9.2.2 milestone entry.
+
+**Completed:**
+- osm-online.xml: rewrote — removed European bounding box (was `minlon="-20" maxlon="30"`, excluded Canada entirely). Global coverage, HTTPS tile URLs, OpenStreetMap + OpenSeaMap. Deployed via `sudo tee` (file owned by avnav:avnav). Verified: AvNav tile proxy returns HTTP 200 for North American tile.
+- index.html: removed hardcoded fake AI chat bubbles ("Helm, fuel range" / Kingston anchorage). AI tab now empty on load — real responses only. Added live aiSourceLbl status bar.
+- nav.js: added `_windyUrl()`, `loadWindy()`, `setWxView()` functions. Windy uses GPS from instruments.js (`window.d3kGpsLat`/`d3kGpsLon`), falls back to Toronto (43.65, -79.38). Three overlays: waves (ecmwf), rain (nowcast), wind (ecmwf).
+- instruments.js: exposed GPS to `window.d3kGpsLat` / `window.d3kGpsLon` on each Signal K position update.
+- helm.js: `sendAI()` updates `aiSourceLbl` after response (GEMINI 2.5 FLASH or OLLAMA).
+- d3kos.css: added `.wx-sub` button styles for weather panel sub-navigation.
+- CSS link bumped to `?v=3`.
+- Commit: 05f5203
+- setup.html: added "FREE CHARTS CONFIGURED" section — shows OSM + OpenSeaMap sources; live JS fetch to `/status` checks AvNav and shows green dot when :8080 is up.
+- CHANGELOG.md: v0.9.2.2 milestone entry written — full feature list covering all 4 sessions.
+- Deployed setup.html to Pi. /setup HTTP 200 verified.
+
+**Decisions:**
+- Windy free public embed requires no API key — previous "key" was a misconception. `embed2.html` URL is fully public and authenticated by Windy's own server.
+- o-charts skipped by operator directive — `.tar.gz` files are OpenCPN plugin installers, not chart data. Actual `.oesu` files not on Pi. Will not be part of setup wizard.
+- Chart wizard step is informational only — charts are pre-configured via osm-online.xml. No download step needed for OSM tile maps (stream live, cache as navigated).
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don visual verify on Pi screen: Windy weather loads in weather tab, chart dot goes green in setup wizard
+- Don visual verify: AI panel first response shows aiSourceLbl update
+- UAT (5 metric + 5 imperial users) — open from v0.9.2
+- Phase 5 on-boat verification (Route AI widget, Port Arrival, Voyage Log, Anchor Watch — live GPS required)
+
+---
+
 ## Session 2026-03-14 — v0.9.2.2 Session 3: Cameras, More Menu, Onboarding Wizard
 **Goal:** Complete v0.9.2.2 — cameras tab live, more menu production-ready, first-run wizard.
 
