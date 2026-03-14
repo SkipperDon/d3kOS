@@ -141,6 +141,9 @@ const SK_HANDLERS = {
     if (!v || v.latitude == null) return;
     _gpsLat = v.latitude;
     _gpsLon = v.longitude;
+    // Expose GPS globally so weather tab can use live position
+    window.d3kGpsLat = v.latitude;
+    window.d3kGpsLon = v.longitude;
     const ls = _latStr(v.latitude), lo = _lonStr(v.longitude);
     _setVal('cellPos', ls + '<br>' + lo);
     const prp = document.querySelector('#posRpt .pr-pos');

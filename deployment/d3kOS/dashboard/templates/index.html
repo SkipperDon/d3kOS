@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=3">
 </head>
 <body>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
@@ -151,37 +151,33 @@
 
       <!-- AI tab -->
       <div id="tab-ai" style="display:flex;flex-direction:column;height:calc(100% - 56px);">
-        <div class="sp-body" style="flex:1;overflow-y:auto;">
+        <div class="sp-body" id="aiBody" style="flex:1;overflow-y:auto;">
           <div id="voyage-notice"></div>
           <div class="ai-status">
-            <div class="ai-dot"></div>
-            GEMINI 2.5 FLASH &middot; ONLINE
-            <span style="margin-left:auto;opacity:.5">OLLAMA STANDBY</span>
-          </div>
-          <div class="ai-msg me">Helm, what&rsquo;s my fuel range at current speed?</div>
-          <div class="ai-msg bot">
-            At <b>18.4 kts</b>, you have approximately <b>2h 40m &middot; 49nm</b> of range. Kingston is <b>8.3nm</b> ahead &mdash; comfortable margin. Fuel at Kingston regardless &mdash; next dock is 62nm beyond.
-            <div class="meta">gemini-2.5-flash &middot; 312 tokens &middot; not stored</div>
-          </div>
-          <div class="ai-msg me">Anchorage at Kingston?</div>
-          <div class="ai-msg bot">
-            <b>Portsmouth Olympic Harbour</b> &mdash; anchor NE of marina basin. 4&ndash;6m sand/mud, excellent holding. Clear of ferry lane. VHF 68 for marina. Tidal range minimal on Lake Ontario.
-            <div class="meta">gemini-2.5-flash &middot; 198 tokens &middot; not stored</div>
+            <div class="ai-dot" id="aiDot"></div>
+            <span id="aiSourceLbl">AI NAVIGATOR</span>
+            <span style="margin-left:auto;opacity:.5;font-size:10px;">QUERIES NOT STORED</span>
           </div>
         </div>
         <div class="ai-in">
           <button class="mic72" id="spMic" onclick="toggleMic()">&#127908;</button>
-          <input class="ai-txt" placeholder="Or type a question&hellip;" id="aiField">
+          <input class="ai-txt" placeholder="Ask a navigation question&hellip;" id="aiField">
         </div>
       </div>
 
-      <!-- Weather tab -->
-      <div id="tab-wx" style="display:none;padding:18px;">
-        <div style="display:flex;gap:10px;margin-bottom:16px;">
-          <button style="flex:1;height:56px;border-radius:10px;background:var(--g-dim);border:2px solid var(--g-bdr);color:var(--g-txt);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">&#127754; Sea State</button>
-          <button style="flex:1;height:56px;border-radius:10px;background:var(--cell);border:1px solid var(--rule);color:var(--ink3);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">&#127783; Radar</button>
+      <!-- Weather tab — live Windy embed at GPS position -->
+      <div id="tab-wx" style="display:none;flex-direction:column;height:calc(100% - 56px);">
+        <div style="display:flex;gap:8px;padding:10px 12px;flex-shrink:0;">
+          <button id="wxBtnWaves" class="wx-sub on" onclick="setWxView('waves')">&#127754; Sea State</button>
+          <button id="wxBtnRain"  class="wx-sub"    onclick="setWxView('rain')">&#127783; Radar</button>
+          <button id="wxBtnWind"  class="wx-sub"    onclick="setWxView('wind')">&#127757; Wind</button>
         </div>
-        <div class="ph-frame"><div class="ph-icon">&#127754;</div><div class="ph-lbl">WINDY EMBED &mdash; SESSION 2</div></div>
+        <iframe id="windyFrame" src="about:blank"
+                style="flex:1;border:none;display:block;width:100%;"
+                title="Windy Weather" allowfullscreen></iframe>
+        <div id="wxMsg" style="display:none;position:absolute;bottom:80px;left:0;right:0;text-align:center;font-family:'Chakra Petch',sans-serif;font-size:13px;color:var(--ink3);padding:8px;">
+          Waiting for GPS position&hellip;
+        </div>
       </div>
 
       <!-- Cameras tab — Session 3: live slot/hardware grid from :8084 -->

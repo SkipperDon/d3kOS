@@ -137,6 +137,10 @@ function sendAI(text) {
       const src  = d.source  || 'ai';
       const tok  = d.tokens  || d.token_count || null;
       _addBubble(resp, false, src, tok);
+      const srcLbl = document.getElementById('aiSourceLbl');
+      if (srcLbl) srcLbl.textContent = src === 'ollama'
+        ? 'OLLAMA \u00b7 OFFLINE AI'
+        : 'GEMINI 2.5 FLASH \u00b7 ONLINE';
       if (ticker && !ticker.classList.contains('hot')) {
         ticker.textContent = 'HELM ANSWERED · ' + src.toUpperCase()
           + (tok ? ' · ' + tok + ' TOKENS' : '');
