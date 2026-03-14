@@ -16,7 +16,8 @@ sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' \
   /home/boatiq/.config/chromium/Default/Preferences 2>/dev/null
 
 # Launch Chromium as maximised app window
-chromium-browser \
+# Note: binary is 'chromium' on Debian/Raspberry Pi OS (not 'chromium-browser')
+chromium \
   --app=http://localhost:3000 \
   --start-maximized \
   --noerrdialogs \
