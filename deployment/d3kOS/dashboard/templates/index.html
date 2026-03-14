@@ -184,12 +184,17 @@
         <div class="ph-frame"><div class="ph-icon">&#127754;</div><div class="ph-lbl">WINDY EMBED &mdash; SESSION 2</div></div>
       </div>
 
-      <!-- Cameras tab -->
-      <div id="tab-cam" style="display:none;padding:18px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <div class="ph-frame" style="aspect-ratio:4/3;margin:0;"><div class="ph-icon">&#128247;</div><div class="ph-lbl">FORWARD</div></div>
-          <div class="ph-frame" style="aspect-ratio:4/3;margin:0;"><div class="ph-icon">&#9881;</div><div class="ph-lbl">ENGINE ROOM</div></div>
+      <!-- Cameras tab — Session 3: live slot/hardware grid from :8084 -->
+      <div id="tab-cam" style="display:none;padding:14px;">
+        <!-- Forward watch primary view (full width, shown when forward_watch slot is assigned) -->
+        <div id="cam-primary" style="display:none;position:relative;margin-bottom:10px;">
+          <div id="cam-primary-lbl" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;padding:5px 10px;border-radius:0 0 9px 9px;z-index:1;">&#9658; FORWARD WATCH</div>
+          <img id="cam-primary-img" src="" alt="Forward Watch" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--panel);display:block;">
         </div>
+        <!-- Grid: all display_in_grid slots (excluding forward watch already shown above) -->
+        <div id="cam-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+        <!-- Status / loading / error message -->
+        <div id="cam-msg" style="display:flex;align-items:center;justify-content:center;min-height:100px;color:var(--ink3);font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:.05em;text-align:center;">Loading cameras&hellip;</div>
       </div>
     </div>
   </div>
@@ -386,34 +391,34 @@
         <span class="ms-btn-sub">Gemini &middot; Ollama</span>
       </button>
       <!-- 3 -->
-      <button class="ms-btn" onclick="closeMenu();toast('Engine monitor &mdash; coming in Session 2')">
+      <button class="ms-btn" onclick="closeMenu();openDiag()">
         <span class="ms-btn-icon">&#9881;</span>
         <span class="ms-btn-lbl">Engine Monitor</span>
-        <span class="ms-btn-sub">Full history</span>
+        <span class="ms-btn-sub">Diagnostics &amp; alerts</span>
       </button>
-      <!-- 4 Demo -->
+      <!-- 4 -->
+      <button class="ms-btn" onclick="closeMenu();openSplit('ai');toast('Voyage Log &mdash; view summaries in AI panel')">
+        <span class="ms-btn-icon">&#128218;</span>
+        <span class="ms-btn-lbl">Trip Log</span>
+        <span class="ms-btn-sub">Voyage summaries</span>
+      </button>
+      <!-- 5 -->
+      <button class="ms-btn" onclick="closeMenu();window.location='/settings'">
+        <span class="ms-btn-icon">&#9881;&#65039;</span>
+        <span class="ms-btn-lbl">Settings</span>
+        <span class="ms-btn-sub">System &amp; configuration</span>
+      </button>
+      <!-- 6 -->
+      <button class="ms-btn" onclick="closeMenu();launchOpenCPN()">
+        <span class="ms-btn-icon">&#128506;</span>
+        <span class="ms-btn-lbl">OpenCPN</span>
+        <span class="ms-btn-sub">Chart plotter</span>
+      </button>
+      <!-- 7 Demo -->
       <button class="ms-btn" onclick="closeMenu();showAlert()">
         <span class="ms-btn-icon">&#9888;</span>
         <span class="ms-btn-lbl">Demo: AIS Alert</span>
         <span class="ms-btn-sub">Vessel crossing</span>
-      </button>
-      <!-- 5 Demo -->
-      <button class="ms-btn" onclick="closeMenu();openDiag()">
-        <span class="ms-btn-icon">&#128295;</span>
-        <span class="ms-btn-lbl">Demo: Engine Diag</span>
-        <span class="ms-btn-sub">Coolant advisory</span>
-      </button>
-      <!-- 6 Demo -->
-      <button class="ms-btn" onclick="closeMenu();showPosRpt()">
-        <span class="ms-btn-icon">&#128226;</span>
-        <span class="ms-btn-lbl">Demo: Pos Report</span>
-        <span class="ms-btn-sub">Full-screen brief</span>
-      </button>
-      <!-- 7 Demo -->
-      <button class="ms-btn" onclick="closeMenu();document.getElementById('arrival-widget').classList.add('show')">
-        <span class="ms-btn-icon">&#127937;</span>
-        <span class="ms-btn-lbl">Demo: Arrival</span>
-        <span class="ms-btn-sub">Port brief</span>
       </button>
       <!-- 8 Demo -->
       <button class="ms-btn" onclick="closeMenu();showCrit()">
@@ -444,12 +449,13 @@
 
 <div id="toast"></div>
 
-<!-- JS load order: instruments &rarr; theme &rarr; overlays &rarr; helm &rarr; nav &rarr; ai-bridge -->
+<!-- JS load order: instruments → theme → overlays → helm → nav → cameras → ai-bridge -->
 <script src="{{ url_for('static', filename='js/instruments.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/overlays.js') }}"></script>
 <script src="{{ url_for('static', filename='js/helm.js') }}"></script>
 <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cameras.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ai-bridge.js') }}"></script>
 
 </body>
