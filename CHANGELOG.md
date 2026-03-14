@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.9.2.2] - 2026-03-13 (In Planning — build starts next session)
+## [0.9.2.2] - 2026-03-14 (Session 1 Complete — Session 2 next)
 
 ### Summary
 
@@ -26,6 +26,22 @@ Complete replacement of the v0.9.2.1 frontend with the v12 design. Backend servi
 **Specs committed:** D3KOS_UI_SPEC.md v1.0.0, D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0, d3kos-mockup-v12.html (canonical reference), D3KOS_V12_FINDINGS.md.
 
 **Build plan:** 3 sessions — Session 1 (static template + Step 0 system prerequisites), Session 2 (live Signal K + AvNav + AI wiring), Session 3 (cameras + More menu + onboarding).
+
+### Session 1 (2026-03-14, commit d94b2f9) — Static Template Complete
+
+**Changed:**
+- `index.html` — full v12 Jinja2 template replaces v4 9-button hub. `lang="{{ ui_lang }}"`. 3-way BOTH/ENGINE/NAV row toggle. All Phase 5 AI Bridge IDs present. More menu position 9 = Windowed Mode toggle.
+- `d3kos.css` — v12 design system (Bebas Neue + Chakra Petch, white/forest theme). Phase 5 additions: `.ai-state`, `#anchor-widget`, `#voyage-notice`.
+- `app.py` — `vessel.env` loaded (override), `UI_LANG` injected into template.
+
+**New:**
+- `static/js/instruments.js` — `showRow()` 3-way toggle + context menu
+- `static/js/helm.js` — HELM overlay + mic, locale from `document.documentElement.lang`
+- `static/js/overlays.js` — all 5 overlays + toast
+- `static/js/nav.js` — Bug 1 fix (manualTheme), clock, ticker, split pane, Windowed Mode, keyboard shortcuts, /status polling
+- `dashboard/config/vessel.env` — owner config (VESSEL_NAME, HOME_PORT, UI_LANG=en-GB)
+
+**Pending (Session 2):** instruments.js Signal K WebSocket wiring, AvNav iframe, AI chat → :3001, Route AI SSE from :3002.
 
 ---
 

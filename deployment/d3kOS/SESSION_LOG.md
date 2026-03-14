@@ -4,6 +4,45 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-14 — v0.9.2.2 Session 1: Static Template + JS Split + Bug Fixes
+**Goal:** Convert d3kos-mockup-v12.html into live Flask Jinja2 template; split monolithic JS into 4 modules; wire vessel.env + UI_LANG; fix Bug 1 (autoTheme override) and Bug 2 (nav row flash).
+
+**Completed:**
+- `dashboard/config/vessel.env` created: VESSEL_NAME=MV SERENITY, HOME_PORT=Toronto, UI_LANG=en-GB
+- `dashboard/app.py` updated: vessel.env loaded after d3kos-config.env (override=True); UI_LANG added to env; `ui_lang=UI_LANG` injected into index() route
+- `dashboard/static/css/d3kos.css` replaced: full v12 design system (Bebas Neue + Chakra Petch, white/forest day, `#020702` night); Phase 5 CSS additions: `.ai-state` variants, `#anchor-widget`, `#voyage-notice`
+- `dashboard/static/js/instruments.js` created: `showRow()` 3-way BOTH/ENGINE/NAV toggle, alert dot helper, context menu open/close, `DOMContentLoaded` init calls `showRow('both')`
+- `dashboard/static/js/helm.js` created: HELM overlay open/close, mic toggle, `HELM_LANG = document.documentElement.lang`, 3.5s demo capture timeout
+- `dashboard/static/js/overlays.js` created: toast, AI alert card, engine diag backdrop, critical screen, position report (4s auto-close + progress bar), port arrival banner
+- `dashboard/static/js/nav.js` created: Bug 1 fix (`manualTheme` flag — `autoTheme()` returns early if `manualTheme=true`), clock tick, 5-message ticker with fade, split pane open/close/showTab, More menu open/close, `toggleWindowedMode()` → keyboard-api.py :8087, keyboard shortcuts (d/n/h/m/1/2/3/a/g/c/r/p/Escape), `/status` connectivity polling every 30s
+- `dashboard/templates/index.html` replaced: complete v12 Jinja2 template — `<html lang="{{ ui_lang }}">`, `{{ vessel_name }}` in status bar + More menu, no `hidden` class on nav row (Bug 2 fix), day/night buttons pass `manual=true`, all Phase 5 AI Bridge IDs present (`route-state/text/meta`, `arrival-widget/dest/text`, `anchor-widget/text/meta/advice`, `voyage-notice`), More menu position 9 = Windowed Mode toggle, JS load order: instruments.js → helm.js → overlays.js → nav.js → ai-bridge.js
+- `.gitignore` updated: added `**/config/*.env` at root (belt-and-suspenders; `deployment/d3kOS/.gitignore` already covers `vessel.env` via `**/*.env`)
+- Commit `d94b2f9` — all 8 files staged and committed to `main`
+
+**Decisions:**
+- JS split into 4 modules (not 5 as spec listed): `theme.js` was merged into `nav.js` — the Bug 1 fix (`manualTheme` flag) lives alongside `autoTheme()` and clock/ticker in one module. This reduces module count without losing clarity.
+- `closeArr()` in overlays.js updated to use `#arrival-widget` (not `#arrival`) to match ai-bridge.js requirement — ID corrected in both HTML and JS.
+- TICKS array defined in nav.js global scope; overlays.js references it at call time (not parse time) — cross-module ref works because all JS loads without type="module" in global scope.
+- vessel.env covered by existing `deployment/d3kOS/.gitignore **/*.env` — root gitignore addition is extra safety.
+
+**Ollama:** 0 calls — all edits direct (no code generation needed, file splits and bug fixes from known spec).
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Step 0 Pi prerequisites: `sudo apt install squeekboard wlrctl unclutter-xfixes`, rc.xml windowRules (preserve ILITEK rule), autostart entry, `labwc --reconfigure`
+- Deploy Session 1 files to Pi: 7 files to `/opt/d3kos/services/dashboard/`
+- Pi verification: load localhost:3000, test v12 layout, row toggle, day/night manual override, keyboard shortcuts, Windowed Mode toggle
+- Session 2: instruments.js Signal K WebSocket wiring, AvNav iframe, AI chat → :3001, Route AI SSE from :3002
+- Session 3: cameras tab, More menu production items, onboarding wizard
+
+---
+
 ## Session 2026-03-13 — v0.9.2.2 Design Review + Spec Deployment
 **Goal:** Review new v12 mockup and spec, assess Wayland kiosk architecture fix, commit v0.9.2.2 as the active version.
 **Completed:**

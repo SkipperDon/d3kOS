@@ -297,32 +297,32 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] Verify: wlrctl windowed toggle endpoints work via keyboard-api.py
 
 ### Session 1 — Static Template
-**Risk:** MEDIUM | **Status:** TODO
+**Risk:** MEDIUM | **Status:** ✅ COMPLETE 2026-03-14 | Commit d94b2f9
 **Reference:** D3KOS_PLAN.md §v0.9.2.2 Session 1
 
 #### index.html rebuild
-- [ ] Extract v12 CSS from d3kos-mockup-v12.html → replace d3kos.css (keep Phase 5 AI widget CSS)
-- [ ] Build new index.html from v12 HTML structure (status bar, toggle strip, 2 instrument rows, chart pane, split pane, bottom nav)
-- [ ] Fix Bug 1: add `manualTheme` flag — autoTheme() never overrides manual selection
-- [ ] Fix Bug 2: remove `hidden` class from nav row HTML (default BOTH = both rows visible)
-- [ ] Row toggle: BOTH / ENGINE / NAV. Default: BOTH. `showRow('both')` on load
-- [ ] HELM button: protrudes 24px, 128px total height, amber when listening
-- [ ] More menu position 9: Windowed Mode toggle (wlrctl via keyboard-api.py :8087)
-- [ ] All 5 overlays work: AIS alert (A), Engine diag (G), Critical (C), Position report (R), Port arrival (P)
-- [ ] Day/night keyboard shortcuts: D / N
+- [✅] Extract v12 CSS from d3kos-mockup-v12.html → replace d3kos.css (keep Phase 5 AI widget CSS)
+- [✅] Build new index.html from v12 HTML structure (status bar, toggle strip, 2 instrument rows, chart pane, split pane, bottom nav)
+- [✅] Fix Bug 1: add `manualTheme` flag — autoTheme() never overrides manual selection
+- [✅] Fix Bug 2: remove `hidden` class from nav row HTML (default BOTH = both rows visible)
+- [✅] Row toggle: BOTH / ENGINE / NAV. Default: BOTH. `showRow('both')` on load
+- [✅] HELM button: protrudes 24px, 128px total height, amber when listening
+- [✅] More menu position 9: Windowed Mode toggle (wlrctl via keyboard-api.py :8087)
+- [✅] All 5 overlays work: AIS alert (A), Engine diag (G), Critical (C), Position report (R), Port arrival (P)
+- [✅] Day/night keyboard shortcuts: D / N
 
 #### JS file split
-- [ ] static/js/theme.js — day/night with manualTheme flag
-- [ ] static/js/nav.js — tab/split pane navigation + windowed toggle
-- [ ] static/js/helm.js — HELM voice overlay, `recognition.lang = '{{ ui_lang }}'`
-- [ ] static/js/overlays.js — all modal/overlay logic
-- [ ] static/js/instruments.js — stub (demo values, no live data)
+- [⏭] static/js/theme.js — MERGED INTO nav.js (manualTheme flag + autoTheme live in nav.js alongside clock/ticker)
+- [✅] static/js/nav.js — theme (Bug 1 fix), clock, ticker, split pane, windowed toggle, connectivity polling
+- [✅] static/js/helm.js — HELM voice overlay, `HELM_LANG = document.documentElement.lang`
+- [✅] static/js/overlays.js — all modal/overlay logic + toast
+- [✅] static/js/instruments.js — showRow() 3-way toggle, context menu, DOMContentLoaded init
 
 #### Flask wire-up
-- [ ] app.py: inject `UI_LANG` from vessel.env into Jinja2 template context
-- [ ] config/vessel.env: add `UI_LANG=en-GB` field
+- [✅] app.py: inject `UI_LANG` from vessel.env into Jinja2 template context
+- [✅] config/vessel.env: VESSEL_NAME, HOME_PORT, UI_LANG=en-GB
 
-#### Session 1 Deploy + Verify
+#### Session 1 Deploy + Verify (Pi — PENDING)
 - [ ] index.html loads v12 layout at localhost:3000
 - [ ] d3kos.css: white bg day, `#020702` night, Bebas Neue + Chakra Petch
 - [ ] Row toggle BOTH default — no nav row flash on load
@@ -330,7 +330,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] All keyboard demo shortcuts working
 - [ ] Windowed mode toggle in More menu position 9 working
 - [ ] Squeekboard appears on input focus (Pi only)
-- [ ] SESSION_LOG.md updated
+- [✅] SESSION_LOG.md updated
 
 ---
 
