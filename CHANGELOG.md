@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.2.2] - 2026-03-13 (In Planning — build starts next session)
+
+### Summary
+
+**v0.9.2.2 — Frontend UI Rebuild: Marine-Grade Instrument Dashboard**
+
+Complete replacement of the v0.9.2.1 frontend with the v12 design. Backend services (Flask :3000, Gemini proxy :3001, AI Bridge :3002) are unchanged. This version implements the full UI spec produced from the d3kOS mockup v12 design review.
+
+**Design system:** White day mode / dark night mode (`#020702`). Bebas Neue for all numerals. Chakra Petch for all UI. Single green accent. Replaces black/Roboto from v0.9.2.1.
+
+**Layout:** Continuous instrument dashboard — status bar + row toggle + engine row + nav row + AvNav chart pane + split pane (AI Nav/Weather/Cameras) + 6-tab bottom nav with HELM button protruding 24px.
+
+**Wayland architecture fix:** `--kiosk` → `--app --start-maximized`. Kiosk mode places Chromium on the Wayland fullscreen layer, above Squeekboard, permanently hiding the on-screen keyboard. Maximised normal window stays below Squeekboard. labwc strips decorations via rc.xml windowRules. New launch script: `scripts/launch-d3kos.sh`.
+
+**Known bugs fixed in spec:** Auto-theme timer overrides manual day/night selection (fix: manualTheme flag). Nav row has `hidden` class in HTML despite BOTH being default (fix: remove class).
+
+**Specs committed:** D3KOS_UI_SPEC.md v1.0.0, D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0, d3kos-mockup-v12.html (canonical reference), D3KOS_V12_FINDINGS.md.
+
+**Build plan:** 3 sessions — Session 1 (static template + Step 0 system prerequisites), Session 2 (live Signal K + AvNav + AI wiring), Session 3 (cameras + More menu + onboarding).
+
+---
+
 ## [0.9.2.1] - 2026-03-13 (Code Complete — Pi verification pending)
 
 ### Summary

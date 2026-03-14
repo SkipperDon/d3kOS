@@ -4,6 +4,49 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-13 — v0.9.2.2 Design Review + Spec Deployment
+**Goal:** Review new v12 mockup and spec, assess Wayland kiosk architecture fix, commit v0.9.2.2 as the active version.
+**Completed:**
+- Read D3KOS_UI_SPEC.md (v1.0.0) from Downloads — full UI spec for v0.9.2.2 frontend rebuild
+- Read d3kos-mockup-v12.html (build 1) — found 2-way toggle only (ENGINE/NAV), flagged as draft
+- Read d3kos-mockup-v12 (2).html — canonical version: 3-way BOTH/ENGINE/NAV toggle, default BOTH, all 5 overlays working
+- Read D3KOS_UI_SPEC_ADDENDUM_01.md — Wayland kiosk architecture fix: --kiosk places Chromium above Squeekboard (fullscreen layer above top layer); fix is --app --start-maximized
+- Created docs/D3KOS_V12_FINDINGS.md — formal findings: canonical mockup declared (build 2), design system tokens, 2 bugs documented with fix code, gaps vs spec, v0.9.2.1 comparison table, total recommendation
+- Deployed docs/D3KOS_UI_SPEC.md — spec with corrections (Hard Rule 9 updated: AvNav apt install is correct, not OpenPlotter-only; Rule 11 added: never --kiosk; Section 19 replaced; phase status corrected)
+- Deployed docs/D3KOS_UI_SPEC_ADDENDUM_01.md — full addendum with ILITEK touch rule preservation note added
+- Deployed docs/d3kos-mockup-v12.html — canonical reference mockup (build 2)
+- Created scripts/launch-d3kos.sh — Chromium launch script, chmod +x
+- Updated D3KOS_PLAN.md — phase status table corrected (Phases 0-5 all COMPLETE/source-complete), v0.9.2.2 section added with 3-session build plan
+- Updated PROJECT_CHECKLIST.md — header updated to v0.9.2.2, v0.9.2.2 checklist section added (Step 0 + Sessions 1-3)
+- Updated DEPLOYMENT_INDEX.md — v0.9.2.2 section added, all new docs indexed
+- Updated CHANGELOG.md — [0.9.2.2] entry added
+- Updated memory/MEMORY.md — v0.9.2.2 facts, Wayland layer stack, correct launch flags
+**Decisions:**
+- v12 build 2 is canonical — build 1 was a draft with 2-way toggle; build 2 has correct 3-way BOTH/ENGINE/NAV
+- Wayland layer fix is correct and do-able: --app --start-maximized is the right architecture; Squeekboard already installed and confirmed working on this Pi (DBus ok:true confirmed 2026-03-13)
+- wlrctl window endpoints go in keyboard-api.py (:8087) NOT app.py — keyboard-api already handles window state; adding to app.py would duplicate
+- unclutter-xfixes: may not work on Wayland; worth trying, non-critical if it fails
+- rc.xml edit: ILITEK touch rule (mouseEmulation="no") MUST be preserved when adding windowRules — explicitly noted in addendum
+- v0.9.2.2 is frontend-only rebuild — Flask/proxy/AI bridge services unchanged
+- Hard Rule 9 in spec (OpenPlotter for AvNav) is wrong for this Pi — corrected in deployed spec to "apt from free-x.de trixie"
+- Phase status tracker in spec was all TODO — corrected in deployed version to reflect actual Pi state
+**Anomalies noted:**
+- mockup v12 (1): auto-theme bug, 2-way toggle only — use build 2
+- mockup v12 (2): auto-theme bug (same) + nav row has `hidden` class in HTML despite BOTH default — both bugs documented with fixes in D3KOS_V12_FINDINGS.md and spec Section 18
+- spec Section 26 phase table: all TODO — corrected in deployed doc
+**Ollama:** 0 calls this session
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+**Pending (v0.9.2.2 build — next sessions):**
+- Step 0: Pi system prerequisites (squeekboard + wlrctl + unclutter-xfixes install, rc.xml windowRules, autostart, labwc --reconfigure)
+- Session 1: index.html v12 rebuild, d3kos.css replacement, JS split, UI_LANG injection
+- Session 2: Live Signal K + AvNav wiring
+- Session 3: Cameras, More menu production, onboarding wizard
+---
+
 ## Correction Note 2026-03-13 — Port 8085 → 8087 (not 8086)
 
 **Correction to 2026-03-13 session entries:**

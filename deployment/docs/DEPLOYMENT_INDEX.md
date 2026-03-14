@@ -170,8 +170,29 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | 2 | Dashboard Hub (Flask :3000) | COMPLETE 2026-03-13 |
 | 3 | Gemini Marine AI Proxy (:3001) | COMPLETE 2026-03-13 |
 | 4 | Settings Page + Documentation | COMPLETE 2026-03-13 |
-| 5 | AI + AvNav Integration | SOURCE COMPLETE 2026-03-13 — Pi deploy pending (AvNav install required) |
-| 5 | AI + AvNav Integration | TODO — begins after Phase 4 stable |
+| 5 | AI + AvNav Integration | SOURCE COMPLETE 2026-03-13 — Pi deploy pending |
+| **v0.9.2.2** | **Frontend UI Rebuild** | **IN PLANNING 2026-03-13** |
+
+---
+
+## v0.9.2.2 — Frontend UI Rebuild (deployment/d3kOS/)
+
+Complete replacement of the v0.9.2.1 frontend (9-button hub, black/Roboto theme) with the v12 marine-grade instrument dashboard. Backend services unchanged.
+
+**Spec:** `deployment/d3kOS/docs/D3KOS_UI_SPEC.md` v1.0.0
+**Addendum:** `deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md` v1.0.0 (Wayland kiosk fix)
+**Reference mockup:** `deployment/d3kOS/docs/d3kos-mockup-v12.html` (canonical — build 2)
+**Findings:** `deployment/d3kOS/docs/D3KOS_V12_FINDINGS.md`
+
+### New Files (2026-03-13)
+
+| File | Purpose |
+|------|---------|
+| `deployment/d3kOS/docs/D3KOS_UI_SPEC.md` | **[NEW 2026-03-13]** Complete UI/UX spec for v0.9.2.2 — design system, layout, instrument panel, overlays, signal K mapping, alert thresholds. Supersedes d3kos-mockup-v4.html as spec authority. |
+| `deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md` | **[NEW 2026-03-13]** Wayland kiosk architecture fix. --kiosk → --app --start-maximized. labwc windowRules, Squeekboard integration, wlrctl windowed toggle, UI_LANG in vessel.env. APPROVED — supersedes spec Section 19. |
+| `deployment/d3kOS/docs/d3kos-mockup-v12.html` | **[NEW 2026-03-13]** Canonical reference mockup — full v12 UI with 3-way BOTH/ENGINE/NAV toggle, all 5 overlays, day/night mode. This is the implementation reference for v0.9.2.2. |
+| `deployment/d3kOS/docs/D3KOS_V12_FINDINGS.md` | **[NEW 2026-03-13]** Design review findings document — canonical mockup declaration, design system tokens, 2 bugs with fix code, gap analysis, v0.9.2.1 comparison, 3-session build plan. |
+| `deployment/d3kOS/scripts/launch-d3kos.sh` | **[NEW 2026-03-13]** Chromium launch script — `--app --start-maximized --ozone-platform=wayland`. Replaces kiosk mode. Deploy to Pi at same path, chmod +x. |
 
 ---
 

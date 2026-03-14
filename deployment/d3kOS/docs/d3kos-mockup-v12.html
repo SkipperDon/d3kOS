@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>d3kOS v12</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═════════════════════════════════════════════════════════════
+   d3kOS v11 — MARINE-GRADE INSTRUMENT PANEL
+   ─────────────────────────────────────────────────────────────
+   Bebas Neue for ALL numerals
+   Chakra Petch for ALL UI — engineered, technical
+   ─────────────────────────────────────────────────────────────
+   SIZING MANDATE — every element designed for wet gloved hands:
+     Status bar ........ 48px
+     Instrument rows ... 120px each
+     Primary numeral ... 72px
+     Bottom nav ........ 104px + HELM protrudes 24px above
+     Min touch target .. 80 × 80px
+     Alert buttons ..... 64px tall, 20px text
+     Split mic ......... 72px circle
+═════════════════════════════════════════════════════════════ */
+
+/* ── DESIGN TOKENS ── */
+:root {
+  /* Surfaces */
+  --bg:       #FFFFFF;
+  --panel:    #F0F4F0;
+  --cell:     #FFFFFF;
+  --rule:     rgba(0,0,0,.10);
+  --rule-lt:  rgba(0,0,0,.05);
+
+  /* Text */
+  --ink:      #040C04;
+  --ink2:     rgba(4,12,4,.52);
+  --ink3:     rgba(4,12,4,.28);
+
+  /* Green — single accent, used precisely */
+  --g:        #003A00;
+  --g-mid:    #005000;
+  --g-hi:     #006C00;
+  --g-txt:    #004400;
+  --g-dim:    rgba(0,58,0,.06);
+  --g-bdr:    rgba(0,58,0,.16);
+
+  /* Status bar always dark green */
+  --bar:      #003200;
+
+  /* Alert — FLOOD approach (whole cell changes, unmissable) */
+  --adv:      #6B3C00;
+  --adv-bg:   #FFF6DC;
+  --adv-bdr:  #C47B00;
+  --adv-num:  #7A4400;
+
+  --alrt:     #7A2000;
+  --alrt-bg:  #FFF2EC;
+  --alrt-bdr: #C03A00;
+  --alrt-num: #8B2A00;
+
+  --crit:     #780000;
+  --crit-bg:  #FFF2F2;
+  --crit-bdr: #BB0000;
+  --crit-num: #8A0000;
+
+  /* Elevation */
+  --e1: 0 1px 4px rgba(0,0,0,.08);
+  --e2: 0 4px 18px rgba(0,0,0,.12);
+  --e3: 0 10px 40px rgba(0,0,0,.18);
+  --e4: 0 20px 60px rgba(0,0,0,.22);
+
+  /* Layout — the non-negotiables */
+  --sb-h:   48px;
+  --row-h:  120px;
+  --bot-h:  104px;
+  --helm-rise: 24px;  /* how far HELM protrudes above nav bar */
+}
+[data-night] {
+  --bg:       #020702;
+  --panel:    #070E07;
+  --cell:     #0B130B;
+  --rule:     rgba(255,255,255,.07);
+  --rule-lt:  rgba(255,255,255,.04);
+  --ink:      #D6EDD6;
+  --ink2:     rgba(214,237,214,.48);
+  --ink3:     rgba(214,237,214,.24);
+  --g:        #00C400;
+  --g-mid:    #00A400;
+  --g-hi:     #00E040;
+  --g-txt:    #00CC00;
+  --g-dim:    rgba(0,196,0,.09);
+  --g-bdr:    rgba(0,196,0,.2);
+  --bar:      #001A00;
+  --adv:      #FF9500;
+  --adv-bg:   rgba(255,149,0,.14);
+  --adv-bdr:  rgba(255,149,0,.55);
+  --adv-num:  #FF9A00;
+  --alrt:     #FF5500;
+  --alrt-bg:  rgba(255,85,0,.14);
+  --alrt-bdr: rgba(255,85,0,.6);
+  --alrt-num: #FF5A00;
+  --crit:     #FF1500;
+  --crit-bg:  rgba(255,21,0,.13);
+  --crit-bdr: rgba(255,21,0,.65);
+  --crit-num: #FF1800;
+  --e1: 0 1px 6px rgba(0,0,0,.5);
+  --e2: 0 4px 20px rgba(0,0,0,.6);
+  --e3: 0 10px 48px rgba(0,0,0,.7);
+  --e4: 0 20px 70px rgba(0,0,0,.8);
+}
+
+/* ── RESET ── */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none; user-select: none;
+}
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--ink);
+  font-family: 'Chakra Petch', sans-serif;
+  transition: background .3s, color .3s;
+}
+
+/* ══════════════════════════════════════
+   1. STATUS BAR
+══════════════════════════════════════ */
+#sb {
+  height: var(--sb-h); flex-shrink: 0;
+  background: var(--bar);
+  display: flex; align-items: center;
+  padding: 0 16px; gap: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  position: relative; z-index: 300;
+}
+.sb-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; letter-spacing: .15em;
+  color: #fff; flex-shrink: 0;
+}
+.sb-sep { width: 1px; height: 22px; background: rgba(255,255,255,.18); flex-shrink: 0; }
+.sb-vessel {
+  font-size: 13px; font-weight: 700; letter-spacing: .1em;
+  color: rgba(255,255,255,.75); flex-shrink: 0;
+}
+/* AI status ticker */
+.sb-ticker {
+  flex: 1; font-size: 11px; font-weight: 600; letter-spacing: .07em;
+  color: rgba(255,255,255,.55);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  transition: color .3s;
+}
+.sb-ticker.hot { color: #FFD454; animation: flash .9s step-end infinite; }
+@keyframes flash { 0%,100%{opacity:1}50%{opacity:.25} }
+/* Right side */
+.sb-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* HELM wake indicator in statusbar */
+.helm-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  color: rgba(255,255,255,.45); cursor: pointer; transition: all .2s;
+}
+.helm-pill.live {
+  background: rgba(255,255,255,.18); color: #fff;
+  animation: helmPill .9s ease-in-out infinite;
+}
+@keyframes helmPill { 0%,100%{background:rgba(255,255,255,.18)}50%{background:rgba(255,255,255,.3)} }
+.hp-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.3); transition: all .2s; }
+.helm-pill.live .hp-dot { background: #fff; box-shadow: 0 0 6px #fff; }
+/* Day/Night toggle */
+.dn {
+  display: flex; background: rgba(0,0,0,.3);
+  border-radius: 20px; padding: 3px;
+}
+.dn-b {
+  padding: 4px 13px; border-radius: 16px; border: none; background: none;
+  font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; color: rgba(255,255,255,.38);
+  cursor: pointer; transition: all .2s;
+}
+.dn-b.on { background: rgba(255,255,255,.9); color: var(--bar); }
+#clk {
+  font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+  letter-spacing: .06em; color: rgba(255,255,255,.9);
+}
+
+/* ══════════════════════════════════════
+   2. INSTRUMENT PANEL — the hero
+   Two rows × 120px. Values dominate.
+══════════════════════════════════════ */
+#inst {
+  flex-shrink: 0;
+  background: var(--panel);
+  border-bottom: 3px solid var(--g-bdr);
+  box-shadow: 0 4px 24px rgba(0,0,0,.1);
+  position: relative; z-index: 200;
+}
+
+/* Row */
+.irow {
+  display: flex; align-items: stretch;
+  height: var(--row-h);
+  border-bottom: 2px solid var(--rule);
+}
+.irow:last-child { border-bottom: none; }
+
+/* Row tab strip — left edge category label */
+.row-tab {
+  width: 44px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px;
+  border-right: 4px solid var(--g-bdr);
+  background: var(--g-dim);
+}
+.rt-bar {
+  width: 3px; height: 36px;
+  background: var(--g-txt); border-radius: 2px; opacity: .5;
+}
+.rt-lbl {
+  font-size: 9px; font-weight: 700; letter-spacing: .2em;
+  color: var(--g-txt); text-transform: uppercase;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+}
+.nav-row .row-tab { border-right-color: var(--rule-lt); background: transparent; }
+.nav-row .rt-bar { opacity: .2; }
+.nav-row .rt-lbl { color: var(--ink3); }
+
+/* ── THE INSTRUMENT CELL ── */
+.ic {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 8px;
+  border-right: 1px solid var(--rule-lt);
+  cursor: pointer;
+  position: relative;
+  background: var(--cell);
+  transition: background .25s;
+  min-width: 0; overflow: hidden;
+}
+.ic:last-child { border-right: none; }
+.ic:active { background: var(--g-dim); }
+
+/* Label — small, spaced, dim */
+.ic-l {
+  font-size: 11px; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink3);
+  margin-bottom: 4px; white-space: nowrap;
+}
+/* THE VALUE — dominant, Bebas Neue, massive */
+.ic-v {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 72px; line-height: .9;
+  color: var(--g-txt); letter-spacing: .02em;
+  white-space: nowrap;
+}
+/* Unit — supporting, readable */
+.ic-u {
+  font-size: 14px; font-weight: 600; letter-spacing: .06em;
+  color: var(--ink2); margin-top: 5px; white-space: nowrap;
+}
+/* Night glow on values */
+[data-night] .ic-v {
+  text-shadow: 0 0 20px rgba(0,196,0,.3);
+}
+
+/* ── ADVISORY — amber flood ── */
+.ic.adv { background: var(--adv-bg); }
+.ic.adv::after {
+  content: ''; position: absolute; inset: 0;
+  border: 3px solid var(--adv-bdr); pointer-events: none;
+  animation: advBorder 2s ease-in-out infinite;
+}
+@keyframes advBorder {
+  0%,100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+.ic.adv .ic-l { color: var(--adv); }
+.ic.adv .ic-v { color: var(--adv-num); }
+.ic.adv .ic-u { color: var(--adv); opacity: .8; }
+
+/* ── ALERT — strong orange flood + pulse border ── */
+.ic.alrt { background: var(--alrt-bg); animation: alrtFlash 1.3s ease-in-out infinite; }
+@keyframes alrtFlash {
+  0%,100% { background: var(--alrt-bg); }
+  50% { background: rgba(255,200,180,.35); }
+}
+[data-night] .ic.alrt { animation: alrtFlashN 1.3s ease-in-out infinite; }
+@keyframes alrtFlashN {
+  0%,100% { background: var(--alrt-bg); }
+  50% { background: rgba(255,85,0,.22); }
+}
+.ic.alrt::after {
+  content: ''; position: absolute; inset: 0;
+  border: 4px solid var(--alrt-bdr); pointer-events: none;
+  animation: alrtBorder 1.3s ease-in-out infinite;
+}
+@keyframes alrtBorder {
+  0%,100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+.ic.alrt .ic-l { color: var(--alrt); font-weight: 700; }
+.ic.alrt .ic-v { color: var(--alrt-num); font-size: 78px; }
+.ic.alrt .ic-u { color: var(--alrt); }
+
+/* ── CRITICAL — red flood + fast pulse ── */
+.ic.crit { animation: critFlash .65s ease-in-out infinite; }
+@keyframes critFlash {
+  0%,100% { background: var(--crit-bg); }
+  50% { background: rgba(255,180,180,.4); }
+}
+[data-night] .ic.crit { animation: critFlashN .65s ease-in-out infinite; }
+@keyframes critFlashN {
+  0%,100% { background: var(--crit-bg); }
+  50% { background: rgba(255,21,0,.25); }
+}
+.ic.crit::after {
+  content: ''; position: absolute; inset: 0;
+  border: 4px solid var(--crit-bdr); pointer-events: none;
+  animation: critBorder .65s ease-in-out infinite;
+}
+@keyframes critBorder {
+  0%,100% { opacity: 1; }
+  50% { opacity: .2; }
+}
+.ic.crit .ic-l { color: var(--crit); }
+.ic.crit .ic-v { color: var(--crit-num); font-size: 78px; }
+
+/* ── WAYPOINT CELL — wider, always distinguished ── */
+.ic-wp {
+  flex: 1.7;
+  background: var(--g-dim) !important;
+  border-left: 4px solid var(--g-bdr) !important;
+}
+.ic-wp .ic-l { color: var(--g-txt); font-size: 10px; }
+.ic-wp .ic-dest {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--ink); text-align: center;
+  line-height: 1.2; margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.ic-wp .ic-v { font-size: 44px; line-height: 1; }
+.ic-wp .ic-eta {
+  font-size: 13px; font-weight: 600; color: var(--ink2);
+  letter-spacing: .04em; margin-top: 3px;
+}
+
+/* GPS — stacked coords in Bebas */
+.ic-gps .ic-v {
+  font-size: 20px; line-height: 1.5;
+  text-align: center; letter-spacing: .04em;
+}
+
+/* ══════════════════════════════════════
+   3. MAIN — CHART + SPLIT PANE
+══════════════════════════════════════ */
+#main { flex: 1; display: flex; overflow: hidden; position: relative; }
+#chart { flex: 1; position: relative; overflow: hidden; transition: flex .3s; }
+
+.chart-mock {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 6px;
+}
+:root .chart-mock { background: #DCF0D8; }
+[data-night] .chart-mock { background: #020C02; }
+.chart-mock-txt {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px; letter-spacing: .18em;
+  color: var(--g-txt); opacity: .25; text-align: center; line-height: 3;
+}
+
+/* Route AI strip at bottom of chart */
+.rw {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--panel); border-top: 2px solid var(--g-bdr);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+  padding: 12px 18px;
+  display: flex; align-items: center; gap: 14px;
+  transition: transform .25s;
+}
+.rw.gone { transform: translateY(100%); }
+.rw-tag {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px;
+  letter-spacing: .12em; color: var(--g-txt); flex-shrink: 0;
+}
+.rw-txt {
+  flex: 1; font-size: 14px; font-weight: 500; color: var(--ink2); line-height: 1.6;
+}
+.rw-txt b { color: var(--ink); font-weight: 700; }
+.rw-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  padding: 5px 10px; border-radius: 4px;
+  background: var(--g-dim); color: var(--g-txt);
+  border: 1px solid var(--g-bdr); flex-shrink: 0;
+}
+.rw-cls {
+  width: 44px; height: 44px; border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--rule);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--ink3); cursor: pointer;
+  transition: all .15s; flex-shrink: 0;
+}
+.rw-cls:hover { color: var(--g-txt); }
+
+/* ── SPLIT PANE ── */
+#split {
+  width: 0; flex-shrink: 0; overflow: hidden;
+  border-left: 3px solid var(--g-bdr);
+  background: var(--panel);
+  box-shadow: -6px 0 28px rgba(0,0,0,.1);
+  transition: width .3s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+}
+#split.open { width: clamp(340px, 38vw, 440px); }
+/* Tab bar */
+.sp-tabs {
+  display: flex; flex-shrink: 0;
+  height: 56px; border-bottom: 2px solid var(--g-bdr);
+  background: var(--panel);
+}
+.sp-tab {
+  flex: 1; border: none; background: none; cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; color: var(--ink3);
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  transition: all .15s;
+}
+.sp-tab.on { color: var(--g-txt); border-bottom-color: var(--g-txt); }
+.sp-close {
+  width: 56px; border: none; background: none; cursor: pointer;
+  font-size: 20px; color: var(--ink3);
+  border-left: 1px solid var(--rule); transition: color .15s;
+}
+.sp-close:hover { color: var(--g-txt); }
+/* Tab body */
+.sp-body { flex: 1; overflow-y: auto; padding: 18px; }
+
+/* AI chat */
+.ai-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 8px;
+  background: var(--g-dim); border: 1px solid var(--g-bdr);
+  font-size: 12px; font-weight: 700; letter-spacing: .07em;
+  color: var(--g-txt); margin-bottom: 14px;
+}
+.ai-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--g-txt); flex-shrink: 0;
+  animation: aiPulse 2s ease-in-out infinite;
+}
+@keyframes aiPulse { 0%,100%{opacity:1}50%{opacity:.3} }
+.ai-msg {
+  padding: 14px 16px; border-radius: 12px; margin-bottom: 10px;
+  font-size: 15px; font-weight: 500; line-height: 1.75;
+}
+.ai-msg.me {
+  background: var(--g-dim); border: 1px solid var(--g-bdr); color: var(--ink); font-weight: 600;
+}
+.ai-msg.bot {
+  background: var(--panel); border: 1px solid var(--rule); color: var(--ink2);
+}
+.ai-msg b { color: var(--ink); font-weight: 700; }
+.ai-msg .meta {
+  font-size: 10px; color: var(--ink3); margin-top: 8px; letter-spacing: .06em;
+}
+/* Voice input — BIG */
+.ai-in {
+  flex-shrink: 0; border-top: 1px solid var(--rule);
+  padding: 14px; display: flex; gap: 12px; align-items: center;
+  background: var(--panel);
+}
+.mic72 {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+  background: var(--g-txt); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; box-shadow: var(--e2);
+  transition: all .2s; position: relative;
+}
+.mic72:active { transform: scale(.93); }
+.mic72.live { background: var(--alrt); animation: micPulse .8s ease-in-out infinite; }
+@keyframes micPulse { 0%,100%{box-shadow: var(--e2)}50%{box-shadow:var(--e2),0 0 0 12px rgba(200,80,0,.15)} }
+.ai-txt {
+  flex: 1; height: 72px; padding: 0 18px;
+  background: var(--cell); border: 2px solid var(--g-bdr);
+  border-radius: 10px; color: var(--ink);
+  font-size: 18px; font-family: 'Chakra Petch', sans-serif; font-weight: 600;
+  outline: none; transition: border-color .2s;
+}
+.ai-txt:focus { border-color: var(--g-txt); }
+.ai-txt::placeholder { color: var(--ink3); }
+
+/* placeholder panels */
+.ph-frame {
+  width: 100%; aspect-ratio: 16/9;
+  background: var(--cell); border: 1px solid var(--rule);
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; flex-direction: column; gap: 8px;
+  margin-bottom: 14px; box-shadow: var(--e1);
+}
+.ph-icon { font-size: 40px; opacity: .35; }
+.ph-lbl { font-size: 13px; font-weight: 700; color: var(--ink3); letter-spacing: .1em; }
+
+/* ══════════════════════════════════════
+   4. BOTTOM NAV — 104px + HELM protrudes
+══════════════════════════════════════ */
+#bot {
+  height: var(--bot-h); flex-shrink: 0;
+  background: var(--panel);
+  border-top: 2px solid var(--rule);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  position: relative; z-index: 200;
+  overflow: visible; /* HELM protrudes above */
+}
+/* Regular nav button */
+.nb {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  border: none; background: none; cursor: pointer;
+  border-right: 1px solid var(--rule);
+  padding: 0 4px;
+  position: relative; transition: background .12s;
+}
+.nb:last-child { border-right: none; }
+.nb:active { background: var(--g-dim); }
+.nb.on::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 4px; right: 4px; height: 3px;
+  background: var(--g-txt); border-radius: 2px 2px 0 0;
+}
+.nb.on .nb-lbl { color: var(--g-txt); }
+.nb-icon { font-size: 32px; line-height: 1; }
+.nb-lbl {
+  font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink3);
+}
+
+/* ── HELM BUTTON — protrudes 24px above nav bar ── */
+.nb.helm {
+  background: var(--g-txt);
+  border-right: 2px solid rgba(0,0,0,.15);
+  border-left: 2px solid rgba(0,0,0,.15);
+  margin-top: calc(-1 * var(--helm-rise));
+  height: calc(var(--bot-h) + var(--helm-rise));
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.15);
+  position: relative; z-index: 10;
+  transition: background .2s;
+}
+.nb.helm .nb-icon { font-size: 38px; color: #fff; }
+.nb.helm .nb-lbl {
+  font-size: 13px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.85);
+}
+.nb.helm:active { background: var(--g-mid); }
+.nb.helm::after { display: none; } /* no bottom line on helm */
+.nb.helm.live {
+  background: var(--alrt);
+  animation: helmLive 1s ease-in-out infinite;
+}
+.nb.helm.live .nb-lbl { animation: flash .9s step-end infinite; }
+@keyframes helmLive {
+  0%,100% { background: var(--alrt); box-shadow: 0 -8px 28px rgba(0,0,0,.22); }
+  50% { background: var(--alrt); box-shadow: 0 -8px 40px rgba(200,60,0,.4); }
+}
+
+/* ══════════════════════════════════════
+   5. HELM LISTENING OVERLAY
+══════════════════════════════════════ */
+#helmOv {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(0,0,0,.78); backdrop-filter: blur(10px);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 28px;
+}
+#helmOv.show { display: flex; }
+
+.hl-ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.hl-ring {
+  width: 160px; height: 160px; border-radius: 50%;
+  background: var(--g-txt);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 64px;
+  box-shadow: 0 0 0 0 rgba(0,180,0,.3);
+  animation: hlPulse 1.4s ease-in-out infinite;
+  position: relative; z-index: 2;
+}
+@keyframes hlPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,180,0,.25); }
+  50% { box-shadow: 0 0 0 30px rgba(0,180,0,.0); }
+}
+.hl-ring-wave {
+  position: absolute; border-radius: 50%;
+  border: 2px solid rgba(0,210,0,.3);
+  animation: hlWave 2s ease-out infinite;
+}
+.hl-ring-wave:nth-child(1) { width: 180px; height: 180px; animation-delay: 0s; }
+.hl-ring-wave:nth-child(2) { width: 220px; height: 220px; animation-delay: .4s; }
+.hl-ring-wave:nth-child(3) { width: 260px; height: 260px; animation-delay: .8s; }
+@keyframes hlWave {
+  0% { transform: scale(.8); opacity: .7; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+/* Waveform bars */
+.hl-bars { display: flex; align-items: center; gap: 7px; height: 56px; }
+.hl-b {
+  width: 7px; border-radius: 4px; background: rgba(255,255,255,.75);
+  animation: hlBar .8s ease-in-out infinite;
+}
+.hl-b:nth-child(1){height:14px;}
+.hl-b:nth-child(2){height:34px;animation-delay:.14s;}
+.hl-b:nth-child(3){height:54px;animation-delay:.07s;}
+.hl-b:nth-child(4){height:28px;animation-delay:.21s;}
+.hl-b:nth-child(5){height:46px;animation-delay:.10s;}
+.hl-b:nth-child(6){height:20px;animation-delay:.18s;}
+.hl-b:nth-child(7){height:40px;animation-delay:.04s;}
+@keyframes hlBar { 0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1.2)} }
+.hl-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 42px;
+  letter-spacing: .18em; color: #fff;
+}
+.hl-hint { font-size: 16px; font-weight: 600; letter-spacing: .06em; color: rgba(255,255,255,.5); }
+.hl-cancel {
+  padding: 16px 36px; border-radius: 30px;
+  background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.7); font-family: 'Chakra Petch', sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: .1em; cursor: pointer;
+  transition: all .2s;
+}
+.hl-cancel:hover { background: rgba(255,255,255,.2); }
+
+/* ══════════════════════════════════════
+   6. AI ALERT CARD
+   Large text — readable under stress
+══════════════════════════════════════ */
+#alertCard {
+  position: fixed;
+  top: calc(var(--sb-h) + 14px);
+  left: 50%;
+  width: min(680px, 94vw);
+  transform: translateX(-50%) translateY(-18px);
+  background: var(--panel);
+  border: 3px solid var(--alrt-bdr);
+  border-radius: 18px;
+  box-shadow: var(--e4), 0 0 60px rgba(200,60,0,.2);
+  z-index: 600; display: none; overflow: hidden;
+  animation: acIn .3s cubic-bezier(.4,0,.2,1) forwards;
+}
+#alertCard.show { display: block; }
+@keyframes acIn {
+  from { opacity:0; transform:translateX(-50%) translateY(-18px); }
+  to { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+.ac-stripe { height: 6px; background: var(--alrt-bdr); }
+.ac-in { padding: 20px 26px; }
+.ac-over { font-size: 11px; font-weight: 700; letter-spacing: .2em; color: var(--alrt); margin-bottom: 6px; }
+.ac-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+  letter-spacing: .08em; color: var(--ink); margin-bottom: 12px;
+}
+.ac-body { font-size: 17px; font-weight: 500; color: var(--ink2); line-height: 1.75; margin-bottom: 20px; }
+.ac-body b { color: var(--ink); font-weight: 700; }
+.ac-btns { display: flex; gap: 12px; align-items: center; }
+/* All modal buttons: 64px tall min, 20px text, fat touch target */
+.btn64 {
+  height: 64px; padding: 0 28px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 700;
+  letter-spacing: .06em; transition: all .15s; display: flex; align-items: center; justify-content: center;
+}
+.btn-primary { background: var(--alrt-bdr); color: #fff; }
+.btn-primary:active { filter: brightness(.9); }
+.btn-sec { background: var(--cell); color: var(--ink); border: 2px solid var(--rule) !important; }
+.btn-ghost { background: none; color: var(--ink3); font-size: 15px; height: 64px; padding: 0 16px; cursor: pointer; font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: .06em; border: none; margin-left: auto; }
+
+/* ══════════════════════════════════════
+   7. ENGINE DIAGNOSTIC
+══════════════════════════════════════ */
+#diagBack {
+  position: fixed; inset: 0; z-index: 650;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+#diagBack.show { display: flex; }
+.diag {
+  background: var(--panel); border: 3px solid var(--alrt-bdr);
+  border-radius: 20px; width: min(640px, 96vw);
+  box-shadow: var(--e4), 0 0 60px rgba(200,60,0,.2);
+  overflow: hidden; max-height: 90vh; overflow-y: auto;
+}
+.diag-head { background: var(--alrt-bdr); padding: 20px 26px; display: flex; align-items: center; gap: 16px; }
+.diag-head-ico { font-size: 36px; }
+.diag-head-over { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: rgba(255,255,255,.7); margin-bottom: 4px; }
+.diag-head-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: .08em; color: #fff; }
+.diag-body { padding: 22px 26px; }
+/* Readings grid */
+.diag-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+.dc {
+  padding: 16px 12px; text-align: center;
+  background: var(--cell); border-radius: 12px; border: 2px solid var(--rule);
+}
+.dc.bad { background: var(--alrt-bg); border-color: var(--alrt-bdr); }
+.dc-lbl { font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
+.dc-val { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 1; color: var(--g-txt); }
+.dc.bad .dc-val { color: var(--alrt-num); }
+.dc-note { font-size: 12px; font-weight: 600; color: var(--ink3); margin-top: 4px; }
+/* AI analysis */
+.diag-ai {
+  background: var(--g-dim); border: 1px solid var(--g-bdr);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;
+}
+.diag-ai-lbl { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--g-txt); margin-bottom: 10px; }
+.diag-ai-txt { font-size: 16px; font-weight: 500; color: var(--ink2); line-height: 1.8; }
+.diag-ai-txt b { color: var(--ink); font-weight: 700; }
+.diag-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+.diag-btn64 {
+  flex: 1; min-width: 140px; height: 64px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif; font-size: 16px; font-weight: 700;
+  letter-spacing: .06em; transition: all .15s;
+}
+.db-primary { background: var(--alrt-bdr); color: #fff; }
+.db-info { background: var(--g-dim); color: var(--g-txt); border: 2px solid var(--g-bdr) !important; }
+.db-dismiss { background: var(--cell); color: var(--ink); border: 2px solid var(--rule) !important; }
+
+/* ══════════════════════════════════════
+   8. FULL-SCREEN POSITION REPORT
+══════════════════════════════════════ */
+#posRpt {
+  position: fixed; inset: 0; z-index: 700;
+  background: var(--bg); cursor: pointer;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  animation: prIn .28s ease;
+}
+#posRpt.show { display: flex; }
+@keyframes prIn { from{opacity:0}to{opacity:1} }
+.pr-lbl { font-size: 12px; font-weight: 700; letter-spacing: .2em; color: var(--ink3); text-transform: uppercase; margin-bottom: 10px; }
+.pr-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(72px, 14vw, 130px);
+  color: var(--g-txt); line-height: .9; letter-spacing: .04em; text-align: center;
+}
+.pr-mid {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 9vw, 80px);
+  color: var(--ink2); line-height: .9; text-align: center;
+}
+.pr-pos {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(28px, 4.5vw, 50px);
+  color: var(--ink3); margin-top: 14px; text-align: center;
+}
+.pr-timer { margin-top: 28px; width: 240px; height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pr-bar { height: 100%; background: var(--g-txt); border-radius: 2px; animation: prBar 4s linear forwards; }
+@keyframes prBar { from{width:100%}to{width:0} }
+.pr-tap { font-size: 13px; font-weight: 600; color: var(--ink3); letter-spacing: .1em; margin-top: 10px; }
+
+/* ══════════════════════════════════════
+   9. CRITICAL SCREEN
+══════════════════════════════════════ */
+#critSc {
+  position: fixed; inset: 0; z-index: 900;
+  border: 8px solid var(--crit-bdr);
+  display: none; align-items: center; justify-content: center;
+  animation: critBg .65s ease-in-out infinite;
+}
+#critSc.show { display: flex; }
+@keyframes critBg {
+  0%,100% { background: rgba(180,0,0,.05); }
+  50% { background: rgba(180,0,0,.22); }
+}
+.crit-card {
+  background: var(--panel); border: 3px solid var(--crit-bdr);
+  border-radius: 20px; padding: 36px 40px; text-align: center;
+  max-width: 480px; width: 92%;
+  box-shadow: var(--e4), 0 0 80px rgba(180,0,0,.3);
+}
+.crit-over { font-size: 11px; font-weight: 700; letter-spacing: .2em; color: var(--crit); margin-bottom: 6px; }
+.crit-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: .08em; color: var(--crit); }
+.crit-num { font-family: 'Bebas Neue', sans-serif; font-size: 90px; color: var(--crit); line-height: 1; margin: 6px 0; }
+.crit-txt { font-size: 16px; font-weight: 500; color: var(--ink2); line-height: 1.9; margin-bottom: 28px; }
+.crit-ack {
+  width: 100%; height: 72px; background: var(--crit-bdr); border: none;
+  border-radius: 14px; color: #fff;
+  font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
+  letter-spacing: .08em; cursor: pointer; transition: filter .15s;
+}
+.crit-ack:active { filter: brightness(.85); }
+
+/* ══════════════════════════════════════
+   10. PORT ARRIVAL BANNER
+══════════════════════════════════════ */
+#arrival {
+  position: fixed; top: calc(var(--sb-h) + 12px);
+  left: 50%; transform: translateX(-50%);
+  width: min(640px, 94vw);
+  background: var(--panel); border: 2px solid var(--g-bdr);
+  border-radius: 16px; box-shadow: var(--e3);
+  z-index: 590; display: none;
+  animation: arrIn .28s ease;
+}
+#arrival.show { display: block; }
+@keyframes arrIn {
+  from{opacity:0;transform:translateX(-50%) translateY(-10px)}
+  to{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+.arr-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--rule);
+}
+.arr-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: .1em; color: var(--g-txt); }
+.arr-x {
+  width: 52px; height: 52px; background: none; border: none;
+  font-size: 22px; color: var(--ink3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.arr-body { padding: 16px 20px; font-size: 15px; font-weight: 500; color: var(--ink2); line-height: 1.85; }
+.arr-body b { color: var(--ink); font-weight: 700; }
+.arr-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-top: 1px solid var(--rule);
+}
+.arr-dist { font-size: 14px; font-weight: 700; color: var(--g-txt); letter-spacing: .06em; }
+.arr-more {
+  height: 52px; padding: 0 24px; background: var(--g-txt); color: #fff;
+  border: none; border-radius: 10px;
+  font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700;
+  letter-spacing: .06em; cursor: pointer;
+}
+
+/* ══════════════════════════════════════
+   11. SLIDE-UP MENU
+══════════════════════════════════════ */
+#menuBack {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(5px);
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+#menuBack.open { opacity: 1; pointer-events: all; }
+#menuSheet {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--panel); border-top: 3px solid var(--g-bdr);
+  border-radius: 24px 24px 0 0; padding: 0 18px 22px;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 -12px 50px rgba(0,0,0,.18);
+}
+#menuBack.open #menuSheet { transform: translateY(0); }
+.ms-drag { width: 44px; height: 5px; border-radius: 3px; background: var(--rule); margin: 14px auto 0; }
+.ms-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 4px 14px; border-bottom: 1px solid var(--rule); margin-bottom: 16px;
+}
+.ms-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .12em; color: var(--g-txt); }
+.ms-x {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: var(--cell); border: 2px solid var(--rule);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--ink3); cursor: pointer; transition: all .15s;
+}
+.ms-x:active { background: var(--g-txt); color: #fff; }
+.ms-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.ms-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 22px 12px; min-height: 120px;
+  background: var(--cell); border: 1px solid var(--rule);
+  border-radius: 16px; cursor: pointer; transition: all .15s;
+  box-shadow: var(--e1);
+}
+.ms-btn:active { background: var(--g-dim); border-color: var(--g-bdr); transform: scale(.96); }
+.ms-btn-icon { font-size: 36px; line-height: 1; }
+.ms-btn-lbl { font-size: 15px; font-weight: 700; text-align: center; color: var(--ink); }
+.ms-btn-sub { font-size: 11px; color: var(--ink3); letter-spacing: .06em; text-align: center; }
+
+/* ══════════════════════════════════════
+   ROW TOGGLE — pill switch on inst panel
+   Sits in its own 48px strip above rows
+══════════════════════════════════════ */
+#rowToggleBar {
+  display: flex; align-items: center;
+  padding: 0 14px;
+  height: 48px;
+  border-bottom: 2px solid var(--rule);
+  background: var(--panel);
+  gap: 10px;
+}
+/* The pill toggle */
+.row-pill {
+  display: flex;
+  background: var(--cell);
+  border: 2px solid var(--rule);
+  border-radius: 30px;
+  padding: 3px;
+  box-shadow: var(--e1);
+}
+.row-pill-btn {
+  height: 36px; padding: 0 22px;
+  border-radius: 24px; border: none; background: none; cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: .1em;
+  color: var(--ink3); transition: all .2s; white-space: nowrap;
+  position: relative;
+}
+.row-pill-btn.on {
+  background: var(--g-txt); color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+/* Alert badge on inactive tab */
+.row-pill-btn .rp-alert {
+  position: absolute; top: 4px; right: 6px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--adv-bdr); display: none;
+  animation: advBorder 1.5s ease-in-out infinite;
+}
+.row-pill-btn .rp-alert.show { display: block; }
+/* Row toggle label */
+.rtb-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  color: var(--ink3); margin-left: auto;
+  font-family: 'Chakra Petch', sans-serif; text-transform: uppercase;
+}
+/* Hide/show rows */
+.irow { display: flex; } /* default visible */
+.irow.hidden { display: none; }
+
+/* ── CELL CONTEXT MENU ── */
+.ctx {
+  position: fixed; z-index: 800;
+  background: var(--panel); border: 2px solid var(--g-bdr);
+  border-radius: 14px; padding: 10px;
+  box-shadow: var(--e3); display: none; min-width: 220px;
+}
+.ctx.show { display: block; animation: ctxIn .15s ease; }
+@keyframes ctxIn { from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)} }
+.ctx-ttl {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--g-txt);
+  text-transform: uppercase; padding: 4px 10px 12px;
+  border-bottom: 1px solid var(--rule); margin-bottom: 6px;
+}
+.ctx-item {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 13px 12px; border-radius: 10px; border: none;
+  background: none; color: var(--ink2); font-size: 15px; font-weight: 600;
+  cursor: pointer; text-align: left; transition: all .12s;
+  font-family: 'Chakra Petch', sans-serif;
+}
+.ctx-item:hover { background: var(--g-dim); color: var(--g-txt); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: calc(var(--bot-h) + 16px);
+  left: 50%; transform: translateX(-50%);
+  background: var(--panel); color: var(--ink);
+  padding: 14px 24px; border-radius: 12px;
+  font-size: 15px; font-weight: 700; letter-spacing: .05em;
+  z-index: 999; box-shadow: var(--e3); display: none;
+  border: 1px solid var(--g-bdr); white-space: nowrap;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--g-bdr); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="app" style="display:flex;flex-direction:column;height:100vh;">
+
+  <!-- ══ 1 · STATUS BAR ══ -->
+  <div id="sb">
+    <div class="sb-brand">d3kOS</div>
+    <div class="sb-sep"></div>
+    <div class="sb-vessel">MV SERENITY</div>
+    <div class="sb-ticker" id="ticker">AI FIRST OFFICER ACTIVE — ALL SYSTEMS NOMINAL</div>
+    <div class="sb-right">
+      <div class="helm-pill" id="hPill" onclick="openHelm()">
+        <div class="hp-dot"></div>HELM
+      </div>
+      <div class="dn">
+        <button class="dn-b on" id="btnD" onclick="setTheme('day')">☀ DAY</button>
+        <button class="dn-b" id="btnN" onclick="setTheme('night')">☾ NIGHT</button>
+      </div>
+      <div id="clk">--:--</div>
+    </div>
+  </div>
+
+  <!-- ══ 2 · INSTRUMENT PANEL ══ -->
+  <div id="inst">
+
+    <!-- ROW TOGGLE — three-way: Both · Engine · Nav -->
+    <div id="rowToggleBar">
+      <div class="row-pill">
+        <button class="row-pill-btn on" id="rpBoth"   onclick="showRow('both')">⚙ + 🧭 BOTH</button>
+        <button class="row-pill-btn"    id="rpEngine" onclick="showRow('engine')">
+          ⚙ ENGINE<span class="rp-alert" id="engineAlert"></span>
+        </button>
+        <button class="row-pill-btn"    id="rpNav"    onclick="showRow('nav')">
+          🧭 NAV<span class="rp-alert" id="navAlert"></span>
+        </button>
+      </div>
+      <div class="rtb-label" id="rowHint">Both rows</div>
+    </div>
+
+    <!-- ENGINE ROW — 120px, 72px values -->
+    <div class="irow" id="rowEngine">
+      <div class="row-tab">
+        <div class="rt-bar"></div>
+        <div class="rt-lbl">Engine</div>
+      </div>
+
+      <div class="ic" oncontextmenu="openCtx(event,'RPM')">
+        <div class="ic-l">RPM</div>
+        <div class="ic-v">2250</div>
+        <div class="ic-u">rev / min</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Trim')">
+        <div class="ic-l">Trim</div>
+        <div class="ic-v">+8°</div>
+        <div class="ic-u">degrees</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Oil Pressure')">
+        <div class="ic-l">Oil Press</div>
+        <div class="ic-v">52</div>
+        <div class="ic-u">PSI · normal</div>
+      </div>
+      <!-- ADVISORY CELL — clicks to engine diag -->
+      <div class="ic adv" id="cellCoolant" onclick="openDiag()" oncontextmenu="openCtx(event,'Coolant Temp')">
+        <div class="ic-l">Coolant</div>
+        <div class="ic-v">92°</div>
+        <div class="ic-u">C · advisory ↑ tap for AI</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Fuel')">
+        <div class="ic-l">Fuel</div>
+        <div class="ic-v">68%</div>
+        <div class="ic-u">84 L · 2h 40m</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Battery')">
+        <div class="ic-l">Battery</div>
+        <div class="ic-v">13.8</div>
+        <div class="ic-u">V · charging</div>
+      </div>
+    </div>
+
+    <!-- NAV ROW — 120px, 72px values -->
+    <div class="irow nav-row hidden" id="rowNav">
+      <div class="row-tab nav-tab">
+        <div class="rt-bar"></div>
+        <div class="rt-lbl">Nav</div>
+      </div>
+
+      <div class="ic" oncontextmenu="openCtx(event,'Speed SOG')">
+        <div class="ic-l">Speed</div>
+        <div class="ic-v">18.4</div>
+        <div class="ic-u">kts · SOG</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Depth')">
+        <div class="ic-l">Depth</div>
+        <div class="ic-v">12.1</div>
+        <div class="ic-u">metres</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Course COG')">
+        <div class="ic-l">Course</div>
+        <div class="ic-v">245°</div>
+        <div class="ic-u">true</div>
+      </div>
+      <div class="ic ic-gps" oncontextmenu="openCtx(event,'GPS Position')">
+        <div class="ic-l">Position</div>
+        <div class="ic-v">43°50.5N<br>76°19.2W</div>
+      </div>
+      <div class="ic ic-wp" oncontextmenu="openCtx(event,'Active Waypoint')">
+        <div class="ic-l">▶ NEXT WAYPOINT</div>
+        <div class="ic-dest">Duck Island</div>
+        <div class="ic-v">8.3 <span style="font-size:28px;opacity:.6">nm</span></div>
+        <div class="ic-eta">ETA 14:22 · Bearing 248° T</div>
+      </div>
+    </div>
+
+  </div><!-- /inst -->
+
+  <!-- ══ 3 · MAIN ══ -->
+  <div id="main">
+    <div id="chart">
+      <div class="chart-mock">
+        <div class="chart-mock-txt">
+          AvNav Chart Viewer<br>
+          localhost : 8080<br>
+          <span style="font-size:11px">[ full-screen iframe in production ]</span>
+        </div>
+      </div>
+      <!-- Route AI strip -->
+      <div class="rw" id="rw">
+        <div class="rw-tag">🧭 Route AI</div>
+        <div class="rw-txt">
+          <b>Kingston Run · 42nm.</b>
+          Give Duck Island NE shoal 0.5nm clearance.
+          Kingston fuel dock VHF 68 — best entry before 18:00 on this ebb.
+        </div>
+        <div class="rw-badge">GEMINI</div>
+        <div class="rw-cls" onclick="this.closest('.rw').classList.add('gone')">✕</div>
+      </div>
+    </div>
+
+    <!-- Split pane -->
+    <div id="split">
+      <div class="sp-tabs">
+        <button class="sp-tab on" onclick="showTab(this,'ai')">🤖 AI Nav</button>
+        <button class="sp-tab" onclick="showTab(this,'wx')">🌤 Weather</button>
+        <button class="sp-tab" onclick="showTab(this,'cam')">📹 Cameras</button>
+        <button class="sp-close" onclick="closeSplit()">✕</button>
+      </div>
+
+      <!-- AI tab -->
+      <div id="tab-ai" style="display:flex;flex-direction:column;height:calc(100% - 56px);">
+        <div class="sp-body" style="flex:1;overflow-y:auto;">
+          <div class="ai-status">
+            <div class="ai-dot"></div>
+            GEMINI 2.5 FLASH · ONLINE
+            <span style="margin-left:auto;opacity:.5">OLLAMA STANDBY</span>
+          </div>
+          <div class="ai-msg me">Helm, what's my fuel range at current speed?</div>
+          <div class="ai-msg bot">
+            At <b>18.4 kts</b>, you have approximately <b>2h 40m · 49nm</b> of range. Kingston is <b>8.3nm</b> ahead — comfortable margin. Fuel at Kingston regardless — next dock is 62nm beyond.
+            <div class="meta">gemini-2.5-flash · 312 tokens · not stored</div>
+          </div>
+          <div class="ai-msg me">Anchorage at Kingston?</div>
+          <div class="ai-msg bot">
+            <b>Portsmouth Olympic Harbour</b> — anchor NE of marina basin. 4–6m sand/mud, excellent holding. Clear of ferry lane. VHF 68 for marina. Tidal range minimal on Lake Ontario.
+            <div class="meta">gemini-2.5-flash · 198 tokens · not stored</div>
+          </div>
+        </div>
+        <div class="ai-in">
+          <button class="mic72" id="spMic" onclick="toggleMic()">🎤</button>
+          <input class="ai-txt" placeholder="Or type a question…" id="aiField">
+        </div>
+      </div>
+
+      <!-- Weather tab -->
+      <div id="tab-wx" style="display:none;padding:18px;">
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <button style="flex:1;height:56px;border-radius:10px;background:var(--g-dim);border:2px solid var(--g-bdr);color:var(--g-txt);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">🌊 Sea State</button>
+          <button style="flex:1;height:56px;border-radius:10px;background:var(--cell);border:1px solid var(--rule);color:var(--ink3);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">🌧 Radar</button>
+        </div>
+        <div class="ph-frame"><div class="ph-icon">🌊</div><div class="ph-lbl">WINDY EMBED</div></div>
+      </div>
+
+      <!-- Cameras tab -->
+      <div id="tab-cam" style="display:none;padding:18px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="ph-frame" style="aspect-ratio:4/3;margin:0;"><div class="ph-icon">📷</div><div class="ph-lbl">FORWARD</div></div>
+          <div class="ph-frame" style="aspect-ratio:4/3;margin:0;"><div class="ph-icon">⚙️</div><div class="ph-lbl">ENGINE ROOM</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 4 · BOTTOM NAV — 104px + HELM protrudes ══ -->
+  <div id="bot">
+    <button class="nb on" onclick="setNav(this);closeSplit()">
+      <span class="nb-icon">🗺️</span><span class="nb-lbl">Charts</span>
+    </button>
+    <button class="nb" onclick="setNav(this);openSplit('wx')">
+      <span class="nb-icon">🌤</span><span class="nb-lbl">Weather</span>
+    </button>
+    <button class="nb" onclick="setNav(this);openSplit('ai')">
+      <span class="nb-icon">🤖</span><span class="nb-lbl">AI Nav</span>
+    </button>
+    <!-- HELM — protrudes above nav bar -->
+    <button class="nb helm" id="helmBtn" onclick="openHelm()">
+      <span class="nb-icon">🎤</span><span class="nb-lbl">HELM</span>
+    </button>
+    <button class="nb" onclick="setNav(this);openSplit('cam')">
+      <span class="nb-icon">📹</span><span class="nb-lbl">Cameras</span>
+    </button>
+    <button class="nb" onclick="openMenu()">
+      <span class="nb-icon">⋮⋮</span><span class="nb-lbl">More</span>
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+
+<!-- ══ HELM LISTENING OVERLAY ══ -->
+<div id="helmOv">
+  <div class="hl-ring-wrap">
+    <div class="hl-ring-wave"></div>
+    <div class="hl-ring-wave"></div>
+    <div class="hl-ring-wave"></div>
+    <div class="hl-ring">🎤</div>
+  </div>
+  <div class="hl-bars">
+    <div class="hl-b"></div><div class="hl-b"></div><div class="hl-b"></div>
+    <div class="hl-b"></div><div class="hl-b"></div><div class="hl-b"></div>
+    <div class="hl-b"></div>
+  </div>
+  <div class="hl-title">HELM IS LISTENING</div>
+  <div class="hl-hint">Ask any question — or give a command</div>
+  <button class="hl-cancel" onclick="closeHelm()">Cancel</button>
+</div>
+
+
+<!-- ══ AI ALERT CARD ══ -->
+<div id="alertCard">
+  <div class="ac-stripe"></div>
+  <div class="ac-in">
+    <div class="ac-over">AI FIRST OFFICER · SITUATIONAL ALERT</div>
+    <div class="ac-title">Vessel Crossing — Monitor CPA</div>
+    <div class="ac-body">
+      AIS target <b>MV ONTARIO SPIRIT</b> is converging bearing 047° — CPA 0.18nm in 4 minutes.
+      You are the stand-on vessel. <b>Hold course and speed.</b>
+      Alter 10° starboard only if CPA closes below 0.1nm. Helm is monitoring.
+    </div>
+    <div class="ac-btns">
+      <button class="btn64 btn-primary" onclick="closeAlert();toast('Acknowledged — AI monitoring CPA')">ACKNOWLEDGE</button>
+      <button class="btn64 btn-sec" onclick="closeAlert();openSplit('ai')">ASK AI MORE</button>
+      <button class="btn-ghost" onclick="closeAlert()">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ ENGINE DIAGNOSTIC ══ -->
+<div id="diagBack">
+  <div class="diag">
+    <div class="diag-head">
+      <div class="diag-head-ico">🔧</div>
+      <div>
+        <div class="diag-head-over">AI ENGINE DIAGNOSTIC</div>
+        <div class="diag-head-title">Coolant Temperature High</div>
+      </div>
+    </div>
+    <div class="diag-body">
+      <div class="diag-grid">
+        <div class="dc bad">
+          <div class="dc-lbl">Coolant Temp</div>
+          <div class="dc-val">92°</div>
+          <div class="dc-note">⚠ Advisory › 88°C</div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">Oil Pressure</div>
+          <div class="dc-val">52</div>
+          <div class="dc-note">✓ Normal 45–65</div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">RPM</div>
+          <div class="dc-val">2250</div>
+          <div class="dc-note">✓ Cruise range</div>
+        </div>
+      </div>
+      <div class="diag-ai">
+        <div class="diag-ai-lbl">🤖 AI ANALYSIS — GEMINI 2.5 FLASH</div>
+        <div class="diag-ai-txt">
+          Coolant at <b>92°C</b> is above normal cruise range (75–88°C) but below critical shutdown (105°C). Oil pressure normal — rules out major internal failure. Most likely cause: <b>partial raw water cooling restriction</b> — debris on intake screen or early impeller wear.<br><br>
+          Recommendation: <b>Reduce to 1800 RPM</b> and monitor for 5 minutes. If temperature stabilises, continue at reduced speed to Kingston. If it climbs above <b>98°C</b>, anchor and shut down engine immediately.
+        </div>
+      </div>
+      <div class="diag-btns">
+        <button class="diag-btn64 db-primary" onclick="closeDiag();toast('Reducing RPM — monitoring coolant temp')">REDUCE TO 1800 RPM</button>
+        <button class="diag-btn64 db-info" onclick="closeDiag();openSplit('ai')">FULL AI BRIEF</button>
+        <button class="diag-btn64 db-dismiss" onclick="closeDiag()">MONITOR · DISMISS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ POSITION REPORT ══ -->
+<div id="posRpt" onclick="closePosRpt()">
+  <div class="pr-lbl">Scheduled Position Report</div>
+  <div class="pr-big">18.4 kts</div>
+  <div class="pr-mid">Course 245° True</div>
+  <div class="pr-pos">43° 50.5 N · 76° 19.2 W</div>
+  <div class="pr-timer"><div class="pr-bar" id="prBar"></div></div>
+  <div class="pr-tap">Tap anywhere to dismiss</div>
+</div>
+
+
+<!-- ══ CRITICAL SCREEN ══ -->
+<div id="critSc">
+  <div class="crit-card">
+    <div class="crit-over">⛔ AI FIRST OFFICER · CRITICAL ENGINE ALERT</div>
+    <div class="crit-title">Oil Pressure</div>
+    <div class="crit-num">8 PSI</div>
+    <div class="crit-txt">
+      Minimum safe 20 PSI · Normal range 45–65 PSI<br>
+      Reduce to idle immediately · Check oil level<br>
+      If pressure does not recover — shut down engine<br>
+      Possible oil pump failure or catastrophic oil loss
+    </div>
+    <button class="crit-ack" onclick="closeCrit()">ACKNOWLEDGE — TAKING ACTION NOW</button>
+  </div>
+</div>
+
+
+<!-- ══ PORT ARRIVAL ══ -->
+<div id="arrival">
+  <div class="arr-head">
+    <div class="arr-title">🏁 PORT ARRIVAL — Kingston, ON</div>
+    <button class="arr-x" onclick="closeArr()">✕</button>
+  </div>
+  <div class="arr-body">
+    <b>Fuel:</b> Portsmouth fuel dock · VHF 68 · 08:00–18:00 · port side tie-up.<br>
+    <b>Marina:</b> Kingston Marina — transient berths available, call ahead VHF 68.<br>
+    <b>Approach:</b> Stay 0.3nm clear of east breakwater shoal. Enter on ebb before 18:00.<br>
+    <b>Customs:</b> CBSA 1-888-226-7277 if arriving from US waters.
+  </div>
+  <div class="arr-foot">
+    <div class="arr-dist">📍 2.0 nm · ETA 14:22</div>
+    <button class="arr-more" onclick="openSplit('ai');closeArr()">Full Briefing in AI →</button>
+  </div>
+</div>
+
+
+<!-- ══ SLIDE-UP MENU ══ -->
+<div id="menuBack" onclick="if(event.target===this)closeMenu()">
+  <div id="menuSheet">
+    <div class="ms-drag"></div>
+    <div class="ms-head">
+      <div class="ms-title">d3kOS · MV SERENITY</div>
+      <button class="ms-x" onclick="closeMenu()">✕</button>
+    </div>
+    <div class="ms-grid">
+      <button class="ms-btn" onclick="closeMenu();toast('AvNav Charts — localhost:8080')">
+        <span class="ms-btn-icon">🗺️</span><span class="ms-btn-lbl">AvNav Charts</span><span class="ms-btn-sub">localhost:8080</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();openSplit('ai')">
+        <span class="ms-btn-icon">🤖</span><span class="ms-btn-lbl">AI Navigation</span><span class="ms-btn-sub">Gemini · Ollama</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();toast('Engine monitor…')">
+        <span class="ms-btn-icon">⚙️</span><span class="ms-btn-lbl">Engine Monitor</span><span class="ms-btn-sub">Full history</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();showAlert()">
+        <span class="ms-btn-icon">⚠️</span><span class="ms-btn-lbl">Demo: AIS Alert</span><span class="ms-btn-sub">Vessel crossing</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();openDiag()">
+        <span class="ms-btn-icon">🔧</span><span class="ms-btn-lbl">Demo: Engine Diag</span><span class="ms-btn-sub">Coolant advisory</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();showPosRpt()">
+        <span class="ms-btn-icon">📢</span><span class="ms-btn-lbl">Demo: Pos Report</span><span class="ms-btn-sub">Full-screen brief</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();document.getElementById('arrival').classList.add('show')">
+        <span class="ms-btn-icon">🏁</span><span class="ms-btn-lbl">Demo: Arrival</span><span class="ms-btn-sub">Port brief</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();showCrit()">
+        <span class="ms-btn-icon">⛔</span><span class="ms-btn-lbl">Demo: Critical</span><span class="ms-btn-sub">Screen pulse</span>
+      </button>
+      <button class="ms-btn" onclick="closeMenu();toast('Settings…')">
+        <span class="ms-btn-icon">⚙️</span><span class="ms-btn-lbl">Settings</span><span class="ms-btn-sub">Config · Docs</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CELL CONTEXT MENU -->
+<div class="ctx" id="ctx">
+  <div class="ctx-ttl" id="ctxTtl">Cell</div>
+  <button class="ctx-item" onclick="hideCtx();toast('Changing data source…')">⚙️ &nbsp;Change data source</button>
+  <button class="ctx-item" onclick="hideCtx();toast('Alert thresholds…')">🔔 &nbsp;Set alert thresholds</button>
+  <button class="ctx-item" onclick="hideCtx();toast('Marked Priority 1')">⭐ &nbsp;Mark as Priority 1</button>
+  <button class="ctx-item" onclick="hideCtx();showPosRpt()">📢 &nbsp;Schedule full-screen report</button>
+  <button class="ctx-item" onclick="hideCtx();toast('Cell hidden')">✕ &nbsp;Hide this cell</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── ROW TOGGLE — Both / Engine / Nav ── */
+function showRow(which){
+  const showE = which === 'both' || which === 'engine';
+  const showN = which === 'both' || which === 'nav';
+  document.getElementById('rowEngine').classList.toggle('hidden', !showE);
+  document.getElementById('rowNav').classList.toggle('hidden', !showN);
+  document.getElementById('rpBoth').classList.toggle('on',   which === 'both');
+  document.getElementById('rpEngine').classList.toggle('on', which === 'engine');
+  document.getElementById('rpNav').classList.toggle('on',    which === 'nav');
+  const hints = { both:'Engine + Nav', engine:'Engine instruments', nav:'Navigation instruments' };
+  document.getElementById('rowHint').textContent = hints[which];
+  // Alert dot on hidden tabs
+  const hasEngineAlert = !!document.querySelector('#rowEngine .ic.adv, #rowEngine .ic.alrt, #rowEngine .ic.crit');
+  const hasNavAlert    = !!document.querySelector('#rowNav .ic.adv,    #rowNav .ic.alrt,    #rowNav .ic.crit');
+  document.getElementById('engineAlert').classList.toggle('show', !showE && hasEngineAlert);
+  document.getElementById('navAlert').classList.toggle('show',    !showN && hasNavAlert);
+}
+showRow('both');   // default — show both rows on load
+
+/* ── THEME ── */
+function setTheme(t){
+  if(t==='night') document.body.setAttribute('data-night','');
+  else document.body.removeAttribute('data-night');
+  document.getElementById('btnD').classList.toggle('on',t==='day');
+  document.getElementById('btnN').classList.toggle('on',t==='night');
+}
+function autoTheme(){ setTheme(new Date().getHours()>=7&&new Date().getHours()<20?'day':'night'); }
+autoTheme(); setInterval(autoTheme, 60000);
+
+/* ── CLOCK ── */
+function tick(){
+  document.getElementById('clk').textContent =
+    new Date().toLocaleTimeString('en-CA',{hour12:false,hour:'2-digit',minute:'2-digit'});
+}
+setInterval(tick,1000); tick();
+
+/* ── TICKER ── */
+const TICKS = [
+  'AI FIRST OFFICER ACTIVE — ALL SYSTEMS NOMINAL',
+  'GEMINI 2.5 FLASH ONLINE — ROUTE ANALYZED — 42NM TO KINGSTON',
+  'FUEL RANGE 49NM AT CURRENT SPEED — 2H 40M REMAINING',
+  'SIGNAL K STREAM ACTIVE — AIS 2 TARGETS IN RANGE',
+  'COOLANT ADVISORY ACTIVE — TAP CELL FOR AI ENGINE ANALYSIS',
+];
+let ti=0;
+setInterval(()=>{
+  const el=document.getElementById('ticker');
+  el.style.opacity='0';
+  setTimeout(()=>{
+    ti=(ti+1)%TICKS.length;
+    el.textContent=TICKS[ti];
+    el.style.transition='opacity .4s'; el.style.opacity='1';
+  },300);
+},5500);
+
+/* ── HELM ── */
+let helmOn=false, helmTimer;
+function openHelm(){
+  helmOn=true;
+  document.getElementById('helmOv').classList.add('show');
+  document.getElementById('hPill').classList.add('live');
+  document.getElementById('helmBtn').classList.add('live');
+  helmTimer = setTimeout(()=>{
+    closeHelm();
+    setTimeout(()=>{
+      document.getElementById('ticker').textContent = 'HELM HEARD: "FUEL RANGE AT CURRENT SPEED" — RESPONDING IN AI PANEL';
+      openSplit('ai');
+      toast('Helm answered — see AI Nav panel');
+      setTimeout(()=>document.getElementById('ticker').textContent=TICKS[0], 5000);
+    },350);
+  }, 3500);
+}
+function closeHelm(){
+  helmOn=false; clearTimeout(helmTimer);
+  document.getElementById('helmOv').classList.remove('show');
+  document.getElementById('hPill').classList.remove('live');
+  document.getElementById('helmBtn').classList.remove('live');
+}
+
+/* ── SPLIT MIC ── */
+let micOn=false;
+function toggleMic(){
+  micOn=!micOn;
+  const b=document.getElementById('spMic');
+  b.classList.toggle('live',micOn);
+  b.textContent=micOn?'⏹':'🎤';
+  if(micOn){
+    toast('Listening — speak your question');
+    setTimeout(()=>{
+      micOn=false; b.classList.remove('live'); b.textContent='🎤';
+      document.getElementById('aiField').value='What is my fuel range at current speed?';
+      toast('Voice captured — processing…');
+    }, 3000);
+  }
+}
+
+/* ── NAV BAR ── */
+function setNav(b){
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+}
+
+/* ── SPLIT PANE ── */
+function openSplit(t){
+  document.getElementById('split').classList.add('open');
+  showTab(null,t);
+}
+function closeSplit(){
+  document.getElementById('split').classList.remove('open');
+  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('on',i===0));
+}
+function showTab(btn,t){
+  ['ai','wx','cam'].forEach(x=>{
+    const el=document.getElementById('tab-'+x);
+    if(el) el.style.display = x===t ? (x==='ai'?'flex':'block') : 'none';
+  });
+  document.querySelectorAll('.sp-tab').forEach(b=>
+    b.classList.toggle('on', b.getAttribute('onclick')?.includes("'"+t+"'")));
+}
+
+/* ── MENU ── */
+function openMenu(){ document.getElementById('menuBack').classList.add('open'); }
+function closeMenu(){ document.getElementById('menuBack').classList.remove('open'); }
+
+/* ── ALERTS ── */
+function showAlert(){
+  document.getElementById('alertCard').classList.add('show');
+  document.getElementById('ticker').textContent='⚠ AIS ALERT — VESSEL CPA 0.18NM IN 4 MINUTES — HOLD COURSE';
+  document.getElementById('ticker').classList.add('hot');
+}
+function closeAlert(){
+  document.getElementById('alertCard').classList.remove('show');
+  document.getElementById('ticker').classList.remove('hot');
+  document.getElementById('ticker').textContent=TICKS[0];
+}
+function openDiag(){ document.getElementById('diagBack').classList.add('show'); }
+function closeDiag(){ document.getElementById('diagBack').classList.remove('show'); }
+function showCrit(){
+  document.getElementById('critSc').classList.add('show');
+  document.getElementById('ticker').textContent='⛔ CRITICAL — OIL PRESSURE 8 PSI — TAKE ACTION NOW';
+  document.getElementById('ticker').classList.add('hot');
+}
+function closeCrit(){
+  document.getElementById('critSc').classList.remove('show');
+  document.getElementById('ticker').classList.remove('hot');
+  document.getElementById('ticker').textContent=TICKS[0];
+}
+function showPosRpt(){
+  document.getElementById('posRpt').classList.add('show');
+  const b=document.getElementById('prBar');
+  b.style.animation='none'; void b.offsetWidth; b.style.animation='prBar 4s linear forwards';
+  setTimeout(closePosRpt, 4300);
+}
+function closePosRpt(){ document.getElementById('posRpt').classList.remove('show'); }
+function closeArr(){ document.getElementById('arrival').classList.remove('show'); }
+
+/* ── CONTEXT MENU ── */
+function openCtx(e, name){
+  e.preventDefault();
+  const m=document.getElementById('ctx');
+  document.getElementById('ctxTtl').textContent=name;
+  m.style.left=Math.min(e.clientX, window.innerWidth-230)+'px';
+  m.style.top=Math.max(e.clientY-180, 60)+'px';
+  m.classList.add('show');
+  setTimeout(()=>document.addEventListener('click',hideCtx,{once:true}),10);
+}
+function hideCtx(){ document.getElementById('ctx').classList.remove('show'); }
+
+/* ── TOAST ── */
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(t._); t._=setTimeout(()=>t.style.display='none', 3000);
+}
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', e=>{
+  if(e.key==='d') setTheme('day');
+  if(e.key==='n') setTheme('night');
+  if(e.key==='h') openHelm();
+  if(e.key==='m') openMenu();
+  if(e.key==='1') openSplit('ai');
+  if(e.key==='2') openSplit('wx');
+  if(e.key==='3') openSplit('cam');
+  if(e.key==='a') showAlert();
+  if(e.key==='g') openDiag();
+  if(e.key==='c') showCrit();
+  if(e.key==='r') showPosRpt();
+  if(e.key==='p') document.getElementById('arrival').classList.add('show');
+  if(e.key==='Escape'){ closeMenu();closeSplit();closeAlert();closeDiag();closeCrit();closeHelm(); }
+});
+</script>
+</body>
+</html>

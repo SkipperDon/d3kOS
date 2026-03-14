@@ -38,12 +38,13 @@ Update this table at the **start of every session**.
 
 | Phase | Name | Status | Est. Sessions |
 |---|---|---|---|
-| 0 | Initial Setup & Directory Structure | ⬜ TODO | 0.5 |
+| 0 | Initial Setup & Directory Structure | ✅ COMPLETE 2026-03-12 | 0.5 |
 | 1 | Pi Menu Restructure | ✅ COMPLETE 2026-03-13 | 1 |
 | 2 | Dashboard Hub (Flask :3000) | ✅ COMPLETE 2026-03-13 | 2 |
 | 3 | Gemini Marine AI Proxy (:3001) | ✅ COMPLETE 2026-03-13 | 2–3 |
-| 4 | Settings Page + Documentation | ⬜ TODO | 1–2 |
-| 5 | AI + AvNav Integration | ⬜ TODO | 3–4 |
+| 4 | Settings Page + Documentation | ✅ COMPLETE 2026-03-13 | 1–2 |
+| 5 | AI + AvNav Integration | ✅ SOURCE COMPLETE 2026-03-13 — Pi deploy pending | 3–4 |
+| **v0.9.2.2** | **Frontend UI Rebuild (v12 design)** | **🔨 IN PLANNING 2026-03-13** | **3** |
 
 > ⬜ TODO → 🔄 IN PROGRESS → ✅ DONE
 
@@ -1884,4 +1885,203 @@ Key non-negotiables:
 
 ---
 
-*Auto-loaded by Claude Code. Version 2.0.0 → updated 2026-03-13 with Phase 5 (was DEFERRED, now active). All URLs and ports verified 2026-03-12/13.*
+*Auto-loaded by Claude Code. Version 2.0.0 → updated 2026-03-13 with Phase 5 (was DEFERRED, now active). All URLs and ports verified 2026-03-12/13. Updated 2026-03-13 with v0.9.2.2 section.*
+
+---
+
+## v0.9.2.2 — Frontend UI Rebuild
+
+**Version:** v0.9.2.2
+**Status:** IN PLANNING 2026-03-13
+**Parent:** v0.9.2.1 (Phases 0–5 complete)
+**Spec:** `docs/D3KOS_UI_SPEC.md` v1.0.0
+**Addendum:** `docs/D3KOS_UI_SPEC_ADDENDUM_01.md` v1.0.0 (Wayland kiosk fix — supersedes Section 19)
+**Reference mockup:** `docs/d3kos-mockup-v12.html` (canonical — use build 2)
+**Findings:** `docs/D3KOS_V12_FINDINGS.md` (design review, bugs, build plan)
+**Checklist:** `PROJECT_CHECKLIST.md` — v0.9.2.2 section
+
+### What Changes in v0.9.2.2
+
+v0.9.2.2 is a **frontend-only rebuild**. Backend services are unchanged:
+- Flask dashboard :3000 (`app.py`) — unchanged except `UI_LANG` injection
+- Gemini proxy :3001 — unchanged
+- AI Bridge :3002 — unchanged
+- All systemd services — unchanged
+
+What IS replaced:
+- `dashboard/templates/index.html` — 9-button hub → v12 continuous dashboard
+- `dashboard/static/css/d3kos.css` — black/Roboto → white day/dark night, Bebas Neue + Chakra Petch
+- `dashboard/static/js/` — new JS files split by concern (instruments, helm, overlays, theme, nav)
+- `config/vessel.env` — new path + `UI_LANG` field added
+- `scripts/launch-d3kos.sh` — new Chromium launch script (--app --start-maximized)
+
+### Design System Change
+
+| Element | v0.9.2.1 | v0.9.2.2 |
+|---|---|---|
+| Background (day) | `#000000` | `#FFFFFF` |
+| Background (night) | `#000000` | `#020702` |
+| Accent | `#00CC00` | `#004400` (day) / `#00CC00` (night) |
+| Font | Roboto | Bebas Neue (numerals) + Chakra Petch (UI) |
+| Layout | 9-button 3×3 grid | Continuous dashboard — instrument panel + AvNav + split pane |
+| Nav | None | 6-tab bottom nav bar + HELM protrusion |
+
+### Wayland Architecture Change (v0.9.2.2 Scope)
+
+**Chromium launch:** `--kiosk` → `--app --start-maximized --ozone-platform=wayland`
+
+Reason: `--kiosk` places Chromium on the Wayland FULLSCREEN layer, above Squeekboard.
+Result: on-screen keyboard is permanently hidden. This is a Wayland layer stack constraint.
+Fix: `--app --start-maximized` keeps Chromium on the normal layer. labwc strips decorations.
+See `docs/D3KOS_UI_SPEC_ADDENDUM_01.md` for complete details.
+
+**System prerequisites (run once on Pi before Session 1):**
+```bash
+sudo apt install squeekboard wlrctl unclutter-xfixes
+# Edit ~/.config/labwc/rc.xml — add windowRules (preserve ILITEK touch rule)
+# Edit ~/.config/labwc/autostart — add launch-d3kos.sh
+labwc --reconfigure
+```
+
+### v0.9.2.2 Three-Session Build Plan
+
+#### Session 1 — Static Template + System Prerequisites
+
+**Goal:** Deploy the v12 visual design as a working static page. No live data yet.
+
+**Step 0 — System prerequisites (Pi, run once):**
+- Install: `sudo apt install squeekboard wlrctl unclutter-xfixes`
+- Edit `~/.config/labwc/rc.xml` — add windowRules block (preserve ILITEK touch rule)
+- Edit `~/.config/labwc/autostart` — add launch script entry
+- Run `labwc --reconfigure`
+- Deploy `scripts/launch-d3kos.sh` to Pi, `chmod +x`
+- Verify: tap an input field anywhere → Squeekboard appears
+- Verify: `wlrctl toplevel list` runs without error
+
+**Step 1 — index.html rebuild:**
+- Extract full v12 CSS from `docs/d3kos-mockup-v12.html` → `static/css/d3kos.css`
+  (replace black/Roboto theme — preserve Phase 5 AI widget CSS)
+- Build new `templates/index.html` from v12 mockup HTML structure
+  - Status bar (48px) with ticker, HELM pill, day/night toggle, clock
+  - Row toggle strip (48px) — BOTH / ENGINE / NAV (default: BOTH)
+  - Engine row (120px) — 6 cells with static demo values
+  - Nav row (120px) — 5 cells + next waypoint (wider)
+  - Chart pane — AvNav iframe at :8080
+  - Split pane — AI Nav / Weather / Cameras tabs
+  - Bottom nav (104px) — 6 buttons, HELM protrudes 24px
+  - More menu (slide-up, 3×3 grid, position 9 = windowed mode toggle)
+- Fix known bugs from D3KOS_V12_FINDINGS.md:
+  - Bug 1: add `manualTheme` flag so autoTheme() doesn't override manual selection
+  - Bug 2: remove `hidden` class from nav row HTML (default is BOTH = both visible)
+
+**Step 2 — Split JS files:**
+- `static/js/theme.js` — day/night logic with manual flag
+- `static/js/nav.js` — tab/split pane navigation + windowed mode toggle
+- `static/js/helm.js` — voice overlay (Web Speech API, `recognition.lang = '{{ ui_lang }}'`)
+- `static/js/overlays.js` — all overlay/modal logic
+- `static/js/instruments.js` — stub (no live data yet — shows demo values)
+
+**Step 3 — Flask wire-up:**
+- `app.py`: inject `UI_LANG` from vessel.env into Jinja2 context
+- `config/vessel.env`: add `UI_LANG` field (default `en-GB`)
+
+**Step 4 — Deploy + verify (static):**
+- All 5 overlays work (keyboard shortcuts A/G/C/R/P)
+- Day/night toggle works (keyboard D/N); auto-switch does not override manual
+- BOTH/ENGINE/NAV toggle works; no row flash on load
+- More menu opens; position 9 = windowed mode toggle
+- AvNav iframe loads from :8080
+- Squeekboard shows when tapping any text field
+
+**Session 1 Definition of Done:**
+- [ ] index.html loads v12 layout at localhost:3000
+- [ ] d3kos.css has new design system (white day, dark night, correct fonts)
+- [ ] All keyboard demo shortcuts work
+- [ ] Day/night manual override does not get overwritten by auto-theme
+- [ ] Nav row has no flash on load (BOTH default, both rows visible)
+- [ ] Windowed mode toggle in More menu position 9 works
+- [ ] Squeekboard appears on input focus (Pi only)
+- [ ] SESSION_LOG.md updated
+
+---
+
+#### Session 2 — Live Signal K + AvNav + AI Wiring
+
+**Goal:** Replace static demo values with live data. Wire all instrument cells.
+
+**Step 1 — instruments.js:**
+- Open Signal K WebSocket at `ws://localhost:8099/signalk/v1/stream`
+- Subscribe to all paths in spec Section 22
+- Update each instrument cell on message receipt
+- Apply alert thresholds from spec Section 23
+- Show `---` on null values
+- Ticker message: "SIGNAL K OFFLINE — RECONNECTING" on disconnect
+
+**Step 2 — Alert flood system:**
+- Cell state classes: `.adv`, `.alrt`, `.crit`
+- CSS already handles the flood backgrounds + border animations
+- Tap advisory/alert cell → Engine Diagnostic overlay
+- `updateAlertDots()` runs after every state change
+
+**Step 3 — AvNav waypoint data:**
+- instruments.js polls `POST /viewer/avnav_navi.php` (request=api&type=route&command=getleg)
+  every 15 seconds when route is active
+- Update Next Waypoint cell: name + distance + bearing + ETA
+- Route AI widget: SSE from :3002/stream (already wired in Phase 5)
+
+**Step 4 — AI Nav panel wiring:**
+- Text field + send → POST /ask to Gemini proxy :3001
+- Response in chat bubbles with model + token meta
+- Voice mic → Web Speech API → populates text field
+
+**Session 2 Definition of Done:**
+- [ ] All instrument cells show live Signal K values
+- [ ] Alert thresholds trigger flood backgrounds + border animations
+- [ ] Next Waypoint cell updates from active AvNav route
+- [ ] AI Nav panel sends/receives from :3001
+- [ ] Route AI widget populated from :3002 SSE
+- [ ] SESSION_LOG.md updated
+
+---
+
+#### Session 3 — Cameras, More Menu, Onboarding
+
+**Goal:** Wire cameras from :8084 slot system. Complete More menu. Onboarding integration.
+
+**Step 1 — Cameras tab:**
+- Connect to `/camera/slot/list` (already deployed at :8084)
+- Display assigned slots with `display_in_grid` flag in 2×2 grid
+- MJPEG stream iframes from `/camera/feed/<slot_id>`
+- Forward watch slot → full-width primary view
+- Staggered polling (500ms primary / 2000ms grid)
+
+**Step 2 — More menu production items:**
+- Remove 3 demo buttons
+- Add: Trip Log, Engine Monitor (links to existing pages)
+- Position 9: Windowed Mode toggle (already wired Session 1)
+- Settings link
+
+**Step 3 — Onboarding integration:**
+- vessel.env missing → show first-run wizard before dashboard loads
+- Wizard sets VESSEL_NAME, HOME_PORT, UI_LANG, hull type, engine config, use case
+- On completion: POST to `/settings/save` → writes vessel.env → redirects to dashboard
+
+**Session 3 Definition of Done:**
+- [ ] Cameras tab shows live MJPEG streams from assigned slots
+- [ ] More menu has production items (no demo buttons)
+- [ ] First-run wizard fires when vessel.env is absent
+- [ ] All three sessions verified on Pi screen
+
+---
+
+### v0.9.2.2 Hard Rules
+
+1. **Backend services unchanged** — do not modify app.py routes beyond UI_LANG injection, do not modify proxy.py, ai_bridge.py
+2. **Never `--kiosk` or `--start-fullscreen`** — see addendum reason section
+3. **Preserve ILITEK touch rule** when editing rc.xml — `mouseEmulation="no"` must remain
+4. **bfcache** — use `pageshow` event not `DOMContentLoaded` for page-load triggers
+5. **wlrctl in keyboard-api.py** — window state endpoints go in keyboard-api.py (:8087), not app.py
+6. **Signal K WebSocket** — always `ws://localhost:8099` — never :3000
+7. **AvNav REST** — always POST to `http://localhost:8080/viewer/avnav_navi.php`
+
+---
