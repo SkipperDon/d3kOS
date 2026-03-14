@@ -2,6 +2,47 @@
 
 ---
 
+## Session — 2026-03-14 — Planning: version sequencing + mobile app strategy
+
+**Goal:** Determine dependency order for three active versions (v0.9.2.1, v0.9.2.2, v0.9.3) and develop a complete mobile app strategy through Q&A with operator.
+
+**Completed:**
+- Analysed dependencies between v0.9.2.1 (backend), v0.9.2.2 (frontend), v0.9.3 (AtMyBoat.com) — confirmed v0.9.2.2 Session 1 can run concurrently with v0.9.2.1 close-out; v0.9.3 is independent (requires /clear)
+- Conducted 9-question mobile app strategy Q&A with operator
+- Created `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0 — complete strategy from Q&A answers
+- Created zip of all strategy context files → `C:\Users\donmo\Downloads\d3kos-mobile-strategy-2026-03-14.zip`
+
+**Decisions:**
+- Mobile app platform: PWA on GitHub Pages — no App Store fees, no Apple/Google terms on payments
+- No third-party relay services — HostPapa PHP+MySQL as message broker (already paid), Pi polls outbound
+- Unique device UUID per install — no VPN IP assignment needed
+- QR code pairing on AtMyBoat.com links phone UUID to Pi installation ID
+- All payments via Stripe on atmyboat.com — not in-app (avoids 30% App Store cut)
+- Do NOT compete with ActiveCaptain — d3kOS Companion is boat systems health + AI, not community/marina
+- Push notifications deferred to Phase 2 (Pi is off when boat unattended = battery concern)
+- Fix My Pi: T0/T1 = $29.99 per incident via Stripe; T2 = 3 free checks/month ($9.99/month sub); T3 = unlimited free
+- PDF Boat Reports added — mPDF on HostPapa, Gemini AI recommendations, stored in central DB
+- OS Lockdown added — apt-mark hold on critical packages, pre-upgrade hook
+- "Find My Boat" = last known GPS + Pi state from last export (Tesla app model)
+- Total new infrastructure cost: $0
+
+**Ollama:** 0 calls — planning session only, no code generated
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Mobile app spec (full implementation spec from the brief — separate session)
+- v0.9.2.1 close-out (test suite + Phase 5 Pi verification)
+- v0.9.2.2 Session 2 (live Signal K + AvNav wiring)
+- v0.9.3 Phase 0+1 (staging activation, child theme)
+
+---
+
 ## Bug Fix — 2026-03-14 — wait-for-signalk.sh stale URL: Node-RED stuck in start-pre on every boot
 
 **Bug:** Node-RED never reached `active` state after reboot. `wait-for-signalk.sh` (Node-RED ExecStartPre) polled `http://localhost:3000/signalk` every 2 seconds for up to 60s, then systemd restarted and the loop repeated indefinitely. Signal K migrated from `:3000` → `:8099` on 2026-03-13. Flask :3000 has no `/signalk` route, so every poll returned 404. This was also the source of the every-2-second `GET /signalk` 404 flood observed in Flask dashboard logs.
