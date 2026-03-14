@@ -55,14 +55,58 @@ function closeSplit() {
 }
 
 function showTab(btn, t) {
+  const displayMap = { ai: 'flex', wx: 'flex', cam: 'block' };
   ['ai', 'wx', 'cam'].forEach(x => {
     const el = document.getElementById('tab-' + x);
-    if (el) el.style.display = x === t ? (x === 'ai' ? 'flex' : 'block') : 'none';
+    if (el) el.style.display = x === t ? (displayMap[x] || 'block') : 'none';
   });
   document.querySelectorAll('.sp-tab').forEach(b =>
     b.classList.toggle('on', b.getAttribute('onclick')?.includes("'" + t + "'"))
   );
+  if (t === 'wx')  loadWindy();
   if (t === 'cam' && typeof loadCameras === 'function') loadCameras();
+}
+
+/* ── WINDY WEATHER (free public embed — no API key required) ── */
+let _wxOverlay = 'waves';
+
+function _windyUrl(lat, lon, overlay) {
+  const product = overlay === 'rain' ? 'nowcast' : 'ecmwf';
+  return 'https://embed.windy.com/embed2.html'
+    + '?lat=' + lat + '&lon=' + lon
+    + '&detailLat=' + lat + '&detailLon=' + lon
+    + '&zoom=9&level=surface'
+    + '&overlay=' + overlay
+    + '&product=' + product
+    + '&menu=&message=true&marker=true&calendar=now&pressure='
+    + '&type=map&location=coordinates&detail='
+    + '&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1';
+}
+
+function loadWindy() {
+  const frame = document.getElementById('windyFrame');
+  if (!frame) return;
+  // Use GPS from instruments.js if available, else fall back to home port area
+  const lat = window.d3kGpsLat || 43.65;
+  const lon = window.d3kGpsLon || -79.38;
+  if (frame.dataset.overlay !== _wxOverlay || !frame.dataset.loaded) {
+    frame.src = _windyUrl(lat, lon, _wxOverlay);
+    frame.dataset.overlay = _wxOverlay;
+    frame.dataset.loaded  = '1';
+  }
+}
+
+function setWxView(overlay) {
+  _wxOverlay = overlay;
+  ['Waves', 'Rain', 'Wind'].forEach(v => {
+    const btn = document.getElementById('wxBtn' + v);
+    if (btn) btn.classList.toggle('on', v.toLowerCase() === overlay);
+  });
+  const frame = document.getElementById('windyFrame');
+  if (frame) {
+    frame.dataset.overlay = '';  // force reload
+    loadWindy();
+  }
 }
 
 /* ── MORE MENU ── */
