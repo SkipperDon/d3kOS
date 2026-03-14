@@ -4,6 +4,52 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session 2026-03-14 (close) — v0.9.2.1 Closed + v0.9.2.2 Session 1 + Step 0 Deployed
+**Goal:** Close v0.9.2.1, complete v0.9.2.2 Session 1 static template, deploy to Pi, run Step 0 prerequisites.
+
+**v0.9.2.1 Closure Decision:**
+- All 6 phases (0–5) code complete and deployed to Pi — services active
+- Feature verification (Route widget, Port Arrival, Voyage Log, Anchor Watch) deferred to on-boat — requires live GPS, active route, waypoint approach
+- Test suite (test_ai_bridge.py) deferred — acceptable, services verified live via /status + SSE stream
+- v0.9.2.1 status: CLOSED — code complete, on-boat verification pending
+
+**v0.9.2.2 Session 1 completed:**
+- theme.js, instruments.js, helm.js, overlays.js, nav.js created
+- index.html rebuilt from v12 mockup (Bug 1 + Bug 2 fixed)
+- d3kos.css replaced with v12 design system
+- app.py updated — vessel.env + UI_LANG
+- vessel.env created on Pi
+- Commits: d94b2f9, 03d93f9, ad5323f
+
+**Step 0 completed:**
+- unclutter-xfixes installed
+- rc.xml: windowRules serverDecoration=no, ILITEK rule preserved
+- autostart: unclutter + launch-d3kos.sh (curl-wait for :3000)
+- launch-d3kos.sh deployed (/opt/d3kos/scripts/) — fixed chromium-browser→chromium
+- Old d3kos-browser.desktop disabled (was launching wrong Chromium on boot)
+- labwc reloaded live (SIGUSR1)
+- v12 layout confirmed on Pi screen by Don ✓
+
+**Decisions:**
+- theme.js kept as separate module (not merged into nav.js) per spec
+- v0.9.2.1 feature tests accepted as deferred — on-boat only, not blocking
+- chromium command: 'chromium' not 'chromium-browser' on Debian Trixie Pi
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Session 1 visual checks on Pi (Don): row toggle, day/night persistence, HELM, Squeekboard, Windowed Mode
+- Session 2: instruments.js Signal K WebSocket, AvNav iframe, AI chat → :3001, Route AI SSE from :3002
+- Session 3: cameras, More menu production, onboarding wizard
+
+---
+
 ## Session 2026-03-14 — v0.9.2.2 Session 1: Static Template + JS Split + Bug Fixes
 **Goal:** Convert d3kos-mockup-v12.html into live Flask Jinja2 template; split monolithic JS into 4 modules; wire vessel.env + UI_LANG; fix Bug 1 (autoTheme override) and Bug 2 (nav row flash).
 
