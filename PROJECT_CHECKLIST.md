@@ -2100,22 +2100,28 @@
 - [✅] CHANGELOG.md [0.9.2.2] entry added
 - [✅] Commit b6c0476 — all spec docs committed
 
-### Step 0 — Pi System Prerequisites (TODO)
-- [ ] `sudo apt install wlrctl` (squeekboard already installed)
-- [ ] Edit `~/.config/labwc/rc.xml` — add windowRules (preserve ILITEK touch rule)
-- [ ] Edit `~/.config/labwc/autostart` — add launch-d3kos.sh entry
-- [ ] `labwc --reconfigure`
-- [ ] Deploy scripts/launch-d3kos.sh to Pi, chmod +x
-- [ ] Verify Squeekboard appears on input focus
+### Step 0 — Pi System Prerequisites (CODE COMPLETE 2026-03-14 — Pi deploy pending after v0.9.2.1)
+- [✅] keyboard-api.py: fixed go_windowed/go_fullscreen (wlrctl maximize off/on), added /window/state /window/maximize /window/restore per Addendum §19.7 — 2026-03-14
+- [⚠️] `sudo apt install wlrctl` — BLOCKED: Pi deploy held until v0.9.2.1 complete
+- [⚠️] Edit `~/.config/labwc/rc.xml` — add windowRules (preserve ILITEK touch rule) — BLOCKED: Pi deploy held
+- [⚠️] Edit `~/.config/labwc/autostart` — add launch-d3kos.sh entry — BLOCKED: Pi deploy held
+- [⚠️] `labwc --reconfigure` — BLOCKED: Pi deploy held
+- [⚠️] Deploy scripts/launch-d3kos.sh to Pi, chmod +x — BLOCKED: Pi deploy held
+- [⚠️] Verify Squeekboard appears on input focus — BLOCKED: Pi deploy held
 
-### Session 1 — Static Template (TODO)
-- [ ] d3kos.css replaced with v12 design (white/night, Bebas Neue + Chakra Petch)
-- [ ] index.html rebuilt from v12 mockup structure
-- [ ] Bug 1 fixed: manualTheme flag prevents auto-theme overriding manual selection
-- [ ] Bug 2 fixed: nav row hidden class removed (BOTH default)
-- [ ] All 5 overlays working via keyboard shortcuts
-- [ ] Windowed mode toggle in More menu position 9
-- [ ] UI_LANG injected from vessel.env into helm.js
+### Session 1 — Static Template (CODE COMPLETE 2026-03-14 — Pi verify pending)
+- [✅] d3kos.css replaced with v12 design (white/night, Bebas Neue + Chakra Petch)
+- [✅] index.html rebuilt from v12 mockup structure
+- [✅] Bug 1 fixed: manualTheme flag prevents auto-theme overriding manual selection (theme.js)
+- [✅] Bug 2 fixed: nav row hidden class removed (BOTH default)
+- [✅] All 5 overlays working via keyboard shortcuts
+- [✅] Windowed mode toggle in More menu position 9
+- [✅] UI_LANG injected from vessel.env into helm.js
+- [✅] theme.js created — extracted from nav.js, loaded before nav.js
+- [✅] instruments.js: readyState guard replaces DOMContentLoaded listener
+- [✅] index.html: theme.js added to script load order
+- [✅] Deployed to Pi 2026-03-14 — d3kos-dashboard.service active, HTTP 200 confirmed
+- [ ] Don visual verify: v12 layout on Pi screen (row toggle, day/night, shortcuts, windowed toggle)
 
 ### Session 2 — Live Data (TODO)
 - [ ] instruments.js wired to Signal K WebSocket ws://localhost:8099
@@ -2152,7 +2158,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-13 — v0.9.2.2 spec committed (UI_SPEC + addendum + mockup + findings + launch script). v0.9.2.2 build plan in place — 3 sessions. Session 1 begins next session. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-14 — v0.9.2.2 Step 0 code complete (keyboard-api.py endpoints fixed + added). Session 1 code complete and deployed to Pi. Pi-side Step 0 deploy blocked on v0.9.2.1 completion. Don visual verify of v12 layout pending. | **Maintained By:** Development team + Claude Code
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
 

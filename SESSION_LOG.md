@@ -2,6 +2,52 @@
 
 ---
 
+## Session — 2026-03-14 — v0.9.2.2 Step 0 + Session 1 code complete — Pi deploy pending v0.9.2.1
+
+**Tasks completed:**
+- keyboard-api.py: fixed `go_windowed` (was incorrectly using `wtype -k F11` + `wlrctl maximize on`; replaced with `wlrctl toplevel maximize off app_id:chromium`). Fixed `go_fullscreen` same pattern. Added `/window/state`, `/window/maximize`, `/window/restore` per Addendum §19.7. Commit `0bd8cff`.
+- theme.js: created as new file — extracted `setTheme()`, `autoTheme()`, `manualTheme` flag from nav.js. Bug 1 fix live. Loads before nav.js. Committed in prior session `03d93f9`.
+- nav.js: removed theme block (now owned by theme.js). Header comment updated.
+- instruments.js: replaced bare `DOMContentLoaded` listener with `readyState` guard — handles scripts-at-end-of-body timing correctly (event may already have fired when script runs).
+- index.html: added `theme.js` to script load order between instruments.js and overlays.js.
+- deployment/d3kOS/PROJECT_CHECKLIST.md: Step 0 status updated, keyboard-api item added, theme.js entry corrected from "MERGED INTO nav.js" to "CREATED".
+- /home/boatiq/Helm-OS/PROJECT_CHECKLIST.md: Step 0 and Session 1 items updated.
+
+**Files changed:**
+- `deployment/v0.9.2/python/keyboard-api.py` — go_windowed/go_fullscreen fixed; 3 new endpoints added
+- `deployment/d3kOS/dashboard/static/js/nav.js` — theme block removed
+- `deployment/d3kOS/dashboard/templates/index.html` — theme.js added to load order
+- `deployment/d3kOS/dashboard/static/js/instruments.js` — readyState guard
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Step 0 and Session 1 status updated
+- `/home/boatiq/Helm-OS/PROJECT_CHECKLIST.md` — Step 0 and Session 1 items updated
+
+**PROJECT_CHECKLIST.md updates (root):**
+- Step 0 heading: TODO → CODE COMPLETE 2026-03-14 — Pi deploy pending
+- keyboard-api.py item: added as [✅]
+- 6 Step 0 Pi-side items: [ ] → [⚠️] BLOCKED (after v0.9.2.1)
+- Session 1 heading: TODO → CODE COMPLETE 2026-03-14 — Pi verify pending
+- 7 Session 1 code items: [ ] → [✅]
+- 4 new [✅] items added (theme.js, readyState guard, load order, Pi deploy)
+- Don visual verify item: added as [ ]
+- Last Updated: updated to 2026-03-14
+
+**AAO compliance:** PASS
+
+**Open items for next session:**
+- v0.9.2.1 must close before any Pi-side Step 0 work (apt install wlrctl, rc.xml, autostart, labwc --reconfigure)
+- Don to visually verify v12 layout on Pi screen after v0.9.2.1 completes: row toggle, day/night persistence, keyboard shortcuts, windowed toggle in More menu position 9
+- Session 2 (Signal K + AvNav live data wiring) not yet started
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-14 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-13 — v0.9.2.2 spec committed — UI rebuild in planning, build starts next session
 
 **Tasks completed:**
