@@ -1,7 +1,7 @@
 # d3kOS Project Checklist
 **Version:** v0.9.2.2 | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
 **Spec:** docs/D3KOS_UI_SPEC.md v1.0.0 | **Addendum:** docs/D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0
-**Updated:** 2026-03-13
+**Updated:** 2026-03-14
 
 Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entries).
 
@@ -334,7 +334,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] Row toggle BOTH default — no nav row flash (Pi screen, Don)
 - [ ] Day/night manual override persists across 60s tick (Pi screen, Don)
 - [ ] Keyboard demo shortcuts d/n/h/m/1/2/3 (Pi screen, Don)
-- [ ] Windowed mode toggle in More menu position 9 (Pi screen, Don)
+- [✅] Windowed mode toggle in More menu position 9 — keyboard-api.py fixed 2026-03-14 (wtype C-A-Down → labwc UnMaximize, wlrctl maximize for fullscreen). State file transitions verified.
 - [ ] Squeekboard appears on input focus (Pi only — after Step 0)
 - [✅] SESSION_LOG.md updated
 
@@ -357,6 +357,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] Deployed to Pi 2026-03-14 — 3 files to /opt/d3kos/services/dashboard/
 - [✅] d3kos-dashboard restarted, HTTP 200, /status all 6 indicators up
 - [ ] Don visual verify: live data flowing on Pi screen
+- [✅] HELM button: onerror fallback to AI panel + toast fixed 2026-03-14 (helm.js). State verified ok:true.
 - [ ] Don visual verify: AI panel text input → response bubble
 - [✅] SESSION_LOG.md updated
 
