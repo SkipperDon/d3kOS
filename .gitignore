@@ -5,6 +5,7 @@ cloud-credentials.json
 .env.*
 **/config/api-keys.json
 **/config/cloud-credentials.json
+**/config/*.env
 telemetry-buffer.db
 
 # Pi SSH keys

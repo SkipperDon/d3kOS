@@ -21,7 +21,10 @@ import socket
 import subprocess
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'config', 'd3kos-config.env'))
+_cfg_dir = os.path.join(os.path.dirname(__file__), 'config')
+load_dotenv(os.path.join(_cfg_dir, 'd3kos-config.env'))
+# vessel.env is owner-config: VESSEL_NAME, HOME_PORT, UI_LANG — override if present
+load_dotenv(os.path.join(_cfg_dir, 'vessel.env'), override=True)
 
 app = Flask(__name__)
 
@@ -29,8 +32,9 @@ AVNAV_PORT    = os.getenv('AVNAV_PORT',    '8080')
 GEMINI_PORT   = os.getenv('GEMINI_PORT',   '3001')
 SIGNALK_PORT  = os.getenv('SIGNALK_PORT',  '8099')
 OLLAMA_HOST   = os.getenv('OLLAMA_HOST',   '192.168.1.36:11434')
-VESSEL_NAME   = os.getenv('VESSEL_NAME',   'Vessel')
+VESSEL_NAME   = os.getenv('VESSEL_NAME',   'MV SERENITY')
 HOME_PORT_VAL = os.getenv('HOME_PORT',     'Home Port')
+UI_LANG       = os.getenv('UI_LANG',       'en-GB')
 
 
 def check_internet() -> bool:
@@ -67,6 +71,7 @@ def index():
         avnav_port=AVNAV_PORT,
         gemini_port=GEMINI_PORT,
         vessel_name=VESSEL_NAME,
+        ui_lang=UI_LANG,
     )
 
 

@@ -1,198 +1,459 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ ui_lang }}">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>d3kOS &mdash; Marine Dashboard</title>
-  <link rel="stylesheet" href="/static/css/d3kos.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>d3kOS &middot; {{ vessel_name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}">
 </head>
 <body>
+<div id="app" style="display:flex;flex-direction:column;height:100vh;">
 
-  <!-- STATUS BAR — always visible -->
-  <div id="status-bar">
-    <button id="btn-back" class="back-btn" onclick="goMenu()" style="display:none">&#9664; Menu</button>
-    <span class="brand">&#9875; d3kOS &mdash; {{ vessel_name }}</span>
-    <div class="indicators">
-      <span id="ind-internet"  class="indicator" title="Internet">&#127760;</span>
-      <span id="ind-avnav"     class="indicator" title="AvNav :8080">&#128506;</span>
-      <span id="ind-gemini"    class="indicator" title="AI :3001">&#129302;</span>
-      <span id="ind-ai-bridge" class="indicator" title="AI Bridge :3002">&#129504;</span>
-      <span id="ind-signalk"   class="indicator" title="SignalK :8099">&#128225;</span>
-      <span id="ind-ollama"    class="indicator" title="Ollama LAN">&#9881;</span>
-    </div>
-    <span id="clock"></span>
-  </div>
-
-  <!-- === SCREEN: MAIN MENU (9-button 3x3 grid) === -->
-  <div id="screen-menu" class="screen active">
-
-    <header class="menu-header">
-      <div class="brand-logo">HELM-OS / RASPBERRY PI 4B</div>
-      <div class="brand-name">d3kOS</div>
-      <div class="brand-sub">MARINE NAVIGATION DASHBOARD &middot; v2.0</div>
-    </header>
-
-    <div class="menu-body">
-      <div class="menu-grid">
-
-        <button class="menu-btn primary" onclick="showAvNav()">
-          <span class="menu-icon">&#128506;</span>
-          <span class="menu-label">AvNav Charts</span>
-          <span class="menu-sub">localhost:{{ avnav_port }}</span>
-        </button>
-
-        <button class="menu-btn primary" onclick="openAI()">
-          <span class="menu-icon">&#129302;</span>
-          <span class="menu-label">AI Navigation &#10022;</span>
-          <span class="menu-sub">Gemini &middot; Ollama</span>
-        </button>
-
-        <button class="menu-btn" onclick="window.location='/settings'">
-          <span class="menu-icon">&#9881;</span>
-          <span class="menu-label">Settings &amp; Help</span>
-          <span class="menu-sub">Config &middot; Docs &middot; Status</span>
-        </button>
-
-        <button class="menu-btn" onclick="showWeather('windy')">
-          <span class="menu-icon">&#127780;</span>
-          <span class="menu-label">Sea State</span>
-          <span class="menu-sub">embed.windy.com</span>
-        </button>
-
-        <button class="menu-btn" onclick="showWeather('radar')">
-          <span class="menu-icon">&#127783;</span>
-          <span class="menu-label">Radar</span>
-          <span class="menu-sub">rainviewer.com</span>
-        </button>
-
-        <button class="menu-btn" onclick="showPlaceholder('Engine Monitor', 'Phase 4')">
-          <span class="menu-icon">&#9875;</span>
-          <span class="menu-label">Engine Monitor</span>
-          <span class="menu-sub">Hours &middot; Temp &middot; Oil</span>
-        </button>
-
-        <button class="menu-btn" onclick="showPlaceholder('Trip Log', 'Phase 4')">
-          <span class="menu-icon">&#128203;</span>
-          <span class="menu-label">Trip Log</span>
-          <span class="menu-sub">Voyage history</span>
-        </button>
-
-        <button class="menu-btn" onclick="openCameras()">
-          <span class="menu-icon">&#128249;</span>
-          <span class="menu-label">Marine Vision</span>
-          <span class="menu-sub">Forward &middot; Fish detect</span>
-        </button>
-
-        <button class="menu-btn warn-border" onclick="launchOpenCPN()">
-          <span class="menu-icon">&#9973;</span>
-          <span class="menu-label">OpenCPN</span>
-          <span class="menu-sub warn-text">Emergency fallback</span>
-        </button>
-
+  <!-- ══ 1 · STATUS BAR ══ -->
+  <div id="sb">
+    <div class="sb-brand">d3kOS</div>
+    <div class="sb-sep"></div>
+    <div class="sb-vessel">{{ vessel_name }}</div>
+    <div class="sb-ticker" id="ticker">AI FIRST OFFICER ACTIVE &mdash; ALL SYSTEMS NOMINAL</div>
+    <div class="sb-right">
+      <div class="helm-pill" id="hPill" onclick="openHelm()">
+        <div class="hp-dot"></div>HELM
       </div>
-    </div>
-
-    <!-- Status row at foot of menu -->
-    <div class="menu-status" id="menu-status-bar">
-      <!-- Populated by connectivity-check.js -->
-    </div>
-
-  </div>
-
-  <!-- === SCREEN: AVNAV + AI SIDE PANEL === -->
-  <div id="screen-avnav" class="screen avnav-layout">
-
-    <!-- AvNav chart iframe — left/main area -->
-    <div id="avnav-chart-area">
-      <!-- src set lazily by showAvNav() in panel-toggle.js -->
-      <iframe id="avnav-frame" src=""
-        title="AvNav Chart Viewer"
-        allowfullscreen>
-      </iframe>
-    </div>
-
-    <!-- AI side panel — right column (Phase 5) -->
-    <div id="ai-panel">
-
-      <!-- Route Analysis Widget -->
-      <div id="route-widget" class="ai-widget">
-        <div class="ai-widget-head">
-          <span>&#9973; Route Analysis</span>
-          <button class="ai-widget-btn" onclick="triggerRouteAnalysis()" title="Analyze now">&#8635;</button>
-          <button class="ai-widget-btn" onclick="togglePanel('route-body')" title="Collapse">&#9660;</button>
-        </div>
-        <div id="route-body" class="ai-widget-body">
-          <div id="route-state" class="ai-state">Connecting...</div>
-          <div id="route-text" class="ai-text"></div>
-          <div id="route-meta" class="ai-meta"></div>
-        </div>
+      <div class="dn">
+        <button class="dn-b on" id="btnD" onclick="setTheme('day', true)">&#9728; DAY</button>
+        <button class="dn-b" id="btnN" onclick="setTheme('night', true)">&#9790; NIGHT</button>
       </div>
-
-      <!-- Arrival Briefing (shown on trigger) -->
-      <div id="arrival-widget" class="ai-widget" style="display:none">
-        <div class="ai-widget-head">
-          <span>&#9875; Port Arrival</span>
-          <button class="ai-widget-btn" onclick="closeWidget('arrival-widget')">&#10005;</button>
-        </div>
-        <div class="ai-widget-body">
-          <div id="arrival-dest" class="ai-meta"></div>
-          <div id="arrival-text" class="ai-text"></div>
-        </div>
-      </div>
-
-      <!-- Anchor Alert (shown on drag detection) -->
-      <div id="anchor-widget" class="ai-widget anchor-alarm" style="display:none">
-        <div class="ai-widget-head alarm-head">
-          <span>&#9875; ANCHOR DRAG</span>
-          <button class="ai-widget-btn" onclick="dismissAnchorAlarm()">DISMISS</button>
-        </div>
-        <div class="ai-widget-body">
-          <div id="anchor-text" class="ai-text alarm-text"></div>
-          <div id="anchor-meta" class="ai-meta"></div>
-          <button class="ai-action-btn" onclick="getAnchorAdvice()">GET AI ADVICE</button>
-          <div id="anchor-advice" class="ai-text" style="display:none"></div>
-        </div>
-      </div>
-
+      <div id="clk">--:--</div>
     </div>
   </div>
 
-  <!-- === SCREEN: WEATHER === -->
-  <div id="screen-weather" class="screen">
-    <div id="weather-tabs">
-      <button class="tab-btn" id="tab-windy" onclick="switchWeatherTab('windy')">Sea State</button>
-      <button class="tab-btn" id="tab-radar" onclick="switchWeatherTab('radar')">Radar</button>
-    </div>
-    <div id="weather-content">
-      <div id="offline-notice" style="display:none">
-        Internet required for weather panels &mdash; check connection
+  <!-- ══ 2 · INSTRUMENT PANEL ══ -->
+  <div id="inst">
+
+    <!-- ROW TOGGLE — three-way: Both &middot; Engine &middot; Nav -->
+    <div id="rowToggleBar">
+      <div class="row-pill">
+        <button class="row-pill-btn on" id="rpBoth"   onclick="showRow('both')">&#9881; + &#129517; BOTH</button>
+        <button class="row-pill-btn"    id="rpEngine" onclick="showRow('engine')">
+          &#9881; ENGINE<span class="rp-alert" id="engineAlert"></span>
+        </button>
+        <button class="row-pill-btn"    id="rpNav"    onclick="showRow('nav')">
+          &#129517; NAV<span class="rp-alert" id="navAlert"></span>
+        </button>
       </div>
-      <!-- src set lazily by switchWeatherTab() in panel-toggle.js -->
-      <iframe id="windy-frame" src="" title="Windy Sea State" style="display:none"></iframe>
-      <iframe id="radar-frame" src="" title="Weather Radar"   style="display:none"></iframe>
+      <div class="rtb-label" id="rowHint">Both rows</div>
+    </div>
+
+    <!-- ENGINE ROW -->
+    <div class="irow" id="rowEngine">
+      <div class="row-tab">
+        <div class="rt-bar"></div>
+        <div class="rt-lbl">Engine</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'RPM')">
+        <div class="ic-l">RPM</div>
+        <div class="ic-v">2250</div>
+        <div class="ic-u">rev / min</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Trim')">
+        <div class="ic-l">Trim</div>
+        <div class="ic-v">+8&deg;</div>
+        <div class="ic-u">degrees</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Oil Pressure')">
+        <div class="ic-l">Oil Press</div>
+        <div class="ic-v">52</div>
+        <div class="ic-u">PSI &middot; normal</div>
+      </div>
+      <!-- ADVISORY &mdash; taps to engine diag -->
+      <div class="ic adv" id="cellCoolant" onclick="openDiag()" oncontextmenu="openCtx(event,'Coolant Temp')">
+        <div class="ic-l">Coolant</div>
+        <div class="ic-v">92&deg;</div>
+        <div class="ic-u">C &middot; advisory &uarr; tap for AI</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Fuel')">
+        <div class="ic-l">Fuel</div>
+        <div class="ic-v">68%</div>
+        <div class="ic-u">84 L &middot; 2h 40m</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Battery')">
+        <div class="ic-l">Battery</div>
+        <div class="ic-v">13.8</div>
+        <div class="ic-u">V &middot; charging</div>
+      </div>
+    </div>
+
+    <!-- NAV ROW — Bug 2 fix: no 'hidden' class; showRow('both') on DOMContentLoaded sets correct state -->
+    <div class="irow nav-row" id="rowNav">
+      <div class="row-tab nav-tab">
+        <div class="rt-bar"></div>
+        <div class="rt-lbl">Nav</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Speed SOG')">
+        <div class="ic-l">Speed</div>
+        <div class="ic-v">18.4</div>
+        <div class="ic-u">kts &middot; SOG</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Depth')">
+        <div class="ic-l">Depth</div>
+        <div class="ic-v">12.1</div>
+        <div class="ic-u">metres</div>
+      </div>
+      <div class="ic" oncontextmenu="openCtx(event,'Course COG')">
+        <div class="ic-l">Course</div>
+        <div class="ic-v">245&deg;</div>
+        <div class="ic-u">true</div>
+      </div>
+      <div class="ic ic-gps" oncontextmenu="openCtx(event,'GPS Position')">
+        <div class="ic-l">Position</div>
+        <div class="ic-v">43&deg;50.5N<br>76&deg;19.2W</div>
+      </div>
+      <div class="ic ic-wp" oncontextmenu="openCtx(event,'Active Waypoint')">
+        <div class="ic-l">&#9658; NEXT WAYPOINT</div>
+        <div class="ic-dest">Duck Island</div>
+        <div class="ic-v">8.3 <span style="font-size:28px;opacity:.6">nm</span></div>
+        <div class="ic-eta">ETA 14:22 &middot; Bearing 248&deg; T</div>
+      </div>
+    </div>
+
+  </div><!-- /inst -->
+
+  <!-- ══ 3 · MAIN ══ -->
+  <div id="main">
+    <div id="chart">
+      <!-- Session 1: chart placeholder. Session 2: replace with AvNav iframe src="http://localhost:{{ avnav_port }}" -->
+      <div class="chart-mock">
+        <div class="chart-mock-txt">
+          AvNav Chart Viewer<br>
+          localhost : {{ avnav_port }}<br>
+          <span style="font-size:11px">[ live iframe wired in Session 2 ]</span>
+        </div>
+      </div>
+
+      <!-- Route AI strip &mdash; Phase 5 AI Bridge ids -->
+      <div class="rw" id="rw">
+        <div class="rw-tag">&#129517; Route AI</div>
+        <div class="rw-txt">
+          <span id="route-state" class="ai-state hidden"></span>
+          <span id="route-text"><b>Kingston Run &middot; 42nm.</b> Give Duck Island NE shoal 0.5nm clearance. Kingston fuel dock VHF 68 &mdash; best entry before 18:00 on this ebb.</span>
+          <div id="route-meta" style="font-size:11px;color:var(--ink3);margin-top:4px;"></div>
+        </div>
+        <div class="rw-badge" onclick="typeof triggerRouteAnalysis !== 'undefined' ? triggerRouteAnalysis() : toast('AI Bridge not connected')">GEMINI</div>
+        <div class="rw-cls" onclick="this.closest('.rw').classList.add('gone')">&#10005;</div>
+      </div>
+    </div>
+
+    <!-- Split pane -->
+    <div id="split">
+      <div class="sp-tabs">
+        <button class="sp-tab on" onclick="showTab(this,'ai')">&#129302; AI Nav</button>
+        <button class="sp-tab" onclick="showTab(this,'wx')">&#127780; Weather</button>
+        <button class="sp-tab" onclick="showTab(this,'cam')">&#128249; Cameras</button>
+        <button class="sp-close" onclick="closeSplit()">&#10005;</button>
+      </div>
+
+      <!-- AI tab -->
+      <div id="tab-ai" style="display:flex;flex-direction:column;height:calc(100% - 56px);">
+        <div class="sp-body" style="flex:1;overflow-y:auto;">
+          <div id="voyage-notice"></div>
+          <div class="ai-status">
+            <div class="ai-dot"></div>
+            GEMINI 2.5 FLASH &middot; ONLINE
+            <span style="margin-left:auto;opacity:.5">OLLAMA STANDBY</span>
+          </div>
+          <div class="ai-msg me">Helm, what&rsquo;s my fuel range at current speed?</div>
+          <div class="ai-msg bot">
+            At <b>18.4 kts</b>, you have approximately <b>2h 40m &middot; 49nm</b> of range. Kingston is <b>8.3nm</b> ahead &mdash; comfortable margin. Fuel at Kingston regardless &mdash; next dock is 62nm beyond.
+            <div class="meta">gemini-2.5-flash &middot; 312 tokens &middot; not stored</div>
+          </div>
+          <div class="ai-msg me">Anchorage at Kingston?</div>
+          <div class="ai-msg bot">
+            <b>Portsmouth Olympic Harbour</b> &mdash; anchor NE of marina basin. 4&ndash;6m sand/mud, excellent holding. Clear of ferry lane. VHF 68 for marina. Tidal range minimal on Lake Ontario.
+            <div class="meta">gemini-2.5-flash &middot; 198 tokens &middot; not stored</div>
+          </div>
+        </div>
+        <div class="ai-in">
+          <button class="mic72" id="spMic" onclick="toggleMic()">&#127908;</button>
+          <input class="ai-txt" placeholder="Or type a question&hellip;" id="aiField">
+        </div>
+      </div>
+
+      <!-- Weather tab -->
+      <div id="tab-wx" style="display:none;padding:18px;">
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <button style="flex:1;height:56px;border-radius:10px;background:var(--g-dim);border:2px solid var(--g-bdr);color:var(--g-txt);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">&#127754; Sea State</button>
+          <button style="flex:1;height:56px;border-radius:10px;background:var(--cell);border:1px solid var(--rule);color:var(--ink3);font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">&#127783; Radar</button>
+        </div>
+        <div class="ph-frame"><div class="ph-icon">&#127754;</div><div class="ph-lbl">WINDY EMBED &mdash; SESSION 2</div></div>
+      </div>
+
+      <!-- Cameras tab -->
+      <div id="tab-cam" style="display:none;padding:18px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="ph-frame" style="aspect-ratio:4/3;margin:0;"><div class="ph-icon">&#128247;</div><div class="ph-lbl">FORWARD</div></div>
+          <div class="ph-frame" style="aspect-ratio:4/3;margin:0;"><div class="ph-icon">&#9881;</div><div class="ph-lbl">ENGINE ROOM</div></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- === SCREEN: PLACEHOLDER === -->
-  <div id="screen-placeholder" class="screen">
-    <div class="placeholder-body">
-      <div class="placeholder-icon">&#128295;</div>
-      <div class="placeholder-title" id="ph-title">Feature</div>
-      <div class="placeholder-sub"   id="ph-sub">Coming soon</div>
-    </div>
+  <!-- ══ 4 · BOTTOM NAV ══ -->
+  <div id="bot">
+    <button class="nb on" onclick="setNav(this);closeSplit()">
+      <span class="nb-icon">&#128506;</span><span class="nb-lbl">Charts</span>
+    </button>
+    <button class="nb" onclick="setNav(this);openSplit('wx')">
+      <span class="nb-icon">&#127780;</span><span class="nb-lbl">Weather</span>
+    </button>
+    <button class="nb" onclick="setNav(this);openSplit('ai')">
+      <span class="nb-icon">&#129302;</span><span class="nb-lbl">AI Nav</span>
+    </button>
+    <!-- HELM &mdash; protrudes 24px above nav bar -->
+    <button class="nb helm" id="helmBtn" onclick="openHelm()">
+      <span class="nb-icon">&#127908;</span><span class="nb-lbl">HELM</span>
+    </button>
+    <button class="nb" onclick="setNav(this);openSplit('cam')">
+      <span class="nb-icon">&#128249;</span><span class="nb-lbl">Cameras</span>
+    </button>
+    <button class="nb" onclick="openMenu()">
+      <span class="nb-icon">&#8942;&#8942;</span><span class="nb-lbl">More</span>
+    </button>
   </div>
 
-  <!-- Pass Flask config to JS without hardcoding in static files -->
-  <script>
-    window.D3K_CONFIG = {
-      avnavUrl:   'http://localhost:{{ avnav_port }}',
-      geminiPort: '{{ gemini_port }}'
-    };
-  </script>
+</div><!-- /app -->
 
-  <script src="/static/js/connectivity-check.js"></script>
-  <script src="/static/js/panel-toggle.js"></script>
-  <script src="/static/js/ai-bridge.js"></script>
+
+<!-- ══ HELM LISTENING OVERLAY ══ -->
+<div id="helmOv">
+  <div class="hl-ring-wrap">
+    <div class="hl-ring-wave"></div>
+    <div class="hl-ring-wave"></div>
+    <div class="hl-ring-wave"></div>
+    <div class="hl-ring">&#127908;</div>
+  </div>
+  <div class="hl-bars">
+    <div class="hl-b"></div><div class="hl-b"></div><div class="hl-b"></div>
+    <div class="hl-b"></div><div class="hl-b"></div><div class="hl-b"></div>
+    <div class="hl-b"></div>
+  </div>
+  <div class="hl-title">HELM IS LISTENING</div>
+  <div class="hl-hint">Ask any question &mdash; or give a command</div>
+  <button class="hl-cancel" onclick="closeHelm()">Cancel</button>
+</div>
+
+
+<!-- ══ AI ALERT CARD ══ -->
+<div id="alertCard">
+  <div class="ac-stripe"></div>
+  <div class="ac-in">
+    <div class="ac-over">AI FIRST OFFICER &middot; SITUATIONAL ALERT</div>
+    <div class="ac-title">Vessel Crossing &mdash; Monitor CPA</div>
+    <div class="ac-body">
+      AIS target <b>MV ONTARIO SPIRIT</b> is converging bearing 047&deg; &mdash; CPA 0.18nm in 4 minutes.
+      You are the stand-on vessel. <b>Hold course and speed.</b>
+      Alter 10&deg; starboard only if CPA closes below 0.1nm. Helm is monitoring.
+    </div>
+    <div class="ac-btns">
+      <button class="btn64 btn-primary" onclick="closeAlert();toast('Acknowledged &mdash; AI monitoring CPA')">ACKNOWLEDGE</button>
+      <button class="btn64 btn-sec" onclick="closeAlert();openSplit('ai')">ASK AI MORE</button>
+      <button class="btn-ghost" onclick="closeAlert()">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ ENGINE DIAGNOSTIC ══ -->
+<div id="diagBack">
+  <div class="diag">
+    <div class="diag-head">
+      <div class="diag-head-ico">&#128295;</div>
+      <div>
+        <div class="diag-head-over">AI ENGINE DIAGNOSTIC</div>
+        <div class="diag-head-title">Coolant Temperature High</div>
+      </div>
+    </div>
+    <div class="diag-body">
+      <div class="diag-grid">
+        <div class="dc bad">
+          <div class="dc-lbl">Coolant Temp</div>
+          <div class="dc-val">92&deg;</div>
+          <div class="dc-note">&#9888; Advisory &rsaquo; 88&deg;C</div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">Oil Pressure</div>
+          <div class="dc-val">52</div>
+          <div class="dc-note">&#10003; Normal 45&ndash;65</div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">RPM</div>
+          <div class="dc-val">2250</div>
+          <div class="dc-note">&#10003; Cruise range</div>
+        </div>
+      </div>
+      <div class="diag-ai">
+        <div class="diag-ai-lbl">&#129302; AI ANALYSIS &mdash; GEMINI 2.5 FLASH</div>
+        <div class="diag-ai-txt">
+          Coolant at <b>92&deg;C</b> is above normal cruise range (75&ndash;88&deg;C) but below critical shutdown (105&deg;C). Oil pressure normal &mdash; rules out major internal failure. Most likely cause: <b>partial raw water cooling restriction</b> &mdash; debris on intake screen or early impeller wear.<br><br>
+          Recommendation: <b>Reduce to 1800 RPM</b> and monitor for 5 minutes. If temperature stabilises, continue at reduced speed to Kingston. If it climbs above <b>98&deg;C</b>, anchor and shut down engine immediately.
+        </div>
+      </div>
+      <div class="diag-btns">
+        <button class="diag-btn64 db-primary" onclick="closeDiag();toast('Reducing RPM &mdash; monitoring coolant temp')">REDUCE TO 1800 RPM</button>
+        <button class="diag-btn64 db-info" onclick="closeDiag();openSplit('ai')">FULL AI BRIEF</button>
+        <button class="diag-btn64 db-dismiss" onclick="closeDiag()">MONITOR &middot; DISMISS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ POSITION REPORT ══ -->
+<div id="posRpt" onclick="closePosRpt()">
+  <div class="pr-lbl">Scheduled Position Report</div>
+  <div class="pr-big">18.4 kts</div>
+  <div class="pr-mid">Course 245&deg; True</div>
+  <div class="pr-pos">43&deg; 50.5 N &middot; 76&deg; 19.2 W</div>
+  <div class="pr-timer"><div class="pr-bar" id="prBar"></div></div>
+  <div class="pr-tap">Tap anywhere to dismiss</div>
+</div>
+
+
+<!-- ══ CRITICAL SCREEN ══ -->
+<div id="critSc">
+  <div class="crit-card">
+    <div class="crit-over">&#9940; AI FIRST OFFICER &middot; CRITICAL ENGINE ALERT</div>
+    <div class="crit-title">Oil Pressure</div>
+    <div class="crit-num">8 PSI</div>
+    <div class="crit-txt">
+      Minimum safe 20 PSI &middot; Normal range 45&ndash;65 PSI<br>
+      Reduce to idle immediately &middot; Check oil level<br>
+      If pressure does not recover &mdash; shut down engine<br>
+      Possible oil pump failure or catastrophic oil loss
+    </div>
+    <button class="crit-ack" onclick="closeCrit()">ACKNOWLEDGE &mdash; TAKING ACTION NOW</button>
+  </div>
+</div>
+
+
+<!-- ══ PORT ARRIVAL BANNER &mdash; id matches ai-bridge.js ══ -->
+<div id="arrival-widget">
+  <div class="arr-head">
+    <div class="arr-title">&#127937; PORT ARRIVAL</div>
+    <button class="arr-x" onclick="closeArr()">&#10005;</button>
+  </div>
+  <div class="arr-body" id="arrival-text">
+    <b>Fuel:</b> Portsmouth fuel dock &middot; VHF 68 &middot; 08:00&ndash;18:00 &middot; port side tie-up.<br>
+    <b>Marina:</b> Kingston Marina &mdash; transient berths available, call ahead VHF 68.<br>
+    <b>Approach:</b> Stay 0.3nm clear of east breakwater shoal. Enter on ebb before 18:00.<br>
+    <b>Customs:</b> CBSA 1-888-226-7277 if arriving from US waters.
+  </div>
+  <div class="arr-foot">
+    <div class="arr-dist" id="arrival-dest">&#128205; 2.0 nm &middot; ETA 14:22</div>
+    <button class="arr-more" onclick="openSplit('ai');closeArr()">Full Briefing in AI &rarr;</button>
+  </div>
+</div>
+
+
+<!-- ══ ANCHOR WATCH WIDGET &mdash; Phase 5 AI Bridge ══ -->
+<div id="anchor-widget">
+  <div class="aw-head">&#9875; ANCHOR DRAG ALERT</div>
+  <div id="anchor-text">DRIFT DETECTED</div>
+  <div id="anchor-meta"></div>
+  <div id="anchor-advice"></div>
+  <div class="aw-btns">
+    <button class="aw-btn aw-advice"  onclick="typeof getAnchorAdvice !== 'undefined' && getAnchorAdvice()">GET AI ADVICE</button>
+    <button class="aw-btn aw-dismiss" onclick="typeof dismissAnchorAlarm !== 'undefined' && dismissAnchorAlarm()">DISMISS</button>
+  </div>
+</div>
+
+
+<!-- ══ SLIDE-UP MENU ══ -->
+<div id="menuBack" onclick="if(event.target===this)closeMenu()">
+  <div id="menuSheet">
+    <div class="ms-drag"></div>
+    <div class="ms-head">
+      <div class="ms-title">d3kOS &middot; {{ vessel_name }}</div>
+      <button class="ms-x" onclick="closeMenu()">&#10005;</button>
+    </div>
+    <div class="ms-grid">
+      <!-- 1 -->
+      <button class="ms-btn" onclick="closeMenu();toast('AvNav Charts &mdash; localhost:{{ avnav_port }}')">
+        <span class="ms-btn-icon">&#128506;</span>
+        <span class="ms-btn-lbl">AvNav Charts</span>
+        <span class="ms-btn-sub">localhost:{{ avnav_port }}</span>
+      </button>
+      <!-- 2 -->
+      <button class="ms-btn" onclick="closeMenu();openSplit('ai')">
+        <span class="ms-btn-icon">&#129302;</span>
+        <span class="ms-btn-lbl">AI Navigation</span>
+        <span class="ms-btn-sub">Gemini &middot; Ollama</span>
+      </button>
+      <!-- 3 -->
+      <button class="ms-btn" onclick="closeMenu();toast('Engine monitor &mdash; coming in Session 2')">
+        <span class="ms-btn-icon">&#9881;</span>
+        <span class="ms-btn-lbl">Engine Monitor</span>
+        <span class="ms-btn-sub">Full history</span>
+      </button>
+      <!-- 4 Demo -->
+      <button class="ms-btn" onclick="closeMenu();showAlert()">
+        <span class="ms-btn-icon">&#9888;</span>
+        <span class="ms-btn-lbl">Demo: AIS Alert</span>
+        <span class="ms-btn-sub">Vessel crossing</span>
+      </button>
+      <!-- 5 Demo -->
+      <button class="ms-btn" onclick="closeMenu();openDiag()">
+        <span class="ms-btn-icon">&#128295;</span>
+        <span class="ms-btn-lbl">Demo: Engine Diag</span>
+        <span class="ms-btn-sub">Coolant advisory</span>
+      </button>
+      <!-- 6 Demo -->
+      <button class="ms-btn" onclick="closeMenu();showPosRpt()">
+        <span class="ms-btn-icon">&#128226;</span>
+        <span class="ms-btn-lbl">Demo: Pos Report</span>
+        <span class="ms-btn-sub">Full-screen brief</span>
+      </button>
+      <!-- 7 Demo -->
+      <button class="ms-btn" onclick="closeMenu();document.getElementById('arrival-widget').classList.add('show')">
+        <span class="ms-btn-icon">&#127937;</span>
+        <span class="ms-btn-lbl">Demo: Arrival</span>
+        <span class="ms-btn-sub">Port brief</span>
+      </button>
+      <!-- 8 Demo -->
+      <button class="ms-btn" onclick="closeMenu();showCrit()">
+        <span class="ms-btn-icon">&#9940;</span>
+        <span class="ms-btn-lbl">Demo: Critical</span>
+        <span class="ms-btn-sub">Screen pulse</span>
+      </button>
+      <!-- 9 &mdash; Windowed Mode toggle (wlrctl via keyboard-api.py :8087) -->
+      <button class="ms-btn" onclick="toggleWindowedMode()">
+        <span class="ms-btn-icon">&#9707;</span>
+        <span class="ms-btn-lbl">Windowed Mode</span>
+        <span class="ms-btn-sub">Toggle fullscreen</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CELL CONTEXT MENU -->
+<div class="ctx" id="ctx">
+  <div class="ctx-ttl" id="ctxTtl">Cell</div>
+  <button class="ctx-item" onclick="hideCtx();toast('Change data source &mdash; Settings &rsaquo; Session 2')">&#9881;&nbsp; Change data source</button>
+  <button class="ctx-item" onclick="hideCtx();toast('Alert thresholds &mdash; Settings &rsaquo; Session 2')">&#128276;&nbsp; Set alert thresholds</button>
+  <button class="ctx-item" onclick="hideCtx();toast('Marked Priority 1')">&#11088;&nbsp; Mark as Priority 1</button>
+  <button class="ctx-item" onclick="hideCtx();showPosRpt()">&#128226;&nbsp; Schedule full-screen report</button>
+  <button class="ctx-item" onclick="hideCtx();toast('Cell hidden')">&#10005;&nbsp; Hide this cell</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- JS load order: instruments &rarr; helm &rarr; overlays &rarr; nav &rarr; ai-bridge -->
+<script src="{{ url_for('static', filename='js/instruments.js') }}"></script>
+<script src="{{ url_for('static', filename='js/helm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/overlays.js') }}"></script>
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai-bridge.js') }}"></script>
 
 </body>
 </html>
