@@ -2,6 +2,24 @@
 
 ---
 
+## Bug Fix — 2026-03-14 — wait-for-signalk.sh stale URL: Node-RED stuck in start-pre on every boot
+
+**Bug:** Node-RED never reached `active` state after reboot. `wait-for-signalk.sh` (Node-RED ExecStartPre) polled `http://localhost:3000/signalk` every 2 seconds for up to 60s, then systemd restarted and the loop repeated indefinitely. Signal K migrated from `:3000` → `:8099` on 2026-03-13. Flask :3000 has no `/signalk` route, so every poll returned 404. This was also the source of the every-2-second `GET /signalk` 404 flood observed in Flask dashboard logs.
+
+**Root cause:** `/usr/local/bin/wait-for-signalk.sh` contained `curl -sf http://localhost:3000/signalk` — stale URL not updated when Signal K was migrated.
+
+**Fix applied:** `sudo sed -i 's|http://localhost:3000/signalk|http://localhost:8099/signalk|g' /usr/local/bin/wait-for-signalk.sh` on Pi. `systemctl restart nodered` — reached `active` immediately.
+
+**Files changed:**
+- `/usr/local/bin/wait-for-signalk.sh` (Pi system file — not in repo)
+- `tests/test-bug-wait-for-signalk-url.sh` (regression test, committed daf101a + follow-up fix)
+
+**AAO note:** Fix was applied before full protocol was followed. Protocol completed retroactively. Regression test written, committed, and passing 4/4 before SESSION_LOG update.
+
+**Tests:** 4/4 PASS — URL correct, no stale references, Node-RED active, SK reachable at :8099 within 5s.
+
+---
+
 ## Session — 2026-03-14 — v0.9.2.2 Session 2 — Signal K live data, AI panel, AvNav iframe deployed
 
 **Tasks completed:**
