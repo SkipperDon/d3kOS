@@ -82,29 +82,28 @@ def _write_window_state(state: str) -> None:
 
 @app.route('/window/windowed', methods=['POST'])
 def go_windowed():
+    """Restore Chromium to a normal windowed state (unmaximize)."""
     if _read_window_state() != 'windowed':
         try:
-            subprocess.run(['wtype', '-k', 'F11'], env=_WAYLAND_ENV,
-                           capture_output=True, timeout=3)
-            time.sleep(0.3)
-            subprocess.run(['wlrctl', 'toplevel', 'maximize', 'app_id:chromium'],
-                           env=_WAYLAND_ENV, capture_output=True, timeout=3)
+            subprocess.Popen(['wlrctl', 'toplevel', 'maximize', 'off',
+                              'app_id:chromium'], env=_WAYLAND_ENV)
             _write_window_state('windowed')
         except Exception:
-            return jsonify({'ok': False})
-    return jsonify({'ok': True})
+            return jsonify({'ok': False, 'windowed': False})
+    return jsonify({'ok': True, 'windowed': True})
 
 
 @app.route('/window/fullscreen', methods=['POST'])
 def go_fullscreen():
+    """Maximize Chromium (normal window layer — not Wayland fullscreen layer)."""
     if _read_window_state() != 'fullscreen':
         try:
-            subprocess.run(['wlrctl', 'toplevel', 'fullscreen', 'app_id:chromium'],
-                           env=_WAYLAND_ENV, capture_output=True, timeout=3)
+            subprocess.Popen(['wlrctl', 'toplevel', 'maximize', 'on',
+                              'app_id:chromium'], env=_WAYLAND_ENV)
             _write_window_state('fullscreen')
         except Exception:
-            return jsonify({'ok': False})
-    return jsonify({'ok': True})
+            return jsonify({'ok': False, 'windowed': True})
+    return jsonify({'ok': True, 'windowed': False})
 
 
 @app.route('/window/toggle', methods=['POST'])
@@ -113,6 +112,27 @@ def toggle_window():
         return go_fullscreen()
     else:
         return go_windowed()
+
+
+# ── Addendum Section 19.7 endpoints ────────────────────────────────────────
+# /window/maximize  = go to maximized state  (maps to existing go_fullscreen)
+# /window/restore   = go to windowed state   (maps to existing go_windowed)
+# /window/state     = query current state    (read from state file)
+
+@app.route('/window/state')
+def window_state():
+    state = _read_window_state()
+    return jsonify({'maximized': state != 'windowed', 'state': state})
+
+
+@app.route('/window/maximize', methods=['POST'])
+def window_maximize():
+    return go_fullscreen()
+
+
+@app.route('/window/restore', methods=['POST'])
+def window_restore():
+    return go_windowed()
 
 
 if __name__ == '__main__':

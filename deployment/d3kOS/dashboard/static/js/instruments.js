@@ -26,8 +26,14 @@ function showRow(which) {
   document.getElementById('navAlert').classList.toggle('show',    !showN && hasNavAlert);
 }
 
-// Default: both rows visible on load
-window.addEventListener('DOMContentLoaded', () => showRow('both'));
+// Default: both rows visible on load.
+// Scripts are at end of body — DOM is already ready, so call directly.
+// DOMContentLoaded would never fire if added after the event has already occurred.
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => showRow('both'));
+} else {
+  showRow('both');
+}
 
 /* ── CELL CONTEXT MENU ── */
 function openCtx(e, name) {
