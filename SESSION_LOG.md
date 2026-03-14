@@ -3646,3 +3646,53 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 - o-charts chart activation — Don's task
 
 ---
+
+---
+
+## Session — 2026-03-14 — v0.9.2.2 Recovery: Full planning session, assumption register, recovery plan written
+
+**Tasks completed:**
+- Full gap analysis of v0.9.2.2 vs v12 mockup — all deviations identified
+- Assumption register: 17 assumptions presented one at a time, all approved by Don
+- V0922_RECOVERY_PLAN.md v1.0.0 written — 9-page recovery plan with 5 sessions, 3 waves, 12 increments
+- AAO methodology section embedded in plan — binding on all recovery sessions
+- Plan includes full AAO compliance checklist, Release Package Manifest format, risk classification table, action scope boundaries, prompt injection rules
+
+**Files changed:**
+- `deployment/d3kOS/docs/V0922_RECOVERY_PLAN.md` — NEW — full recovery plan document (Low risk)
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Updated "Last Updated" line + appended recovery planning section with Wave 1/2/3 increment tasks (Low risk)
+- `deployment/d3kOS/SESSION_LOG.md` — this entry appended (Low risk)
+
+**PROJECT_CHECKLIST.md updates:**
+- Updated header "Last Updated" line to: 2026-03-14 — Recovery planning session (V0922_RECOVERY_PLAN.md created)
+- Added new section: "v0.9.2.2 Recovery — Planning Session" with all 12 increments as open tasks
+- Marked [✅]: gap analysis, assumption register, recovery plan creation, AAO methodology embed
+
+**AAO compliance:** PASS
+- All actions None or Low risk only — planning session, no deploys
+- Pre-action stated before each file write
+- Scope: read existing files + created plan doc + updated governance files only
+- No High-risk actions taken
+- No git push
+- No prompt injection patterns found
+- No Emergency Brake needed
+
+**Decisions recorded:**
+- All 9 pages in scope (History removed — never asked for)
+- HELM = proactive first officer Option C — always watching, mutable, stoppable mid-speech
+- Bottom nav: Dashboard | Weather | Marine Vision | HELM | Boat Log | More (6 items)
+- More menu: AI Navigation, Engine Monitor, Initial Setup, Upload Documents, Manage Documents, Settings (6 items)
+- Remote Access removed — replaced by mobile app in v0.9.4
+- QR code in onboarding = Pi unique device ID for mobile pairing (mobile phone scans it)
+- Equipment/manual onboarding step: enter model numbers, auto-find manual online, add to RAG
+- Onboarding Tier 0: 10 runs maximum
+- Community features: section inside Settings (not separate page)
+- All pages Flask :3000 only — no split systems
+- i18n: preserve existing keys; new elements English-only with keys added to JSON
+
+**Open items for next session:**
+- Start Wave 1: Session A — INC-01 (CSS Foundation) + INC-02 (Flask Routing)
+- Read V0922_RECOVERY_PLAN.md before starting
+- No code written yet — Wave 1 is Session A's entire scope
+
+**Sign-off:** Don — silence = approval

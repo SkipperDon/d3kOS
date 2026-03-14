@@ -217,6 +217,7 @@ Complete replacement of the v0.9.2.1 frontend (9-button hub, black/Roboto theme)
 | `deployment/d3kOS/docs/d3kos-mockup-v12.html` | **[NEW 2026-03-13]** Canonical reference mockup — full v12 UI with 3-way BOTH/ENGINE/NAV toggle, all 5 overlays, day/night mode. This is the implementation reference for v0.9.2.2. |
 | `deployment/d3kOS/docs/D3KOS_V12_FINDINGS.md` | **[NEW 2026-03-13]** Design review findings document — canonical mockup declaration, design system tokens, 2 bugs with fix code, gap analysis, v0.9.2.1 comparison, 3-session build plan. |
 | `deployment/d3kOS/scripts/launch-d3kos.sh` | **[NEW 2026-03-13]** Chromium launch script — `--app --start-maximized --ozone-platform=wayland`. Replaces kiosk mode. Deploy to Pi at same path, chmod +x. |
+| `deployment/d3kOS/docs/V0922_RECOVERY_PLAN.md` | **[NEW 2026-03-14]** v0.9.2.2 Recovery Plan v1.0.0 — 17-assumption register, 9-page scope, 5-session execution plan (3 waves, 12 increments). AAO methodology section embedded. Read before every recovery session. |
 
 ---
 
