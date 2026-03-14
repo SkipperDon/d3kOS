@@ -97,7 +97,7 @@ def go_fullscreen():
     """Maximize Chromium at OS level (normal Wayland layer, not fullscreen layer)."""
     try:
         # Always execute — state file can go stale if window is moved externally
-        subprocess.run(['wlrctl', 'toplevel', 'maximize', 'app_id:chromium'],
+        subprocess.run(['wlrctl', 'toplevel', 'maximize', 'app_id:chrome-localhost__-Default'],
                        env=_WAYLAND_ENV, capture_output=True, timeout=3)
         _write_window_state('fullscreen')
     except Exception:
