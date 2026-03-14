@@ -2,6 +2,52 @@
 
 ---
 
+## Session — 2026-03-14 — v0.9.2.2 Post-Session 2: UI fixes, bug fixes, AODA, windowed toggle
+
+**Tasks completed:**
+- Bug fix: wait-for-signalk.sh stale URL — Node-RED never started after reboot (AAO bug-fix protocol followed, regression test 4/4)
+- Bug fix: keyboard-api.py windowed toggle — wrong labwc keybinding, wrong wlrctl app_id (chrome-localhost__-Default), stale state guard removed
+- Bug fix: 5 stale SK WebSocket URLs in /var/www/html/ pages (was source of GET /signalk 404 flood)
+- Bug fix: 3 stale SK REST URLs in Python services (signalk_client.py, query_handler.py, remote_api.py)
+- AODA: nav labels 12px→20px; HELM label 13px→20px; More menu 15px→18px / 11px→14px
+- More menu: scroll support (max-height 78vh) + compact buttons (120px→82px)
+- Bottom nav: position:fixed so nav always visible at any window height
+- Demo data removed: Route AI strip hidden; Kingston Run text cleared; fake TICKS removed
+- Vessel name: MV SERENITY → "Boat Name" in vessel.env
+- HELM button: outline style — no longer looks permanently active
+- Nav icons: fonts-noto-color-emoji installed on Pi — coloured emoji rendering
+- CSS cache-bust: ?v=2 to force browser reload
+- labwc rc.xml: C-A-Down → UnMaximize, C-A-Up → Maximize keybindings added; labwc reloaded
+- Windowed mode: confirmed working (Pi panel visible, window resizable, toggle back to fullscreen working)
+
+**Files changed:**
+- `deployment/v0.9.2/python/keyboard-api.py` — windowed/fullscreen fix, correct app_id, state guard removed
+- `deployment/v0.9.2/python/remote_api.py` — SK URL :3000→:8099
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — AODA fonts, fixed nav, HELM outline, More menu, cache-bust
+- `deployment/d3kOS/dashboard/templates/index.html` — Route AI hidden, demo text cleared, padding-bottom, cache-bust
+- `deployment/d3kOS/dashboard/static/js/nav.js` — TICKS simplified
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — post-session 2 fixes section added
+- `tests/test-bug-wait-for-signalk-url.sh` — new regression test
+- Pi only: `/usr/local/bin/wait-for-signalk.sh`, `/home/d3kos/.config/labwc/rc.xml`, vessel.env, 4x /var/www/html/ pages, 3x /opt/d3kos/services/ Python files, fonts-noto-color-emoji installed
+
+**PROJECT_CHECKLIST.md updates:**
+- `Visual verify: v12 layout` → [✅]
+- `Don visual verify: live data flowing` → [✅]
+- Added Post-Session 2 UI Fixes section — 13 items all [✅]
+- Updated timestamp line
+
+**AAO compliance:** PASS — one note: wait-for-signalk.sh fix applied before full bug-fix protocol; protocol completed retroactively, flagged transparently.
+
+**Open items for next session:**
+- Session 3: Cameras tab, More menu production items (remove 3 demo buttons, add Trip Log/Engine Monitor/Settings), first-run wizard
+- Don visual verify still needed: AI panel text input → response bubble; row toggle flash; day/night persist; keyboard shortcuts
+- Don: set real vessel name in vessel.env when ready (`VESSEL_NAME=` your boat name, restart dashboard)
+- Don: o-charts chart activation (see deployment/docs/OPENCPN_FLATPAK_OCHARTS.md)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-14 — Planning: version sequencing + mobile app strategy
 
 **Goal:** Determine dependency order for three active versions (v0.9.2.1, v0.9.2.2, v0.9.3) and develop a complete mobile app strategy through Q&A with operator.

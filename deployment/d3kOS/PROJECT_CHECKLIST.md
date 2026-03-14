@@ -1,7 +1,7 @@
 # d3kOS Project Checklist
 **Version:** v0.9.2.2 | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
 **Spec:** docs/D3KOS_UI_SPEC.md v1.0.0 | **Addendum:** docs/D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0
-**Updated:** 2026-03-14
+**Updated:** 2026-03-14 — Session 2 post-deploy fixes + bug fixes
 
 Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entries).
 
@@ -330,7 +330,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] d3kos-dashboard.service restarted and active
 - [✅] HTTP 200 at localhost:3000 — Flask serving new template ✓
 - [✅] /status: all 6 indicators up (avnav, gemini, ai_bridge, signalk, ollama, internet) ✓
-- [ ] Visual verify: v12 layout on Pi screen (Don)
+- [✅] Visual verify: v12 layout on Pi screen — confirmed via screenshots 2026-03-14
 - [ ] Row toggle BOTH default — no nav row flash (Pi screen, Don)
 - [ ] Day/night manual override persists across 60s tick (Pi screen, Don)
 - [ ] Keyboard demo shortcuts d/n/h/m/1/2/3 (Pi screen, Don)
@@ -356,12 +356,27 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] AvNav iframe live at localhost:{{ avnav_port }} (replaced chart-mock placeholder)
 - [✅] Deployed to Pi 2026-03-14 — 3 files to /opt/d3kos/services/dashboard/
 - [✅] d3kos-dashboard restarted, HTTP 200, /status all 6 indicators up
-- [ ] Don visual verify: live data flowing on Pi screen
+- [✅] Don visual verify: live data flowing on Pi screen — confirmed via screenshots 2026-03-14
 - [✅] HELM button: onerror fallback to AI panel + toast fixed 2026-03-14 (helm.js). State verified ok:true.
 - [ ] Don visual verify: AI panel text input → response bubble
 - [✅] SESSION_LOG.md updated
 
 ---
+
+### Post-Session 2 — UI Fixes & Bug Fixes (2026-03-14)
+**Risk:** LOW | **Status:** ✅ COMPLETE 2026-03-14
+- [✅] Bug fix: wait-for-signalk.sh stale URL (:3000→:8099) — Node-RED stuck in start-pre on every boot. Regression test passing 4/4.
+- [✅] Bug fix: keyboard-api.py windowed toggle — correct labwc keybinding (C-A-Down), correct app_id (chrome-localhost__-Default), remove stale state guard
+- [✅] Bug fix: 5 stale SK WebSocket URLs in old /var/www/html/ pages (:3000→:8099)
+- [✅] Bug fix: 3 stale SK REST URLs in Python services (:3000→:8099), services restarted
+- [✅] AODA: nav label font-size 12px→20px; HELM label 13px→20px; More menu 15px→18px / 11px→14px
+- [✅] More menu: max-height 78vh + overflow-y scroll; button min-height 120px→82px
+- [✅] Bottom nav: position fixed so always visible in any window height
+- [✅] Demo data removed: Route AI strip hidden by default; Kingston Run text cleared; TICKS fake messages removed
+- [✅] Vessel name: changed from MV SERENITY to "Boat Name" in vessel.env
+- [✅] HELM button: outline style (not filled dark green) so it doesn't look permanently selected
+- [✅] Nav icons: fonts-noto-color-emoji installed on Pi — emoji now render in colour
+- [✅] CSS cache-bust: ?v=2 added to CSS link
 
 ### Session 3 — Cameras, More Menu, Onboarding
 **Risk:** MEDIUM | **Status:** TODO
