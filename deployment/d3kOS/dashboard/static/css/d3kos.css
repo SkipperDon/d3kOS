@@ -474,7 +474,7 @@ html, body {
   border-top: 2px solid var(--rule);
   box-shadow: 0 -4px 20px rgba(0,0,0,.08);
   display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
-  position: relative; z-index: 200;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   overflow: visible;
 }
 .nb {
@@ -493,9 +493,9 @@ html, body {
   background: var(--g-txt); border-radius: 2px 2px 0 0;
 }
 .nb.on .nb-lbl { color: var(--g-txt); }
-.nb-icon { font-size: 32px; line-height: 1; }
+.nb-icon { font-size: 32px; line-height: 1; color: var(--g-txt); }
 .nb-lbl {
-  font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  font-size: 16px; font-weight: 700; letter-spacing: .08em;
   text-transform: uppercase; color: var(--ink3);
 }
 
