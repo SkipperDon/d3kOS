@@ -2,6 +2,24 @@
 
 ---
 
+## Bug Fix — 2026-03-14 — Node-RED flows: stale Signal K :3000 URLs corrected to :8099
+
+**Bug:** Node-RED flows contained 4 stale Signal K URL references to `localhost:3000`
+(WebSocket x2, HTTP request x1, function node x1). Signal K migrated :3000 → :8099
+on 2026-03-13. The HTTP request node `GET Signal K vessels/self` was hitting Flask
+dashboard at :3000 which has no `/signalk` route. WebSocket nodes failing silently.
+
+**No impact on v0.9.2.2** — Flask at :3000 and all v0.9.2.2 files untouched.
+
+**Fix:** `sed -i 's|localhost:3000/signalk|localhost:8099/signalk|g' ~/.node-red/flows.json`
+All 4 instances corrected. Node-RED restarted — active, flows started cleanly.
+
+**Files changed:** `~/.node-red/flows.json` (Pi only — not in repo). Backup written.
+
+**v0.9.3 checklist:** Node-RED verification task updated — stale URL fix marked complete.
+
+---
+
 ## Session — 2026-03-14 — v0.9.2.2 Post-Session 2: UI fixes, bug fixes, AODA, windowed toggle
 
 **Tasks completed:**
