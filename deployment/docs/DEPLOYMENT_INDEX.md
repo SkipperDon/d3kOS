@@ -146,6 +146,23 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | `deployment/d3kOS/ai-bridge/config/ai-bridge.env` | Phase 5 | **[DEPLOYED 2026-03-13]** Live on Pi at `/opt/d3kos/services/ai-bridge/config/ai-bridge.env`. NEVER committed. gitignored. |
 | `deployment/d3kOS/dashboard/static/js/ai-bridge.js` | Phase 5 | **[DEPLOYED 2026-03-13]** SSE EventSource to :3002/stream. Handles all 5 event types. triggerRouteAnalysis(), dismissAnchorAlarm(), getAnchorAdvice(). Pi: `/opt/d3kos/services/dashboard/static/js/ai-bridge.js` |
 
+### v0.9.2.3 Sessions A+B+C+D — UI Remediation (2026-03-16, commits cdf03c6–c79b1ac)
+
+| File | Description |
+|------|-------------|
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED 2026-03-16]** v0.9.2.3. Session A: NAV ribbon alignment, .nb-active state, nav.js leave-app fix. Session B: `.close-btn` universal class, `.ms-x`/`.sp-close`/`.rw-cls`/`.arr-x` dark 48px bold, More popup icons 40px labels 28px, global `select` rule 52px/20px, body font-family Chakra Petch. CSS v=11. |
+| `deployment/d3kOS/dashboard/static/js/helm.js` | **[UPDATED 2026-03-16]** Session A: navTo() clears beforeunload + stops TTS before internal nav. Session C: `toggleHelmMute()` — TTS on/off toggle, green=talking/grey=muted, persists localStorage `d3kHelmMute`. |
+| `deployment/d3kOS/dashboard/static/js/nav.js` | **[UPDATED 2026-03-16]** Session A: `.nb-active` class tracks last-tapped nav button; HELM only active when overlay open; `setNav()`/`openHelm()`/`closeHelm()` wired. |
+| `deployment/d3kOS/dashboard/static/js/weather-panel.js` | **[NEW 2026-03-16]** Session C: Open-Meteo weather overlay. GPS from SK `navigation.position`. Fetches wind/sea-state/atmospheric/alerts. `openWeatherPanel()`/`closeWeatherPanel()`. Auto-logs snapshot to boatlog-export-api :8095 every 30 min while open. Pi: `/opt/d3kos/services/dashboard/static/js/weather-panel.js` |
+| `deployment/d3kOS/dashboard/static/js/boatlog-engine.js` | **[NEW 2026-03-16]** Session D: Engine auto-capture via SK WebSocket. RPM/oil/coolant/battery/fuel paths. Engine start/stop detection. Snapshot on start, every 30 min running, on stop, on alert threshold. POST entries to :8095. Pi: `/opt/d3kos/services/dashboard/static/js/boatlog-engine.js` |
+| `deployment/d3kOS/dashboard/templates/index.html` | **[UPDATED 2026-03-16]** Session C: weather panel `#wxPanel` div, mute button in HELM overlay, `toggleWeatherPanel()` on Weather btn. weather-panel.js in load order. CSS ?v=12. |
+| `deployment/d3kOS/dashboard/templates/boat-log.html` | **[UPDATED 2026-03-16]** Session D: full font rewrite (Bebas Neue/Chakra Petch, 28px heads, 20px text), ENGINE entry rendering as data grid with RPM/oil/coolant/battery/fuel cells, VOICE/ENGINE/WEATHER/ALERT type badges, `window.renderEntries` exposed for boatlog-engine.js. CSS ?v=11. |
+| `deployment/d3kOS/dashboard/templates/setup.html` | **[UPDATED 2026-03-16]** Session B: body font-family Chakra Petch; `.field select` font-size 18px→20px. |
+| All other templates (7) | **[UPDATED 2026-03-16]** Session B: CSS cache-bust ?v=9→?v=11. No structural changes. |
+| `deployment/d3kOS/docs/V0923_PLAN.md` | **[NEW 2026-03-16]** v0.9.2.3 remediation plan — 19 issues, 5 sessions (A–E), architecture decisions, verification checklist. Canonical reference. |
+
+---
+
 ### v0.9.2.2 Recovery Session D — Upload Docs, Manage Docs, AI Navigation, Engine Monitor (2026-03-16)
 
 | File | Description |

@@ -1204,3 +1204,26 @@ Corrective action: In future, after presenting a plan, await a distinct explicit
 **Sign-off:** Don — silence = approval
 
 ---
+
+## Release Package Manifest — v0.9.2.3 Sessions B+C+D Combined Deploy 2026-03-16
+
+- Version: v0.9.2.2 (Pi) → v0.9.2.3 (deployed)
+- Update type: incremental
+- Pi: 192.168.1.237 | CSS version on Pi post-deploy: ?v=12
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| d3kos.css | /opt/d3kos/services/dashboard/static/css/ | base | Session B: close btns, popup scaling, select rule, font-family |
+| helm.js | /opt/d3kos/services/dashboard/static/js/ | base | Session C: mute toggle (toggleHelmMute) |
+| weather-panel.js | /opt/d3kos/services/dashboard/static/js/ | base | Session C: new — Open-Meteo weather overlay |
+| boatlog-engine.js | /opt/d3kos/services/dashboard/static/js/ | base | Session D: new — engine capture via SK WebSocket |
+| index.html | /opt/d3kos/services/dashboard/templates/ | base | Session C: weather panel HTML + mute btn, ?v=12 |
+| boat-log.html | /opt/d3kos/services/dashboard/templates/ | base | Session D: font rewrite + engine entry rendering |
+| 7 other templates | /opt/d3kos/services/dashboard/templates/ | base | CSS ?v=11 cache-bust only |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` — completed, active
+- Rollback: redeploy prior versions from commit cdf03c6 + git revert C/D commits
+- Health check: `curl http://192.168.1.237:3000/` → HTTP 200, ?v=12 in response ✅
+
+---
