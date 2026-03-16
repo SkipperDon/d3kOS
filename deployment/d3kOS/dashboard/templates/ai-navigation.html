@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; AI Navigation</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=6">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=7">
 <style>
   /* Full-page chat layout */
   #chat-wrap {
@@ -33,7 +33,7 @@
     flex: 1; height: 60px; padding: 0 18px;
     background: var(--cell); border: 2px solid var(--g-bdr);
     border-radius: 12px; color: var(--ink);
-    font-size: 17px; font-family: 'Chakra Petch', sans-serif; font-weight: 600;
+    font-size: 18px; font-family: 'Chakra Petch', sans-serif; font-weight: 600;
     outline: none; transition: border-color .2s;
     user-select: auto; -webkit-user-select: auto;
   }
@@ -52,7 +52,7 @@
   .chat-bubble {
     max-width: min(600px, 88%);
     padding: 14px 16px; border-radius: 14px;
-    margin-bottom: 10px; font-size: 16px;
+    margin-bottom: 10px; font-size: 18px;
     font-weight: 500; line-height: 1.75;
   }
   .bubble-me {
@@ -65,12 +65,12 @@
     color: var(--ink2);
   }
   .bubble-meta {
-    font-size: 11px; color: var(--ink3); margin-top: 8px; letter-spacing: .06em;
+    font-size: 16px; color: var(--ink3); margin-top: 8px; letter-spacing: .06em;
   }
   .bubble-source {
     display: inline-block;
     padding: 3px 9px; border-radius: 4px;
-    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    font-size: 16px; font-weight: 700; letter-spacing: .1em;
     background: var(--g-dim); color: var(--g-txt); border: 1px solid var(--g-bdr);
     margin-left: 6px;
   }
@@ -117,7 +117,7 @@
     <!-- Service status pill -->
     <div id="svc-pill" style="display:inline-flex;align-items:center;gap:8px;
           background:var(--g-dim);border:1px solid var(--g-bdr);padding:7px 14px;
-          border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.08em;
+          border-radius:20px;font-size: 16px;font-weight:700;letter-spacing:.08em;
           color:var(--g-txt);margin-bottom:14px">
       <div style="width:8px;height:8px;border-radius:50%;background:var(--g-txt);
                   animation:aiPulse 2s ease-in-out infinite"></div>
