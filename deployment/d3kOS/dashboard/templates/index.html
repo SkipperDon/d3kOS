@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=10">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=12">
 </head>
 <body>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
@@ -201,7 +201,7 @@
     <button class="nb nb-active" onclick="setNav(this);closeSplit()">
       <span class="nb-icon">&#128506;</span><span class="nb-lbl">Dashboard</span>
     </button>
-    <button class="nb" onclick="setNav(this);openSplit('wx')">
+    <button class="nb" onclick="toggleWeatherPanel()">
       <span class="nb-icon">&#127780;</span><span class="nb-lbl">Weather</span>
     </button>
     <button class="nb" onclick="setNav(this);navTo('/marine-vision')">
@@ -222,6 +222,17 @@
 </div><!-- /app -->
 
 
+<!-- ══ WEATHER CONDITIONS PANEL (I-11, I-12, I-13) ══ -->
+<!-- Left-side overlay — slides over AvNav, ribbons stay full width -->
+<div id="wxPanel">
+  <div class="wx-panel-head">
+    <div class="wx-panel-title">&#9928; CONDITIONS</div>
+    <button class="wx-panel-close close-btn" onclick="closeWeatherPanel()">&#10005;</button>
+  </div>
+  <div id="wxPanelBody" class="wx-panel-body"></div>
+</div>
+
+
 <!-- ══ HELM LISTENING OVERLAY ══ -->
 <div id="helmOv">
   <div class="hl-ring-wrap">
@@ -237,6 +248,8 @@
   </div>
   <div class="hl-title">HELM IS LISTENING</div>
   <div class="hl-hint">Ask any question &mdash; or give a command</div>
+  <!-- Mute toggle (I-07): green = voice active, grey = muted -->
+  <button class="hl-mute" id="helmMuteBtn" onclick="toggleHelmMute()">&#128266; TALKING</button>
   <button class="hl-cancel" onclick="closeHelm()">Cancel</button>
 </div>
 
@@ -430,13 +443,14 @@
 
 <div id="toast"></div>
 
-<!-- JS load order: instruments → theme → overlays → helm → nav → cameras → ai-bridge -->
+<!-- JS load order: instruments → theme → overlays → helm → nav → cameras → weather-panel → ai-bridge -->
 <script src="{{ url_for('static', filename='js/instruments.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/overlays.js') }}"></script>
 <script src="{{ url_for('static', filename='js/helm.js') }}"></script>
 <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cameras.js') }}"></script>
+<script src="{{ url_for('static', filename='js/weather-panel.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ai-bridge.js') }}"></script>
 
 </body>

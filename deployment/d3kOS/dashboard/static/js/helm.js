@@ -1,5 +1,5 @@
 /**
- * helm.js — d3kOS v0.9.2.2
+ * helm.js — d3kOS v0.9.2.3
  * HELM voice overlay (Web Speech API) + AI Nav panel text input.
  * sendAI(text) → POST :3001/ask → chat bubbles in split pane.
  *
@@ -8,6 +8,7 @@
  *
  * Session 1: demo stubs.
  * Session 2: Web Speech API + live :3001 AI calls.
+ * Session C (v0.9.2.3): HELM mute toggle — I-07.
  */
 
 const HELM_LANG  = document.documentElement.lang || 'en-GB';
@@ -16,6 +17,34 @@ const GEMINI_URL = 'http://localhost:3001/ask';
 let _helmOn    = false;
 let _helmTimer = null;
 let _helmRec   = null;  // SpeechRecognition instance for HELM overlay
+
+/* ── HELM MUTE (I-07) ── */
+/* Persists across page reload. Mutes TTS speech synthesis only.
+   HELM still listens and processes voice when muted. */
+let helmMuted = localStorage.getItem('d3kHelmMute') === '1';
+
+function toggleHelmMute() {
+  helmMuted = !helmMuted;
+  localStorage.setItem('d3kHelmMute', helmMuted ? '1' : '0');
+  /* Cancel any active browser speech synthesis */
+  if (helmMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+  _updateMuteBtn();
+  if (typeof toast === 'function') {
+    toast(helmMuted ? 'HELM muted \u2014 listening only' : 'HELM unmuted \u2014 voice active');
+  }
+}
+
+function _updateMuteBtn() {
+  const btn = document.getElementById('helmMuteBtn');
+  if (!btn) return;
+  if (helmMuted) {
+    btn.textContent = '\uD83D\uDD07 MUTED';
+    btn.classList.add('muted');
+  } else {
+    btn.textContent = '\uD83D\uDD0A TALKING';
+    btn.classList.remove('muted');
+  }
+}
 
 /* ── WEB SPEECH API ── */
 function _newRecognition() {
@@ -208,8 +237,13 @@ function _wireField() {
   }
 }
 
-if (document.readyState === 'loading') {
-  window.addEventListener('DOMContentLoaded', _wireField);
-} else {
+function _helmInit() {
   _wireField();
+  _updateMuteBtn(); // Set initial mute button state from localStorage
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', _helmInit);
+} else {
+  _helmInit();
 }
