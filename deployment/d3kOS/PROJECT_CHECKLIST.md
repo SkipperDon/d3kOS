@@ -433,4 +433,67 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 
-**Last updated:** 2026-03-16 — ⛔ v0.9.2.2 NOT APPROVED. Status: pending investigation. Do not close version until investigation complete and Don approves.
+**Last updated:** 2026-03-16 — ⛔ v0.9.2.2 NOT APPROVED. Investigation complete. Issues catalogued in V0923_PLAN.md. v0.9.2.3 planning complete — awaiting implementation authorization.
+
+---
+
+## v0.9.2.3 — UI Remediation
+**Version:** v0.9.2.3 | **Status:** 🔄 PLANNING COMPLETE — awaiting implementation authorization
+**Plan:** docs/V0923_PLAN.md (canonical — read before every session)
+**Issues Register:** 19 items (I-01 through I-19) — see V0923_PLAN.md
+
+### Session A — NAV Ribbon + Nav Active State + Leave App Fix
+**Items:** I-01, I-02, I-03, I-04, I-05, I-06, I-14, I-15
+- [ ] NAV ribbon: Position label top-aligned
+- [ ] NAV ribbon: Position numbers at 50% of SOG size
+- [ ] NAV ribbon: Next Waypoint label top-aligned, same size as other labels
+- [ ] NAV ribbon: Next Waypoint value same size as position data
+- [ ] Bottom nav: active state tracks last-tapped button only
+- [ ] HELM highlight: only when HELM overlay is open
+- [ ] Weather button: sized to match other bottom nav buttons
+- [ ] Leave app dialog: suppressed for internal route navigation
+- [ ] CSS cache-bust: ?v=10
+- [ ] Deploy to Pi + visual verify
+
+### Session B — Close Buttons + More Popup + Dropdowns
+**Items:** I-08, I-09, I-10, I-18, I-19
+- [ ] All X/close buttons: 48×48px, 24px inset from edges, dark, bold — entire app
+- [ ] More popup icons: scaled to match bottom nav icon size
+- [ ] More popup fonts: scaled to match bottom nav label size
+- [ ] All dropdowns: 3× larger, touch-friendly (52px+ height, 20px+ font) — all pages
+- [ ] Bebas Neue / Chakra Petch enforced on all page templates
+- [ ] CSS cache-bust: ?v=11
+- [ ] Deploy to Pi + visual verify
+
+### Session C — HELM Mute + Weather Overlay Panel
+**Items:** I-07, I-11, I-12, I-13
+- [ ] HELM mute button: inside HELM overlay, simple toggle, green=talking/grey=muted
+- [ ] HELM mute: persists in localStorage
+- [ ] Weather panel: new left-side overlay (28% width, slides over AvNav)
+- [ ] Weather panel: ribbons stay full width at all times
+- [ ] Weather panel: Open-Meteo data (wind, sea state, atmospheric, alerts)
+- [ ] Weather panel: auto-log to boat log every 30 min while open
+- [ ] Weather button: toggles panel open/close
+- [ ] Load order updated: weather-panel.js added
+- [ ] CSS cache-bust: ?v=12
+- [ ] Deploy to Pi + visual verify
+
+### Session D — Boat Log Overhaul
+**Items:** I-16, I-17
+- [ ] Boat log: fonts rewritten to Bebas Neue / Chakra Petch, dashboard-consistent sizes
+- [ ] boatlog-engine.js: Signal K WebSocket, engine start/stop detection
+- [ ] Engine capture: full snapshot on start, every 30 min running, on stop
+- [ ] Engine capture: immediate snapshot on alert threshold crossing
+- [ ] Entry type badges: VOICE / ENGINE / WEATHER / ALERT
+- [ ] CSS cache-bust: ?v=13
+- [ ] Deploy to Pi + visual verify
+
+### Session E — Global Font Audit + Full Deploy + Verification
+**Items:** I-19 (final sweep)
+- [ ] All templates audited — Bebas Neue / Chakra Petch, no Roboto remnants
+- [ ] All font sizes meet IEC 62288 standard
+- [ ] All dropdowns touch-sized on every page
+- [ ] Full deploy to Pi + reboot
+- [ ] 16-check verification checklist (V-01 through V-16) — all pass
+- [ ] SESSION_LOG.md updated
+- [ ] CHANGELOG.md updated — version bump to v0.9.2.3
