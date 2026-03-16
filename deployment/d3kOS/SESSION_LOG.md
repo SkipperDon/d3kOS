@@ -4,7 +4,7 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
-## Session — 2026-03-16 — v0.9.2.3 Planning
+## Session — 2026-03-16 — v0.9.2.3 Planning + Investigation
 **Goal:** Investigate v0.9.2.2 deficiencies, catalogue issues, create v0.9.2.3 remediation plan.
 
 **Completed:**
@@ -32,9 +32,28 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 | Claude API | check console.anthropic.com | TBD |
 | Ollama | 0 calls | $0.00 |
 
+**Files changed:**
+- NEW: `deployment/d3kOS/docs/V0923_PLAN.md` — 5-session remediation plan, 19 issues, architecture decisions, verification checklist
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — v0.9.2.3 section added
+- MOD: `deployment/d3kOS/SESSION_LOG.md` — this entry
+- MOD: `/home/boatiq/.claude/projects/-home-boatiq/memory/MEMORY.md` — v0.9.2.3 status block added
+
+**PROJECT_CHECKLIST.md updates:**
+- Added v0.9.2.3 section header — Status: PLANNING COMPLETE
+- Added Session A checklist (8 items, all [ ])
+- Added Session B checklist (6 items, all [ ])
+- Added Session C checklist (9 items, all [ ])
+- Added Session D checklist (6 items, all [ ])
+- Added Session E checklist (7 items, all [ ])
+- Updated "Last updated" line to 2026-03-16
+
+**AAO compliance:** PASS
+
 **Pending:**
 - Don to authorize implementation (say "go ahead", "implement", "proceed" or similar)
 - Session A through E to be executed in order after authorization
+
+**Sign-off:** Don — silence = approval
 
 ---
 
