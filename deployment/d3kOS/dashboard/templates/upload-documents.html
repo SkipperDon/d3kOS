@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Upload Documents</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=9">
 </head>
 <body>
 
@@ -77,7 +77,7 @@
       <div id="progressBar" style="height:100%;width:0%;background:var(--g-txt);border-radius:4px;
                                     transition:width .3s"></div>
     </div>
-    <p style="font-size: 16px;color:var(--ink3);font-weight:600">Processing document for RAG indexing&hellip;</p>
+    <p style="font-size: 18px;color:var(--ink3);font-weight:600">Processing document for RAG indexing&hellip;</p>
   </div>
 
   <!-- QUICK LINKS -->
@@ -89,7 +89,7 @@
           <span style="font-size:28px">&#128193;</span>
           <div>
             <div style="font-size: 18px;font-weight:700;color:var(--ink);margin-bottom:2px">Manage Documents</div>
-            <div style="font-size: 16px;color:var(--ink3)">View &amp; delete uploaded files</div>
+            <div style="font-size: 18px;color:var(--ink3)">View &amp; delete uploaded files</div>
           </div>
         </div>
       </a>
@@ -98,7 +98,7 @@
           <span style="font-size:28px">&#127968;</span>
           <div>
             <div style="font-size: 18px;font-weight:700;color:var(--ink);margin-bottom:2px">Return to Dashboard</div>
-            <div style="font-size: 16px;color:var(--ink3)">Back to main navigation</div>
+            <div style="font-size: 18px;color:var(--ink3)">Back to main navigation</div>
           </div>
         </div>
       </a>
@@ -196,7 +196,7 @@ async function doUpload() {
         '&#10003; Upload complete',
         `<b>${_esc(data.filename || file.name)}</b> was uploaded successfully.<br>
          Size: ${sizeMb} MB &middot; Type: ${_esc(typeInput.value)}<br>
-         <span style="color:var(--ink3);font-size: 16px">${_esc(data.message || '')}</span>`
+         <span style="color:var(--ink3);font-size: 18px">${_esc(data.message || '')}</span>`
       );
       fileInput.value = '';
     } else {
