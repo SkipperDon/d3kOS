@@ -2219,7 +2219,7 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
-**Last Updated:** 2026-03-16 — v0.9.2.2 APPROVED AND CLOSED. v0.9.2.3 planning complete. UAT document created. v0.9.3 session plan added. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-16 — v0.9.2.3 Session A COMPLETE (cdf03c6). Position/WP top-align, .nb-active nav state, navTo() leave-app fix deployed to Pi. Don confirmed visual correct. | **Maintained By:** Development team + Claude Code
 
 ---
 
