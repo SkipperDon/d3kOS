@@ -3916,3 +3916,26 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 - Session B when Don confirms Session A looks correct
 
 ---
+
+## Session — 2026-03-16 — v0.9.2.3 Session A close (alignment correction + Don sign-off)
+
+**Tasks completed:**
+- Alignment correction: `.ic-gps` and `.ic-wp` horizontal centering restored after I over-applied `align-items: flex-start`. Fix: `align-items: center` + `text-align: center` — top-align kept, horizontal centering restored.
+- Don confirmed visuals correct on Pi screen.
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — align-items left→center, text-align left→center for ic-gps and ic-wp (commit a4b51c4)
+- `PROJECT_CHECKLIST.md` — Last Updated line updated
+
+**PROJECT_CHECKLIST.md updates:**
+- Last Updated line → "v0.9.2.3 Session A COMPLETE (cdf03c6). Position/WP top-align, .nb-active nav state, navTo() leave-app fix deployed to Pi. Don confirmed visual correct."
+
+**AAO compliance:** PASS — all Low risk, no scope creep, no git push
+
+**Open items for next session:**
+- Session B: Close buttons + More popup scaling + dropdowns (all pages) — I-08, I-09, I-10, I-18, I-19
+- Read V0923_PLAN.md + PROJECT_CHECKLIST.md before starting
+
+**Sign-off:** Don confirmed "perfect" — Session A approved.
+
+---
