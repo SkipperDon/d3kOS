@@ -2,6 +2,53 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.3 Session C Close: HELM Mute + Weather Overlay Panel
+
+**Goal:** Build Session C of v0.9.2.3 — I-07 (HELM mute) + I-11/I-12/I-13 (weather overlay panel)
+
+**Tasks completed:**
+- Read CLAUDE.md, SESSION_LOG.md, MEMORY.md, V0923_PLAN.md at session start
+- Confirmed Sessions A+B already merged into index.html (CSS at v=11, nb-active, navTo())
+- Built Session C in full:
+  - NEW `weather-panel.js`: GPS from Signal K, Open-Meteo weather + marine API, left-side overlay, alert/wind/sea state/atmospheric sections, 30-min auto-log to localStorage, CSS slide transition
+  - MOD `helm.js`: `helmMuted` flag, `toggleHelmMute()`, `_updateMuteBtn()`, localStorage persistence, speechSynthesis.cancel() on mute
+  - MOD `index.html`: `#wxPanel` div, HELM mute button, Weather nav button → `toggleWeatherPanel()`, weather-panel.js in load order, CSS v=12
+  - MOD `d3kos.css`: `#wxPanel`, `.wx-panel-*`, `.wx-sec`, `.wx-alert`/`.wx-warn`/`.wx-crit`, `.wx-row`/`.wx-k`/`.wx-v`, `.hl-mute` styles appended
+- Committed: 022a9bb (code) + 2275695 (governance)
+- SESSION_LOG.md Session C entry written
+- deployment/d3kOS/PROJECT_CHECKLIST.md Session C items all ✅
+
+**Files changed:**
+- NEW: `deployment/d3kOS/dashboard/static/js/weather-panel.js` — Medium risk
+- MOD: `deployment/d3kOS/dashboard/static/js/helm.js` — Low risk
+- MOD: `deployment/d3kOS/dashboard/templates/index.html` — Low risk
+- MOD: `deployment/d3kOS/dashboard/static/css/d3kos.css` — Low risk
+- MOD: `Helm-OS/SESSION_LOG.md` — Low risk
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — Low risk
+
+**PROJECT_CHECKLIST.md updates (d3kOS):**
+- Session C: all 9 items `[ ]` → `[✅]` (deploy item marked "pending Sessions A+B merge" — subsequently merged and deployed by Session B entry)
+- Root PROJECT_CHECKLIST.md: Session C `[ ]` → `[✅] (022a9bb) — deployed Pi` (updated by Session B combined deploy)
+
+**AAO compliance:** PASS — Medium risk pre-stated, no scope creep, no Pi deploy (code only), no push, no injection detected.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Open items for next session:**
+- Session E: global font audit + 16-check verification + CHANGELOG.md + version bump to v0.9.2.3
+- INC-16: Visual verify 32px labels readable at helm distance (Don — on Pi screen)
+- UAT: 5 metric + 5 imperial users (Don)
+- o-charts chart activation (Don — see OPENCPN_FLATPAK_OCHARTS.md)
+- Node-RED inactive status — confirm intentional or re-enable
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.3 Session B: Close Buttons + More Popup + Dropdowns + Font Enforcement
 
 **Tasks completed:**
