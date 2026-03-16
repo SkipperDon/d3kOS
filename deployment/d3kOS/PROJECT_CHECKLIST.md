@@ -410,8 +410,8 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] INC-02: Flask Routing — add 6 new routes, remove OpenCPN route, rebuild More menu + bottom nav (2026-03-16)
 
 ### Wave 2 — Page Redesigns (parallel after Wave 1)
-- [ ] INC-03: Settings page — v12 CSS + community section
-- [ ] INC-04: Marine Vision — 4-camera grid, single focus, fish detection overlay
+- [✅] INC-03: Settings page — v12 CSS + community section (2026-03-16)
+- [✅] INC-04: Marine Vision — 4-camera grid, single focus, fish detection overlay (2026-03-16)
 - [ ] INC-05: Boat Log — voice note + entry list
 - [ ] INC-06: Onboarding wizard — 6-step flow, QR pairing, equipment/RAG, Tier 0 counter (10 runs max)
 - [ ] INC-07: Upload Documents page
