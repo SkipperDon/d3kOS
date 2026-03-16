@@ -264,18 +264,36 @@ def offline():
     return render_template('offline.html')
 
 
-@app.route('/launch/opencpn', methods=['POST'])
-def launch_opencpn():
-    """
-    Trigger OpenCPN via Node-RED.
-    Proxies to existing Node-RED flow at localhost:1880/launch-opencpn
-    (added in v0.9.2 — see nginx proxy block).
-    """
-    try:
-        r = requests.post('http://127.0.0.1:1880/launch-opencpn', timeout=5)
-        return jsonify({'ok': True, 'status': r.status_code})
-    except requests.RequestException as exc:
-        return jsonify({'ok': False, 'error': str(exc)}), 502
+# ── INC-02: New page routes (Session A stubs → replaced in Sessions B/C/D) ──
+
+@app.route('/marine-vision')
+def marine_vision():
+    return render_template('marine-vision.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
+@app.route('/boat-log')
+def boat_log():
+    return render_template('boat-log.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
+@app.route('/upload-documents')
+def upload_documents():
+    return render_template('upload-documents.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
+@app.route('/manage-documents')
+def manage_documents():
+    return render_template('manage-documents.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
+@app.route('/ai-navigation')
+def ai_navigation():
+    return render_template('ai-navigation.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
+@app.route('/engine-monitor')
+def engine_monitor():
+    return render_template('engine-monitor.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
 
 
 if __name__ == '__main__':

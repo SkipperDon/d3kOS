@@ -93,6 +93,17 @@ File: `deployment/d3kOS/dashboard/app.py`
 - Remove `/launch/opencpn` route (OpenCPN is Pi system menu, not d3kOS menu)
 - Remove Remote Access from More menu in index.html
 
+**INC-02: Stub Templates (Decision 2026-03-16 — Option A approved)**
+For each of the 6 new routes, create a minimal v12-styled stub template:
+- Status bar (consistent with d3kOS design system)
+- "Page coming soon" message
+- Back button → `/`
+- Full day/night theme via d3kos.css
+Files: `marine-vision.html`, `boat-log.html`, `upload-documents.html`,
+       `manage-documents.html`, `ai-navigation.html`, `engine-monitor.html`
+Note: Each stub is replaced by the full page implementation in Sessions B, C, D.
+      Do NOT deploy stub templates to Pi — deploy only after full page is complete (Session E).
+
 ---
 
 ### WAVE 2 — Page Redesigns (run in parallel after Wave 1)
@@ -105,7 +116,7 @@ File: `deployment/d3kOS/dashboard/templates/settings.html`
 - No content removed
 
 **INC-04: Marine Vision Page**
-File: `deployment/d3kOS/dashboard/templates/marine-vision.html` (NEW)
+File: `deployment/d3kOS/dashboard/templates/marine-vision.html` (REPLACES stub from INC-02)
 - 4-camera grid default layout
 - Tap any camera → single-focus view (tap again or back button → return to grid)
 - Fish detection overlay on each frame (calls `:8086`)
@@ -115,7 +126,7 @@ File: `deployment/d3kOS/dashboard/templates/marine-vision.html` (NEW)
 - Full day/night theme
 
 **INC-05: Boat Log Page**
-File: `deployment/d3kOS/dashboard/templates/boat-log.html` (NEW)
+File: `deployment/d3kOS/dashboard/templates/boat-log.html` (REPLACES stub from INC-02)
 - Voice note record → transcribe → save → view flow (already built in services)
 - List view of log entries
 - Voice record button (calls existing boatlog API)
@@ -123,7 +134,7 @@ File: `deployment/d3kOS/dashboard/templates/boat-log.html` (NEW)
 - Full day/night theme
 
 **INC-06: Onboarding Wizard**
-File: `deployment/d3kOS/dashboard/templates/setup.html` (EXPAND)
+File: `deployment/d3kOS/dashboard/templates/setup.html` (EXPAND — no stub, route already exists)
 - Step 1: Welcome screen
 - Step 2: Vessel basics (name, home port, language) — already built
 - Step 3: Mobile pairing — display Pi UUID as QR code; user scans with phone or types code manually
@@ -134,28 +145,28 @@ File: `deployment/d3kOS/dashboard/templates/setup.html` (EXPAND)
 - v12 CSS applied throughout
 
 **INC-07: Upload Documents Page**
-File: `deployment/d3kOS/dashboard/templates/upload-documents.html` (NEW)
+File: `deployment/d3kOS/dashboard/templates/upload-documents.html` (REPLACES stub from INC-02)
 - PDF upload form (calls existing manuals API at `:8083`)
 - Upload status feedback
 - Status bar + back button → /
 - Full day/night theme
 
 **INC-08: Manage Documents Page**
-File: `deployment/d3kOS/dashboard/templates/manage-documents.html` (NEW)
+File: `deployment/d3kOS/dashboard/templates/manage-documents.html` (REPLACES stub from INC-02)
 - List of uploaded documents (from manuals API)
 - Delete document option
 - Status bar + back button → /
 - Full day/night theme
 
 **INC-09: AI Navigation Page**
-File: `deployment/d3kOS/dashboard/templates/ai-navigation.html` (NEW)
+File: `deployment/d3kOS/dashboard/templates/ai-navigation.html` (REPLACES stub from INC-02)
 - AI chat interface (calls AI Bridge `:3002`)
 - Message history in session
 - Status bar + back button → /
 - Full day/night theme
 
 **INC-10: Engine Monitor Page**
-File: `deployment/d3kOS/dashboard/templates/engine-monitor.html` (NEW)
+File: `deployment/d3kOS/dashboard/templates/engine-monitor.html` (REPLACES stub from INC-02)
 - Engine data display (Signal K at `:8099` via WebSocket)
 - Key metrics: RPM, temp, oil pressure, alternator, fuel
 - Alert indicators for out-of-range values
