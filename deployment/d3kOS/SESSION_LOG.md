@@ -4,6 +4,61 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.3 Session D — Boat Log Overhaul + Engine Auto-Capture
+
+**Goal:** I-16 (font overhaul) + I-17 (engine auto-capture) — running in parallel with Sessions A/B/C.
+
+**Completed:**
+- `boat-log.html` font rewrite: Bebas Neue/Chakra Petch on all elements. Section headings 18px→28px, page title 22px→28px, export buttons 20px, status bar and entry text all explicitly Chakra Petch.
+- Entry type badge variants: VOICE (green), ENGINE (amber), WEATHER (blue), ALERT (red) — distinct border + colour per type.
+- ENGINE entry rendering: data grid showing RPM, oil PSI, coolant °C, battery V, fuel % with red warn highlight on threshold breach. VOICE entries unchanged.
+- `window.renderEntries` exposed so boatlog-engine.js can trigger re-render from outside the page script.
+- Theme init reads localStorage `d3kTheme` (was previously auto-detecting by hour — now consistent with dashboard).
+- NEW: `boatlog-engine.js` — Signal K WebSocket engine capture module:
+  - Subscribes: `propulsion.0.revolutions`, `propulsion.0.oilPressure`, `propulsion.0.coolantTemperature`, `electrical.batteries.0.voltage`, `tanks.fuel.0.currentLevel`
+  - RPM threshold: 3 Hz (180 RPM) = engine running
+  - Events: start, running (every 30 min), stop, alert_oil_low, alert_coolant_high, alert_battery_low, alert_battery_high
+  - Alert thresholds: oil < 10 PSI, coolant > 100°C, battery < 11.8V or > 15V
+  - Alert fires only on transition (not repeat); clears when condition recovers
+  - Saves to localStorage + POST :8095/api/boatlog/engine-entry (fire-and-forget)
+  - Auto-archives entries older than 90 days on every save
+  - Auto-reconnect on WS close (5-second retry)
+- Deployed to Pi: both files confirmed present, HTTP 200 on /boat-log
+- Commit: 581d172
+
+**Decisions:**
+- CSS cache-bust for boat-log.html set to ?v=13 per session plan (A=10, B=11, C=12, D=13)
+- Engine entry POSTs to `/api/boatlog/engine-entry` — new endpoint on boatlog-export-api.py :8095 (endpoint may not exist yet; localStorage copy is source of truth, POST is fire-and-forget)
+- d3kos.css not modified this session — all badge CSS is inline in boat-log.html (page-specific, no global need)
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Files changed:**
+- MOD: `deployment/d3kOS/dashboard/templates/boat-log.html` — full font + badge + engine rendering overhaul, ?v=13
+- NEW: `deployment/d3kOS/dashboard/static/js/boatlog-engine.js` — engine auto-capture module
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — Session D marked complete
+- MOD: `deployment/d3kOS/SESSION_LOG.md` — this entry
+
+**Pi deploy:**
+- `/opt/d3kos/services/dashboard/templates/boat-log.html` — deployed
+- `/opt/d3kos/services/dashboard/static/js/boatlog-engine.js` — deployed
+- d3kos-dashboard restarted — HTTP 200 verified
+
+**Pending:**
+- Visual verify on Pi screen (Don) — confirm font sizes, badge colours, engine grid layout
+- Sessions A/B/C completing in parallel — Session E to follow when all sessions done
+- boatlog-export-api.py may need `/api/boatlog/engine-entry` endpoint added (currently only has `/api/boatlog/voice-note` and `/api/boatlog/export`)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.3 Planning + Investigation
 **Goal:** Investigate v0.9.2.2 deficiencies, catalogue issues, create v0.9.2.3 remediation plan.
 
@@ -1052,5 +1107,100 @@ Corrective action: In future, after presenting a plan, await a distinct explicit
 **Sign-off:** Don — silence = approval
 
 ---
+
+---
+
+## Session — 2026-03-16 — v0.9.2.2 Approval + Close
+
+**Goal:** Formally approve and close v0.9.2.2. Move carryover items to v0.9.2.3 Session E.
+
+**Completed:**
+- v0.9.2.2 approved by Don
+- v0.9.2.2 status changed to ✅ APPROVED AND CLOSED in PROJECT_CHECKLIST.md
+- Status Note corrected in SESSION_LOG.md header
+- Four carryover items moved to v0.9.2.3 Session E:
+  - INC-16: Visual verify 32px labels at helm distance (Don)
+  - UAT: 5 metric + 5 imperial users (Don)
+  - o-charts chart activation (Don)
+  - Node-RED inactive status — confirm or re-enable
+- V0923_PLAN.md Session E scope updated with carryover items
+- PROJECT_CHECKLIST.md Session E updated with carryover items
+- v0.9.2.3 status remains: PLANNING COMPLETE — awaiting implementation authorization
+
+**Decisions:**
+- v0.9.2.2 closed on Don's explicit approval
+- All four carryover items are now formally tracked in v0.9.2.3 Session E
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Files changed:**
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — v0.9.2.2 status → APPROVED AND CLOSED; Session E updated with carryover items
+- MOD: `deployment/d3kOS/docs/V0923_PLAN.md` — Session E scope updated with carryover items
+- MOD: `deployment/d3kOS/SESSION_LOG.md` — this entry
+
+**Pending:**
+- Don to authorize v0.9.2.3 implementation (say "go ahead", "implement", or "proceed")
+
+**Sign-off:** Don — explicit approval given
+
+---
+
+## Session — 2026-03-16 — v0.9.2.3 Session B — Close Buttons + More Popup + Dropdowns
+
+**Goal:** I-08, I-09, I-10, I-18, I-19 — universal close button standard, More popup scaling, global dropdown sizing, font enforcement.
+
+**Completed:**
+- I-08: `.close-btn` universal class added to d3kos.css — 48×48px, `rgba(0,0,0,0.85)` bg, white ✕, 2px border, bold, rounded
+- I-08: `.ms-x` (More menu), `.sp-close` (split pane), `.rw-cls` (route strip), `.arr-x` (arrival widget) all updated to dark/bold close button style
+- I-09: `.ms-btn-icon` scaled 28px → 40px (matches bottom nav icon size)
+- I-10: `.ms-btn-lbl` scaled 18px → 28px (matches bottom nav label size)
+- I-18: Global `select {}` rule added — min-height 52px, font-size 20px, Chakra Petch, full-width — applies to all pages using d3kos.css
+- I-18: `setup.html` inline `.field input, .field select` font-size 18px → 20px (separate CSS, no d3kos.css)
+- I-19: `html, body { font-family: 'Chakra Petch', sans-serif; }` added to d3kos.css global base (body-level enforcement)
+- I-19: `setup.html` inline CSS: `html, body { font-family: 'Chakra Petch', sans-serif; }` added
+- CSS cache-bust: all 8 templates updated to `?v=11` (settings.html uses `/static/css/` path — updated same way)
+- PROJECT_CHECKLIST.md: Session A items marked ✅ (code was committed in cdf03c6, checklist not updated); Session B items marked ✅
+- Note: Session C (HELM mute + weather panel) also code-complete per checklist — all three sessions ready for combined Pi deploy
+
+**Decisions:**
+- Deploy Sessions A+B+C together in one Pi deploy (code is interleaved in same CSS file — deploying separately would cause partial state)
+- Session B CSS changes landed in commit cdf03c6 (Session A commit) due to concurrent editing — functionally correct, version control note only
+
+**AAO compliance:** PASS — all Low risk, pre-stated, no scope creep, no push, no injection detected
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Files changed:**
+- MOD: `deployment/d3kOS/dashboard/static/css/d3kos.css` — close button styles, More popup sizes, global select, body font-family, .close-btn class, v0.9.2.3 header
+- MOD: `deployment/d3kOS/dashboard/templates/index.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/settings.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/boat-log.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/marine-vision.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/upload-documents.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/manage-documents.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/ai-navigation.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/engine-monitor.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/setup.html` — body font-family + select font-size 20px
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — Session A + B marked ✅, status updated to IN PROGRESS
+- MOD: `deployment/d3kOS/SESSION_LOG.md` — this entry
+
+**Pending:**
+- Combined A+B+C Pi deploy (Session C also code-complete — all ready)
+- SCP d3kos.css + all 9 templates + weather-panel.js + boatlog-engine.js to Pi
+- Restart d3kos-dashboard, visual verify
+
+**Sign-off:** Don — silence = approval
 
 ---

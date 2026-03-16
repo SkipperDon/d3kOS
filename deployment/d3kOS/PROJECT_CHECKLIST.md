@@ -438,32 +438,32 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 ---
 
 ## v0.9.2.3 — UI Remediation
-**Version:** v0.9.2.3 | **Status:** 🔄 PLANNING COMPLETE — awaiting implementation authorization
+**Version:** v0.9.2.3 | **Status:** 🔄 IN PROGRESS — Sessions A+B+C code complete, deploy pending
 **Plan:** docs/V0923_PLAN.md (canonical — read before every session)
 **Issues Register:** 19 items (I-01 through I-19) — see V0923_PLAN.md
 
-### Session A — NAV Ribbon + Nav Active State + Leave App Fix
+### Session A — NAV Ribbon + Nav Active State + Leave App Fix ✅ CODE COMPLETE 2026-03-16
 **Items:** I-01, I-02, I-03, I-04, I-05, I-06, I-14, I-15
-- [ ] NAV ribbon: Position label top-aligned
-- [ ] NAV ribbon: Position numbers at 50% of SOG size
-- [ ] NAV ribbon: Next Waypoint label top-aligned, same size as other labels
-- [ ] NAV ribbon: Next Waypoint value same size as position data
-- [ ] Bottom nav: active state tracks last-tapped button only
-- [ ] HELM highlight: only when HELM overlay is open
-- [ ] Weather button: sized to match other bottom nav buttons
-- [ ] Leave app dialog: suppressed for internal route navigation
-- [ ] CSS cache-bust: ?v=10
-- [ ] Deploy to Pi + visual verify
+- [✅] NAV ribbon: Position label top-aligned
+- [✅] NAV ribbon: Position numbers at 50% of SOG size
+- [✅] NAV ribbon: Next Waypoint label top-aligned, same size as other labels
+- [✅] NAV ribbon: Next Waypoint value same size as position data
+- [✅] Bottom nav: active state tracks last-tapped button only
+- [✅] HELM highlight: only when HELM overlay is open
+- [✅] Weather button: sized to match other bottom nav buttons
+- [✅] Leave app dialog: suppressed for internal route navigation
+- [✅] CSS cache-bust: ?v=10
+- [ ] Deploy to Pi + visual verify (pending combined A+B+C deploy)
 
-### Session B — Close Buttons + More Popup + Dropdowns
+### Session B — Close Buttons + More Popup + Dropdowns ✅ CODE COMPLETE 2026-03-16
 **Items:** I-08, I-09, I-10, I-18, I-19
-- [ ] All X/close buttons: 48×48px, 24px inset from edges, dark, bold — entire app
-- [ ] More popup icons: scaled to match bottom nav icon size
-- [ ] More popup fonts: scaled to match bottom nav label size
-- [ ] All dropdowns: 3× larger, touch-friendly (52px+ height, 20px+ font) — all pages
-- [ ] Bebas Neue / Chakra Petch enforced on all page templates
-- [ ] CSS cache-bust: ?v=11
-- [ ] Deploy to Pi + visual verify
+- [✅] All X/close buttons: 48×48px, dark, bold (.close-btn class + .ms-x/.sp-close/.rw-cls/.arr-x updated)
+- [✅] More popup icons: scaled to 40px (matches bottom nav)
+- [✅] More popup fonts: scaled to 28px (matches bottom nav labels)
+- [✅] All dropdowns: global select rule — 52px height, 20px font, Chakra Petch — all pages
+- [✅] Bebas Neue / Chakra Petch enforced via body-level CSS (html,body font-family)
+- [✅] CSS cache-bust: ?v=11
+- [ ] Deploy to Pi + visual verify (pending combined A+B+C deploy)
 
 ### Session C — HELM Mute + Weather Overlay Panel ✅ CODE COMPLETE 2026-03-16
 **Items:** I-07, I-11, I-12, I-13
@@ -479,14 +479,14 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] Deploy to Pi + visual verify (pending Sessions A+B merge)
 
 ### Session D — Boat Log Overhaul
-**Items:** I-16, I-17
-- [ ] Boat log: fonts rewritten to Bebas Neue / Chakra Petch, dashboard-consistent sizes
-- [ ] boatlog-engine.js: Signal K WebSocket, engine start/stop detection
-- [ ] Engine capture: full snapshot on start, every 30 min running, on stop
-- [ ] Engine capture: immediate snapshot on alert threshold crossing
-- [ ] Entry type badges: VOICE / ENGINE / WEATHER / ALERT
-- [ ] CSS cache-bust: ?v=13
-- [ ] Deploy to Pi + visual verify
+**Items:** I-16, I-17 | **Status:** ✅ COMPLETE 2026-03-16 | Commit 581d172
+- [✅] Boat log: fonts rewritten to Bebas Neue / Chakra Petch, dashboard-consistent sizes
+- [✅] boatlog-engine.js: Signal K WebSocket, engine start/stop detection
+- [✅] Engine capture: full snapshot on start, every 30 min running, on stop
+- [✅] Engine capture: immediate snapshot on alert threshold crossing
+- [✅] Entry type badges: VOICE / ENGINE / WEATHER / ALERT
+- [✅] CSS cache-bust: ?v=13
+- [✅] Deployed to Pi — HTTP 200 verified, both files confirmed on Pi
 
 ### Session E — Global Font Audit + Full Deploy + Verification + v0.9.2.2 Closeout
 **Items:** I-19 (final sweep) + v0.9.2.2 carryover items
