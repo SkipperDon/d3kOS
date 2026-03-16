@@ -2,27 +2,32 @@
 
 ---
 
-## Session 2026-03-16 — v0.9.2.2 Recovery Session B (INC-03 + INC-04)
-**Goal:** Complete Wave 2 increments assigned to Session B: Settings page fix (INC-03) and Marine Vision full implementation (INC-04)
+## Session — 2026-03-16 — v0.9.2.2 Recovery Session B: Settings + Marine Vision (INC-03 + INC-04)
 
-**Completed:**
-- INC-03: Settings page — fixed font import (Roboto → Bebas Neue + Chakra Petch), removed bookmark sidebar (per A-S-1: full-width no sidebar), added Community & Mobile Pairing section (per A-CF-1)
-- INC-04: Marine Vision — replaced stub with full implementation: 4-camera grid default, tap-to-focus, fish detection overlay (badge on grid tiles, bounding box canvas in focus mode), frame polling 500ms/2000ms, API health indicators
-
-**Actions taken:**
-- Edited `deployment/d3kOS/dashboard/templates/settings.html`: font import, sidebar removal, community section added
-- Rewrote `deployment/d3kOS/dashboard/templates/marine-vision.html`: full implementation replacing INC-02 stub
-- Committed: `c1f7f81`
+**Tasks completed:**
+- INC-03: Settings page — font import fixed (Roboto → Bebas Neue + Chakra Petch), bookmark sidebar removed (A-S-1: full-width no sidebar), Community & Mobile Pairing section ⑰ added (A-CF-1: AtMyBoat.com link + Pi pairing status)
+- INC-04: Marine Vision — stub replaced with full implementation: 4-camera grid default, tap any tile → single-focus view, tap/back → return to grid, fish detection badge on grid tiles + bounding box canvas in focus mode (auto-poll 5s via :8086), frame polling 500ms/2000ms from :8084, status bar with API health indicators, full day/night theme
 
 **Files changed:**
-- `deployment/d3kOS/dashboard/templates/settings.html`
-- `deployment/d3kOS/dashboard/templates/marine-vision.html`
+- `deployment/d3kOS/dashboard/templates/settings.html` — INC-03: font fix, sidebar removed, community section added (Low)
+- `deployment/d3kOS/dashboard/templates/marine-vision.html` — INC-04: full page replacing stub (Low)
+- `deployment/d3kOS/SESSION_LOG.md` — this entry (Low)
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — INC-03 + INC-04 marked ✅, Last Updated line added (None)
 
-**Decisions:**
-- CSS variable shims (--muted, --accent, --text, --warn) confirmed already in d3kos.css from INC-01 — no inline variable replacements needed in settings.html
-- Marine Vision uses direct fetch to :8084 and :8086 (same pattern as cameras.js) — no Flask proxy required
-- Fish detection overlay: canvas+bboxes in focus mode; badge only in grid mode (proportional complexity)
-- Grid layout: 2-col default, 3-col for 5+ cameras; focus view covers full content area via position:absolute inside #mv-body
+**PROJECT_CHECKLIST.md updates:**
+- `[ ] INC-03` → `[✅] INC-03: Settings page — v12 CSS + community section (2026-03-16)`
+- `[ ] INC-04` → `[✅] INC-04: Marine Vision — 4-camera grid, single focus, fish detection overlay (2026-03-16)`
+- Added `Last updated: 2026-03-16 — Session B` at EOF
+
+**Key decisions:**
+- CSS variable shims (--muted, --accent, --text, --warn) already in d3kos.css from INC-01 — inline replacements not needed in settings.html
+- Marine Vision uses direct fetch to :8084 and :8086 (same pattern as cameras.js) — no Flask proxy needed
+- Fish detection: canvas+bboxes in focus mode only; badge on grid tiles (proportional complexity — avoids N simultaneous canvases)
+- Grid: 2-col default, 3-col for 5+ cameras; focus view overlays via `position:absolute` inside `#mv-body`
+
+**Commits:** `c1f7f81` (code), `63f1f2c` (governance)
+
+**AAO compliance:** PASS — all actions classified Low or None; pre-action statements given; scope contained to INC-03 + INC-04; no push; no High-risk actions; no injection patterns found
 
 **Ollama:** 0 calls (all direct edits)
 
@@ -32,16 +37,10 @@
 | Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
 | Ollama | 0 calls | $0.00 |
 
-**Pending (Session B scope complete — Wave 2 items remaining for C and D):**
-- INC-05: Boat Log (Session C)
-- INC-06: Onboarding wizard 6-step (Session C)
-- INC-07: Upload Documents (Session D)
-- INC-08: Manage Documents (Session D)
-- INC-09: AI Navigation (Session D)
-- INC-10: Engine Monitor (Session D)
-- INC-11 + INC-12: Deploy + Verify (Session E — after C and D complete)
+**Open items for next session:**
+- Session E (INC-11 + INC-12): Deploy all Wave 1+2 files to Pi, restart d3kos-dashboard, cache-bust CSS, run 12-item verification checklist. Sessions C and D are complete so Session E is unblocked.
 
-**Release Package Manifest:** Not applicable — no Pi deployment this session (deploy in Session E only)
+**Sign-off:** Don — silence = approval
 
 ---
 
