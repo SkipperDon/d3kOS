@@ -424,4 +424,13 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] INC-12: Full verification checklist — all 16 checks PASS. Theme fix applied to settings.html + marine-vision.html (2026-03-16)
 
 ---
-**Last updated:** 2026-03-16 — Session D complete (INC-07 through INC-10). Session E: INC-11+12 deployed to Pi and verified. v0.9.2.2 Recovery COMPLETE — all 12 increments done.
+### Post-Recovery: AODA Font Scale (2026-03-16)
+- [✅] INC-13: Row height fix + touch target fix (commit 82635f0) — deployed to Pi
+- [✅] INC-14: Full font scale research (IEC 62288 + ISO 9241-303 + ISO 15008, 1m viewing distance)
+- [✅] INC-15: Option B font scale deployed (commit f0bbbc6) — 32px labels, 28px nav, 20px forms, zero 16px violations — deployed to Pi CSS v=9
+- [ ] INC-16: Visual verification on Pi screen — Don to confirm 32px labels readable at helm distance
+- [ ] UAT: 5 metric + 5 imperial users
+- [ ] o-charts chart activation (Don's task)
+- [ ] Node-RED inactive status — confirm intentional or re-enable
+
+**Last updated:** 2026-03-16 — Session D complete (INC-07 through INC-10). Session E: INC-11+12 deployed to Pi and verified. v0.9.2.2 Recovery COMPLETE. Post-recovery: INC-13/14/15 font scale complete — verification pending.
