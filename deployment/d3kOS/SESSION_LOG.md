@@ -4,6 +4,40 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.3 Planning
+**Goal:** Investigate v0.9.2.2 deficiencies, catalogue issues, create v0.9.2.3 remediation plan.
+
+**Completed:**
+- Don's investigation findings gathered via structured Q&A (one question at a time)
+- 19 issues identified and documented in issues register (I-01 through I-19)
+- V0923_PLAN.md written — 5-session plan, multi-session capable
+- PROJECT_CHECKLIST.md updated — v0.9.2.3 section added with all 5 sessions
+- SESSION_LOG.md updated (this entry)
+- MEMORY.md updated with v0.9.2.3 status
+
+**Decisions:**
+- Weather panel: left-side overlay (28% width) over AvNav — ribbons stay full width. NOT a compressed layout.
+- Leave app dialog: fix HELM beforeunload handler — page architecture unchanged (full-page routes correct for 10.1" display)
+- HELM mute: simple toggle (no timer). Mutes TTS output only. Listens/processes continue.
+- Boat log engine capture: event-driven + 30-min snapshots while engine running
+- All close buttons: 48×48px min, 24px inset from edges, dark, bold — entire app
+- All dropdowns: 3× larger across all pages
+- Font standard: Bebas Neue / Chakra Petch enforced on all pages
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don to authorize implementation (say "go ahead", "implement", "proceed" or similar)
+- Session A through E to be executed in order after authorization
+
+---
+
 ## Status Note — 2026-03-16
 
 **⛔ v0.9.2.2 NOT APPROVED — PENDING INVESTIGATION**
