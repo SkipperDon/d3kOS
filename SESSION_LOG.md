@@ -2,6 +2,44 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Recovery Session D: Upload Docs, Manage Docs, AI Nav, Engine Monitor — RECOVERY COMPLETE
+
+**Tasks completed:**
+- INC-07: upload-documents.html — full PDF upload page, file picker (PDF only, 50 MB max), type selector (engine/electrical/safety/nav/hull/other), POST multipart to localhost:8081/upload/manual, progress animation, success/error feedback, D/N theme
+- INC-08: manage-documents.html — document list from GET localhost:8083/manuals/list, formatted size/date per row, delete with confirm dialog, DELETE localhost:8083/manuals/delete/\<filename\>, empty state, D/N theme
+- INC-09: ai-navigation.html — full-page AI marine chat, POST localhost:3001/ask {message}, me/bot bubbles, thinking animation, GEMINI/OLLAMA source badge, 60 s timeout, error handling, D/N theme
+- INC-10: engine-monitor.html — SK WebSocket ws://localhost:8099/signalk/v1/stream, 6 paths (RPM/coolant/oil/battery/fuel/trim), alert flood states matching instruments.js THR, auto-reconnect 5 s, D/N theme
+- Session E (Don): INC-11 deploy (12 files SCP to Pi, services restarted) + INC-12 verify (all 16 checks PASS, theme fix settings.html + marine-vision.html). v0.9.2.2 Recovery COMPLETE.
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/templates/upload-documents.html` — stub replaced (INC-07)
+- `deployment/d3kOS/dashboard/templates/manage-documents.html` — stub replaced (INC-08)
+- `deployment/d3kOS/dashboard/templates/ai-navigation.html` — stub replaced + duplicate ID fix (INC-09)
+- `deployment/d3kOS/dashboard/templates/engine-monitor.html` — stub replaced (INC-10)
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — INC-07 through INC-12 all ✅, Last Updated line updated
+- `deployment/d3kOS/SESSION_LOG.md` — Session D entry appended
+- `deployment/docs/DEPLOYMENT_INDEX.md` — Recovery Session D entries added
+
+**PROJECT_CHECKLIST.md updates:**
+- INC-07 `[ ]` → `[✅]` Upload Documents complete (2026-03-16)
+- INC-08 `[ ]` → `[✅]` Manage Documents complete (2026-03-16)
+- INC-09 `[ ]` → `[✅]` AI Navigation complete (2026-03-16)
+- INC-10 `[ ]` → `[✅]` Engine Monitor complete (2026-03-16)
+- INC-11 `[ ]` → `[✅]` Deploy to Pi — Session E
+- INC-12 `[ ]` → `[✅]` Verification PASS — Session E
+- Last Updated → Session D+E complete, v0.9.2.2 Recovery COMPLETE
+
+**AAO compliance:** PASS — all Low risk, pre-stated, scope clean, no push, no emergency brake.
+
+**Open items for next session:**
+- v0.9.2.2 Recovery fully complete — no open wave items
+- Remaining v0.9.2 tasks: UAT (5 metric + 5 imperial users), on-boat camera tests, o-charts (Don's task)
+- Next build candidate: Mobile App (d3kOS Companion PWA) — see `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md`
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Recovery Session B: Settings + Marine Vision (INC-03 + INC-04)
 
 **Tasks completed:**
