@@ -231,6 +231,14 @@
 <div id="toast"></div>
 
 <script>
+/* ── THEME (honour localStorage day/night set on dashboard) ── */
+(function () {
+  if (localStorage.getItem('d3kTheme') === 'night')
+    document.body.setAttribute('data-night', '');
+  else
+    document.body.removeAttribute('data-night');
+})();
+
 /* ══════════════════════════════════════════════════════════════
    Marine Vision — d3kOS v0.9.2.2 (INC-04 Session B)
    Grid default → tap tile → focus → tap/back → grid

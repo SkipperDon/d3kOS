@@ -420,5 +420,5 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] INC-10: Engine Monitor page — SK WS live data, 6 metrics, alert flood states (2026-03-16)
 
 ### Wave 3 — Deploy and Verify
-- [ ] INC-11: Deploy all to Pi + cache-bust
-- [ ] INC-12: Full verification checklist (12 items — see plan doc)
+- [✅] INC-11: Deploy all to Pi — 12 files deployed via SCP, d3kos-dashboard + d3kos-gemini restarted (2026-03-16)
+- [✅] INC-12: Full verification checklist — all 16 checks PASS. Theme fix applied to settings.html + marine-vision.html (2026-03-16)

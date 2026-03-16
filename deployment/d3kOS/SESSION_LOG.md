@@ -4,6 +4,94 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Recovery: Session E (Wave 3 — INC-11 + INC-12)
+
+**Goal:** INC-11 (Deploy all Wave 1+2 files to Pi) + INC-12 (Full verification checklist).
+
+**Completed:**
+
+INC-11 — Deploy all to Pi:
+- Verified SSH connectivity to Pi (192.168.1.237, d3kos user)
+- Confirmed gemini_proxy.py already had api-keys.env fallback (no update needed)
+- SCP deployed 10 templates: index.html, settings.html, setup.html, marine-vision.html, boat-log.html, upload-documents.html, manage-documents.html, ai-navigation.html, engine-monitor.html, offline.html → /opt/d3kos/services/dashboard/templates/
+- SCP deployed static/css/d3kos.css → /opt/d3kos/services/dashboard/static/css/
+- SCP deployed app.py → /opt/d3kos/services/dashboard/
+- SCP deployed gemini_proxy.py → /opt/d3kos/services/gemini-nav/
+- Restarted d3kos-dashboard → active
+- Restarted d3kos-gemini → active
+
+Bug fix during verification (INC-12):
+- Discovered settings.html and marine-vision.html had no day/night theme init (no localStorage read at page load)
+- Added `(function(){ if(localStorage.getItem('d3kTheme')==='night') body.setAttribute('data-night',''); })()` to both files
+- Redeployed both files, service restarted
+
+INC-12 — Full Verification Checklist (16/16 PASS):
+1. ✅ All 9 routes HTTP 200 (/, /settings, /setup, /marine-vision, /boat-log, /upload-documents, /manage-documents, /ai-navigation, /engine-monitor)
+2. ✅ Settings CSS rendered (.sec, .card present in d3kos.css)
+3. ✅ HELM button solid green (background: var(--g-txt))
+4. ✅ Nav labels 12px (font-size: 12px confirmed in .nb-lbl)
+5. ✅ Bottom nav 6 items (Dashboard/Weather/Marine Vision/HELM/Boat Log/More)
+6. ✅ More menu 6 items (AI Navigation/Engine Monitor/Initial Setup/Upload Docs/Manage Docs/Settings)
+7. ✅ Marine Vision grid present (mv-tile class, :8084 CAM, :8086 FISH)
+8. ✅ Boat Log voice button present (6 occurrences, :8095 API)
+9. ✅ Upload Documents (POST :8081/upload/manual)
+10. ✅ Manage Documents (GET :8083/manuals/list, DELETE :8083/manuals/delete/)
+11. ✅ AI Navigation chat (POST :3001/ask, source badge)
+12. ✅ Engine Monitor Signal K WebSocket (9 SK references)
+13. ✅ Day/night init on all 8 subpages (localStorage honoured — fixed settings + marine-vision)
+14. ✅ Back navigation on all subpages (.back-btn or .bl-back → /)
+15. ✅ d3kos-dashboard service active
+16. ✅ d3kos-gemini service active
+
+**Decisions:**
+- settings.html and marine-vision.html did not include localStorage theme init — fixed by adding minimal IIFE. No D/N buttons added (pages don't have status bar D/N; init-only is correct behaviour).
+
+**Ollama:** 0 calls this session (no code generation needed — deploy + verify only)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- On-screen visual verify by Don (all 9 pages on Pi screen)
+- UAT: 5 metric + 5 imperial users (v0.9.2 item still open)
+- o-charts chart activation (Don's task)
+
+---
+
+### Release Package Manifest
+
+- **Version:** v0.9.2.2 (Wave 3 deploy — all waves complete)
+- **Update type:** incremental
+- **Changed files:**
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| d3kos.css | /opt/d3kos/services/dashboard/static/css/d3kos.css | runtime | Full CSS rewrite: HELM solid green, nb-lbl 12px, settings CSS, stub page CSS, CSS variable shims |
+| app.py | /opt/d3kos/services/dashboard/app.py | runtime | 6 new routes, hashlib import, api-keys.env load, device UUID, onboarding run limit |
+| index.html | /opt/d3kos/services/dashboard/templates/index.html | runtime | Bottom nav 6 items, More menu 6 items, CSS v4 |
+| settings.html | /opt/d3kos/services/dashboard/templates/settings.html | runtime | Full v12 CSS rebuild, community/mobile pairing section, theme localStorage fix |
+| marine-vision.html | /opt/d3kos/services/dashboard/templates/marine-vision.html | runtime | Full implementation: camera grid, focus view, fish detection, theme fix |
+| boat-log.html | /opt/d3kos/services/dashboard/templates/boat-log.html | runtime | Full implementation: voice record, entry list, CSV export |
+| setup.html | /opt/d3kos/services/dashboard/templates/setup.html | runtime | 6-step wizard: welcome, vessel, QR pairing, equipment, Gemini key, done |
+| upload-documents.html | /opt/d3kos/services/dashboard/templates/upload-documents.html | runtime | New: PDF upload form, POST :8081/upload/manual |
+| manage-documents.html | /opt/d3kos/services/dashboard/templates/manage-documents.html | runtime | New: list + delete via :8083/manuals/ |
+| ai-navigation.html | /opt/d3kos/services/dashboard/templates/ai-navigation.html | runtime | New: full-page chat, POST :3001/ask, GEMINI/OLLAMA badge |
+| engine-monitor.html | /opt/d3kos/services/dashboard/templates/engine-monitor.html | runtime | New: Signal K WS live data, 6 metrics, alert flood states |
+| offline.html | /opt/d3kos/services/dashboard/templates/offline.html | runtime | Redeployed (unchanged — included for completeness) |
+| gemini_proxy.py | /opt/d3kos/services/gemini-nav/gemini_proxy.py | runtime | api-keys.env fallback load (was already present — redeployed to confirm) |
+
+- **Pre-install steps:** none
+- **Post-install steps:** sudo systemctl restart d3kos-dashboard; sudo systemctl restart d3kos-gemini
+- **Rollback:** Restore prior templates from git — all previous versions in git history. Run: git show HEAD~1:deployment/d3kOS/dashboard/templates/<file>.html > /tmp/<file>.html then SCP to Pi.
+- **Health check:** curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 → must return 200. Repeat for /settings /marine-vision /engine-monitor.
+- **Plain-language release notes:** All 9 pages of the d3kOS v0.9.2.2 UI are now live on the Pi. The main dashboard has the correct 6-item bottom nav and 6-item More menu. The HELM button is solid green. Nav labels are 12px. Six new/rebuilt pages are deployed: Marine Vision (camera grid + fish detection), Boat Log (voice notes), Initial Setup (6-step wizard with QR pairing), Upload Documents, Manage Documents, AI Navigation (full chat), and Engine Monitor (live Signal K data). Day/night mode now persists correctly across all pages including Settings and Marine Vision.
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Recovery: Session C (Wave 2 — INC-06 + INC-05)
 
 **Goal:** INC-06 (Onboarding wizard — expand to 6 steps) + INC-05 (Boat Log — full page, replace stub).

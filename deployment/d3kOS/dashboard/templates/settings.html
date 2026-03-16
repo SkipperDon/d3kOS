@@ -583,6 +583,14 @@
   <script src="/static/js/connectivity-check.js"></script>
 
   <script>
+    /* ── THEME (honour localStorage day/night set on dashboard) ── */
+    (function () {
+      if (localStorage.getItem('d3kTheme') === 'night')
+        document.body.setAttribute('data-night', '');
+      else
+        document.body.removeAttribute('data-night');
+    })();
+
     /* ── BOOKMARK SIDEBAR ── */
     function bmScroll(id, btn) {
       document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
