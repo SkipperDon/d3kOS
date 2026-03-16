@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Manage Documents</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=9">
 <style>
   .doc-row {
     display: flex; align-items: center; gap: 14px;
@@ -19,7 +19,7 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     margin-bottom: 3px;
   }
-  .doc-row-meta { font-size: 16px; color: var(--ink3); font-weight: 600; }
+  .doc-row-meta { font-size: 18px; color: var(--ink3); font-weight: 600; }
   .doc-del-btn {
     height: 48px; width: 48px; flex-shrink: 0;
     background: var(--crit-bg); border: 1px solid var(--crit-bdr);
@@ -212,7 +212,7 @@ async function loadDocs() {
       <div class="sec-header" style="color:var(--crit)">&#9888; Could Not Load</div>
       <p style="font-size: 18px;color:var(--ink2);line-height:1.7;margin-bottom:14px">
         The manuals service at localhost:8083 is not responding.<br>
-        <span style="font-size: 16px;color:var(--ink3)">${_esc(e.message)}</span>
+        <span style="font-size: 18px;color:var(--ink3)">${_esc(e.message)}</span>
       </p>
       <button class="btn" onclick="loadDocs()" style="min-height:48px">&#128260; Try Again</button>`;
   }

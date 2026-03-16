@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Marine Vision</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=9">
 <style>
 /* ── Marine Vision page layout ── */
 #mv-body {
@@ -51,7 +51,7 @@
   background: rgba(0,0,0,.65);
   color: #fff;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px; font-weight: 700; letter-spacing: .1em;
+  font-size: 18px; font-weight: 700; letter-spacing: .1em;
   padding: 5px 8px;
   pointer-events: none;
 }
@@ -72,7 +72,7 @@
   top: 8px; left: 8px;
   background: var(--g-txt); color: #fff;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px; font-weight: 700; letter-spacing: .05em;
+  font-size: 18px; font-weight: 700; letter-spacing: .05em;
   padding: 2px 7px; border-radius: 10px;
   display: none;
   pointer-events: none;
@@ -83,7 +83,7 @@
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px; font-weight: 700; color: var(--adv);
+  font-size: 18px; font-weight: 700; color: var(--adv);
 }
 
 /* ── Focus view (single camera full-screen) ── */
@@ -118,7 +118,7 @@
   flex: 1;
 }
 #mv-focus-live {
-  font-size: 16px; font-weight: 700; letter-spacing: .12em;
+  font-size: 18px; font-weight: 700; letter-spacing: .12em;
   color: var(--g-txt); font-family: 'Chakra Petch', sans-serif;
 }
 #mv-focus-canvas-wrap {
@@ -147,15 +147,15 @@
   border-top: 1px solid var(--rule);
   display: flex; align-items: center; gap: 16px;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px; color: var(--ink3);
+  font-size: 18px; color: var(--ink3);
 }
 #mv-focus-fish {
   flex: 1;
-  font-size: 16px; font-weight: 700; letter-spacing: .04em;
+  font-size: 18px; font-weight: 700; letter-spacing: .04em;
   color: var(--g-txt);
 }
 #mv-tap-hint {
-  font-size: 16px; color: var(--ink3); letter-spacing: .04em;
+  font-size: 18px; color: var(--ink3); letter-spacing: .04em;
 }
 
 /* ── Empty state ── */
@@ -171,7 +171,7 @@
   margin-bottom: 8px;
 }
 .mv-empty-sub {
-  font-size: 16px; font-weight: 600; color: var(--ink3);
+  font-size: 18px; font-weight: 600; color: var(--ink3);
   line-height: 1.6; margin-bottom: 24px;
 }
 </style>

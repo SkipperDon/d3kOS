@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>d3kOS &mdash; Settings &amp; Help</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/d3kos.css?v=8">
+  <link rel="stylesheet" href="/static/css/d3kos.css?v=9">
 </head>
 <body>
 
@@ -198,7 +198,7 @@
           <div style="background:rgba(0,20,0,.5);border:1px solid rgba(0,204,0,.25);border-radius:6px;padding:14px 16px;margin-bottom:14px;font-size: 18px;color:var(--muted);line-height:1.9;">
             <strong style="color:var(--text);">Gemini API Key</strong> &mdash; Get at
             <strong style="color:var(--accent);">aistudio.google.com</strong> &rarr; Get API key &rarr; Create API key.
-            Key starts with <code style="font-family:'Roboto Mono',monospace;font-size: 16px;background:rgba(0,204,0,.1);padding:1px 5px;border-radius:3px;color:var(--accent);">AIzaSy&hellip;</code>
+            Key starts with <code style="font-family:'Roboto Mono',monospace;font-size: 18px;background:rgba(0,204,0,.1);padding:1px 5px;border-radius:3px;color:var(--accent);">AIzaSy&hellip;</code>
             Free tier sufficient. Key stays on your Pi &mdash; never sent elsewhere. Token counts logged only &mdash; query text never stored.
           </div>
           <div class="trow" style="padding-bottom:14px;">
@@ -224,18 +224,18 @@
         <div class="card" style="margin-bottom:14px;">
           <div class="trow-lbl" style="margin-bottom:8px;">AI Routing Mode</div>
           <div class="ai-modes">
-            <button class="ai-mode sel" onclick="selAI(this)">&#128260; Auto<br><span style="font-size: 16px;font-weight:400;">Gemini &rarr; Ollama</span></button>
-            <button class="ai-mode" onclick="selAI(this)">&#127758; Gemini<br><span style="font-size: 16px;font-weight:400;">Online only</span></button>
-            <button class="ai-mode" onclick="selAI(this)">&#128187; Ollama<br><span style="font-size: 16px;font-weight:400;">192.168.1.36:11434</span></button>
+            <button class="ai-mode sel" onclick="selAI(this)">&#128260; Auto<br><span style="font-size: 18px;font-weight:400;">Gemini &rarr; Ollama</span></button>
+            <button class="ai-mode" onclick="selAI(this)">&#127758; Gemini<br><span style="font-size: 18px;font-weight:400;">Online only</span></button>
+            <button class="ai-mode" onclick="selAI(this)">&#128187; Ollama<br><span style="font-size: 18px;font-weight:400;">192.168.1.36:11434</span></button>
           </div>
           <div style="margin-top:14px;">
-            <div style="font-size: 16px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
+            <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
             <input type="text" class="fc" value="192.168.1.36:11434" style="font-family:'Roboto Mono',monospace;margin-bottom:10px;">
-            <div style="font-size: 16px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
+            <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
             <input type="text" class="fc" value="qwen3-coder:30b" style="font-family:'Roboto Mono',monospace;">
           </div>
           <div>
-            <div style="font-size: 16px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview</div>
+            <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview</div>
             <div class="prompt-box" id="prompt-preview">You are a marine navigation assistant for a vessel named <strong style="color:rgba(0,255,0,0.9);">{{ vessel_name }}</strong>, home port <strong style="color:rgba(0,255,0,0.9);">{{ home_port }}</strong>. Respond only to marine queries: port info, fuel, anchorages, passages, weather, local attractions. Keep answers concise and practical for use at sea. Route: Gemini API (online) &rarr; Ollama 192.168.1.36:11434 (offline). Never store query text.</div>
           </div>
           <div style="margin-top:12px;">
@@ -260,15 +260,15 @@
         </div>
         <div class="cs-grid">
           <div class="cs-panel">
-            <div class="cs-ph">POSITIONS <button class="btn btn-primary" style="font-size: 16px;padding:5px 12px;min-height:0;border-radius:4px;" onclick="showToast('Camera position management: open Marine Vision settings')">+ New</button></div>
-            <div class="cs-row"><span style="color:var(--accent);">&#9679;</span><span>Forward Watch</span><small style="color:var(--muted);font-size: 16px;">&nbsp;[FW]</small></div>
+            <div class="cs-ph">POSITIONS <button class="btn btn-primary" style="font-size: 18px;padding:5px 12px;min-height:0;border-radius:4px;" onclick="showToast('Camera position management: open Marine Vision settings')">+ New</button></div>
+            <div class="cs-row"><span style="color:var(--accent);">&#9679;</span><span>Forward Watch</span><small style="color:var(--muted);font-size: 18px;">&nbsp;[FW]</small></div>
             <div class="cs-row"><span style="color:var(--accent);">&#9679;</span><span>Engine Room</span></div>
             <div class="cs-row"><span style="color:#555;">&#9675;</span><span style="color:var(--muted);">Cockpit</span></div>
           </div>
           <div class="cs-panel">
             <div class="cs-ph">SLOT DETAIL</div>
             <div style="padding:12px;">
-              <div style="height:90px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#333;font-size: 16px;margin-bottom:10px;">Select a position to preview</div>
+              <div style="height:90px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#333;font-size: 18px;margin-bottom:10px;">Select a position to preview</div>
               <div class="cs-role"><span>Forward Watch <small style="color:var(--muted);">(one only)</small></span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox" checked><span class="tslider"></span></label></div>
               <div class="cs-role"><span>Fish Detection</span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox"><span class="tslider"></span></label></div>
               <div class="cs-role"><span>Show in Grid</span><label class="toggle" style="width:56px;height:30px;"><input type="checkbox" checked><span class="tslider"></span></label></div>
@@ -313,7 +313,7 @@
                 <tr><td>Signal K</td><td>localhost:8099</td><td id="pt-signalk">&#8212;</td></tr>
                 <tr>
                   <td>Signal K WebSocket</td>
-                  <td style="font-size: 16px;">ws://localhost:8099/signalk/v1/stream</td>
+                  <td style="font-size: 18px;">ws://localhost:8099/signalk/v1/stream</td>
                   <td id="pt-skws">&#8212;</td>
                 </tr>
                 <tr><td>OpenPlotter</td><td>localhost:8081</td><td class="wrn">&#9679; INFRA</td></tr>
@@ -394,7 +394,7 @@
         <div class="sec-header">&#128640; Getting Started &mdash; How to Use d3kOS</div>
         <div class="g2">
           <div>
-            <div style="font-size: 16px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Daily Use</div>
+            <div style="font-size: 18px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Daily Use</div>
             <div class="steps">
               <div class="step"><div class="step-num">1</div><div class="step-txt"><strong>Pi boots</strong> &rarr; d3kOS dashboard auto-launches at <code>localhost:3000</code></div></div>
               <div class="step"><div class="step-num">2</div><div class="step-txt"><strong>Charts</strong> &rarr; Main Menu &rarr; AvNav Charts &rarr; live GPS at <code>localhost:8080</code></div></div>
@@ -404,7 +404,7 @@
             </div>
           </div>
           <div>
-            <div style="font-size: 16px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Emergency Procedures</div>
+            <div style="font-size: 18px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Emergency Procedures</div>
             <div class="steps">
               <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>Dashboard down</strong> &rarr; use System Actions below to restart Dashboard</div></div>
               <div class="step"><div class="step-num em">!</div><div class="step-txt"><strong>No GPS in AvNav</strong> &rarr; Check Signal K at <code>localhost:8099</code> &rarr; Data Browser</div></div>
@@ -442,7 +442,7 @@
             <div><div class="ph-title" style="color:var(--warn);">Phase 4 &mdash; Settings Page + AvNav Docs (current)</div><div class="ph-desc">This settings page &mdash; 16 sections wired to live data. Signal K WebSocket on ws://localhost:8099. Documentation files: AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md.</div></div>
           </div>
           <div class="phase-item">
-            <div class="ph-badge ph-fut" style="font-size: 16px;">5</div>
+            <div class="ph-badge ph-fut" style="font-size: 18px;">5</div>
             <div><div class="ph-title">Phase 5 &mdash; AI + AvNav Integration</div><div class="ph-desc">Route suggestion via AvNav POST API + Gemini. Voyage log GPX summarization. Port arrival briefings at 2nm. Anchor watch AI alerts. AI Bridge service at :3002. Requires AvNav install via OpenPlotter first.</div></div>
           </div>
         </div>
@@ -462,7 +462,7 @@
           <button class="btn" onclick="svcAction('dashboard','Restart d3kOS Dashboard (:3000)?')">&#128260; Restart Dashboard</button>
           <button class="btn" onclick="svcAction('gemini','Restart Gemini Proxy (:3001)?')">&#128260; Restart Gemini Proxy</button>
         </div>
-        <p style="font-size: 16px;color:var(--muted);margin-top:8px;">Note: Restart actions require sudo permissions configured in /etc/sudoers.d/d3kos on Pi.</p>
+        <p style="font-size: 18px;color:var(--muted);margin-top:8px;">Note: Restart actions require sudo permissions configured in /etc/sudoers.d/d3kos on Pi.</p>
       </div>
 
 
@@ -507,23 +507,23 @@
         <div class="card">
           <p style="font-size:18px;margin-bottom:12px;"><strong>d3kOS</strong> is a comprehensive marine electronics system for chart navigation, engine monitoring, AI-assisted passage planning, and vessel camera monitoring.</p>
           <p style="font-size: 18px;color:var(--muted);margin-bottom:12px;">Built on Raspberry Pi 4B with AvNav (primary charts at :8080), Signal K integration (:8099), NMEA support via OpenPlotter (:8081), and Gemini AI (:3001) with Ollama offline fallback (192.168.1.36:11434).</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;font-size: 16px;font-family:'Roboto Mono',monospace;line-height:2.2;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;font-size: 18px;font-family:'Roboto Mono',monospace;line-height:2.2;">
             <div>
-              <div style="font-size: 16px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">System</div>
+              <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">System</div>
               <div>Version: <span style="color:var(--accent);">d3kOS v2.0</span></div>
               <div>Platform: <span style="color:var(--accent);">Pi 4B 8GB</span></div>
               <div>Phase: <span style="color:var(--warn);">Phase 4 active</span></div>
               <div>Plan: <span style="color:var(--accent);">D3KOS_PLAN.md v2.0</span></div>
             </div>
             <div>
-              <div style="font-size: 16px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Services</div>
+              <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Services</div>
               <div>Dashboard: <span style="color:var(--accent);">:3000</span></div>
               <div>AvNav: <span style="color:var(--accent);">:8080</span></div>
               <div>Gemini Proxy: <span style="color:var(--accent);">:3001</span></div>
               <div>Signal K: <span style="color:var(--accent);">:8099</span></div>
             </div>
             <div>
-              <div style="font-size: 16px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Project</div>
+              <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Project</div>
               <div>Owner: <span style="color:var(--accent);">Skipper Don</span></div>
               <div>Site: <span style="color:var(--accent);">AtMyBoat.com</span></div>
               <div>Repo: <span style="color:var(--accent);">Helm-OS</span></div>

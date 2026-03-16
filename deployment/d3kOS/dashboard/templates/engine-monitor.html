@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Engine Monitor</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=9">
 <style>
   /* ── ENGINE METRIC GRID ── */
   .eng-grid {
@@ -43,7 +43,7 @@
     animation: critFlash .65s ease-in-out infinite;
   }
   .eng-lbl {
-    font-size: 16px; font-weight: 700; letter-spacing: .16em;
+    font-size: 18px; font-weight: 700; letter-spacing: .16em;
     text-transform: uppercase; color: var(--ink3);
     margin-bottom: 6px;
   }
@@ -61,7 +61,7 @@
   .eng-cell.alrt .eng-val { color: var(--alrt-num); font-size: 66px; }
   .eng-cell.crit .eng-val { color: var(--crit-num); font-size: 66px; }
   .eng-unit {
-    font-size: 16px; font-weight: 600; letter-spacing: .06em;
+    font-size: 18px; font-weight: 600; letter-spacing: .06em;
     color: var(--ink2); margin-top: 6px;
   }
   .eng-cell.adv  .eng-unit { color: var(--adv);  opacity:.8; }
@@ -86,7 +86,7 @@
   #conn-banner {
     display: flex; align-items: center; gap: 10px;
     padding: 11px 16px; border-radius: 10px;
-    font-size: 16px; font-weight: 700; letter-spacing: .07em;
+    font-size: 18px; font-weight: 700; letter-spacing: .07em;
     margin-bottom: 16px;
   }
   #conn-banner.ok   { background: var(--g-dim);   border: 1px solid var(--g-bdr);   color: var(--g-txt); }
@@ -120,7 +120,7 @@
   <div id="conn-banner" class="warn">
     <div class="conn-dot pulse"></div>
     <span id="conn-text">Connecting to Signal K&hellip;</span>
-    <button class="btn" style="margin-left:auto;height:36px;font-size: 16px" onclick="reconnect()">Reconnect</button>
+    <button class="btn" style="margin-left:auto;height:36px;font-size: 18px" onclick="reconnect()">Reconnect</button>
   </div>
 
   <!-- MAIN ENGINE METRICS -->
@@ -179,15 +179,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td>RPM</td>            <td><code style="font-size: 16px">propulsion.0.revolutions</code></td>    <td>Hz → RPM</td></tr>
-        <tr><td>Coolant Temp</td>   <td><code style="font-size: 16px">propulsion.0.coolantTemperature</code></td><td>K → °C</td></tr>
-        <tr><td>Oil Pressure</td>   <td><code style="font-size: 16px">propulsion.0.oilPressure</code></td>     <td>Pa → PSI</td></tr>
-        <tr><td>Battery</td>        <td><code style="font-size: 16px">electrical.batteries.0.voltage</code></td><td>V</td></tr>
-        <tr><td>Fuel Level</td>     <td><code style="font-size: 16px">tanks.fuel.0.currentLevel</code></td>    <td>fraction → %</td></tr>
-        <tr><td>Trim Tab</td>       <td><code style="font-size: 16px">propulsion.0.trimTabPosition</code></td> <td>rad → °</td></tr>
+        <tr><td>RPM</td>            <td><code style="font-size: 18px">propulsion.0.revolutions</code></td>    <td>Hz → RPM</td></tr>
+        <tr><td>Coolant Temp</td>   <td><code style="font-size: 18px">propulsion.0.coolantTemperature</code></td><td>K → °C</td></tr>
+        <tr><td>Oil Pressure</td>   <td><code style="font-size: 18px">propulsion.0.oilPressure</code></td>     <td>Pa → PSI</td></tr>
+        <tr><td>Battery</td>        <td><code style="font-size: 18px">electrical.batteries.0.voltage</code></td><td>V</td></tr>
+        <tr><td>Fuel Level</td>     <td><code style="font-size: 18px">tanks.fuel.0.currentLevel</code></td>    <td>fraction → %</td></tr>
+        <tr><td>Trim Tab</td>       <td><code style="font-size: 18px">propulsion.0.trimTabPosition</code></td> <td>rad → °</td></tr>
       </tbody>
     </table>
-    <p style="font-size: 16px;color:var(--ink3);margin-top:12px">
+    <p style="font-size: 18px;color:var(--ink3);margin-top:12px">
       &#128225; Signal K WebSocket: <code>ws://localhost:8099/signalk/v1/stream</code>
     </p>
   </div>

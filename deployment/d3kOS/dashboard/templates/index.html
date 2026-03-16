@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=9">
 </head>
 <body>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
@@ -133,7 +133,7 @@
         <div class="rw-txt">
           <span id="route-state" class="ai-state hidden"></span>
           <span id="route-text"></span>
-          <div id="route-meta" style="font-size: 16px;color:var(--ink3);margin-top:4px;"></div>
+          <div id="route-meta" style="font-size: 18px;color:var(--ink3);margin-top:4px;"></div>
         </div>
         <div class="rw-badge" onclick="typeof triggerRouteAnalysis !== 'undefined' ? triggerRouteAnalysis() : toast('AI Bridge not connected')">GEMINI</div>
         <div class="rw-cls" onclick="this.closest('.rw').classList.add('gone')">&#10005;</div>
@@ -156,7 +156,7 @@
           <div class="ai-status">
             <div class="ai-dot" id="aiDot"></div>
             <span id="aiSourceLbl">AI NAVIGATOR</span>
-            <span style="margin-left:auto;opacity:.5;font-size: 16px;">QUERIES NOT STORED</span>
+            <span style="margin-left:auto;opacity:.5;font-size: 18px;">QUERIES NOT STORED</span>
           </div>
         </div>
         <div class="ai-in">
@@ -175,7 +175,7 @@
         <iframe id="windyFrame" src="about:blank"
                 style="flex:1;border:none;display:block;width:100%;"
                 title="Windy Weather" allowfullscreen></iframe>
-        <div id="wxMsg" style="display:none;position:absolute;bottom:80px;left:0;right:0;text-align:center;font-family:'Chakra Petch',sans-serif;font-size: 16px;color:var(--ink3);padding:8px;">
+        <div id="wxMsg" style="display:none;position:absolute;bottom:80px;left:0;right:0;text-align:center;font-family:'Chakra Petch',sans-serif;font-size: 18px;color:var(--ink3);padding:8px;">
           Waiting for GPS position&hellip;
         </div>
       </div>
@@ -184,13 +184,13 @@
       <div id="tab-cam" style="display:none;padding:14px;">
         <!-- Forward watch primary view (full width, shown when forward_watch slot is assigned) -->
         <div id="cam-primary" style="display:none;position:relative;margin-bottom:10px;">
-          <div id="cam-primary-lbl" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-family:'Chakra Petch',sans-serif;font-size: 16px;font-weight:700;letter-spacing:.08em;padding:5px 10px;border-radius:0 0 9px 9px;z-index:1;">&#9658; FORWARD WATCH</div>
+          <div id="cam-primary-lbl" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-family:'Chakra Petch',sans-serif;font-size: 18px;font-weight:700;letter-spacing:.08em;padding:5px 10px;border-radius:0 0 9px 9px;z-index:1;">&#9658; FORWARD WATCH</div>
           <img id="cam-primary-img" src="" alt="Forward Watch" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--panel);display:block;">
         </div>
         <!-- Grid: all display_in_grid slots (excluding forward watch already shown above) -->
         <div id="cam-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
         <!-- Status / loading / error message -->
-        <div id="cam-msg" style="display:flex;align-items:center;justify-content:center;min-height:100px;color:var(--ink3);font-family:'Chakra Petch',sans-serif;font-size: 16px;letter-spacing:.05em;text-align:center;">Loading cameras&hellip;</div>
+        <div id="cam-msg" style="display:flex;align-items:center;justify-content:center;min-height:100px;color:var(--ink3);font-family:'Chakra Petch',sans-serif;font-size: 18px;letter-spacing:.05em;text-align:center;">Loading cameras&hellip;</div>
       </div>
     </div>
   </div>
