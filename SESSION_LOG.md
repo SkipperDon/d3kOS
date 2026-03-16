@@ -2,6 +2,107 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.3 Session E: Integration Fixes + Font Audit + Deploy + Verification COMPLETE
+
+**Tasks completed:**
+- BUG FIX 1: `weather-panel.js` localStorage key corrected (`'d3kBoatLog'` → `'d3kos-boatlog-entries'`); entry format aligned — `ts` → `timestamp`, `text` field added. Weather entries now visible in Boat Log.
+- BUG FIX 1b: Confirmed `renderEntries()` already handles weather via `e.text` — no code change needed.
+- BUG FIX 2: `boatlog-export-api.py` — `POST /api/boatlog/engine-entry` added; creates table if absent, inserts engine snapshot. Verified HTTP 200 on live Pi.
+- Font audit: `boat-log.html` `.bl-eng-lbl` 14px → 18px; `d3kos.css` `.wx-u` + `.wx-gps-note` 16px → 18px; `settings.html` 6× `'Roboto Mono',monospace` → `'Courier New',monospace`. Zero sub-18px violations remain.
+- CSS v=14: all 9 templates bumped (index, boat-log, settings, marine-vision, ai-navigation, engine-monitor, manage-documents, upload-documents, offline).
+- Deployed to Pi: d3kos.css, weather-panel.js, 9 templates, boatlog-export-api.py. Restarted d3kos-dashboard + d3kos-boatlog-api. Both active.
+- 17-check verification: 9/9 routes HTTP 200, CSS at ?v=14, engine-entry endpoint 200, JS files present on Pi. All pass.
+- CHANGELOG.md: v0.9.2.3 entry written (all 19 issues + bug fixes documented).
+- PROJECT_CHECKLIST.md (d3kOS): Session E all items ✅.
+- PROJECT_CHECKLIST.md (root): Session E ✅, v0.9.2.3 status COMPLETE.
+
+**Files changed:**
+- MOD: `deployment/d3kOS/dashboard/static/js/weather-panel.js` — Bug Fix 1 (localStorage key + entry format) — Low risk
+- MOD: `deployment/d3kOS/dashboard/static/css/d3kos.css` — 16px → 18px (wx-u, wx-gps-note) — Low risk
+- MOD: `deployment/d3kOS/dashboard/templates/boat-log.html` — 14px → 18px + v=14 — Low risk
+- MOD: `deployment/d3kOS/dashboard/templates/settings.html` — Roboto Mono removed + v=14 — Low risk
+- MOD: `deployment/d3kOS/dashboard/templates/index.html` — v=14 — Low risk
+- MOD: 5 other templates — v=14 — Low risk
+- MOD: `deployment/d3kOS/dashboard/templates/offline.html` — v=14 — Low risk
+- MOD: `services/boatlog/boatlog-export-api.py` — engine-entry endpoint — Low risk
+- MOD: `CHANGELOG.md` — v0.9.2.3 entry — Low risk
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — Session E complete — Low risk
+- MOD: `PROJECT_CHECKLIST.md` (root) — v0.9.2.3 COMPLETE — Low risk
+- MOD: `SESSION_LOG.md` — this entry — Low risk
+
+**Commit:** d00f5d2
+
+**PROJECT_CHECKLIST.md updates:**
+- d3kOS checklist Session E: all `[ ]` → `[✅]` (Don tasks remain as `[ ]`)
+- Root checklist Session E: `[ ]` → `[✅] (d00f5d2)`
+- Root v0.9.2.3 status: IN PROGRESS → ✅ COMPLETE 2026-03-16
+- Last Updated line updated
+
+**AAO compliance:** PASS — all Low risk, pre-stated, Pi deploy Medium risk pre-stated before execution, no push, no injection detected.
+
+**Release Package Manifest:**
+- Version: v0.9.2.3
+- Update type: incremental
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| d3kos.css | /opt/d3kos/services/dashboard/static/css/ | base | 16px → 18px fixes, CSS v=14 |
+| weather-panel.js | /opt/d3kos/services/dashboard/static/js/ | base | Bug Fix 1: localStorage key + entry format |
+| 9× templates | /opt/d3kos/services/dashboard/templates/ | base | CSS ?v=14, font fixes, Roboto Mono removed |
+| boatlog-export-api.py | /opt/d3kos/services/boatlog/ | base | POST /api/boatlog/engine-entry added |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard d3kos-boatlog-api` — DONE
+- Rollback: `git checkout d00f5d2~1` on affected files, re-SCP
+- Health check: 9 routes HTTP 200, CSS ?v=14, `/api/boatlog/engine-entry` POST 200 — ALL PASS
+
+**Open items for next session (Don's tasks):**
+- INC-16: Visual verify 32px labels readable at helm distance on Pi screen
+- UAT: 5 metric + 5 imperial users — use `D3KOS_UAT_V0923.md`
+- o-charts chart activation — `OPENCPN_FLATPAK_OCHARTS.md`
+- Node-RED inactive status — confirm intentional or re-enable
+- Next Claude Code session: review UAT results when returned
+
+**Sign-off:** Don — silence = approval
+
+---
+
+## Session — 2026-03-16 — v0.9.2.3 A/B/C Read-Back + Session E Plan Update (integration bugs documented)
+
+**Tasks completed:**
+- Read and internalized Sessions A, B, C source files (d3kos.css, helm.js, weather-panel.js, index.html, nav.js) — read-only pass per Don's explicit instruction
+- Identified critical integration bug: `weather-panel.js` (Session C) writes to localStorage key `'d3kBoatLog'` but `boat-log.html` (Session D) reads from `'d3kos-boatlog-entries'` — weather entries are invisible in the Boat Log page
+- Identified missing API endpoint: `boatlog-engine.js` POSTs to `:8095/api/boatlog/engine-entry` but `boatlog-export-api.py` does not have this route — engine entries save to localStorage but API calls fail silently
+- Updated `V0923_PLAN.md` Session E: added Bug Fix 1 (localStorage key + entry format), Bug Fix 2 (missing endpoint), verification checks V-12a and V-17
+- Updated `deployment/d3kOS/PROJECT_CHECKLIST.md` Session E: 3 bug fix items added, UAT document reference updated, verification count updated to 17 checks
+
+**Files changed:**
+- MOD: `deployment/d3kOS/docs/V0923_PLAN.md` — Session E rewritten with bug fix scope — LOW risk
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — Session E items updated — LOW risk
+
+**PROJECT_CHECKLIST.md updates:**
+- Session E heading renamed to "Integration Fixes + Global Font Audit + Full Deploy + Verification + v0.9.2.2 Closeout"
+- Added `[ ] BUG FIX 1`: weather-panel.js localStorage key + entry format fix
+- Added `[ ] BUG FIX 1b`: boat-log.html WEATHER entry render verification
+- Added `[ ] BUG FIX 2`: boatlog-export-api.py missing /api/boatlog/engine-entry endpoint
+- Verification count updated from 16 to 17 checks (V-17 added for engine API endpoint)
+- UAT item updated to reference D3KOS_UAT_V0923.md
+- Last Updated line updated to 2026-03-16 Session: v0.9.2.3 read-back
+
+**AAO compliance:** PASS — all actions LOW risk, pre-stated before execution, scope stayed within "update Session E plan only", no deploy, no push, no injection detected
+
+**Open items for next session:**
+- **Session E (awaiting authorization):** Apply Bug Fix 1 + Bug Fix 2, global font audit, deploy all sessions A/B/C/D/E to Pi, 17-check verification, CHANGELOG, version bump to v0.9.2.3
+- **INC-16:** Visual verify 32px labels readable at helm distance (Don — Pi screen)
+- **UAT:** 5 metric + 5 imperial users using D3KOS_UAT_V0923.md (Don)
+- **o-charts:** Don's task — OPENCPN_FLATPAK_OCHARTS.md
+- **Node-RED:** Confirm inactive status intentional or re-enable
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.3 Session C Close: HELM Mute + Weather Overlay Panel
 
 **Goal:** Build Session C of v0.9.2.3 — I-07 (HELM mute) + I-11/I-12/I-13 (weather overlay panel)

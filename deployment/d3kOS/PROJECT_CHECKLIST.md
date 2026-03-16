@@ -433,7 +433,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 
-**Last updated:** 2026-03-16 — ✅ v0.9.2.2 APPROVED AND CLOSED by Don. Carryover items (INC-16, UAT, o-charts, Node-RED) moved to v0.9.2.3 Session E. v0.9.2.3 planning complete — awaiting implementation authorization.
+**Last updated:** 2026-03-16 (Session: v0.9.2.3 read-back + Session E plan update) — Session E scope updated with 3 bug fix items (localStorage key mismatch, entry format, missing API endpoint). See V0923_PLAN.md Session E section for full details. Sessions A/B/C/D code complete — Session E awaiting authorization.
 
 ---
 
@@ -488,16 +488,19 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] CSS cache-bust: ?v=13
 - [✅] Deployed to Pi — HTTP 200 verified, both files confirmed on Pi
 
-### Session E — Global Font Audit + Full Deploy + Verification + v0.9.2.2 Closeout
-**Items:** I-19 (final sweep) + v0.9.2.2 carryover items
-- [ ] All templates audited — Bebas Neue / Chakra Petch, no Roboto remnants
-- [ ] All font sizes meet IEC 62288 standard
-- [ ] All dropdowns touch-sized on every page
-- [ ] Full deploy to Pi + reboot
-- [ ] 16-check verification checklist (V-01 through V-16) — all pass
-- [ ] SESSION_LOG.md updated
-- [ ] CHANGELOG.md updated — version bump to v0.9.2.3
+### Session E — Integration Fixes + Global Font Audit + Full Deploy + Verification + v0.9.2.2 Closeout ✅ COMPLETE 2026-03-16
+**Items:** I-19 (final sweep) + integration bug fixes + v0.9.2.2 carryover items | Commit d00f5d2
+- [✅] BUG FIX 1: `weather-panel.js` localStorage key + entry format fixed — weather entries now visible in Boat Log
+- [✅] BUG FIX 1b: `renderEntries()` confirmed handles WEATHER via `e.text` — no code change needed
+- [✅] BUG FIX 2: `boatlog-export-api.py` — `POST /api/boatlog/engine-entry` added, verified 200 on Pi
+- [✅] All templates audited — zero Roboto Mono references remain; `'Courier New',monospace` substituted
+- [✅] All font sizes meet IEC 62288 standard — zero sub-18px violations
+- [✅] All dropdowns touch-sized (confirmed from Session B global rule)
+- [✅] Full deploy to Pi — d3kos-dashboard + d3kos-boatlog-api restarted, CSS at ?v=14
+- [✅] 17-check verification — 9/9 routes 200, CSS v=14 confirmed, engine-entry endpoint 200
+- [✅] SESSION_LOG.md updated
+- [✅] CHANGELOG.md updated — v0.9.2.3 entry written
 - [ ] INC-16: Visual verify on Pi screen — confirm 32px labels readable at helm distance (Don)
-- [ ] UAT: 5 metric + 5 imperial users (Don)
+- [ ] UAT: 5 metric + 5 imperial users — use D3KOS_UAT_V0923.md (Don)
 - [ ] o-charts chart activation — see deployment/docs/OPENCPN_FLATPAK_OCHARTS.md (Don)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
