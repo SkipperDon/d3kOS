@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.2.3] - 2026-03-16
+
+### Summary
+
+**v0.9.2.3 — UI Remediation: 19 issues resolved across 5 sessions (A–E)**
+
+Complete remediation of all deficiencies identified during the v0.9.2.2 investigation. Sessions ran in parallel and were integrated and deployed as a single release. All 9 routes verified HTTP 200 on Pi. CSS at ?v=14.
+
+### Added
+- **Weather overlay panel (I-11/I-12/I-13):** Left-side 28% overlay slides over AvNav when Weather is tapped. Shows alerts, wind speed/direction/gusts, sea state (wave height/period/direction), and atmospheric (pressure, temp, humidity, visibility, precip). GPS from Signal K with Lake Simcoe fallback. Auto-logs weather snapshot to boat log every 30 minutes while panel is open. New `weather-panel.js` module.
+- **HELM software mute (I-07):** Mute toggle button inside HELM overlay. Green = talking active, grey = muted. Persists across page reload via localStorage. Cancels speechSynthesis on mute.
+- **Engine auto-capture (I-17):** `boatlog-engine.js` subscribes to Signal K WebSocket. Records engine start, every-30-min snapshot, stop, and alert threshold crossings (oil low, coolant high, battery out of range). Entries appear in Boat Log with ENGINE badge and data grid.
+- **`POST /api/boatlog/engine-entry` endpoint (Bug Fix 2):** Added to `boatlog-export-api.py` — creates boatlog_entries table if absent, inserts engine snapshot. Resolves silent 404 from boatlog-engine.js.
+
+### Fixed
+- **I-01/I-02:** NAV ribbon Position cell: label top-aligned, value at 50% of SOG size
+- **I-03/I-04:** NAV ribbon Next Waypoint: label top-aligned, value same size as position data
+- **I-05/I-06:** Bottom nav active state: only last-tapped button highlighted; HELM only when overlay is open; Weather button width matches other nav buttons
+- **I-08:** All close/X buttons: 48×48px min, dark `rgba(0,0,0,0.85)`, bold, 24px inset from edges — entire app via `.close-btn` class
+- **I-09/I-10:** More popup: icons 28px → 40px, labels 18px → 28px (matches bottom nav)
+- **I-14/I-15:** Leave app dialog suppressed for internal route navigation (Marine Vision, Boat Log)
+- **I-16:** Boat Log fonts: full Bebas Neue / Chakra Petch rewrite, dashboard-consistent sizing
+- **I-18:** All dropdowns: global CSS rule, min-height 52px, 20px font, Chakra Petch — all pages
+- **I-19:** Bebas Neue / Chakra Petch enforced via body-level CSS; all Roboto Mono references removed; zero font-size violations below 18px
+- **Bug Fix 1:** `weather-panel.js` localStorage key corrected (`'d3kBoatLog'` → `'d3kos-boatlog-entries'`), entry format aligned with boat-log.html schema (`ts` → `timestamp`, `text` field added). Weather entries now visible in Boat Log page.
+- **Font audit:** `.bl-eng-lbl` 14px → 18px; `.wx-u` + `.wx-gps-note` 16px → 18px; settings.html `'Roboto Mono',monospace` → `'Courier New',monospace` (6 instances)
+
+### Verification
+- All 9 routes HTTP 200 on Pi ✓
+- CSS deployed at ?v=14 ✓
+- `POST /api/boatlog/engine-entry` returns 200 on live Pi ✓
+- weather-panel.js present on Pi ✓
+- IEC 62288 font compliance: zero violations ✓
+
+### Pending (Don's tasks)
+- INC-16: Visual verify 32px labels readable at helm distance (Pi screen)
+- UAT: 5 metric + 5 imperial users — use `deployment/d3kOS/docs/D3KOS_UAT_V0923.md`
+- o-charts chart activation — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
+- Node-RED inactive status — confirm intentional or re-enable
+
+---
+
 ## [0.9.2.2] - 2026-03-14 (Session 1 Complete — Session 2 next)
 
 ### Summary
