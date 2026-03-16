@@ -16,6 +16,7 @@ CRITICAL: Signal K WebSocket is ws://localhost:8099 — NOT ws://localhost:3000.
 from flask import Flask, render_template, jsonify, request, redirect
 import requests
 import os
+import hashlib
 import shutil
 import socket
 import subprocess
@@ -23,9 +24,34 @@ from dotenv import load_dotenv
 
 _cfg_dir = os.path.join(os.path.dirname(__file__), 'config')
 _VESSEL_ENV_PATH = os.path.join(_cfg_dir, 'vessel.env')
+_APIKEYS_ENV_PATH = os.path.join(_cfg_dir, 'api-keys.env')  # gitignored — Gemini key etc.
 load_dotenv(os.path.join(_cfg_dir, 'd3kos-config.env'))
 # vessel.env is owner-config: VESSEL_NAME, HOME_PORT, UI_LANG — override if present
 load_dotenv(_VESSEL_ENV_PATH, override=True)
+# api-keys.env holds sensitive keys (never committed) — override if present
+load_dotenv(_APIKEYS_ENV_PATH, override=True)
+
+ONBOARDING_RUN_LIMIT = 10
+
+
+def _get_device_uuid() -> str:
+    """Return a stable device ID for mobile pairing.
+    Reads /etc/machine-id (Pi-standard); falls back to hostname hash."""
+    try:
+        with open('/etc/machine-id') as f:
+            mid = f.read().strip()
+        if len(mid) >= 32:
+            return (
+                f'{mid[0:8]}-{mid[8:12]}-{mid[12:16]}-'
+                f'{mid[16:20]}-{mid[20:32]}'
+            ).upper()
+    except Exception:
+        pass
+    raw = hashlib.sha256(socket.gethostname().encode()).hexdigest()
+    return (
+        f'{raw[0:8]}-{raw[8:12]}-{raw[12:16]}-'
+        f'{raw[16:20]}-{raw[20:32]}'
+    ).upper()
 
 app = Flask(__name__)
 
@@ -81,28 +107,58 @@ def index():
 
 @app.route('/setup', methods=['GET'])
 def setup_get():
-    """First-run onboarding wizard."""
-    return render_template('setup.html', error=None)
+    """Onboarding wizard — 6 steps."""
+    run_count = int(os.getenv('ONBOARDING_RUNS', '0'))
+    return render_template(
+        'setup.html',
+        error=None,
+        run_count=run_count,
+        run_limit=ONBOARDING_RUN_LIMIT,
+        device_uuid=_get_device_uuid(),
+    )
 
 
 @app.route('/setup', methods=['POST'])
 def setup_post():
-    """Save vessel.env from onboarding form and redirect to dashboard."""
+    """Save wizard data and redirect to dashboard."""
     global VESSEL_NAME, HOME_PORT_VAL, UI_LANG
-    vessel_name = request.form.get('vessel_name', '').strip()
-    home_port   = request.form.get('home_port', '').strip()
-    ui_lang     = request.form.get('ui_lang', 'en-GB').strip()
+    vessel_name     = request.form.get('vessel_name', '').strip()
+    home_port       = request.form.get('home_port', '').strip()
+    ui_lang         = request.form.get('ui_lang', 'en-GB').strip()
+    equipment_notes = request.form.get('equipment_notes', '').strip()
+    gemini_key      = request.form.get('gemini_api_key', '').strip()
+
+    run_count = int(os.getenv('ONBOARDING_RUNS', '0')) + 1
 
     if not vessel_name:
-        return render_template('setup.html', error='Vessel name is required.')
+        return render_template(
+            'setup.html', error='Vessel name is required.',
+            run_count=run_count - 1, run_limit=ONBOARDING_RUN_LIMIT,
+            device_uuid=_get_device_uuid(),
+        )
 
-    content = f'VESSEL_NAME={vessel_name}\nHOME_PORT={home_port}\nUI_LANG={ui_lang}\n'
+    # Write vessel.env (non-sensitive owner config)
     os.makedirs(_cfg_dir, exist_ok=True)
+    vessel_lines = [
+        f'VESSEL_NAME={vessel_name}',
+        f'HOME_PORT={home_port}',
+        f'UI_LANG={ui_lang}',
+        f'ONBOARDING_RUNS={run_count}',
+    ]
+    if equipment_notes:
+        vessel_lines.append(f'EQUIPMENT_NOTES={equipment_notes}')
     with open(_VESSEL_ENV_PATH, 'w') as f:
-        f.write(content)
+        f.write('\n'.join(vessel_lines) + '\n')
+
+    # Write api-keys.env (gitignored — Gemini key only written if provided)
+    if gemini_key:
+        with open(_APIKEYS_ENV_PATH, 'w') as f:
+            f.write(f'GEMINI_API_KEY={gemini_key}\n')
 
     # Reload runtime values without restarting Flask
     load_dotenv(_VESSEL_ENV_PATH, override=True)
+    if gemini_key:
+        load_dotenv(_APIKEYS_ENV_PATH, override=True)
     VESSEL_NAME   = os.getenv('VESSEL_NAME',  vessel_name)
     HOME_PORT_VAL = os.getenv('HOME_PORT',    home_port)
     UI_LANG       = os.getenv('UI_LANG',      ui_lang)

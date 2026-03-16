@@ -3,24 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>d3kOS &mdash; First Run Setup</title>
+<title>d3kOS &mdash; Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:     #FFFFFF;
-    --panel:  #F0F4F0;
-    --cell:   #FFFFFF;
-    --ink:    #040C04;
-    --ink2:   rgba(4,12,4,.52);
-    --ink3:   rgba(4,12,4,.28);
-    --g:      #003A00;
-    --g-txt:  #004400;
-    --g-dim:  rgba(0,58,0,.06);
-    --g-bdr:  rgba(0,58,0,.20);
-    --bar:    #003200;
-    --rule:   rgba(0,0,0,.08);
+    --bg:    #FFFFFF;
+    --panel: #F0F4F0;
+    --cell:  #FFFFFF;
+    --ink:   #040C04;
+    --ink2:  rgba(4,12,4,.52);
+    --ink3:  rgba(4,12,4,.28);
+    --g:     #003A00;
+    --g-txt: #004400;
+    --g-dim: rgba(0,58,0,.06);
+    --g-bdr: rgba(0,58,0,.20);
+    --bar:   #003200;
+    --rule:  rgba(0,0,0,.08);
+    --adv-bg: #FFF6DC; --adv-bdr: #C47B00; --adv-num: #7A4400;
+    --alrt-bg: #FFF2EC; --alrt-bdr: #C03A00; --alrt-num: #8B2A00;
+  }
+
+  [data-night] {
+    --bg:    #020702;
+    --panel: #070E07;
+    --cell:  #0B130B;
+    --ink:   #D6EDD6;
+    --ink2:  rgba(214,237,214,.55);
+    --ink3:  rgba(214,237,214,.30);
+    --g:     #00C400;
+    --g-txt: #00CC00;
+    --g-dim: rgba(0,196,0,.08);
+    --g-bdr: rgba(0,196,0,.22);
+    --bar:   #001A00;
+    --rule:  rgba(255,255,255,.08);
+    --adv-bg: rgba(255,149,0,.14); --adv-bdr: rgba(255,149,0,.55); --adv-num: #FF9A00;
+    --alrt-bg: rgba(255,85,0,.14); --alrt-bdr: rgba(255,85,0,.6);  --alrt-num: #FF5A00;
   }
 
   html, body {
@@ -38,233 +57,407 @@
     align-items: center;
     padding: 0 20px;
     gap: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
   }
-  .sb-brand {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: .15em;
-    color: #fff;
+  .sb-brand { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .15em; color: #fff; }
+  .sb-sep   { width: 1px; height: 24px; background: rgba(255,255,255,.2); }
+  .sb-title { font-size: 13px; letter-spacing: .1em; color: rgba(255,255,255,.75); flex: 1; }
+  #sb .sb-skip {
+    font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    color: rgba(255,255,255,.55); background: none; border: none;
+    cursor: pointer; padding: 4px 8px;
   }
-  .sb-sep { width: 1px; height: 24px; background: rgba(255,255,255,.2); }
-  .sb-title {
-    font-size: 13px;
-    letter-spacing: .1em;
-    color: rgba(255,255,255,.75);
+  #sb .sb-skip:hover { color: rgba(255,255,255,.85); }
+
+  /* ── Scroll area ── */
+  #setup-scroll {
+    position: fixed;
+    top: 48px; left: 0; right: 0; bottom: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
-  /* ── Setup card ── */
+  /* ── Outer wrapper ── */
   #setup-wrap {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 40px 20px 60px;
-    min-height: calc(100vh - 48px);
+    padding: 32px 16px 60px;
+    min-height: 100%;
   }
+
+  /* ── Card ── */
   #setup-card {
     width: 100%;
-    max-width: 520px;
+    max-width: 540px;
     background: var(--cell);
     border: 1px solid var(--rule);
     border-radius: 16px;
     overflow: hidden;
   }
+
+  /* ── Progress bar ── */
+  .wiz-progress {
+    background: var(--panel);
+    border-bottom: 1px solid var(--rule);
+    padding: 16px 24px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wiz-dot {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--rule);
+    transition: background .3s;
+  }
+  .wiz-dot.done { background: var(--g-txt); }
+  .wiz-dot.act  { background: var(--g-bdr); }
+  .wiz-step-lbl {
+    font-size: 10px; font-weight: 700; letter-spacing: .2em;
+    color: var(--ink3); margin-left: 10px; flex-shrink: 0;
+    font-family: 'Chakra Petch', sans-serif;
+  }
+
+  /* ── Step panels ── */
+  .wiz-step { display: none; }
+  .wiz-step.active { display: block; }
+
+  /* ── Card head ── */
   .card-head {
     background: var(--panel);
     border-bottom: 1px solid var(--rule);
-    padding: 28px 32px 24px;
+    padding: 24px 28px 20px;
   }
   .card-head-over {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .2em;
-    color: var(--ink3);
-    margin-bottom: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: .2em;
+    color: var(--ink3); margin-bottom: 6px;
   }
   .card-head-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: .1em;
-    color: var(--g-txt);
-    line-height: 1.1;
+    font-size: 34px; letter-spacing: .1em; color: var(--g-txt); line-height: 1.1;
   }
   .card-head-sub {
-    font-size: 13px;
-    color: var(--ink2);
-    margin-top: 8px;
-    line-height: 1.6;
+    font-size: 13px; color: var(--ink2); margin-top: 8px; line-height: 1.7;
   }
-  .card-body { padding: 28px 32px 32px; }
+  .card-body { padding: 24px 28px 28px; }
+
+  /* ── Welcome bullets ── */
+  .welcome-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+  .wl-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px;
+    background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 10px; }
+  .wl-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .wl-text { font-size: 14px; color: var(--ink2); line-height: 1.6; }
+  .wl-text strong { color: var(--ink); font-weight: 700; }
 
   /* ── Error banner ── */
   .error-banner {
-    background: #FFF2EC;
-    border: 1px solid #C03A00;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #8B2A00;
-    margin-bottom: 24px;
+    background: var(--alrt-bg); border: 1px solid var(--alrt-bdr);
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 13px; color: var(--alrt-num); margin-bottom: 20px;
   }
 
   /* ── Form fields ── */
-  .field { margin-bottom: 22px; }
+  .field { margin-bottom: 20px; }
   .field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .16em;
-    color: var(--ink3);
-    margin-bottom: 8px;
+    display: block; font-size: 11px; font-weight: 700;
+    letter-spacing: .16em; color: var(--ink3); margin-bottom: 8px;
     text-transform: uppercase;
   }
-  .field input,
-  .field select {
-    display: block;
-    width: 100%;
-    height: 56px;
+  .field input, .field select {
+    display: block; width: 100%; height: 54px;
     padding: 0 16px;
     font-family: 'Chakra Petch', sans-serif;
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--ink);
-    background: var(--bg);
-    border: 2px solid var(--rule);
-    border-radius: 10px;
-    outline: none;
-    appearance: none;
+    font-size: 17px; font-weight: 500; color: var(--ink);
+    background: var(--bg); border: 2px solid var(--rule);
+    border-radius: 10px; outline: none; appearance: none;
     transition: border-color .2s;
   }
-  .field input:focus,
-  .field select:focus {
-    border-color: var(--g-txt);
+  .field input:focus, .field select:focus { border-color: var(--g-txt); }
+  .field .hint { font-size: 11px; color: var(--ink3); margin-top: 6px; letter-spacing: .03em; }
+  .field input[type="password"] { letter-spacing: .1em; }
+
+  /* ── QR / pairing ── */
+  .pairing-box {
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
   }
-  .field .hint {
-    font-size: 11px;
-    color: var(--ink3);
-    margin-top: 6px;
-    letter-spacing: .03em;
+  #qr-canvas {
+    display: inline-block;
+    background: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  #qr-canvas img, #qr-canvas canvas { display: block; }
+  .pairing-uuid {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px; letter-spacing: .2em; color: var(--g-txt);
+    background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 8px; padding: 10px 16px;
+    margin: 0 auto 12px;
+    cursor: pointer; word-break: break-all;
+  }
+  .pairing-sub { font-size: 12px; color: var(--ink3); line-height: 1.7; }
+  .pairing-copied {
+    display: none; font-size: 12px; font-weight: 700;
+    color: var(--g-txt); margin-top: 6px;
   }
 
-  /* ── Submit button ── */
-  .btn-submit {
-    width: 100%;
-    height: 64px;
-    background: var(--g-txt);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
+  /* ── Equipment ── */
+  .equip-note {
+    background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 10px; padding: 14px 16px;
+    font-size: 13px; color: var(--ink2); line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .equip-or {
+    text-align: center; font-size: 12px; font-weight: 700;
+    letter-spacing: .12em; color: var(--ink3);
+    margin: 16px 0 12px;
+  }
+  .equip-upload-link {
+    display: block; width: 100%; height: 48px;
+    background: none; border: 2px solid var(--g-bdr);
+    border-radius: 10px; color: var(--g-txt);
     font-family: 'Chakra Petch', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: .12em;
-    cursor: pointer;
-    transition: opacity .15s;
-    margin-top: 8px;
+    font-size: 14px; font-weight: 700; letter-spacing: .05em;
+    cursor: pointer; transition: all .15s; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .equip-upload-link:hover { background: var(--g-dim); }
+
+  /* ── API key step ── */
+  .key-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .key-step { display: flex; gap: 14px; align-items: flex-start; }
+  .key-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--g-dim); border: 2px solid var(--g-bdr); color: var(--g-txt);
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .key-txt { font-size: 13px; color: var(--ink2); line-height: 1.7; padding-top: 2px; }
+  .key-txt strong { color: var(--ink); }
+  .key-skip-row { text-align: right; margin-top: -8px; margin-bottom: 8px; }
+  .key-skip { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--ink3);
+    cursor: pointer; padding: 4px 0; }
+  .key-skip:hover { color: var(--ink2); }
+
+  /* ── Done step ── */
+  .done-icon { text-align: center; font-size: 56px; margin-bottom: 16px; }
+  .done-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  .done-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--ink);
+  }
+  .done-item .di-tick { color: var(--g-txt); font-size: 16px; flex-shrink: 0; }
+  .done-item .di-skip { color: var(--ink3); font-size: 14px; flex-shrink: 0; }
+
+  /* ── Chart info ── */
+  .chart-info {
+    background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;
+  }
+  .chart-info-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .chart-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--g-dim); border: 2px solid var(--g-bdr);
+    flex-shrink: 0; transition: background .3s, border-color .3s;
+  }
+  .chart-dot.ok { background: var(--g-txt); border-color: var(--g-txt); }
+  .chart-label { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--g-txt); }
+  .chart-source { font-size: 13px; color: var(--ink2); padding: 3px 0; letter-spacing: .02em; }
+  .chart-note   { font-size: 11px; color: var(--ink3); margin-top: 8px; letter-spacing: .04em; line-height: 1.5; }
+
+  /* ── Tier warning ── */
+  .tier-warn {
+    background: var(--adv-bg); border: 1px solid var(--adv-bdr);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 20px;
+    font-size: 14px; color: var(--adv-num); line-height: 1.7;
+  }
+  .tier-warn strong { display: block; margin-bottom: 4px; }
+
+  /* ── Buttons ── */
+  .btn-submit {
+    width: 100%; height: 60px;
+    background: var(--g-txt); color: #fff; border: none;
+    border-radius: 12px;
+    font-family: 'Chakra Petch', sans-serif; font-size: 17px;
+    font-weight: 700; letter-spacing: .12em;
+    cursor: pointer; transition: opacity .15s;
   }
   .btn-submit:active { opacity: .85; }
+  .btn-back {
+    width: 100%; height: 48px; margin-top: 10px;
+    background: none; border: 2px solid var(--rule);
+    border-radius: 12px; color: var(--ink3);
+    font-family: 'Chakra Petch', sans-serif; font-size: 14px;
+    font-weight: 700; letter-spacing: .08em;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-back:hover { border-color: var(--g-bdr); color: var(--ink2); }
 
-  /* ── Chart info block ── */
-  .chart-info {
-    background: var(--g-dim);
-    border: 1px solid var(--g-bdr);
-    border-radius: 10px;
-    padding: 16px 18px;
-    margin-bottom: 22px;
+  /* ── Locked screen ── */
+  .locked-wrap {
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 48px 20px 60px;
+    min-height: calc(100vh - 48px);
   }
-  .chart-info-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+  .locked-card {
+    width: 100%; max-width: 480px;
+    background: var(--cell); border: 1px solid var(--rule);
+    border-radius: 16px; overflow: hidden;
   }
-  .chart-dot {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--g-dim);
-    border: 2px solid var(--g-bdr);
-    flex-shrink: 0;
-    transition: background .3s, border-color .3s;
+  .locked-head { background: var(--adv-bg); border-bottom: 1px solid var(--adv-bdr); padding: 28px 28px 22px; }
+  .locked-head-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px; letter-spacing: .1em; color: var(--adv-num); line-height: 1.1;
   }
-  .chart-dot.ok {
-    background: var(--g-txt);
-    border-color: var(--g-txt);
+  .locked-head-sub { font-size: 13px; color: var(--adv-num); margin-top: 8px; line-height: 1.7; opacity: .85; }
+  .locked-body { padding: 24px 28px 28px; }
+  .locked-cta {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    height: 56px; background: var(--adv-bdr); color: #fff;
+    border: none; border-radius: 12px; width: 100%;
+    font-family: 'Chakra Petch', sans-serif; font-size: 16px;
+    font-weight: 700; letter-spacing: .1em; cursor: pointer; text-decoration: none;
+    margin-bottom: 12px;
   }
-  .chart-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .18em;
-    color: var(--g-txt);
+  .locked-go {
+    display: block; width: 100%; height: 48px; background: none;
+    border: 2px solid var(--rule); border-radius: 12px; color: var(--ink3);
+    font-family: 'Chakra Petch', sans-serif; font-size: 14px;
+    font-weight: 700; letter-spacing: .06em; cursor: pointer;
+    transition: all .15s; text-align: center; line-height: 46px; text-decoration: none;
   }
-  .chart-source {
-    font-size: 13px;
-    color: var(--ink2);
-    padding: 3px 0;
-    letter-spacing: .02em;
-  }
-  .chart-note {
-    font-size: 11px;
-    color: var(--ink3);
-    margin-top: 8px;
-    letter-spacing: .04em;
-    line-height: 1.5;
-  }
-
-  /* ── Night mode ── */
-  [data-night] {
-    --bg:    #020702;
-    --panel: #070E07;
-    --cell:  #0B130B;
-    --ink:   #D6EDD6;
-    --ink2:  rgba(214,237,214,.55);
-    --ink3:  rgba(214,237,214,.30);
-    --g:     #00C400;
-    --g-txt: #00CC00;
-    --g-dim: rgba(0,196,0,.08);
-    --g-bdr: rgba(0,196,0,.22);
-    --bar:   #001A00;
-    --rule:  rgba(255,255,255,.08);
-  }
+  .locked-go:hover { border-color: var(--g-bdr); color: var(--ink2); }
 </style>
 </head>
 <body>
 
-<!-- Status bar -->
 <div id="sb">
   <div class="sb-brand">d3kOS</div>
   <div class="sb-sep"></div>
-  <div class="sb-title">First Run Setup</div>
+  <div class="sb-title">Setup Wizard</div>
+  {% if run_count > 0 %}
+  <button class="sb-skip" onclick="window.location='/'">Skip &rsaquo;</button>
+  {% endif %}
 </div>
 
+{% if run_count >= run_limit %}
+<!-- ═══════════════════ TIER 0 LOCKED ═══════════════════ -->
+<div id="setup-scroll">
+<div class="locked-wrap">
+  <div class="locked-card">
+    <div class="locked-head">
+      <div class="card-head-over">Tier 0 Limit Reached</div>
+      <div class="locked-head-title">Setup Wizard<br>Locked</div>
+      <div class="locked-head-sub">
+        You have run the setup wizard {{ run_count }} times (Tier 0 limit: {{ run_limit }}).
+        Settings can still be changed from the Settings page.
+        Upgrade to Tier 1 or higher to unlock unlimited wizard access.
+      </div>
+    </div>
+    <div class="locked-body">
+      <a href="https://atmyboat.com" class="locked-cta" target="_blank">
+        Upgrade at AtMyBoat.com &rarr;
+      </a>
+      <a href="/" class="locked-go">Continue to Dashboard</a>
+    </div>
+  </div>
+</div>
+</div>
+
+{% else %}
+<!-- ═══════════════════ WIZARD ═══════════════════ -->
+<div id="setup-scroll">
 <div id="setup-wrap">
-  <div id="setup-card">
-    <div class="card-head">
-      <div class="card-head-over">Welcome to d3kOS</div>
-      <div class="card-head-title">Let&rsquo;s set up<br>your vessel</div>
-      <div class="card-head-sub">
-        This information personalises your dashboard and AI First Officer.
-        You can change these settings at any time in Settings.
+<div id="setup-card">
+
+  <!-- Progress indicator -->
+  <div class="wiz-progress" id="wiz-progress">
+    <div class="wiz-dot act" id="dot-1"></div>
+    <div class="wiz-dot"     id="dot-2"></div>
+    <div class="wiz-dot"     id="dot-3"></div>
+    <div class="wiz-dot"     id="dot-4"></div>
+    <div class="wiz-dot"     id="dot-5"></div>
+    <div class="wiz-dot"     id="dot-6"></div>
+    <div class="wiz-step-lbl" id="step-lbl">STEP 1 OF 6</div>
+  </div>
+
+  <form id="wiz-form" method="POST" action="/setup">
+
+    <!-- ═══ STEP 1 — WELCOME ═══ -->
+    <div class="wiz-step active" id="wiz-1">
+      <div class="card-head">
+        <div class="card-head-over">Welcome to d3kOS</div>
+        <div class="card-head-title">Your marine<br>navigation hub</div>
+        <div class="card-head-sub">
+          This wizard takes about 2 minutes. It personalises your
+          dashboard and sets up your AI First Officer.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="welcome-list">
+          <div class="wl-item">
+            <div class="wl-icon">🧭</div>
+            <div class="wl-text"><strong>Live navigation</strong> — AvNav charts, Signal K instruments, waypoint tracking.</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-icon">🤖</div>
+            <div class="wl-text"><strong>HELM AI First Officer</strong> — marine AI that watches your instruments and speaks up when needed.</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-icon">📱</div>
+            <div class="wl-text"><strong>Mobile companion</strong> — check your vessel from anywhere via the d3kOS mobile app.</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-icon">📷</div>
+            <div class="wl-text"><strong>Marine Vision</strong> — live camera feeds with fish detection overlay.</div>
+          </div>
+        </div>
+        {% if run_count > 0 %}
+        <div class="tier-warn">
+          <strong>Re-running setup</strong>
+          You have run this wizard {{ run_count }} time{% if run_count != 1 %}s{% endif %} before.
+          {{ run_limit - run_count }} run{% if run_limit - run_count != 1 %}s{% endif %} remaining in Tier 0.
+        </div>
+        {% endif %}
+        <button type="button" class="btn-submit" onclick="goTo(2)">GET STARTED &rsaquo;</button>
       </div>
     </div>
 
-    <div class="card-body">
-      {% if error %}
-      <div class="error-banner">{{ error }}</div>
-      {% endif %}
+    <!-- ═══ STEP 2 — VESSEL BASICS ═══ -->
+    <div class="wiz-step" id="wiz-2">
+      <div class="card-head">
+        <div class="card-head-over">Step 2 of 6 &mdash; Vessel Basics</div>
+        <div class="card-head-title">Tell us about<br>your vessel</div>
+        <div class="card-head-sub">This information personalises your AI and voyage logs.</div>
+      </div>
+      <div class="card-body">
+        {% if error %}
+        <div class="error-banner">{{ error }}</div>
+        {% endif %}
 
-      <form method="POST" action="/setup">
         <div class="field">
           <label for="vessel_name">Vessel Name</label>
           <input type="text" id="vessel_name" name="vessel_name"
-                 placeholder="e.g. MV SERENITY" autocomplete="off"
+                 placeholder="e.g. MV Serenity" autocomplete="off"
                  value="{{ request.form.get('vessel_name', '') }}">
-          <div class="hint">Used in the status bar, AI prompts, and voyage logs.</div>
+          <div class="hint">Shown in the status bar and used in AI prompts.</div>
         </div>
 
         <div class="field">
           <label for="home_port">Home Port</label>
           <input type="text" id="home_port" name="home_port"
-                 placeholder="e.g. Kingston" autocomplete="off"
+                 placeholder="e.g. Kingston, ON" autocomplete="off"
                  value="{{ request.form.get('home_port', '') }}">
           <div class="hint">Used in AI navigation prompts for local knowledge.</div>
         </div>
@@ -291,10 +484,10 @@
             <option value="ru-RU" {% if request.form.get('ui_lang')=='ru-RU' %}selected{% endif %}>&#1056;&#1091;&#1089;&#1089;&#1082;&#1080;&#1081;</option>
             <option value="el-GR" {% if request.form.get('ui_lang')=='el-GR' %}selected{% endif %}>&#917;&#955;&#955;&#951;&#957;&#953;&#954;&#940;</option>
           </select>
-          <div class="hint">Sets the HELM voice recognition language (BCP 47 tag).</div>
+          <div class="hint">Sets HELM voice recognition language (BCP 47 tag).</div>
         </div>
 
-        <!-- Chart Configuration — free charts are pre-configured via osm-online.xml -->
+        <!-- Chart readiness -->
         <div class="chart-info">
           <div class="chart-info-head">
             <div class="chart-dot" id="chartDot"></div>
@@ -302,38 +495,315 @@
           </div>
           <div class="chart-source">&bull; OpenStreetMap &mdash; global coverage, all zoom levels</div>
           <div class="chart-source">&bull; OpenSeaMap &mdash; nautical marks, lights &amp; hazards overlay</div>
-          <div class="chart-note" id="chartNote">Charts stream live when internet is connected. Tile data is cached as you navigate.</div>
+          <div class="chart-note" id="chartNote">Charts stream live when internet is connected.</div>
         </div>
 
-        <button type="submit" class="btn-submit">SAVE &amp; LAUNCH d3kOS</button>
-      </form>
+        <button type="button" class="btn-submit" onclick="validateStep2()">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(1)">&larr; Back</button>
+      </div>
     </div>
-  </div>
-</div>
 
+    <!-- ═══ STEP 3 — MOBILE PAIRING ═══ -->
+    <div class="wiz-step" id="wiz-3">
+      <div class="card-head">
+        <div class="card-head-over">Step 3 of 6 &mdash; Mobile Pairing</div>
+        <div class="card-head-title">Connect your<br>mobile phone</div>
+        <div class="card-head-sub">
+          Scan the QR code or type your unique vessel ID to pair the
+          d3kOS mobile app to this installation.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="pairing-box">
+          <div id="qr-canvas"></div>
+          <div id="qr-fallback" style="display:none; font-size:13px; color:var(--ink3); margin-bottom:12px;">
+            QR library unavailable &mdash; use the ID below.
+          </div>
+          <div class="pairing-uuid" id="uuid-display" onclick="copyUUID()" title="Tap to copy">
+            {{ device_uuid }}
+          </div>
+          <div class="pairing-copied" id="uuid-copied">Copied!</div>
+          <div class="pairing-sub">
+            &bull; Download <strong>d3kOS</strong> from AtMyBoat.com<br>
+            &bull; Tap <strong>Pair with Pi</strong> and scan or enter the ID above<br>
+            &bull; You can pair later &mdash; tap Skip to continue
+          </div>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="goTo(4)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(2)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 4 — EQUIPMENT & MANUALS ═══ -->
+    <div class="wiz-step" id="wiz-4">
+      <div class="card-head">
+        <div class="card-head-over">Step 4 of 6 &mdash; Equipment &amp; Manuals</div>
+        <div class="card-head-title">Register your<br>equipment</div>
+        <div class="card-head-sub">
+          Enter model numbers so HELM can find technical manuals and
+          give accurate advice about your specific gear.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="equip-note">
+          HELM searches for manuals online and adds them to its knowledge base.
+          You can also upload PDFs manually at any time from the <em>Upload Documents</em> page.
+        </div>
+
+        <div class="field">
+          <label for="eq_engine">Main Engine</label>
+          <input type="text" id="eq_engine" placeholder="e.g. Yanmar 4JH4-HTE" autocomplete="off">
+          <div class="hint">Manufacturer and model number.</div>
+        </div>
+
+        <div class="field">
+          <label for="eq_chartplotter">Chart Plotter / MFD</label>
+          <input type="text" id="eq_chartplotter" placeholder="e.g. Garmin GPSMap 1242xsv" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="eq_vhf">VHF Radio</label>
+          <input type="text" id="eq_vhf" placeholder="e.g. Standard Horizon GX2400" autocomplete="off">
+        </div>
+
+        <!-- Hidden field — assembled by JS before submission -->
+        <input type="hidden" name="equipment_notes" id="equipment_notes">
+
+        <div class="equip-or">— OR —</div>
+
+        <a href="/upload-documents" class="equip-upload-link" target="_blank">
+          📄 Upload PDF Manuals
+        </a>
+
+        <br>
+        <button type="button" class="btn-submit" onclick="assembleEquipment(); goTo(5)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(3)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 5 — GEMINI API KEY ═══ -->
+    <div class="wiz-step" id="wiz-5">
+      <div class="card-head">
+        <div class="card-head-over">Step 5 of 6 &mdash; AI Key</div>
+        <div class="card-head-title">Gemini API<br>Key</div>
+        <div class="card-head-sub">
+          HELM uses Google Gemini for marine AI. A free API key gives you
+          generous daily limits. You can skip this and add it later in Settings.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="key-steps">
+          <div class="key-step">
+            <div class="key-num">1</div>
+            <div class="key-txt">Open <strong>aistudio.google.com</strong> from any browser</div>
+          </div>
+          <div class="key-step">
+            <div class="key-num">2</div>
+            <div class="key-txt">Click <strong>Get API Key &rarr; Create API Key</strong></div>
+          </div>
+          <div class="key-step">
+            <div class="key-num">3</div>
+            <div class="key-txt">Copy the key (starts with <strong>AIzaSy…</strong>) and paste below</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="gemini_api_key">Gemini API Key</label>
+          <input type="password" id="gemini_api_key" name="gemini_api_key"
+                 placeholder="AIzaSy…" autocomplete="off" spellcheck="false">
+          <div class="hint">Stored securely on this Pi &mdash; never shared or committed to git.</div>
+        </div>
+        <div class="key-skip-row">
+          <button type="button" class="key-skip" onclick="document.getElementById('gemini_api_key').value=''; goTo(6)">
+            Skip for now
+          </button>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="goTo(6)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(4)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 6 — DONE ═══ -->
+    <div class="wiz-step" id="wiz-6">
+      <div class="card-head">
+        <div class="card-head-over">Step 6 of 6 &mdash; All done</div>
+        <div class="card-head-title">Ready to<br>set sail</div>
+        <div class="card-head-sub">
+          Your vessel is configured. Tap Launch to start d3kOS.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="done-icon">⚓</div>
+        <div class="done-list" id="done-summary">
+          <!-- Populated by JS -->
+        </div>
+        <button type="submit" class="btn-submit">LAUNCH d3kOS</button>
+        <button type="button" class="btn-back" onclick="goTo(5)">&larr; Back</button>
+      </div>
+    </div>
+
+  </form>
+</div><!-- #setup-card -->
+</div><!-- #setup-wrap -->
+</div><!-- #setup-scroll -->
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+  onerror="document.getElementById('qr-fallback').style.display='block'"></script>
 <script>
-  /* Apply night mode if after 20:00 or before 07:00 */
+  /* Night mode — applied before render */
   (function () {
-    const h = new Date().getHours();
+    var h = new Date().getHours();
     if (h < 7 || h >= 20) document.body.setAttribute('data-night', '');
   })();
 
-  /* Check AvNav status and update chart readiness indicator */
+  /* === Wizard state === */
+  var currentStep = 1;
+  var DEVICE_UUID = '{{ device_uuid }}';
+
+  /* === Navigation === */
+  function goTo(n) {
+    var from = document.getElementById('wiz-' + currentStep);
+    var to   = document.getElementById('wiz-' + n);
+    if (!to) return;
+    if (from) from.classList.remove('active');
+    to.classList.add('active');
+    currentStep = n;
+    updateProgress(n);
+    if (n === 3) initQR();
+    if (n === 6) buildSummary();
+    document.getElementById('setup-scroll').scrollTop = 0;
+  }
+
+  function updateProgress(n) {
+    for (var i = 1; i <= 6; i++) {
+      var dot = document.getElementById('dot-' + i);
+      if (!dot) continue;
+      dot.className = 'wiz-dot';
+      if (i < n) dot.classList.add('done');
+      else if (i === n) dot.classList.add('act');
+    }
+    var lbl = document.getElementById('step-lbl');
+    if (lbl) lbl.textContent = 'STEP ' + n + ' OF 6';
+  }
+
+  /* === Step 2 validation === */
+  function validateStep2() {
+    var name = document.getElementById('vessel_name').value.trim();
+    if (!name) {
+      document.getElementById('vessel_name').focus();
+      document.getElementById('vessel_name').style.borderColor = 'var(--alrt-bdr)';
+      return;
+    }
+    document.getElementById('vessel_name').style.borderColor = '';
+    goTo(3);
+  }
+
+  /* === QR code === */
+  function initQR() {
+    var canvas = document.getElementById('qr-canvas');
+    if (!canvas || canvas.children.length > 0) return; /* already rendered */
+    var payload = 'd3kos://pair/' + DEVICE_UUID;
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(canvas, {
+        text: payload,
+        width: 180, height: 180,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      document.getElementById('qr-fallback').style.display = 'block';
+    }
+  }
+
+  /* === Copy UUID === */
+  function copyUUID() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(DEVICE_UUID).then(function () {
+        showCopied();
+      }).catch(function () { fallbackCopy(); });
+    } else {
+      fallbackCopy();
+    }
+  }
+  function fallbackCopy() {
+    var el = document.createElement('textarea');
+    el.value = DEVICE_UUID;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showCopied();
+  }
+  function showCopied() {
+    var el = document.getElementById('uuid-copied');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () { el.style.display = 'none'; }, 2000);
+  }
+
+  /* === Equipment assembly === */
+  function assembleEquipment() {
+    var parts = [];
+    var engine = (document.getElementById('eq_engine')      || {}).value || '';
+    var chart  = (document.getElementById('eq_chartplotter') || {}).value || '';
+    var vhf    = (document.getElementById('eq_vhf')          || {}).value || '';
+    if (engine) parts.push('Engine: ' + engine.trim());
+    if (chart)  parts.push('Chartplotter: ' + chart.trim());
+    if (vhf)    parts.push('VHF: ' + vhf.trim());
+    document.getElementById('equipment_notes').value = parts.join('; ');
+  }
+
+  /* === Done summary === */
+  function buildSummary() {
+    var name   = (document.getElementById('vessel_name') || {}).value || '—';
+    var port   = (document.getElementById('home_port')   || {}).value || '—';
+    var lang   = (document.getElementById('ui_lang')     || {});
+    var langTxt = lang.options ? lang.options[lang.selectedIndex].text : '—';
+    var equip  = document.getElementById('eq_engine') ?
+                 [document.getElementById('eq_engine').value,
+                  document.getElementById('eq_chartplotter').value,
+                  document.getElementById('eq_vhf').value].filter(Boolean).length : 0;
+    var gemini = (document.getElementById('gemini_api_key') || {}).value || '';
+
+    var items = [
+      { icon: '⚓', text: 'Vessel: <strong>' + name + '</strong>, home port <strong>' + port + '</strong>',   done: !!name },
+      { icon: '🌐', text: 'Language: <strong>' + langTxt + '</strong>',                                       done: true },
+      { icon: '📱', text: 'Mobile pairing ID ready',                                                           done: true },
+      { icon: '🔧', text: equip > 0 ? equip + ' equipment item(s) registered' : 'Equipment step skipped',     done: equip > 0 },
+      { icon: '🤖', text: gemini ? 'Gemini API key saved' : 'Gemini key skipped — add in Settings',            done: !!gemini },
+    ];
+
+    var html = '';
+    items.forEach(function (it) {
+      html += '<div class="done-item">';
+      html += '<span class="' + (it.done ? 'di-tick' : 'di-skip') + '">' + (it.done ? '✓' : '—') + '</span>';
+      html += '<span>' + it.icon + ' ' + it.text + '</span></div>';
+    });
+    document.getElementById('done-summary').innerHTML = html;
+  }
+
+  /* === AvNav chart readiness check === */
   (function checkCharts() {
     fetch('/status')
-      .then(r => r.json())
-      .then(d => {
-        const dot  = document.getElementById('chartDot');
-        const note = document.getElementById('chartNote');
-        if (d.avnav) {
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var dot  = document.getElementById('chartDot');
+        var note = document.getElementById('chartNote');
+        if (d && d.avnav) {
           if (dot)  dot.classList.add('ok');
-          if (note) note.textContent = 'Chart system ready \u2014 AvNav connected at :8080. Charts stream live; tile data cached as you navigate.';
-        } else {
-          if (note) note.textContent = 'AvNav not yet running \u2014 charts will be available once the system fully starts.';
+          if (note) note.textContent = 'Chart system ready \u2014 AvNav connected at :8080.';
         }
       })
-      .catch(function () { /* leave default note text */ });
+      .catch(function () {});
   })();
+
+  /* If form was submitted with errors, jump to step 2 */
+  {% if error %}
+  goTo(2);
+  {% endif %}
 </script>
 </body>
 </html>
