@@ -1,5 +1,5 @@
 # d3kOS Project Checklist
-**Version:** v0.9.2.2 | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
+**Version:** v0.9.2.2 | **Status:** ⛔ NOT APPROVED — PENDING INVESTIGATION (2026-03-16) | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
 **Spec:** docs/D3KOS_UI_SPEC.md v1.0.0 | **Addendum:** docs/D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0
 **Updated:** 2026-03-14 — Recovery planning session (V0922_RECOVERY_PLAN.md created)
 
@@ -433,4 +433,4 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 
-**Last updated:** 2026-03-16 — Session D complete (INC-07 through INC-10). Session E: INC-11+12 deployed to Pi and verified. v0.9.2.2 Recovery COMPLETE. Post-recovery: INC-13/14/15 font scale complete — verification pending.
+**Last updated:** 2026-03-16 — ⛔ v0.9.2.2 NOT APPROVED. Status: pending investigation. Do not close version until investigation complete and Don approves.

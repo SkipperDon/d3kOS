@@ -4,6 +4,13 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Status Note — 2026-03-16
+
+**⛔ v0.9.2.2 NOT APPROVED — PENDING INVESTIGATION**
+Don has flagged v0.9.2.2 as not approved. Version remains open. No work proceeds until investigation is complete and Don explicitly approves. Investigation scope to be determined by Don.
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Post-Deploy: nginx fix + grey screen fix + Pi screen verify
 
 **Goal:** Fix port 80 serving old static dashboard, resolve grey screen on Pi, verify layout on Pi screen.
