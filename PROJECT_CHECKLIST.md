@@ -2077,7 +2077,7 @@
 
 ## v0.9.2.2 — d3kOS Frontend UI Rebuild [Effort: 3 Sessions]
 
-**Status:** [🔄] In Planning | **Started:** 2026-03-13 | **Priority:** HIGH
+**Status:** [✅] APPROVED AND CLOSED 2026-03-16 | **Started:** 2026-03-13 | **Priority:** HIGH
 **Spec:** `deployment/d3kOS/docs/D3KOS_UI_SPEC.md` v1.0.0
 **Addendum:** `deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md` v1.0.0
 **Reference mockup:** `deployment/d3kOS/docs/d3kos-mockup-v12.html`
@@ -2201,7 +2201,25 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-16 — v0.9.2.2 Recovery Plan complete (Sessions A–E, INC-01–INC-12). All 9 pages rebuilt with v12 design. Deployed and verified on Pi. | **Maintained By:** Development team + Claude Code
+## v0.9.2.3 — d3kOS UI Remediation [Effort: 5 Sessions]
+
+**Status:** [🔄] PLANNING COMPLETE — awaiting implementation authorization | **Started:** 2026-03-16 | **Priority:** HIGH
+**Plan:** `deployment/d3kOS/docs/V0923_PLAN.md` (canonical)
+**Detailed checklist:** `deployment/d3kOS/PROJECT_CHECKLIST.md`
+**UAT document:** `deployment/d3kOS/docs/D3KOS_UAT_V0923.md` (74 checks — return to Claude Code when complete)
+
+> 19 issues identified during v0.9.2.2 investigation. 5 sessions planned (A–E).
+> Carryover from v0.9.2.2: INC-16, UAT, o-charts, Node-RED — tracked in Session E.
+
+- [✅] Session A — NAV ribbon + bottom nav active state + leave-app fix (cdf03c6)
+- [ ] Session B — Close buttons + More popup + dropdowns (all pages)
+- [ ] Session C — HELM mute + Weather overlay panel (new component)
+- [ ] Session D — Boat log font overhaul + engine auto-capture (new component)
+- [ ] Session E — Global font audit + full deploy + 16-check verify + v0.9.2.2 closeout
+
+---
+
+**Last Updated:** 2026-03-16 — v0.9.2.2 APPROVED AND CLOSED. v0.9.2.3 planning complete. UAT document created. v0.9.3 session plan added. | **Maintained By:** Development team + Claude Code
 
 ---
 

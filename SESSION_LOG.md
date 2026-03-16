@@ -2,6 +2,43 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Close + v0.9.2.3 Planning Finalized + v0.9.3 Session Plan + UAT Document
+
+**Tasks completed:**
+- v0.9.2.2 approved and closed by Don
+- v0.9.2.3 carryover items (INC-16, UAT, o-charts, Node-RED) moved to Session E
+- v0.9.3 remaining work reviewed and organized into 4 sessions (MailPoet+Fonts → SEO → AODA Audit → Live Push)
+- v0.9.3 security key rotation deferred to Session 4 closeout — existing keys stay until work complete
+- UAT document created: `deployment/d3kOS/docs/D3KOS_UAT_V0923.md` — 74 checks, self-contained, return to Claude Code when complete
+
+**Files changed:**
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — v0.9.2.2 APPROVED AND CLOSED; Session E + carryover items added
+- MOD: `deployment/d3kOS/docs/V0923_PLAN.md` — Session E scope updated with 4 carryover items
+- MOD: `deployment/d3kOS/SESSION_LOG.md` — v0.9.2.2 close entry appended
+- MOD: `/home/boatiq/.claude/projects/-home-boatiq/memory/MEMORY.md` — v0.9.2.2 closed; v0.9.2.3 status updated
+- MOD: `deployment/v0.9.3/PROJECT_CHECKLIST.md` — 4-session plan added; security note updated
+- MOD: `deployment/v0.9.3/SESSION_LOG.md` — planning session entry appended
+- NEW: `deployment/d3kOS/docs/D3KOS_UAT_V0923.md` — 74-check UAT document
+- MOD: `PROJECT_CHECKLIST.md` (root) — v0.9.2.2 CLOSED; v0.9.2.3 entry added; v0.9.3 status updated
+- MOD: `SESSION_LOG.md` (root) — this entry
+
+**PROJECT_CHECKLIST.md updates:**
+- v0.9.2.2 status: [🔄] In Planning → [✅] APPROVED AND CLOSED 2026-03-16
+- v0.9.2.3 section: ADDED — 5 sessions (A–E), all [ ]
+- v0.9.3 status: [ ] Not Started → [🔄] IN PROGRESS — Phases 0–2D complete, session plan written
+- Last Updated line updated to 2026-03-16
+
+**AAO compliance:** PASS — all actions Low risk, pre-stated, no scope creep, no push
+
+**Open items for next session:**
+- Don to authorize v0.9.2.3 Session A (say "go ahead" / "implement" / "proceed")
+- Don to authorize v0.9.3 Session 1 (MailPoet + font fixes)
+- UAT document to be completed by Don and returned for issue investigation
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Recovery Session C (INC-05 Boat Log + INC-06 Onboarding Wizard)
 
 **Tasks completed:**
@@ -3805,3 +3842,50 @@ The Mar 10 session deployed `/tmp/nginx-new` → `sites-enabled/default`. This f
 - No code written yet — Wave 1 is Session A's entire scope
 
 **Sign-off:** Don — silence = approval
+
+## Session — 2026-03-16 — v0.9.2.3 Session A: NAV ribbon + nav active state + leave-app fix
+
+**Goal:** Implement v0.9.2.3 Session A — 8 issues (I-01 through I-06, I-14, I-15)
+
+**Completed:**
+- I-01: Position cell top-aligned — `.ic-gps { justify-content: flex-start; align-items: flex-start; padding-top: 14px; }`
+- I-02: Position coordinates increased from 20px → 36px (50% of ic-v 72px)
+- I-03: Next Waypoint cell top-aligned — same flex-start treatment on `.ic-wp`
+- I-04: Waypoint destination name 18px → 28px; ic-v 44px → 36px (match position data size)
+- I-05: Introduced `.nb-active` class for nav active state tracking. HELM: `.nb-active` added on `openHelm()`, removed on `closeHelm()` (restores to Dashboard). Other buttons use `setNav()` which sets `.nb-active`. CSS aliases `.nb.nb-active` to same rules as `.nb.on` + HELM-specific white bar.
+- I-06: `.nb-active` CSS ensures consistent bottom-bar indicator; added HELM white-bar override for active indicator
+- I-14/I-15: Added `navTo(url)` in nav.js — clears `window.onbeforeunload`, calls `closeHelm()` to stop speech recognition, then navigates. All `window.location` calls in bottom nav and More menu updated to `navTo()`.
+- CSS cache-bust: `?v=9` → `?v=10`
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — ic-gps/ic-wp top-align, size changes, .nb-active CSS
+- `deployment/d3kOS/dashboard/static/js/nav.js` — setNav/closeSplit use .nb-active, navTo() added
+- `deployment/d3kOS/dashboard/static/js/helm.js` — openHelm/closeHelm manage .nb-active
+- `deployment/d3kOS/dashboard/templates/index.html` — .nb-active on Dashboard, navTo() throughout, ?v=10
+
+**Deploy:**
+- SCP all 4 files to Pi (192.168.1.237)
+- `sudo systemctl restart d3kos-dashboard` → active
+- HTTP 200 verified on localhost:3000
+
+**Commit:** cdf03c6
+
+**Decisions:**
+- `.nb-active` introduced alongside `.on` — CSS aliases both so any remaining `.on` references still work
+- `navTo()` placed in nav.js (navigation module) for broad scope, calls closeHelm() defensively
+- HELM white bar uses `rgba(255,255,255,.85)` on the green HELM button — visible but not harsh
+
+**Ollama:** 0 calls — all direct edits
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Visual verify on Pi touchscreen (Don)
+- Session B when Don confirms Session A looks correct
+
+---
