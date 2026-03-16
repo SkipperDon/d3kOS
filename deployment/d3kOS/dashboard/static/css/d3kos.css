@@ -134,11 +134,11 @@ html, body {
 }
 .sb-sep { width: 1px; height: 22px; background: rgba(255,255,255,.18); flex-shrink: 0; }
 .sb-vessel {
-  font-size: 13px; font-weight: 700; letter-spacing: .1em;
+  font-size: 16px; font-weight: 700; letter-spacing: .1em;
   color: rgba(255,255,255,.75); flex-shrink: 0;
 }
 .sb-ticker {
-  flex: 1; font-size: 11px; font-weight: 600; letter-spacing: .07em;
+  flex: 1; font-size: 14px; font-weight: 600; letter-spacing: .07em;
   color: rgba(255,255,255,.55);
   overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   transition: color .3s;
@@ -150,7 +150,7 @@ html, body {
   display: flex; align-items: center; gap: 6px;
   padding: 5px 14px; border-radius: 20px;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
-  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  font-size: 13px; font-weight: 700; letter-spacing: .12em;
   color: rgba(255,255,255,.45); cursor: pointer; transition: all .2s;
 }
 .helm-pill.live {
@@ -166,7 +166,7 @@ html, body {
 }
 .dn-b {
   padding: 4px 13px; border-radius: 16px; border: none; background: none;
-  font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700;
   letter-spacing: .08em; color: rgba(255,255,255,.38);
   cursor: pointer; transition: all .2s;
 }
@@ -205,7 +205,7 @@ html, body {
   background: var(--g-txt); border-radius: 2px; opacity: .5;
 }
 .rt-lbl {
-  font-size: 9px; font-weight: 700; letter-spacing: .2em;
+  font-size: 11px; font-weight: 700; letter-spacing: .2em;
   color: var(--g-txt); text-transform: uppercase;
   writing-mode: vertical-rl; transform: rotate(180deg);
 }
@@ -229,7 +229,7 @@ html, body {
 .ic:last-child { border-right: none; }
 .ic:active { background: var(--g-dim); }
 .ic-l {
-  font-size: 11px; font-weight: 600; letter-spacing: .16em;
+  font-size: 14px; font-weight: 600; letter-spacing: .16em;
   text-transform: uppercase; color: var(--ink3);
   margin-bottom: 4px; white-space: nowrap;
 }
@@ -240,7 +240,7 @@ html, body {
   white-space: nowrap;
 }
 .ic-u {
-  font-size: 14px; font-weight: 600; letter-spacing: .06em;
+  font-size: 16px; font-weight: 600; letter-spacing: .06em;
   color: var(--ink2); margin-top: 5px; white-space: nowrap;
 }
 [data-night] .ic-v {
@@ -294,7 +294,7 @@ html, body {
   background: var(--g-dim) !important;
   border-left: 4px solid var(--g-bdr) !important;
 }
-.ic-wp .ic-l { color: var(--g-txt); font-size: 10px; }
+.ic-wp .ic-l { color: var(--g-txt); font-size: 14px; }
 .ic-wp .ic-dest {
   font-family: 'Chakra Petch', sans-serif;
   font-size: 18px; font-weight: 700;
@@ -354,7 +354,7 @@ html, body {
 }
 .rw-txt b { color: var(--ink); font-weight: 700; }
 .rw-badge {
-  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  font-size: 13px; font-weight: 700; letter-spacing: .1em;
   padding: 5px 10px; border-radius: 4px;
   background: var(--g-dim); color: var(--g-txt);
   border: 1px solid var(--g-bdr); flex-shrink: 0;
@@ -387,7 +387,7 @@ html, body {
 }
 .sp-tab {
   flex: 1; border: none; background: none; cursor: pointer;
-  font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif; font-size: 16px; font-weight: 700;
   letter-spacing: .06em; color: var(--ink3);
   border-bottom: 3px solid transparent; margin-bottom: -2px;
   transition: all .15s;
@@ -404,7 +404,7 @@ html, body {
 /* Weather sub-buttons */
 .wx-sub {
   flex: 1; height: 48px; border-radius: 9px; cursor: pointer;
-  font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700;
   letter-spacing: .05em;
   background: var(--cell); border: 1px solid var(--rule); color: var(--ink3);
   transition: all .15s;
@@ -419,7 +419,7 @@ html, body {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px; border-radius: 8px;
   background: var(--g-dim); border: 1px solid var(--g-bdr);
-  font-size: 12px; font-weight: 700; letter-spacing: .07em;
+  font-size: 14px; font-weight: 700; letter-spacing: .07em;
   color: var(--g-txt); margin-bottom: 14px;
 }
 .ai-dot {
@@ -509,7 +509,7 @@ html, body {
 .nb-icon { font-size: 32px; line-height: 1; }
 .nb.on .nb-icon { color: var(--g-txt); }
 .nb-lbl {
-  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  font-size: 18px; font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--ink3);
 }
 
@@ -528,7 +528,7 @@ html, body {
 }
 .nb.helm .nb-icon { font-size: 38px; color: #fff; }
 .nb.helm .nb-lbl {
-  font-size: 12px; font-weight: 700; letter-spacing: .06em; color: #fff;
+  font-size: 18px; font-weight: 700; letter-spacing: .06em; color: #fff;
 }
 .nb.helm:active { background: var(--g-dim); }
 .nb.helm::after { display: none; }
@@ -666,12 +666,12 @@ html, body {
 .diag-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
 .dc { padding: 16px 12px; text-align: center; background: var(--cell); border-radius: 12px; border: 2px solid var(--rule); }
 .dc.bad { background: var(--alrt-bg); border-color: var(--alrt-bdr); }
-.dc-lbl { font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
+.dc-lbl { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
 .dc-val { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 1; color: var(--g-txt); }
 .dc.bad .dc-val { color: var(--alrt-num); }
 .dc-note { font-size: 12px; font-weight: 600; color: var(--ink3); margin-top: 4px; }
 .diag-ai { background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
-.diag-ai-lbl { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--g-txt); margin-bottom: 10px; }
+.diag-ai-lbl { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--g-txt); margin-bottom: 10px; }
 .diag-ai-txt { font-size: 16px; font-weight: 500; color: var(--ink2); line-height: 1.8; }
 .diag-ai-txt b { color: var(--ink); font-weight: 700; }
 .diag-btns { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -817,7 +817,7 @@ html, body {
   height: 36px; padding: 0 22px;
   border-radius: 24px; border: none; background: none; cursor: pointer;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 13px; font-weight: 700; letter-spacing: .1em;
+  font-size: 16px; font-weight: 700; letter-spacing: .1em;
   color: var(--ink3); transition: all .2s; white-space: nowrap;
   position: relative;
 }
@@ -830,7 +830,7 @@ html, body {
 }
 .row-pill-btn .rp-alert.show { display: block; }
 .rtb-label {
-  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  font-size: 14px; font-weight: 700; letter-spacing: .12em;
   color: var(--ink3); margin-left: auto;
   font-family: 'Chakra Petch', sans-serif; text-transform: uppercase;
 }
