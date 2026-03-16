@@ -4,6 +4,37 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Post-Deploy: nginx fix + grey screen fix + Pi screen verify
+
+**Goal:** Fix port 80 serving old static dashboard, resolve grey screen on Pi, verify layout on Pi screen.
+
+**Completed:**
+- nginx `location /` changed from `try_files $uri $uri/ =404` to `proxy_pass http://127.0.0.1:3000` — port 80 now serves Flask dashboard. All sub-paths including `/static/` pass through via catch-all. Backup: `/tmp/nginx-default.bak-20260316`.
+- Rebooted Pi — confirmed clean boot sequence: all services up, Chromium auto-launched via autostart → launch-d3kos.sh, all 9 routes HTTP 200.
+- Grey screen root cause identified: system-level Chromium config at `/etc/chromium/master_preferences` injects `--use-angle=gles` which causes GPU rendering to fail silently on Pi 4 Wayland stack → blank grey screen.
+- Fix: added `--disable-gpu` to launch-d3kos.sh. Forces software rendering. Deployed to Pi `/opt/d3kos/scripts/launch-d3kos.sh`. Committed 0c6c204.
+- Pi screen confirmed: layout correct — bottom nav, instruments, HELM button, More menu all visible. Don confirmed "layout is correct".
+
+**Decisions:**
+- `--disable-gpu` is the right long-term fix. The `--use-angle=gles` injection is system-wide and cannot be easily removed without modifying system Chromium config. Software rendering is fully adequate for this dashboard — no 3D/video content.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Visual walk-through of all 9 pages on Pi screen (tap each page, verify content)
+- UAT: 5 metric + 5 imperial users
+- o-charts chart activation (Don's task)
+- Node-RED inactive — confirm this is intentional or needs re-enabling
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Recovery: Session E (Wave 3 — INC-11 + INC-12)
 
 **Goal:** INC-11 (Deploy all Wave 1+2 files to Pi) + INC-12 (Full verification checklist).
