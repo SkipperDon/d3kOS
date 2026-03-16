@@ -414,10 +414,10 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] INC-04: Marine Vision — 4-camera grid, single focus, fish detection overlay (2026-03-16)
 - [✅] INC-05: Boat Log — voice note + entry list (2026-03-16)
 - [✅] INC-06: Onboarding wizard — 6-step flow, QR pairing, equipment/RAG, Tier 0 counter (2026-03-16)
-- [ ] INC-07: Upload Documents page
-- [ ] INC-08: Manage Documents page
-- [ ] INC-09: AI Navigation page
-- [ ] INC-10: Engine Monitor page
+- [✅] INC-07: Upload Documents page — PDF upload form, POST localhost:8081/upload/manual (2026-03-16)
+- [✅] INC-08: Manage Documents page — list + delete via localhost:8083/manuals/ (2026-03-16)
+- [✅] INC-09: AI Navigation page — full-page chat, POST localhost:3001/ask, source badge (2026-03-16)
+- [✅] INC-10: Engine Monitor page — SK WS live data, 6 metrics, alert flood states (2026-03-16)
 
 ### Wave 3 — Deploy and Verify
 - [ ] INC-11: Deploy all to Pi + cache-bust

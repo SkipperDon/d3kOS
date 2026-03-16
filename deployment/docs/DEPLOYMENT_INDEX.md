@@ -146,6 +146,17 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 | `deployment/d3kOS/ai-bridge/config/ai-bridge.env` | Phase 5 | **[DEPLOYED 2026-03-13]** Live on Pi at `/opt/d3kos/services/ai-bridge/config/ai-bridge.env`. NEVER committed. gitignored. |
 | `deployment/d3kOS/dashboard/static/js/ai-bridge.js` | Phase 5 | **[DEPLOYED 2026-03-13]** SSE EventSource to :3002/stream. Handles all 5 event types. triggerRouteAnalysis(), dismissAnchorAlarm(), getAnchorAdvice(). Pi: `/opt/d3kos/services/dashboard/static/js/ai-bridge.js` |
 
+### v0.9.2.2 Recovery Session D — Upload Docs, Manage Docs, AI Navigation, Engine Monitor (2026-03-16)
+
+| File | Description |
+|------|-------------|
+| `deployment/d3kOS/dashboard/templates/upload-documents.html` | **[REPLACED 2026-03-16]** Full PDF upload page. File picker (PDF only, 50 MB max), manual type selector, POST multipart to `localhost:8081/upload/manual`, progress bar, success/error feedback, D/N theme. |
+| `deployment/d3kOS/dashboard/templates/manage-documents.html` | **[REPLACED 2026-03-16]** Document library page. GET `localhost:8083/manuals/list`, filename/size/date per row, delete with confirm dialog, DELETE `localhost:8083/manuals/delete/<filename>`, empty state, D/N theme. |
+| `deployment/d3kOS/dashboard/templates/ai-navigation.html` | **[REPLACED 2026-03-16]** Full-page AI marine chat. POST `localhost:3001/ask` with `{message}`, me/bot bubbles, thinking animation, GEMINI/OLLAMA source badge, 60 s timeout, D/N theme. |
+| `deployment/d3kOS/dashboard/templates/engine-monitor.html` | **[REPLACED 2026-03-16]** Live engine data page. SK WebSocket `ws://localhost:8099/signalk/v1/stream`, 6 paths (RPM/coolant/oil/battery/fuel/trim), alert flood states (adv/alrt/crit), auto-reconnect 5 s, D/N theme. |
+
+---
+
 ### v0.9.2.2 Session 3 — Cameras, More Menu, Onboarding (2026-03-14, commit c6fd43e)
 
 | File | Purpose |

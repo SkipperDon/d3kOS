@@ -6,19 +6,256 @@
 <title>d3kOS &middot; Manage Documents</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=4">
+<style>
+  .doc-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--rule-lt);
+  }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-row-icon { font-size: 30px; flex-shrink: 0; }
+  .doc-row-info { flex: 1; min-width: 0; }
+  .doc-row-name {
+    font-size: 15px; font-weight: 700; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .doc-row-meta { font-size: 12px; color: var(--ink3); font-weight: 600; }
+  .doc-del-btn {
+    height: 48px; width: 48px; flex-shrink: 0;
+    background: var(--crit-bg); border: 1px solid var(--crit-bdr);
+    border-radius: 10px; color: var(--crit-num);
+    font-size: 20px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .doc-del-btn:active { filter: brightness(.88); }
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px;
+    padding: 48px 20px; text-align: center;
+  }
+  .empty-icon { font-size: 52px; opacity: .28; }
+  .empty-msg {
+    font-family: 'Bebas Neue', sans-serif; font-size: 24px;
+    letter-spacing: .15em; color: var(--ink3);
+  }
+  .empty-sub { font-size: 14px; font-weight: 600; color: var(--ink3); }
+</style>
 </head>
 <body>
-<!-- STUB — replaced by INC-08 (Session D) -->
-<div class="stub-wrap">
-  <div class="stub-sb">
-    <a href="/" class="stub-back">&#9664; Dashboard</a>
-    <div class="stub-title">&#128193; Manage Documents</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+  <span class="brand">&#128193; Manage Documents</span>
+  <div class="dn" style="margin-left:auto">
+    <button class="dn-b" id="btnDay" onclick="setTheme('day')">D</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
   </div>
-  <div class="stub-content">
-    <div class="stub-icon">&#128193;</div>
-    <div class="stub-msg">Coming Soon</div>
-    <div class="stub-sub">View &amp; delete documents &middot; session D</div>
-  </div>
+  <span id="clock"></span>
 </div>
+
+<!-- SCROLLABLE CONTENT -->
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
+<div style="max-width:760px;margin:0 auto;padding:24px">
+
+  <!-- SUMMARY BAR -->
+  <div class="sec" id="summaryCard" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div>
+        <span id="docCount" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--g-txt);letter-spacing:.06em">—</span>
+        <span style="font-size:14px;font-weight:700;color:var(--ink3);margin-left:6px">DOCUMENTS</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" onclick="loadDocs()" style="min-height:48px">&#128260; Refresh</button>
+        <a href="/upload-documents" style="text-decoration:none">
+          <button class="btn btn-primary" style="min-height:48px">&#128228; Upload New</button>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENT LIST -->
+  <div class="sec" id="docList">
+    <div class="empty-state">
+      <div class="empty-icon">&#128260;</div>
+      <div class="empty-msg">Loading&hellip;</div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM DIALOG -->
+  <div id="confirmBack" style="display:none;position:fixed;inset:0;z-index:700;
+        background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+        align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--panel);border:3px solid var(--crit-bdr);border-radius:20px;
+                width:min(480px,94vw);padding:28px 28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.08em;color:var(--crit);margin-bottom:8px">
+        &#128465; Delete Document?
+      </div>
+      <p style="font-size:15px;font-weight:600;color:var(--ink2);line-height:1.7;margin-bottom:20px">
+        <b id="confirmName" style="color:var(--ink)"></b> will be permanently deleted
+        and removed from the AI knowledge base.
+      </p>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-danger" id="confirmYes" style="flex:1;height:56px" onclick="doDelete()">
+          &#128465; Delete
+        </button>
+        <button class="btn" style="flex:1;height:56px" onclick="closeConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /max-width -->
+</div><!-- /scroll -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ── THEME ── */
+function setTheme(t) {
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  document.getElementById('btnDay').classList.toggle('on',   t === 'day');
+  document.getElementById('btnNight').classList.toggle('on', t === 'night');
+  localStorage.setItem('d3kTheme', t);
+}
+(function () { setTheme(localStorage.getItem('d3kTheme') || 'day'); })();
+
+/* ── CLOCK ── */
+(function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  setTimeout(tick, 10000);
+})();
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── HELPERS ── */
+function _esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+function _fmtSize(bytes) {
+  if (bytes < 1024)      return bytes + ' B';
+  if (bytes < 1048576)   return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
+function _fmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/* ── STATE ── */
+let _pendingDelete = null;
+
+/* ── LOAD DOCUMENTS ── */
+async function loadDocs() {
+  const list = document.getElementById('docList');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128260;</div><div class="empty-msg">Loading&hellip;</div></div>';
+  document.getElementById('summaryCard').style.display = 'none';
+
+  try {
+    const resp = await fetch('http://localhost:8083/manuals/list', { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const docs = data.manuals || data || [];
+
+    document.getElementById('docCount').textContent = docs.length;
+    document.getElementById('summaryCard').style.display = 'block';
+
+    if (!docs.length) {
+      list.innerHTML = `
+        <div class="sec-header">&#128193; Your Documents</div>
+        <div class="empty-state">
+          <div class="empty-icon">&#128228;</div>
+          <div class="empty-msg">No Documents Yet</div>
+          <div class="empty-sub">Upload PDF manuals to enable AI-assisted vessel advice</div>
+        </div>
+        <div style="margin-top:16px">
+          <a href="/upload-documents" style="text-decoration:none">
+            <button class="btn btn-primary btn-full" style="height:56px">&#128228; Upload First Document</button>
+          </a>
+        </div>`;
+      return;
+    }
+
+    let rows = `<div class="sec-header">&#128193; Your Documents</div>`;
+    for (const doc of docs) {
+      const name = _esc(doc.filename || doc.name || 'Unknown');
+      const size = _fmtSize(doc.size || 0);
+      const date = _fmtDate(doc.uploaded);
+      rows += `
+        <div class="doc-row">
+          <div class="doc-row-icon">&#128196;</div>
+          <div class="doc-row-info">
+            <div class="doc-row-name">${name}</div>
+            <div class="doc-row-meta">${size}${date ? ' &middot; ' + date : ''}</div>
+          </div>
+          <button class="doc-del-btn" title="Delete ${name}"
+            onclick="confirmDelete(${JSON.stringify(doc.filename || doc.name || '')})">&#128465;</button>
+        </div>`;
+    }
+    list.innerHTML = rows;
+
+  } catch (e) {
+    list.innerHTML = `
+      <div class="sec-header" style="color:var(--crit)">&#9888; Could Not Load</div>
+      <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:14px">
+        The manuals service at localhost:8083 is not responding.<br>
+        <span style="font-size:12px;color:var(--ink3)">${_esc(e.message)}</span>
+      </p>
+      <button class="btn" onclick="loadDocs()" style="min-height:48px">&#128260; Try Again</button>`;
+  }
+}
+
+/* ── DELETE ── */
+function confirmDelete(filename) {
+  _pendingDelete = filename;
+  document.getElementById('confirmName').textContent = filename;
+  const back = document.getElementById('confirmBack');
+  back.style.display = 'flex';
+}
+function closeConfirm() {
+  _pendingDelete = null;
+  document.getElementById('confirmBack').style.display = 'none';
+}
+async function doDelete() {
+  const filename = _pendingDelete;
+  if (!filename) return;
+  closeConfirm();
+
+  const btn = document.getElementById('confirmYes');
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(
+      `http://localhost:8083/manuals/delete/${encodeURIComponent(filename)}`,
+      { method: 'DELETE', signal: AbortSignal.timeout(8000) }
+    );
+    if (resp.ok) {
+      showToast(`Deleted: ${filename}`);
+      await loadDocs();
+    } else {
+      showToast(`Delete failed — server returned ${resp.status}`);
+    }
+  } catch (e) {
+    showToast('Delete failed — service unreachable');
+  }
+  btn.disabled = false;
+}
+
+/* ── INIT ── */
+loadDocs();
+</script>
 </body>
 </html>
