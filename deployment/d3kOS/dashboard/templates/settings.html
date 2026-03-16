@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>d3kOS &mdash; Settings &amp; Help</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/d3kos.css?v=11">
+  <link rel="stylesheet" href="/static/css/d3kos.css?v=14">
 </head>
 <body>
 
@@ -198,13 +198,13 @@
           <div style="background:rgba(0,20,0,.5);border:1px solid rgba(0,204,0,.25);border-radius:6px;padding:14px 16px;margin-bottom:14px;font-size: 18px;color:var(--muted);line-height:1.9;">
             <strong style="color:var(--text);">Gemini API Key</strong> &mdash; Get at
             <strong style="color:var(--accent);">aistudio.google.com</strong> &rarr; Get API key &rarr; Create API key.
-            Key starts with <code style="font-family:'Roboto Mono',monospace;font-size: 18px;background:rgba(0,204,0,.1);padding:1px 5px;border-radius:3px;color:var(--accent);">AIzaSy&hellip;</code>
+            Key starts with <code style="font-family:'Courier New',monospace;font-size: 18px;background:rgba(0,204,0,.1);padding:1px 5px;border-radius:3px;color:var(--accent);">AIzaSy&hellip;</code>
             Free tier sufficient. Key stays on your Pi &mdash; never sent elsewhere. Token counts logged only &mdash; query text never stored.
           </div>
           <div class="trow" style="padding-bottom:14px;">
             <div><strong>API Key</strong><div class="trow-sub">Paste from aistudio.google.com &mdash; saved to gemini.env on Pi</div></div>
             <div style="display:flex;gap:8px;width:360px;">
-              <input type="password" id="gem-key" class="fc" placeholder="AIzaSy&hellip;" style="flex:1;font-family:'Roboto Mono',monospace;font-size: 18px;">
+              <input type="password" id="gem-key" class="fc" placeholder="AIzaSy&hellip;" style="flex:1;font-family:'Courier New',monospace;font-size: 18px;">
               <button class="btn btn-primary" style="min-width:80px;padding:0 14px;font-size: 18px;" onclick="var i=document.getElementById('gem-key');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button>
             </div>
           </div>
@@ -230,9 +230,9 @@
           </div>
           <div style="margin-top:14px;">
             <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
-            <input type="text" class="fc" value="192.168.1.36:11434" style="font-family:'Roboto Mono',monospace;margin-bottom:10px;">
+            <input type="text" class="fc" value="192.168.1.36:11434" style="font-family:'Courier New',monospace;margin-bottom:10px;">
             <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
-            <input type="text" class="fc" value="qwen3-coder:30b" style="font-family:'Roboto Mono',monospace;">
+            <input type="text" class="fc" value="qwen3-coder:30b" style="font-family:'Courier New',monospace;">
           </div>
           <div>
             <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview</div>
@@ -475,7 +475,7 @@
             <span class="info-k">Hardware:</span><span class="info-v">Raspberry Pi 4B (8GB RAM)</span>
             <span class="info-k">OS:</span><span class="info-v">Debian GNU/Linux 13 (Trixie) 64-bit</span>
             <span class="info-k">Signal K:</span><span class="info-v"><span class="info-badge" id="si-sk-badge">&#8212;</span></span>
-            <span class="info-k">IP Address:</span><span class="info-v" id="si-ip" style="font-family:'Roboto Mono',monospace;">&#8212;</span>
+            <span class="info-k">IP Address:</span><span class="info-v" id="si-ip" style="font-family:'Courier New',monospace;">&#8212;</span>
             <span class="info-k">Disk Usage:</span><span class="info-v" id="si-disk">&#8212;</span>
             <span class="info-k">Memory:</span><span class="info-v" id="si-mem">&#8212;</span>
             <span class="info-k">CPU Temp:</span><span class="info-v" id="si-cputemp">&#8212;</span>
@@ -494,7 +494,7 @@
         <div class="card">
           <div class="info-grid">
             <span class="info-k">Tier:</span><span class="info-v" style="color:#FFD700;font-weight:700;">Tier 2</span>
-            <span class="info-k">Install ID:</span><span class="info-v" style="font-family:'Roboto Mono',monospace;color:var(--accent);">d3k-2024-boatiq-001</span>
+            <span class="info-k">Install ID:</span><span class="info-v" style="font-family:'Courier New',monospace;color:var(--accent);">d3k-2024-boatiq-001</span>
             <span class="info-k">Features:</span><span class="info-v">&#10003; Voice &nbsp; &#10003; Camera &nbsp; &#10003; AI Nav</span>
           </div>
         </div>
@@ -507,7 +507,7 @@
         <div class="card">
           <p style="font-size:18px;margin-bottom:12px;"><strong>d3kOS</strong> is a comprehensive marine electronics system for chart navigation, engine monitoring, AI-assisted passage planning, and vessel camera monitoring.</p>
           <p style="font-size: 18px;color:var(--muted);margin-bottom:12px;">Built on Raspberry Pi 4B with AvNav (primary charts at :8080), Signal K integration (:8099), NMEA support via OpenPlotter (:8081), and Gemini AI (:3001) with Ollama offline fallback (192.168.1.36:11434).</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;font-size: 18px;font-family:'Roboto Mono',monospace;line-height:2.2;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;font-size: 18px;font-family:'Courier New',monospace;line-height:2.2;">
             <div>
               <div style="font-size: 18px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">System</div>
               <div>Version: <span style="color:var(--accent);">d3kOS v2.0</span></div>
