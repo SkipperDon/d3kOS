@@ -2,6 +2,33 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.3 Session C: HELM Mute + Weather Overlay Panel
+
+**Tasks completed:**
+- I-07: HELM mute toggle — `helmMuted` flag in helm.js, persists to localStorage `d3kHelmMute`, cancels speechSynthesis on mute. Mute button added to HELM overlay (green = talking, grey = muted).
+- I-11/I-12/I-13: Weather conditions overlay panel — new `weather-panel.js` module. Left-side 28% overlay slides over AvNav. Ribbons and nav bar stay full width. Shows alerts, wind, sea state, atmospheric conditions. GPS from Signal K with Lake Simcoe fallback. Open-Meteo weather + marine APIs (free, no key). Auto-logs to localStorage every 30 min while open. Weather nav button rewired to `toggleWeatherPanel()`.
+
+**Files changed:**
+- NEW: `deployment/d3kOS/dashboard/static/js/weather-panel.js` — new weather panel module
+- MOD: `deployment/d3kOS/dashboard/static/js/helm.js` — mute flag + toggleHelmMute() + _updateMuteBtn()
+- MOD: `deployment/d3kOS/dashboard/templates/index.html` — wxPanel div, mute button, Weather nav rewired, load order updated, CSS v=12
+- MOD: `deployment/d3kOS/dashboard/static/css/d3kos.css` — #wxPanel, .wx-panel-*, .wx-sec, .wx-alert, .hl-mute styles
+- MOD: `SESSION_LOG.md` — this entry
+
+**Note:** Sessions A and B were running in parallel; their changes (v=11, nb-active, navTo()) were already merged into index.html before Session C edits.
+
+**Commit:** 022a9bb
+
+**AAO compliance:** PASS — Medium risk pre-stated, no scope creep, no Pi deploy, no push, no injection detected.
+
+**Open items for next session (Session D — Boat Log Overhaul):**
+- boat-log.html font rewrite (I-16)
+- boatlog-engine.js new module: Signal K WebSocket, engine start/stop detection, 30-min snapshots (I-17)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Close + v0.9.2.3 Planning Finalized + v0.9.3 Session Plan + UAT Document
 
 **Tasks completed:**
