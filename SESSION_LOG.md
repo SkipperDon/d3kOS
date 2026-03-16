@@ -2,6 +2,55 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.3 Session B: Close Buttons + More Popup + Dropdowns + Font Enforcement
+
+**Tasks completed:**
+- I-08: `.close-btn` universal CSS class added (48×48px, dark `rgba(0,0,0,0.85)`, white ✕, bold). `.ms-x` (More menu), `.sp-close` (split pane), `.rw-cls` (route strip), `.arr-x` (arrival widget) all updated to dark bold close button standard.
+- I-09: More popup `.ms-btn-icon` 28px → 40px (matches bottom nav 32px icon size).
+- I-10: More popup `.ms-btn-lbl` 18px → 28px (matches bottom nav label size).
+- I-18: Global `select {}` CSS rule added — `min-height: 52px`, `font-size: 20px`, Chakra Petch, full-width — applies to all pages via d3kos.css. `setup.html` inline select rule separately updated 18px → 20px.
+- I-19: `html, body { font-family: 'Chakra Petch', sans-serif; }` added to d3kos.css global base. Same rule added to `setup.html` inline CSS.
+- CSS cache-bust: all 8 templates updated from `?v=9` → `?v=11` (index.html already at `?v=10` from Session A; Session C subsequently bumped to `?v=12`).
+- Combined Pi deploy: d3kos.css + helm.js + weather-panel.js + boatlog-engine.js + 9 templates. `d3kos-dashboard` restarted. Pi confirmed active, all 9 routes HTTP 200, CSS at `?v=12`.
+- PROJECT_CHECKLIST.md (d3kOS): Session A items marked ✅; Session B items marked ✅; v0.9.2.3 status updated.
+- Root PROJECT_CHECKLIST.md: Sessions B + C + D marked ✅, status updated to IN PROGRESS.
+
+**Files changed:**
+- MOD: `deployment/d3kOS/dashboard/static/css/d3kos.css` — Session B CSS changes (close btns, popup scaling, select rule, font-family, .close-btn class)
+- MOD: `deployment/d3kOS/dashboard/templates/index.html` — CSS ?v=11 (Session C later bumped to ?v=12)
+- MOD: `deployment/d3kOS/dashboard/templates/settings.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/boat-log.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/marine-vision.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/upload-documents.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/manage-documents.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/ai-navigation.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/engine-monitor.html` — CSS ?v=11
+- MOD: `deployment/d3kOS/dashboard/templates/setup.html` — body font-family + select font-size 20px
+- MOD: `deployment/d3kOS/PROJECT_CHECKLIST.md` — Session A + B ✅, v0.9.2.3 IN PROGRESS
+- MOD: `deployment/d3kOS/SESSION_LOG.md` — Session B entry + Release Package Manifest appended
+- MOD: `deployment/docs/DEPLOYMENT_INDEX.md` — v0.9.2.3 Sessions A+B+C+D entries added
+- MOD: `PROJECT_CHECKLIST.md` (root) — Sessions B+C+D ✅, Last Updated
+
+**PROJECT_CHECKLIST.md updates (root):**
+- v0.9.2.3 status: `PLANNING COMPLETE — awaiting` → `IN PROGRESS — Sessions A+B+C+D code complete + deployed, Session E pending`
+- Session B: `[ ]` → `[✅]` (c79b1ac)
+- Session C: `[ ]` → `[✅]` (022a9bb)
+- Session D: `[ ]` → `[✅]` (581d172)
+- Last Updated line updated to 2026-03-16
+
+**AAO compliance:** PASS — all Low/Medium risk, pre-stated, no scope creep, no push, no injection detected. Pi deploy (Medium) within session scope. CSS changes landed in Session A commit due to concurrent editing — functionally correct.
+
+**Open items for next session:**
+- Session E: global font audit + 16-check verification + CHANGELOG + version bump to v0.9.2.3
+- INC-16: Visual verify 32px labels at helm distance on Pi screen (Don)
+- UAT: 5 metric + 5 imperial users (Don)
+- o-charts chart activation (Don)
+- Node-RED inactive — confirm intentional or re-enable
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.3 Session C: HELM Mute + Weather Overlay Panel
 
 **Tasks completed:**
