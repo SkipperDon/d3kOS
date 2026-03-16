@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>d3kOS &mdash; Settings &amp; Help</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/d3kos.css?v=4">
 </head>
 <body>
@@ -535,36 +535,38 @@
       </div>
 
 
+
+
+      <!-- ⑰ COMMUNITY & MOBILE PAIRING -->
+      <div class="sec" id="s-community">
+        <div class="sec-header">&#127758; AtMyBoat Community &amp; Mobile Pairing</div>
+        <div class="g2">
+          <div class="card">
+            <div class="trow-lbl" style="margin-bottom:6px;">AtMyBoat.com</div>
+            <p class="card-desc">Community forums, local marine intel, boat listings, and tips from boaters near you.</p>
+            <div class="btn-group" style="margin-top:10px;">
+              <button class="btn btn-primary" onclick="showToast('Opening AtMyBoat.com \u2014 requires internet')">&#127760; Visit AtMyBoat.com</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="trow-lbl" style="margin-bottom:6px;">Mobile Pairing</div>
+            <p class="card-desc">Connect the d3kOS companion app to this Pi. Scan the QR code in Initial Setup or enter your Pi ID manually.</p>
+            <div class="info-grid" style="margin-bottom:12px;">
+              <span class="info-k">Pi ID:</span>
+              <span class="info-v" style="font-family:'Chakra Petch',monospace;color:var(--g-txt);">d3k-2024-boatiq-001</span>
+              <span class="info-k">Status:</span>
+              <span class="info-v" id="pair-status" style="color:var(--ink3);">&#8212; Not paired</span>
+            </div>
+            <button class="btn" onclick="window.location.href='/setup'">&#128247; Open Initial Setup &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+
     </div><!-- /settings-content -->
     </div><!-- /settings-scroll-area -->
 
 
-    <!-- BOOKMARK SIDEBAR -->
-    <div class="settings-bm-sidebar">
-      <div class="bm-head">&#9875; SECTIONS</div>
-      <button class="bm-btn active" onclick="bmScroll('s-status',this)">&#128225; System Status</button>
-      <div class="bm-sep"></div>
-      <button class="bm-btn" onclick="bmScroll('s-engine',this)">&#9875; Engine Config</button>
-      <button class="bm-btn" onclick="bmScroll('s-units',this)">&#128207; Units &amp; Display</button>
-      <button class="bm-btn" onclick="bmScroll('s-alerts',this)">&#128276; Alerts</button>
-      <div class="bm-sep"></div>
-      <button class="bm-btn" onclick="bmScroll('s-ai',this)">&#129302; AI Assistant</button>
-      <button class="bm-btn" onclick="bmScroll('s-camera',this)">&#128249; Camera Setup</button>
-      <div class="bm-sep"></div>
-      <button class="bm-btn" onclick="bmScroll('s-data',this)">&#128190; Data Mgmt</button>
-      <button class="bm-btn" onclick="bmScroll('s-network',this)">&#127760; Network</button>
-      <div class="bm-sep"></div>
-      <button class="bm-btn" onclick="bmScroll('s-charts',this)">&#128506; Chart Docs</button>
-      <button class="bm-btn" onclick="bmScroll('s-openplotter',this)">&#128268; OpenPlotter</button>
-      <div class="bm-sep"></div>
-      <button class="bm-btn" onclick="bmScroll('s-start',this)">&#128640; Getting Started</button>
-      <button class="bm-btn" onclick="bmScroll('s-roadmap',this)">&#128197; Roadmap</button>
-      <div class="bm-sep"></div>
-      <button class="bm-btn" onclick="bmScroll('s-actions',this)">&#128295; Sys Actions</button>
-      <button class="bm-btn" onclick="bmScroll('s-sysinfo',this)">&#128187; Sys Info</button>
-      <button class="bm-btn" onclick="bmScroll('s-license',this)">&#127867; License</button>
-      <button class="bm-btn" onclick="bmScroll('s-about',this)">&#8505;&#65039; About</button>
-    </div>
 
   </div><!-- /settings-page-body -->
 
