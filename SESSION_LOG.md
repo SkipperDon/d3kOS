@@ -2,6 +2,49 @@
 
 ---
 
+## Session 2026-03-16 — v0.9.2.2 Recovery Session B (INC-03 + INC-04)
+**Goal:** Complete Wave 2 increments assigned to Session B: Settings page fix (INC-03) and Marine Vision full implementation (INC-04)
+
+**Completed:**
+- INC-03: Settings page — fixed font import (Roboto → Bebas Neue + Chakra Petch), removed bookmark sidebar (per A-S-1: full-width no sidebar), added Community & Mobile Pairing section (per A-CF-1)
+- INC-04: Marine Vision — replaced stub with full implementation: 4-camera grid default, tap-to-focus, fish detection overlay (badge on grid tiles, bounding box canvas in focus mode), frame polling 500ms/2000ms, API health indicators
+
+**Actions taken:**
+- Edited `deployment/d3kOS/dashboard/templates/settings.html`: font import, sidebar removal, community section added
+- Rewrote `deployment/d3kOS/dashboard/templates/marine-vision.html`: full implementation replacing INC-02 stub
+- Committed: `c1f7f81`
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/templates/settings.html`
+- `deployment/d3kOS/dashboard/templates/marine-vision.html`
+
+**Decisions:**
+- CSS variable shims (--muted, --accent, --text, --warn) confirmed already in d3kos.css from INC-01 — no inline variable replacements needed in settings.html
+- Marine Vision uses direct fetch to :8084 and :8086 (same pattern as cameras.js) — no Flask proxy required
+- Fish detection overlay: canvas+bboxes in focus mode; badge only in grid mode (proportional complexity)
+- Grid layout: 2-col default, 3-col for 5+ cameras; focus view covers full content area via position:absolute inside #mv-body
+
+**Ollama:** 0 calls (all direct edits)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending (Session B scope complete — Wave 2 items remaining for C and D):**
+- INC-05: Boat Log (Session C)
+- INC-06: Onboarding wizard 6-step (Session C)
+- INC-07: Upload Documents (Session D)
+- INC-08: Manage Documents (Session D)
+- INC-09: AI Navigation (Session D)
+- INC-10: Engine Monitor (Session D)
+- INC-11 + INC-12: Deploy + Verify (Session E — after C and D complete)
+
+**Release Package Manifest:** Not applicable — no Pi deployment this session (deploy in Session E only)
+
+---
+
 ## Session — 2026-03-14 — v0.9.2.2: AvNav fix, Windy weather, chart wizard step, CHANGELOG
 
 **Tasks completed:**
