@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=4">
 </head>
 <body>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
@@ -196,22 +196,23 @@
   </div>
 
   <!-- ══ 4 · BOTTOM NAV ══ -->
+  <!-- A-D-2: Dashboard | Weather | Marine Vision | HELM | Boat Log | More -->
   <div id="bot">
     <button class="nb on" onclick="setNav(this);closeSplit()">
-      <span class="nb-icon">&#128506;</span><span class="nb-lbl">Charts</span>
+      <span class="nb-icon">&#128506;</span><span class="nb-lbl">Dashboard</span>
     </button>
     <button class="nb" onclick="setNav(this);openSplit('wx')">
       <span class="nb-icon">&#127780;</span><span class="nb-lbl">Weather</span>
     </button>
-    <button class="nb" onclick="setNav(this);openSplit('ai')">
-      <span class="nb-icon">&#129302;</span><span class="nb-lbl">AI Nav</span>
+    <button class="nb" onclick="setNav(this);window.location='/marine-vision'">
+      <span class="nb-icon">&#128249;</span><span class="nb-lbl">Marine Vision</span>
     </button>
     <!-- HELM &mdash; protrudes 24px above nav bar -->
     <button class="nb helm" id="helmBtn" onclick="openHelm()">
       <span class="nb-icon">&#127908;</span><span class="nb-lbl">HELM</span>
     </button>
-    <button class="nb" onclick="setNav(this);openSplit('cam')">
-      <span class="nb-icon">&#128249;</span><span class="nb-lbl">Cameras</span>
+    <button class="nb" onclick="setNav(this);window.location='/boat-log'">
+      <span class="nb-icon">&#128218;</span><span class="nb-lbl">Boat Log</span>
     </button>
     <button class="nb" onclick="openMenu()">
       <span class="nb-icon">&#8942;&#8942;</span><span class="nb-lbl">More</span>
@@ -373,60 +374,44 @@
       <div class="ms-title">d3kOS &middot; {{ vessel_name }}</div>
       <button class="ms-x" onclick="closeMenu()">&#10005;</button>
     </div>
+    <!-- A-D-3: 6 items — AI Navigation, Engine Monitor, Initial Setup,
+         Upload Documents, Manage Documents, Settings -->
     <div class="ms-grid">
       <!-- 1 -->
-      <button class="ms-btn" onclick="closeMenu();toast('AvNav Charts &mdash; localhost:{{ avnav_port }}')">
-        <span class="ms-btn-icon">&#128506;</span>
-        <span class="ms-btn-lbl">AvNav Charts</span>
-        <span class="ms-btn-sub">localhost:{{ avnav_port }}</span>
-      </button>
-      <!-- 2 -->
-      <button class="ms-btn" onclick="closeMenu();openSplit('ai')">
+      <button class="ms-btn" onclick="closeMenu();window.location='/ai-navigation'">
         <span class="ms-btn-icon">&#129302;</span>
         <span class="ms-btn-lbl">AI Navigation</span>
-        <span class="ms-btn-sub">Gemini &middot; Ollama</span>
+        <span class="ms-btn-sub">Marine AI assistant</span>
       </button>
-      <!-- 3 -->
-      <button class="ms-btn" onclick="closeMenu();openDiag()">
-        <span class="ms-btn-icon">&#9881;</span>
+      <!-- 2 -->
+      <button class="ms-btn" onclick="closeMenu();window.location='/engine-monitor'">
+        <span class="ms-btn-icon">&#128295;</span>
         <span class="ms-btn-lbl">Engine Monitor</span>
         <span class="ms-btn-sub">Diagnostics &amp; alerts</span>
       </button>
+      <!-- 3 -->
+      <button class="ms-btn" onclick="closeMenu();window.location='/setup'">
+        <span class="ms-btn-icon">&#128640;</span>
+        <span class="ms-btn-lbl">Initial Setup</span>
+        <span class="ms-btn-sub">Vessel configuration</span>
+      </button>
       <!-- 4 -->
-      <button class="ms-btn" onclick="closeMenu();openSplit('ai');toast('Voyage Log &mdash; view summaries in AI panel')">
-        <span class="ms-btn-icon">&#128218;</span>
-        <span class="ms-btn-lbl">Trip Log</span>
-        <span class="ms-btn-sub">Voyage summaries</span>
+      <button class="ms-btn" onclick="closeMenu();window.location='/upload-documents'">
+        <span class="ms-btn-icon">&#128228;</span>
+        <span class="ms-btn-lbl">Upload Documents</span>
+        <span class="ms-btn-sub">Manuals &amp; PDFs</span>
       </button>
       <!-- 5 -->
+      <button class="ms-btn" onclick="closeMenu();window.location='/manage-documents'">
+        <span class="ms-btn-icon">&#128193;</span>
+        <span class="ms-btn-lbl">Manage Documents</span>
+        <span class="ms-btn-sub">View &amp; delete</span>
+      </button>
+      <!-- 6 -->
       <button class="ms-btn" onclick="closeMenu();window.location='/settings'">
         <span class="ms-btn-icon">&#9881;&#65039;</span>
         <span class="ms-btn-lbl">Settings</span>
         <span class="ms-btn-sub">System &amp; configuration</span>
-      </button>
-      <!-- 6 -->
-      <button class="ms-btn" onclick="closeMenu();launchOpenCPN()">
-        <span class="ms-btn-icon">&#128506;</span>
-        <span class="ms-btn-lbl">OpenCPN</span>
-        <span class="ms-btn-sub">Chart plotter</span>
-      </button>
-      <!-- 7 Demo -->
-      <button class="ms-btn" onclick="closeMenu();showAlert()">
-        <span class="ms-btn-icon">&#9888;</span>
-        <span class="ms-btn-lbl">Demo: AIS Alert</span>
-        <span class="ms-btn-sub">Vessel crossing</span>
-      </button>
-      <!-- 8 Demo -->
-      <button class="ms-btn" onclick="closeMenu();showCrit()">
-        <span class="ms-btn-icon">&#9940;</span>
-        <span class="ms-btn-lbl">Demo: Critical</span>
-        <span class="ms-btn-sub">Screen pulse</span>
-      </button>
-      <!-- 9 &mdash; Windowed Mode toggle (wlrctl via keyboard-api.py :8087) -->
-      <button class="ms-btn" onclick="toggleWindowedMode()">
-        <span class="ms-btn-icon">&#9707;</span>
-        <span class="ms-btn-lbl">Windowed Mode</span>
-        <span class="ms-btn-sub">Toggle fullscreen</span>
       </button>
     </div>
   </div>

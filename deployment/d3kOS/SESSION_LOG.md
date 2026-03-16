@@ -4,6 +4,79 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Recovery: Session A (Wave 1 — INC-01 + INC-02)
+
+**Goal:** Execute Wave 1 of the recovery plan — CSS foundation fixes and Flask routing.
+
+**Completed:**
+
+INC-01 — CSS Foundation (d3kos.css):
+- Fixed `.nb-lbl`: `font-size: 20px` → `12px` (nav labels were oversized)
+- Fixed `.nb.helm`: `background: var(--panel)` → `background: var(--g-txt)` (solid green per v12)
+- Fixed `.nb.helm .nb-icon` and `.nb.helm .nb-lbl`: colour → `#fff` (readable on green background)
+- Fixed `.nb-icon`: removed forced `color: var(--g-txt)`; added `.nb.on .nb-icon { color: var(--g-txt) }`
+- Added CSS variable shims: `--accent`, `--muted`, `--text`, `--warn` → mapped to v12 tokens
+- Added `#status-bar`, `.back-btn`, `.brand`, `.indicators`, `.indicator` for settings page top bar
+- Added all settings page component CSS: `.sec`, `.sec-header`, `.g2`, `.g3`, `.card`, `.card-label`,
+  `.card-desc`, `.fc`, `.trow`, `.trow-lbl`, `.trow-sub`, `.toggle`, `.tslider`, `.btn-group`,
+  `.btn`, `.btn-primary`, `.btn-warn`, `.btn-danger`, `.btn-full`, `.btn-outline`, `.settings-page-body`,
+  `.settings-scroll-area`, `.settings-content`, `.settings-bm-sidebar`, `.bm-head`, `.bm-btn`,
+  `.bm-sep`, `.status-grid`, `.si`, `.si-name`, `.si-val`, `.si-sub`, `.ai-modes`, `.ai-mode`,
+  `.prompt-box`, `.cs-grid`, `.cs-panel`, `.cs-ph`, `.cs-row`, `.cs-role`, `.cs-empty`,
+  `.port-table`, `.doc-btn`, `.doc-icon`, `.doc-title`, `.doc-desc`, `.steps`, `.step`,
+  `.step-num`, `.step-txt`, `.phases`, `.phase-item`, `.ph-badge`, `.ph-done`, `.ph-now`,
+  `.ph-fut`, `.ph-title`, `.ph-desc`, `.info-grid`, `.info-k`, `.info-v`, `.info-badge`
+- Added stub page CSS: `.stub-wrap`, `.stub-sb`, `.stub-back`, `.stub-title`, `.stub-content`,
+  `.stub-icon`, `.stub-msg`, `.stub-sub`
+- CSS version bumped from `?v=3` → `?v=4` in index.html, settings.html, and all stub templates
+
+INC-02 — Flask Routing (app.py + index.html + 6 new templates):
+- Added 6 Flask routes: `/marine-vision`, `/boat-log`, `/upload-documents`,
+  `/manage-documents`, `/ai-navigation`, `/engine-monitor`
+- Removed `/launch/opencpn` route (OpenCPN is Pi system menu, not d3kOS menu)
+- Updated bottom nav (A-D-2): Charts→Dashboard, AI Nav→Marine Vision (/marine-vision),
+  Cameras→Boat Log (/boat-log)
+- Rebuilt More menu (A-D-3): replaced 9 items with approved 6 — AI Navigation, Engine Monitor,
+  Initial Setup, Upload Documents, Manage Documents, Settings
+- Created 6 stub templates (v12-styled, back button → /, "Coming Soon" message):
+  marine-vision.html, boat-log.html, upload-documents.html, manage-documents.html,
+  ai-navigation.html, engine-monitor.html
+
+**Decisions:**
+- Stub templates chosen over redirect approach (Option A approved by Don 2026-03-16)
+- Each stub annotated with which Wave 2 increment replaces it (INC-04 through INC-10)
+- `/launch/opencpn` route removed; `launchOpenCPN()` JS function left in nav.js (harmless dead code)
+- Demo: AIS Alert, Demo: Critical, Windowed Mode removed from More menu per A-D-3
+- AvNav Charts and Trip Log removed from More menu; functionality still accessible via split pane
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — INC-01 (large CSS addition)
+- `deployment/d3kOS/dashboard/app.py` — INC-02 (6 routes added, 1 removed)
+- `deployment/d3kOS/dashboard/templates/index.html` — INC-02 (bottom nav + More menu + CSS v4)
+- `deployment/d3kOS/dashboard/templates/settings.html` — CSS link bumped to ?v=4
+- `deployment/d3kOS/dashboard/templates/marine-vision.html` — CREATED (stub)
+- `deployment/d3kOS/dashboard/templates/boat-log.html` — CREATED (stub)
+- `deployment/d3kOS/dashboard/templates/upload-documents.html` — CREATED (stub)
+- `deployment/d3kOS/dashboard/templates/manage-documents.html` — CREATED (stub)
+- `deployment/d3kOS/dashboard/templates/ai-navigation.html` — CREATED (stub)
+- `deployment/d3kOS/dashboard/templates/engine-monitor.html` — CREATED (stub)
+- `deployment/d3kOS/docs/V0922_RECOVERY_PLAN.md` — stub decision recorded
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — INC-01 + INC-02 marked complete
+
+**Not deployed to Pi** — Wave 1 output stays local. Deploy only after Wave 2 complete (Session E).
+
+**AAO compliance:** PASS — all actions Low or None risk. No Pi deploy. No git push. No injection detected.
+
+**Pending (Wave 2 — Sessions B, C, D):**
+- Session B: INC-03 (Settings CSS + community section) + INC-04 (Marine Vision page)
+- Session C: INC-06 (Onboarding 6-step) + INC-05 (Boat Log page)
+- Session D: INC-07 + INC-08 + INC-09 + INC-10 (Upload Docs, Manage Docs, AI Nav, Engine Monitor)
+- Session E: Deploy all to Pi + verify
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session 2026-03-14 — v0.9.2.2 Complete: Fixes, Windy, Chart Wizard Step, CHANGELOG
 
 **Goal:** Fix AvNav white screen, remove fake demo content, wire live Windy weather, add chart step to setup wizard, write CHANGELOG.md v0.9.2.2 milestone entry.

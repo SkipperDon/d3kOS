@@ -406,8 +406,8 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] AAO methodology section embedded in plan — binding on all sessions
 
 ### Wave 1 — Foundation (INC-01 + INC-02)
-- [ ] INC-01: CSS Foundation — fix HELM button, nav labels, restore settings CSS, add page CSS for 6 new pages
-- [ ] INC-02: Flask Routing — add 6 new routes, remove OpenCPN route, remove Remote Access from More menu
+- [✅] INC-01: CSS Foundation — fix HELM button, nav labels, restore settings CSS, add page CSS for 6 new pages (2026-03-16)
+- [✅] INC-02: Flask Routing — add 6 new routes, remove OpenCPN route, rebuild More menu + bottom nav (2026-03-16)
 
 ### Wave 2 — Page Redesigns (parallel after Wave 1)
 - [ ] INC-03: Settings page — v12 CSS + community section
