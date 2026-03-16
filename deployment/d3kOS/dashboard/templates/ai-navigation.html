@@ -6,19 +6,281 @@
 <title>d3kOS &middot; AI Navigation</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=4">
+<style>
+  /* Full-page chat layout */
+  #chat-wrap {
+    position: fixed;
+    top: 48px; left: 0; right: 0;
+    bottom: 88px;
+    overflow-y: auto;
+    padding: 14px 16px;
+    background: var(--bg);
+    -webkit-overflow-scrolling: touch;
+  }
+  #chat-inner { max-width: 760px; margin: 0 auto; }
+  #input-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 88px;
+    background: var(--panel);
+    border-top: 2px solid var(--g-bdr);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.1);
+    z-index: 100;
+  }
+  #ai-input {
+    flex: 1; height: 60px; padding: 0 18px;
+    background: var(--cell); border: 2px solid var(--g-bdr);
+    border-radius: 12px; color: var(--ink);
+    font-size: 17px; font-family: 'Chakra Petch', sans-serif; font-weight: 600;
+    outline: none; transition: border-color .2s;
+    user-select: auto; -webkit-user-select: auto;
+  }
+  #ai-input:focus { border-color: var(--g-txt); }
+  #ai-input::placeholder { color: var(--ink3); }
+  #btn-send {
+    width: 60px; height: 60px; flex-shrink: 0;
+    background: var(--g-txt); border: none; border-radius: 12px;
+    color: #fff; font-size: 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  #btn-send:active { filter: brightness(.85); }
+  #btn-send:disabled { opacity: .45; cursor: default; }
+  /* Chat bubbles */
+  .chat-bubble {
+    max-width: min(600px, 88%);
+    padding: 14px 16px; border-radius: 14px;
+    margin-bottom: 10px; font-size: 16px;
+    font-weight: 500; line-height: 1.75;
+  }
+  .bubble-me {
+    background: var(--g-dim); border: 1px solid var(--g-bdr);
+    color: var(--ink); font-weight: 600;
+    margin-left: auto;
+  }
+  .bubble-bot {
+    background: var(--panel); border: 1px solid var(--rule);
+    color: var(--ink2);
+  }
+  .bubble-meta {
+    font-size: 11px; color: var(--ink3); margin-top: 8px; letter-spacing: .06em;
+  }
+  .bubble-source {
+    display: inline-block;
+    padding: 3px 9px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    background: var(--g-dim); color: var(--g-txt); border: 1px solid var(--g-bdr);
+    margin-left: 6px;
+  }
+  .bubble-source.ollama {
+    background: var(--adv-bg); color: var(--adv-num); border-color: var(--adv-bdr);
+  }
+  /* Thinking indicator */
+  .thinking {
+    display: flex; align-items: center; gap: 6px;
+    padding: 14px 16px; background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 14px;
+    margin-bottom: 10px; max-width: 100px;
+  }
+  .th-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ink3);
+    animation: thinkBounce .8s ease-in-out infinite;
+  }
+  .th-dot:nth-child(2) { animation-delay: .15s; }
+  .th-dot:nth-child(3) { animation-delay: .30s; }
+  @keyframes thinkBounce {
+    0%,100% { transform: translateY(0); opacity: .4; }
+    50%      { transform: translateY(-6px); opacity: 1; }
+  }
+</style>
 </head>
 <body>
-<!-- STUB — replaced by INC-09 (Session D) -->
-<div class="stub-wrap">
-  <div class="stub-sb">
-    <a href="/" class="stub-back">&#9664; Dashboard</a>
-    <div class="stub-title">&#129302; AI Navigation</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+  <span class="brand">&#129302; AI Navigation</span>
+  <div class="dn" style="margin-left:auto">
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day')">D</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
   </div>
-  <div class="stub-content">
-    <div class="stub-icon">&#129302;</div>
-    <div class="stub-msg">Coming Soon</div>
-    <div class="stub-sub">Marine AI chat &middot; Gemini &middot; Ollama &middot; session D</div>
+  <span id="clock"></span>
+</div>
+
+<!-- CHAT AREA -->
+<div id="chat-wrap">
+  <div id="chat-inner">
+
+    <!-- Service status pill -->
+    <div id="svc-pill" style="display:inline-flex;align-items:center;gap:8px;
+          background:var(--g-dim);border:1px solid var(--g-bdr);padding:7px 14px;
+          border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.08em;
+          color:var(--g-txt);margin-bottom:14px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--g-txt);
+                  animation:aiPulse 2s ease-in-out infinite"></div>
+      <span id="svc-label">READY</span>
+    </div>
+
+    <!-- Welcome -->
+    <div class="chat-bubble bubble-bot">
+      <b>AI Navigation is ready.</b><br>
+      Ask about routes, tides, weather routing, anchoring, fuel planning, customs procedures,
+      port arrivals, or any marine navigation question.<br>
+      <span class="bubble-meta">Powered by Gemini (online) &middot; Ollama fallback (offline)</span>
+    </div>
+
   </div>
 </div>
+
+<!-- INPUT BAR -->
+<div id="input-bar">
+  <input type="text" id="ai-input" placeholder="Ask a navigation question…"
+    autocomplete="off" autocorrect="off" spellcheck="false"
+    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
+  <button id="btn-send" onclick="sendMsg()" title="Send">&#10148;</button>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ── THEME ── */
+function setTheme(t) {
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  document.getElementById('btnDay').classList.toggle('on',   t === 'day');
+  document.getElementById('btnNight').classList.toggle('on', t === 'night');
+  localStorage.setItem('d3kTheme', t);
+}
+(function () { setTheme(localStorage.getItem('d3kTheme') || 'day'); })();
+
+/* ── CLOCK ── */
+(function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  setTimeout(tick, 10000);
+})();
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── HELPERS ── */
+function _esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+function _sanitizeAI(raw) {
+  return _esc(raw)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\n/g, '<br>');
+}
+function _scrollBottom() {
+  const w = document.getElementById('chat-wrap');
+  w.scrollTop = w.scrollHeight;
+}
+function _setStatus(label) {
+  document.getElementById('svc-label').textContent = label;
+}
+
+/* ── CHAT STATE ── */
+let _busy = false;
+
+/* ── SEND MESSAGE ── */
+async function sendMsg() {
+  if (_busy) return;
+  const inp  = document.getElementById('ai-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+
+  _busy = true;
+  document.getElementById('btn-send').disabled = true;
+
+  const inner = document.getElementById('chat-inner');
+
+  /* User bubble */
+  const uBubble = document.createElement('div');
+  uBubble.className = 'chat-bubble bubble-me';
+  uBubble.textContent = text;
+  inner.appendChild(uBubble);
+  _scrollBottom();
+
+  /* Thinking indicator */
+  const thinking = document.createElement('div');
+  thinking.className = 'thinking';
+  thinking.id = '_thinkDots';
+  thinking.innerHTML = '<div class="th-dot"></div><div class="th-dot"></div><div class="th-dot"></div>';
+  inner.appendChild(thinking);
+  _scrollBottom();
+
+  _setStatus('THINKING…');
+
+  try {
+    const resp = await fetch('http://localhost:3001/ask', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message: text }),
+      signal:  AbortSignal.timeout(60000),
+    });
+    const data = await resp.json().catch(() => ({}));
+
+    document.getElementById('_thinkDots')?.remove();
+
+    if (resp.ok && (data.response || data.text)) {
+      const raw    = data.response || data.text || '';
+      const src    = data.source || 'gemini';
+      const srcLbl = src === 'ollama' ? 'OLLAMA' : 'GEMINI';
+
+      const bBubble = document.createElement('div');
+      bBubble.className = 'chat-bubble bubble-bot';
+      bBubble.innerHTML =
+        _sanitizeAI(raw) +
+        `<div class="bubble-meta">
+           ${new Date().toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'})}
+           <span class="bubble-source${src === 'ollama' ? ' ollama' : ''}">${srcLbl}</span>
+         </div>`;
+      inner.appendChild(bBubble);
+      _setStatus(srcLbl);
+    } else {
+      _appendError(inner, data.error || `Service returned status ${resp.status}`);
+      _setStatus('ERROR');
+    }
+  } catch (e) {
+    document.getElementById('_thinkDots')?.remove();
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      _appendError(inner, 'Request timed out (60 s). The AI may be slow or unreachable.');
+    } else {
+      _appendError(inner, 'Could not reach AI service at localhost:3001. Check that d3kos-gemini is running.');
+    }
+    _setStatus('OFFLINE');
+  }
+
+  _busy = false;
+  document.getElementById('btn-send').disabled = false;
+  _scrollBottom();
+  inp.focus();
+}
+
+function _appendError(container, msg) {
+  const el = document.createElement('div');
+  el.className = 'chat-bubble bubble-bot';
+  el.style.borderColor = 'var(--alrt-bdr)';
+  el.innerHTML = `<span style="color:var(--alrt)">&#9888; ${_esc(msg)}</span>`;
+  container.appendChild(el);
+}
+
+/* ── INIT ── */
+document.getElementById('ai-input').focus();
+</script>
 </body>
 </html>

@@ -8,17 +8,232 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=4">
 </head>
 <body>
-<!-- STUB — replaced by INC-07 (Session D) -->
-<div class="stub-wrap">
-  <div class="stub-sb">
-    <a href="/" class="stub-back">&#9664; Dashboard</a>
-    <div class="stub-title">&#128228; Upload Documents</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+  <span class="brand">&#128228; Upload Documents</span>
+  <div class="dn" style="margin-left:auto">
+    <button class="dn-b" id="btnDay" onclick="setTheme('day')">D</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
   </div>
-  <div class="stub-content">
-    <div class="stub-icon">&#128228;</div>
-    <div class="stub-msg">Coming Soon</div>
-    <div class="stub-sub">PDF upload &middot; manuals &middot; session D</div>
-  </div>
+  <span id="clock"></span>
 </div>
+
+<!-- SCROLLABLE CONTENT -->
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
+<div style="max-width:760px;margin:0 auto;padding:24px">
+
+  <!-- UPLOAD FORM -->
+  <div class="sec">
+    <div class="sec-header">&#128228; Upload a PDF Manual</div>
+    <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:20px">
+      Upload PDF manuals for your equipment. Uploaded files are indexed for AI-assisted answers
+      about your vessel systems. Maximum file size: 50 MB.
+    </p>
+
+    <!-- File picker -->
+    <div class="card" style="margin-bottom:16px">
+      <label class="card-label" for="pdfFile">PDF File</label>
+      <p class="card-desc">Select a PDF manual from your device</p>
+      <input type="file" id="pdfFile" accept=".pdf,application/pdf"
+        style="width:100%;padding:12px 14px;background:var(--bg);border:2px solid var(--g-bdr);
+               border-radius:8px;color:var(--ink);font-family:'Chakra Petch',sans-serif;
+               font-size:15px;cursor:pointer;min-height:48px">
+    </div>
+
+    <!-- Manual type -->
+    <div class="card" style="margin-bottom:20px">
+      <label class="card-label" for="manualType">Document Type</label>
+      <p class="card-desc">Helps the AI understand the context of this document</p>
+      <select id="manualType" class="fc">
+        <option value="engine">Engine Manual</option>
+        <option value="electrical">Electrical / Electronics</option>
+        <option value="safety">Safety Equipment</option>
+        <option value="navigation">Navigation Equipment</option>
+        <option value="hull">Hull &amp; Structure</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+    <!-- Submit -->
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btnUpload" onclick="doUpload()" style="min-width:180px">
+        &#128228; Upload Document
+      </button>
+    </div>
+  </div>
+
+  <!-- STATUS CARD -->
+  <div class="sec" id="statusCard" style="display:none">
+    <div class="sec-header" id="statusHeader"></div>
+    <div id="statusBody" style="font-size:15px;font-weight:500;color:var(--ink2);line-height:1.7"></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="sec" id="progressCard" style="display:none">
+    <div class="sec-header">&#128260; Uploading&hellip;</div>
+    <div style="height:8px;background:var(--rule);border-radius:4px;overflow:hidden;margin-bottom:14px">
+      <div id="progressBar" style="height:100%;width:0%;background:var(--g-txt);border-radius:4px;
+                                    transition:width .3s"></div>
+    </div>
+    <p style="font-size:13px;color:var(--ink3);font-weight:600">Processing document for RAG indexing&hellip;</p>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="sec">
+    <div class="sec-header">&#128279; Quick Links</div>
+    <div class="g2">
+      <a href="/manage-documents" style="text-decoration:none">
+        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:16px 18px">
+          <span style="font-size:28px">&#128193;</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px">Manage Documents</div>
+            <div style="font-size:12px;color:var(--ink3)">View &amp; delete uploaded files</div>
+          </div>
+        </div>
+      </a>
+      <a href="/" style="text-decoration:none">
+        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:16px 18px">
+          <span style="font-size:28px">&#127968;</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px">Return to Dashboard</div>
+            <div style="font-size:12px;color:var(--ink3)">Back to main navigation</div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div><!-- /max-width -->
+</div><!-- /scroll -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ── THEME ── */
+function setTheme(t) {
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  document.getElementById('btnDay').classList.toggle('on',   t === 'day');
+  document.getElementById('btnNight').classList.toggle('on', t === 'night');
+  localStorage.setItem('d3kTheme', t);
+}
+(function () {
+  setTheme(localStorage.getItem('d3kTheme') || 'day');
+})();
+
+/* ── CLOCK ── */
+(function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  setTimeout(tick, 10000);
+})();
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── UPLOAD ── */
+async function doUpload() {
+  const fileInput = document.getElementById('pdfFile');
+  const typeInput = document.getElementById('manualType');
+  const btn       = document.getElementById('btnUpload');
+
+  if (!fileInput.files.length) {
+    showToast('Please select a PDF file first.');
+    return;
+  }
+  const file = fileInput.files[0];
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showToast('Only PDF files are supported.');
+    return;
+  }
+  if (file.size > 52428800) {
+    showToast('File too large — maximum 50 MB.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Uploading…';
+  document.getElementById('statusCard').style.display = 'none';
+
+  const prog = document.getElementById('progressCard');
+  prog.style.display = 'block';
+  const bar = document.getElementById('progressBar');
+
+  /* Animate progress bar (no real XHR progress — server is synchronous) */
+  let pct = 0;
+  const tick = setInterval(() => {
+    pct = Math.min(pct + 8, 85);
+    bar.style.width = pct + '%';
+  }, 300);
+
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('type', typeInput.value);
+
+  try {
+    const resp = await fetch('http://localhost:8081/upload/manual', {
+      method: 'POST',
+      body: fd,
+    });
+    clearInterval(tick);
+    bar.style.width = '100%';
+    prog.style.display = 'none';
+
+    const data = await resp.json().catch(() => ({}));
+
+    if (resp.ok && data.success !== false) {
+      const sizeMb = (file.size / 1048576).toFixed(2);
+      showStatus('ok',
+        '&#10003; Upload complete',
+        `<b>${_esc(data.filename || file.name)}</b> was uploaded successfully.<br>
+         Size: ${sizeMb} MB &middot; Type: ${_esc(typeInput.value)}<br>
+         <span style="color:var(--ink3);font-size:13px">${_esc(data.message || '')}</span>`
+      );
+      fileInput.value = '';
+    } else {
+      showStatus('err',
+        '&#9888; Upload failed',
+        _esc(data.error || data.message || `Server returned status ${resp.status}.`)
+      );
+    }
+  } catch (e) {
+    clearInterval(tick);
+    prog.style.display = 'none';
+    showStatus('err', '&#9888; Connection error',
+      'Could not reach the upload service at localhost:8081. Check that d3kos-upload-api is running.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📤 Upload Document';
+}
+
+function showStatus(type, header, body) {
+  const card  = document.getElementById('statusCard');
+  const hdr   = document.getElementById('statusHeader');
+  const bdy   = document.getElementById('statusBody');
+  const color = type === 'ok' ? 'var(--g-txt)' : 'var(--crit)';
+  hdr.textContent = '';
+  hdr.innerHTML   = header;
+  hdr.style.color = color;
+  bdy.innerHTML   = body;
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function _esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+</script>
 </body>
 </html>

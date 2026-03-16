@@ -6,19 +6,360 @@
 <title>d3kOS &middot; Engine Monitor</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=4">
+<style>
+  /* ── ENGINE METRIC GRID ── */
+  .eng-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 600px) {
+    .eng-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .eng-cell {
+    background: var(--cell);
+    border: 2px solid var(--rule);
+    border-radius: 16px;
+    padding: 16px 12px 14px;
+    text-align: center;
+    cursor: default;
+    transition: background .25s, border-color .25s;
+    position: relative; overflow: hidden;
+  }
+  .eng-cell.adv {
+    background: var(--adv-bg);
+    border-color: var(--adv-bdr);
+    animation: advBorder 2s ease-in-out infinite;
+  }
+  .eng-cell.alrt {
+    background: var(--alrt-bg);
+    border-color: var(--alrt-bdr);
+    animation: alrtFlash 1.3s ease-in-out infinite;
+  }
+  .eng-cell.crit {
+    background: var(--crit-bg);
+    border-color: var(--crit-bdr);
+    animation: critFlash .65s ease-in-out infinite;
+  }
+  .eng-lbl {
+    font-size: 10px; font-weight: 700; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ink3);
+    margin-bottom: 6px;
+  }
+  .eng-cell.adv  .eng-lbl { color: var(--adv); }
+  .eng-cell.alrt .eng-lbl { color: var(--alrt); }
+  .eng-cell.crit .eng-lbl { color: var(--crit); }
+  .eng-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 60px; line-height: .9;
+    color: var(--g-txt); letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  [data-night] .eng-val { text-shadow: 0 0 20px rgba(0,196,0,.3); }
+  .eng-cell.adv  .eng-val { color: var(--adv-num); }
+  .eng-cell.alrt .eng-val { color: var(--alrt-num); font-size: 66px; }
+  .eng-cell.crit .eng-val { color: var(--crit-num); font-size: 66px; }
+  .eng-unit {
+    font-size: 13px; font-weight: 600; letter-spacing: .06em;
+    color: var(--ink2); margin-top: 6px;
+  }
+  .eng-cell.adv  .eng-unit { color: var(--adv);  opacity:.8; }
+  .eng-cell.alrt .eng-unit { color: var(--alrt); }
+  /* Alert border pulse (reuse keyframes from main CSS) */
+  .eng-cell.adv::after {
+    content:''; position:absolute; inset:0;
+    border: 3px solid var(--adv-bdr); pointer-events:none;
+    animation: advBorder 2s ease-in-out infinite;
+  }
+  .eng-cell.alrt::after {
+    content:''; position:absolute; inset:0;
+    border: 4px solid var(--alrt-bdr); pointer-events:none;
+    animation: alrtBorder 1.3s ease-in-out infinite;
+  }
+  .eng-cell.crit::after {
+    content:''; position:absolute; inset:0;
+    border: 4px solid var(--crit-bdr); pointer-events:none;
+    animation: critBorder .65s ease-in-out infinite;
+  }
+  /* Connection status banner */
+  #conn-banner {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 700; letter-spacing: .07em;
+    margin-bottom: 16px;
+  }
+  #conn-banner.ok   { background: var(--g-dim);   border: 1px solid var(--g-bdr);   color: var(--g-txt); }
+  #conn-banner.warn { background: var(--adv-bg);  border: 1px solid var(--adv-bdr); color: var(--adv); }
+  #conn-banner.err  { background: var(--crit-bg); border: 1px solid var(--crit-bdr);color: var(--crit); }
+  .conn-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+  }
+  .conn-dot.pulse { animation: aiPulse 2s ease-in-out infinite; }
+</style>
 </head>
 <body>
-<!-- STUB — replaced by INC-10 (Session D) -->
-<div class="stub-wrap">
-  <div class="stub-sb">
-    <a href="/" class="stub-back">&#9664; Dashboard</a>
-    <div class="stub-title">&#128295; Engine Monitor</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+  <span class="brand">&#128295; Engine Monitor</span>
+  <div class="dn" style="margin-left:auto">
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day')">D</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
   </div>
-  <div class="stub-content">
-    <div class="stub-icon">&#128295;</div>
-    <div class="stub-msg">Coming Soon</div>
-    <div class="stub-sub">RPM &middot; temp &middot; oil &middot; Signal K &middot; session D</div>
-  </div>
+  <span id="clock"></span>
 </div>
+
+<!-- SCROLLABLE CONTENT -->
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
+<div style="max-width:900px;margin:0 auto;padding:20px">
+
+  <!-- CONNECTION BANNER -->
+  <div id="conn-banner" class="warn">
+    <div class="conn-dot pulse"></div>
+    <span id="conn-text">Connecting to Signal K&hellip;</span>
+    <button class="btn" style="margin-left:auto;height:36px;font-size:12px" onclick="reconnect()">Reconnect</button>
+  </div>
+
+  <!-- MAIN ENGINE METRICS -->
+  <div class="sec">
+    <div class="sec-header">&#9881; Engine &amp; Propulsion</div>
+    <div class="eng-grid">
+      <div class="eng-cell" id="cell-rpm">
+        <div class="eng-lbl">RPM</div>
+        <div class="eng-val" id="val-rpm">—</div>
+        <div class="eng-unit" id="unit-rpm">rpm</div>
+      </div>
+      <div class="eng-cell" id="cell-coolant">
+        <div class="eng-lbl">Coolant Temp</div>
+        <div class="eng-val" id="val-coolant">—</div>
+        <div class="eng-unit" id="unit-coolant">°C</div>
+      </div>
+      <div class="eng-cell" id="cell-oil">
+        <div class="eng-lbl">Oil Pressure</div>
+        <div class="eng-val" id="val-oil">—</div>
+        <div class="eng-unit" id="unit-oil">PSI</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELECTRICAL & FUEL -->
+  <div class="sec">
+    <div class="sec-header">&#9889; Electrical &amp; Fuel</div>
+    <div class="eng-grid">
+      <div class="eng-cell" id="cell-bat">
+        <div class="eng-lbl">Battery</div>
+        <div class="eng-val" id="val-bat">—</div>
+        <div class="eng-unit" id="unit-bat">V</div>
+      </div>
+      <div class="eng-cell" id="cell-fuel">
+        <div class="eng-lbl">Fuel Level</div>
+        <div class="eng-val" id="val-fuel">—</div>
+        <div class="eng-unit" id="unit-fuel">%</div>
+      </div>
+      <div class="eng-cell" id="cell-trim">
+        <div class="eng-lbl">Trim Tab</div>
+        <div class="eng-val" id="val-trim">—</div>
+        <div class="eng-unit" id="unit-trim">°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNAL K PATHS REFERENCE -->
+  <div class="sec">
+    <div class="sec-header" style="font-size:16px">&#128225; Signal K Source Paths</div>
+    <table class="port-table" style="width:100%">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Signal K Path</th>
+          <th>Unit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>RPM</td>            <td><code style="font-size:11px">propulsion.0.revolutions</code></td>    <td>Hz → RPM</td></tr>
+        <tr><td>Coolant Temp</td>   <td><code style="font-size:11px">propulsion.0.coolantTemperature</code></td><td>K → °C</td></tr>
+        <tr><td>Oil Pressure</td>   <td><code style="font-size:11px">propulsion.0.oilPressure</code></td>     <td>Pa → PSI</td></tr>
+        <tr><td>Battery</td>        <td><code style="font-size:11px">electrical.batteries.0.voltage</code></td><td>V</td></tr>
+        <tr><td>Fuel Level</td>     <td><code style="font-size:11px">tanks.fuel.0.currentLevel</code></td>    <td>fraction → %</td></tr>
+        <tr><td>Trim Tab</td>       <td><code style="font-size:11px">propulsion.0.trimTabPosition</code></td> <td>rad → °</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--ink3);margin-top:12px">
+      &#128225; Signal K WebSocket: <code>ws://localhost:8099/signalk/v1/stream</code>
+    </p>
+  </div>
+
+</div><!-- /max-width -->
+</div><!-- /scroll -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ── THEME ── */
+function setTheme(t) {
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  document.getElementById('btnDay').classList.toggle('on',   t === 'day');
+  document.getElementById('btnNight').classList.toggle('on', t === 'night');
+  localStorage.setItem('d3kTheme', t);
+}
+(function () { setTheme(localStorage.getItem('d3kTheme') || 'day'); })();
+
+/* ── CLOCK ── */
+(function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  setTimeout(tick, 10000);
+})();
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── ALERT THRESHOLDS (mirrored from instruments.js Section 23) ── */
+const THR = {
+  coolant: { adv: 88,   alrt: 98,   crit: 105  },   // °C, above = alarm
+  oil:     { adv: 30,   alrt: 25,   crit: 20   },   // PSI, below = alarm
+  bat:     { adv: 12.4, alrt: 12.0, crit: 11.5 },   // V,   below = alarm
+  fuel:    { adv: 0.25, alrt: 0.15, crit: 0.10 },   // fraction, below = alarm
+};
+
+function _evalAbove(v, thr) {
+  if (v >= thr.crit) return 'crit';
+  if (v >= thr.alrt) return 'alrt';
+  if (v >= thr.adv)  return 'adv';
+  return '';
+}
+function _evalBelow(v, thr) {
+  if (v <= thr.crit) return 'crit';
+  if (v <= thr.alrt) return 'alrt';
+  if (v <= thr.adv)  return 'adv';
+  return '';
+}
+
+function _setCell(id, val, unit, state) {
+  const cell = document.getElementById('cell-' + id);
+  const valEl = document.getElementById('val-' + id);
+  const unitEl = document.getElementById('unit-' + id);
+  if (!cell) return;
+  valEl.textContent  = val;
+  unitEl.textContent = unit;
+  cell.className = 'eng-cell' + (state ? ' ' + state : '');
+}
+
+/* ── SIGNAL K HANDLERS ── */
+const SK_HANDLERS = {
+  'propulsion.0.revolutions': (v) => {
+    const rpm = Math.round(v * 60);
+    _setCell('rpm', rpm.toString(), 'rpm', '');   /* no RPM threshold defined */
+  },
+  'propulsion.0.coolantTemperature': (v) => {
+    const c     = v - 273.15;
+    const state = _evalAbove(c, THR.coolant);
+    _setCell('coolant', c.toFixed(0), state ? '°C · ' + state.toUpperCase() : '°C', state);
+  },
+  'propulsion.0.oilPressure': (v) => {
+    const psi   = Math.round(v * 0.000145038);
+    const state = _evalBelow(psi, THR.oil);
+    _setCell('oil', psi.toString(), state ? 'PSI · ' + state.toUpperCase() : 'PSI', state);
+  },
+  'electrical.batteries.0.voltage': (v) => {
+    const state = _evalBelow(v, THR.bat);
+    const note  = state ? state.toUpperCase() : (v > 13.0 ? 'charging' : 'normal');
+    _setCell('bat', v.toFixed(1), 'V · ' + note, state);
+  },
+  'tanks.fuel.0.currentLevel': (v) => {
+    const pct   = Math.round(v * 100);
+    const state = _evalBelow(v, THR.fuel);
+    _setCell('fuel', pct.toString(), state ? '% · ' + state.toUpperCase() : '%', state);
+  },
+  'propulsion.0.trimTabPosition': (v) => {
+    const deg = Math.round(v * 180 / Math.PI);
+    _setCell('trim', deg.toString(), '°', '');
+  },
+};
+
+/* ── CONNECTION ── */
+const SK_WS = 'ws://localhost:8099/signalk/v1/stream';
+let _ws = null;
+let _reconnectTimer = null;
+
+function setBanner(state, text) {
+  const b = document.getElementById('conn-banner');
+  const t = document.getElementById('conn-text');
+  b.className = 'warn'; /* reset */
+  if (state === 'ok')  b.className = 'ok';
+  if (state === 'err') b.className = 'err';
+  t.textContent = text;
+}
+
+function openSK() {
+  if (_ws) { try { _ws.close(); } catch (_) {} }
+  setBanner('warn', 'Connecting to Signal K…');
+  _ws = new WebSocket(SK_WS);
+
+  _ws.onopen = () => {
+    setBanner('ok', 'Signal K connected — live data flowing');
+    /* Subscribe to engine/electrical/fuel paths */
+    _ws.send(JSON.stringify({
+      context: 'vessels.self',
+      subscribe: [
+        { path: 'propulsion.0.revolutions',         period: 1000 },
+        { path: 'propulsion.0.coolantTemperature',  period: 2000 },
+        { path: 'propulsion.0.oilPressure',         period: 2000 },
+        { path: 'electrical.batteries.0.voltage',   period: 5000 },
+        { path: 'tanks.fuel.0.currentLevel',        period: 10000 },
+        { path: 'propulsion.0.trimTabPosition',     period: 2000 },
+      ],
+    }));
+  };
+
+  _ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch (_) { return; }
+    const updates = msg.updates || [];
+    for (const upd of updates) {
+      for (const kv of (upd.values || [])) {
+        const handler = SK_HANDLERS[kv.path];
+        if (handler && kv.value !== null && kv.value !== undefined) {
+          try { handler(kv.value); } catch (_) {}
+        }
+      }
+    }
+  };
+
+  _ws.onerror = () => {
+    setBanner('err', 'Signal K connection error — check that signalk is running on :8099');
+  };
+
+  _ws.onclose = () => {
+    setBanner('err', 'Signal K disconnected — reconnecting in 5 s…');
+    _reconnectTimer = setTimeout(openSK, 5000);
+  };
+}
+
+function reconnect() {
+  clearTimeout(_reconnectTimer);
+  openSK();
+}
+
+/* ── INIT ── */
+openSK();
+
+/* Clean up on page unload */
+window.addEventListener('beforeunload', () => {
+  clearTimeout(_reconnectTimer);
+  if (_ws) try { _ws.close(); } catch (_) {}
+});
+</script>
 </body>
 </html>

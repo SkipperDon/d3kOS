@@ -748,3 +748,37 @@ The correct target port is **8087** (confirmed free after full nginx port map gr
 - Phase 3: Gemini AI proxy at :3001
 - Phase 4: Settings page + documentation
 ---
+
+## Session — 2026-03-16 — v0.9.2.2 Recovery: Session D (Wave 2 — INC-07 through INC-10)
+
+**Goal:** Build 4 full page templates replacing Session A stubs: Upload Documents, Manage Documents, AI Navigation, Engine Monitor.
+
+**Completed:**
+- INC-07: upload-documents.html — PDF upload form, manual type selector, POST to localhost:8081/upload/manual (multipart), progress animation, success/error feedback
+- INC-08: manage-documents.html — document list from GET localhost:8083/manuals/list, formatted size+date, delete via DELETE localhost:8083/manuals/delete/<filename>, confirm dialog, empty state
+- INC-09: ai-navigation.html — full-page chat interface, POST localhost:3001/ask with {message}, me/bot bubble classes, thinking indicator, source badge (GEMINI/OLLAMA), D/N toggle, clock
+- INC-10: engine-monitor.html — Signal K WebSocket (ws://localhost:8099/signalk/v1/stream), 6 metrics (RPM, coolant, oil, battery, fuel, trim tab), alert flood states using same THR thresholds as instruments.js (coolant/oil/bat/fuel), auto-reconnect every 5 s
+- PROJECT_CHECKLIST.md: INC-07 through INC-10 marked complete
+
+**Decisions:**
+- Upload endpoint: POST localhost:8081/upload/manual with fields [file, type] — confirmed from curl test in UPLOAD_MANUAL_RAG_INTEGRATION_2026-02-27.md
+- Manuals list/delete: localhost:8083/manuals/list and /manuals/delete/<filename> — from MANUAL_AUTOMATION_2026-02-13.md
+- AI Navigation uses localhost:3001/ask (Gemini proxy) — consistent with index.html AI panel and plan spec
+- Engine Monitor reuses exact THR thresholds from instruments.js to keep alert behaviour consistent
+- No Pi deployment this session — Wave 3 (INC-11/INC-12) deploys all Wave 2 work at once
+
+**Ollama:** 0 calls (file edits only)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- INC-11: Deploy all Wave 2 pages to Pi (Session E)
+- INC-12: Full verification checklist on Pi (Session E)
+- Wave 2 status: INC-03 through INC-10 complete — all templates done (Sessions A–D parallel)
+
+---
