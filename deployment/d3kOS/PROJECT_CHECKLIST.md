@@ -1,7 +1,7 @@
 # d3kOS Project Checklist
-**Version:** v0.9.2.2 | **Status:** ⛔ NOT APPROVED — PENDING INVESTIGATION (2026-03-16) | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
+**Version:** v0.9.2.2 | **Status:** ✅ APPROVED AND CLOSED (2026-03-16) | **Plan:** D3KOS_PLAN.md v2.0.0 | **UI Reference:** docs/d3kos-mockup-v12.html
 **Spec:** docs/D3KOS_UI_SPEC.md v1.0.0 | **Addendum:** docs/D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0
-**Updated:** 2026-03-14 — Recovery planning session (V0922_RECOVERY_PLAN.md created)
+**Updated:** 2026-03-16 — Approved and closed by Don. Carryover items moved to v0.9.2.3 Session E.
 
 Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entries).
 
@@ -433,7 +433,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 
-**Last updated:** 2026-03-16 — ⛔ v0.9.2.2 NOT APPROVED. Investigation complete. Issues catalogued in V0923_PLAN.md. v0.9.2.3 planning complete — awaiting implementation authorization.
+**Last updated:** 2026-03-16 — ✅ v0.9.2.2 APPROVED AND CLOSED by Don. Carryover items (INC-16, UAT, o-charts, Node-RED) moved to v0.9.2.3 Session E. v0.9.2.3 planning complete — awaiting implementation authorization.
 
 ---
 
@@ -465,18 +465,18 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] CSS cache-bust: ?v=11
 - [ ] Deploy to Pi + visual verify
 
-### Session C — HELM Mute + Weather Overlay Panel
+### Session C — HELM Mute + Weather Overlay Panel ✅ CODE COMPLETE 2026-03-16
 **Items:** I-07, I-11, I-12, I-13
-- [ ] HELM mute button: inside HELM overlay, simple toggle, green=talking/grey=muted
-- [ ] HELM mute: persists in localStorage
-- [ ] Weather panel: new left-side overlay (28% width, slides over AvNav)
-- [ ] Weather panel: ribbons stay full width at all times
-- [ ] Weather panel: Open-Meteo data (wind, sea state, atmospheric, alerts)
-- [ ] Weather panel: auto-log to boat log every 30 min while open
-- [ ] Weather button: toggles panel open/close
-- [ ] Load order updated: weather-panel.js added
-- [ ] CSS cache-bust: ?v=12
-- [ ] Deploy to Pi + visual verify
+- [✅] HELM mute button: inside HELM overlay, simple toggle, green=talking/grey=muted
+- [✅] HELM mute: persists in localStorage
+- [✅] Weather panel: new left-side overlay (28% width, slides over AvNav)
+- [✅] Weather panel: ribbons stay full width at all times
+- [✅] Weather panel: Open-Meteo data (wind, sea state, atmospheric, alerts)
+- [✅] Weather panel: auto-log to boat log every 30 min while open
+- [✅] Weather button: toggles panel open/close
+- [✅] Load order updated: weather-panel.js added
+- [✅] CSS cache-bust: ?v=12
+- [ ] Deploy to Pi + visual verify (pending Sessions A+B merge)
 
 ### Session D — Boat Log Overhaul
 **Items:** I-16, I-17
@@ -488,8 +488,8 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] CSS cache-bust: ?v=13
 - [ ] Deploy to Pi + visual verify
 
-### Session E — Global Font Audit + Full Deploy + Verification
-**Items:** I-19 (final sweep)
+### Session E — Global Font Audit + Full Deploy + Verification + v0.9.2.2 Closeout
+**Items:** I-19 (final sweep) + v0.9.2.2 carryover items
 - [ ] All templates audited — Bebas Neue / Chakra Petch, no Roboto remnants
 - [ ] All font sizes meet IEC 62288 standard
 - [ ] All dropdowns touch-sized on every page
@@ -497,3 +497,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] 16-check verification checklist (V-01 through V-16) — all pass
 - [ ] SESSION_LOG.md updated
 - [ ] CHANGELOG.md updated — version bump to v0.9.2.3
+- [ ] INC-16: Visual verify on Pi screen — confirm 32px labels readable at helm distance (Don)
+- [ ] UAT: 5 metric + 5 imperial users (Don)
+- [ ] o-charts chart activation — see deployment/docs/OPENCPN_FLATPAK_OCHARTS.md (Don)
+- [ ] Node-RED inactive status — confirm intentional or re-enable
