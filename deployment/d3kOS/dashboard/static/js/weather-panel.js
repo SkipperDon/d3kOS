@@ -229,33 +229,37 @@ function _wxBuildHTML(wx, marine) {
 }
 
 /* ── Auto-log weather snapshot to localStorage ── */
+/* BUG FIX 1 (Session E): key was 'd3kBoatLog', field was 'ts'.
+   boat-log.html uses key 'd3kos-boatlog-entries' and reads 'timestamp' + 'text'.
+   Entry format now matches boatlog-engine.js schema. */
 function _wxLogSnapshot(wx, marine) {
   const c = wx    ? wx.current    : {};
   const m = marine ? marine.current : {};
+
+  /* Build a human-readable text summary for boat-log.html renderEntries() */
+  const parts = [];
+  if (c.wind_speed_10m !== undefined)
+    parts.push('Wind ' + c.wind_speed_10m + ' km/h ' + _wxWindDir(c.wind_direction_10m));
+  if (m && m.wave_height !== undefined)
+    parts.push('Waves ' + m.wave_height.toFixed(1) + 'm');
+  if (c.temperature_2m !== undefined)
+    parts.push(c.temperature_2m + '\u00b0C');
+  if (c.surface_pressure !== undefined)
+    parts.push(c.surface_pressure + ' hPa');
+  parts.push('\u{1F4CD} ' + _wxLat.toFixed(4) + '\u00b0, ' + _wxLon.toFixed(4) + '\u00b0');
+
   const entry = {
-    id:    'wx-' + Date.now(),
-    type:  'WEATHER',
-    ts:    new Date().toISOString(),
-    label: 'Weather snapshot — auto',
-    data: {
-      temp:       c.temperature_2m,
-      wind_speed: c.wind_speed_10m,
-      wind_dir:   c.wind_direction_10m,
-      gusts:      c.wind_gusts_10m,
-      pressure:   c.surface_pressure,
-      wave_height: m.wave_height,
-      wave_period: m.wave_period,
-      lat: _wxLat,
-      lon: _wxLon
-    }
+    timestamp: new Date().toISOString(),
+    type:      'weather',
+    text:      parts.join(' \u00b7 '),
   };
 
-  /* Save to localStorage (shared with boat-log.html) */
+  /* Save to localStorage — same key and format as boat-log.html and boatlog-engine.js */
   try {
-    const arr = JSON.parse(localStorage.getItem('d3kBoatLog') || '[]');
+    const arr = JSON.parse(localStorage.getItem('d3kos-boatlog-entries') || '[]');
     arr.unshift(entry);
     if (arr.length > 500) arr.length = 500;
-    localStorage.setItem('d3kBoatLog', JSON.stringify(arr));
+    localStorage.setItem('d3kos-boatlog-entries', JSON.stringify(arr));
   } catch { /* storage full — ignore */ }
 }
 

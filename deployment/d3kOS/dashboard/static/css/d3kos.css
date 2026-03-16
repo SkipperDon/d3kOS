@@ -1483,7 +1483,7 @@ select:focus { border-color: var(--g-txt); }
 }
 .wx-u {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink3);
   font-weight: 500;
 }
@@ -1498,7 +1498,7 @@ select:focus { border-color: var(--g-txt); }
 /* GPS position note at bottom of panel */
 .wx-gps-note {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink3);
   text-align: center;
   margin-top: 8px;
