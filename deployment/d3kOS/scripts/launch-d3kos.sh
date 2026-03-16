@@ -28,4 +28,5 @@ chromium \
   --disable-features=TranslateUI \
   --enable-features=OverlayScrollbar \
   --check-for-update-interval=31536000 \
-  --ozone-platform=wayland
+  --ozone-platform=wayland \
+  --disable-gpu
