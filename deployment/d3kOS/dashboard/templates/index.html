@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=9">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=10">
 </head>
 <body>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
@@ -198,20 +198,20 @@
   <!-- ══ 4 · BOTTOM NAV ══ -->
   <!-- A-D-2: Dashboard | Weather | Marine Vision | HELM | Boat Log | More -->
   <div id="bot">
-    <button class="nb on" onclick="setNav(this);closeSplit()">
+    <button class="nb nb-active" onclick="setNav(this);closeSplit()">
       <span class="nb-icon">&#128506;</span><span class="nb-lbl">Dashboard</span>
     </button>
     <button class="nb" onclick="setNav(this);openSplit('wx')">
       <span class="nb-icon">&#127780;</span><span class="nb-lbl">Weather</span>
     </button>
-    <button class="nb" onclick="setNav(this);window.location='/marine-vision'">
+    <button class="nb" onclick="setNav(this);navTo('/marine-vision')">
       <span class="nb-icon">&#128249;</span><span class="nb-lbl">Marine Vision</span>
     </button>
     <!-- HELM &mdash; protrudes 24px above nav bar -->
     <button class="nb helm" id="helmBtn" onclick="openHelm()">
       <span class="nb-icon">&#127908;</span><span class="nb-lbl">HELM</span>
     </button>
-    <button class="nb" onclick="setNav(this);window.location='/boat-log'">
+    <button class="nb" onclick="setNav(this);navTo('/boat-log')">
       <span class="nb-icon">&#128218;</span><span class="nb-lbl">Boat Log</span>
     </button>
     <button class="nb" onclick="openMenu()">
@@ -378,37 +378,37 @@
          Upload Documents, Manage Documents, Settings -->
     <div class="ms-grid">
       <!-- 1 -->
-      <button class="ms-btn" onclick="closeMenu();window.location='/ai-navigation'">
+      <button class="ms-btn" onclick="closeMenu();navTo('/ai-navigation')">
         <span class="ms-btn-icon">&#129302;</span>
         <span class="ms-btn-lbl">AI Navigation</span>
         <span class="ms-btn-sub">Marine AI assistant</span>
       </button>
       <!-- 2 -->
-      <button class="ms-btn" onclick="closeMenu();window.location='/engine-monitor'">
+      <button class="ms-btn" onclick="closeMenu();navTo('/engine-monitor')">
         <span class="ms-btn-icon">&#128295;</span>
         <span class="ms-btn-lbl">Engine Monitor</span>
         <span class="ms-btn-sub">Diagnostics &amp; alerts</span>
       </button>
       <!-- 3 -->
-      <button class="ms-btn" onclick="closeMenu();window.location='/setup'">
+      <button class="ms-btn" onclick="closeMenu();navTo('/setup')">
         <span class="ms-btn-icon">&#128640;</span>
         <span class="ms-btn-lbl">Initial Setup</span>
         <span class="ms-btn-sub">Vessel configuration</span>
       </button>
       <!-- 4 -->
-      <button class="ms-btn" onclick="closeMenu();window.location='/upload-documents'">
+      <button class="ms-btn" onclick="closeMenu();navTo('/upload-documents')">
         <span class="ms-btn-icon">&#128228;</span>
         <span class="ms-btn-lbl">Upload Documents</span>
         <span class="ms-btn-sub">Manuals &amp; PDFs</span>
       </button>
       <!-- 5 -->
-      <button class="ms-btn" onclick="closeMenu();window.location='/manage-documents'">
+      <button class="ms-btn" onclick="closeMenu();navTo('/manage-documents')">
         <span class="ms-btn-icon">&#128193;</span>
         <span class="ms-btn-lbl">Manage Documents</span>
         <span class="ms-btn-sub">View &amp; delete</span>
       </button>
       <!-- 6 -->
-      <button class="ms-btn" onclick="closeMenu();window.location='/settings'">
+      <button class="ms-btn" onclick="closeMenu();navTo('/settings')">
         <span class="ms-btn-icon">&#9881;&#65039;</span>
         <span class="ms-btn-lbl">Settings</span>
         <span class="ms-btn-sub">System &amp; configuration</span>

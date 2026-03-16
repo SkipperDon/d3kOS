@@ -33,6 +33,9 @@ function openHelm() {
   _helmOn = true;
   document.getElementById('helmOv').classList.add('show');
   document.getElementById('hPill').classList.add('live');
+  // Track active nav state on HELM button (I-05)
+  document.querySelectorAll('.nb').forEach(x => { x.classList.remove('on'); x.classList.remove('nb-active'); });
+  document.getElementById('helmBtn').classList.add('nb-active');
   document.getElementById('helmBtn').classList.add('live');
 
   const r = _newRecognition();
@@ -72,6 +75,10 @@ function closeHelm() {
   document.getElementById('helmOv').classList.remove('show');
   document.getElementById('hPill').classList.remove('live');
   document.getElementById('helmBtn').classList.remove('live');
+  document.getElementById('helmBtn').classList.remove('nb-active');
+  // Restore active state to Dashboard (I-05)
+  const dashBtn = document.querySelectorAll('.nb')[0];
+  if (dashBtn) dashBtn.classList.add('nb-active');
 }
 
 /* ── SPLIT PANE MIC ── */
