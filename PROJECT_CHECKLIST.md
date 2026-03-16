@@ -2151,6 +2151,34 @@
 
 ---
 
+## v0.9.2.2 — Recovery Plan (Sessions A–E) [2026-03-16]
+
+**Status:** [✅] COMPLETE | **Plan:** `deployment/d3kOS/docs/V0922_RECOVERY_PLAN.md` v1.0.0
+**Problem:** v0.9.2.2 was built incorrectly — Settings CSS stripped, HELM button wrong, 6 pages had no routes, onboarding stripped to 3 fields.
+**Recovery:** Apply v12 design to all 9 pages, restore all functionality, add 6 new full pages.
+
+### Wave 1 — Foundation
+- [✅] INC-01: CSS Foundation — HELM button solid green, nav labels 12px, settings CSS restored, stub CSS added
+- [✅] INC-02: Flask Routing — 6 routes added, bottom nav rebuilt, More menu rebuilt (6 items), stubs created
+
+### Wave 2 — Page Redesigns (all sessions parallel)
+- [✅] INC-03: Settings page — v12 CSS full-width cards, Community section added (Session B)
+- [✅] INC-04: Marine Vision — 4-camera grid, tap-to-focus, fish detection overlay (Session B)
+- [✅] INC-05: Boat Log — voice note record/stop/transcribe, localStorage entries, export CSV (Session C)
+- [✅] INC-06: Onboarding — 6-step wizard (Welcome→Vessel→Pairing QR→Equipment→Gemini Key→Done), Tier 0 lock after 10 runs (Session C)
+- [✅] INC-07: Upload Documents — PDF upload form, POST :8081/upload/manual (Session D)
+- [✅] INC-08: Manage Documents — list + delete via :8083 (Session D)
+- [✅] INC-09: AI Navigation — full-page chat, POST :3001/ask, source badge (Session D)
+- [✅] INC-10: Engine Monitor — Signal K WS, 6 metrics, alert flood states (Session D)
+
+### Wave 3 — Deploy and Verify
+- [✅] INC-11: Deploy all to Pi — SCP, service restart, ?v=5 cache-bust (Session E)
+- [✅] INC-12: Verification — all 16 checklist items PASS. Theme fix applied (settings + marine-vision) (Session E)
+
+**Commit:** 5d2e489 (Session E final)
+
+---
+
 ## 📝 NOTES & CONVENTIONS
 
 ### Checklist Update Protocol
@@ -2173,7 +2201,7 @@ Every commit should update this checklist — mark completed tasks as `\\\\\\\\\
 
 All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before considering a version complete. Add `\\\\\\\\\\\\\\\<!-- VERIFY: description --\\\\\\\\\\\\\\\>` comments for issues found. Do not proceed to next version until all verifications pass.
 
-**Last Updated:** 2026-03-14 — v0.9.2.2 Sessions 2+3 marked complete. AvNav fix, Windy wiring, setup wizard chart section complete. Settings layout (touch) + settings camera section (live :8084) + weather fullscreen flagged for next session. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-16 — v0.9.2.2 Recovery Plan complete (Sessions A–E, INC-01–INC-12). All 9 pages rebuilt with v12 design. Deployed and verified on Pi. | **Maintained By:** Development team + Claude Code
 
 ---
 

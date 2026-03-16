@@ -2,6 +2,35 @@
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Recovery Session C (INC-05 Boat Log + INC-06 Onboarding Wizard)
+
+**Tasks completed:**
+- INC-06: Rebuilt setup.html — 6-step JS wizard: Welcome → Vessel Basics → Mobile Pairing QR → Equipment & Manuals → Gemini API Key → Done. Tier 0 run counter (10 max, locked screen after limit). QR code via qrcodejs CDN with offline text fallback.
+- INC-05: Replaced boat-log.html stub — 96px voice record button, MediaRecorder API, POST to :8095/api/boatlog/voice-note, transcript display, localStorage entry list, Export CSV.
+- app.py: added _get_device_uuid(), api-keys.env handling, ONBOARDING_RUN_LIMIT, hashlib import, expanded setup_get/setup_post.
+- gemini_proxy.py: added api-keys.env fallback load so Gemini key entered in wizard is picked up on next proxy restart.
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/app.py` — Low risk
+- `deployment/d3kOS/dashboard/templates/setup.html` — Low risk (rebuilt)
+- `deployment/d3kOS/dashboard/templates/boat-log.html` — Low risk (stub replaced)
+- `deployment/d3kOS/gemini-nav/gemini_proxy.py` — Low risk
+- `deployment/d3kOS/SESSION_LOG.md` — Low risk (appended)
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — Low risk (INC-05+06 marked complete)
+- `/home/boatiq/.claude/projects/-home-boatiq/memory/MEMORY.md` — Low risk
+
+**PROJECT_CHECKLIST.md updates (top-level):**
+- Added `v0.9.2.2 Recovery Plan (Sessions A–E)` section with all 12 increments marked [✅]
+- Last Updated line updated to 2026-03-16
+
+**AAO compliance:** PASS — all Low/None risk. Pre-stated all edits. No Pi deploy. No git push. No injection detected.
+
+**Commit:** 909aa8c
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Recovery Session D: Upload Docs, Manage Docs, AI Nav, Engine Monitor — RECOVERY COMPLETE
 
 **Tasks completed:**
