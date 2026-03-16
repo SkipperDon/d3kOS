@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Marine Vision</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=8">
 <style>
 /* ── Marine Vision page layout ── */
 #mv-body {
@@ -104,10 +104,12 @@
 }
 .mv-focus-back {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px; font-weight: 700; letter-spacing: .06em;
+  font-size: 18px; font-weight: 700; letter-spacing: .06em;
   color: rgba(255,255,255,.75);
   background: none; border: none; cursor: pointer;
-  padding: 0; touch-action: manipulation;
+  height: 100%; padding: 0 8px; min-width: 48px;
+  display: flex; align-items: center;
+  touch-action: manipulation;
 }
 .mv-focus-back:active { color: #fff; }
 #mv-focus-title {
