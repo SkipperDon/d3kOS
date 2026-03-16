@@ -38,8 +38,18 @@ setInterval(() => {
 
 /* ── BOTTOM NAV ── */
 function setNav(b) {
-  document.querySelectorAll('.nb').forEach(x => x.classList.remove('on'));
-  b.classList.add('on');
+  document.querySelectorAll('.nb').forEach(x => {
+    x.classList.remove('on');
+    x.classList.remove('nb-active');
+  });
+  b.classList.add('nb-active');
+}
+
+/* ── INTERNAL NAVIGATION — clears HELM speech + beforeunload before navigating ── */
+function navTo(url) {
+  if (typeof closeHelm === 'function') closeHelm();
+  window.onbeforeunload = null;
+  window.location = url;
 }
 
 /* ── SPLIT PANE ── */
@@ -50,7 +60,10 @@ function openSplit(t) {
 
 function closeSplit() {
   document.getElementById('split').classList.remove('open');
-  document.querySelectorAll('.nb').forEach((b, i) => b.classList.toggle('on', i === 0));
+  document.querySelectorAll('.nb').forEach((b, i) => {
+    b.classList.remove('on');
+    b.classList.toggle('nb-active', i === 0);
+  });
   if (typeof clearCamIntervals === 'function') clearCamIntervals();
 }
 

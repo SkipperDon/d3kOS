@@ -1,5 +1,5 @@
 /* ═════════════════════════════════════════════════════════════
-   d3kOS v0.9.2.2 — MARINE-GRADE INSTRUMENT PANEL
+   d3kOS v0.9.2.3 — MARINE-GRADE INSTRUMENT PANEL
    ─────────────────────────────────────────────────────────────
    Bebas Neue for ALL numerals
    Chakra Petch for ALL UI — engineered, technical
@@ -71,6 +71,7 @@
 
 /* ── GLOBAL TOUCHSCREEN BASE ── */
 html, body {
+  font-family: 'Chakra Petch', sans-serif;
   font-size: 18px;
   line-height: 1.8;
 }
@@ -301,24 +302,28 @@ html, body {
   flex: 1.7;
   background: var(--g-dim) !important;
   border-left: 4px solid var(--g-bdr) !important;
+  justify-content: flex-start; align-items: flex-start; padding-top: 14px;
 }
 .ic-wp .ic-l { color: var(--g-txt); font-size: 18px; }
 .ic-wp .ic-dest {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 18px; font-weight: 700;
-  color: var(--ink); text-align: center;
+  font-size: 28px; font-weight: 700;
+  color: var(--ink); text-align: left;
   line-height: 1.2; margin-bottom: 4px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%;
 }
-.ic-wp .ic-v { font-size: 44px; line-height: 1; }
+.ic-wp .ic-v { font-size: 36px; line-height: 1; }
 .ic-wp .ic-eta {
   font-size: 20px; font-weight: 600; color: var(--ink2);
   letter-spacing: .04em; margin-top: 3px;
 }
+.ic-gps {
+  justify-content: flex-start; align-items: flex-start; padding-top: 14px;
+}
 .ic-gps .ic-v {
-  font-size: 20px; line-height: 1.5;
-  text-align: center; letter-spacing: .04em;
+  font-size: 36px; line-height: 1.3;
+  text-align: left; letter-spacing: .04em;
 }
 
 /* ══════════════════════════════════════
@@ -370,13 +375,13 @@ html, body {
 }
 .rw-badge:active { background: var(--g-bdr); }
 .rw-cls {
-  width: 44px; height: 44px; border-radius: 6px;
-  background: var(--panel); border: 1px solid var(--rule);
+  width: 48px; height: 48px; border-radius: 8px;
+  background: rgba(0,0,0,0.85); border: 2px solid rgba(255,255,255,.3);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; color: var(--ink3); cursor: pointer;
+  font-size: 24px; font-weight: 700; color: #fff; cursor: pointer;
   transition: all .15s; flex-shrink: 0;
 }
-.rw-cls:hover { color: var(--g-txt); }
+.rw-cls:hover { background: rgba(0,0,0,1); color: #fff; }
 
 /* ── SPLIT PANE ── */
 #split {
@@ -402,11 +407,13 @@ html, body {
 }
 .sp-tab.on { color: var(--g-txt); border-bottom-color: var(--g-txt); }
 .sp-close {
-  width: 56px; border: none; background: none; cursor: pointer;
-  font-size: 20px; color: var(--ink3);
-  border-left: 1px solid var(--rule); transition: color .15s;
+  width: 56px; min-height: 48px; border: none;
+  background: rgba(0,0,0,0.85); cursor: pointer;
+  font-size: 24px; font-weight: 700; color: #fff;
+  border-left: 1px solid var(--rule); transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
 }
-.sp-close:hover { color: var(--g-txt); }
+.sp-close:hover { background: rgba(0,0,0,1); color: #fff; }
 .sp-body { flex: 1; overflow-y: auto; padding: 18px; }
 
 /* Weather sub-buttons */
@@ -508,14 +515,16 @@ html, body {
 }
 .nb:last-child { border-right: none; }
 .nb:active { background: var(--g-dim); }
-.nb.on::after {
+.nb.on::after, .nb.nb-active::after {
   content: ''; position: absolute;
   bottom: 0; left: 4px; right: 4px; height: 3px;
   background: var(--g-txt); border-radius: 2px 2px 0 0;
 }
-.nb.on .nb-lbl { color: var(--g-txt); }
+.nb.on .nb-lbl, .nb.nb-active .nb-lbl { color: var(--g-txt); }
 .nb-icon { font-size: 32px; line-height: 1; }
-.nb.on .nb-icon { color: var(--g-txt); }
+.nb.on .nb-icon, .nb.nb-active .nb-icon { color: var(--g-txt); }
+/* HELM active: white bar indicator when overlay is open */
+.nb.helm.nb-active::after { display: block; background: rgba(255,255,255,.85); left: 10px; right: 10px; }
 .nb-lbl {
   font-size: 28px; font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--ink3);
@@ -764,7 +773,7 @@ html, body {
   padding: 16px 20px; border-bottom: 1px solid var(--rule);
 }
 .arr-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: .1em; color: var(--g-txt); }
-.arr-x { width: 52px; height: 52px; background: none; border: none; font-size: 22px; color: var(--ink3); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.arr-x { width: 52px; height: 52px; background: rgba(0,0,0,0.85); border: 2px solid rgba(255,255,255,.3); border-radius: 8px; font-size: 24px; font-weight: 700; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
 .arr-body { padding: 16px 20px; font-size: 18px; font-weight: 500; color: var(--ink2); line-height: 1.85; }
 .arr-body b { color: var(--ink); font-weight: 700; }
 .arr-foot { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--rule); }
@@ -793,13 +802,13 @@ html, body {
 .ms-drag { width: 44px; height: 5px; border-radius: 3px; background: var(--rule); margin: 14px auto 0; }
 .ms-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 14px; border-bottom: 1px solid var(--rule); margin-bottom: 16px; }
 .ms-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .12em; color: var(--g-txt); }
-.ms-x { width: 54px; height: 54px; border-radius: 50%; background: var(--cell); border: 2px solid var(--rule); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink3); cursor: pointer; transition: all .15s; }
-.ms-x:active { background: var(--g-txt); color: #fff; }
+.ms-x { width: 48px; height: 48px; border-radius: 8px; background: rgba(0,0,0,0.85); border: 2px solid rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+.ms-x:active { background: rgba(0,0,0,1); color: #fff; }
 .ms-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
 .ms-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px 10px; min-height: 82px; background: var(--cell); border: 1px solid var(--rule); border-radius: 16px; cursor: pointer; transition: all .15s; box-shadow: var(--e1); }
 .ms-btn:active { background: var(--g-dim); border-color: var(--g-bdr); transform: scale(.96); }
-.ms-btn-icon { font-size: 28px; line-height: 1; }
-.ms-btn-lbl { font-size: 18px; font-weight: 700; text-align: center; color: var(--ink); }
+.ms-btn-icon { font-size: 40px; line-height: 1; }
+.ms-btn-lbl { font-size: 28px; font-weight: 700; text-align: center; color: var(--ink); }
 .ms-btn-sub { font-size: 18px; color: var(--ink3); letter-spacing: .04em; text-align: center; }
 
 /* ══════════════════════════════════════
@@ -1065,6 +1074,24 @@ body.anchor-alarm-active {
 }
 .fc:focus { border-color: var(--g-txt); }
 
+/* Global select — touch-friendly on all pages */
+select {
+  min-height: 52px;
+  font-size: 20px;
+  padding: 8px 16px;
+  font-family: 'Chakra Petch', sans-serif;
+  background: var(--bg);
+  border: 2px solid var(--g-bdr);
+  border-radius: 8px;
+  color: var(--ink);
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  width: 100%;
+}
+select:focus { border-color: var(--g-txt); }
+
 /* Toggle row */
 .trow {
   display: flex; align-items: center;
@@ -1287,3 +1314,25 @@ body.anchor-alarm-active {
   font-size: 32px; letter-spacing: .2em; color: var(--ink3);
 }
 .stub-sub { font-size: 18px; font-weight: 600; letter-spacing: .06em; color: var(--ink3); }
+
+/* ══════════════════════════════════════
+   UNIVERSAL CLOSE BUTTON (I-08 — Session B)
+   48×48px min, dark, bold, high-contrast
+   Inset from screen edge set at placement level
+══════════════════════════════════════ */
+.close-btn {
+  min-width: 48px; min-height: 48px;
+  width: 48px; height: 48px;
+  background: rgba(0,0,0,0.85);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.close-btn:active { background: rgba(0,0,0,1); }
