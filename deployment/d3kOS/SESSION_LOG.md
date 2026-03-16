@@ -4,6 +4,89 @@ Append-only. Never delete entries. Format: date, goal, completed, decisions, pen
 
 ---
 
+## Session — 2026-03-16 — v0.9.2.2 Recovery: Session C (Wave 2 — INC-06 + INC-05)
+
+**Goal:** INC-06 (Onboarding wizard — expand to 6 steps) + INC-05 (Boat Log — full page, replace stub).
+
+**Completed:**
+
+INC-06 — Onboarding Wizard (setup.html):
+- Replaced 3-field single-form with JS-driven 6-step wizard
+- Step 1: Welcome screen — 4 feature bullets (navigation, HELM AI, mobile companion, Marine Vision)
+- Step 2: Vessel basics — vessel name, home port, language, chart readiness indicator (pre-existing)
+- Step 3: Mobile pairing — device UUID displayed as QR code (qrcodejs CDN with offline fallback) +
+  tap-to-copy UUID text. QR encodes `d3kos://pair/<UUID>`. Skip OK.
+- Step 4: Equipment & Manuals — engine / chartplotter / VHF model inputs; fields assembled into
+  EQUIPMENT_NOTES hidden field. "Upload PDF Manuals" link → /upload-documents (opens in new tab)
+- Step 5: Gemini API Key — 3-step instructions, password input, "Skip for now" link
+- Step 6: Done — dynamic summary showing what was configured vs skipped; LAUNCH submit button
+- Tier 0 counter: ONBOARDING_RUNS written to vessel.env on every successful submit; after 10 runs
+  GET /setup renders locked screen with upgrade link → atmyboat.com; dashboard still accessible
+- Skip button shown in status bar if run_count > 0 (returning users)
+- Progress bar: 6 coloured dots + "STEP N OF 6" label
+- Night mode auto-applied on load (h < 7 or h >= 20)
+- Error handling: vessel_name empty → jump to step 2 with error banner
+- CSS fully self-contained inline (consistent with original setup.html approach)
+
+INC-05 — Boat Log page (boat-log.html — stub replaced):
+- Status bar with back button → / and live clock
+- Service status bar: boatlog API dot (online/offline), total DB entry count, session count
+- Voice record panel: 96px touch button → toggleRecord() → MediaRecorder API
+  - Tap once: starts recording (button turns red, pulse animation, timer ticks)
+  - Tap again: stops → POST audio blob to http://localhost:8095/api/boatlog/voice-note
+  - Transcript shown in panel after API responds
+  - Fallback: saves placeholder entry locally if API unavailable
+- Entries stored in localStorage (key: d3kos-boatlog-entries), shown as entry list with delete
+- Export CSV button → POST :8095/api/boatlog/export → downloads CSV
+- Refresh button → re-checks boatlog API status
+- Full day/night theme via d3kos.css `[data-night]` + page-specific inline CSS
+
+Supporting changes (app.py):
+- Added `import hashlib`
+- Added `_APIKEYS_ENV_PATH` (config/api-keys.env — gitignored)
+- Added `load_dotenv(_APIKEYS_ENV_PATH)` startup
+- Added `ONBOARDING_RUN_LIMIT = 10`
+- Added `_get_device_uuid()` — reads /etc/machine-id, falls back to hostname hash
+- setup_get: passes `run_count`, `run_limit`, `device_uuid` to template
+- setup_post: saves GEMINI_API_KEY to api-keys.env (if provided), EQUIPMENT_NOTES to vessel.env,
+  ONBOARDING_RUNS incremented; reloads runtime without restart
+
+Supporting changes (gemini_proxy.py):
+- Added `load_dotenv(…/dashboard/config/api-keys.env, override=False)` after gemini.env load
+  so Gemini key entered in onboarding wizard is picked up on next proxy restart
+
+**Decisions:**
+- Gemini key saved to `config/api-keys.env` (separate from vessel.env, both gitignored by `**/*.env`)
+- vessel.env keeps VESSEL_NAME, HOME_PORT, UI_LANG, ONBOARDING_RUNS, EQUIPMENT_NOTES (non-sensitive)
+- Boat Log entry list uses localStorage (session) + API for transcript; no DB read endpoint needed
+- QR code uses qrcodejs CDN with graceful text fallback if CDN unavailable offline
+- Wizard steps are all in one <form> — all fields submitted together on Step 6 LAUNCH
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/app.py` — hashlib, _get_device_uuid, _APIKEYS_ENV_PATH, ONBOARDING_RUN_LIMIT, setup_get, setup_post expanded
+- `deployment/d3kOS/dashboard/templates/setup.html` — REBUILT (6-step wizard)
+- `deployment/d3kOS/dashboard/templates/boat-log.html` — REBUILT (full page, stub replaced)
+- `deployment/d3kOS/gemini-nav/gemini_proxy.py` — api-keys.env fallback load added
+
+**Not deployed to Pi** — per plan: deploy only after Wave 2 fully complete (Session E).
+
+**AAO compliance:** PASS — all actions Low or None risk. No Pi deploy. No git push. No injection detected.
+
+**Pending (Wave 2 remaining):**
+- Session B: INC-03 (Settings CSS + community section) + INC-04 (Marine Vision page)
+- Session D: INC-07 + INC-08 + INC-09 + INC-10 (Upload Docs, Manage Docs, AI Nav, Engine Monitor)
+- Session E: Deploy all to Pi + verify
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-16 — v0.9.2.2 Recovery: Session A (Wave 1 — INC-01 + INC-02)
 
 **Goal:** Execute Wave 1 of the recovery plan — CSS foundation fixes and Flask routing.

@@ -6,19 +6,542 @@
 <title>d3kOS &middot; Boat Log</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=4">
+<style>
+  /* ── Page layout ── */
+  .bl-wrap {
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  }
+  .bl-body {
+    flex: 1; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 20px 16px 32px;
+    background: var(--bg);
+  }
+  .bl-inner { max-width: 720px; margin: 0 auto; }
+
+  /* ── Status bar — reuse #sb classes, back button inside ── */
+  .bl-back {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: .06em;
+    color: rgba(255,255,255,.7); text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px 4px 0; flex-shrink: 0;
+  }
+  .bl-back:hover { color: #fff; }
+  .bl-page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: .15em; color: #fff;
+    flex: 1;
+  }
+
+  /* ── Section heading ── */
+  .bl-sec-head {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px; letter-spacing: .14em; color: var(--g-txt);
+    margin: 0 0 12px 0;
+    border-bottom: 2px solid var(--g-bdr);
+    padding-bottom: 8px;
+  }
+
+  /* ── Voice record panel ── */
+  .bl-record-panel {
+    background: var(--cell);
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--e1);
+  }
+  .bl-rec-btn {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: var(--g-txt); border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; cursor: pointer;
+    transition: all .2s; box-shadow: 0 4px 20px rgba(0,68,0,.3);
+    flex-shrink: 0;
+  }
+  .bl-rec-btn:active { transform: scale(.94); }
+  .bl-rec-btn.recording {
+    background: #BB0000;
+    animation: recPulse 1s ease-in-out infinite;
+    box-shadow: 0 4px 20px rgba(187,0,0,.4);
+  }
+  @keyframes recPulse {
+    0%,100% { box-shadow: 0 4px 20px rgba(187,0,0,.4); }
+    50%      { box-shadow: 0 4px 32px rgba(187,0,0,.7); }
+  }
+  .bl-rec-state {
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    color: var(--ink3); text-align: center;
+  }
+  .bl-rec-state.live { color: #BB0000; }
+  .bl-rec-state.saving { color: var(--g-txt); }
+  .bl-rec-timer {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px; letter-spacing: .1em; color: var(--ink);
+    display: none;
+  }
+  .bl-rec-timer.show { display: block; }
+  .bl-rec-hint {
+    font-size: 12px; color: var(--ink3);
+    text-align: center; line-height: 1.6;
+  }
+
+  /* ── Transcript result ── */
+  .bl-transcript {
+    display: none;
+    background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 10px; padding: 14px 16px;
+    font-size: 14px; color: var(--ink); line-height: 1.7;
+    margin-top: 4px; width: 100%;
+  }
+  .bl-transcript.show { display: block; }
+  .bl-transcript-head {
+    font-size: 10px; font-weight: 700; letter-spacing: .16em;
+    color: var(--g-txt); margin-bottom: 6px; text-transform: uppercase;
+  }
+  .bl-transcript-text { font-style: italic; color: var(--ink2); }
+
+  /* ── Status bar ── */
+  .bl-status-bar {
+    background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 20px; font-size: 13px; color: var(--ink2);
+    box-shadow: var(--e1);
+  }
+  .bl-stat {
+    display: flex; align-items: center; gap: 8px; flex: 1; min-width: 120px;
+  }
+  .bl-stat-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ink3); flex-shrink: 0;
+    transition: background .3s;
+  }
+  .bl-stat-dot.ok  { background: var(--g-txt); }
+  .bl-stat-dot.off { background: #BB0000; }
+  .bl-stat-label { font-weight: 600; color: var(--ink); }
+  .bl-stat-val   { color: var(--ink3); font-size: 12px; }
+
+  /* ── Entry list ── */
+  .bl-list { display: flex; flex-direction: column; gap: 10px; }
+  .bl-entry {
+    background: var(--cell); border: 1px solid var(--rule);
+    border-radius: 12px; padding: 14px 16px;
+    box-shadow: var(--e1); transition: border-color .15s;
+  }
+  .bl-entry:hover { border-color: var(--g-bdr); }
+  .bl-entry-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .bl-entry-ts {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    color: var(--ink3); text-transform: uppercase;
+  }
+  .bl-entry-type {
+    display: inline-block; background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 6px; padding: 2px 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--g-txt);
+  }
+  .bl-entry-text {
+    font-size: 14px; color: var(--ink); line-height: 1.7;
+  }
+  .bl-entry-del {
+    background: none; border: none; color: var(--ink3);
+    font-size: 16px; cursor: pointer; padding: 2px 4px;
+    transition: color .15s;
+  }
+  .bl-entry-del:hover { color: #BB0000; }
+
+  /* ── Empty state ── */
+  .bl-empty {
+    text-align: center; padding: 48px 24px;
+    color: var(--ink3);
+  }
+  .bl-empty-icon { font-size: 48px; opacity: .3; margin-bottom: 12px; }
+  .bl-empty-text { font-size: 14px; font-weight: 600; letter-spacing: .04em; }
+
+  /* ── Export row ── */
+  .bl-export-row {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .bl-export-btn {
+    flex: 1; min-width: 140px; height: 48px;
+    background: none; border: 2px solid var(--g-bdr);
+    border-radius: 10px; color: var(--g-txt);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: .06em;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .bl-export-btn:hover { background: var(--g-dim); }
+  .bl-export-btn:active { background: var(--g-dim); filter: brightness(.9); }
+</style>
 </head>
 <body>
-<!-- STUB — replaced by INC-05 (Session C) -->
-<div class="stub-wrap">
-  <div class="stub-sb">
-    <a href="/" class="stub-back">&#9664; Dashboard</a>
-    <div class="stub-title">&#128218; Boat Log</div>
+
+<div class="bl-wrap">
+
+  <!-- Status bar -->
+  <div id="sb">
+    <a href="/" class="bl-back">&#9664;</a>
+    <div class="sb-sep"></div>
+    <div class="bl-page-title">Boat Log</div>
+    <div class="sb-right">
+      <div id="clk"></div>
+    </div>
   </div>
-  <div class="stub-content">
-    <div class="stub-icon">&#128218;</div>
-    <div class="stub-msg">Coming Soon</div>
-    <div class="stub-sub">Voice notes &middot; log entries &middot; session C</div>
-  </div>
-</div>
+
+  <!-- Scrollable body -->
+  <div class="bl-body">
+  <div class="bl-inner">
+
+    <!-- Service status bar -->
+    <div class="bl-status-bar" id="bl-status-bar">
+      <div class="bl-stat">
+        <div class="bl-stat-dot" id="api-dot"></div>
+        <span class="bl-stat-label">Log API</span>
+        <span class="bl-stat-val" id="api-status">checking…</span>
+      </div>
+      <div class="bl-stat">
+        <div class="bl-stat-dot" id="count-dot"></div>
+        <span class="bl-stat-label">Entries</span>
+        <span class="bl-stat-val" id="entry-count">—</span>
+      </div>
+      <div class="bl-stat">
+        <span class="bl-stat-label">Session</span>
+        <span class="bl-stat-val" id="session-count">0</span>
+      </div>
+    </div>
+
+    <!-- Voice Record Panel -->
+    <div class="bl-sec-head">Voice Note</div>
+    <div class="bl-record-panel" id="record-panel">
+      <button class="bl-rec-btn" id="rec-btn" onclick="toggleRecord()" title="Tap to record">
+        <span id="rec-icon">🎤</span>
+      </button>
+      <div class="bl-rec-state" id="rec-state">TAP TO RECORD</div>
+      <div class="bl-rec-timer" id="rec-timer">0:00</div>
+      <div class="bl-rec-hint" id="rec-hint">
+        Records and transcribes via the d3kOS voice API.<br>
+        Tap once to start, tap again to stop and save.
+      </div>
+
+      <!-- Transcript (shown after recording stops) -->
+      <div class="bl-transcript" id="bl-transcript">
+        <div class="bl-transcript-head">Transcript</div>
+        <div class="bl-transcript-text" id="transcript-text"></div>
+      </div>
+    </div>
+
+    <!-- Export buttons -->
+    <div class="bl-export-row">
+      <button class="bl-export-btn" onclick="exportCSV()">
+        📥 Export CSV
+      </button>
+      <button class="bl-export-btn" onclick="refreshStatus()">
+        ↺ Refresh
+      </button>
+    </div>
+
+    <!-- Entry list -->
+    <div class="bl-sec-head">Log Entries</div>
+    <div class="bl-list" id="bl-entry-list">
+      <div class="bl-empty">
+        <div class="bl-empty-icon">📋</div>
+        <div class="bl-empty-text">No entries yet — record your first voice note.</div>
+      </div>
+    </div>
+
+  </div><!-- .bl-inner -->
+  </div><!-- .bl-body -->
+
+</div><!-- .bl-wrap -->
+
+<script>
+/* ── Boatlog page — INC-05 (Session C) ──
+   API: boatlog-export-api.py at localhost:8095
+   Storage: localStorage (session entries) + API for persistent log
+*/
+
+var BOATLOG_API = 'http://localhost:8095';
+var mediaRecorder = null;
+var audioChunks   = [];
+var recTimerID    = null;
+var recSeconds    = 0;
+var isRecording   = false;
+
+/* ── Clock ── */
+(function tickClock() {
+  var el = document.getElementById('clk');
+  function tick() {
+    var now = new Date();
+    var h = now.getHours().toString().padStart(2,'0');
+    var m = now.getMinutes().toString().padStart(2,'0');
+    if (el) el.textContent = h + ':' + m;
+  }
+  tick();
+  setInterval(tick, 10000);
+})();
+
+/* ── Night mode ── */
+(function() {
+  var h = new Date().getHours();
+  if (h < 7 || h >= 20) document.body.setAttribute('data-night','');
+})();
+
+/* ── localStorage key ── */
+var LS_KEY = 'd3kos-boatlog-entries';
+
+function loadEntries() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(LS_KEY, JSON.stringify(entries));
+}
+
+/* ── Render entry list ── */
+function renderEntries() {
+  var entries = loadEntries();
+  var el = document.getElementById('bl-entry-list');
+  if (!entries.length) {
+    el.innerHTML = '<div class="bl-empty">' +
+      '<div class="bl-empty-icon">📋</div>' +
+      '<div class="bl-empty-text">No entries yet &mdash; record your first voice note.</div>' +
+      '</div>';
+    return;
+  }
+  var html = '';
+  entries.forEach(function(e, i) {
+    var ts = new Date(e.timestamp);
+    var tsStr = ts.toLocaleDateString(undefined, {month:'short',day:'numeric'}) +
+                ' ' + ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    html += '<div class="bl-entry">' +
+      '<div class="bl-entry-head">' +
+        '<span class="bl-entry-ts">' + tsStr + '</span>' +
+        '<span class="bl-entry-type">' + (e.type || 'voice') + '</span>' +
+        '<button class="bl-entry-del" onclick="deleteEntry(' + i + ')" title="Delete">✕</button>' +
+      '</div>' +
+      '<div class="bl-entry-text">' + _esc(e.text || '(no transcript)') + '</div>' +
+      '</div>';
+  });
+  el.innerHTML = html;
+
+  /* session count */
+  document.getElementById('session-count').textContent = entries.length;
+}
+
+function _esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function deleteEntry(i) {
+  var entries = loadEntries();
+  entries.splice(i, 1);
+  saveEntries(entries);
+  renderEntries();
+}
+
+/* ── Status check ── */
+function refreshStatus() {
+  fetch(BOATLOG_API + '/api/boatlog/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var dot  = document.getElementById('api-dot');
+      var stat = document.getElementById('api-status');
+      var cnt  = document.getElementById('entry-count');
+      var cdot = document.getElementById('count-dot');
+      if (dot)  dot.classList.add('ok');
+      if (stat) stat.textContent = 'online';
+      if (cnt)  cnt.textContent  = d.entry_count !== undefined ? d.entry_count : '—';
+      if (cdot) { cdot.classList.remove('off'); cdot.classList.add('ok'); }
+    })
+    .catch(function() {
+      var dot  = document.getElementById('api-dot');
+      var stat = document.getElementById('api-status');
+      if (dot)  { dot.classList.remove('ok'); dot.classList.add('off'); }
+      if (stat) stat.textContent = 'unavailable';
+    });
+}
+
+/* ── Recording ── */
+function toggleRecord() {
+  if (isRecording) {
+    stopRecord();
+  } else {
+    startRecord();
+  }
+}
+
+function startRecord() {
+  if (!window.MediaRecorder) {
+    setRecState('error', 'BROWSER NOT SUPPORTED');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream) {
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks   = [];
+      isRecording   = true;
+
+      mediaRecorder.ondataavailable = function(e) {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = function() {
+        var blob = new Blob(audioChunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        submitVoiceNote(blob);
+      };
+
+      mediaRecorder.start(250); /* collect every 250ms */
+      recSeconds = 0;
+      updateTimer();
+      recTimerID = setInterval(updateTimer, 1000);
+
+      /* UI → recording state */
+      var btn  = document.getElementById('rec-btn');
+      var icon = document.getElementById('rec-icon');
+      var hint = document.getElementById('rec-hint');
+      if (btn)  btn.classList.add('recording');
+      if (icon) icon.textContent = '⏹';
+      if (hint) hint.textContent = 'Tap to stop recording';
+      setRecState('live', 'RECORDING');
+      document.getElementById('rec-timer').classList.add('show');
+      document.getElementById('bl-transcript').classList.remove('show');
+    })
+    .catch(function(err) {
+      setRecState('error', 'MICROPHONE UNAVAILABLE');
+      console.error('Mic error:', err);
+    });
+}
+
+function stopRecord() {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+  clearInterval(recTimerID);
+  recTimerID = null;
+  isRecording = false;
+  mediaRecorder.stop();
+
+  var btn  = document.getElementById('rec-btn');
+  var icon = document.getElementById('rec-icon');
+  var hint = document.getElementById('rec-hint');
+  if (btn)  btn.classList.remove('recording');
+  if (icon) icon.textContent = '🎤';
+  if (hint) hint.textContent = 'Saving and transcribing…';
+  setRecState('saving', 'SAVING…');
+  document.getElementById('rec-timer').classList.remove('show');
+}
+
+function updateTimer() {
+  recSeconds++;
+  var m = Math.floor(recSeconds / 60);
+  var s = (recSeconds % 60).toString().padStart(2, '0');
+  var el = document.getElementById('rec-timer');
+  if (el) el.textContent = m + ':' + s;
+}
+
+function setRecState(cls, text) {
+  var el = document.getElementById('rec-state');
+  if (!el) return;
+  el.className = 'bl-rec-state';
+  if (cls !== 'idle') el.classList.add(cls);
+  el.textContent = text;
+}
+
+/* ── Submit voice note to API ── */
+function submitVoiceNote(blob) {
+  var fd = new FormData();
+  fd.append('audio', blob, 'voice-note.webm');
+
+  fetch(BOATLOG_API + '/api/boatlog/voice-note', {
+    method: 'POST',
+    body: fd
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var transcript = d.transcript || '';
+      showTranscript(transcript, d.timestamp || new Date().toISOString());
+
+      /* Save to localStorage */
+      var entries = loadEntries();
+      entries.unshift({
+        timestamp: d.timestamp || new Date().toISOString(),
+        type:      'voice',
+        text:      transcript || '(no transcript)',
+        filename:  d.filename || ''
+      });
+      saveEntries(entries);
+      renderEntries();
+      setRecState('idle', 'TAP TO RECORD');
+
+      var hint = document.getElementById('rec-hint');
+      if (hint) hint.textContent = 'Tap once to start, tap again to stop and save.';
+    })
+    .catch(function(err) {
+      console.error('Voice note submit error:', err);
+      /* Still save locally with no transcript */
+      var entries = loadEntries();
+      entries.unshift({
+        timestamp: new Date().toISOString(),
+        type:      'voice',
+        text:      '(API unavailable — transcript not saved)',
+        filename:  ''
+      });
+      saveEntries(entries);
+      renderEntries();
+      setRecState('idle', 'TAP TO RECORD');
+
+      var hint = document.getElementById('rec-hint');
+      if (hint) hint.textContent = 'Tap once to start, tap again to stop and save.';
+    });
+}
+
+function showTranscript(text, ts) {
+  var wrap = document.getElementById('bl-transcript');
+  var body = document.getElementById('transcript-text');
+  if (!wrap || !body) return;
+  body.textContent = text || '(no transcript generated)';
+  wrap.classList.add('show');
+}
+
+/* ── Export CSV ── */
+function exportCSV() {
+  fetch(BOATLOG_API + '/api/boatlog/export', { method: 'POST' })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Export failed: ' + r.status);
+      var cd = r.headers.get('Content-Disposition') || '';
+      var m  = cd.match(/filename="?([^"]+)"?/);
+      var fn = m ? m[1] : 'd3kos_boatlog.csv';
+      return r.blob().then(function(b) { return { blob: b, filename: fn }; });
+    })
+    .then(function(o) {
+      var url = URL.createObjectURL(o.blob);
+      var a   = document.createElement('a');
+      a.href = url; a.download = o.filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(function(err) {
+      alert('Export failed: ' + err.message);
+    });
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+  renderEntries();
+  refreshStatus();
+});
+</script>
 </body>
 </html>

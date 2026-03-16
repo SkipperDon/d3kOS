@@ -18,6 +18,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / 'config' / 'gemini.env')
+# api-keys.env is written by the onboarding wizard and holds GEMINI_API_KEY
+# (override=False so gemini.env takes precedence if both have the key)
+load_dotenv(Path(__file__).parent.parent / 'dashboard' / 'config' / 'api-keys.env', override=False)
 
 app = Flask(__name__)
 
