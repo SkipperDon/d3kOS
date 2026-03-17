@@ -517,12 +517,16 @@ html, body {
 .nb:active { background: var(--g-dim); }
 .nb.on::after, .nb.nb-active::after {
   content: ''; position: absolute;
-  bottom: 0; left: 4px; right: 4px; height: 3px;
+  bottom: 0; left: 4px; right: 4px; height: 4px;
   background: var(--g-txt); border-radius: 2px 2px 0 0;
 }
+/* Active non-HELM button: visible background highlight */
+.nb.on:not(.helm), .nb.nb-active:not(.helm) { background: rgba(0,80,0,.10); }
+[data-night] .nb.on:not(.helm), [data-night] .nb.nb-active:not(.helm) { background: rgba(0,196,0,.10); }
 .nb.on .nb-lbl, .nb.nb-active .nb-lbl { color: var(--g-txt); }
-.nb-icon { font-size: 32px; line-height: 1; }
-.nb.on .nb-icon, .nb.nb-active .nb-icon { color: var(--g-txt); }
+/* Inactive icons dimmed; active icons full opacity */
+.nb-icon { font-size: 32px; line-height: 1; opacity: 0.38; }
+.nb.on .nb-icon, .nb.nb-active .nb-icon { opacity: 1; color: var(--g-txt); }
 /* HELM active: white bar indicator when overlay is open */
 .nb.helm.nb-active::after { display: block; background: rgba(255,255,255,.85); left: 10px; right: 10px; }
 .nb-lbl {
@@ -543,7 +547,7 @@ html, body {
   position: relative; z-index: 10;
   transition: background .2s, border-color .2s;
 }
-.nb.helm .nb-icon { font-size: 38px; color: #fff; }
+.nb.helm .nb-icon { font-size: 38px; color: #fff; opacity: 1; }
 .nb.helm .nb-lbl {
   font-size: 28px; font-weight: 700; letter-spacing: .06em; color: #fff;
 }
@@ -1391,21 +1395,23 @@ select:focus { border-color: var(--g-txt); }
   font-size: 22px;
   border-radius: 8px;
 }
-/* WIND MAP link button in conditions panel header */
+/* WIND MAP link button in conditions panel header — must be white on dark --bar background */
 .wx-map-btn {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 18px; font-weight: 600;
+  font-size: 18px; font-weight: 700;
   letter-spacing: .04em;
-  color: var(--g-txt);
-  background: var(--g-dim);
-  border: 1px solid var(--g-mid);
+  color: #fff;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.28);
   border-radius: 6px;
   padding: 0 12px;
   height: 44px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: background .15s;
 }
+.wx-map-btn:active { background: rgba(255,255,255,.25); }
 
 .wx-panel-body {
   flex: 1;
