@@ -1380,7 +1380,7 @@ select:focus { border-color: var(--g-txt); }
 }
 .wx-panel-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
+  font-size: 28px;
   letter-spacing: .18em;
   color: #fff;
 }
@@ -1390,6 +1390,21 @@ select:focus { border-color: var(--g-txt); }
   height: 48px;
   font-size: 22px;
   border-radius: 8px;
+}
+/* WIND MAP link button in conditions panel header */
+.wx-map-btn {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--g-txt);
+  background: var(--g-dim);
+  border: 1px solid var(--g-mid);
+  border-radius: 6px;
+  padding: 0 12px;
+  height: 44px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .wx-panel-body {
@@ -1454,7 +1469,7 @@ select:focus { border-color: var(--g-txt); }
 
 .wx-sec-ttl {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px;
+  font-size: 24px;
   letter-spacing: .16em;
   color: var(--ink3);
   margin-bottom: 8px;
@@ -1477,13 +1492,13 @@ select:focus { border-color: var(--g-txt); }
 }
 .wx-v {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
+  font-size: 28px;
   color: var(--ink);
   text-align: right;
 }
 .wx-u {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink3);
   font-weight: 500;
 }
@@ -1498,7 +1513,7 @@ select:focus { border-color: var(--g-txt); }
 /* GPS position note at bottom of panel */
 .wx-gps-note {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink3);
   text-align: center;
   margin-top: 8px;
