@@ -29,4 +29,8 @@ chromium \
   --enable-features=OverlayScrollbar \
   --check-for-update-interval=31536000 \
   --ozone-platform=wayland \
-  --disable-gpu
+  --disable-gpu \
+  --disk-cache-size=1 \
+  --media-cache-size=1 \
+  --remote-debugging-port=9222 \
+  --remote-debugging-address=0.0.0.0
