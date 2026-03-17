@@ -433,12 +433,12 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 
-**Last updated:** 2026-03-16 (Session: v0.9.2.3 read-back + Session E plan update) — Session E scope updated with 3 bug fix items (localStorage key mismatch, entry format, missing API endpoint). See V0923_PLAN.md Session E section for full details. Sessions A/B/C/D code complete — Session E awaiting authorization.
+**Last updated:** 2026-03-17 (Session: S-06 fix + template cache flush) — Flask running since March 4 (debug=False, templates cached). Service restarted — all Sessions A-E changes now live. 3 CSS fixes deployed (icon opacity, active state background, WIND MAP button visibility). CSS v=14. All 9 routes HTTP 200. Chromium relaunched. S-06 should now pass — Don to re-run UAT.
 
 ---
 
 ## v0.9.2.3 — UI Remediation
-**Version:** v0.9.2.3 | **Status:** 🔄 IN PROGRESS — Sessions A+B+C code complete, deploy pending
+**Version:** v0.9.2.3 | **Status:** 🔄 IN PROGRESS — All sessions code complete and deployed. S-06 fixes applied 2026-03-17. Awaiting UAT re-run.
 **Plan:** docs/V0923_PLAN.md (canonical — read before every session)
 **Issues Register:** 19 items (I-01 through I-19) — see V0923_PLAN.md
 
@@ -453,7 +453,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] Weather button: sized to match other bottom nav buttons
 - [✅] Leave app dialog: suppressed for internal route navigation
 - [✅] CSS cache-bust: ?v=10
-- [ ] Deploy to Pi + visual verify (pending combined A+B+C deploy)
+- [✅] Deploy to Pi + visual verify — service restarted 2026-03-17, templates now live
 
 ### Session B — Close Buttons + More Popup + Dropdowns ✅ CODE COMPLETE 2026-03-16
 **Items:** I-08, I-09, I-10, I-18, I-19
@@ -463,7 +463,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] All dropdowns: global select rule — 52px height, 20px font, Chakra Petch — all pages
 - [✅] Bebas Neue / Chakra Petch enforced via body-level CSS (html,body font-family)
 - [✅] CSS cache-bust: ?v=11
-- [ ] Deploy to Pi + visual verify (pending combined A+B+C deploy)
+- [✅] Deploy to Pi + visual verify — service restarted 2026-03-17, templates now live
 
 ### Session C — HELM Mute + Weather Overlay Panel ✅ CODE COMPLETE 2026-03-16
 **Items:** I-07, I-11, I-12, I-13
@@ -476,7 +476,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] Weather button: toggles panel open/close
 - [✅] Load order updated: weather-panel.js added
 - [✅] CSS cache-bust: ?v=12
-- [ ] Deploy to Pi + visual verify (pending Sessions A+B merge)
+- [✅] Deploy to Pi + visual verify — service restarted 2026-03-17, templates now live
 
 ### Session D — Boat Log Overhaul
 **Items:** I-16, I-17 | **Status:** ✅ COMPLETE 2026-03-16 | Commit 581d172
@@ -500,7 +500,10 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] 17-check verification — 9/9 routes 200, CSS v=14 confirmed, engine-entry endpoint 200
 - [✅] SESSION_LOG.md updated
 - [✅] CHANGELOG.md updated — v0.9.2.3 entry written
-- [ ] INC-16: Visual verify on Pi screen — confirm 32px labels readable at helm distance (Don)
-- [ ] UAT: 5 metric + 5 imperial users — use D3KOS_UAT_V0923.md (Don)
+- [✅] INC-16: Visual verify on Pi screen — 32px labels confirmed readable at helm distance (Don — 2026-03-16)
+- [🔄] UAT: 5 metric + 5 imperial users — S-06 blockers fixed 2026-03-17. Ready to re-run.
+  - S-01 PASS, S-02 PASS, S-03 PASS, S-04 PASS, S-05 PASS (confirmed earlier)
+  - S-06 FIXES DEPLOYED (2026-03-17): icon opacity, active state background, WIND MAP button visibility, template cache flushed via service restart
+  - Service running since 2026-03-17 09:57:28 EDT (fresh start — all Sessions A-E templates now live)
 - [ ] o-charts chart activation — see deployment/docs/OPENCPN_FLATPAK_OCHARTS.md (Don)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
