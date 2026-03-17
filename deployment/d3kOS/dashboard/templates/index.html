@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=14">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=17">
 </head>
 <body>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
@@ -201,7 +201,7 @@
     <button class="nb nb-active" onclick="setNav(this);closeSplit()">
       <span class="nb-icon">&#128506;</span><span class="nb-lbl">Dashboard</span>
     </button>
-    <button class="nb" onclick="toggleWeatherPanel()">
+    <button class="nb" onclick="setNav(this);toggleWeatherPanel()">
       <span class="nb-icon">&#127780;</span><span class="nb-lbl">Weather</span>
     </button>
     <button class="nb" onclick="setNav(this);navTo('/marine-vision')">
@@ -227,6 +227,7 @@
 <div id="wxPanel">
   <div class="wx-panel-head">
     <div class="wx-panel-title">&#9928; CONDITIONS</div>
+    <button class="wx-map-btn" onclick="closeWeatherPanel();openSplit('wx')">&#127780; WIND MAP</button>
     <button class="wx-panel-close close-btn" onclick="closeWeatherPanel()">&#10005;</button>
   </div>
   <div id="wxPanelBody" class="wx-panel-body"></div>
