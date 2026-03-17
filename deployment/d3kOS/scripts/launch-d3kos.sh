@@ -30,4 +30,5 @@ chromium \
   --check-for-update-interval=31536000 \
   --ozone-platform=wayland \
   --use-gl=angle \
-  --use-angle=swiftshader
+  --use-angle=swiftshader \
+  --disk-cache-size=1
