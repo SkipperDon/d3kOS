@@ -203,64 +203,6 @@ def export_boatlog():
             'message': str(e)
         }), 500
 
-@app.route('/api/boatlog/engine-entry', methods=['POST'])
-def engine_entry():
-    """
-    BUG FIX 2 (Session E): Accept engine auto-capture entries from boatlog-engine.js.
-    Fire-and-forget — boatlog-engine.js treats localStorage as source of truth.
-
-    Expected JSON body:
-      timestamp, type='engine', event, rpm, oil_psi, coolant_c, battery_v, fuel_pct
-    """
-    try:
-        data = request.get_json(silent=True) or {}
-
-        timestamp   = data.get('timestamp', datetime.utcnow().isoformat())
-        event       = data.get('event', 'unknown')
-        rpm         = data.get('rpm')
-        oil_psi     = data.get('oil_psi')
-        coolant_c   = data.get('coolant_c')
-        battery_v   = data.get('battery_v')
-        fuel_pct    = data.get('fuel_pct')
-
-        # Build human-readable content string for CSV export
-        parts = ['ENGINE ' + event.replace('_', ' ').upper()]
-        if rpm         is not None: parts.append(f'RPM:{rpm}')
-        if oil_psi     is not None: parts.append(f'OIL:{round(oil_psi)}psi')
-        if coolant_c   is not None: parts.append(f'COOLANT:{round(coolant_c, 1)}C')
-        if battery_v   is not None: parts.append(f'BATT:{round(battery_v, 1)}V')
-        if fuel_pct    is not None: parts.append(f'FUEL:{round(fuel_pct * 100)}%')
-        content = ' | '.join(parts)
-
-        # Ensure DB and table exist
-        os.makedirs(os.path.dirname(BOATLOG_DB), exist_ok=True)
-        conn = sqlite3.connect(BOATLOG_DB)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS boatlog_entries (
-                entry_id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp         TEXT NOT NULL,
-                entry_type        TEXT NOT NULL,
-                content           TEXT,
-                latitude          REAL,
-                longitude         REAL,
-                weather_conditions TEXT
-            )
-        """)
-        conn.execute(
-            "INSERT INTO boatlog_entries (timestamp, entry_type, content) VALUES (?, ?, ?)",
-            (timestamp, 'engine', content)
-        )
-        conn.commit()
-        conn.close()
-
-        logger.info(f"Engine entry recorded: {event} at {timestamp}")
-        return jsonify({'status': 'ok', 'event': event}), 200
-
-    except Exception as e:
-        logger.error(f"Engine entry error: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
