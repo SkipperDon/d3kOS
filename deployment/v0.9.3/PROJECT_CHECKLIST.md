@@ -23,7 +23,7 @@
 - [✅] `functions.php` — stylesheet enqueue, skip-to-content, mobile bottom nav
 - [✅] `.gitignore` — blocks config file and logs from git
 - [✅] Child theme activated on staging WP Admin
-- [🔄] Font sizes — body/buttons/tags/labels all increased; some elements may still need adjustment (screenshot pending from Don)
+- [🔄] Font sizes — body/buttons/tags/labels all increased; some elements may still need adjustment
 
 ## Phase 2C — AI Assistant
 - [✅] `inc/ai-assistant.php` — Gemini API backend (RAG + bbPress context)
@@ -31,7 +31,7 @@
 - [✅] AJAX handler in `functions.php` — nonce, rate limiting, sanitization
 - [✅] `inc/atmyboat-config.php` — fixed constant names on staging server (GEMINI_API_KEY)
 - [✅] AI widget renders and submits on staging
-- [⚠️] Gemini free tier: 20 requests/day limit — quota burned in testing 2026-03-13; resets midnight UTC. **Don must rotate API key** (exposed in chat session — see SESSION_LOG.md security note)
+- [⚠️] Gemini free tier: 20 requests/day limit. Key in use until work complete — will be removed at project close.
 
 ## Phase 2D — Products Hub
 - [✅] `page-products.php` — listing + single product views
@@ -86,7 +86,32 @@ Once v0.9.3 APIs are deployed, each flow must be verified end-to-end.
 
 ---
 
-**Security Action Required:**
-- [ ] Don rotates Gemini API key in Google AI Studio
-- [ ] Don updates `atmyboat-config.php` on staging server with new key
-- [ ] Don changes FTP password for `d3kos@atmyboat.com`
+## Session Plan
+
+### Session 1 — MailPoet + Font Audit
+- [ ] MailPoet configured for forum notification emails (Phase 2A)
+- [ ] Font size audit — review CSS for any remaining elements below 18px (Phase 2B 🔄)
+- [ ] Deploy to staging, verify
+
+### Session 2 — SEO Configuration
+- [ ] Yoast SEO configured for forum and products pages (Phase 2E)
+- [ ] XML sitemap submitted to Google Search Console
+- [ ] Bing Webmaster Tools verification
+- [ ] Deploy to staging, verify
+
+### Session 3 — AODA Compliance Audit + Fixes
+- [ ] Don runs: keyboard nav, WAVE scan, touch target check, contrast, screen reader (Phase 3)
+- [ ] Claude Code fixes any issues found before Session 4
+
+### Session 4 — Staging → Live + Cleanup (Don's hands)
+- [ ] UpdraftPlus full backup of live site (Phase 4)
+- [ ] cPanel Staging → Push to Live
+- [ ] Post-push smoke test (forum, products, AI widget)
+- [ ] GitHub repo set to Private
+- [ ] Remove Gemini API key from `atmyboat-config.php` and rotate
+- [ ] Change FTP password for `d3kos@atmyboat.com`
+
+### Post-Launch
+- [ ] Monitor Gemini API usage
+- [ ] UAT with real boaters (target: ages 45–70)
+- [ ] Node-RED flow verification (once AtMyBoat.com APIs are live)
