@@ -163,18 +163,48 @@ Plan approval and implementation approval are separate events.
 
 ---
 
-### Session E — Global Font Audit + Full Deploy + Verification
-**Files:** All templates, `d3kos.css`
-**Risk:** LOW
-**Items:** I-19 (final sweep)
-**Scope:**
-1. Read each template — confirm Bebas Neue / Chakra Petch in use, no Roboto remnants
-2. Confirm all font sizes meet IEC 62288 standard (32px labels, 28px nav, 20px forms minimum)
-3. Confirm all dropdowns are touch-sized on every page
-4. Final CSS cache-bust
-5. Full deploy to Pi
-6. 16-check verification checklist (same structure as INC-12)
-7. SESSION_LOG.md + CHANGELOG.md + version bump to v0.9.2.3
+### Session E — Integration Fixes + Global Font Audit + Full Deploy + Verification + v0.9.2.2 Closeout
+**Files:** `static/js/weather-panel.js`, `static/js/boatlog-engine.js`, `boat-log.html`, `boatlog-export-api.py`, all templates, `d3kos.css`
+**Risk:** LOW–MEDIUM (integration bug fixes + font audit + full deploy)
+**Items:** I-19 (final sweep) + integration fixes + v0.9.2.2 carryover items
+
+#### BUG FIX 1 — localStorage key mismatch (Sessions C vs D)
+**Root cause:** `weather-panel.js` (Session C) writes weather auto-log entries to localStorage key `'d3kBoatLog'`
+with entry format `{id, type:'WEATHER', ts, label, data:{temp, wind_speed, ...}}`.
+`boat-log.html` (Session D) reads from key `'d3kos-boatlog-entries'` and expects
+`{timestamp, type, text}` or engine-specific format.
+**Effect:** Weather entries are silently written and never displayed in the Boat Log page.
+**Fix:**
+1. In `weather-panel.js` — change write key from `'d3kBoatLog'` to `'d3kos-boatlog-entries'`
+2. In `weather-panel.js` — change entry object to match the canonical format:
+   `{ timestamp: Date.now(), type: 'WEATHER', text: '<label text>', data: { temp, wind_speed, ... } }`
+   (keep `data` field — boat-log.html renders it in the engine grid when present on WEATHER entries)
+3. In `boat-log.html` `_badgeClass()` and `_badgeLabel()` — confirm WEATHER type is handled (it is — already present in Session D code)
+4. In `boat-log.html` `renderEntries()` — confirm WEATHER entries with a `data` field render the data grid (verify or add branch)
+
+#### BUG FIX 2 — missing API endpoint in boatlog-export-api.py
+**Root cause:** `boatlog-engine.js` POSTs engine entries to `:8095/api/boatlog/engine-entry`
+but `boatlog-export-api.py` only has `/api/boatlog/voice-note` and `/api/boatlog/export`.
+**Effect:** Engine entries save to localStorage correctly (fire-and-forget) but the POST fails silently every time.
+**Fix:** Add `POST /api/boatlog/engine-entry` route to `boatlog-export-api.py`:
+- Accepts JSON body: `{timestamp, type, text, data:{rpm, oil_psi, coolant_c, battery_v, fuel_pct, lat, lon}}`
+- Appends to a flat NDJSON log file (same pattern as voice-note handler)
+- Returns `{"status":"ok"}`
+
+#### Scope (after bug fixes):
+1. Apply Bug Fix 1 — update `weather-panel.js` (key + entry format)
+2. Apply Bug Fix 2 — add endpoint to `boatlog-export-api.py`
+3. Read each template — confirm Bebas Neue / Chakra Petch in use, no Roboto remnants
+4. Confirm all font sizes meet IEC 62288 standard (32px labels, 28px nav, 20px forms minimum)
+5. Confirm all dropdowns are touch-sized on every page
+6. Final CSS cache-bust (Sessions A/B/C combined: bump index.html from ?v=12 if any index changes; boat-log.html already at ?v=13)
+7. Full deploy to Pi — Sessions A/B/C/D changes + Session E fixes
+8. 16-check verification checklist (V-01 through V-16) + V-12 weather auto-log verification
+9. SESSION_LOG.md + CHANGELOG.md + version bump to v0.9.2.3
+10. **INC-16:** Visual verify on Pi screen — confirm 32px labels readable at helm distance (Don)
+11. **UAT:** 5 metric + 5 imperial users — use `D3KOS_UAT_V0923.md` (Don)
+12. **o-charts activation:** Install o-charts in OpenCPN — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` (Don)
+13. **Node-RED status:** Confirm inactive status is intentional or re-enable
 **Deploy:** Full SCP deploy, reboot Pi, verify all 9 routes HTTP 200
 
 ---
@@ -194,11 +224,13 @@ Plan approval and implementation approval are separate events.
 | V-09 | More popup fonts | Fonts match bottom nav label size |
 | V-10 | Weather panel | Opens left-side overlay; ribbons stay full width; AvNav visible |
 | V-11 | Weather data | Wind, wave, atmospheric, alerts all displayed |
-| V-12 | Weather auto-log | Entry in boat log after 30 min with panel open |
+| V-12 | Weather auto-log | Entry appears in Boat Log page (not just localStorage) after 30 min with panel open |
+| V-12a | Weather entry format | WEATHER badge shown with correct label and data fields in Boat Log |
 | V-13 | Leave app dialog | No dialog when tapping Marine Vision or Boat Log |
 | V-14 | Boat log fonts | Bebas Neue / Chakra Petch, consistent with dashboard |
 | V-15 | Engine auto-capture | Entry appears in boat log within 30 min of engine start |
 | V-16 | Dropdowns | All selects touch-friendly (52px+ height) on all pages |
+| V-17 | Engine API endpoint | POST to :8095/api/boatlog/engine-entry returns 200 ok |
 
 ---
 
