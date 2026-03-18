@@ -249,6 +249,20 @@ Complete replacement of the v0.9.2.1 frontend (9-button hub, black/Roboto theme)
 
 ---
 
+## Pi Health Fixes — 2026-03-18
+
+Continuous-operation diagnostic session. 6 anomalies found and resolved directly on Pi via SSH. No new repo files — all changes are Pi-side patches.
+
+| Item | Pi Path | What Changed |
+|------|---------|-------------|
+| Chromium launch script | `/opt/d3kos/scripts/launch-d3kos.sh` | `--disable-gpu` removed. `--use-gl=angle --use-angle=swiftshader` active. Deployed from repo. |
+| fake-hwclock | `/etc/fake-hwclock.data` | `apt install fake-hwclock` — saves/restores clock across reboots. Pi has no hardware RTC; without this, systemd timestamps are unreliable after reboot. |
+| AvNav Signal K handler | `/usr/lib/avnav/server/handler/signalkhandler.py` | Line 1580 patched — charts URL from `/v1/api/` to `/v2/api/`. SK 2.x moved resources to v2; AvNav was polling v1. Backup: `.bak-20260318`. |
+| Signal K resources-provider | `~/.signalk/package.json` | `@signalk/resources-provider ^1.5.1` — confirmed built-in to SK 2.22.1. Active on `/signalk/v2/api/resources/charts` → `200 {}`. |
+| Node-RED settings | `/home/d3kos/.node-red/settings.js` | `contextStorage: localfilesystem` enabled. `credentialSecret` set. |
+
+---
+
 ## Version Release Docs
 
 | Directory | What It Contains |

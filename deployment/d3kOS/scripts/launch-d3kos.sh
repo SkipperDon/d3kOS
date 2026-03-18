@@ -18,6 +18,7 @@ sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' \
 # Launch Chromium as maximised app window
 # Note: binary is 'chromium' on Debian/Raspberry Pi OS (not 'chromium-browser')
 chromium \
+  --no-gl-override \
   --app=http://localhost:3000 \
   --start-maximized \
   --noerrdialogs \
