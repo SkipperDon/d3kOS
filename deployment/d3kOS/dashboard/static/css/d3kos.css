@@ -977,7 +977,7 @@ body.anchor-alarm-active {
 }
 .back-btn {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 18px; font-weight: 700; letter-spacing: .06em;
+  font-size: 22px; font-weight: 700; letter-spacing: .06em;
   color: rgba(255,255,255,.75);
   display: flex; align-items: center;
   height: 100%; padding: 0 8px; min-width: 48px;
@@ -996,20 +996,14 @@ body.anchor-alarm-active {
   font-size: 20px; letter-spacing: .06em; color: rgba(255,255,255,.9);
 }
 
-/* Settings two-column layout */
+/* Settings layout — single column, full-width scroll */
 .settings-page-body {
-  display: flex; overflow: hidden;
+  display: block; overflow-y: auto;
   position: fixed; top: 48px; left: 0; right: 0; bottom: 0;
 }
-.settings-scroll-area { flex: 1; overflow-y: auto; padding: 24px; }
-.settings-content { max-width: 960px; margin: 0 auto; }
-.settings-bm-sidebar {
-  width: 190px; flex-shrink: 0;
-  overflow-y: auto;
-  background: var(--panel);
-  border-left: 1px solid var(--rule);
-  padding: 16px 10px;
-}
+.settings-scroll-area { padding: 24px; }
+.settings-content { max-width: 960px; margin: 0 auto; font-size: 20px; }
+.settings-bm-sidebar { display: none; }
 .bm-head {
   font-size: 18px; font-weight: 700; letter-spacing: .18em;
   text-transform: uppercase; color: var(--ink3);
@@ -1041,7 +1035,7 @@ body.anchor-alarm-active {
 }
 .sec-header {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px; letter-spacing: .1em; color: var(--g-txt);
+  font-size: 28px; letter-spacing: .1em; color: var(--g-txt);
   margin-bottom: 18px;
   display: flex; align-items: center; gap: 10px;
 }
@@ -1058,11 +1052,11 @@ body.anchor-alarm-active {
   padding: 16px 18px;
 }
 .card-label {
-  display: block; font-size: 20px; font-weight: 700;
+  display: block; font-size: 24px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase;
   color: var(--ink3); margin-bottom: 4px;
 }
-.card-desc { font-size: 18px; color: var(--ink3); margin-bottom: 10px; line-height: 1.5; }
+.card-desc { font-size: 20px; color: var(--ink3); margin-bottom: 10px; line-height: 1.5; }
 
 /* Form controls */
 .fc {
@@ -1071,8 +1065,8 @@ body.anchor-alarm-active {
   border: 2px solid var(--g-bdr);
   border-radius: 8px; color: var(--ink);
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 20px; outline: none;
-  min-height: 52px;
+  font-size: 24px; outline: none;
+  min-height: 72px;
   transition: border-color .2s;
   -webkit-appearance: none;
 }
@@ -1080,9 +1074,9 @@ body.anchor-alarm-active {
 
 /* Global select — touch-friendly on all pages */
 select {
-  min-height: 52px;
-  font-size: 20px;
-  padding: 8px 16px;
+  min-height: 96px;
+  font-size: 28px;
+  padding: 16px 24px;
   font-family: 'Chakra Petch', sans-serif;
   background: var(--bg);
   border: 2px solid var(--g-bdr);
@@ -1103,8 +1097,8 @@ select:focus { border-color: var(--g-txt); }
   padding: 10px 0;
 }
 .trow + .trow { border-top: 1px solid var(--rule-lt); }
-.trow-lbl { font-size: 20px; font-weight: 700; color: var(--ink); }
-.trow-sub { font-size: 18px; color: var(--ink3); margin-top: 2px; line-height: 1.5; }
+.trow-lbl { font-size: 24px; font-weight: 700; color: var(--ink); }
+.trow-sub { font-size: 20px; color: var(--ink3); margin-top: 2px; line-height: 1.5; }
 
 /* Toggle switch */
 .toggle {
@@ -1134,7 +1128,7 @@ select:focus { border-color: var(--g-txt); }
   border: 2px solid var(--rule);
   background: var(--cell); color: var(--ink);
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 18px; font-weight: 700; letter-spacing: .05em;
+  font-size: 20px; font-weight: 700; letter-spacing: .05em;
   cursor: pointer; transition: all .15s; min-height: 48px;
 }
 .btn:active { background: var(--g-dim); border-color: var(--g-bdr); }
@@ -1155,16 +1149,16 @@ select:focus { border-color: var(--g-txt); }
   border-radius: 10px; padding: 12px 14px; text-align: center;
 }
 .si-name {
-  font-size: 18px; font-weight: 700; letter-spacing: .1em;
+  font-size: 20px; font-weight: 700; letter-spacing: .1em;
   text-transform: uppercase; color: var(--ink3); margin-bottom: 6px;
 }
 .si-val {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px; letter-spacing: .05em; color: var(--ink3);
+  font-size: 20px; letter-spacing: .05em; color: var(--ink3);
 }
 .si-val.ok { color: var(--g-txt); }
 .si-val.off { color: var(--crit); }
-.si-sub { font-size: 18px; color: var(--ink3); margin-top: 4px; }
+.si-sub { font-size: 20px; color: var(--ink3); margin-top: 4px; }
 
 /* AI mode selector */
 .ai-modes { display: flex; gap: 10px; margin-top: 10px; }
