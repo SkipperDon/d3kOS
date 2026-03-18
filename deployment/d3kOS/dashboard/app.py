@@ -352,5 +352,10 @@ def engine_monitor():
     return render_template('engine-monitor.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
 
 
+@app.route('/weather')
+def weather():
+    return render_template('weather.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=False)
