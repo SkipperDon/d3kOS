@@ -2064,10 +2064,13 @@
 
 ### Existing v0.9.2 Tasks (still open)
 
-- [ ] **o-charts chart activation**
-  See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` for full steps.
-  You need to upload the fingerprint file to o-charts.org to activate your purchased charts.
-  The fingerprint file `oc03L_1773315591.fpr` is in your Downloads folder on the Pi.
+- [⚠️] **o-charts chart activation (AvNav) — BLOCKED — fingerprint mismatch**
+  Session 2026-03-17: Charts (CAgl + CAac) extracted to Pi at `/var/lib/avnav/ochartsng/charts/`.
+  oexserverd loaded both sets but all 1,019 charts fail to decrypt — fingerprint mismatch.
+  Charts were registered with `oc03L_1772818229.fpr` (unknown origin — not this Pi).
+  Pi's actual fingerprint: `oc03L_1773779136.fpr` — saved to `C:\Users\donmo\Downloads\`.
+  To fix: go to o-charts.org → My Systems → replace old device with new fingerprint file → re-download charts → re-deploy.
+  Don declined to re-register (2026-03-17). Resume when ready.
 
 - [ ] **UAT — 5 metric + 5 imperial users**
   Have 5 people test the system with metric settings and 5 with imperial.
@@ -2219,7 +2222,22 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
-**Last Updated:** 2026-03-16 — v0.9.2.3 COMPLETE. All 5 sessions deployed. Pi at ?v=14, 9/9 routes HTTP 200, CHANGELOG written. Don's tasks: INC-16, UAT, o-charts, Node-RED. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-18 — Pi health session complete. 6 anomalies resolved. | **Maintained By:** Development team + Claude Code
+
+---
+
+## Pi Continuous Operation — Health Fixes (2026-03-18)
+
+**Session:** Pi had been running continuously. Signal K + Node-RED diagnostic + 6 anomalies fixed.
+
+- [✅] Chromium launch script deployed — `--disable-gpu` removed, SwiftShader (`--use-gl=angle --use-angle=swiftshader`) confirmed active. Pi: `/opt/d3kos/scripts/launch-d3kos.sh`
+- [✅] `fake-hwclock` installed — systemd load/save services registered. Pi timestamps now reliable across reboots. Pi has no hardware RTC.
+- [✅] `@signalk/resources-provider` — confirmed built-in to Signal K 2.22.1, active on v2 API. Plugin enabled, `GET /signalk/v2/api/resources/charts` returns `200 {}`.
+- [✅] AvNav charts 404 fixed — `signalkhandler.py` line 1580 patched: charts URL rewritten from v1 to v2 API path. Backup at `/usr/lib/avnav/server/handler/signalkhandler.py.bak-20260318`. Charts 404 count confirmed 0.
+- [✅] Node-RED context storage — `contextStorage: localfilesystem` enabled in `settings.js`. Flow context now persists across restarts.
+- [✅] Node-RED credential secret — `credentialSecret` set. Re-encrypt triggers on next Deploy in editor.
+- [⚠️] Node-RED credential re-encryption — **Don must**: open Node-RED editor, re-enter any credentials in flow nodes, click Deploy. One-time task. After Deploy, warning clears permanently.
+- [ ] Anchor data 404s (AvNav) — `navigation/anchor/*` paths return 404. Expected when not anchored — no fix needed. Monitor when anchored with NMEA2000 anchor watch active.
 
 ---
 

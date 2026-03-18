@@ -2,6 +2,64 @@
 
 ---
 
+## Session — 2026-03-18 — Pi continuous-operation health check — 6 anomalies diagnosed and fixed
+
+**Goal:** Pi had been running continuously. Check Signal K and Node-RED for anomalies, report, then fix all approved items.
+
+**Tasks completed:**
+- Diagnosed 6 anomalies across Signal K, Node-RED, Chromium, and system clock
+- Fixed Chromium launch script: deployed SwiftShader flags from repo to Pi — `--disable-gpu` removed, `--use-gl=angle --use-angle=swiftshader` confirmed in running process
+- Installed `fake-hwclock` — timestamps now reliable across reboots (Pi has no RTC; previously clock started at kernel build date before NTP sync)
+- Installed and confirmed `@signalk/resources-provider` — built-in to SK 2.22.1, active on v2 API path
+- Patched AvNav `signalkhandler.py` line 1580 — charts URL rewritten from `/v1/api/` to `/v2/api/`. Root cause: SK 2.x moved resources to v2 but AvNav polls v1. Charts 404 count confirmed 0 after fix.
+- Enabled Node-RED `contextStorage: localfilesystem` — flow context now persists across restarts
+- Set Node-RED `credentialSecret` — credentials now re-encryptable with known key
+
+**Decisions:**
+- SwiftShader chosen over hardware GPU (V3D): V3D driver on Pi 4 Wayland causes crash/spin loop. SwiftShader uses CPU for rendering but is stable and preserves full CSS compositor. Accepted trade-off: higher CPU usage, reliable rendering.
+- AvNav patch applied to system package file: same approach as existing Python 3.13 patch on `httphandler.py`. Backup created. Known maintenance point if AvNav updates.
+- `@signalk/resources-provider` npm install performed (added to `~/.signalk/package.json`) — discovered plugin is already built-in to SK 2.22.1. Redundant but harmless.
+- Anchor data 404s (`navigation/anchor/*`) not fixed — expected behavior when not anchored. No action needed.
+
+**Files changed (Pi — direct SSH):**
+- Pi: `/opt/d3kos/scripts/launch-d3kos.sh` — SwiftShader flags deployed from repo (LOW)
+- Pi: `/usr/lib/avnav/server/handler/signalkhandler.py` — charts URL v1→v2 patch, backup `.bak-20260318` (LOW)
+- Pi: `/home/d3kos/.node-red/settings.js` — `contextStorage` uncommented + `credentialSecret` set (LOW)
+- Pi: `/home/d3kos/.signalk/package.json` — `@signalk/resources-provider ^1.5.1` added by npm (LOW)
+- Pi: `/etc/fake-hwclock.data` — created by `apt install fake-hwclock` (LOW)
+
+**Files changed (local repo):**
+- `PROJECT_CHECKLIST.md` — new Pi health section added (LOW)
+- `SESSION_LOG.md` — this entry (LOW)
+- `deployment/docs/DEPLOYMENT_INDEX.md` — Pi health fixes indexed (LOW)
+
+**PROJECT_CHECKLIST.md updates:**
+- Last Updated line: updated to 2026-03-18
+- Added new section: "Pi Continuous Operation — Health Fixes (2026-03-18)" with 8 items
+- All 6 fix items marked [✅]
+- Node-RED credential re-encryption marked [⚠️] — requires Don action
+- Anchor data 404s left as [ ] with note
+
+**AAO compliance:** PASS — all risk levels classified, all Low+ actions pre-stated, no High-risk actions, no push, no scope creep
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-18 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Open items for next session:**
+- Node-RED credential re-encryption: Don opens editor → re-enters flow node credentials → Deploy (one-time)
+- UAT: 5 metric + 5 imperial users (v0.9.2.3 carryover)
+- o-charts chart activation (Don's task)
+- INC-16 (v0.9.2.3 carryover)
+- Mobile App build not started
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-17 — S-06 fix + 13-day Flask template cache flushed
 
 **Goal:** Diagnose "v0.9.2.3 totally failed" — identify all blockers, fix, deploy, prepare for UAT.
