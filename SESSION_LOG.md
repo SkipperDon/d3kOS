@@ -40,7 +40,7 @@
 - Weather page build is deferred — do not attempt until dashboard stability confirmed
 - Read feedback_weather_page_2026-03-18.md before any new page build
 
-**Sign-off:** Don — silence = approval
+**Sign-off:** Don — DOES NOT APPROVE
 
 ---
 
