@@ -2148,8 +2148,8 @@
 - [✅] setup.html chart section: FREE CHARTS CONFIGURED + live AvNav status dot
 
 ### Known Issues — Requires Fix Next Session
-- [❌] Settings page layout: desktop two-column sidebar — not touch-friendly. Fix: rebuild CSS layout only, ALL 16 sections + content unchanged, match v12 design system (Chakra Petch/Bebas Neue)
-- [❌] Settings camera section (§6): shows hardcoded static slots — must fetch from :8084/camera/slots for real slot/hardware data
+- [✅] Settings page layout: single-column full-width, sidebar hidden; IEC 62288 font scale applied (sec-header 28px Bebas Neue, card-label 24px, trow-lbl 24px, select 28px/96px); CSS v=15 — deployed 2026-03-18 commit ab8cf03
+- [✅] Settings camera section (§6): live fetch from :8084/camera/slots — shows real slot names, IDs, camera assignments, roles; graceful error if service down — deployed 2026-03-18 commit ab8cf03
 - [🔄] Weather tab: Windy in split pane too narrow — approved for fullscreen redesign as 4th row toggle option (WX)
 
 ---
@@ -2222,7 +2222,7 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
-**Last Updated:** 2026-03-18 — Pi health session complete. 6 anomalies resolved. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-18 — Settings font/layout + camera §6 live fetch complete. Commit ab8cf03. | **Maintained By:** Development team + Claude Code
 
 ---
 

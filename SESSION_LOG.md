@@ -2,6 +2,51 @@
 
 ---
 
+## Session — 2026-03-18 (Part 2) — Settings page IEC 62288 font scale + live camera §6 + single-column layout
+
+**Tasks completed:**
+- Applied IEC 62288 marine font scale to settings page CSS: sec-header 28px Bebas Neue, card-label 24px, trow-lbl 24px, back-btn 22px, btn 20px, si-* 20px, card-desc/trow-sub 20px
+- Doubled select/dropdown size: 28px font, 96px min-height, 16px 24px padding
+- Doubled form control (.fc) size: 24px font, 72px min-height
+- Converted settings layout from two-column (sidebar) to single-column full-width scroll
+- Replaced camera §6 hardcoded slots (Forward Watch/Engine Room/Cockpit static) with live fetch from :8084/camera/slots — shows real slot names, IDs, camera assignments, roles
+- Bumped all inline font-size: 18px → 20px in settings.html (19 instances)
+- CSS version cache-bust: ?v=14 → ?v=15
+- Deployed CSS (static — no restart), deployed template + restarted d3kos-dashboard (Flask cache clear)
+- Committed: ab8cf03
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — font scale + layout + select size (Low risk)
+- `deployment/d3kOS/dashboard/templates/settings.html` — CSS v=15, inline 18px→20px, camera §6 live fetch (Low risk)
+- Pi: `/opt/d3kos/services/dashboard/static/css/d3kos.css` — deployed (Low)
+- Pi: `/opt/d3kos/services/dashboard/templates/settings.html` — deployed (Low)
+- Pi: `d3kos-dashboard` service — restarted to clear Flask template cache (Low)
+
+**PROJECT_CHECKLIST.md updates:**
+- Line 2151: `[❌] Settings page layout` → `[✅] Settings page layout: single-column…CSS v=15 — deployed 2026-03-18 commit ab8cf03`
+- Line 2152: `[❌] Settings camera section (§6)` → `[✅] Settings camera section (§6): live fetch from :8084/camera/slots…deployed 2026-03-18 commit ab8cf03`
+- Last Updated line updated to reflect this session
+
+**AAO compliance:** PASS — all actions Low risk, Don approved before execution ("approved go ahead"), no scope creep, no push
+
+**Open items for next session:**
+- [🔄] Weather fullscreen WX toggle (4th row toggle — Windy fullscreen instead of split pane) — approved design, not yet built
+- [ ] UAT — 5 metric + 5 imperial users (Don to recruit)
+- [ ] o-charts activation — Don's on-boat task (see OPENCPN_FLATPAK_OCHARTS.md)
+- [ ] INC-16 (Node-RED carryover from v0.9.2.2 — check V0923_PLAN.md for detail)
+- [ ] Live test: settings camera §6 — verify fetch renders real slots from :8084 on Pi screen
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-18 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-18 — Pi continuous-operation health check — 6 anomalies diagnosed and fixed
 
 **Goal:** Pi had been running continuously. Check Signal K and Node-RED for anomalies, report, then fix all approved items.
