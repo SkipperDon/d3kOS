@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>d3kOS &mdash; Weather</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── DAY / NIGHT TOKENS ── */
+    :root {
+      --bg:       #ffffff;
+      --ink:      #111111;
+      --ink3:     #555555;
+      --cell:     #f5f5f5;
+      --panel:    #eeeeee;
+      --rule:     #cccccc;
+      --rule-lt:  #e0e0e0;
+      --g-txt:    #004400;
+      --g-dim:    rgba(0,68,0,.12);
+      --g-bdr:    rgba(0,68,0,.35);
+      --accent:   #004400;
+      --adv-bg:   rgba(255,165,0,.12);
+      --adv-num:  #7a4000;
+      --adv-bdr:  rgba(255,165,0,.5);
+      --crit-bg:  rgba(220,0,0,.10);
+      --crit-num: #cc0000;
+      --crit-bdr: rgba(220,0,0,.5);
+      --muted:    #888888;
+      --top-h:    48px;
+    }
+    [data-night] {
+      --bg:       #020702;
+      --ink:      #e8ffe8;
+      --ink3:     #88aa88;
+      --cell:     #0a120a;
+      --panel:    #060e06;
+      --rule:     #1a2e1a;
+      --rule-lt:  #0f1f0f;
+      --g-txt:    #00cc00;
+      --g-dim:    rgba(0,204,0,.12);
+      --g-bdr:    rgba(0,204,0,.35);
+      --accent:   #00cc00;
+      --adv-bg:   rgba(255,165,0,.15);
+      --adv-num:  #ffaa00;
+      --adv-bdr:  rgba(255,165,0,.5);
+      --crit-bg:  rgba(255,0,0,.15);
+      --crit-num: #ff4444;
+      --crit-bdr: rgba(255,0,0,.5);
+      --muted:    #557755;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 20px;
+      background: var(--bg);
+      color: var(--ink);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      height: 100vh;
+    }
+
+    /* ── TOP BAR ── */
+    #top-bar {
+      height: var(--top-h);
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .back-btn {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 22px; font-weight: 700; letter-spacing: .06em;
+      color: rgba(255,255,255,.85);
+      display: flex; align-items: center;
+      height: 100%; padding: 0 8px; min-width: 48px;
+      text-decoration: none; border: none; background: none; cursor: pointer;
+    }
+    .back-btn:active { color: #fff; }
+    #top-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px; letter-spacing: .15em; color: #fff; flex: 1;
+    }
+    /* DAY / NIGHT toggle in top bar */
+    .dn { display: flex; gap: 6px; }
+    .dn-b {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 18px; font-weight: 700; letter-spacing: .06em;
+      padding: 6px 12px; border-radius: 6px; border: 2px solid rgba(255,255,255,.4);
+      background: rgba(255,255,255,.1); color: rgba(255,255,255,.6);
+      cursor: pointer; min-height: 36px; transition: all .15s;
+    }
+    .dn-b.on { background: rgba(255,255,255,.25); color: #fff; border-color: rgba(255,255,255,.8); }
+
+    /* ── MAIN TWO-COLUMN LAYOUT ── */
+    #main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      height: calc(100vh - var(--top-h));
+      overflow: hidden;
+    }
+
+    /* ── LEFT — RADAR ── */
+    #radar-section {
+      position: relative;
+      background: #111;
+      border-right: 2px solid var(--accent);
+    }
+    #radarFrame {
+      width: 100%; height: 100%; border: none; display: block;
+    }
+
+    /* GPS overlay — top left */
+    #gps-overlay {
+      position: absolute; top: 10px; left: 10px; z-index: 100;
+      background: rgba(0,0,0,.82);
+      border: 1px solid var(--accent);
+      border-radius: 8px; padding: 10px 14px;
+    }
+    #gps-overlay .loc-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: .1em; color: var(--accent);
+    }
+    #gps-overlay .loc-coords {
+      font-size: 18px; color: rgba(255,255,255,.75); margin-top: 2px;
+    }
+
+    /* Overlay toggle — below GPS overlay */
+    #overlay-toggle {
+      position: absolute; top: 82px; left: 10px; z-index: 100;
+      background: rgba(0,0,0,.88);
+      border: 1px solid var(--accent);
+      border-radius: 8px; padding: 8px;
+      display: flex; gap: 8px;
+    }
+    .ovr-btn {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 20px; font-weight: 700;
+      padding: 10px 18px; border-radius: 6px;
+      border: 2px solid rgba(0,204,0,.3);
+      background: rgba(51,51,51,.8); color: rgba(255,255,255,.7);
+      cursor: pointer; min-height: 48px; transition: all .15s;
+      touch-action: manipulation;
+    }
+    .ovr-btn.active {
+      background: var(--accent); border-color: var(--accent); color: #000;
+    }
+    [data-night] .ovr-btn.active { color: #000; }
+
+    /* Zoom controls — right edge of radar */
+    #zoom-controls {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 14px; z-index: 100;
+    }
+    .zoom-btn {
+      width: 72px; height: 72px;
+      background: rgba(0,0,0,.88);
+      border: 3px solid var(--accent);
+      border-radius: 12px; color: var(--accent);
+      font-size: 36px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .15s; touch-action: manipulation; user-select: none;
+    }
+    .zoom-btn:active { background: var(--accent); color: #000; }
+
+    /* ── RIGHT — CONDITIONS PANEL ── */
+    #conditions-panel {
+      background: var(--bg);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+
+    .ts-line {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: .08em;
+      color: var(--accent); margin-bottom: 14px; text-align: center;
+    }
+
+    .alert-box {
+      background: var(--adv-bg);
+      border: 2px solid var(--adv-bdr);
+      border-radius: 8px; padding: 14px; margin-bottom: 14px;
+    }
+    .alert-box.critical {
+      background: var(--crit-bg); border-color: var(--crit-bdr);
+    }
+    .alert-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px; letter-spacing: .08em;
+      color: var(--adv-num); margin-bottom: 6px;
+    }
+    .alert-box.critical .alert-title { color: var(--crit-num); }
+    .alert-desc { font-size: 20px; line-height: 1.5; color: var(--ink); }
+
+    .data-group {
+      margin-bottom: 16px; padding: 14px;
+      background: var(--cell);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+    }
+    .data-group h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px; letter-spacing: .1em; color: var(--accent);
+      margin-bottom: 10px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .data-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--rule-lt);
+    }
+    .data-row:last-child { border-bottom: none; }
+    .data-label { font-size: 20px; color: var(--ink3); font-weight: 500; }
+    .data-value { font-size: 20px; color: var(--ink); font-weight: 700; text-align: right; }
+    .data-value.warning { color: var(--adv-num); }
+    .data-value.critical { color: var(--crit-num); animation: blink 1s ease-in-out infinite; }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    .loading {
+      text-align: center; padding: 40px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px; letter-spacing: .1em; color: var(--accent);
+    }
+    .error {
+      text-align: center; padding: 40px;
+      font-size: 20px; color: var(--crit-num);
+    }
+
+    /* Auto-log badge */
+    #autolog-badge {
+      position: fixed; bottom: 10px; right: 10px;
+      background: rgba(0,0,0,.8);
+      border: 1px solid var(--accent);
+      border-radius: 8px; padding: 8px 14px;
+      font-size: 18px; color: var(--accent); z-index: 200;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 32px; }
+    ::-webkit-scrollbar-track { background: var(--cell); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 8px; min-height: 60px; }
+  </style>
+</head>
+<body>
+
+  <!-- Apply day/night before render -->
+  <script>
+    (function() {
+      if (localStorage.getItem('d3kTheme') === 'night')
+        document.body.setAttribute('data-night', '');
+      else
+        document.body.removeAttribute('data-night');
+    })();
+  </script>
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+    <span id="top-title">&#127780; Weather</span>
+    <div class="dn">
+      <button class="dn-b" id="btnD" onclick="setTheme('day')">&#9728; DAY</button>
+      <button class="dn-b" id="btnN" onclick="setTheme('night')">&#9790; NIGHT</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- LEFT — WINDY RADAR -->
+    <div id="radar-section">
+      <div id="gps-overlay">
+        <div class="loc-name" id="locName">Locating&hellip;</div>
+        <div class="loc-coords" id="locCoords">--</div>
+      </div>
+
+      <div id="overlay-toggle">
+        <button class="ovr-btn active" id="btn-wind" onclick="changeOverlay('wind')">&#127757; Wind</button>
+        <button class="ovr-btn" id="btn-clouds" onclick="changeOverlay('clouds')">&#9928; Clouds</button>
+        <button class="ovr-btn" id="btn-radar" onclick="changeOverlay('radar')">&#127784; Radar</button>
+      </div>
+
+      <div id="zoom-controls">
+        <button class="zoom-btn" id="zoom-in" title="Zoom In">+</button>
+        <button class="zoom-btn" id="recenter" title="Recenter">&#8857;</button>
+        <button class="zoom-btn" id="zoom-out" title="Zoom Out">&minus;</button>
+      </div>
+
+      <iframe id="radarFrame" src="about:blank"
+              allow="geolocation" allowfullscreen
+              title="Windy Weather Map"></iframe>
+    </div>
+
+    <!-- RIGHT — CONDITIONS -->
+    <div id="conditions-panel">
+      <div class="loading">Loading weather data&hellip;</div>
+    </div>
+  </div>
+
+  <div id="autolog-badge">Auto-log: Initializing&hellip;</div>
+
+  <script>
+    /* ── THEME ── */
+    function setTheme(t) {
+      if (t === 'night') document.body.setAttribute('data-night', '');
+      else               document.body.removeAttribute('data-night');
+      localStorage.setItem('d3kTheme', t);
+      document.getElementById('btnD').classList.toggle('on', t === 'day');
+      document.getElementById('btnN').classList.toggle('on', t === 'night');
+    }
+    /* Set initial button state */
+    (function() {
+      const t = localStorage.getItem('d3kTheme') || 'day';
+      document.getElementById('btnD').classList.toggle('on', t === 'day');
+      document.getElementById('btnN').classList.toggle('on', t === 'night');
+    })();
+
+    /* ── STATE ── */
+    const UPDATE_INTERVAL   = 5  * 60 * 1000;  // 5 min
+    const AUTOLOG_INTERVAL  = 30 * 60 * 1000;  // 30 min
+    let currentPosition  = { lat: 44.4167, lon: -79.3333 }; // Lake Simcoe fallback
+    let hasGPSFix        = false;
+    let weatherData      = null;
+    let lastLogTime      = null;
+    let currentZoom      = 9;
+    let currentOverlay   = 'wind';
+    let lastRadarPos     = { lat: null, lon: null };
+    let _radarDebounce   = null;
+
+    /* ── RADAR ── */
+    function updateRadar() {
+      if (!currentPosition.lat || !currentPosition.lon) return;
+      clearTimeout(_radarDebounce);
+      _radarDebounce = setTimeout(function() {
+        const url = `https://embed.windy.com/embed2.html?lat=${currentPosition.lat}&lon=${currentPosition.lon}` +
+          `&detailLat=${currentPosition.lat}&detailLon=${currentPosition.lon}` +
+          `&width=100%&height=100%&zoom=${currentZoom}&level=surface` +
+          `&overlay=${currentOverlay}&product=ecmwf&menu=&message=&marker=true` +
+          `&calendar=now&pressure=&type=map&location=coordinates&detail=` +
+          `&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1`;
+        document.getElementById('radarFrame').src = url;
+        document.getElementById('locName').textContent = hasGPSFix ? 'Current Position' : 'Lake Simcoe (no GPS)';
+      }, 500);
+    }
+
+    function changeOverlay(overlay) {
+      currentOverlay = overlay;
+      updateRadar();
+      document.querySelectorAll('.ovr-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + overlay).classList.add('active');
+    }
+
+    function zoomIn()  { if (currentZoom < 15) { currentZoom++; updateRadar(); } }
+    function zoomOut() { if (currentZoom > 3)  { currentZoom--; updateRadar(); } }
+    function recenter() {
+      lastRadarPos.lat = null; lastRadarPos.lon = null;
+      updateRadar();
+    }
+
+    document.getElementById('zoom-in').addEventListener('click',  () => zoomIn());
+    document.getElementById('zoom-out').addEventListener('click', () => zoomOut());
+    document.getElementById('recenter').addEventListener('click', () => recenter());
+
+    /* ── SIGNAL K GPS ── */
+    function connectSK() {
+      const ws = new WebSocket('ws://' + window.location.hostname + ':8099/signalk/v1/stream?subscribe=none');
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          context: 'vessels.self',
+          subscribe: [{ path: 'navigation.position', period: 5000 }]
+        }));
+      };
+      ws.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.updates) d.updates.forEach(u => {
+            if (u.values) u.values.forEach(v => {
+              if (v.path === 'navigation.position' && v.value) {
+                currentPosition.lat = v.value.latitude;
+                currentPosition.lon = v.value.longitude;
+                hasGPSFix = true;
+                document.getElementById('locCoords').textContent =
+                  `${currentPosition.lat.toFixed(5)}°, ${currentPosition.lon.toFixed(5)}°`;
+                const moved = !lastRadarPos.lat ||
+                  Math.abs(currentPosition.lat - lastRadarPos.lat) > 0.01 ||
+                  Math.abs(currentPosition.lon - lastRadarPos.lon) > 0.01;
+                if (moved) {
+                  updateRadar();
+                  lastRadarPos.lat = currentPosition.lat;
+                  lastRadarPos.lon = currentPosition.lon;
+                }
+                if (!weatherData) fetchWeatherData();
+              }
+            });
+          });
+        } catch(e) {}
+      };
+      ws.onclose = () => setTimeout(connectSK, 5000);
+    }
+
+    /* ── WEATHER DATA (Open-Meteo, free, no key) ── */
+    async function fetchWeatherData() {
+      if (!currentPosition.lat || !currentPosition.lon) return;
+      try {
+        const marineUrl  = `https://marine-api.open-meteo.com/v1/marine?latitude=${currentPosition.lat}&longitude=${currentPosition.lon}&current=wave_height,wave_direction,wave_period,wind_wave_height,wind_wave_direction,wind_wave_period&timezone=auto`;
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${currentPosition.lat}&longitude=${currentPosition.lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=visibility&timezone=auto`;
+        const [mRes, wRes] = await Promise.all([fetch(marineUrl), fetch(weatherUrl)]);
+        weatherData = { marine: await mRes.json(), weather: await wRes.json(), timestamp: new Date().toISOString() };
+        renderConditions();
+        updateAutologBadge();
+      } catch(err) {
+        document.getElementById('conditions-panel').innerHTML =
+          '<div class="error">Weather data unavailable.<br>Check internet connection.</div>';
+      }
+    }
+
+    function renderConditions() {
+      if (!weatherData) return;
+      const marine  = weatherData.marine.current  || {};
+      const weather = weatherData.weather.current || {};
+      const vis     = weatherData.weather.hourly && weatherData.weather.hourly.visibility
+                        ? (weatherData.weather.hourly.visibility[0] / 1000).toFixed(1) : 'N/A';
+      const ts      = new Date(weatherData.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+      const warnings = [];
+      if (weather.wind_gusts_10m > 25) warnings.push({ title:'High Wind Warning',  desc:`Gusts up to ${weather.wind_gusts_10m.toFixed(1)} kt`, crit: weather.wind_gusts_10m > 35 });
+      if (marine.wave_height > 2.0)    warnings.push({ title:'High Seas Warning',   desc:`Wave height ${marine.wave_height.toFixed(1)} m`,     crit: marine.wave_height > 3.5 });
+      if (weather.precipitation > 5.0) warnings.push({ title:'Heavy Precipitation', desc:`${weather.precipitation.toFixed(1)} mm/hr`,           crit: weather.precipitation > 10 });
+
+      let html = `<div class="ts-line">Updated ${ts}</div>`;
+
+      warnings.forEach(w => {
+        html += `<div class="alert-box ${w.crit ? 'critical' : ''}">
+          <div class="alert-title">${w.title}</div>
+          <div class="alert-desc">${w.desc}</div>
+        </div>`;
+      });
+
+      html += `<div class="data-group"><h2>Wind</h2>
+        <div class="data-row"><span class="data-label">Speed</span><span class="data-value">${(weather.wind_speed_10m||0).toFixed(1)} kt</span></div>
+        <div class="data-row"><span class="data-label">Direction</span><span class="data-value">${weather.wind_direction_10m||'--'}° (${windDir(weather.wind_direction_10m)})</span></div>
+        <div class="data-row"><span class="data-label">Gusts</span><span class="data-value ${weather.wind_gusts_10m > 25 ? 'warning':''}">${(weather.wind_gusts_10m||0).toFixed(1)} kt</span></div>
+      </div>`;
+
+      const wh = marine.wave_height;
+      html += `<div class="data-group"><h2>Sea State</h2>
+        <div class="data-row"><span class="data-label">Wave Height</span><span class="data-value ${wh > 2.0 ? 'warning':''}">${wh ? wh.toFixed(1)+' m' : 'Inland'}</span></div>
+        <div class="data-row"><span class="data-label">Wave Direction</span><span class="data-value">${marine.wave_direction ? marine.wave_direction+'° ('+windDir(marine.wave_direction)+')' : 'N/A'}</span></div>
+        <div class="data-row"><span class="data-label">Wave Period</span><span class="data-value">${marine.wave_period ? marine.wave_period.toFixed(1)+' s' : 'N/A'}</span></div>
+        <div class="data-row"><span class="data-label">State</span><span class="data-value">${seaState(wh)}</span></div>
+      </div>`;
+
+      html += `<div class="data-group"><h2>Atmospheric</h2>
+        <div class="data-row"><span class="data-label">Conditions</span><span class="data-value">${wxCode(weather.weather_code)}</span></div>
+        <div class="data-row"><span class="data-label">Visibility</span><span class="data-value">${vis} km</span></div>
+        <div class="data-row"><span class="data-label">Temperature</span><span class="data-value">${(weather.temperature_2m||0).toFixed(1)}°C</span></div>
+        <div class="data-row"><span class="data-label">Humidity</span><span class="data-value">${weather.relative_humidity_2m||'--'}%</span></div>
+        <div class="data-row"><span class="data-label">Pressure</span><span class="data-value">${(weather.surface_pressure||0).toFixed(1)} hPa</span></div>
+        <div class="data-row"><span class="data-label">Precipitation</span><span class="data-value ${weather.precipitation > 5 ? 'warning':''}">${(weather.precipitation||0).toFixed(1)} mm</span></div>
+      </div>`;
+
+      document.getElementById('conditions-panel').innerHTML = html;
+    }
+
+    /* ── HELPERS ── */
+    function windDir(deg) {
+      if (deg === undefined || deg === null) return '--';
+      const d = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      return d[Math.round(deg / 22.5) % 16];
+    }
+    function seaState(h) {
+      if (!h)      return 'Inland';
+      if (h < 0.1) return 'Calm (glassy)';
+      if (h < 0.5) return 'Calm (rippled)';
+      if (h < 1.25)return 'Smooth';
+      if (h < 2.5) return 'Slight';
+      if (h < 4.0) return 'Moderate';
+      if (h < 6.0) return 'Rough';
+      if (h < 9.0) return 'Very rough';
+      return 'High';
+    }
+    function wxCode(c) {
+      const m = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Dense drizzle',61:'Light rain',63:'Moderate rain',65:'Heavy rain',71:'Light snow',73:'Moderate snow',75:'Heavy snow',80:'Light showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm + hail',99:'Thunderstorm + heavy hail'};
+      return m[c] || 'Unknown';
+    }
+
+    /* ── AUTO-LOG BADGE ── */
+    function updateAutologBadge() {
+      const el = document.getElementById('autolog-badge');
+      if (!lastLogTime) { lastLogTime = Date.now(); }
+      const mins = Math.floor((AUTOLOG_INTERVAL - (Date.now() - lastLogTime)) / 60000);
+      el.textContent = `Auto-log: Next in ${Math.max(0, mins)} min`;
+    }
+
+    /* ── INIT ── */
+    async function init() {
+      try {
+        const r = await fetch('/signalk/v1/api/vessels/self/navigation/position',
+          { signal: AbortSignal.timeout(4000) });
+        const d = await r.json();
+        if (d.value && d.value.latitude) {
+          currentPosition = { lat: d.value.latitude, lon: d.value.longitude };
+          hasGPSFix = true;
+          document.getElementById('locCoords').textContent =
+            `${currentPosition.lat.toFixed(5)}°, ${currentPosition.lon.toFixed(5)}°`;
+        }
+      } catch(e) {}
+      updateRadar();
+      fetchWeatherData();
+      connectSK();
+    }
+
+    init();
+    setInterval(fetchWeatherData, UPDATE_INTERVAL);
+    setInterval(updateAutologBadge, 60000);
+  </script>
+</body>
+</html>
