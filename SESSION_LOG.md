@@ -14,6 +14,7 @@
 - Patched AvNav `signalkhandler.py` line 1580 — charts URL rewritten from `/v1/api/` to `/v2/api/`. Root cause: SK 2.x moved resources to v2 but AvNav polls v1. Charts 404 count confirmed 0 after fix.
 - Enabled Node-RED `contextStorage: localfilesystem` — flow context now persists across restarts
 - Set Node-RED `credentialSecret` — credentials now re-encryptable with known key
+- Node-RED credential investigation: `flows_cred.json` contained 51 bytes of garbled data from key cycling, not real credentials. Confirmed no credentials were ever stored in any flow nodes. Don clicked Deploy — corrupted file cleared, fresh empty credentials file written under `atmyboat2026`. Warning gone.
 
 **Decisions:**
 - SwiftShader chosen over hardware GPU (V3D): V3D driver on Pi 4 Wayland causes crash/spin loop. SwiftShader uses CPU for rendering but is stable and preserves full CSS compositor. Accepted trade-off: higher CPU usage, reliable rendering.
