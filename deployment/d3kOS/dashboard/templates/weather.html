@@ -96,11 +96,15 @@
     }
     .dn-b.on { background: rgba(255,255,255,.25); color: #fff; border-color: rgba(255,255,255,.8); }
 
+    /* ── BOTTOM NAV ── */
+    --bot-h: 104px;
+    --helm-rise: 24px;
+
     /* ── MAIN TWO-COLUMN LAYOUT ── */
     #main {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      height: calc(100vh - var(--top-h));
+      height: calc(100vh - var(--top-h) - var(--bot-h));
       overflow: hidden;
     }
 
@@ -234,14 +238,58 @@
       font-size: 20px; color: var(--crit-num);
     }
 
-    /* Auto-log badge */
-    #autolog-badge {
-      position: fixed; bottom: 10px; right: 10px;
-      background: rgba(0,0,0,.8);
-      border: 1px solid var(--accent);
-      border-radius: 8px; padding: 8px 14px;
-      font-size: 18px; color: var(--accent); z-index: 200;
+    /* Update countdown line in conditions panel */
+    .update-line {
+      font-size: 18px; color: var(--muted);
+      margin-top: 4px; margin-bottom: 14px;
+      text-align: center; letter-spacing: .04em;
     }
+
+    /* ── BOTTOM NAV ── */
+    #bot {
+      height: var(--bot-h); flex-shrink: 0;
+      background: var(--panel);
+      border-top: 2px solid var(--rule);
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      overflow: visible;
+    }
+    .nb {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+      border: none; background: none; cursor: pointer;
+      border-right: 1px solid var(--rule);
+      padding: 0 4px; position: relative; transition: background .12s;
+    }
+    .nb:last-child { border-right: none; }
+    .nb:active { background: var(--g-dim); }
+    .nb.nb-active::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 4px; right: 4px; height: 4px;
+      background: var(--g-txt); border-radius: 2px 2px 0 0;
+    }
+    .nb.nb-active:not(.helm) { background: rgba(0,80,0,.10); }
+    [data-night] .nb.nb-active:not(.helm) { background: rgba(0,196,0,.10); }
+    .nb-icon { font-size: 32px; line-height: 1; opacity: .38; }
+    .nb.nb-active .nb-icon { opacity: 1; color: var(--g-txt); }
+    .nb-lbl {
+      font-size: 28px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--ink3);
+    }
+    .nb.nb-active .nb-lbl { color: var(--g-txt); }
+    /* HELM button */
+    .nb.helm {
+      background: var(--g-txt);
+      border-right: 2px solid rgba(0,100,0,.5);
+      border-left: 2px solid rgba(0,100,0,.5);
+      border-top: 3px solid rgba(0,200,0,.4);
+      margin-top: calc(-1 * var(--helm-rise));
+      height: calc(var(--bot-h) + var(--helm-rise));
+      border-radius: 18px 18px 0 0;
+    }
+    .nb.helm .nb-icon { font-size: 38px; color: #fff; opacity: 1; }
+    .nb.helm .nb-lbl { font-size: 28px; font-weight: 700; letter-spacing: .06em; color: #fff; }
+    .nb.helm::after { display: none; }
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 32px; }
@@ -304,7 +352,27 @@
     </div>
   </div>
 
-  <div id="autolog-badge">Auto-log: Initializing&hellip;</div>
+  <!-- BOTTOM NAV — Weather tab active -->
+  <div id="bot">
+    <button class="nb" onclick="window.location.href='/'">
+      <span class="nb-icon">&#128506;</span><span class="nb-lbl">Dashboard</span>
+    </button>
+    <button class="nb nb-active">
+      <span class="nb-icon">&#127780;</span><span class="nb-lbl">Weather</span>
+    </button>
+    <button class="nb" onclick="window.location.href='/marine-vision'">
+      <span class="nb-icon">&#128249;</span><span class="nb-lbl">Marine Vision</span>
+    </button>
+    <button class="nb helm" onclick="window.location.href='/'">
+      <span class="nb-icon">&#127908;</span><span class="nb-lbl">HELM</span>
+    </button>
+    <button class="nb" onclick="window.location.href='/boat-log'">
+      <span class="nb-icon">&#128218;</span><span class="nb-lbl">Boat Log</span>
+    </button>
+    <button class="nb" onclick="window.location.href='/'">
+      <span class="nb-icon">&#8942;&#8942;</span><span class="nb-lbl">More</span>
+    </button>
+  </div>
 
   <script>
     /* ── THEME ── */
@@ -328,6 +396,7 @@
     let currentPosition  = { lat: 44.4167, lon: -79.3333 }; // Lake Simcoe fallback
     let hasGPSFix        = false;
     let weatherData      = null;
+    let lastFetchTime    = null;
     let lastLogTime      = null;
     let currentZoom      = 9;
     let currentOverlay   = 'wind';
@@ -413,8 +482,8 @@
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${currentPosition.lat}&longitude=${currentPosition.lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=visibility&timezone=auto`;
         const [mRes, wRes] = await Promise.all([fetch(marineUrl), fetch(weatherUrl)]);
         weatherData = { marine: await mRes.json(), weather: await wRes.json(), timestamp: new Date().toISOString() };
+        lastFetchTime = Date.now();
         renderConditions();
-        updateAutologBadge();
       } catch(err) {
         document.getElementById('conditions-panel').innerHTML =
           '<div class="error">Weather data unavailable.<br>Check internet connection.</div>';
@@ -428,13 +497,17 @@
       const vis     = weatherData.weather.hourly && weatherData.weather.hourly.visibility
                         ? (weatherData.weather.hourly.visibility[0] / 1000).toFixed(1) : 'N/A';
       const ts      = new Date(weatherData.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const minsLeft = lastFetchTime
+        ? Math.max(0, Math.ceil((UPDATE_INTERVAL - (Date.now() - lastFetchTime)) / 60000))
+        : 5;
 
       const warnings = [];
       if (weather.wind_gusts_10m > 25) warnings.push({ title:'High Wind Warning',  desc:`Gusts up to ${weather.wind_gusts_10m.toFixed(1)} kt`, crit: weather.wind_gusts_10m > 35 });
       if (marine.wave_height > 2.0)    warnings.push({ title:'High Seas Warning',   desc:`Wave height ${marine.wave_height.toFixed(1)} m`,     crit: marine.wave_height > 3.5 });
       if (weather.precipitation > 5.0) warnings.push({ title:'Heavy Precipitation', desc:`${weather.precipitation.toFixed(1)} mm/hr`,           crit: weather.precipitation > 10 });
 
-      let html = `<div class="ts-line">Updated ${ts}</div>`;
+      let html = `<div class="ts-line">Updated ${ts}</div>
+        <div class="update-line">Next update in ${minsLeft} min</div>`;
 
       warnings.forEach(w => {
         html += `<div class="alert-box ${w.crit ? 'critical' : ''}">
@@ -491,12 +564,9 @@
       return m[c] || 'Unknown';
     }
 
-    /* ── AUTO-LOG BADGE ── */
-    function updateAutologBadge() {
-      const el = document.getElementById('autolog-badge');
-      if (!lastLogTime) { lastLogTime = Date.now(); }
-      const mins = Math.floor((AUTOLOG_INTERVAL - (Date.now() - lastLogTime)) / 60000);
-      el.textContent = `Auto-log: Next in ${Math.max(0, mins)} min`;
+    /* Re-render countdown every minute so "Next update in X min" stays accurate */
+    function refreshCountdown() {
+      if (weatherData) renderConditions();
     }
 
     /* ── INIT ── */
@@ -519,7 +589,7 @@
 
     init();
     setInterval(fetchWeatherData, UPDATE_INTERVAL);
-    setInterval(updateAutologBadge, 60000);
+    setInterval(refreshCountdown, 60000);
   </script>
 </body>
 </html>
