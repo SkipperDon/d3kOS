@@ -2236,7 +2236,7 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 - [✅] AvNav charts 404 fixed — `signalkhandler.py` line 1580 patched: charts URL rewritten from v1 to v2 API path. Backup at `/usr/lib/avnav/server/handler/signalkhandler.py.bak-20260318`. Charts 404 count confirmed 0.
 - [✅] Node-RED context storage — `contextStorage: localfilesystem` enabled in `settings.js`. Flow context now persists across restarts.
 - [✅] Node-RED credential secret — `credentialSecret` set. Re-encrypt triggers on next Deploy in editor.
-- [⚠️] Node-RED credential re-encryption — **Don must**: open Node-RED editor, re-enter any credentials in flow nodes, click Deploy. One-time task. After Deploy, warning clears permanently.
+- [✅] Node-RED credential re-encryption — confirmed no credentials were stored in any flow nodes. `flows_cred.json` was 51 bytes of garbled data from key cycling. Don clicked Deploy 2026-03-18 — file cleared, fresh empty credentials written under `atmyboat2026`. Warning gone.
 - [ ] Anchor data 404s (AvNav) — `navigation/anchor/*` paths return 404. Expected when not anchored — no fix needed. Monitor when anchored with NMEA2000 anchor watch active.
 
 ---
