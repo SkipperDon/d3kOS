@@ -536,28 +536,34 @@ html, body {
 
 /* ── HELM BUTTON ── */
 .nb.helm {
-  background: var(--g-txt);
-  border-right: 2px solid var(--g-mid);
-  border-left: 2px solid var(--g-mid);
-  border-top: 3px solid var(--g-hi);
+  border-top: 2px solid var(--g-bdr);
   margin-top: calc(-1 * var(--helm-rise));
   height: calc(var(--bot-h) + var(--helm-rise));
   border-radius: 18px 18px 0 0;
-  box-shadow: 0 -6px 20px rgba(0,68,0,.18);
   position: relative; z-index: 10;
-  transition: background .2s, border-color .2s;
+  transition: background .2s;
 }
-.nb.helm .nb-icon { font-size: 38px; color: #fff; opacity: 1; }
-.nb.helm .nb-lbl {
-  font-size: 28px; font-weight: 700; letter-spacing: .06em; color: #fff;
-}
-.nb.helm:active { background: var(--g-dim); }
+.nb.helm .nb-icon { font-size: 38px; opacity: 0.6; }
+.nb.helm .nb-lbl { font-size: 28px; font-weight: 700; letter-spacing: .06em; }
+.nb.helm:active { background: rgba(0,68,0,.10); }
 .nb.helm::after { display: none; }
+/* State sub-label — always shows WATCHING / MUTED */
+.nb-state {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 13px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink3);
+  line-height: 1; margin-top: 2px;
+}
+.nb.helm.muted .nb-state { color: var(--alrt); }
+.nb.helm.muted .nb-icon { opacity: 0.4; }
+/* Listening state — amber pulse */
 .nb.helm.live {
   background: var(--alrt);
   animation: helmLive 1s ease-in-out infinite;
 }
-.nb.helm.live .nb-lbl { animation: flash .9s step-end infinite; }
+.nb.helm.live .nb-icon { opacity: 1; color: #fff; }
+.nb.helm.live .nb-lbl { color: #fff; animation: flash .9s step-end infinite; }
+.nb.helm.live .nb-state { color: rgba(255,255,255,.7); }
 @keyframes helmLive {
   0%,100% { background: var(--alrt); box-shadow: 0 -8px 28px rgba(0,0,0,.22); }
   50% { background: var(--alrt); box-shadow: 0 -8px 40px rgba(200,60,0,.4); }
