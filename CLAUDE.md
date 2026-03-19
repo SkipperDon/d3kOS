@@ -25,6 +25,49 @@ If genuinely blocked with two meaningfully different paths that produce differen
 
 ---
 
+## Pre-Edit Snapshot Rule (AAO Section 17 — Interactive Development Mode)
+
+This rule implements the snapshot requirement from AAO SPECIFICATION.md Section 17.
+It applies at the start of every session, before any file is modified.
+
+**Step 1 — Check working tree (MANDATORY)**
+Run `git status` before touching any file.
+
+If clean (`nothing to commit, working tree clean`):
+> State: "Working tree clean — git snapshot valid. Proceeding with [sprint scope]."
+
+If NOT clean (uncommitted changes exist):
+> STOP. List every uncommitted file in chat.
+> State: "Uncommitted changes exist. I cannot proceed until these are committed or
+> you explicitly acknowledge the risk and authorize me to continue."
+> Do NOT proceed until the operator responds.
+
+**Step 2 — State scope before starting**
+Before any edit, state the exact list of files this sprint will touch.
+This is the scope boundary. Do not modify any file not on this list.
+
+**Step 3 — Checkpoint commits for structural edits**
+If this session touches three or more files, or any structural file
+(CLAUDE.md, package.json, schema files, config files, .env files), state:
+> "This session touches structural files. I will stop and request a checkpoint
+> commit after each logical unit of work before continuing."
+
+**Step 4 — File-change summary before every commit**
+Before requesting a commit, present:
+- Every file modified this task
+- A one-line description of what changed in each file
+- Confirmation that no file outside the stated scope was touched
+
+The operator must acknowledge this summary before the commit proceeds.
+
+**Why this rule exists (AAO Section 17.7):**
+Claude Code writes directly to live files. If a session goes sideways and the
+working tree was not clean, the prior state of modified files is permanently lost.
+Git is only a valid rollback mechanism when a clean commit exists as the baseline.
+This rule ensures that baseline always exists before work begins.
+
+---
+
 ## Git Policy
 
 - **NEVER push to GitHub** — no `git push`, no `gh pr create`, no force push
