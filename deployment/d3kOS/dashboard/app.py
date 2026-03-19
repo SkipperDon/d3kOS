@@ -62,6 +62,8 @@ OLLAMA_HOST   = os.getenv('OLLAMA_HOST',   '192.168.1.36:11434')
 VESSEL_NAME   = os.getenv('VESSEL_NAME',   'MV SERENITY')
 HOME_PORT_VAL = os.getenv('HOME_PORT',     'Home Port')
 UI_LANG       = os.getenv('UI_LANG',       'en-GB')
+HOME_PORT_LAT = os.getenv('HOME_PORT_LAT', '')
+HOME_PORT_LON = os.getenv('HOME_PORT_LON', '')
 
 
 def check_internet() -> bool:
@@ -313,6 +315,22 @@ def action_reboot():
         return jsonify({'ok': True})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/vessel-home')
+def vessel_home():
+    """
+    Return home port coordinates for weather.html GPS fallback.
+    Reads HOME_PORT_LAT / HOME_PORT_LON from vessel.env.
+    Returns {"lat": float, "lon": float, "home_port": str} if set,
+    or {"lat": null, "lon": null, "home_port": str} if not configured.
+    """
+    try:
+        lat = float(HOME_PORT_LAT) if HOME_PORT_LAT else None
+        lon = float(HOME_PORT_LON) if HOME_PORT_LON else None
+    except ValueError:
+        lat = lon = None
+    return jsonify({'lat': lat, 'lon': lon, 'home_port': HOME_PORT_VAL})
 
 
 @app.route('/offline')
