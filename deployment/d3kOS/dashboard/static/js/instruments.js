@@ -397,22 +397,100 @@ function triggerRouteAnalysis() {
     .catch(() => toast('AI Bridge unavailable'));
 }
 
-/* ── ROW TOGGLE — Both / Engine / Nav ── */
+/* ── ROW TOGGLE — Both / Engine / Nav / WX ── */
 function showRow(which) {
+  const isWx = which === 'wx';
+
+  /* Stop WX fullscreen when leaving it */
+  if (!isWx) _wxFsStop();
+
   const showE = which === 'both' || which === 'engine';
   const showN = which === 'both' || which === 'nav';
   document.getElementById('rowEngine').classList.toggle('hidden', !showE);
   document.getElementById('rowNav').classList.toggle('hidden', !showN);
+
+  /* Show/hide main area vs WX fullscreen */
+  document.getElementById('main').style.display  = isWx ? 'none' : '';
+  document.getElementById('wxFs').style.display  = isWx ? 'flex' : 'none';
+
   document.getElementById('rpBoth').classList.toggle('on',   which === 'both');
   document.getElementById('rpEngine').classList.toggle('on', which === 'engine');
   document.getElementById('rpNav').classList.toggle('on',    which === 'nav');
+  document.getElementById('rpWx').classList.toggle('on',     which === 'wx');
+
   const hints = {
     both:   'Engine + Nav',
     engine: 'Engine instruments',
     nav:    'Navigation instruments',
+    wx:     'Weather fullscreen',
   };
-  document.getElementById('rowHint').textContent = hints[which];
-  updateAlertDots();
+  document.getElementById('rowHint').textContent = hints[which] || '';
+
+  if (isWx) _wxFsStart();
+  else updateAlertDots();
+}
+
+/* ── WX FULLSCREEN ── */
+let _wxFsCountdownTmr = null;
+let _wxFsSecondsLeft  = 900;
+
+function _wxFsStart() {
+  /* Unload split pane Windy — only one Windy instance at a time */
+  const splitFrame = document.getElementById('windyFrame');
+  if (splitFrame) { splitFrame.src = 'about:blank'; splitFrame.dataset.loaded = ''; }
+  if (typeof closeSplit === 'function') closeSplit();
+
+  /* Load weather.html full-screen — it has its own radar + conditions layout */
+  const fsFrame = document.getElementById('wxFsFrame');
+  if (fsFrame) fsFrame.src = 'http://localhost/weather.html';
+
+  /* Sync day/night button to current theme */
+  _wxFsSyncDayNight();
+
+  /* Start 15-min countdown — reloads weather.html to refresh all data */
+  _wxFsSecondsLeft = 900;
+  _wxFsUpdateCountdown();
+  _wxFsCountdownTmr = setInterval(() => {
+    _wxFsSecondsLeft--;
+    if (_wxFsSecondsLeft <= 0) {
+      _wxFsSecondsLeft = 900;
+      const f = document.getElementById('wxFsFrame');
+      if (f) f.src = '/weather.html';
+    }
+    _wxFsUpdateCountdown();
+  }, 1000);
+}
+
+function _wxFsStop() {
+  clearInterval(_wxFsCountdownTmr);
+  _wxFsCountdownTmr = null;
+  const fsFrame = document.getElementById('wxFsFrame');
+  if (fsFrame) fsFrame.src = 'about:blank';
+}
+
+function _wxFsUpdateCountdown() {
+  const el = document.getElementById('wxFsCountdown');
+  if (!el) return;
+  const m = String(Math.floor(_wxFsSecondsLeft / 60)).padStart(2, '0');
+  const s = String(_wxFsSecondsLeft % 60).padStart(2, '0');
+  el.textContent = 'Update in ' + m + ':' + s;
+}
+
+function _wxFsSyncDayNight() {
+  const btn = document.getElementById('wxFsDayNight');
+  if (!btn) return;
+  const isNight = document.body.hasAttribute('data-night');
+  btn.textContent = isNight ? '\u263E NIGHT' : '\u2600\uFE0F DAY';
+}
+
+function wxFsToggleDayNight() {
+  const isNight = document.body.hasAttribute('data-night');
+  setTheme(isNight ? 'day' : 'night', true);
+  const fsFrame = document.getElementById('wxFsFrame');
+  if (fsFrame) fsFrame.src = _wxFsWindyUrl(_wxFsOverlay);
+  _wxFsSecondsLeft = 900;
+  _wxFsUpdateCountdown();
+  _wxFsSyncDayNight();
 }
 
 /* ── ALERT DOTS ── */
