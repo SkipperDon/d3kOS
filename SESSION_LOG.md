@@ -2,6 +2,65 @@
 
 ---
 
+## Session — 2026-03-19 (Session 4) — Tailscale removed from Pi; Node-RED confirmed active
+
+**Tasks completed:**
+- GPS outdoor verification rescheduled — dependency on UAT added to checklist (Don's instruction)
+- Tailscale removed from Pi: `tailscale` 1.94.2 + `tailscale-archive-keyring` purged, 65.5 MB freed, `tailscaled.service` gone, `tailscale0` interface gone. Pi remains reachable at 192.168.1.237.
+- `remote_api.py` updated: `_tailscale_status()` and `subprocess` import removed; `/remote/config` and `/remote/status-stream` return stub values (`tailscale_connected: false`). API contract preserved.
+- `remote-access.html` updated: Tailscale warning box, steps, and `updateStatusBadge()` logic removed. Replaced with LAN-only QR code + v0.9.4 remote access notice. Steps rewritten for LAN access.
+- Node-RED status confirmed: active (running), v4.1.4, flows started, Dashboard 2.0 at /dashboard. "Encrypted credentials not found" warning is known/harmless — no credentials in flow nodes.
+
+**Files changed:**
+- `deployment/v0.9.2/python/remote_api.py` — Tailscale code removed, subprocess import removed (Low)
+- `deployment/v0.9.2/pi_source/remote-access.html` — Tailscale UI replaced with LAN QR + v0.9.4 notice (Low)
+- Pi: `/opt/d3kos/services/remote/remote_api.py` — deployed (Low)
+- Pi: `/var/www/html/remote-access.html` — deployed (Low)
+- Pi: Tailscale packages purged — irreversible (Medium)
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — GPS dependency note; Tailscale [✅]; Node-RED [✅] ×2; Last Updated bumped (Low)
+
+**Backups created:**
+- Local: `deployment/v0.9.2/python/remote_api.py.bak-20260319`
+- Local: `deployment/v0.9.2/pi_source/remote-access.html.bak-20260319`
+- Pi: `/opt/d3kos/services/remote/remote_api.py.bak-20260319`
+- Pi: `/var/www/html/remote-access.html.bak-20260319`
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| remote_api.py | `/opt/d3kos/services/remote/remote_api.py` | base | Tailscale removed, stubs inserted |
+| remote-access.html | `/var/www/html/remote-access.html` | base | Tailscale UI → LAN + v0.9.4 notice |
+| system | Pi packages | system | tailscale + tailscale-archive-keyring purged |
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-remote-api` (done)
+- Rollback: `sudo apt-get install tailscale` + restore .bak files
+- Health check: `curl http://localhost:8111/remote/health` → `{"status":"ok"}`
+
+**PROJECT_CHECKLIST.md updates:**
+- GPS outdoor verification → added `**Dependency: after UAT.**`
+- `[ ] Tailscale removal from Pi` → `[✅]` purged 2026-03-19
+- `[ ] Node-RED inactive status` (×2 instances) → `[✅]` confirmed active
+- Last Updated → Session 4
+
+**AAO compliance:** PASS — Tailscale purge pre-stated as Medium/irreversible, explicit "confirm" received before executing. All other actions Low. No scope creep.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-19 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Open items for next session:**
+- UAT — 5 metric + 5 imperial users (Don's task — when ready)
+- GPS outdoor verification — after UAT, at dock with sky view
+- Fill in `HOME_PORT_LAT`/`HOME_PORT_LON` in vessel.env (Don's one-time task)
+- o-charts chart activation (Don's task)
+- v0.9.4 mobile companion app — Tailscale pre-req now done, ready to plan when Don gives the word
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-19 (Session 3) — Sprint Mode added to AAO CLAUDE.md files; pushed to GitHub
 
 **Tasks completed:**
