@@ -428,17 +428,26 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] INC-13: Row height fix + touch target fix (commit 82635f0) — deployed to Pi
 - [✅] INC-14: Full font scale research (IEC 62288 + ISO 9241-303 + ISO 15008, 1m viewing distance)
 - [✅] INC-15: Option B font scale deployed (commit f0bbbc6) — 32px labels, 28px nav, 20px forms, zero 16px violations — deployed to Pi CSS v=9
-- [ ] INC-16: Visual verification on Pi screen — Don to confirm 32px labels readable at helm distance
+- [✅] INC-16: Visual verification on Pi screen — Don confirmed 32px labels readable at helm distance (2026-03-16)
+- [✅] I-08: Close buttons 48×48px dark bold — deployed 2026-03-19 (CSS v=15)
+- [✅] I-18: All dropdowns touch-sized (global select rule) — deployed 2026-03-19
+- [✅] I-19: Base font 18px→20px — deployed 2026-03-19
+- [✅] I-05: HELM active state — highlights only when overlay open — deployed 2026-03-19
+- [✅] I-07: HELM mute toggle — speaker button, localStorage persistence — deployed 2026-03-19
+- [✅] I-14/I-15: Leave app dialog suppressed for internal navigation — deployed 2026-03-19
+- [✅] I-16: Boat log fonts Bebas Neue/Chakra Petch — confirmed identical on Pi, no change needed
+- [✅] I-17: Engine capture — boatlog-engine.js + engine-entry endpoint deployed 2026-03-19
+- [✅] WX fullscreen: 4th row toggle button (WX) — weather.html full-screen, bottom bar countdown + day/night — deployed 2026-03-19
 - [ ] UAT: 5 metric + 5 imperial users
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 - [ ] weather.html GPS fallback: replace hardcoded Lake Simcoe (44.4167, -79.3333) with vessel home port from vessel.env. If no home port configured, show world-level zoom with no fixed centre. Hardcoded position is Canada-specific — wrong for any deployment outside Ontario.
+- [ ] Tailscale removal from Pi — pre-requisite before v0.9.4 mobile app build begins
 
-**Last updated:** 2026-03-19 (Session: v0.9.2.3 cancelled, Pi CSS cleanup, v0.9.2.2 backup created)
+**Last updated:** 2026-03-19 (Session: Batches 1–4 complete, WX fullscreen built, GPS diagnosed healthy)
 
-**Active system on Pi:** v0.9.2.2 — restored by Don from prior backup. CSS ?v=9. d3kos-dashboard active.
+**Active system on Pi:** v0.9.2.2 — CSS ?v=15. All Batch 1–4 fixes deployed. WX fullscreen active.
 **v0.9.2.3 status:** ❌ CANCELLED — do not deploy. See V0923_PLAN.md for historical record.
-**Pending next session:** WX full-screen weather button (not yet built — previous attempt reverted due to scope violation). Requires explicit file list from Don before implementation begins.
 
 ---
 
