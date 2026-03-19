@@ -2,6 +2,52 @@
 
 ---
 
+## Session — 2026-03-18 (Part 7) — v0.9.3 Phase 2F added; Q&A confirmation pass closed
+
+**Tasks completed:**
+- Confirmed Decision 10: PDF Boat Reports — T2 and T3 only (T1 excluded, corrected from original brief)
+- Confirmed Decision 11: OS Lockdown — apt-mark hold, pre-upgrade hook, Fix My Pi repairs OS breakage
+- Confirmed Decision 12: Push notifications deferred — Pi must be online; no VPS = no push when Pi is off
+- Q&A confirmation pass complete — all 12 decisions on record in MOBILE_APP_QA_RECORD.md
+- Added Phase 2F (Mobile App Backend) to v0.9.3 ATMYBOAT_BUILD_REFERENCE.md and PROJECT_CHECKLIST.md
+- Corrected Phase 5 in both docs — removed Supabase and Next.js (conflict with $0 infrastructure decision)
+- Corrected products.json version: v2.0-T3 → v0.9.2 (March 2026)
+- Added Phase 2F to ATMYBOAT_STANDING_INSTRUCTION.md phase status table
+- Committed all prior-session unstaged files (deployment/d3kOS/ governance files, DEPLOYMENT_INDEX.md)
+
+**Files changed:**
+- `deployment/docs/MOBILE_APP_QA_RECORD.md` — Decisions 10–12 confirmed (Low)
+- `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` — PDF tier corrected to T2/T3 only (Low)
+- `PROJECT_CHECKLIST.md` — Phase 2F added to v0.9.3, Phase 5 corrected, Last Updated refreshed (Low)
+- `SESSION_LOG.md` — This entry (Low)
+- `memory/MEMORY.md` — PDF tier and push notification corrections (Low)
+- `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` — Phase 2F added, Phase 5 rewritten, version corrected (Low)
+- `deployment/v0.9.3/ATMYBOAT_STANDING_INSTRUCTION.md` — Phase 2F added to status table (Low)
+
+**PROJECT_CHECKLIST.md updates:**
+- Added Phase 2F section (15 tasks) to v0.9.3 — between Phase 2E and Phase 3
+- Phase 5 rewritten — Supabase and Next.js removed, correct scope stated
+- Last Updated line updated to 2026-03-18
+
+**AAO compliance:** PASS — all Low risk, pre-stated, no scope creep, no push
+
+**Open items for next session:**
+- v0.9.3 Session 1: Start at Phase 0 — UpdraftPlus backup, staging activation, Anthropic API key
+- v0.9.4: Write full mobile app implementation spec (brief + Q&A record are now clean)
+- Remove Tailscale from Pi (pre-build prerequisite for v0.9.4)
+- v0.9.2 UAT: 5 metric + 5 imperial users (Don's task)
+- o-charts fingerprint: Don to re-register at o-charts.org
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-18 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-18 (Part 6) — Mobile App Q&A Confirmation Pass Complete
 
 **Tasks completed:**

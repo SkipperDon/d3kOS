@@ -1462,6 +1462,30 @@
 - [ ] Add internal cross-links: homepage → products → forum → blog
 
 
+### Phase 2F — Mobile App Backend (HostPapa PHP + MySQL) — Added 2026-03-18
+
+*Required before v0.9.4 PWA can launch. All on existing HostPapa hosting — $0 new cost.*
+*Full spec in `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` Phase 2F.*
+
+- [ ] Create 7 MySQL tables via phpMyAdmin SQL import (devices, pairings, command queue, exports, Fix My Pi reports, PDF reports, version registry)
+- [ ] Build `mobile/register-device.php` — store device UUID, link to account
+- [ ] Build `mobile/pair-device.php` — link device UUID + Pi installation ID + account
+- [ ] Build `mobile/command-queue.php` — write (app), poll (Pi every 30s), result write (Pi), read (app)
+- [ ] Build `mobile/data-ingress.php` — receive all 8 Pi export categories
+- [ ] Build `mobile/tier-features.php` — return JSON feature flags per tier (T0/T1/T2/T3)
+- [ ] Build Stripe $29.99 Fix My Pi payment page — T0/T1 only; webhook updates DB on success
+- [ ] Upload mPDF library to HostPapa via FTPS
+- [ ] Build `mobile/pdf-report.php` — mPDF + Gemini 2.5 Flash (MAX_TOKENS 1000), T2/T3 only
+- [ ] Build `mobile/version-registry.php` — seed with current d3kOS version on launch
+- [ ] Add API key authentication to all `/mobile/` endpoints
+- [ ] Test command queue end-to-end: app writes → Pi polls → Pi responds → app reads result
+- [ ] Test Stripe Fix My Pi: app opens payment page → payment completes → tier updated
+- [ ] Test PDF report: trigger → mPDF generates → Gemini recommendations → download URL returned
+- [ ] Verify PDF reports blocked for T0/T1 (return 403)
+
+**Phase 2F complete when:** Command queue, pairing, exports, Stripe, PDF reports all verified on staging.
+
+
 ### Phase 3 — AODA Compliance Audit (staging — before any migration)
 
 - [ ] All body text 4.5:1 minimum contrast — test every text/background pair
@@ -1520,19 +1544,14 @@
 
 ### Phase 5 — Future Platform Expansion (do not start until Phase 4 verified)
 
-- [ ] T1/T2/T3 subscription tiers
+**Note:** No Supabase. No Next.js. No separate server. All HostPapa PHP + MySQL.
+Device registration, QR pairing, command queue, and Stripe payments are Phase 2F (already scoped).
 
-- [ ] Device registration via QR scan
-
-- [ ] Supabase telemetry dashboard
-
-- [ ] Advanced AI (First Mate, session history)
-
-- [ ] Marine Vision gallery
-
-- [ ] Fleet management (T3)
-
-- [ ] B2B intelligence portal
+- [ ] T3 fleet management (multiple Pis on one account)
+- [ ] B2B intelligence portal (marine dealers, marinas, installers)
+- [ ] Marine Vision gallery (shared camera clips)
+- [ ] Advanced AI session history (if decided)
+- [ ] Annual billing option via Stripe (T2/T3)
 
 **Deliverable:** atmyboat.com community forum live with AI assistant, product hub showing d3kOS, full AODA compliance, SEO configured.
 
@@ -1942,7 +1961,7 @@
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
 
-**Last Updated:** 2026-03-12 | Session: Charts/OpenCPN fix complete — nginx proxy + charts.html relative path. OpenCPN confirmed opening on Pi desktop by Don. Commit 83b91c8.
+**Last Updated:** 2026-03-18 | Session: Mobile app Q&A confirmation pass complete (12 decisions, 4 corrections). v0.9.3 Phase 2F added. Phase 5 Supabase/Next.js removed. Commits 9a23c44, 94328fe.
 
 ---
 
