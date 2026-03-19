@@ -64,38 +64,54 @@ All payments go through Stripe on atmyboat.com directly. Apple and Google
 payment rules only apply to apps distributed through their stores. A PWA
 is not in their store — their rules do not apply.
 
-### Decision 2 — No third-party relay services
+### Decision 2 — No third-party paid services
 
-No Tailscale. No Supabase. No AWS. No DigitalOcean. No Cloudflare.
-The only infrastructure used is what already exists:
+No Supabase. No AWS. No DigitalOcean. No paid relay infrastructure.
+The only infrastructure used is what already exists or is free:
 
-- AtMyBoat.com on HostPapa (already paid) — message broker + identity
+- AtMyBoat.com on HostPapa (already paid) — command queue, data broker, identity
 - GitHub (already have) — PWA hosting via GitHub Pages
+- Google/Cloudflare STUN servers (permanently free) — P2P tunnel coordination
 - Stripe — payment processing (2.9% + 30c per transaction, no other fees)
 
-### Decision 3 — HostPapa as the message broker (not a tunnel)
+### Decision 3 — WebRTC/STUN P2P tunnel for live Pi ↔ phone connection
 
-HostPapa shared hosting cannot run a true VPN tunnel. Instead it runs a
-PHP + MySQL message broker that achieves the same functional result:
+**⚠️ CORRECTED 2026-03-18 — previous version incorrectly documented this as a
+polling message broker. See MOBILE_APP_QA_RECORD.md for full correction record.**
+
+The Pi connects to the phone using the same P2P technology that IP cameras
+(e.g. Reolink) use to punch through firewalls and connect directly to mobile apps.
+This is WebRTC with STUN for NAT traversal — $0 continuous cost.
 
 ```
 MOBILE APP (PWA — GitHub Pages)
-    |  reads data / writes commands via HTTPS
+    |  WebRTC/STUN P2P tunnel (live connection)
+    |  also reads/writes async data via HTTPS
     v
-ATMYBOAT.COM — PHP + MySQL  (HostPapa — already paid for)
-    ^
-    |  Pi polls outbound every 30 seconds (punches through any firewall)
-    |  Pi pushes data exports on schedule (outbound HTTPS only)
+STUN SERVER (Google/Cloudflare — free, brokers the P2P handshake only)
     |
-PI COMMAND CONSUMER AGENT  (new Python service on Pi, ~150 lines)
+    | introduces both sides, then exits — traffic flows P2P directly
+    v
+PI  (initiates outbound — no open inbound ports ever)
     |
     v
 EXISTING Pi SERVICES
-(remote_api :8111, export-manager :8094, update manager, all services)
+(remote_api :8111, export-manager :8094, all services)
+
+ATMYBOAT.COM — PHP + MySQL  (command queue, OTA, Fix My Pi, data export)
+    ^
+    |  Pi pushes exports on schedule (outbound HTTPS only)
 ```
 
 The Pi ALWAYS initiates connections outbound. No open inbound ports ever.
-Works through marina WiFi, 4G, any firewall — exactly like IP cameras.
+Works through marina WiFi and 4G — the standard network environment for boats.
+TURN relay fallback is deferred — add only if real user testing reveals it is needed.
+
+### Decision 9 — Self-hosted P2P coordination server deferred to v1.1
+
+Option C (fully self-hosted UDP hole punching, zero third-party dependency) is
+the v1.1 upgrade path. It replaces the Google/Cloudflare STUN dependency with
+a coordination server you own and control. Build begins after v0.9.4 ships.
 
 ### Decision 4 — Unique device identity per app install
 
@@ -334,7 +350,7 @@ ActiveCaptain are used side by side on the same phone.
 | Signal K data | Running | :8099 — all engine + GPS data |
 | AvNav | Running | :8080 — navigation |
 | All d3kOS services | Running | Ports 3000, 3001, 3002, 8084, 8086, 8087, 8089 |
-| Tailscale | Running | IP 100.88.112.63 — available for Phase 2 live screen |
+| Tailscale | ⚠️ TO BE REMOVED — was never operator's choice. Removal task in PROJECT_CHECKLIST.md |
 
 ## WHAT NEEDS TO BE BUILT
 
@@ -406,7 +422,11 @@ ActiveCaptain are used side by side on the same phone.
 ## KEY CONSTRAINTS — NON-NEGOTIABLE
 
 - No open inbound ports on the Pi — ever
-- No third-party relay services (no Tailscale, Supabase, AWS, Cloudflare)
+- No paid relay services (no Supabase, AWS, Cloudflare paid tiers)
+- Tailscale not used — never was operator's choice — removed from Pi before v0.9.4 build
+- WebRTC/STUN is the Pi ↔ phone live tunnel — not polling, not message broker
+- TURN server deferred — add only if user testing proves it necessary
+- Option C (self-hosted coordination server) is v1.1 — not in v0.9.4 scope
 - No App Store distribution — PWA only
 - No in-app payments — all payments via Stripe on atmyboat.com
 - No user question text stored anywhere — token counts only
