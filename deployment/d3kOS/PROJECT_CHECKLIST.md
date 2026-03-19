@@ -442,8 +442,8 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 - [✅] weather.html GPS fallback: 3-tier chain deployed 2026-03-19 — GPS → vessel home port (HOME_PORT_LAT/HOME_PORT_LON in vessel.env) → world view zoom 3. Lake Simcoe hardcode removed. Don must fill in HOME_PORT_LAT/HOME_PORT_LON in vessel.env to activate home port fallback.
-- [ ] Tailscale removal from Pi — pre-requisite before v0.9.4 mobile app build begins
-- [ ] GPS outdoor verification — confirm satellite fix when Pi has sky view. Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position at dock, confirm lat/lon non-zero.
+- [✅] Tailscale removal from Pi — purged 2026-03-19. tailscale 1.94.2 removed, tailscale0 interface gone, 65.5 MB freed. remote_api.py and remote-access.html updated for LAN-only + v0.9.4 placeholder.
+- [ ] GPS outdoor verification — confirm satellite fix when Pi has sky view. Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position at dock, confirm lat/lon non-zero. **Dependency: after UAT.**
 
 **Last updated:** 2026-03-19 (Session 2: weather.html GPS fallback deployed; GPS memory saved)
 
