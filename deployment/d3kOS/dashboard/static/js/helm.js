@@ -26,12 +26,20 @@ let helmMuted = localStorage.getItem('d3kHelmMute') === '1';
 function toggleHelmMute() {
   helmMuted = !helmMuted;
   localStorage.setItem('d3kHelmMute', helmMuted ? '1' : '0');
-  /* Cancel any active browser speech synthesis */
-  if (helmMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+  _syncMuteToServer(helmMuted);
   _updateMuteBtn();
   if (typeof toast === 'function') {
     toast(helmMuted ? 'HELM muted \u2014 listening only' : 'HELM unmuted \u2014 voice active');
   }
+}
+
+function _syncMuteToServer(muted) {
+  /* Tell ai-bridge to stop/resume espeak-ng TTS immediately */
+  fetch('http://localhost:3002/helm/mute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ muted: muted }),
+  }).catch(() => {});
 }
 
 function _updateMuteBtn() {
@@ -45,14 +53,18 @@ function _updateMuteBtn() {
       btn.classList.remove('muted');
     }
   }
-  /* Update nav button state label and muted class */
+  /* Update nav button icon, state label and muted class */
   const helmBtn = document.getElementById('helmBtn');
   const stateEl = document.getElementById('helmState');
+  const iconEl  = document.getElementById('helmIcon');
   if (helmBtn) {
     helmBtn.classList.toggle('muted', helmMuted);
   }
-  if (stateEl && !helmBtn.classList.contains('live')) {
-    stateEl.textContent = helmMuted ? 'MUTED' : 'WATCHING';
+  if (iconEl) {
+    iconEl.textContent = helmMuted ? '\uD83D\uDD07' : '\uD83C\uDFA4'; // 🔇 or 🎤
+  }
+  if (stateEl && helmBtn && !helmBtn.classList.contains('live')) {
+    stateEl.textContent = helmMuted ? 'MUTED' : 'LISTENING';
   }
 }
 
@@ -115,7 +127,7 @@ function closeHelm() {
   document.getElementById('helmBtn').classList.remove('live');
   /* Restore state label */
   const stateEl = document.getElementById('helmState');
-  if (stateEl) stateEl.textContent = helmMuted ? 'MUTED' : 'WATCHING';
+  if (stateEl) stateEl.textContent = helmMuted ? 'MUTED' : 'LISTENING';
 }
 
 /* ── SPLIT PANE MIC ── */
@@ -248,6 +260,7 @@ function _wireField() {
 function _helmInit() {
   _wireField();
   _updateMuteBtn(); // Set initial mute button state from localStorage
+  _syncMuteToServer(helmMuted); // Sync persisted state to ai-bridge on load
 }
 
 if (document.readyState === 'loading') {

@@ -286,6 +286,22 @@ def webhook_query():
         return jsonify({'ok': False, 'error': str(exc)}), 503
 
 
+# ── HELM mute control ──────────────────────────────────────────────────────────
+
+@app.route('/helm/mute', methods=['POST'])
+def helm_mute():
+    """
+    Browser calls this when operator taps the HELM mute button.
+    Body: {'muted': true|false}
+    Immediately stops any active espeak subprocess and sets mute state.
+    """
+    data  = request.get_json(silent=True) or {}
+    muted = bool(data.get('muted', True))
+    tts.set_muted(muted)
+    log.info('HELM TTS %s', 'MUTED' if muted else 'UNMUTED')
+    return jsonify({'ok': True, 'muted': muted})
+
+
 # ── Voyage summary list (for settings page) ────────────────────────────────────
 
 @app.route('/voyages', methods=['GET'])
