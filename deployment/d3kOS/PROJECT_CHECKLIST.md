@@ -432,8 +432,9 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] UAT: 5 metric + 5 imperial users
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
+- [ ] weather.html GPS fallback: replace hardcoded Lake Simcoe (44.4167, -79.3333) with vessel home port from vessel.env. If no home port configured, show world-level zoom with no fixed centre. Hardcoded position is Canada-specific — wrong for any deployment outside Ontario.
 
-**Last updated:** 2026-03-18 (Session: v0.9.2.3 cancelled, Pi CSS cleanup, v0.9.2.2 backup created)
+**Last updated:** 2026-03-19 (Session: v0.9.2.3 cancelled, Pi CSS cleanup, v0.9.2.2 backup created)
 
 **Active system on Pi:** v0.9.2.2 — restored by Don from prior backup. CSS ?v=9. d3kos-dashboard active.
 **v0.9.2.3 status:** ❌ CANCELLED — do not deploy. See V0923_PLAN.md for historical record.
