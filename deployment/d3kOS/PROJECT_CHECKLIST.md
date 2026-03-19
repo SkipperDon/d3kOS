@@ -440,7 +440,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] WX fullscreen: 4th row toggle button (WX) — weather.html full-screen, bottom bar countdown + day/night — deployed 2026-03-19
 - [ ] UAT: 5 metric + 5 imperial users
 - [ ] o-charts chart activation (Don's task)
-- [ ] Node-RED inactive status — confirm intentional or re-enable
+- [✅] Node-RED inactive status — confirmed active 2026-03-19. v4.1.4, flows running, Dashboard 2.0 at /dashboard. Encrypted credentials warning is known/harmless.
 - [✅] weather.html GPS fallback: 3-tier chain deployed 2026-03-19 — GPS → vessel home port (HOME_PORT_LAT/HOME_PORT_LON in vessel.env) → world view zoom 3. Lake Simcoe hardcode removed. Don must fill in HOME_PORT_LAT/HOME_PORT_LON in vessel.env to activate home port fallback.
 - [✅] Tailscale removal from Pi — purged 2026-03-19. tailscale 1.94.2 removed, tailscale0 interface gone, 65.5 MB freed. remote_api.py and remote-access.html updated for LAN-only + v0.9.4 placeholder.
 - [ ] GPS outdoor verification — confirm satellite fix when Pi has sky view. Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position at dock, confirm lat/lon non-zero. **Dependency: after UAT.**
@@ -521,4 +521,4 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
   - S-06 FIXES DEPLOYED (2026-03-17): icon opacity, active state background, WIND MAP button visibility, template cache flushed via service restart
   - Service running since 2026-03-17 09:57:28 EDT (fresh start — all Sessions A-E templates now live)
 - [ ] o-charts chart activation — see deployment/docs/OPENCPN_FLATPAK_OCHARTS.md (Don)
-- [ ] Node-RED inactive status — confirm intentional or re-enable
+- [✅] Node-RED inactive status — confirmed active 2026-03-19. v4.1.4, flows running, Dashboard 2.0 at /dashboard. Encrypted credentials warning is known/harmless.
