@@ -441,10 +441,11 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] UAT: 5 metric + 5 imperial users
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
-- [ ] weather.html GPS fallback: replace hardcoded Lake Simcoe (44.4167, -79.3333) with vessel home port from vessel.env. If no home port configured, show world-level zoom with no fixed centre. Hardcoded position is Canada-specific — wrong for any deployment outside Ontario.
+- [✅] weather.html GPS fallback: 3-tier chain deployed 2026-03-19 — GPS → vessel home port (HOME_PORT_LAT/HOME_PORT_LON in vessel.env) → world view zoom 3. Lake Simcoe hardcode removed. Don must fill in HOME_PORT_LAT/HOME_PORT_LON in vessel.env to activate home port fallback.
 - [ ] Tailscale removal from Pi — pre-requisite before v0.9.4 mobile app build begins
+- [ ] GPS outdoor verification — confirm satellite fix when Pi has sky view. Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position at dock, confirm lat/lon non-zero.
 
-**Last updated:** 2026-03-19 (Session: Batches 1–4 complete, WX fullscreen built, GPS diagnosed healthy)
+**Last updated:** 2026-03-19 (Session 2: weather.html GPS fallback deployed; GPS memory saved)
 
 **Active system on Pi:** v0.9.2.2 — CSS ?v=15. All Batch 1–4 fixes deployed. WX fullscreen active.
 **v0.9.2.3 status:** ❌ CANCELLED — do not deploy. See V0923_PLAN.md for historical record.
