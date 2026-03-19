@@ -65,6 +65,8 @@ These documents explain what problem was solved and exactly how the solution wor
 | `deployment/v0.9.2/python/export_categories.py` | **[2026-03-13 — NEW IN REPO]** collect_settings() now reads user-preferences.json. Adds unit_metadata block (measurement_system, speed/temp/pressure/volume units) to every JSON export. Pi: `/opt/d3kos/services/export/export_categories.py` |
 | `deployment/v0.9.2/python/boatlog-export-api.py` | **[2026-03-13 — NEW IN REPO]** CSV export now writes 3-row unit metadata section before data header. _get_unit_metadata() reads user-preferences.json. Pi: `/opt/d3kos/services/boatlog/boatlog-export-api.py` |
 | `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` | **[2026-03-14 — NEW]** v2.0.0 — Complete mobile app strategy built from 9-question operator Q&A. Covers: PWA on GitHub Pages, HostPapa message broker, tier system (T0-T3), Fix My Pi service, PDF boat reports, OS lockdown, OTA from phone, Find My Boat, build sequence (5 stages). No third-party relay. Zero new infrastructure cost. Context zip at `C:\Users\donmo\Downloads\d3kos-mobile-strategy-2026-03-14.zip` |
+| `deployment/docs/MOBILE_APP_QA_RECORD.md` | **[2026-03-18 — NEW]** v1.0.0 — Verbatim Q&A decision record for mobile app strategy. Authoritative source for all 12 confirmed decisions. 4 corrections applied to original 2026-03-14 brief. |
+| `deployment/d3kOS/docs/D3KOS_UAT_V0922_FIXES.md` | **[2026-03-18 — NEW]** v1.0.0 — UAT checklist for 8 confirmed UI fixes identified in 2026-03-18 issue review (I-05, I-07, I-08, I-11, I-14/15, I-16, I-17, I-18, I-19). Don runs this after all 8 fixes are deployed. |
 
 ---
 

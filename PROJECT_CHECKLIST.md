@@ -2247,6 +2247,31 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
+## v0.9.2.2 — UI Fix Tasks (Issue Review 2026-03-18)
+
+**Source:** 19-issue review session 2026-03-18. 11 issues already fixed in v0.9.2.2. 8 confirmed still needed.
+**UAT:** `deployment/d3kOS/docs/D3KOS_UAT_V0922_FIXES.md` — Don runs this after all 8 fixes deployed.
+**Approach:** One fix at a time. Present plan, wait for approval, then implement.
+
+### Open Fixes
+
+- [ ] **I-05** — HELM button active state: only highlight when HELM overlay is open; all other buttons only highlight when their page is active
+- [ ] **I-07** — HELM software mute: mute toggle button inside HELM overlay; green = talking, grey = muted; persists via localStorage `d3kHelmMute`
+- [ ] **I-08** — Close buttons throughout entire app: 48×48px min, 24px inset from edges, dark background `rgba(0,0,0,0.85)`, white ✕, font-weight 700, font-size 24px
+- [ ] **I-11** — Weather page: modify existing weather.html — left: radar, right: conditions. Add day/night colours, countdown to next update, full screen, back button. Do NOT replace — modify.
+- [ ] **I-14/I-15** — Remove "Leave app?" dialog from ALL pages — never requested, introduced accidentally. Clear `beforeunload` handler on all internal navigation.
+- [ ] **I-16** — Boat Log fonts: Bebas Neue / Chakra Petch throughout, consistent with dashboard
+- [ ] **I-17** — Boat Log auto engine capture: engine start/stop entries + 30-min snapshots while running + alert threshold entries. New JS module `boatlog-engine.js`.
+- [ ] **I-18** — Dropdowns all pages: min-height 52px, font-size 20px, proper padding — global CSS rule
+- [ ] **I-19** — Font consistency all pages: Bebas Neue / Chakra Petch enforced. Minimum sizes: body 20px, labels 24px, instrument values 32px. No text below 20px.
+
+### Open Questions (must answer before implementation)
+- [ ] **Q1** — Does weather.html still exist on Pi in its v0.9.2 form, or was it overwritten?
+- [ ] **Q2** — Does boatlog-export-api.py :8095 need a new endpoint for engine entries, or same endpoint with type field?
+- [ ] **Q3** — Confirm nav.js is the only file controlling bottom nav active state (I-05)
+
+---
+
 ## Pi Continuous Operation — Health Fixes (2026-03-18)
 
 **Session:** Pi had been running continuously. Signal K + Node-RED diagnostic + 6 anomalies fixed.
