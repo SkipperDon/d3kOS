@@ -2,6 +2,49 @@
 
 ---
 
+## Session — 2026-03-18 (Part 6) — Mobile App Q&A Confirmation Pass Complete
+
+**Tasks completed:**
+- Ran systematic confirmation pass through all 12 mobile app Q&A decisions from 2026-03-14 session
+- Confirmed: PWA platform, QR pairing, Fix My Pi tiers, Find My Boat, OS Lockdown
+- Corrected and confirmed: Decision 3 (WebRTC/STUN, not polling), Decision 5 (payments inside PWA), Decision 6 (AI First Mate companion identity), Decision 9 (T0 excluded from OTA), Decision 10 (PDF reports T2/T3 only, not T1+)
+- Decision 12 confirmed: push notifications deferred — Pi must be online; no VPS = no push when Pi is off
+- All 12 decisions now recorded verbatim in MOBILE_APP_QA_RECORD.md
+
+**Files changed:**
+- `deployment/docs/MOBILE_APP_QA_RECORD.md` — 5 new confirmed/corrected decisions added (Low)
+- `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` — PDF reports tier corrected to T2/T3 only (Low)
+- `PROJECT_CHECKLIST.md` — Mobile App section updated: confirmation pass status, PDF tier correction, Phase 2 push note (Low)
+
+**PROJECT_CHECKLIST.md updates:**
+- Mobile App section header updated to "Q&A Confirmation Pass Complete 2026-03-18"
+- Status line updated: all 12 decisions confirmed, 4 corrections applied
+- Stage 4 header updated: PDF Boat Reports T2/T3 only — confirmed 2026-03-18
+- Phase 2 push note updated: Pi must be online; no VPS = no push when Pi is off
+
+**AAO compliance:** PASS
+- All actions were Low risk (file edits only)
+- Pre-action statements given
+- No scope creep — only confirmation pass files touched
+- No git push executed
+
+**Open items for next session:**
+- Write full mobile app implementation spec (from brief + Q&A record)
+- Remove Tailscale from Pi (pre-build prerequisite)
+- v0.9.2 UAT: 5 metric + 5 imperial users (Don's task)
+- o-charts fingerprint: Don to re-register at o-charts.org
+- v0.9.3 Session 1: MailPoet + font audit for AtMyBoat.com
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-18 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-18 (Part 5) — AAO Pre-Implementation Gate pushed to GitHub
 
 **Tasks completed:**
