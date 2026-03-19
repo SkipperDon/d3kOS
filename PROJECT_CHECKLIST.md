@@ -2243,10 +2243,16 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
-## Mobile App — d3kOS Companion (Strategy Complete — Build Not Started)
+## Mobile App — d3kOS Companion (Strategy Corrected 2026-03-18 — Build Not Started)
 
-**Brief:** `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0
-**Status:** Strategy complete 2026-03-14. Implementation spec not yet written. Build not started.
+**Brief:** `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0 (corrected 2026-03-18)
+**Q&A Record:** `deployment/docs/MOBILE_APP_QA_RECORD.md` v1.0.0 (authoritative — read before any mobile work)
+**Status:** Strategy corrected 2026-03-18. Implementation spec not yet written. Build not started.
+**Connectivity:** WebRTC/STUN P2P tunnel (not polling message broker) — corrected from original brief.
+
+### Pre-Build Prerequisites
+- [ ] Remove Tailscale from Pi (was never operator's choice — `sudo systemctl disable tailscaled && sudo apt remove tailscale`)
+- [ ] Verify Pi services unaffected after Tailscale removal
 
 ### Stage 1 — Foundation
 - [ ] Complete Pi export-manager (all 8 data categories — currently 3/8)
@@ -2254,7 +2260,10 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 - [ ] Build Pi Command Consumer Agent (d3kos-cloud-agent.service)
 - [ ] Build device registration + QR pairing on AtMyBoat.com
 
-### Stage 2 — Core PWA (GitHub Pages)
+### Stage 2 — WebRTC/STUN Tunnel + Core PWA (GitHub Pages)
+- [ ] Implement WebRTC/STUN P2P tunnel — Pi side (Python WebRTC library)
+- [ ] Implement WebRTC/STUN P2P tunnel — PWA side (browser WebRTC API)
+- [ ] STUN server config: Google (stun.l.google.com:19302) + Cloudflare (stun.cloudflare.com) — free, no account
 - [ ] Account creation + QR pairing screen
 - [ ] Home screen (boat status, Find My Boat, health dashboard, update available)
 - [ ] OTA upgrade flow (version check, release notes, progress bar)
@@ -2277,9 +2286,14 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 - [ ] Deploy pre-upgrade hook on Pi
 - [ ] Fix My Pi extended to detect + repair OS-level breakage
 
+### v1.1 — Self-Hosted P2P Coordination Server (Option C)
+- [ ] Design self-hosted UDP hole punching coordination server
+- [ ] Replace STUN dependency with own coordination server
+- [ ] Deploy on HostPapa or small VPS
+
 ### Phase 2 (deferred — needs VPS budget)
 - [ ] Push notifications for critical alerts
-- [ ] Live screen viewing via Tailscale
+- [ ] Live screen viewing (VPS relay)
 - [ ] T3 fleet management (multiple Pis, one account)
 
 **© 2026 AtMyBoat.com | d3kOS — AI-Powered Marine Electronics** *"Smarter Boating, Simpler Systems"*
