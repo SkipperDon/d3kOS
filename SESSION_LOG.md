@@ -2,6 +2,54 @@
 
 ---
 
+## Session — 2026-03-18 (Part 8) — v0.9.2.2 issue review complete; 5-round fix plan ready
+
+**Tasks completed:**
+- Reviewed all 19 v0.9.2.3 issues one at a time with Don
+- 11 issues confirmed already fixed in v0.9.2.2 (I-01 through I-04, I-06, I-09, I-10, I-12, I-13)
+- 8 issues confirmed still needed (I-05, I-07, I-08, I-11, I-14/15, I-16, I-17, I-18, I-19)
+- Corrected I-11: weather.html should be MODIFIED (layout, day/night, countdown, back button) — not replaced with overlay panel
+- Corrected I-14/15: "Leave app?" dialog affects ALL pages, not just Marine Vision and Boat Log
+- Clarified engine benchmark (Node-RED, cloud telemetry, disabled) vs boatlog engine capture (new local feature, in local repo) — nothing was removed
+- Audited local repo: I-05, I-07, I-17 code already written from v0.9.2.3 Sessions A–D; just needs deployment
+- Identified missing piece: boatlog-export-api.py needs POST /api/boatlog/engine-entry endpoint
+- Created D3KOS_UAT_V0922_FIXES.md — 47 verification checks across all 8 fix areas
+- Added v0.9.2.2 UI Fix Tasks section to PROJECT_CHECKLIST.md (8 tasks + 3 open questions)
+- Produced 5-round implementation plan for tomorrow
+
+**Files changed:**
+- `deployment/d3kOS/docs/D3KOS_UAT_V0922_FIXES.md` — new file, 47-check UAT (Low)
+- `PROJECT_CHECKLIST.md` — v0.9.2.2 UI Fix Tasks section + Last Updated (Low)
+- `deployment/docs/DEPLOYMENT_INDEX.md` — UAT + QA Record indexed (Low)
+- `memory/MEMORY.md` — v0.9.2.2 local repo state, engine clarification, Pi-off note (Low)
+
+**PROJECT_CHECKLIST.md updates:**
+- Added v0.9.2.2 UI Fix Tasks section with 8 fix tasks (all `[ ]` not started)
+- Added 3 open questions (Q1–Q3) — all answered this session, can mark resolved
+- Last Updated line updated to 2026-03-18 with issue review summary
+
+**AAO compliance:** PASS
+
+**Open items for next session:**
+- Start v0.9.2.2 fixes — Pi must be on
+- Step 1: Audit local repo files (helm.js, nav.js, d3kos.css, index.html, boat-log.html, boatlog-engine.js)
+- Round 1: Deploy helm.js (I-05 HELM active state + I-07 HELM mute — already written)
+- Round 2: Fix I-14/15 leave app dialog (nav.js)
+- Round 3: CSS fixes (I-08 close buttons, I-18 dropdowns, I-19 fonts)
+- Round 4: Boat log fixes (I-16 fonts + I-17 engine capture + API endpoint)
+- Round 5: Weather page modification (I-11)
+- Run UAT after all 5 rounds
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-18 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-18 (Part 7) — v0.9.3 Phase 2F added; Q&A confirmation pass closed
 
 **Tasks completed:**
