@@ -31,3 +31,7 @@ node_modules/
 *.docx
 *.odt
 *.xlsx
+
+# Session backup files and scratch
+*.bak-*
+ssh
