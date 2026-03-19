@@ -327,11 +327,11 @@
     <main>
       <div class="content-wrapper">
 
-        <!-- Not connected warning (hidden when connected) -->
-        <div id="not-connected-box" class="warning-box" style="display:none;">
-          <h3>⚠️ Tailscale Not Connected</h3>
-          <p>Tailscale is not running. Remote access only works on the boat's local Wi-Fi until Tailscale is reconnected.</p>
-          <p style="margin-top:12px; opacity:0.7;">To reconnect: <code style="color:var(--color-warning)">sudo tailscale up</code></p>
+        <!-- Remote access notice -->
+        <div class="warning-box" style="display:block;">
+          <h3>📱 Remote Access — v0.9.4</h3>
+          <p>Remote access from outside the boat is coming in v0.9.4 via the d3kOS Mobile Companion App. No VPN required — uses direct P2P connection.</p>
+          <p style="margin-top:12px; opacity:0.7;">Currently available on boat Wi-Fi only.</p>
         </div>
 
         <!-- QR Code Section -->
@@ -353,10 +353,6 @@
         <div class="info-card">
           <h3>🌐 Connection Details</h3>
 
-          <div class="detail-row">
-            <span class="detail-label">Remote (Tailscale)</span>
-            <span class="detail-value" id="tailscale-url">—</span>
-          </div>
           <div class="detail-row">
             <span class="detail-label">Local (boat Wi-Fi)</span>
             <span class="detail-value" id="local-url">http://192.168.1.237</span>
@@ -380,19 +376,19 @@
 
           <div class="step-item">
             <span class="step-number">1</span>
-            <span class="step-text">Install <strong>Tailscale</strong> on your phone — free from the App Store or Play Store</span>
+            <span class="step-text">Connect your phone to the same Wi-Fi as the boat's Pi</span>
           </div>
           <div class="step-item">
             <span class="step-number">2</span>
-            <span class="step-text">Log in to Tailscale with your account and make sure it is turned on</span>
+            <span class="step-text">Scan the QR code above with your phone's camera — or type the address in your browser</span>
           </div>
           <div class="step-item">
             <span class="step-number">3</span>
-            <span class="step-text">Open your phone's camera and scan the QR code above — or type the address in your browser</span>
+            <span class="step-text">The full d3kOS dashboard opens on your phone</span>
           </div>
           <div class="step-item">
             <span class="step-number">4</span>
-            <span class="step-text">The full d3kOS dashboard opens on your phone — works on cellular, at home, anywhere</span>
+            <span class="step-text">Remote access from outside the boat (cellular / home Wi-Fi) arrives in v0.9.4</span>
           </div>
         </div>
 
@@ -444,58 +440,26 @@
 
     function renderConfig(data) {
       const badge = document.getElementById('status-badge');
-      const notConnectedBox = document.getElementById('not-connected-box');
+      badge.textContent = '⚓ LAN Only';
+      badge.className = 'status-badge disconnected';
 
-      if (data.tailscale_connected && data.tailscale_ip) {
-        badge.textContent = '✓ Tailscale Connected';
-        badge.className = 'status-badge connected';
-        notConnectedBox.style.display = 'none';
+      const localUrl = data.local_url || 'http://192.168.1.237';
+      document.getElementById('qr-url').textContent = localUrl;
+      document.getElementById('qrcode').innerHTML = '';
+      new QRCode(document.getElementById('qrcode'), {
+        text: localUrl,
+        width: 260,
+        height: 260,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
 
-        const baseUrl = data.tailscale_url;
-
-        // QR code
-        document.getElementById('qr-url').textContent = baseUrl;
-        document.getElementById('qrcode').innerHTML = '';
-        new QRCode(document.getElementById('qrcode'), {
-          text: baseUrl,
-          width: 260,
-          height: 260,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.H
-        });
-
-        // Connection details
-        document.getElementById('tailscale-url').textContent = baseUrl;
-        document.getElementById('link-dashboard').textContent = baseUrl + '/dashboard.html';
-        document.getElementById('link-helm').textContent = baseUrl + '/helm.html';
-        document.getElementById('link-nav').textContent = baseUrl + '/navigation.html';
-        document.getElementById('link-api').textContent = baseUrl + '/remote/status';
-
-      } else {
-        badge.textContent = '⚠ Tailscale Off';
-        badge.className = 'status-badge disconnected';
-        notConnectedBox.style.display = 'block';
-
-        // Fall back to local URL for QR
-        const localUrl = data.local_url || 'http://192.168.1.237';
-        document.getElementById('qr-url').textContent = localUrl + ' (local only)';
-        document.getElementById('qrcode').innerHTML = '';
-        new QRCode(document.getElementById('qrcode'), {
-          text: localUrl,
-          width: 260,
-          height: 260,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.H
-        });
-
-        document.getElementById('tailscale-url').textContent = 'Not connected';
-        document.getElementById('link-dashboard').textContent = localUrl + '/dashboard.html';
-        document.getElementById('link-helm').textContent = localUrl + '/helm.html';
-        document.getElementById('link-nav').textContent = localUrl + '/navigation.html';
-        document.getElementById('link-api').textContent = localUrl + '/remote/status';
-      }
+      document.getElementById('local-url').textContent = localUrl;
+      document.getElementById('link-dashboard').textContent = localUrl;
+      document.getElementById('link-helm').textContent = localUrl + '/helm.html';
+      document.getElementById('link-nav').textContent = localUrl + '/navigation.html';
+      document.getElementById('link-api').textContent = localUrl + '/remote/status';
 
       // API key
       if (data.api_key) {
@@ -536,45 +500,8 @@
       link.click();
     }
 
-    function updateStatusBadge(connected, ip) {
-      var badge = document.getElementById('status-badge');
-      var notConnectedBox = document.getElementById('not-connected-box');
-      if (connected && ip) {
-        badge.textContent = '✓ Tailscale Connected';
-        badge.className = 'status-badge connected';
-        notConnectedBox.style.display = 'none';
-        // Re-render if IP changed (refreshes QR code and URLs)
-        if (cfg && cfg.tailscale_ip !== ip) {
-          cfg.tailscale_ip = ip;
-          cfg.tailscale_url = 'http://' + ip;
-          cfg.tailscale_connected = true;
-          renderConfig(cfg);
-        }
-      } else {
-        badge.textContent = '⚠ Tailscale Off';
-        badge.className = 'status-badge disconnected';
-        notConnectedBox.style.display = 'block';
-        if (cfg && cfg.tailscale_connected) {
-          cfg.tailscale_connected = false;
-          cfg.tailscale_ip = null;
-          cfg.tailscale_url = null;
-          renderConfig(cfg);
-        }
-      }
-    }
-
     function startStatusStream() {
-      if (!window.EventSource) { return; }  // fallback: Refresh button still works
-      var evtSource = new EventSource('/remote/status-stream');
-      evtSource.onmessage = function(e) {
-        try {
-          var state = JSON.parse(e.data);
-          updateStatusBadge(state.connected, state.ip);
-        } catch (_) {}
-      };
-      evtSource.onerror = function() {
-        // Browser auto-retries after error — no action needed
-      };
+      // SSE kept for API compatibility — no meaningful state changes until v0.9.4
     }
 
     document.addEventListener('DOMContentLoaded', function() {
