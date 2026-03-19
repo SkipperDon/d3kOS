@@ -25,6 +25,33 @@ If genuinely blocked with two meaningfully different paths that produce differen
 
 ---
 
+## Backup Naming Standard (AAO Section 18)
+
+When asked to back up a file, use this convention. No other format.
+
+**All backups go to `.aao-backups/` at project root. Never elsewhere.**
+
+**Format:**
+```
+.aao-backups/YYYYMMDD_HHMMSS_<SESSION_ID>/mirrored/path/filename.ext.bak
+```
+
+**Rules:**
+- Session folder timestamp = set at first backup of session, never changes
+- All backups this session share one folder
+- Mirror the full original path inside the session folder
+- Append `.bak` — never replace the original extension
+- Before creating: state the full backup path in chat, wait for acknowledgment
+- Verify `.aao-backups/` is in `.gitignore` before creating first backup of session
+  If absent: add it first, then create the backup
+
+**Cleanup (operator-triggered only — never automatic):**
+- `/aao-backup-status` — list all backups, age, purge eligibility
+- `/aao-backup-purge` — list eligible files, wait for explicit confirm, delete, report
+- Keep last 3 backups per original file — older ones are purge-eligible
+- Never purge current session's folder
+- Never delete anything without listing first and receiving explicit confirmation
+
 ## Pre-Edit Snapshot Rule (AAO Section 17 — Interactive Development Mode)
 
 This rule implements the snapshot requirement from AAO SPECIFICATION.md Section 17.

@@ -35,3 +35,6 @@ node_modules/
 # Session backup files and scratch
 *.bak-*
 ssh
+
+# AAO backup files (AAO Methodology Section 18 — never commit backup files)
+.aao-backups/
