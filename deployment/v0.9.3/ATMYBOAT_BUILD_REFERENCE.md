@@ -512,7 +512,7 @@ The `[atmyboat_ai]` shortcode renders the AI widget. It can be placed on the for
         "Connectivity": "NMEA 2000 via PiCAN-M HAT",
         "Engine interface": "CX5106 NMEA2000 gateway",
         "Build approach": "DIY · parts list in documentation",
-        "Current version": "v2.0-T3 (February 22, 2026)"
+        "Current version": "v0.9.2 (March 2026)"
       },
       "cta_primary": { "text": "Download d3kOS", "url": "/download" },
       "cta_secondary": { "text": "Get Community Support", "url": "/forum/forum/d3kos-support/" }
@@ -673,6 +673,118 @@ All new URLs are subfolders of atmyboat.com. **No subdomains.** This keeps all S
 
 ---
 
+### Phase 2F — Mobile App Backend (HostPapa PHP + MySQL)
+
+*Builds the server-side infrastructure required by the d3kOS mobile PWA. All code is PHP + MySQL on existing HostPapa Growth hosting — no new servers, no new cost.*
+
+**New MySQL tables (create via phpMyAdmin SQL import):**
+
+```sql
+-- Device registry
+CREATE TABLE d3kos_devices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device_uuid VARCHAR(64) NOT NULL UNIQUE,
+    account_id INT NOT NULL,
+    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- QR pairings
+CREATE TABLE d3kos_pairings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device_uuid VARCHAR(64) NOT NULL,
+    pi_installation_id VARCHAR(64) NOT NULL,
+    account_id INT NOT NULL,
+    paired_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Command queue
+CREATE TABLE d3kos_command_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pi_installation_id VARCHAR(64) NOT NULL,
+    command VARCHAR(64) NOT NULL,
+    payload JSON,
+    status ENUM('pending','picked_up','completed','failed') DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    picked_up_at DATETIME NULL,
+    completed_at DATETIME NULL,
+    result JSON NULL
+);
+
+-- Pi exports (all 8 data categories)
+CREATE TABLE d3kos_pi_exports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pi_installation_id VARCHAR(64) NOT NULL,
+    export_type VARCHAR(32) NOT NULL,
+    data_json JSON NOT NULL,
+    exported_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Fix My Pi reports
+CREATE TABLE d3kos_fix_my_pi_reports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pi_installation_id VARCHAR(64) NOT NULL,
+    triggered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    issues_found INT DEFAULT 0,
+    issues_resolved INT DEFAULT 0,
+    report_json JSON,
+    tier VARCHAR(4) NOT NULL
+);
+
+-- PDF reports
+CREATE TABLE d3kos_pdf_reports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pi_installation_id VARCHAR(64) NOT NULL,
+    generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    report_path VARCHAR(255),
+    tier VARCHAR(4) NOT NULL
+);
+
+-- Version registry
+CREATE TABLE d3kos_version_registry (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    version VARCHAR(20) NOT NULL,
+    release_notes TEXT,
+    min_app_version VARCHAR(20),
+    released_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**New PHP endpoints (all under `/mobile/` subfolder, require API key header):**
+
+| Endpoint | Method | What It Does |
+|----------|--------|--------------|
+| `register-device.php` | POST | Stores device UUID + links to account |
+| `pair-device.php` | POST | Links device UUID + Pi installation ID to account |
+| `command-queue.php` | POST/GET | App writes command; Pi polls for pending; Pi writes result |
+| `data-ingress.php` | POST | Receives Pi exports (all 8 data categories), stores in DB |
+| `tier-features.php` | GET | Returns feature flags for this account/tier |
+| `fix-my-pi-billing.php` | POST | Stripe $29.99 charge for T0/T1 per incident |
+| `pdf-report.php` | POST/GET | T2/T3 only: triggers mPDF generation + AI recommendations |
+| `version-registry.php` | GET | Returns current d3kOS version, release notes, min app version |
+
+**Phase 2F build checklist:**
+
+- [ ] Create 7 MySQL tables via phpMyAdmin SQL import
+- [ ] Build `mobile/register-device.php` — store device UUID, link to account
+- [ ] Build `mobile/pair-device.php` — link device UUID + Pi installation ID + account, return confirmation
+- [ ] Build `mobile/command-queue.php` — write (app), poll (Pi every 30s), result write (Pi), read (app)
+- [ ] Build `mobile/data-ingress.php` — receive all 8 export categories from Pi, store in DB
+- [ ] Build `mobile/tier-features.php` — return JSON feature flags per tier (T0/T1/T2/T3)
+- [ ] Build Stripe $29.99 Fix My Pi payment page — T0/T1 only; Stripe webhook updates DB on success
+- [ ] Upload mPDF library to HostPapa via FTPS (no Composer — upload pre-packaged ZIP)
+- [ ] Build `mobile/pdf-report.php` — generate PDF via mPDF, call Gemini 2.5 Flash (MAX_TOKENS 1000), store file, return download URL — T2/T3 only
+- [ ] Build `mobile/version-registry.php` — seed with current d3kOS version on launch
+- [ ] Add API key authentication to all `/mobile/` endpoints (Pi uses installation ID + shared secret)
+- [ ] Add all `/mobile/` endpoints to security checklist (Part 12)
+- [ ] Test: command queue end-to-end — app writes → Pi polls → Pi responds → app reads result
+- [ ] Test: Stripe Fix My Pi — app opens payment page → payment completes → tier status updated
+- [ ] Test: PDF report generation — trigger from app → mPDF generates → Gemini recommendations included → download URL returned
+- [ ] Verify PDF reports blocked for T0/T1 — return 403 with clear message
+
+**✓ 2F COMPLETE — Mobile app backend live on staging. Command queue, pairing, exports, Stripe Fix My Pi, PDF reports all verified.**
+
+---
+
 ### Phase 3 — AODA Compliance Audit (Run on Staging Before Migration)
 *Non-negotiable for Ontario. Run every test before Phase 4.*
 
@@ -720,18 +832,20 @@ All new URLs are subfolders of atmyboat.com. **No subdomains.** This keeps all S
 
 ---
 
-### Phase 5 — Future: Full d3kOS Platform Integration
-*This phase is documented separately in `ATMYBOAT_CLAUDE_CODE_SPEC.md`. Do not start until Phase 4 is verified live.*
+### Phase 5 — Future: Platform Expansion (post-v0.9.4 launch)
+*Do not start until Phase 4 is live and v0.9.4 mobile app is shipping.*
+
+**Note: Next.js, Supabase, and any separate server infrastructure are NOT in scope.**
+All expansion uses HostPapa PHP + MySQL — the existing platform. $0 new infrastructure.
+Device registration, QR pairing, command queue, and Stripe payments are Phase 2F (already built).
 
 This future phase adds:
-- Next.js 15 app layer (or continued WordPress expansion — decision to be made)
-- T1/T2/T3 subscription tiers via Stripe
-- Supabase telemetry dashboard
-- Device registration (QR scan onboarding)
-- Advanced AI (First Mate widget, Helm AI session history)
-- B2B intelligence portal
-- Marine Vision gallery
-- Fleet management (T3)
+- T3 fleet management (multiple Pis on one account)
+- B2B intelligence portal (marine dealers, marinas, installers)
+- Marine Vision gallery (shared camera clips and highlights)
+- Advanced AI session history (Helm AI conversation logs, if decided)
+- Annual billing option via Stripe (T2/T3 — currently monthly only)
+- Community features TBD (only if they do not duplicate ActiveCaptain)
 
 ---
 

@@ -196,6 +196,7 @@ Solo bootstrap. gemini only. Hard cap set in geminiConsole. Check if something 
 | Phase 2C — PHP AI assistant | ☐ Pending |
 | Phase 2D — Product hub | ☐ Pending |
 | Phase 2E — SEO configuration | ☐ Pending |
+| Phase 2F — Mobile app backend (command queue, pairing, Stripe, PDF reports) | ☐ Pending |
 | Phase 3 — AODA compliance audit | ☐ Pending |
 | Phase 4 — Migration staging → live | ☐ Pending |
 
