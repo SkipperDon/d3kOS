@@ -433,14 +433,18 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [ ] o-charts chart activation (Don's task)
 - [ ] Node-RED inactive status — confirm intentional or re-enable
 
-**Last updated:** 2026-03-17 (Session: S-06 fix + template cache flush) — Flask running since March 4 (debug=False, templates cached). Service restarted — all Sessions A-E changes now live. 3 CSS fixes deployed (icon opacity, active state background, WIND MAP button visibility). CSS v=14. All 9 routes HTTP 200. Chromium relaunched. S-06 should now pass — Don to re-run UAT.
+**Last updated:** 2026-03-18 (Session: v0.9.2.3 cancelled, Pi CSS cleanup, v0.9.2.2 backup created)
+
+**Active system on Pi:** v0.9.2.2 — restored by Don from prior backup. CSS ?v=9. d3kos-dashboard active.
+**v0.9.2.3 status:** ❌ CANCELLED — do not deploy. See V0923_PLAN.md for historical record.
+**Pending next session:** WX full-screen weather button (not yet built — previous attempt reverted due to scope violation). Requires explicit file list from Don before implementation begins.
 
 ---
 
 ## v0.9.2.3 — UI Remediation
-**Version:** v0.9.2.3 | **Status:** 🔄 IN PROGRESS — All sessions code complete and deployed. S-06 fixes applied 2026-03-17. Awaiting UAT re-run.
-**Plan:** docs/V0923_PLAN.md (canonical — read before every session)
-**Issues Register:** 19 items (I-01 through I-19) — see V0923_PLAN.md
+**Version:** v0.9.2.3 | **Status:** ❌ CANCELLED 2026-03-18 — DO NOT DEPLOY
+**Plan:** docs/V0923_PLAN.md — CANCELLED, retained as historical record only
+**Reason:** Complete deployment failure. CSS regressions broke the working dashboard. Weather panel (I-11/I-12/I-13) was scope Don never requested. Don restored system from a prior backup. Active system is v0.9.2.2.
 
 ### Session A — NAV Ribbon + Nav Active State + Leave App Fix ✅ CODE COMPLETE 2026-03-16
 **Items:** I-01, I-02, I-03, I-04, I-05, I-06, I-14, I-15

@@ -1,3 +1,6 @@
+> ❌ CANCELLED — DO NOT USE
+> v0.9.2.3 was abandoned 2026-03-18. This UAT document is void. Retained as historical record only.
+
 # d3kOS v0.9.2.3 — User Acceptance Test (UAT)
 
 **Version:** v0.9.2.3 | **Document:** UAT-001 **Created:** 2026-03-16 | **Owner:** Donald Moskaluk — AtMyBoat.com **Status:** DRAFT — awaiting execution

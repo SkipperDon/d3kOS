@@ -1,7 +1,14 @@
 # d3kOS v0.9.2.3 — UI Remediation Plan
-**Version:** v0.9.2.3 | **Status:** APPROVED — PLANNING COMPLETE
+
+> ❌ CANCELLED — DO NOT DEPLOY
+> This plan was abandoned 2026-03-18. v0.9.2.3 was a complete failure in deployment.
+> The weather panel (I-11/I-12/I-13) was scope that Don never requested.
+> CSS regressions broke the working dashboard. Don restored from a prior backup.
+> The active system is v0.9.2.2. This document is retained as a historical record only.
+> Nothing in this plan is to be implemented.
+
+**Version:** v0.9.2.3 | **Status:** ❌ CANCELLED 2026-03-18
 **Created:** 2026-03-16 | **Owner:** Donald Moskaluk — AtMyBoat.com
-**Supersedes:** v0.9.2.2 (status: NOT APPROVED — investigation complete, issues catalogued below)
 
 ---
 
