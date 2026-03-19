@@ -136,6 +136,12 @@
 
 - \[✅\] Sprint Mode added to both CLAUDE.md files (`aao-methodology-repo/CLAUDE.md` and `/home/boatiq/CLAUDE.md`) — resolves autonomous operation override gap; Sprint Mode is now structural, not verbal — pushed to GitHub `SkipperDon/AAO-Methodology` (commit 9d55d3a) — 2026-03-19
 
+- \[✅\] Pre-Edit Snapshot Rule (AAO Section 17) — SPECIFICATION.md v1.2, docs/06-snapshot-rollback.md subsection 6.4, all three CLAUDE.md files updated — pushed to GitHub `SkipperDon/AAO-Methodology` (commit 8efbe0d) — 2026-03-19
+
+- \[✅\] AAO Backup Naming Standard (Section 18) v9 release — SPECIFICATION.md v1.3, docs/06-snapshot-rollback.md subsection 6.5, docs/12-backup-naming-standard.md (NEW), CHANGELOG\_v9.md (NEW), README.md updated, all three CLAUDE.md files + Helm-OS .gitignore updated — pushed to GitHub `SkipperDon/AAO-Methodology` (commit 1c076c4) — 2026-03-19
+
+- \[✅\] Session Memory Loop closed — Session-Start Memory Load block added to both CLAUDE.md files; `commands/session-start.md` (NEW); `docs/aao-commands-reference.html` (NEW); CHANGELOG\_v9.md addendum appended — pushed to GitHub `SkipperDon/AAO-Methodology` (commit 9a21218) — 2026-03-19
+
 ## v0.9.1 — Voice AI Assistant \[Effort: Large\]
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.1.x (multiple sessions) | **Priority:** HIGH
@@ -2245,7 +2251,7 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
-**Last Updated:** 2026-03-18 — 19-issue review complete. 8 fixes confirmed needed. UAT created. 5-round implementation plan ready. Commit ab6e6a2. | **Maintained By:** Development team + Claude Code
+**Last Updated:** 2026-03-19 — HELM button fixes (I-05, I-07), Reload dialog fix (I-14/I-15), grey screen on boot fixed (Google Fonts → local). Commit 41d2ba3. | **Maintained By:** Development team + Claude Code
 
 ---
 
@@ -2257,20 +2263,23 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ### Open Fixes
 
-- [ ] **I-05** — HELM button active state: only highlight when HELM overlay is open; all other buttons only highlight when their page is active
-- [ ] **I-07** — HELM software mute: mute toggle button inside HELM overlay; green = talking, grey = muted; persists via localStorage `d3kHelmMute`
+- [✅] **I-05** — HELM button active state: resolved 2026-03-19. Button tap = mute toggle (not overlay open). Icon aligns with other nav buttons via padding-top fix. Icon+state on one row, HELM label below.
+- [✅] **I-07** — HELM software mute: resolved 2026-03-19. Tap toggles mute. Icon swaps 🎤↔🔇. State text LISTENING/MUTED. espeak-ng silenced server-side via POST /helm/mute to ai-bridge. Persists via localStorage. Commit 41d2ba3.
 - [ ] **I-08** — Close buttons throughout entire app: 48×48px min, 24px inset from edges, dark background `rgba(0,0,0,0.85)`, white ✕, font-weight 700, font-size 24px
 - [ ] **I-11** — Weather page: modify existing weather.html — left: radar, right: conditions. Add day/night colours, countdown to next update, full screen, back button. Do NOT replace — modify.
-- [ ] **I-14/I-15** — Remove "Leave app?" dialog from ALL pages — never requested, introduced accidentally. Clear `beforeunload` handler on all internal navigation.
+- [✅] **I-14/I-15** — "Reload app?" dialog removed 2026-03-19. Capturing beforeunload listener in nav.js deletes e.returnValue before AvNav iframe handler fires. navTo() updated. Commit 41d2ba3.
 - [ ] **I-16** — Boat Log fonts: Bebas Neue / Chakra Petch throughout, consistent with dashboard
 - [ ] **I-17** — Boat Log auto engine capture: engine start/stop entries + 30-min snapshots while running + alert threshold entries. New JS module `boatlog-engine.js`.
 - [ ] **I-18** — Dropdowns all pages: min-height 52px, font-size 20px, proper padding — global CSS rule
 - [ ] **I-19** — Font consistency all pages: Bebas Neue / Chakra Petch enforced. Minimum sizes: body 20px, labels 24px, instrument values 32px. No text below 20px.
 
+### Resolved This Session (2026-03-19)
+- [✅] **Grey screen on boot** — root cause: Google Fonts CDN render-blocking `<link>` in index.html. Pi cannot reach fonts.googleapis.com. Fixed by downloading Bebas Neue + Chakra Petch woff2 files locally to `static/fonts/`, adding @font-face in d3kos.css, removing external link. Commit 41d2ba3.
+
 ### Open Questions (must answer before implementation)
-- [ ] **Q1** — Does weather.html still exist on Pi in its v0.9.2 form, or was it overwritten?
+- [✅] **Q1** — weather.html confirmed present on Pi in v0.9.2 form (answered prior session)
 - [ ] **Q2** — Does boatlog-export-api.py :8095 need a new endpoint for engine entries, or same endpoint with type field?
-- [ ] **Q3** — Confirm nav.js is the only file controlling bottom nav active state (I-05)
+- [✅] **Q3** — nav.js controls bottom nav active state (I-05 resolved differently — button is mute toggle, not nav state)
 
 ---
 
