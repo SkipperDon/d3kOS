@@ -4,7 +4,8 @@ d3kOS Remote Status API
 Port: 8111
 
 Provides authenticated REST endpoints so the boat can be monitored
-from any phone or tablet — on LAN or via Tailscale.
+from any phone or tablet on LAN. Remote access via WebRTC/STUN P2P
+is planned for v0.9.4 (mobile companion app).
 
 Auth: set "remote_api_key" in /opt/d3kos/config/api-keys.json.
       If the key is empty, all requests are allowed (local-only mode).
@@ -16,12 +17,11 @@ Endpoints:
   GET /remote/maintenance    — last 20 maintenance log entries (newest first)
   POST /remote/note          — add maintenance note from phone
                                body: {"content": "checked bilge pump"}
-  GET /remote/config         — Tailscale IP + API key (local dashboard use)
-  GET /remote/status-stream  — SSE stream: Tailscale status push (local dashboard use)
+  GET /remote/config         — API key + local IP (local dashboard use)
+  GET /remote/status-stream  — SSE stream: connection status push (local dashboard use)
 """
 
 import json
-import subprocess
 import sys
 import time
 import urllib.request
@@ -137,36 +137,18 @@ def add_note():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
-def _tailscale_status():
-    """Return (connected: bool, ip: str|None)."""
-    try:
-        r = subprocess.run(['tailscale', 'ip', '-4'],
-                           capture_output=True, text=True, timeout=3)
-        if r.returncode == 0:
-            ip = r.stdout.strip()
-            return bool(ip), ip or None
-    except Exception:
-        pass
-    return False, None
-
-
 @app.route('/remote/status-stream', methods=['GET'])
 def status_stream():
     """
-    SSE endpoint — pushes Tailscale status changes to the Remote Access page.
+    SSE endpoint — pushes connection status to the Remote Access page.
     Sends a keepalive comment every 15 s so nginx does not time out.
     No auth required (same policy as /remote/config).
     """
     def generate():
-        last_state = None
         tick = 0
         while True:
-            connected, ip = _tailscale_status()
-            state = (connected, ip)
-            if state != last_state:
-                last_state = state
-                payload = json.dumps({'connected': connected, 'ip': ip})
-                yield f'data: {payload}\n\n'
+            payload = json.dumps({'connected': False, 'ip': None})
+            yield f'data: {payload}\n\n'
             tick += 1
             if tick % 3 == 0:          # keepalive every ~15 s
                 yield ': keepalive\n\n'
@@ -185,15 +167,16 @@ def status_stream():
 @app.route('/remote/config', methods=['GET'])
 def config():
     """
-    Local-only endpoint — returns Tailscale IP and API key for the
+    Local-only endpoint — returns API key and local IP for the
     Remote Access settings page. No auth required (local dashboard use).
+    Remote access via WebRTC/STUN is planned for v0.9.4.
     """
     api_key = _configured_key()
 
     return jsonify({
-        'tailscale_connected': tailscale_connected,
-        'tailscale_ip':        tailscale_ip,
-        'tailscale_url':       f'http://{tailscale_ip}' if tailscale_ip else None,
+        'tailscale_connected': False,
+        'tailscale_ip':        None,
+        'tailscale_url':       None,
         'local_ip':            '192.168.1.237',
         'local_url':           'http://192.168.1.237',
         'api_key':             api_key,
