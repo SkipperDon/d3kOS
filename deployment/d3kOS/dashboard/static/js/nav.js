@@ -45,10 +45,14 @@ function setNav(b) {
   b.classList.add('nb-active');
 }
 
-/* ── INTERNAL NAVIGATION — clears HELM speech + beforeunload before navigating ── */
+/* ── SUPPRESS BEFOREUNLOAD DIALOGS (AvNav iframe + Speech API triggers) ── */
+window.addEventListener('beforeunload', function(e) {
+  delete e.returnValue;
+}, true);
+
+/* ── INTERNAL NAVIGATION — stops HELM speech before navigating ── */
 function navTo(url) {
   if (typeof closeHelm === 'function') closeHelm();
-  window.onbeforeunload = null;
   window.location = url;
 }
 

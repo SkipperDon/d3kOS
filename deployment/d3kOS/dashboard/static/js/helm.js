@@ -36,13 +36,23 @@ function toggleHelmMute() {
 
 function _updateMuteBtn() {
   const btn = document.getElementById('helmMuteBtn');
-  if (!btn) return;
-  if (helmMuted) {
-    btn.textContent = '\uD83D\uDD07 MUTED';
-    btn.classList.add('muted');
-  } else {
-    btn.textContent = '\uD83D\uDD0A TALKING';
-    btn.classList.remove('muted');
+  if (btn) {
+    if (helmMuted) {
+      btn.textContent = '\uD83D\uDD07 MUTED';
+      btn.classList.add('muted');
+    } else {
+      btn.textContent = '\uD83D\uDD0A TALKING';
+      btn.classList.remove('muted');
+    }
+  }
+  /* Update nav button state label and muted class */
+  const helmBtn = document.getElementById('helmBtn');
+  const stateEl = document.getElementById('helmState');
+  if (helmBtn) {
+    helmBtn.classList.toggle('muted', helmMuted);
+  }
+  if (stateEl && !helmBtn.classList.contains('live')) {
+    stateEl.textContent = helmMuted ? 'MUTED' : 'WATCHING';
   }
 }
 
@@ -62,10 +72,9 @@ function openHelm() {
   _helmOn = true;
   document.getElementById('helmOv').classList.add('show');
   document.getElementById('hPill').classList.add('live');
-  // Track active nav state on HELM button (I-05)
-  document.querySelectorAll('.nb').forEach(x => { x.classList.remove('on'); x.classList.remove('nb-active'); });
-  document.getElementById('helmBtn').classList.add('nb-active');
   document.getElementById('helmBtn').classList.add('live');
+  const stateEl = document.getElementById('helmState');
+  if (stateEl) stateEl.textContent = 'LISTENING';
 
   const r = _newRecognition();
   if (r) {
@@ -104,10 +113,9 @@ function closeHelm() {
   document.getElementById('helmOv').classList.remove('show');
   document.getElementById('hPill').classList.remove('live');
   document.getElementById('helmBtn').classList.remove('live');
-  document.getElementById('helmBtn').classList.remove('nb-active');
-  // Restore active state to Dashboard (I-05)
-  const dashBtn = document.querySelectorAll('.nb')[0];
-  if (dashBtn) dashBtn.classList.add('nb-active');
+  /* Restore state label */
+  const stateEl = document.getElementById('helmState');
+  if (stateEl) stateEl.textContent = helmMuted ? 'MUTED' : 'WATCHING';
 }
 
 /* ── SPLIT PANE MIC ── */
