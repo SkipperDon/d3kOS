@@ -445,7 +445,7 @@ Before each session: read D3KOS_PLAN.md, this file, SESSION_LOG.md (last 3 entri
 - [✅] Tailscale removal from Pi — purged 2026-03-19. tailscale 1.94.2 removed, tailscale0 interface gone, 65.5 MB freed. remote_api.py and remote-access.html updated for LAN-only + v0.9.4 placeholder.
 - [ ] GPS outdoor verification — confirm satellite fix when Pi has sky view. Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position at dock, confirm lat/lon non-zero. **Dependency: after UAT.**
 
-**Last updated:** 2026-03-19 (Session 2: weather.html GPS fallback deployed; GPS memory saved)
+**Last updated:** 2026-03-19 (Session 3: Tailscale removed from Pi; Node-RED confirmed active)
 
 **Active system on Pi:** v0.9.2.2 — CSS ?v=15. All Batch 1–4 fixes deployed. WX fullscreen active.
 **v0.9.2.3 status:** ❌ CANCELLED — do not deploy. See V0923_PLAN.md for historical record.
