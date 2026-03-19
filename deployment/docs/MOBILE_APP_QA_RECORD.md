@@ -25,6 +25,22 @@ The brief misinterpreted one answer (see Correction below).
 - OS Lockdown via apt-mark hold + pre-upgrade hook
 - Find My Boat: last known GPS + Pi state from last export (Tesla app model)
 
+**Correction to PDF Boat Reports (2026-03-18):**
+Original brief stated "Available at T1 and above."
+Operator confirmed: T2 and T3 only. T1 does not include PDF reports.
+
+**Decision 11 confirmed (2026-03-18) — OS Lockdown:**
+apt-mark hold on all critical packages. Pre-upgrade hook warns user.
+d3kOS paths (/opt/d3kos/, /var/www/html/) never touched by apt upgrade.
+Fix My Pi detects and repairs any OS-level breakage post-upgrade.
+
+**Decision 12 confirmed (2026-03-18) — Push Notifications:**
+Deferred. No money, no push unless Pi is actively communicating.
+Pi is off when boat is unattended — it cannot push.
+Push notifications only work while Pi is online.
+Phase 2 item: revisit if/when budget allows persistent relay infrastructure.
+App shows last known state when Pi is offline (Tesla app model).
+
 ---
 
 ## SESSION 2 — 2026-03-18 (verbatim)
@@ -41,6 +57,17 @@ through firewalls and connect directly to a phone app.
 The brief captured the IP camera reference but drew the wrong conclusion —
 it used "like IP cameras" as a metaphor for polling, not as a technology directive.
 
+**Decision 9 confirmed (2026-03-18) — OTA Upgrade tiers:**
+T0 = no OTA (no mobile app, no remote connection — direct Pi access only).
+T1, T2, T3 = OTA from PWA. Command queue → Pi picks up in 30s → progress bar in app.
+
+**Decision 6 confirmed (2026-03-18) — Product Identity:**
+d3kOS = AI First Mate. A companion system to chartplotters and ActiveCaptain.
+Does not duplicate navigation or community features. Adds the AI intelligence
+layer: boat health, engine monitoring, system management, AI analysis.
+Chartplotter = navigation. ActiveCaptain = marina/community. d3kOS = boat
+systems intelligence. All three sit side by side on helm and phone.
+
 **Operator confirmation (2026-03-18):**
 "I believe it is" — confirmed when presented with the interpretation:
 "the Pi should connect to the mobile app using the same P2P technology that
@@ -53,6 +80,12 @@ connect directly to a phone app."
 - Option A: WebRTC with STUN (public free servers — Google, Cloudflare)
 - Option B: Throughtek TUTK SDK (proprietary, Reolink's actual SDK — not self-hostable)
 - Option C: Self-hosted UDP hole punching coordination server
+
+**Decision 5 confirmed (2026-03-18):**
+Payments via Stripe on atmyboat.com. User initiates from inside the PWA (tap Upgrade
+or Fix My Pi) → PWA opens atmyboat.com payment page in an embedded browser view →
+Stripe payment completes → PWA detects tier change and unlocks features.
+User never leaves the PWA experience. No App Store cut. 2.9% + 30c Stripe only.
 
 **Operator answer:** Option A — WebRTC/STUN.
 

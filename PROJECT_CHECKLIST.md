@@ -2243,12 +2243,13 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 
 ---
 
-## Mobile App — d3kOS Companion (Strategy Corrected 2026-03-18 — Build Not Started)
+## Mobile App — d3kOS Companion (Q&A Confirmation Pass Complete 2026-03-18 — Build Not Started)
 
 **Brief:** `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0 (corrected 2026-03-18)
 **Q&A Record:** `deployment/docs/MOBILE_APP_QA_RECORD.md` v1.0.0 (authoritative — read before any mobile work)
-**Status:** Strategy corrected 2026-03-18. Implementation spec not yet written. Build not started.
+**Status:** All 12 Q&A decisions confirmed and recorded 2026-03-18. 4 corrections applied. Implementation spec not yet written. Build not started.
 **Connectivity:** WebRTC/STUN P2P tunnel (not polling message broker) — corrected from original brief.
+**Corrections applied 2026-03-18:** Decision 3 (WebRTC/STUN, not polling), Decision 5 (payments initiated inside PWA), Decision 6 (AI First Mate companion identity), Decision 9 (T0 excluded from OTA), Decision 10 (PDF reports T2/T3 only, not T1+).
 
 ### Pre-Build Prerequisites
 - [ ] Remove Tailscale from Pi (was never operator's choice — `sudo systemctl disable tailscaled && sudo apt remove tailscale`)
@@ -2275,7 +2276,7 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 - [ ] Stripe $29.99 payment on AtMyBoat.com for T0/T1
 - [ ] Report storage + display in app
 
-### Stage 4 — PDF Boat Reports
+### Stage 4 — PDF Boat Reports (T2 and T3 only — confirmed 2026-03-18)
 - [ ] Install mPDF on HostPapa
 - [ ] Build PDF report generation PHP script
 - [ ] Gemini 2.5 Flash AI recommendations (MAX_TOKENS 1000)
@@ -2291,8 +2292,8 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 - [ ] Replace STUN dependency with own coordination server
 - [ ] Deploy on HostPapa or small VPS
 
-### Phase 2 (deferred — needs VPS budget)
-- [ ] Push notifications for critical alerts
+### Phase 2 (deferred — push only works when Pi is online; VPS needed for offline push)
+- [ ] Push notifications — Pi must be communicating. No VPS = no push when Pi is off. Add when budget allows.
 - [ ] Live screen viewing (VPS relay)
 - [ ] T3 fleet management (multiple Pis, one account)
 
