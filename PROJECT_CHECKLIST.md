@@ -134,6 +134,8 @@
 
 - \[✅\] Pre-Implementation Gate added to CLAUDE.md template and new `commands/implementation-gate.md` — pushed to GitHub `SkipperDon/AAO-Methodology` (commit cf37b50) — 2026-03-18
 
+- \[✅\] Sprint Mode added to both CLAUDE.md files (`aao-methodology-repo/CLAUDE.md` and `/home/boatiq/CLAUDE.md`) — resolves autonomous operation override gap; Sprint Mode is now structural, not verbal — pushed to GitHub `SkipperDon/AAO-Methodology` (commit 9d55d3a) — 2026-03-19
+
 ## v0.9.1 — Voice AI Assistant \[Effort: Large\]
 
 **Status:** \[✅\] Complete | **Shipped:** v0.9.1.x (multiple sessions) | **Priority:** HIGH
