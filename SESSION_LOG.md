@@ -2,6 +2,55 @@
 
 ---
 
+## Session — 2026-03-19 — Batches 1–4 complete; WX fullscreen weather view deployed
+
+**Tasks completed:**
+- Batch 1 (CSS): I-19 base font 18px→20px; I-08 close buttons; I-18 dropdowns — CSS v=15 deployed across all 8 templates
+- Batch 2 (JS): I-05 HELM active state; I-07 mute toggle; I-14/I-15 beforeunload fix — helm.js + nav.js deployed
+- Batch 3 (engine): I-17 boatlog-engine.js deployed; engine-entry endpoint added to boatlog-export-api.py on Pi; I-16 fonts confirmed already correct
+- Batch 4 (WX fullscreen): 4th row toggle button WX added; weather.html loaded full-screen (left: radar, right: conditions); bottom bar countdown + day/night toggle; nginx static locations added for /weather.html and /js/; GPS 0,0 no-fix guard added to weather.html; header hidden when embedded
+- Bug fix: Weather bottom nav button regression fixed (openSplit wx restored after template copy error)
+- GPS diagnosed: hardware healthy — u-blox on /dev/ttyACM0, gpsd active, NMEA flowing — no satellite fix (indoors), not a software issue
+- Checklist: Lake Simcoe GPS fallback and Tailscale removal logged as open tasks
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/static/css/d3kos.css` — font-size 18→20px
+- `deployment/d3kOS/dashboard/templates/index.html` — CSS v=15; WX pill; #wxFs div; weather button fix; inline CSS
+- `deployment/d3kOS/dashboard/templates/ai-navigation.html` — CSS v=15
+- `deployment/d3kOS/dashboard/templates/boat-log.html` — CSS v=15
+- `deployment/d3kOS/dashboard/templates/engine-monitor.html` — CSS v=15
+- `deployment/d3kOS/dashboard/templates/manage-documents.html` — CSS v=15
+- `deployment/d3kOS/dashboard/templates/marine-vision.html` — CSS v=15
+- `deployment/d3kOS/dashboard/templates/upload-documents.html` — CSS v=15
+- `deployment/d3kOS/dashboard/static/js/instruments.js` — showRow() WX case; WX fullscreen functions
+- `deployment/d3kOS/PROJECT_CHECKLIST.md` — tasks updated; new tasks logged
+- Pi only: `helm.js`, `nav.js`, `boatlog-engine.js` (new), `boatlog-export-api.py` (targeted insert), `weather.html` (iframe + GPS fix), nginx config (/weather.html + /js/ locations)
+
+**PROJECT_CHECKLIST.md updates:**
+- INC-16 → [✅]
+- I-08, I-18, I-19, I-05, I-07, I-14/I-15, I-16, I-17, WX fullscreen → all [✅]
+- Added [ ] Tailscale removal from Pi
+- Updated active system status and last updated date
+
+**AAO compliance:** PASS — one scope violation caught and fixed (template copy carried cancelled v0.9.2.3 weather button code). Hard rule added to memory: CSS version bumps must use targeted sed on Pi, never full file copy.
+
+**Open items for next session:**
+- weather.html GPS fallback — replace Lake Simcoe with vessel home port from vessel.env
+- Tailscale removal from Pi (pre-req for v0.9.4)
+- Node-RED inactive status — confirm intentional or re-enable
+- UAT — 5 metric + 5 imperial users (Don's task)
+- o-charts chart activation (Don's task)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-19 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-18 (Part 8) — v0.9.2.2 issue review complete; 5-round fix plan ready
 
 **Tasks completed:**

@@ -153,19 +153,43 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 > v0.9.2.3 was a complete deployment failure. CSS regressions broke the working dashboard.
 > The weather panel (Session C) was scope Don never requested. Don restored from a prior backup.
 > All files listed below are v0.9.2.3 artifacts. They exist in the repo as historical record only.
-> The active system on the Pi is v0.9.2.2. Do not deploy any of these files.
+> Authorized replacement versions of these files were deployed 2026-03-19 (see section below).
 
 | File | Status |
 |------|--------|
-| `deployment/d3kOS/dashboard/static/css/d3kos.css` | ❌ CANCELLED — contains v0.9.2.3 changes. Pi has been restored to v0.9.2.2. |
-| `deployment/d3kOS/dashboard/static/js/helm.js` | ❌ CANCELLED — Session C mute toggle not to be deployed. |
-| `deployment/d3kOS/dashboard/static/js/nav.js` | ❌ CANCELLED — Session A nav-active changes not to be deployed. |
-| `deployment/d3kOS/dashboard/static/js/weather-panel.js` | ❌ CANCELLED — Open-Meteo weather overlay. Never to be deployed. Not on Pi. |
-| `deployment/d3kOS/dashboard/static/js/boatlog-engine.js` | ❌ CANCELLED — Engine auto-capture JS. Not to be deployed. |
-| `deployment/d3kOS/dashboard/templates/index.html` | ❌ CANCELLED — contained #wxPanel, weather-panel.js wiring. Pi restored to v0.9.2.2 version. |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | ❌ CANCELLED — superseded by authorized 2026-03-19 deploy (I-08/I-18/I-19 fixes, CSS v=15). |
+| `deployment/d3kOS/dashboard/static/js/helm.js` | ❌ CANCELLED — superseded by authorized 2026-03-19 deploy (I-05/I-07). |
+| `deployment/d3kOS/dashboard/static/js/nav.js` | ❌ CANCELLED — superseded by authorized 2026-03-19 deploy (I-14/I-15). |
+| `deployment/d3kOS/dashboard/static/js/weather-panel.js` | ❌ CANCELLED PERMANENTLY — Open-Meteo weather overlay. Never to be deployed. Not on Pi. |
+| `deployment/d3kOS/dashboard/static/js/boatlog-engine.js` | ❌ CANCELLED — superseded by authorized 2026-03-19 deploy (I-17). |
+| `deployment/d3kOS/dashboard/templates/index.html` | ❌ CANCELLED — superseded by authorized 2026-03-19 deploy (WX fullscreen). |
 | `deployment/d3kOS/dashboard/templates/boat-log.html` | ❌ CANCELLED — Session D font + engine entry changes not to be deployed. |
 | `deployment/d3kOS/docs/V0923_PLAN.md` | ❌ CANCELLED — plan is void. Retained as historical record only. |
 | `deployment/d3kOS/docs/D3KOS_UAT_V0923.md` | ❌ CANCELLED — UAT is void. |
+
+---
+
+### v0.9.2.2 — Authorized UI Fix Deployment (2026-03-19, commit 426c783)
+
+Batches 1–4 of authorized v0.9.2.2 UI fixes. All changes explicitly authorized by Don before implementation. No Session C (v0.9.2.3) code used.
+
+| File | Description |
+|------|-------------|
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED 2026-03-19]** I-19: base font 18px → 20px. I-08: `.close-btn` 48×48px, 24px inset, dark bg, bold. I-18: global dropdown rule min-height:52px, 20px font. CSS v=15. Backup: `d3kos.css.bak-20260319`. |
+| `deployment/d3kOS/dashboard/templates/index.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. WX pill button added to row toggle (4th: BOTH\|ENGINE\|NAV\|WX). `#wxFs` div + `#wxFsFrame` iframe + `#wxFsBar` countdown/day-night. Inline CSS for WX fullscreen. Weather bottom nav button regression fixed: `openSplit('wx')` restored. Backup: `index.html.bak-20260319`. |
+| `deployment/d3kOS/dashboard/templates/ai-navigation.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. |
+| `deployment/d3kOS/dashboard/templates/boat-log.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. |
+| `deployment/d3kOS/dashboard/templates/engine-monitor.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. |
+| `deployment/d3kOS/dashboard/templates/manage-documents.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. |
+| `deployment/d3kOS/dashboard/templates/marine-vision.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. |
+| `deployment/d3kOS/dashboard/templates/upload-documents.html` | **[UPDATED 2026-03-19]** CSS link bumped to `?v=15`. |
+| `deployment/d3kOS/dashboard/static/js/instruments.js` | **[UPDATED 2026-03-19]** `showRow()` extended: `'wx'` case hides `#main`, shows `#wxFs`, manages Windy iframes (windyFrame blanked), calls `_wxFsStart()`/`_wxFsStop()`. WX fullscreen functions: `_wxFsStart()`, `_wxFsStop()`, `wxFsToggleDayNight()`, `_wxFsSyncDayNight()`, `_wxFsUpdateCountdown()`. Countdown 15-min timer, auto-reload weather.html on expiry. Backup: `instruments.js.bak-20260319`. |
+| Pi: `/opt/d3kos/services/dashboard/static/js/helm.js` | **[UPDATED 2026-03-19, Pi only]** I-05: `nb-active` added to HELM button only when overlay is open, removed on close. I-07: `helmMuted` flag + `toggleHelmMute()`, persisted via `localStorage('d3kHelmMute')`, cancels speechSynthesis on mute. |
+| Pi: `/opt/d3kos/services/dashboard/static/js/nav.js` | **[UPDATED 2026-03-19, Pi only]** I-14/I-15: `window.onbeforeunload = null` set before `window.location.href` for all internal navigation (Marine Vision, Boat Log, and all other internal links). |
+| Pi: `/opt/d3kos/services/dashboard/static/js/boatlog-engine.js` | **[NEW 2026-03-19, Pi only]** I-17: Signal K WebSocket subscriber for engine data. Detects engine start/stop via RPM threshold. Records: start event, 30-min snapshots (RPM + coolant + oil + battery + fuel), stop event, threshold alert crossings. POSTs to `POST /api/boatlog/engine-entry`. |
+| Pi: `/opt/d3kos/services/boatlog/boatlog-export-api.py` | **[UPDATED 2026-03-19, Pi only — targeted insert]** `POST /api/boatlog/engine-entry` endpoint added. Creates `boatlog_entries` table if absent. Inserts engine snapshot with ENGINE badge. Voice-note endpoint and unit metadata already on Pi — NOT overwritten. |
+| Pi: `/var/www/html/weather.html` | **[UPDATED 2026-03-19, Pi only]** Header hidden when loaded as iframe (`window.self !== window.top`). GPS no-fix guard: skip lat=0/lon=0 Signal K updates to preserve Lake Simcoe fallback. Backup: `weather.html.bak-20260319-wxfs`. |
+| Pi: `/etc/nginx/sites-enabled/default` | **[UPDATED 2026-03-19, Pi only]** Added `location = /weather.html` → `/var/www/html/weather.html` (static). Added `location /js/` → `/var/www/html/js/` (static). Both inserted before `location /` (Flask proxy) to prevent 404. |
 
 ---
 
