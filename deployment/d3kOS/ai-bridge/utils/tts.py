@@ -19,6 +19,34 @@ log = logging.getLogger(__name__)
 TTS_ENGINE   = os.environ.get('TTS_ENGINE', 'espeak-ng')
 AUDIO_DEVICE = os.environ.get('AUDIO_DEVICE', 'plughw:S330,0')
 
+# ── Mute state ─────────────────────────────────────────────────────────────────
+_muted = False
+_active_procs: list[subprocess.Popen] = []
+_procs_lock = threading.Lock()
+
+
+def set_muted(muted: bool):
+    """Mute or unmute TTS. Muting immediately kills any active speech subprocess."""
+    global _muted
+    _muted = muted
+    if muted:
+        _kill_active()
+
+
+def is_muted() -> bool:
+    return _muted
+
+
+def _kill_active():
+    """Kill any running espeak/aplay processes immediately."""
+    with _procs_lock:
+        for p in list(_active_procs):
+            try:
+                p.kill()
+            except Exception:
+                pass
+        _active_procs.clear()
+
 
 def speak(text: str, block: bool = False) -> bool:
     """
@@ -28,7 +56,10 @@ def speak(text: str, block: bool = False) -> bool:
     block=False — fire in background thread, return immediately
 
     Returns True if the command launched without error.
+    Returns False immediately if muted.
     """
+    if _muted:
+        return False
     text = text.strip()
     if not text:
         return False
@@ -44,10 +75,12 @@ def speak(text: str, block: bool = False) -> bool:
 def speak_urgent(text: str, repeat: int = 1):
     """
     Speak urgent alert text, optionally repeating N times (with 2-second gap).
-    Always runs in background thread.
+    Always runs in background thread. Respects mute state.
     """
     def _run():
         for i in range(max(1, repeat)):
+            if _muted:
+                break
             _speak_sync(text)
             if i < repeat - 1:
                 import time
@@ -104,8 +137,16 @@ def _espeak(text: str) -> bool:
             stderr=subprocess.DEVNULL,
         )
         espeak_proc.stdout.close()
-        aplay_proc.wait(timeout=30)
-        espeak_proc.wait(timeout=5)
+        with _procs_lock:
+            _active_procs.extend([espeak_proc, aplay_proc])
+        try:
+            aplay_proc.wait(timeout=30)
+            espeak_proc.wait(timeout=5)
+        finally:
+            with _procs_lock:
+                for p in [espeak_proc, aplay_proc]:
+                    if p in _active_procs:
+                        _active_procs.remove(p)
         return aplay_proc.returncode == 0
     except subprocess.TimeoutExpired:
         log.warning('TTS espeak-ng timed out')

@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=16">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=19">
 <style>
 /* ── WX FULLSCREEN (I-11 v0.9.2) ── */
 #wxFs {
@@ -269,9 +268,12 @@
       <span class="nb-icon">&#128249;</span><span class="nb-lbl">Marine Vision</span>
     </button>
     <!-- HELM &mdash; protrudes 24px above nav bar -->
-    <button class="nb helm" id="helmBtn" onclick="openHelm()">
-      <span class="nb-icon">&#127908;</span><span class="nb-lbl">HELM</span>
-      <span class="nb-state" id="helmState">WATCHING</span>
+    <button class="nb helm" id="helmBtn" onclick="toggleHelmMute()">
+      <span class="helm-row">
+        <span class="nb-icon" id="helmIcon">&#127908;</span>
+        <span class="nb-state" id="helmState">LISTENING</span>
+      </span>
+      <span class="nb-lbl">HELM</span>
     </button>
     <button class="nb" onclick="setNav(this);navTo('/boat-log')">
       <span class="nb-icon">&#128218;</span><span class="nb-lbl">Boat Log</span>

@@ -1,3 +1,45 @@
+/* ── LOCAL FONTS (offline-safe — no Google Fonts CDN dependency) ── */
+@font-face {
+  font-family: 'Bebas Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/bebas-neue-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/chakra-petch-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/chakra-petch-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/chakra-petch-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/chakra-petch-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* ═════════════════════════════════════════════════════════════
    d3kOS v0.9.2.3 — MARINE-GRADE INSTRUMENT PANEL
    ─────────────────────────────────────────────────────────────
@@ -536,26 +578,31 @@ html, body {
 
 /* ── HELM BUTTON ── */
 .nb.helm {
-  border-top: 2px solid var(--g-bdr);
   margin-top: calc(-1 * var(--helm-rise));
   height: calc(var(--bot-h) + var(--helm-rise));
+  padding-top: var(--helm-rise);
+  box-sizing: border-box;
   border-radius: 18px 18px 0 0;
   position: relative; z-index: 10;
   transition: background .2s;
 }
-.nb.helm .nb-icon { font-size: 38px; opacity: 0.6; }
-.nb.helm .nb-lbl { font-size: 28px; font-weight: 700; letter-spacing: .06em; }
 .nb.helm:active { background: rgba(0,68,0,.10); }
 .nb.helm::after { display: none; }
-/* State sub-label — always shows WATCHING / MUTED */
+/* Icon + state on one row */
+.helm-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.nb.helm .nb-icon { font-size: 32px; opacity: 0.6; line-height: 1; }
+.nb.helm .nb-lbl  { font-size: 28px; font-weight: 700; letter-spacing: .06em; }
+/* State text — same size as label, dimmed */
 .nb-state {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 13px; font-weight: 600; letter-spacing: .08em;
+  font-size: 28px; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; color: var(--ink3);
-  line-height: 1; margin-top: 2px;
+  line-height: 1;
 }
 .nb.helm.muted .nb-state { color: var(--alrt); }
-.nb.helm.muted .nb-icon { opacity: 0.4; }
+.nb.helm.muted .nb-icon  { opacity: 1; }
 /* Listening state — amber pulse */
 .nb.helm.live {
   background: var(--alrt);
