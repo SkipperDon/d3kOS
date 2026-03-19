@@ -2,6 +2,61 @@
 
 ---
 
+## Session — 2026-03-19 (Session 2) — weather.html GPS fallback deployed; GPS dispute saved to memory
+
+**Tasks completed:**
+- GPS status saved to memory — Don disputes 2026-03-19 diagnosis (no satellite fix indoors). Flagged as open investigation. GPS outdoor verification task added to checklist.
+- weather.html GPS fallback: removed hardcoded Lake Simcoe (44.4167, -79.3333). Replaced with 3-tier chain: (1) Signal K live GPS, (2) vessel home port from vessel.env via `/api/vessel-home`, (3) world view zoom 3.
+- `/api/vessel-home` endpoint added to `app.py` — reads `HOME_PORT_LAT`/`HOME_PORT_LON` from vessel.env, returns `{lat, lon, home_port}`.
+- `vessel.env` on Pi: blank `HOME_PORT_LAT=` and `HOME_PORT_LON=` fields added for Don to fill in.
+- Flask dashboard restarted — endpoint verified responding `{"home_port":"Toronto","lat":null,"lon":null}`.
+
+**Files changed:**
+- `deployment/d3kOS/dashboard/app.py` — added `HOME_PORT_LAT`/`HOME_PORT_LON` vars + `GET /api/vessel-home` endpoint (Low)
+- Pi: `/opt/d3kos/services/dashboard/app.py` — same, deployed (Low)
+- Pi: `/opt/d3kos/services/dashboard/config/vessel.env` — added blank `HOME_PORT_LAT=` and `HOME_PORT_LON=` fields (Low)
+- Pi: `/var/www/html/weather.html` — `initPosition()` rewritten with 3-tier fallback chain; default position changed to world view (Low)
+- Memory: `project_gps_status.md` (new), `MEMORY.md` (GPS open investigation pointer added) (None)
+
+**Backups created:**
+- Local: `deployment/d3kOS/dashboard/app.py.bak-20260319`
+- Pi: `/var/www/html/weather.html.bak-20260319-gpsfallback`
+- Pi: `/opt/d3kos/services/dashboard/config/vessel.env.bak-20260319`
+
+**PROJECT_CHECKLIST.md updates:**
+- `[ ] weather.html GPS fallback` → `[✅]` — 3-tier chain deployed, Lake Simcoe hardcode removed
+- Added `[ ] GPS outdoor verification` — confirm satellite fix when Pi has sky view at dock
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| app.py | `/opt/d3kos/services/dashboard/app.py` | base | Added /api/vessel-home endpoint |
+| vessel.env | `/opt/d3kos/services/dashboard/config/vessel.env` | runtime | Added HOME_PORT_LAT= HOME_PORT_LON= fields |
+| weather.html | `/var/www/html/weather.html` | base | initPosition() 3-tier GPS fallback |
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` (done)
+- Rollback: restore from `.bak-20260319` backups on Pi
+- Health check: `curl http://localhost:3000/api/vessel-home` → returns JSON with lat/lon fields
+
+**AAO compliance:** PASS — all actions classified Low or None, pre-action statements given, scope contained to weather fallback + GPS memory. No High-risk actions.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-19 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Open items for next session:**
+- Don must fill in `HOME_PORT_LAT=` and `HOME_PORT_LON=` in vessel.env to activate home port fallback (decimal degrees — e.g. `43.6532` / `-79.3832` for Toronto)
+- GPS outdoor verification — confirm satellite fix at dock with sky view
+- Tailscale removal from Pi (pre-req for v0.9.4)
+- Node-RED inactive status check
+- UAT — 5 metric + 5 imperial users (Don's task)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-19 — Batches 1–4 complete; WX fullscreen weather view deployed
 
 **Tasks completed:**
