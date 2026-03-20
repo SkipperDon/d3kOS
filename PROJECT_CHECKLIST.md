@@ -1969,7 +1969,7 @@ Device registration, QR pairing, command queue, and Stripe payments are Phase 2F
 
 - [ ] International compliance (GDPR, CCPA, translation quality)
 
-**Last Updated:** 2026-03-18 | Session: Mobile app Q&A confirmation pass complete (12 decisions, 4 corrections). v0.9.3 Phase 2F added. Phase 5 Supabase/Next.js removed. Commits 9a23c44, 94328fe.
+**Last Updated:** 2026-03-19 | Session 7: GPS + Signal K plugin investigation. GPS outdoor verification item added to Pi Continuous Operation section. No code changes this session.
 
 ---
 
@@ -2295,6 +2295,7 @@ All `\\\\\\\\\\\\\\\[🔍\\\\\\\\\\\\\\\]` items must be retested before conside
 - [✅] Node-RED credential secret — `credentialSecret` set. Re-encrypt triggers on next Deploy in editor.
 - [✅] Node-RED credential re-encryption — confirmed no credentials were stored in any flow nodes. `flows_cred.json` was 51 bytes of garbled data from key cycling. Don clicked Deploy 2026-03-18 — file cleared, fresh empty credentials written under `atmyboat2026`. Warning gone.
 - [ ] Anchor data 404s (AvNav) — `navigation/anchor/*` paths return 404. Expected when not anchored — no fix needed. Monitor when anchored with NMEA2000 anchor watch active.
+- [ ] **GPS outdoor verification** — u-blox on /dev/ttyACM0 hardware confirmed working. gpsd active, NMEA flowing (RMC + GSA sentences). Status `V` (no fix), 0 satellites tracked, no GSV sentences. Signal K plugins (`resources-provider`, `signalk-to-nmea0183`) confirmed NOT the cause — they cannot affect antenna signal. Root cause is line-of-sight: GPS has no sky view indoors. **Test at dock:** `timeout 30 gpspipe -r | grep -E "GPRMC|GPGSA"` — expect `A` status and satellite IDs within 60s. If still `V` outdoors, investigate u-blox antenna cable. **Dependency: after UAT, at dock with sky view.**
 
 ---
 
