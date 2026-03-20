@@ -52,6 +52,62 @@ When asked to back up a file, use this convention. No other format.
 - Never purge current session's folder
 - Never delete anything without listing first and receiving explicit confirmation
 
+### Uncertainty Declaration Rule (AAO Section 20.2)
+
+When you are not certain of a claim, estimate, or recommendation — say so.
+Explicitly. Using one of these forms:
+
+- `Uncertainty flag: I am not certain of this — [reason]. Verify before acting.`
+- `Estimate: This is an approximation based on [basis].`
+- `Assumption: I am assuming [X]. If wrong, [consequence].`
+
+**This rule applies to:**
+- Technical claims (performance, compatibility, correctness)
+- Completeness claims ("this test covers the failure case")
+- Summary claims ("all issues resolved")
+- Any statement where you are filling a knowledge gap with inference
+
+Stating something with false confidence is a protocol violation.
+It is treated as OIC=0 — it voids the session quality score.
+
+When knowledge is missing: state the gap. Propose how to fill it.
+Do not produce confident-sounding output to cover the gap.
+
+### Summary Accuracy Standard (AAO Section 20.3)
+
+Every session-close summary MUST include all four of these sections.
+Omitting any section is not permitted even if the content is "none."
+
+```
+ACCOMPLISHED THIS SESSION:
+[genuinely completed items only]
+
+NOT COMPLETED / DEFERRED:
+[items not finished — with honest reason — or state "none"]
+
+KNOWN GAPS OR UNCERTAINTIES:
+[things you are not certain about — or state "none identified"]
+
+OPERATOR ACTIONS REQUIRED:
+[things requiring operator verification or decision — or state "none"]
+```
+
+A summary that omits known gaps or presents the session as more complete
+than it was is sycophantic output. It voids the OIC and the session score.
+
+### Output Integrity Check — OIC (AAO Section 19 Metric 6)
+
+OIC is assessed by the operator at session close. You MUST NOT self-report OIC.
+
+The operator will assess:
+- Did you flag uncertainty where you were uncertain?
+- Does the summary accurately list what was NOT done?
+- Is the work substantive or superficial?
+- Do the tests cover the failure case?
+
+OIC=0 voids the session quality score regardless of other metric values.
+OIC assessment is required before the session is formally closed.
+
 ## Pre-Edit Snapshot Rule (AAO Section 17 — Interactive Development Mode)
 
 This rule implements the snapshot requirement from AAO SPECIFICATION.md Section 17.
