@@ -2,6 +2,67 @@
 
 ---
 
+## Session — 2026-03-20 — PROJECT_CHECKLIST rename + AAO commands install
+
+**Goal:** Rename MASTER_CHECKLIST.md → PROJECT_CHECKLIST.md and update all references; install AAO slash commands; fix /project:session-start not found.
+
+**Tasks completed:**
+- MASTER_CHECKLIST.md renamed to PROJECT_CHECKLIST.md via git mv — history preserved
+- All MASTER_CHECKLIST references updated across: Helm-OS/CLAUDE.md, /home/boatiq/CLAUDE.md, DEPLOYMENT_INDEX.md
+- DEPLOYMENT_INDEX.md description cleaned up (was self-referential after rename)
+- AAO-Project-Install.md saved to aao-methodology-repo/templates/ (new one-time install guide)
+- .claude/commands/ installed in Helm-OS project (session-start, session-close, bug-fix, methodology-check)
+- /project:session-start was not working — root cause: Claude Code resolves commands from ~/.claude/commands/ not project/.claude/commands/ when launched from home dir. Fixed by copying session-start.md to ~/.claude/commands/
+- All four global commands updated to current version (session-close was March 10 stale version)
+
+**Files changed:**
+- `/home/boatiq/Helm-OS/PROJECT_CHECKLIST.md` — renamed from MASTER_CHECKLIST.md (git mv)
+- `/home/boatiq/Helm-OS/CLAUDE.md` — MASTER_CHECKLIST → PROJECT_CHECKLIST
+- `/home/boatiq/CLAUDE.md` — MASTER_CHECKLIST → PROJECT_CHECKLIST
+- `/home/boatiq/Helm-OS/deployment/docs/DEPLOYMENT_INDEX.md` — references + description updated
+- `/home/boatiq/Helm-OS/.claude/commands/` — 4 new command files installed
+- `/home/boatiq/aao-methodology-repo/templates/AAO-Project-Install.md` — new file
+- `/home/boatiq/.claude/commands/session-start.md` — new (missing, caused /project:session-start failure)
+- `/home/boatiq/.claude/commands/session-close.md` — updated to current
+- `/home/boatiq/.claude/commands/bug-fix.md` — updated to current
+- `/home/boatiq/.claude/commands/methodology-check.md` — updated to current
+
+**Decisions:**
+- MEMORY.md not created in Helm-OS project root — one memory file only (global ~/.claude/projects/.../memory/MEMORY.md). AAO install skipped that step per operator instruction.
+- Project-level .claude/commands/ installed but not sufficient — global ~/.claude/commands/ is the active location when Claude Code launches from home dir.
+
+**Release Package Manifest:** Not applicable — no Pi deployment.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-20 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+QUALITY METRICS — 2026-03-20
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0  (session-start not functional at session open)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 80/90 × OIC
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS=0 — /project:session-start was broken at session start (missing from ~/.claude/commands/). Fixed during this session. MLS will be 1 from next session onward.
+
+**Open items:**
+- Git worktree cleanup (build-v0.9.2.1 — 5 unmerged commits decision)
+- MEMORY.md trim (336 lines, truncates at 200)
+- SQS calculation block in CLAUDE.md session-close steps (still open)
+- v0.9.2 UAT
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-20 — Anti-Sycophancy Protocol (AAO v1.5) Deployed + GitHub Push
 
 **Goal:** Deploy AAO v1.5 Anti-Sycophancy Protocol across aao-methodology-repo; push both Helm-OS and aao-methodology-repo to GitHub.
