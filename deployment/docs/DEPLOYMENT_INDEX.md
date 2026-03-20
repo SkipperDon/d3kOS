@@ -94,7 +94,7 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 
 **Plan:** `deployment/d3kOS/D3KOS_PLAN.md` v2.0.0 (canonical implementation plan)
 **UI Reference:** `deployment/d3kOS/docs/d3kos-mockup-v4.html` (interactive mockup — all screens)
-**Detailed Checklist:** `deployment/d3kOS/PROJECT_CHECKLIST.md`
+**Detailed Checklist:** `MASTER_CHECKLIST.md` (project root — single master for all projects)
 
 ### Governance Files (d3kOS-specific)
 
@@ -102,7 +102,7 @@ New Flask-based dashboard stack. Web-first, AI-assisted marine dashboard replaci
 |------|---------|
 | `deployment/d3kOS/D3KOS_PLAN.md` | Canonical implementation plan — Phases 0–5, all code, port reference, rollback procedures |
 | `deployment/d3kOS/docs/d3kos-mockup-v4.html` | Full interactive UI mockup — main menu, AI nav, settings (16 sections), design system |
-| `deployment/d3kOS/PROJECT_CHECKLIST.md` | Phase-by-phase task tracking (detailed) |
+| `MASTER_CHECKLIST.md` | Single master checklist — all projects (d3kOS, AtMyBoat, mobile). Replaces all prior PROJECT_CHECKLIST.md files. |
 | `deployment/d3kOS/SESSION_LOG.md` | Append-only session log for d3kOS build sessions |
 | `deployment/d3kOS/CHANGELOG.md` | Milestone entries only |
 | `deployment/d3kOS/.gitignore` | Excludes all .env files and cache from git |
@@ -360,4 +360,4 @@ Every time work is completed:
 2. If it is a new feature built via Ollama executor: it already has a `features/` dir
 3. Update this index with a new row
 4. Update `SESSION_LOG.md`
-5. Update `PROJECT_CHECKLIST.md`
+5. Update `MASTER_CHECKLIST.md`
