@@ -2,6 +2,49 @@
 
 ---
 
+## Session — 2026-03-20 — Checklist Consolidation & Worktree Audit
+
+**Tasks completed:**
+- Audited all PROJECT_CHECKLIST.md files across repo — found 13 copies (4 originals + 9 worktree duplicates)
+- Identified root causes: git worktrees create full repo copies; old instructions folder; CLAUDE.md pointed to wrong path
+- Merged all 4 originals into single `MASTER_CHECKLIST.md` at Helm-OS root
+- Marked abandoned items: v0.9.3 Next.js/Supabase concept; v0.9.2.3 UI Remediation
+- Updated both CLAUDE.md files (5 + 1 references) — PROJECT_CHECKLIST → MASTER_CHECKLIST
+- Updated DEPLOYMENT_INDEX.md (3 references)
+- All originals archived to `.aao-backups/20260320_000000_checklist-merge/`
+
+**Files changed:**
+- `MASTER_CHECKLIST.md` — NEW — `/home/boatiq/Helm-OS/MASTER_CHECKLIST.md`
+- `PROJECT_CHECKLIST.md` — DELETED — `/home/boatiq/Helm-OS/`
+- `PROJECT_CHECKLIST.md` — DELETED — `/home/boatiq/Helm-OS/deployment/d3kOS/`
+- `PROJECT_CHECKLIST.md` — DELETED — `/home/boatiq/Helm-OS/deployment/v0.9.3/`
+- `PROJECT_CHECKLIST.md` — DELETED — `/home/boatiq/Helm-OS/deployment/v0.9.3/old instructions/`
+- `CLAUDE.md` — MODIFIED — `/home/boatiq/CLAUDE.md` (5 references updated)
+- `CLAUDE.md` — MODIFIED — `/home/boatiq/Helm-OS/CLAUDE.md` (1 reference updated)
+- `DEPLOYMENT_INDEX.md` — MODIFIED — `/home/boatiq/Helm-OS/deployment/docs/DEPLOYMENT_INDEX.md` (3 references updated)
+
+**MASTER_CHECKLIST.md updates:**
+- File created (v1.0 → v1.1 after session-close edits)
+- Added Part 6 item 7: worktree cleanup pending (build-v0.9.2.1 has 5 unmerged commits — needs decision)
+
+**AAO compliance:** PASS — all actions Low risk, pre-stated, scope clean, no push
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-20 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Open items for next session:**
+- Decide fate of `build-v0.9.2.1` branch (5 unmerged commits: AvNav client fixes, voyage log features, Phase 5 checklist). Merge to main or discard?
+- Remove git worktrees once branch decision made: `worktrees/v0.9.2`, `worktrees/v0.9.2.1`, `worktrees/v0.9.3`
+- SQS calculation block — add to CLAUDE.md session-close steps (AAO Section 19, Part 2 item outstanding)
+- MEMORY.md is over 200-line limit (336 lines) — trim index, move detailed content to topic files
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-19 (Session 8) — AAO Section 19 Session Quality Metrics — SPEC v1.4
 
 **Tasks completed:**

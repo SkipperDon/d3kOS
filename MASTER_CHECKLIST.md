@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 1.0 | **Last Updated:** 2026-03-20
+**Version:** 1.1 | **Last Updated:** 2026-03-20 (Session: checklist consolidation)
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -136,6 +136,7 @@ On-boat verification still pending:
 | 4 | Camera on-boat tests (DHCP reservations, 24hr stability, performance, storage) | Don (on boat with cameras) | `[!]` On-boat dependency |
 | 5 | SQS calculation block — add to CLAUDE.md session-close | Claude | `[ ]` AAO Section 19 |
 | 6 | RAG re-ingest after each Pi deployment | Claude (recurring) | `[~]` Must run after every deploy session |
+| 7 | Remove git worktrees (v0.9.2, v0.9.2.1, v0.9.3) from disk | Claude | `[ ]` `build-v0.9.2.1` has 5 unmerged commits — decide: merge or discard before removing |
 
 ---
 
