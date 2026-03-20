@@ -1,0 +1,241 @@
+# d3kOS & AtMyBoat.com — Master Project Checklist
+**Version:** 1.0 | **Last Updated:** 2026-03-20
+**Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
+**Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
+
+> **Purpose:** Single source of truth — what is done, what is open, what was abandoned.
+> Completed phases are summarised. Open items are listed in full. Abandoned work is noted with reason.
+
+---
+
+## LEGEND
+- `[x]` Complete
+- `[ ]` Not started
+- `[~]` In progress
+- `[!]` Blocked / needs action
+- `[–]` Abandoned / superseded
+
+---
+
+## PART 1 — Developer Infrastructure
+**Status: COMPLETE**
+
+All Ollama executor tooling, RAG knowledge base, and Verify Agent are operational.
+
+| Item | Status | Detail |
+|------|--------|--------|
+| Ollama executor v3 (`ollama_execute_v3.py`) | `[x]` | Generic phases.json-driven executor. Model: qwen3-coder:30b at 192.168.1.36:11434. Score: 97/100. |
+| RAG knowledge base | `[x]` | helm_os_docs: 1,079 chunks. helm_os_source: 54 chunks. Smart filtered ingestion. |
+| Verify Agent | `[x]` | Deployed on TrueNAS VM 192.168.1.103:11436. Routed to workstation GPU. |
+| helm_os_context.md | `[x]` | Full Pi variable names, port map, API patterns, format rules. |
+| RAG re-ingest | `[~]` | Recurring task after every Pi deployment. Command: `cd /home/boatiq/rag-stack && .venv/bin/python3 helm_os_ingest.py --collection source` |
+
+---
+
+## PART 2 — AAO Operating Environment
+**Status: COMPLETE (1 item open)**
+
+| Item | Status | Detail |
+|------|--------|--------|
+| Hooks, Emergency Brake, Sprint Mode | `[x]` | All in ~/.claude/settings.json + CLAUDE.md. |
+| AAO Methodology GitHub repo | `[x]` | https://github.com/SkipperDon/aao-methodology — v1.4 current. |
+| AAO Methodology website | `[x]` | https://skipperdon.github.io/AAO-Methodology/ live. |
+| Session Memory Loop (session-start / session-close) | `[x]` | Deployed to both CLAUDE.md files. |
+| Session Quality Metrics (Section 19) | `[x]` | Spec written. **Don to push:** `git push origin main` in aao-methodology-repo. |
+| SQS calculation block in CLAUDE.md | `[ ]` | Sprint scope item 5 — not yet executed. Add to session-close steps. |
+
+---
+
+## PART 3 — v0.9.1 Voice AI Assistant
+**Status: COMPLETE — Shipped**
+
+Full hands-free voice pipeline deployed on Pi. Vosk wake word detection, Piper TTS, Gemini/RAG/rule-based query routing, SQLite conversation logging. Service: `d3kos-voice-assistant.service`. All 18 query types tested.
+
+---
+
+## PART 4 — v0.9.2 Core Platform Features
+**Status: COMPLETE — All features shipped. On-boat verification tasks remain.**
+
+### 4.1 Metric/Imperial Conversion System
+**Status: COMPLETE** — units.js (25/25 tests), Preferences API :8107, Settings toggle, all pages updated. Commit e3ddbef.
+
+### 4.2 Marine Vision — Camera Overhaul (Slot/Hardware Architecture)
+**Status: COMPLETE** — Dynamic slot/hardware architecture replacing hardcoded cameras.json. Supports 1–20 cameras. All 5 steps deployed 2026-03-11.
+
+| Open item | Status |
+|-----------|--------|
+| Touchscreen test — Settings UI + Marine Vision (requires Pi touchscreen) | `[!]` On-boat |
+| 24hr stability test + performance test (requires cameras on boat network) | `[!]` On-boat |
+| setup_dhcp_reservations.py: one-line update to read hardware.json | `[ ]` Low priority |
+
+### 4.3 Marine Vision — Original System
+**Status: ABANDONED** — Superseded 2026-03-11 by camera-overhaul (§4.2). Original two-camera cameras.json system replaced entirely. All open items from original system are closed — add cameras 3 & 4 via Settings → Camera Setup → Scan + Assign. No code changes needed.
+
+### 4.4 Gemini API Integration
+**Status: COMPLETE** — Gemini proxy :8097, Settings UI, query_handler.py routing, onboarding Step 17. Commit 02d2694.
+
+### 4.5 Remote Access API
+**Status: COMPLETE** — remote_api.py :8111, API key auth, /remote/health/status/maintenance/note, Tailscale removed 2026-03-19 (replaced with LAN-only + v0.9.4 placeholder). SSE /remote/status-stream live. remote-access.html updated.
+
+| Open item | Status |
+|-----------|--------|
+| Camera stream relay RTSP → HLS | `[ ]` Deferred — implement when cameras 3 & 4 purchased |
+
+### 4.6 Post-Install Bug Fixes & UI Polish
+**Status: COMPLETE** — All 14 fixes deployed 2026-03-05 via Ollama executor. Commit in Part 12.
+
+### 4.7 Community Features (Pi Side)
+**Status: COMPLETE (flows disabled)** — anonymiser.py, community-api.py :8103, community-prefs.json, settings.html community section, Node-RED flows (3 flows deployed but disabled).
+
+| Open item | Status |
+|-----------|--------|
+| Re-enable Node-RED flows when v0.9.3 AtMyBoat.com community API endpoints are live | `[ ]` Blocked on v0.9.3 |
+| End-to-end test: toggle on → data flows to atmyboat.com → appears on community map | `[ ]` Blocked on v0.9.3 |
+
+### 4.8 Export Boot Race Fix
+**Status: COMPLETE** — `d3kos-export-boot.service` race resolved with `set -e` + `curl` exit 7 fix. See `deployment/docs/EXPORT_BOOT_RACE_FIX.md`.
+
+### 4.9 signalk-forward-watch (npm Plugin)
+**Status: COMPLETE** — v0.2.0 published to GitHub + npm 2026-03-11. Worker thread architecture. 21,719 labeled images, YOLOv8n model.
+
+| Open item | Status |
+|-----------|--------|
+| Add download-on-first-run (auto-fetch model from GitHub Releases) | `[ ]` |
+| Test on OpenPlotter | `[ ]` |
+
+---
+
+## PART 5 — v0.9.2.x UI Rebuild & Fixes
+**Status: COMPLETE — Active system is v0.9.2.2 CSS v=15**
+
+### 5.1 d3kOS Dashboard UI — Phases 0–5
+**Status: COMPLETE** — Full dashboard hub (Flask :3000), Gemini proxy (:3001), AI Bridge (:3002), AvNav integration, Settings (16 sections), Phase 5 AI+AvNav features. All phases deployed and verified on Pi.
+
+On-boat verification still pending:
+- Route Analysis Widget, Port Arrival Briefing, Voyage Log Summary, Anchor Watch — require live GPS + active route + waypoint approach.
+
+### 5.2 v0.9.2.2 Frontend UI Rebuild
+**Status: COMPLETE — APPROVED AND CLOSED 2026-03-16** — Full v12 layout, 5 JS modules, Signal K WebSocket, AvNav iframe, AI panel, cameras, onboarding wizard. Commits: d94b2f9 · 7097664 · c6fd43e. CSS ?v=15.
+
+### 5.3 v0.9.2.2 Recovery
+**Status: COMPLETE** — INC-01 through INC-16 all deployed. AODA font scale (IEC 62288 Option B): 32px labels, 28px nav, 20px forms. All confirmed on Pi screen.
+
+### 5.4 v0.9.2.3 UI Remediation
+**Status: ABANDONED** — Cancelled 2026-03-18. Complete deployment failure. CSS regressions broke working dashboard. Weather panel (I-11/I-12/I-13) was scope Don never requested. Don restored from prior backup. All surviving fixes (I-05, I-07, I-08, I-14–I-19, WX fullscreen) were re-applied directly to v0.9.2.2 and deployed 2026-03-19. See V0923_PLAN.md for historical record only.
+
+---
+
+## PART 6 — v0.9.2 OPEN ITEMS (Active)
+**These are the remaining items blocking v0.9.2 close.**
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| 1 | UAT: 5 metric + 5 imperial users | Don (recruit users) | `[ ]` Ready — S-06 fixes deployed 2026-03-17 |
+| 2 | o-charts chart activation | Don | `[ ]` See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` |
+| 3 | GPS outdoor verification | Don (Pi at dock) | `[!]` Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position outdoors, confirm lat/lon non-zero. Do after UAT. |
+| 4 | Camera on-boat tests (DHCP reservations, 24hr stability, performance, storage) | Don (on boat with cameras) | `[!]` On-boat dependency |
+| 5 | SQS calculation block — add to CLAUDE.md session-close | Claude | `[ ]` AAO Section 19 |
+| 6 | RAG re-ingest after each Pi deployment | Claude (recurring) | `[~]` Must run after every deploy session |
+
+---
+
+## PART 7 — v0.9.3 AtMyBoat.com Community Platform (WordPress)
+**Status: IN PROGRESS — Staging build underway**
+**Platform:** WordPress + Twenty Twenty child theme on HostPapa staging
+**Repo:** github.com/SkipperDon/atmyboat-forum
+**Rules:** Child theme only · PHP + cURL · No Node.js · AI model = claude-haiku-4-5-20251001 · AODA enforced
+
+### Phase 0 — Repo & Staging Setup
+- [x] GitHub repo created, staging confirmed, FTP access established, child theme created
+
+### Phase 1 — bbPress Forum
+- [x] bbPress installed on staging, /forum/ slug confirmed
+
+### Phase 2 — Features
+| Item | Status |
+|------|--------|
+| 2A — MailPoet email notifications | `[ ]` Not started |
+| 2B — AODA CSS & design system (style.css, bbpress.css, functions.php) | `[~]` Core done — font sizes need final audit |
+| 2C — AI Assistant (inc/ai-assistant.php, ai-widget.php, AJAX handler) | `[x]` Complete — renders and submits on staging |
+| 2D — Products Hub (page-products.php, products.json) | `[x]` Complete — renders on staging |
+| 2E — SEO (Yoast/RankMath, sitemap, Bing Webmaster) | `[ ]` Not started |
+
+### Phase 3 — AODA Compliance Audit
+**Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
+
+- [ ] All 5 audit steps complete and issues fixed
+
+### Phase 4 — Staging → Live
+**Owner: Don's hands only**
+- [ ] UpdraftPlus full backup of live site
+- [ ] cPanel Staging → Push to Live
+- [ ] Post-push smoke test (forum, products, AI widget)
+- [ ] GitHub repo set to Private
+- [ ] Remove Gemini API key from atmyboat-config.php and rotate
+- [ ] Change FTP password for d3kos@atmyboat.com
+
+### Post-Launch
+- [ ] Monitor Gemini API usage (free tier: 20 req/day)
+- [ ] UAT with real boaters (ages 45–70)
+- [ ] Node-RED flow verification once AtMyBoat.com APIs are live (see Part 4.7)
+  - POST /api/telemetry/push
+  - POST /api/community/benchmark
+  - POST /api/community/position
+  - Replace placeholder URL in "Post to Community DB" nodes (2 nodes)
+  - Create /opt/d3kos/config/cloud-credentials.json with AtMyBoat.com API key
+
+### Abandoned v0.9.3 Concept
+**Status: ABANDONED** — An earlier v0.9.3 concept (Next.js 15 + Supabase + Stripe + Vercel) was superseded by the current WordPress + HostPapa approach. The original spec is archived at `deployment/v0.9.3/old instructions/PROJECT_CHECKLIST.md.bak`. Do not action any items from that spec.
+
+---
+
+## PART 8 — v0.9.4 d3kOS Mobile Companion App (PWA)
+**Status: PLANNED — Not started. Pre-build task: remove Tailscale from Pi (done 2026-03-19).**
+**Strategy:** `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0
+**Q&A record (authoritative):** `deployment/docs/MOBILE_APP_QA_RECORD.md` v1.0.0
+
+| Build step | Status |
+|------------|--------|
+| Pre-build: Remove Tailscale from Pi | `[x]` Done 2026-03-19 |
+| Foundation (PWA shell on GitHub Pages) | `[ ]` |
+| WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
+| Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
+| Fix My Pi (diagnostic + restore, $29.99/incident) | `[ ]` |
+| PDF Reports via mPDF + Gemini 2.5 Flash (T2/T3 only) | `[ ]` |
+| OS Lockdown (apt-mark hold + pre-upgrade hook) | `[ ]` |
+| Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[ ]` |
+
+---
+
+## PART 9 — v1.1 Multi-Language Platform
+**Status: LAYER 0 COMPLETE — Layers 1–5 not started**
+**Full spec:** `doc/MULTILANGUAGE_PLATFORM_SPEC.md` | `deployment/v1.1/`
+**Supported languages:** 18 (en, fr, de, es, it, nl, pt, uk, ar, sv, no, da, fi, hr, tr, el, zh, ja)
+
+| Layer | What it covers | Status |
+|-------|---------------|--------|
+| Layer 0 — UI Foundation | i18n JSON, language API :8101, data-i18n wired on all 13 pages, 38 new keys | `[x]` Complete |
+| Layer 0 remaining | Noto fonts for Arabic/CJK/Greek/Cyrillic, Arabic RTL, professional translation review | `[ ]` |
+| Layer 1 — Speech-to-Text | Whisper-small (244MB, 99 languages), replaces Vosk post-wake, whisper_transcribe.py | `[ ]` Not started |
+| Layer 2 — Text-to-Speech | Per-language Piper models (fr/de/es/it/nl/pt/uk/ar), espeak-ng fallback for others | `[ ]` Not started |
+| Layer 3 — AI Response Language | Inject language into Gemini system prompt, i18n rule-based responses | `[ ]` Not started |
+| Layer 4 — Keyboard & Text Input | Per-language virtual keyboard layouts, Arabic RTL fcitx5, CJK deferred to v1.1+ | `[ ]` Not started — fix existing keyboard bug first |
+| Layer 5 — Boat Log in User's Language | Auto once Layers 1 + 4 done | `[ ]` Not started |
+
+---
+
+## PART 10 — Version Roadmap Summary
+
+| Version | Description | Status |
+|---------|-------------|--------|
+| v0.9.1 | Voice AI Assistant | `[x]` Shipped |
+| v0.9.2 | Core platform — cameras, units, Gemini, remote access, UI rebuild | `[~]` Code complete — UAT + on-boat tasks remain |
+| v0.9.3 | AtMyBoat.com community platform (WordPress) | `[~]` Staging in progress |
+| v0.9.4 | d3kOS Mobile Companion App (PWA) | `[ ]` Planned |
+| v1.0 | Multi-language + v0.9.4 + signalk-forward-watch AppStore | `[ ]` Planned |
+| v1.1 | CJK keyboard, self-hosted STUN coordination server, fleet features | `[ ]` Future |
+
+---
+
+*Archived originals: `.aao-backups/20260320_000000_checklist-merge/`*
+*Do not create new PROJECT_CHECKLIST.md files — update this file only.*
