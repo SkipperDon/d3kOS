@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 1.1 | **Last Updated:** 2026-03-20 (Session: checklist consolidation)
+**Version:** 1.2 | **Last Updated:** 2026-03-20 (Session: anti-sycophancy deploy + checklist updates)
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -38,10 +38,10 @@ All Ollama executor tooling, RAG knowledge base, and Verify Agent are operationa
 | Item | Status | Detail |
 |------|--------|--------|
 | Hooks, Emergency Brake, Sprint Mode | `[x]` | All in ~/.claude/settings.json + CLAUDE.md. |
-| AAO Methodology GitHub repo | `[x]` | https://github.com/SkipperDon/aao-methodology — v1.4 current. |
+| AAO Methodology GitHub repo | `[x]` | https://github.com/SkipperDon/aao-methodology — v1.5 current. Pushed 2026-03-20. |
 | AAO Methodology website | `[x]` | https://skipperdon.github.io/AAO-Methodology/ live. |
 | Session Memory Loop (session-start / session-close) | `[x]` | Deployed to both CLAUDE.md files. |
-| Session Quality Metrics (Section 19) | `[x]` | Spec written. **Don to push:** `git push origin main` in aao-methodology-repo. |
+| Session Quality Metrics (Section 19) | `[x]` | Spec written and pushed. OIC (Section 20) added as 6th metric 2026-03-20. |
 | SQS calculation block in CLAUDE.md | `[ ]` | Sprint scope item 5 — not yet executed. Add to session-close steps. |
 
 ---

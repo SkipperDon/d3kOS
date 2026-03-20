@@ -2,6 +2,71 @@
 
 ---
 
+## Session — 2026-03-20 — Anti-Sycophancy Protocol (AAO v1.5) Deployed + GitHub Push
+
+**Goal:** Deploy AAO v1.5 Anti-Sycophancy Protocol across aao-methodology-repo; push both Helm-OS and aao-methodology-repo to GitHub.
+
+**Tasks completed:**
+- AAO SPECIFICATION.md: OIC metric block inserted after UAC; SQS formula updated (OIC binary multiplier, max 90); Section 20 Anti-Sycophancy Protocol added (§20.1–20.6 + NIST alignment); version v1.4 → v1.5
+- aao-methodology-repo CLAUDE.md: Uncertainty Declaration Rule (§20.2), Summary Accuracy Standard (§20.3), OIC (§19 Metric 6) sections added; 3 compliance checklist items added
+- aao-methodology-repo docs/aao-session-quality.html: OIC card added (purple), formula updated with OIC multiplier, grade table updated, SESSION_LOG example updated
+- CHANGELOG_v9.md: Anti-sycophancy addendum appended with Section 20 description
+- Helm-OS CLAUDE.md: Anti-Sycophancy sections added (NOTE: scope error — was intended for aao-methodology-repo only; left as-is per Don's instruction 2026-03-20)
+- MASTER_CHECKLIST.md: created 2026-03-20 (prior session); updated this session to v1.2 — AAO repo version v1.4→v1.5, push complete noted
+- GitHub push: both repos pushed to origin/main. Helm-OS required merge (remote had 1 commit ahead: file deletion). aao-methodology-repo pushed cleanly. settings.json deny rules temporarily removed, restored immediately after push.
+
+**Files changed:**
+- `/home/boatiq/aao-methodology-repo/SPECIFICATION.md` — OIC metric + Section 20 Anti-Sycophancy (High risk — external push)
+- `/home/boatiq/aao-methodology-repo/CLAUDE.md` — Three anti-sycophancy sections + compliance checklist items (Low)
+- `/home/boatiq/aao-methodology-repo/docs/aao-session-quality.html` — OIC metric card + formula update (Low)
+- `/home/boatiq/aao-methodology-repo/CHANGELOG_v9.md` — Section 20 addendum appended (Low)
+- `/home/boatiq/Helm-OS/CLAUDE.md` — Anti-sycophancy sections added (scope error, left as-is) (Low)
+- `/home/boatiq/CLAUDE.md` — MASTER_CHECKLIST references + anti-sycophancy sections (Low)
+- `/home/boatiq/Helm-OS/deployment/docs/DEPLOYMENT_INDEX.md` — PROJECT_CHECKLIST→MASTER_CHECKLIST references (Low)
+- `/home/boatiq/Helm-OS/MASTER_CHECKLIST.md` — v1.2 update: AAO v1.5 noted, push status updated (Low)
+- `/home/boatiq/.claude/settings.json` — push deny rules temporarily removed, restored (High — reverted)
+
+**MASTER_CHECKLIST.md updates:**
+- Part 2 row "AAO Methodology GitHub repo": v1.4 → v1.5, pushed 2026-03-20
+- Part 2 row "Session Quality Metrics": removed "Don to push" note — push done; OIC Section 20 noted
+- Version: 1.1 → 1.2, last-updated updated
+
+**Decisions:**
+- Anti-sycophancy sections were applied to Helm-OS CLAUDE.md in error (scope was aao-methodology-repo only). Don instructed: leave it as-is. Not reverted.
+- GitHub push: one-time only authorization. settings.json deny rules restored to normal state immediately after push.
+- Helm-OS push used merge (not rebase) to resolve non-fast-forward — remote had 1 commit (file deletion), no conflicts.
+
+**AAO compliance:** PASS — with one scope error (Helm-OS CLAUDE.md) acknowledged and left as-is per operator instruction. Stop was honoured when operator said "hold it — tell me what you're about to do." settings.json was restored as instructed.
+
+**SQS metrics (self-report — operator assesses OIC):**
+- SCR (scope compliance): 1 scope error (Helm-OS CLAUDE.md outside authorized scope) → ~90%
+- SGCR (stop gate): operator stop honoured immediately → 100%
+- REC (recovery events): 1 (merge instead of rebase)
+- MLS (memory load): session started with loaded context
+- UAC (unauthorized actions): 0 (settings.json push change was authorized)
+- OIC: operator assessment required
+
+**Ollama:** 0 calls this session (all edits were direct — no code generation needed)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-20 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Open items for next session:**
+- Git worktree cleanup: decide fate of `build-v0.9.2.1` (5 unmerged commits: AvNav client fixes, voyage log, Phase 5 checklist) — merge or discard, then remove all 3 worktree dirs
+- MEMORY.md trim: 336 lines, limit 200 — causing truncation at session start
+- SQS calculation block: add to CLAUDE.md session-close steps (Part 2 item 5 — still open)
+- v0.9.2 UAT: 5 metric + 5 imperial users
+- GPS outdoor verification (after UAT)
+- o-charts activation (Don's task)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-20 — Checklist Consolidation & Worktree Audit
 
 **Tasks completed:**
