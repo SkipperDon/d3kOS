@@ -157,8 +157,8 @@ Format:
 
 Never edit or delete prior entries. Append only.
 
-**Step 2 — PROJECT_CHECKLIST.md**
-Update /home/boatiq/Helm-OS/PROJECT_CHECKLIST.md:
+**Step 2 — MASTER_CHECKLIST.md**
+Update /home/boatiq/Helm-OS/MASTER_CHECKLIST.md:
 - Mark any tasks completed this session as done
 - Add any new tasks discovered during this session
 - Update the status of any in-progress items
