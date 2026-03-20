@@ -2,6 +2,58 @@
 
 ---
 
+## Session — 2026-03-19 (Session 7) — GPS + Signal K plugin investigation — plugins not the cause
+
+**Tasks completed:**
+- Investigated GPS regression: user reported GPS showing 3 satellites before two Signal K plugins were added for AvNav, now registering nothing
+- Identified the two plugins: `@signalk/resources-provider` v1.5.1 (chart resource API) and `@signalk/signalk-to-nmea0183` v1.12.1 (reconfigured to output GGA/RMC/VTG/etc on TCP port 10111 for AvNav)
+- Pulled raw NMEA directly from u-blox via `gpspipe -r` (15 seconds): only `$GPRMC` and `$GPGSA` sentences, both showing V status (no fix), mode 1, zero satellites, no GSV sentences
+- Confirmed Signal K v1 API returning lat:0, lon:0, source `gps.GP`, sentence `RMC` — consistent with no fix
+- Confirmed gpsd is active, u-blox driver detected on /dev/ttyACM0, NMEA flowing — hardware not dead
+- Confirmed `signalk-to-nmea0183` backup shows all sentences were `false` before AvNav work; current config enables GGA, RMC, VTG, etc. — this was the configuration change for AvNav
+- Confirmed neither plugin can affect GPS satellite reception — they operate above the hardware layer
+- Root cause: GPS has no sky view indoors. Timing correlation with plugin install is coincidental.
+- Added GPS outdoor verification task to PROJECT_CHECKLIST.md under Pi Continuous Operation section
+
+**Files changed:**
+- `/home/boatiq/Helm-OS/PROJECT_CHECKLIST.md` — added GPS outdoor verification checklist item, updated Last Updated line (Low)
+- `/home/boatiq/Helm-OS/SESSION_LOG.md` — this entry (Low)
+
+**Pi reads (no writes):**
+- `/home/d3kos/.signalk/package.json` — plugin list reviewed
+- `/home/d3kos/.signalk/settings.json` — pipedProviders and plugin config reviewed
+- `/home/d3kos/.signalk/plugin-config-data/*.json` — all plugin configs reviewed, including sk-to-nmea0183.json.backup
+- `gpspipe -r` — 15s raw NMEA from u-blox
+- `systemctl status gpsd` — confirmed active
+- Signal K v1 API position endpoint — confirmed 0,0 no fix
+
+**PROJECT_CHECKLIST.md updates:**
+- Added `[ ] GPS outdoor verification` under Pi Continuous Operation section (new item — not a state change)
+- Updated Last Updated line to 2026-03-19 Session 7
+
+**AAO compliance:** PASS — all actions None risk (reads/diagnostics only), no writes to Pi, no code changes, no git push, no scope creep
+
+**Open items for next session:**
+- I-08 — Close buttons throughout app (48×48px, dark bg, white ✕)
+- I-11 — Weather page (weather.html modify — not replace)
+- I-16 — Boat Log fonts (Bebas Neue / Chakra Petch)
+- I-17 — Boat Log auto engine capture (boatlog-engine.js endpoint missing)
+- I-18 — Dropdowns all pages (52px min-height)
+- I-19 — Font consistency all pages
+- Q2 — boatlog-export-api.py engine entry endpoint question
+- UAT — 5 metric + 5 imperial users
+- GPS outdoor verification — Don to run at dock with sky view
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-19 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-19 (Session 6) — HELM button UX fixes, grey screen on boot fixed, mute wired to espeak-ng
 
 **Tasks completed:**
