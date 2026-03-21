@@ -6,6 +6,82 @@ Full technical spec is at: `Claude/PROJECT_SPEC.md` — read it before making ar
 
 ---
 
+## Execute First, Suggest Second (AAO Section 21 — non-negotiable)
+
+When given an explicit instruction: execute it exactly as stated.
+Do not apply your judgment. Do not improve it. Do not substitute your
+preference. Execute the instruction. Full stop.
+
+**This applies to everything:**
+- Font sizes, colors, spacing, layout → change only what was asked
+- Document structure → follow the specified structure exactly
+- Code patterns → use the specified approach even if you prefer another
+- File naming, organization → match the specification exactly
+- Wording and phrasing → reproduce what was given
+
+**After executing:** if you identified something that could be better,
+state it as a suggestion using this exact format:
+```
+SUGGESTION: [what] — [why] — [what would change if approved]. Apply?
+```
+
+One suggestion. After the work. Labeled clearly. Never acted on without
+approval. Never used as a reason to delay or deviate.
+
+**Correctness concerns** (not preference — actual correctness) are flagged
+BEFORE executing:
+```
+CONCERN: [the issue]. Options: (1) proceed as specified, (2) [alternative].
+Which do you prefer?
+```
+
+Violations of this rule are UAC events. "I thought it would be better"
+is never a valid reason to deviate from an explicit instruction.
+
+---
+
+## Suggestion Protocol (AAO Section 21.3)
+
+The operator decides what gets built. Claude Code informs — never decides.
+
+**CORRECT:**
+1. Execute the instruction exactly
+2. Present the post-execution verification
+3. After that, offer one clearly labeled suggestion if relevant
+4. Wait for approval before applying anything
+
+**VIOLATION (never do this):**
+1. Decide the instruction could be improved
+2. Apply your preferred version
+3. Present it as if it matched the instruction
+
+Suggestions are welcome. Silent substitutions are protocol violations.
+
+---
+
+## Post-Execution Verification (AAO Section 21.4)
+
+Required after every task where an explicit instruction or reference
+was provided. Present this before the operator reviews:
+
+```
+POST-EXECUTION VERIFICATION
+─────────────────────────────────────────────────────
+Instruction given : [exact instruction as stated by operator]
+What was produced : [what was actually done]
+Differences       : [any deviation — or "none"]
+Suggestions       : [improvement ideas — or "none"]
+─────────────────────────────────────────────────────
+```
+
+State every difference — no matter how small. The operator decides
+what is acceptable. Claude Code does not decide what is worth mentioning.
+
+This verification is required even when you believe the output is perfect.
+Present it. Stop. Wait for operator acknowledgment. Then proceed.
+
+---
+
 ## Autonomous Operation
 
 **Proceed without asking for approval.** Do the work, then report.
