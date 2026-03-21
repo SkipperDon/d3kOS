@@ -151,17 +151,17 @@ def preprocess_species(image):
 
 def classify_species(image):
     """
-    Classify fish species from image
+    Classify fish species from image.
     Returns: (species_name, confidence, top_3_predictions)
+    NOTE: model outputs log-softmax — apply exp() to convert to probability.
     """
-    # Preprocess
     input_tensor = preprocess_species(image)
-    
-    # Run inference
     outputs = species_session.run(None, {species_input_name: input_tensor})
-    probabilities = outputs[0][0]
-    
-    # Get top 3 predictions
+    log_probs = outputs[0][0]
+
+    # Convert log-softmax → probability (values were negative raw log-softmax)
+    probabilities = np.exp(log_probs)
+
     top_3_idx = np.argsort(probabilities)[-3:][::-1]
     top_3_predictions = [
         {
@@ -170,15 +170,57 @@ def classify_species(image):
         }
         for idx in top_3_idx
     ]
-    
-    # Return best prediction
+
     best_species = top_3_predictions[0]['species']
     best_confidence = top_3_predictions[0]['confidence']
-    
+
     return best_species, best_confidence, top_3_predictions
 
-def postprocess_detections(outputs, confidence_threshold=0.25):
-    """Post-process YOLOv8 fish detection output"""
+
+def compute_iou(b1, b2):
+    """Compute IoU between two bounding boxes (center format: x_center, y_center, w, h)."""
+    ax1 = b1['x_center'] - b1['width'] / 2
+    ay1 = b1['y_center'] - b1['height'] / 2
+    ax2 = b1['x_center'] + b1['width'] / 2
+    ay2 = b1['y_center'] + b1['height'] / 2
+
+    bx1 = b2['x_center'] - b2['width'] / 2
+    by1 = b2['y_center'] - b2['height'] / 2
+    bx2 = b2['x_center'] + b2['width'] / 2
+    by2 = b2['y_center'] + b2['height'] / 2
+
+    ix1, iy1 = max(ax1, bx1), max(ay1, by1)
+    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+
+    if ix2 <= ix1 or iy2 <= iy1:
+        return 0.0
+
+    inter = (ix2 - ix1) * (iy2 - iy1)
+    area_a = (ax2 - ax1) * (ay2 - ay1)
+    area_b = (bx2 - bx1) * (by2 - by1)
+    return inter / (area_a + area_b - inter)
+
+
+def apply_nms(detections, iou_threshold=0.4):
+    """Collapse overlapping bounding boxes — keeps highest-confidence box per cluster."""
+    if len(detections) <= 1:
+        return detections
+    detections = sorted(detections, key=lambda x: x['confidence'], reverse=True)
+    kept = []
+    suppressed = set()
+    for i in range(len(detections)):
+        if i in suppressed:
+            continue
+        kept.append(detections[i])
+        for j in range(i + 1, len(detections)):
+            if j not in suppressed:
+                if compute_iou(detections[i]['bbox'], detections[j]['bbox']) > iou_threshold:
+                    suppressed.add(j)
+    return kept
+
+
+def postprocess_detections(outputs, confidence_threshold=0.45):
+    """Post-process YOLOv8 fish detection output with NMS to suppress duplicate boxes."""
     predictions = outputs[0][0]
     predictions = predictions.T
 
@@ -198,7 +240,7 @@ def postprocess_detections(outputs, confidence_threshold=0.25):
                 }
             })
 
-    return detections
+    return apply_nms(detections)
 
 @app.route('/detect/status', methods=['GET'])
 def detection_status():
@@ -331,6 +373,7 @@ def detect_frame():
         'species': species_name,
         'species_confidence': species_confidence,
         'species_top3': species_top3,
+        'species_note': 'Classifier trained on 483 marine species — may not match Ontario freshwater fish. For walleye, perch, pike, bass: ask the voice assistant.',
         'capture_triggered': capture_triggered,
         'capture_id': capture_id
     })
