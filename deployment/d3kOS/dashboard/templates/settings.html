@@ -256,12 +256,37 @@
       <div class="sec" id="s-camera">
         <div class="sec-header">
           &#128249; Camera Setup
-          <button class="btn btn-primary" style="padding:6px 14px;min-height:0;" onclick="loadCameraSlots()">&#8635; Refresh</button>
+          <button class="btn btn-primary" style="padding:6px 14px;min-height:0;" onclick="camScan()">&#128269; Scan</button>
         </div>
-        <div id="camera-slots-container">
-          <div class="cs-empty" style="padding:20px;text-align:center;">Loading camera slots&hellip;</div>
+
+        <!-- Wizard states -->
+        <div id="cam-scanning" style="display:none;padding:20px;text-align:center;font-size:20px;color:var(--ink2);">
+          &#128269; Scanning for cameras&hellip;
         </div>
-        <div class="btn-group">
+        <div id="cam-none" style="display:none;padding:20px;">
+          <div style="font-size:20px;color:var(--adv-num);margin-bottom:12px;">&#9888; No cameras detected. Check that cameras are powered and on the same network as the Pi.</div>
+          <button class="btn" onclick="camScan()">&#128260; Retry Scan</button>
+        </div>
+        <div id="cam-error" style="display:none;padding:20px;font-size:20px;color:var(--crit);">
+          Camera service unavailable. Is Marine Vision running on :8084?
+        </div>
+
+        <!-- Assigned slots list -->
+        <div id="cam-slots"></div>
+
+        <!-- Unassigned cameras wizard -->
+        <div id="cam-unassigned" style="display:none;">
+          <div style="padding:14px 0 10px;font-size:20px;font-weight:700;color:var(--ink2);letter-spacing:.06em;">
+            UNASSIGNED CAMERAS — tap a thumbnail and pick a position
+          </div>
+          <div id="cam-wizard-cards" style="display:flex;flex-wrap:wrap;gap:14px;padding-bottom:16px;"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" style="font-size:20px;min-height:52px;padding:0 24px;" onclick="camAssignAll()">&#10003; Assign All</button>
+            <button class="btn" style="font-size:20px;min-height:52px;padding:0 24px;" onclick="loadCameraSlots()">Skip</button>
+          </div>
+        </div>
+
+        <div class="btn-group" style="margin-top:14px;">
           <button class="btn" onclick="window.open('http://localhost:8084','_blank')">&#128249; Open Marine Vision</button>
         </div>
       </div>
@@ -697,37 +722,155 @@
       showToast('Doc: deployment/d3kOS/docs/' + name + '.md');
     }
 
-    /* ── CAMERA SLOTS (section 6) — live fetch from :8084 ── */
+    /* ── CAMERA SETUP WIZARD (section 6) ── */
+
+    const CAM_API  = 'http://localhost:8084';
+    const SLOT_SUGGESTIONS = ['Bow','Helm','Port','Starboard','Stern','Anchor','Cockpit','Engine Room'];
+
+    function _rolePreset(name) {
+      const lc = (name || '').toLowerCase();
+      if (lc.includes('bow'))  return { forward_watch: true,  fish_detection: false, active_default: false, display_in_grid: true };
+      if (lc.includes('helm')) return { forward_watch: false, fish_detection: true,  active_default: false, display_in_grid: true };
+      return                          { forward_watch: false, fish_detection: false, active_default: false, display_in_grid: true };
+    }
+
+    function _roleLabel(name) {
+      const lc = (name || '').toLowerCase();
+      if (lc.includes('bow'))  return '<span style="color:var(--g-txt);font-size:18px;">&#11088; Forward Watch preset</span>';
+      if (lc.includes('helm')) return '<span style="color:var(--g-txt);font-size:18px;">&#127840; Fish Detection preset</span>';
+      return '';
+    }
+
+    function _camShow(id) {
+      ['cam-scanning','cam-none','cam-error','cam-slots','cam-unassigned'].forEach(el => {
+        const e = document.getElementById(el);
+        if (e) e.style.display = 'none';
+      });
+      const target = document.getElementById(id);
+      if (target) target.style.display = '';
+    }
+
     function loadCameraSlots() {
-      const container = document.getElementById('camera-slots-container');
-      container.innerHTML = '<div class="cs-empty" style="padding:20px;text-align:center;">Loading&hellip;</div>';
-      fetch('http://localhost:8084/camera/slots')
+      _camShow('cam-scanning');
+      fetch(CAM_API + '/camera/slots')
         .then(r => r.json())
         .then(slots => {
-          if (!slots || slots.length === 0) {
-            container.innerHTML = '<div class="cs-empty" style="padding:20px;">No camera slots configured. Open Marine Vision to set up cameras.</div>';
-            return;
-          }
-          let html = '<div class="cs-grid">';
+          if (!slots || slots.length === 0) { _camShow('cam-none'); return; }
+
+          /* Render assigned slots */
+          const slotsDiv = document.getElementById('cam-slots');
+          let html = '<div class="cs-grid" style="margin-bottom:16px;">';
           slots.forEach(slot => {
-            const active = slot.camera_id ? true : false;
-            const dot = active ? '<span style="color:var(--g-txt);">&#9679;</span>' : '<span style="color:#555;">&#9675;</span>';
-            const roles = (slot.roles || []).join(', ') || 'No roles';
+            const online  = slot.status === 'online';
+            const dot     = online ? '&#9679;' : '&#9675;';
+            const dotCol  = online ? 'var(--g-txt)' : 'var(--ink3)';
+            const model   = (slot.hardware || {}).model || '—';
+            const ip      = (slot.hardware || {}).ip    || '—';
+            const roles   = slot.roles ? Object.entries(slot.roles).filter(([,v])=>v).map(([k])=>k.replace(/_/g,' ')).join(' · ') || 'display only' : '—';
             html += `<div class="cs-panel">
-              <div class="cs-ph">${dot} ${slot.name || slot.id}</div>
-              <div style="padding:8px 12px;font-size:20px;color:var(--ink3);">
-                <div>ID: ${slot.id}</div>
-                <div>Camera: ${slot.camera_id || 'unassigned'}</div>
-                <div>Roles: ${roles}</div>
+              <div class="cs-ph" style="display:flex;align-items:center;justify-content:space-between;">
+                <span><span style="color:${dotCol};">${dot}</span> ${slot.label}</span>
+                <button class="btn" style="font-size:18px;padding:4px 12px;min-height:36px;" onclick="camUnassign('${slot.slot_id}')">Unassign</button>
+              </div>
+              <div style="padding:8px 12px;font-size:18px;color:var(--ink3);line-height:1.7;">
+                <div>${model} &nbsp;·&nbsp; ${ip}</div>
+                <div style="font-size:18px;">${roles}</div>
               </div>
             </div>`;
           });
           html += '</div>';
-          container.innerHTML = html;
+          slotsDiv.innerHTML = html;
+          _camShow('cam-slots');
         })
-        .catch(err => {
-          container.innerHTML = '<div class="cs-empty" style="padding:20px;color:var(--crit);">Camera service unavailable. Is Marine Vision running on :8084?</div>';
-        });
+        .catch(() => _camShow('cam-error'));
+    }
+
+    function camScan() {
+      _camShow('cam-scanning');
+      fetch(CAM_API + '/camera/scan', { method: 'POST' })
+        .then(() => new Promise(res => setTimeout(res, 3000)))  /* wait for scan */
+        .then(() => fetch(CAM_API + '/camera/hardware'))
+        .then(r => r.json())
+        .then(hardware => {
+          /* Split into assigned and unassigned */
+          const unassigned = hardware.filter(h => !h.assigned_to_slot);
+
+          /* Always refresh the slots list */
+          loadCameraSlots();
+
+          if (unassigned.length === 0) return; /* all assigned — done */
+
+          /* Build wizard cards for unassigned cameras */
+          const cardsDiv = document.getElementById('cam-wizard-cards');
+          cardsDiv.innerHTML = '';
+          unassigned.forEach(hw => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:var(--cell);border:2px solid var(--rule);border-radius:14px;padding:14px;min-width:220px;max-width:280px;flex:1 1 220px;';
+            card.dataset.hardwareId = hw.hardware_id;
+            card.innerHTML = `
+              <img src="${CAM_API}/camera/frame/hw/${hw.hardware_id}"
+                   style="width:100%;height:140px;object-fit:cover;border-radius:8px;background:var(--rule);"
+                   onerror="this.style.background='var(--rule)';this.alt='No frame yet';">
+              <div style="margin-top:10px;font-size:18px;color:var(--ink2);">${hw.model || 'Camera'}</div>
+              <div style="font-size:18px;color:var(--ink3);margin-bottom:10px;">${hw.ip} &nbsp;·&nbsp; ${hw.mac}</div>
+              <input list="cam-positions-${hw.hardware_id.replace(/:/g,'')}"
+                     id="cam-pos-${hw.hardware_id.replace(/:/g,'')}"
+                     placeholder="Position name…"
+                     style="width:100%;font-family:'Chakra Petch',sans-serif;font-size:20px;background:var(--cell);color:var(--ink);border:2px solid var(--rule);border-radius:8px;padding:10px 12px;outline:none;"
+                     oninput="camUpdatePreset(this,'${hw.hardware_id.replace(/:/g,'')}')">
+              <datalist id="cam-positions-${hw.hardware_id.replace(/:/g,'')}">
+                ${SLOT_SUGGESTIONS.map(s=>`<option value="${s}">`).join('')}
+              </datalist>
+              <div id="cam-preset-${hw.hardware_id.replace(/:/g,'')}" style="min-height:24px;margin-top:8px;"></div>`;
+            cardsDiv.appendChild(card);
+          });
+          document.getElementById('cam-unassigned').style.display = '';
+        })
+        .catch(() => _camShow('cam-error'));
+    }
+
+    function camUpdatePreset(input, hwKey) {
+      document.getElementById('cam-preset-' + hwKey).innerHTML = _roleLabel(input.value);
+    }
+
+    async function camAssignAll() {
+      const cards = document.querySelectorAll('#cam-wizard-cards [data-hardware-id]');
+      let assigned = 0;
+      for (const card of cards) {
+        const hwId   = card.dataset.hardwareId;
+        const hwKey  = hwId.replace(/:/g,'');
+        const posEl  = document.getElementById('cam-pos-' + hwKey);
+        const label  = (posEl ? posEl.value : '').trim();
+        if (!label) continue;
+
+        const slot_id = label.toLowerCase().replace(/[^a-z0-9]/g,'_');
+        const roles   = _rolePreset(label);
+
+        try {
+          /* Create slot (may already exist — ignore 409) */
+          await fetch(CAM_API + '/camera/slots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot_id, label, roles }),
+          });
+          /* Assign hardware to slot */
+          const r = await fetch(CAM_API + `/camera/slots/${slot_id}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hardware_id: hwId }),
+          });
+          if (r.ok) assigned++;
+        } catch (_) {}
+      }
+      showToast(assigned + ' camera' + (assigned !== 1 ? 's' : '') + ' assigned');
+      document.getElementById('cam-unassigned').style.display = 'none';
+      loadCameraSlots();
+    }
+
+    function camUnassign(slot_id) {
+      fetch(CAM_API + `/camera/slots/${slot_id}/unassign`, { method: 'POST' })
+        .then(() => { showToast('Camera unassigned from ' + slot_id); loadCameraSlots(); })
+        .catch(() => showToast('Unassign failed'));
     }
 
     /* ── INIT ── */

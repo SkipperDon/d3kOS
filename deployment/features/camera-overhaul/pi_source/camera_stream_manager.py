@@ -568,6 +568,20 @@ def get_frame_by_slot(slot_id):
     return send_file(io.BytesIO(data), mimetype='image/jpeg')
 
 
+@app.route('/camera/frame/hw/<hardware_id>', methods=['GET'])
+def get_frame_by_hardware(hardware_id: str):
+    """Return JPEG by hardware_id — used by setup wizard before slot assignment."""
+    state = hw_state.get(hardware_id)
+    if state:
+        with state['lock']:
+            frame = state['frame']
+        if frame:
+            return send_file(io.BytesIO(frame), mimetype='image/jpeg')
+    hw = hardware.get(hardware_id, {})
+    label = hw.get('model', hardware_id)
+    return send_file(io.BytesIO(_offline_placeholder(label)), mimetype='image/jpeg')
+
+
 # ── Backwards-compatible endpoints ────────────────────────────────────────────
 
 @app.route('/camera/status', methods=['GET'])

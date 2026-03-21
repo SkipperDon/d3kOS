@@ -640,7 +640,17 @@
         <div class="done-list" id="done-summary">
           <!-- Populated by JS -->
         </div>
-        <button type="submit" class="btn-submit">LAUNCH d3kOS</button>
+        <div style="background:var(--panel);border:2px solid var(--g-bdr);border-radius:14px;padding:18px 20px;margin:16px 0;text-align:left;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.08em;color:var(--g-txt);margin-bottom:6px;">&#128249; Camera Setup</div>
+          <div style="font-size:20px;color:var(--ink2);line-height:1.6;margin-bottom:14px;">
+            Set up your cameras now — or any time from<br><strong>Settings &rarr; Camera Setup</strong>.
+          </div>
+          <button type="button" class="btn-submit" style="margin:0;"
+            onclick="window.location.href='/settings#s-camera'">
+            Set Up Cameras &rsaquo;
+          </button>
+        </div>
+        <button type="submit" class="btn-submit">LAUNCH d3kOS &rsaquo;</button>
         <button type="button" class="btn-back" onclick="goTo(5)">&larr; Back</button>
       </div>
     </div>
