@@ -709,10 +709,18 @@ function runDetection() {
         html += '<div class="detect-item" style="color:var(--g-txt);font-weight:700;">&#128247; CAPTURE TRIGGERED — ID: ' + data.capture_id + '</div>';
       }
       if (data.detections && data.detections.length > 0) {
-        html += '<div class="detect-item" style="font-weight:700;">Objects detected: ' + data.detections.length + '</div>';
+        html += '<div class="detect-item" style="font-weight:700;">Fish detected: ' + data.detections.length + (data.detections.length === 1 ? ' fish' : ' fish') + '</div>';
         data.detections.forEach(function(d) {
-          html += '<div class="detect-item">' + d.class_name + ' — ' + (d.confidence * 100).toFixed(1) + '%</div>';
+          html += '<div class="detect-item">' + d.class_name + ' — detection confidence ' + (d.confidence * 100).toFixed(1) + '%</div>';
         });
+        if (data.species && data.species_confidence !== null && data.species_confidence !== undefined) {
+          var speciesDisplay = data.species.replace(/_/g, ' ');
+          html += '<div class="detect-item" style="margin-top:8px;"><strong>Classifier:</strong> ' +
+                  speciesDisplay + ' — ' + (data.species_confidence * 100).toFixed(1) + '%</div>';
+        }
+        if (data.species_note) {
+          html += '<div class="detect-item" style="color:var(--g-txt);font-size:17px;margin-top:4px;">&#9432; ' + data.species_note + '</div>';
+        }
       } else {
         html += '<div class="detect-item" style="color:var(--ink3);">No objects detected</div>';
       }
