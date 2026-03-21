@@ -736,13 +736,11 @@ function runDetection() {
                     g.ontario_note + '</div>';
           }
           html += '</div>';
-        } else if (g && g.source !== 'gemini_unavailable') {
+        } else if (g) {
+          var src = g.source || '';
+          var icon = (src === 'rate_limited' || src === 'cooldown') ? '&#9201;' : '&#9432;';
           html += '<div class="detect-item" style="color:var(--g-txt);margin-top:8px;">' +
-                  '&#9432; Species not identified: ' + (g.visual_features || 'unclear image') + '</div>';
-        } else if (!g) {
-          /* No Gemini result yet */
-          html += '<div class="detect-item" style="color:var(--g-txt);margin-top:8px;">' +
-                  '&#9432; Species lookup pending...</div>';
+                  icon + ' ' + (g.visual_features || 'Species not identified') + '</div>';
         }
       } else {
         html += '<div class="detect-item" style="color:var(--ink3);">No fish detected</div>';
