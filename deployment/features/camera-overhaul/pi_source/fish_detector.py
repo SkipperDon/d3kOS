@@ -16,6 +16,11 @@ import json
 
 app = Flask(__name__)
 
+@app.after_request
+def _cors(r):
+    r.headers["Access-Control-Allow-Origin"] = "*"
+    return r
+
 # Configuration
 DETECTION_MODEL_PATH = "/opt/d3kos/models/marine-vision/fish_detector.onnx"
 SPECIES_MODEL_PATH = "/opt/d3kos/models/fish-species/fish_classifier_483species_best.onnx"

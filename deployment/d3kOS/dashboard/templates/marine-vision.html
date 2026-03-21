@@ -9,13 +9,20 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* override d3kos.css scroll lock — this page is scrollable */
+html, body {
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   font-family: 'Chakra Petch', sans-serif;
   background: var(--bg);
   color: var(--ink);
   font-size: 20px;
   overflow-x: hidden;
-  min-height: 100vh;
 }
 
 /* ── HEADER ── */
@@ -62,20 +69,7 @@ h1 {
   color: var(--g-txt);
 }
 
-/* day/night toggle — matches dashboard dn-b style */
-.dn-b {
-  width: 48px; height: 48px;
-  border-radius: 8px;
-  border: 2px solid var(--g-bdr);
-  background: var(--g-dim);
-  color: var(--ink2);
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: .03em;
-}
-.dn-b.on { background: var(--g-txt); color: var(--bg); border-color: var(--g-txt); }
+/* .dn-b intentionally not redefined — d3kos.css handles it correctly */
 
 /* ── LAYOUT ── */
 .container {
@@ -474,8 +468,9 @@ setInterval(autoTheme, 60000);
 
 /* ── STATE ── */
 var CAM_API    = 'http://localhost:8084';
+var FISH_API   = 'http://localhost:8086';
 var FEED_MS    = 125;   /* ~8 fps single feed */
-var GRID_MS    = 500;   /* ~2 fps grid tiles */
+var GRID_MS    = 1500;  /* ~0.67 fps grid tiles — 4 cameras × 1500ms = sustainable Pi load */
 var isRecording = false;
 var feedInterval = null;
 var gridIntervals = [];
@@ -508,7 +503,7 @@ function loadSlots() {
       renderSelector(slots);
       renderAllCamsGrid(slots);
       updateStatusFromSlots(slots);
-      if (!feedInterval) startFeed();
+      if (!feedInterval && !gridMode) startFeed();
     })
     .catch(function() {
       document.getElementById('cameraSelector').innerHTML =
@@ -667,7 +662,7 @@ function renderAllCamsGrid(slots) {
 
 /* ── FISH DETECTION ── */
 function updateDetectionStatus() {
-  fetch('/detect/status')
+  fetch(FISH_API + '/detect/status')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var el = document.getElementById('fishStatus');
@@ -698,7 +693,7 @@ function runDetection() {
   resDiv.style.display = 'block';
   dataDiv.innerHTML = '<div style="color:var(--g-txt);">Running detection\u2026</div>';
 
-  fetch('/detect/frame', { method: 'POST' })
+  fetch(FISH_API + '/detect/frame', { method: 'POST' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var html = '';
@@ -761,9 +756,7 @@ document.getElementById('btnRecord').addEventListener('click', function() {
 document.getElementById('btnCapture').addEventListener('click', function() {
   this.disabled = true;
   var slotId = activeSlotId || '';
-  fetch(CAM_API + '/camera/capture', { method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slot_id: slotId }) })
+  fetch(CAM_API + '/camera/capture', { method: 'POST' })
     .then(function(r) { return r.json(); })
     .then(function(data) { alert('Photo captured: ' + (data.filename || 'ok')); loadRecordings(); })
     .catch(function() { alert('Capture failed'); })
@@ -786,8 +779,19 @@ function loadRecordings() {
       var list = document.getElementById('recordingsList');
       if (data.recordings && data.recordings.length > 0) {
         list.innerHTML = data.recordings.map(function(rec) {
+          /* parse timestamp from filename: capture_bow_20260320_210922.jpg */
+          var ts = '';
+          var m = rec.filename.match(/(\d{8})_(\d{6})/);
+          if (m) {
+            var d = m[1], t = m[2];
+            ts = d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8) + ' ' +
+                 t.slice(0,2)+':'+t.slice(2,4)+':'+t.slice(4,6);
+          }
           return '<div class="recording-item">' +
-            '<span class="recording-name">' + rec.filename + '</span>' +
+            '<div>' +
+              '<div class="recording-name">' + rec.filename + '</div>' +
+              (ts ? '<div style="font-size:17px;color:var(--ink3);">' + ts + '</div>' : '') +
+            '</div>' +
             '<span class="recording-size">' + rec.size_mb + ' MB</span>' +
           '</div>';
         }).join('');
