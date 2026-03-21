@@ -14,6 +14,7 @@ import io
 import base64
 import requests
 import json
+import time
 
 app = Flask(__name__)
 
@@ -67,8 +68,12 @@ FISH_ID_PROMPT = (
     '"visual_features":"Reason identification was not possible","ontario_note":""}'
 )
 
+GEMINI_COOLDOWN_SEC = 15   # minimum seconds between Gemini Vision calls
+GEMINI_RETRY_WAIT   = 8    # seconds to wait before a single retry on 429
+_gemini_last_call   = 0.0  # module-level timestamp of last successful/attempted call
+
 if GEMINI_API_KEY:
-    print(f"✓ Gemini Vision ready — model: {GEMINI_MODEL}")
+    print(f"✓ Gemini Vision ready — model: {GEMINI_MODEL} (cooldown {GEMINI_COOLDOWN_SEC}s)")
 else:
     print("⚠ Gemini API key not found — species ID via Gemini will be skipped")
 
@@ -198,12 +203,39 @@ def preprocess_species(image):
     
     return img_batch
 
+def _call_gemini_api(img_b64):
+    """Make one Gemini Vision API call. Returns parsed dict or raises."""
+    payload = {
+        'contents': [{
+            'parts': [
+                {'inline_data': {'mime_type': 'image/jpeg', 'data': img_b64}},
+                {'text': FISH_ID_PROMPT}
+            ]
+        }],
+        'generationConfig': {'maxOutputTokens': 250, 'temperature': 0.1}
+    }
+    resp = requests.post(
+        f'{GEMINI_URL}?key={GEMINI_API_KEY}',
+        json=payload, timeout=20
+    )
+    resp.raise_for_status()
+    raw = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+    if '```' in raw:
+        parts = raw.split('```')
+        raw = parts[1] if len(parts) > 1 else raw
+        if raw.startswith('json'):
+            raw = raw[4:]
+    return json.loads(raw.strip())
+
+
 def identify_species_gemini(img):
     """
     Send captured JPEG to Gemini Vision for Ontario fish species identification.
+    Enforces a cooldown between calls and retries once on 429.
     Returns dict: common_name, scientific_name, confidence, visual_features, ontario_note
-    Falls back gracefully if Gemini unavailable.
     """
+    global _gemini_last_call
+
     if not GEMINI_API_KEY:
         return {
             'common_name': 'Unknown', 'scientific_name': '', 'confidence': 'low',
@@ -211,41 +243,49 @@ def identify_species_gemini(img):
             'ontario_note': '', 'source': 'gemini_unavailable'
         }
 
-    try:
-        # Encode image as base64 JPEG
-        _, buf = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 85])
-        img_b64 = base64.b64encode(buf.tobytes()).decode('utf-8')
-
-        payload = {
-            'contents': [{
-                'parts': [
-                    {'inline_data': {'mime_type': 'image/jpeg', 'data': img_b64}},
-                    {'text': FISH_ID_PROMPT}
-                ]
-            }],
-            'generationConfig': {'maxOutputTokens': 250, 'temperature': 0.1}
+    # Enforce cooldown — prevents burst calls consuming free-tier quota
+    now = time.time()
+    elapsed = now - _gemini_last_call
+    if elapsed < GEMINI_COOLDOWN_SEC:
+        wait_left = int(GEMINI_COOLDOWN_SEC - elapsed)
+        print(f"⚠ Gemini cooldown — {wait_left}s remaining")
+        return {
+            'common_name': 'Unknown', 'scientific_name': '', 'confidence': 'low',
+            'visual_features': f'Please wait {wait_left}s before next identification.',
+            'ontario_note': '', 'source': 'cooldown'
         }
 
-        resp = requests.post(
-            f'{GEMINI_URL}?key={GEMINI_API_KEY}',
-            json=payload, timeout=20
-        )
-        resp.raise_for_status()
+    _gemini_last_call = time.time()
 
-        raw = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+    # Encode image
+    _, buf = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    img_b64 = base64.b64encode(buf.tobytes()).decode('utf-8')
 
-        # Strip markdown code fences if Gemini wraps response
-        if '```' in raw:
-            parts = raw.split('```')
-            raw = parts[1] if len(parts) > 1 else raw
-            if raw.startswith('json'):
-                raw = raw[4:]
-        raw = raw.strip()
-
-        result = json.loads(raw)
+    try:
+        result = _call_gemini_api(img_b64)
         result['source'] = 'gemini'
         print(f"✓ Gemini ID: {result.get('common_name')} ({result.get('confidence')})")
         return result
+
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 429:
+            # Rate limited — wait and retry once
+            print(f"⚠ Gemini 429 rate limit — waiting {GEMINI_RETRY_WAIT}s then retrying...")
+            time.sleep(GEMINI_RETRY_WAIT)
+            try:
+                result = _call_gemini_api(img_b64)
+                result['source'] = 'gemini'
+                print(f"✓ Gemini ID (retry): {result.get('common_name')} ({result.get('confidence')})")
+                return result
+            except requests.exceptions.HTTPError as e2:
+                if e2.response is not None and e2.response.status_code == 429:
+                    return {
+                        'common_name': 'Unknown', 'scientific_name': '', 'confidence': 'low',
+                        'visual_features': 'Gemini rate limit reached. Free tier allows ~10 requests/min. Wait 1 minute and try again.',
+                        'ontario_note': '', 'source': 'rate_limited'
+                    }
+                raise e2
+        raise
 
     except requests.exceptions.Timeout:
         print("⚠ Gemini Vision timeout")
