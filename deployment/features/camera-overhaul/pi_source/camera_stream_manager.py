@@ -57,6 +57,11 @@ from flask import Flask, jsonify, send_file, request
 
 app = Flask(__name__)
 
+@app.after_request
+def _cors(r):
+    r.headers["Access-Control-Allow-Origin"] = "*"
+    return r
+
 # ── Config paths ───────────────────────────────────────────────────────────────
 
 SLOTS_CONFIG    = '/opt/d3kos/config/slots.json'
