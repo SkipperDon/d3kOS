@@ -705,42 +705,23 @@ function runDetection() {
         (data.fish_detected
           ? '&#10003; Detected (' + (data.fish_confidence * 100).toFixed(1) + '%)'
           : '&#10007; Not detected') + '</div>';
-      if (data.capture_triggered) {
-        html += '<div class="detect-item" style="color:var(--g-txt);font-weight:700;">&#128247; CAPTURE TRIGGERED — ID: ' + data.capture_id + '</div>';
-      }
+
       if (data.detections && data.detections.length > 0) {
         var cnt = data.detections.length;
         html += '<div class="detect-item" style="font-weight:700;font-size:22px;">' +
                 '&#10003; ' + cnt + (cnt === 1 ? ' fish detected' : ' fish detected') + '</div>';
 
-        /* ── Gemini Vision species ID (primary) ── */
-        var g = data.gemini_id;
-        if (g && g.common_name && g.common_name !== 'Unknown') {
-          var confColour = g.confidence === 'high' ? 'var(--ink)' :
-                           g.confidence === 'medium' ? '#e6a817' : 'var(--g-txt)';
-          html += '<div class="detect-item" style="margin-top:10px;padding:10px;' +
-                  'border:2px solid var(--g-bdr);border-radius:6px;">';
-          html += '<div style="font-weight:700;font-size:22px;color:' + confColour + ';">' +
-                  g.common_name + '</div>';
-          if (g.scientific_name) {
-            html += '<div style="font-style:italic;font-size:17px;color:var(--g-txt);">' +
-                    g.scientific_name + '</div>';
-          }
-          html += '<div style="font-size:17px;margin-top:4px;">Confidence: ' + g.confidence + '</div>';
-          if (g.visual_features) {
-            html += '<div style="font-size:17px;margin-top:4px;color:var(--g-txt);">' +
-                    g.visual_features + '</div>';
-          }
-          if (g.ontario_note) {
-            html += '<div style="font-size:17px;margin-top:6px;color:#e6a817;">&#9888; ' +
-                    g.ontario_note + '</div>';
-          }
-          html += '</div>';
-        } else if (g) {
-          var src = g.source || '';
-          var icon = (src === 'rate_limited' || src === 'cooldown') ? '&#9201;' : '&#9432;';
-          html += '<div class="detect-item" style="color:var(--g-txt);margin-top:8px;">' +
-                  icon + ' ' + (g.visual_features || 'Species not identified') + '</div>';
+        if (data.capture_triggered && data.capture_id) {
+          html += '<div class="detect-item" style="color:var(--g-txt);font-weight:700;">' +
+                  '&#128247; Capture saved — ID: ' + data.capture_id + '</div>';
+          /* ── Identify Species button — tap to call Gemini on demand ── */
+          html += '<div class="detect-item" style="margin-top:10px;">' +
+                  '<button id="btnIdentify_' + data.capture_id + '" ' +
+                  'class="detect-btn" style="height:64px;font-size:20px;" ' +
+                  'onclick="identifyCapture(' + data.capture_id + ')">' +
+                  '&#128270; Identify Species</button>' +
+                  '<div id="geminiResult_' + data.capture_id + '" style="margin-top:10px;"></div>' +
+                  '</div>';
         }
       } else {
         html += '<div class="detect-item" style="color:var(--ink3);">No fish detected</div>';
@@ -753,6 +734,66 @@ function runDetection() {
       dataDiv.innerHTML = '<div style="color:var(--crit);">Detection failed: ' + err.message + '</div>';
       btn.textContent   = 'Run Detection Now';
       btn.disabled      = false;
+    });
+}
+
+function identifyCapture(captureId) {
+  var idBtn    = document.getElementById('btnIdentify_'   + captureId);
+  var resArea  = document.getElementById('geminiResult_'  + captureId);
+  if (!idBtn) return;
+
+  idBtn.disabled    = true;
+  idBtn.textContent = 'Identifying\u2026';
+  resArea.innerHTML = '<div style="color:var(--g-txt);">Sending capture to Gemini Vision\u2026</div>';
+
+  fetch(FISH_API + '/detect/identify/' + captureId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var g    = data.gemini_id || {};
+      var html = '';
+      var src  = g.source || '';
+
+      if (g.common_name && g.common_name !== 'Unknown') {
+        /* ── Good ID ── */
+        var confColour = g.confidence === 'high'   ? 'var(--ink)' :
+                         g.confidence === 'medium' ? '#e6a817'    : 'var(--g-txt)';
+        html += '<div style="padding:10px;border:2px solid var(--g-bdr);border-radius:6px;">';
+        html += '<div style="font-weight:700;font-size:24px;color:' + confColour + ';">' +
+                g.common_name + '</div>';
+        if (g.scientific_name) {
+          html += '<div style="font-style:italic;font-size:17px;color:var(--g-txt);">' +
+                  g.scientific_name + '</div>';
+        }
+        html += '<div style="font-size:17px;margin-top:4px;">Confidence: <strong>' +
+                g.confidence + '</strong></div>';
+        if (g.visual_features) {
+          html += '<div style="font-size:17px;margin-top:4px;color:var(--g-txt);">' +
+                  g.visual_features + '</div>';
+        }
+        if (g.ontario_note) {
+          html += '<div style="font-size:17px;margin-top:6px;color:#e6a817;">&#9888; ' +
+                  g.ontario_note + '</div>';
+        }
+        html += '</div>';
+        /* Re-identify button stays available — low confidence = try again */
+        idBtn.textContent = '&#128270; Re-identify';
+        idBtn.disabled    = g.confidence === 'high';  /* lock only on high confidence */
+      } else {
+        /* ── Not identified / rate limited / cooldown ── */
+        var icon = (src === 'rate_limited' || src === 'cooldown') ? '&#9201;' : '&#9432;';
+        html += '<div style="padding:8px;border:1px solid var(--g-bdr);border-radius:6px;color:var(--g-txt);">' +
+                icon + ' ' + (g.visual_features || 'Species not identified') + '</div>';
+        /* Always allow retry — the whole point is "try again until good" */
+        idBtn.textContent = '&#128270; Try Again';
+        idBtn.disabled    = false;
+      }
+
+      resArea.innerHTML = html;
+    })
+    .catch(function(err) {
+      resArea.innerHTML = '<div style="color:var(--crit);">Identification failed: ' + err.message + '</div>';
+      idBtn.textContent = '&#128270; Try Again';
+      idBtn.disabled    = false;
     });
 }
 
