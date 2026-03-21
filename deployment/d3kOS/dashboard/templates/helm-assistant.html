@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>d3kOS &middot; Helm Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=19">
+<style>
+/* ── LAYOUT ── */
+#page-wrap {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 48px; left: 0; right: 0; bottom: 0;
+}
+
+/* ── QUICK-ACTION BUTTONS ── */
+#qa-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px 8px;
+  background: var(--panel);
+  border-bottom: 2px solid var(--rule);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.qa-btn {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: .08em;
+  flex: 1 1 auto;
+  min-height: 48px;
+  min-width: 140px;
+  background: var(--cell);
+  color: var(--g-txt);
+  border: 2px solid var(--g-bdr);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.qa-btn:active,
+.qa-btn.active {
+  background: var(--g-dim);
+  border-color: var(--g-txt);
+}
+
+/* ── CHAT SCROLL AREA ── */
+#chat-wrap {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 14px 16px 10px;
+  background: var(--bg);
+}
+#chat-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── MESSAGES ── */
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 86%;
+  animation: msgFadeIn .25s ease;
+}
+@keyframes msgFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg.ai   { align-self: flex-start; }
+.msg.user { align-self: flex-end; }
+
+.msg-bubble {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  line-height: 1.6;
+  padding: 14px 18px;
+  border-radius: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg.ai   .msg-bubble {
+  background: var(--cell);
+  border: 2px solid var(--rule);
+  color: var(--ink);
+}
+.msg.user .msg-bubble {
+  background: var(--g-dim);
+  border: 2px solid var(--g-bdr);
+  color: var(--ink);
+}
+.msg-meta {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 16px;
+  color: var(--ink3);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+.msg.user .msg-meta { text-align: right; }
+
+/* ── THINKING INDICATOR ── */
+.msg-thinking .msg-bubble {
+  font-style: italic;
+  color: var(--ink3);
+}
+.msg-thinking .msg-bubble::after {
+  content: '...';
+  animation: thinkDots 1.4s infinite;
+}
+@keyframes thinkDots {
+  0%,20%  { content: '.';   }
+  40%     { content: '..';  }
+  60%,100%{ content: '...'; }
+}
+
+/* ── WELCOME STATE ── */
+#welcome {
+  text-align: center;
+  padding: 40px 20px;
+}
+#welcome .wl-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+#welcome .wl-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 40px;
+  letter-spacing: .1em;
+  color: var(--g-txt);
+  margin-bottom: 10px;
+}
+[data-night] #welcome .wl-title { text-shadow: 0 0 20px rgba(0,196,0,.3); }
+#welcome .wl-sub {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  color: var(--ink2);
+  line-height: 1.6;
+}
+
+/* ── INPUT BAR ── */
+#input-bar {
+  flex-shrink: 0;
+  background: var(--panel);
+  border-top: 2px solid var(--rule);
+  padding: 10px 14px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+#msg-input {
+  flex: 1;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  line-height: 1.5;
+  background: var(--cell);
+  color: var(--ink);
+  border: 2px solid var(--rule);
+  border-radius: 10px;
+  padding: 12px 14px;
+  resize: none;
+  min-height: 52px;
+  max-height: 140px;
+  outline: none;
+  transition: border-color .2s;
+}
+#msg-input:focus { border-color: var(--g-bdr); }
+#msg-input::placeholder { color: var(--ink3); }
+#send-btn {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px; font-weight: 700;
+  letter-spacing: .06em;
+  background: var(--g-txt);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  min-height: 52px;
+  padding: 0 22px;
+  cursor: pointer;
+  transition: opacity .2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+#send-btn:disabled { opacity: .4; cursor: not-allowed; }
+[data-night] #send-btn { color: #001200; }
+
+/* ── SK STATUS DOT IN HEADER ── */
+.sk-dot {
+  display: inline-block;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--adv);
+  margin-left: 6px;
+  vertical-align: middle;
+  transition: background .3s;
+}
+.sk-dot.ok  { background: var(--g-txt); animation: aiPulse 2.5s ease-in-out infinite; }
+.sk-dot.err { background: var(--crit-bdr); }
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+  <span class="brand">&#9881; Helm Assistant<span class="sk-dot" id="sk-dot"></span></span>
+  <div class="dn" style="margin-left:auto">
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)">DAY</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)">NGT</button>
+  </div>
+  <span id="clock" style="margin-left:12px"></span>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="page-wrap">
+
+  <!-- QUICK-ACTION BUTTONS -->
+  <div id="qa-row">
+    <button class="qa-btn" onclick="quickAction('engine_status')">&#9881; Engine Status</button>
+    <button class="qa-btn" onclick="quickAction('check_issues')">&#128270; Check Issues</button>
+    <button class="qa-btn" onclick="quickAction('system_health')">&#128154; System Health</button>
+    <button class="qa-btn" onclick="quickAction('diagnostics')">&#128295; Run Diagnostics</button>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div id="chat-wrap">
+    <div id="chat-inner">
+      <div id="welcome">
+        <div class="wl-icon">&#9881;</div>
+        <div class="wl-title">Helm Assistant</div>
+        <div class="wl-sub">
+          AI-Powered Troubleshooting &amp; System Help<br>
+          Tap a quick action above or type a question below.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT BAR -->
+  <div id="input-bar">
+    <textarea
+      id="msg-input"
+      placeholder="Ask Helm anything\u2026 e.g. What's the engine status?"
+      rows="1"
+      inputmode="text"
+    ></textarea>
+    <button id="send-btn" onclick="sendMessage()">Send</button>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<div id="toast"></div>
+
+<script>
+/* ── THEME ── */
+function setTheme(t, manual) {
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  document.getElementById('btnDay').classList.toggle('on',   t === 'day');
+  document.getElementById('btnNight').classList.toggle('on', t === 'night');
+  if (manual) localStorage.setItem('d3kTheme', t);
+}
+(function () {
+  const stored = localStorage.getItem('d3kTheme');
+  if (stored) { setTheme(stored); return; }
+  setTheme(new Date().getHours() >= 7 && new Date().getHours() < 20 ? 'day' : 'night');
+})();
+
+/* ── CLOCK ── */
+(function tick() {
+  const n = new Date();
+  const el = document.getElementById('clock');
+  if (el) el.textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  setTimeout(tick, 10000);
+})();
+
+/* ── LIVE SIGNAL K STATE ── */
+const live = { rpm: null, coolant: null, oil: null, voltage: null, fuel: null };
+let _skConnected = false;
+let _ws = null, _reconnectTimer = null;
+
+function setSKDot(state) {
+  const dot = document.getElementById('sk-dot');
+  if (dot) dot.className = 'sk-dot ' + state;
+}
+
+function openSK() {
+  if (_ws) { try { _ws.close(); } catch (_) {} }
+  _ws = new WebSocket('ws://localhost:8099/signalk/v1/stream');
+
+  _ws.onopen = () => {
+    _skConnected = true;
+    setSKDot('ok');
+    _ws.send(JSON.stringify({
+      context: 'vessels.self',
+      subscribe: [
+        { path: 'propulsion.0.revolutions',         period: 2000  },
+        { path: 'propulsion.0.coolantTemperature',  period: 3000  },
+        { path: 'propulsion.0.oilPressure',         period: 3000  },
+        { path: 'electrical.batteries.0.voltage',   period: 5000  },
+        { path: 'tanks.fuel.0.currentLevel',        period: 10000 },
+      ],
+    }));
+  };
+
+  _ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch (_) { return; }
+    for (const upd of (msg.updates || [])) {
+      for (const kv of (upd.values || [])) {
+        if (kv.value === null || kv.value === undefined) continue;
+        switch (kv.path) {
+          case 'propulsion.0.revolutions':        live.rpm      = Math.round(kv.value * 60); break;
+          case 'propulsion.0.coolantTemperature': live.coolant  = kv.value - 273.15; break;
+          case 'propulsion.0.oilPressure':        live.oil      = Math.round(kv.value * 0.000145038); break;
+          case 'electrical.batteries.0.voltage':  live.voltage  = kv.value; break;
+          case 'tanks.fuel.0.currentLevel':       live.fuel     = kv.value; break;
+        }
+      }
+    }
+  };
+
+  _ws.onerror = () => { _skConnected = false; setSKDot('err'); };
+  _ws.onclose = () => {
+    _skConnected = false;
+    setSKDot('err');
+    _reconnectTimer = setTimeout(openSK, 5000);
+  };
+}
+
+/* ── ALERT THRESHOLDS (matches engine-monitor) ── */
+const THR = {
+  coolant: { adv: 88,   alrt: 98,   crit: 105  },
+  oil:     { adv: 30,   alrt: 25,   crit: 20   },
+  bat:     { adv: 12.4, alrt: 12.0, crit: 11.5 },
+  fuel:    { adv: 0.25, alrt: 0.15, crit: 0.10 },
+};
+
+/* ── QUICK-ACTION RESPONSE GENERATORS ── */
+function genEngineStatus() {
+  if (!_skConnected) return '\u26a0\ufe0f Signal K is not connected.\nEngine data is unavailable \u2014 check that Signal K is running on :8099.';
+  const rpm  = live.rpm;
+  const oil  = live.oil;
+  const cool = live.coolant;
+  const volt = live.voltage;
+  const fuel = live.fuel;
+
+  if (rpm === null) return '\u26a0\ufe0f No engine data received from Signal K yet.\nWait a moment and try again.';
+
+  const running = rpm > 0;
+  let lines = [];
+  lines.push(running ? '\u2705 ENGINE RUNNING' : '\u26d4 ENGINE STOPPED');
+  lines.push('');
+  if (rpm !== null)  lines.push('RPM:        ' + rpm);
+  if (cool !== null) lines.push('Coolant:    ' + cool.toFixed(0) + '\u00b0C');
+  if (oil  !== null) lines.push('Oil Press:  ' + oil + ' PSI');
+  if (volt !== null) lines.push('Battery:    ' + volt.toFixed(1) + ' V  (' + (volt > 13.0 ? 'charging' : volt < 12.0 ? 'LOW' : 'normal') + ')');
+  if (fuel !== null) lines.push('Fuel:       ' + Math.round(fuel * 100) + '%');
+  return lines.join('\n');
+}
+
+function genCheckIssues() {
+  if (!_skConnected) return '\u26a0\ufe0f Signal K is not connected. Cannot check issues without live data.';
+  const issues = [];
+
+  if (live.coolant !== null) {
+    if      (live.coolant >= THR.coolant.crit) issues.push('\ud83d\udd34 Coolant temp CRITICAL: ' + live.coolant.toFixed(0) + '\u00b0C \u2014 shut down immediately');
+    else if (live.coolant >= THR.coolant.alrt) issues.push('\u26a0\ufe0f Coolant temp HIGH: ' + live.coolant.toFixed(0) + '\u00b0C');
+    else if (live.coolant >= THR.coolant.adv)  issues.push('\u26a0\ufe0f Coolant temp elevated: ' + live.coolant.toFixed(0) + '\u00b0C');
+  }
+  if (live.oil !== null && live.rpm > 0) {
+    if      (live.oil <= THR.oil.crit) issues.push('\ud83d\udd34 Oil pressure CRITICAL: ' + live.oil + ' PSI \u2014 shut down immediately');
+    else if (live.oil <= THR.oil.alrt) issues.push('\u26a0\ufe0f Oil pressure LOW: ' + live.oil + ' PSI');
+    else if (live.oil <= THR.oil.adv)  issues.push('\u26a0\ufe0f Oil pressure slightly low: ' + live.oil + ' PSI');
+  }
+  if (live.voltage !== null) {
+    if      (live.voltage <= THR.bat.crit) issues.push('\ud83d\udd34 Battery CRITICAL: ' + live.voltage.toFixed(1) + ' V');
+    else if (live.voltage <= THR.bat.alrt) issues.push('\u26a0\ufe0f Battery low: ' + live.voltage.toFixed(1) + ' V');
+    else if (live.voltage <= THR.bat.adv)  issues.push('\u26a0\ufe0f Battery slightly low: ' + live.voltage.toFixed(1) + ' V');
+  }
+  if (live.fuel !== null) {
+    if      (live.fuel <= THR.fuel.crit) issues.push('\ud83d\udd34 Fuel CRITICAL: ' + Math.round(live.fuel * 100) + '% \u2014 return to dock');
+    else if (live.fuel <= THR.fuel.alrt) issues.push('\u26a0\ufe0f Fuel low: ' + Math.round(live.fuel * 100) + '%');
+    else if (live.fuel <= THR.fuel.adv)  issues.push('\u26a0\ufe0f Fuel below 25%: ' + Math.round(live.fuel * 100) + '%');
+  }
+
+  if (issues.length === 0) return '\u2705 NO ISSUES DETECTED\n\nAll monitored systems are within normal parameters.';
+  return '\u26a0\ufe0f ' + issues.length + ' ISSUE' + (issues.length > 1 ? 'S' : '') + ' DETECTED\n\n' +
+    issues.join('\n') +
+    '\n\nRecommendation: Address warnings promptly. Refer to your engine manual or ask a question below.';
+}
+
+function genSystemHealth(sysinfo, status) {
+  const lines = [];
+  lines.push('\ud83d\udcbb SYSTEM HEALTH STATUS');
+  lines.push('');
+  lines.push('Signal K:     ' + (_skConnected ? '\u2705 Connected' : '\u274c Disconnected'));
+  lines.push('Engine:       ' + (live.rpm > 0 ? '\u2705 Running (' + live.rpm + ' RPM)' : '\u26d4 Stopped'));
+  lines.push('Battery:      ' + (live.voltage !== null ? (live.voltage <= THR.bat.alrt ? '\u26a0\ufe0f Low (' + live.voltage.toFixed(1) + 'V)' : '\u2705 ' + live.voltage.toFixed(1) + 'V') : '\u2014 No data'));
+  lines.push('');
+  if (sysinfo) {
+    lines.push('CPU Temp:     ' + (sysinfo.cpu_temp || '\u2014'));
+    lines.push('Memory:       ' + (sysinfo.mem_pct !== undefined ? sysinfo.mem_pct + '% used' : '\u2014'));
+    lines.push('Storage:      ' + (sysinfo.disk_pct !== undefined ? sysinfo.disk_pct + '% used (' + sysinfo.disk_free_gb + ' GB free)' : '\u2014'));
+    lines.push('Uptime:       ' + (sysinfo.uptime || '\u2014'));
+    lines.push('');
+    lines.push('System:       Raspberry Pi 4B');
+    lines.push('OS:           Debian Trixie');
+    lines.push('Version:      ' + (sysinfo.version || 'd3kOS'));
+    lines.push('IP:           ' + (sysinfo.ip || '\u2014'));
+  }
+  if (status) {
+    lines.push('');
+    lines.push('Internet:     ' + (status.internet ? '\u2705 Online' : '\u274c Offline'));
+    lines.push('AvNav:        ' + (status.avnav    ? '\u2705 Running' : '\u274c Stopped'));
+  }
+  return lines.join('\n');
+}
+
+function genDiagnostics(sysinfo, status) {
+  let out = '\ud83d\udd27 DIAGNOSTICS REPORT\n';
+  out += '\u2014'.repeat(32) + '\n';
+  out += genEngineStatus();
+  out += '\n\n' + '\u2014'.repeat(32) + '\n';
+  out += genCheckIssues();
+  out += '\n\n' + '\u2014'.repeat(32) + '\n';
+  out += genSystemHealth(sysinfo, status);
+  return out;
+}
+
+/* ── CHAT UI ── */
+let _busy = false;
+
+function _ts() {
+  const n = new Date();
+  return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0') + ':' + String(n.getSeconds()).padStart(2,'0');
+}
+
+function _removeWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.remove();
+}
+
+function addUserMsg(text) {
+  _removeWelcome();
+  const inner = document.getElementById('chat-inner');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = '<div class="msg-bubble">' + _esc(text) + '</div><div class="msg-meta">' + _ts() + '</div>';
+  inner.appendChild(div);
+  _scrollBottom();
+}
+
+function addAIMsg(text) {
+  _removeWelcome();
+  const inner = document.getElementById('chat-inner');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = '<div class="msg-bubble">' + _esc(text) + '</div><div class="msg-meta">Helm \u00b7 ' + _ts() + '</div>';
+  inner.appendChild(div);
+  _scrollBottom();
+  return div;
+}
+
+function addThinking() {
+  _removeWelcome();
+  const inner = document.getElementById('chat-inner');
+  const div = document.createElement('div');
+  div.className = 'msg ai msg-thinking';
+  div.innerHTML = '<div class="msg-bubble">Thinking</div>';
+  inner.appendChild(div);
+  _scrollBottom();
+  return div;
+}
+
+function _esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _scrollBottom() {
+  const wrap = document.getElementById('chat-wrap');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+/* ── QUICK ACTIONS ── */
+function quickAction(type) {
+  const labels = {
+    engine_status: '\u2699\ufe0f Engine Status',
+    check_issues:  '\ud83d\udd0e Check Issues',
+    system_health: '\ud83d\udc9a System Health',
+    diagnostics:   '\ud83d\udd27 Run Diagnostics',
+  };
+  addUserMsg(labels[type] || type);
+
+  if (type === 'engine_status') {
+    addAIMsg(genEngineStatus());
+    return;
+  }
+  if (type === 'check_issues') {
+    addAIMsg(genCheckIssues());
+    return;
+  }
+
+  /* system_health and diagnostics need /sysinfo + /status */
+  const thinking = addThinking();
+  Promise.all([
+    fetch('/sysinfo').then(r => r.json()).catch(() => null),
+    fetch('/status').then(r => r.json()).catch(() => null),
+  ]).then(([si, st]) => {
+    thinking.remove();
+    if (type === 'system_health') addAIMsg(genSystemHealth(si, st));
+    else                          addAIMsg(genDiagnostics(si, st));
+  });
+}
+
+/* ── TEXT QUERY — routes to RAG ── */
+async function sendMessage() {
+  if (_busy) return;
+  const input = document.getElementById('msg-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addUserMsg(text);
+
+  /* Intercept common engine/system queries locally */
+  const lc = text.toLowerCase();
+  if (lc.includes('engine status') || lc.includes('engine running') || lc.includes('rpm')) {
+    addAIMsg(genEngineStatus()); return;
+  }
+  if (lc.includes('check issue') || lc.includes('any issue') || lc.includes('what') && lc.includes('wrong')) {
+    addAIMsg(genCheckIssues()); return;
+  }
+  if (lc.includes('system health') || lc.includes('system status')) {
+    const thinking = addThinking();
+    Promise.all([
+      fetch('/sysinfo').then(r => r.json()).catch(() => null),
+      fetch('/status').then(r => r.json()).catch(() => null),
+    ]).then(([si, st]) => { thinking.remove(); addAIMsg(genSystemHealth(si, st)); });
+    return;
+  }
+  if (lc.includes('diagnostic') || lc.includes('run diag') || lc.includes('full report')) {
+    const thinking = addThinking();
+    Promise.all([
+      fetch('/sysinfo').then(r => r.json()).catch(() => null),
+      fetch('/status').then(r => r.json()).catch(() => null),
+    ]).then(([si, st]) => { thinking.remove(); addAIMsg(genDiagnostics(si, st)); });
+    return;
+  }
+
+  /* Fall through to RAG */
+  _busy = true;
+  document.getElementById('send-btn').disabled = true;
+  const thinking = addThinking();
+
+  try {
+    const res  = await fetch('/ai/query', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ question: text, provider: 'rag' }),
+    });
+    const data = await res.json();
+    thinking.remove();
+    if (data.error) addAIMsg('\u26a0\ufe0f ' + data.error);
+    else            addAIMsg(data.answer || '(no response)');
+  } catch (e) {
+    thinking.remove();
+    addAIMsg('\u26a0\ufe0f Could not reach the AI service. Check that the server is running.');
+  } finally {
+    _busy = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+}
+
+/* ── INPUT HANDLING ── */
+const input = document.getElementById('msg-input');
+
+input.addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+});
+
+input.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* Shrink chat before keyboard appears (Wayland / squeekboard) */
+input.addEventListener('pointerup', function (e) {
+  if (e.pointerType !== 'touch') return;
+  const chat  = document.getElementById('chat-wrap');
+  const qaH   = (document.getElementById('qa-row')    || {offsetHeight:0}).offsetHeight;
+  const inputH = (document.getElementById('input-bar') || {offsetHeight:0}).offsetHeight;
+  if (chat) chat.style.maxHeight = Math.max(100, window.innerHeight - 380 - 48 - qaH - inputH) + 'px';
+});
+input.addEventListener('blur', function () {
+  const chat = document.getElementById('chat-wrap');
+  if (chat) chat.style.maxHeight = '';
+});
+
+/* Check for ?q= pre-fill */
+window.addEventListener('load', () => {
+  const q = new URLSearchParams(window.location.search).get('q');
+  if (q) { input.value = q; input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; }
+});
+
+/* ── INIT ── */
+openSK();
+
+window.addEventListener('beforeunload', () => {
+  clearTimeout(_reconnectTimer);
+  if (_ws) try { _ws.close(); } catch (_) {}
+});
+</script>
+<script src="/js/keyboard-fix.js"></script>
+</body>
+</html>

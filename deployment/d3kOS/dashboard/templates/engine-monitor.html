@@ -3,100 +3,168 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>d3kOS &middot; Engine Monitor</title>
+<title>d3kOS &middot; Engine Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=15">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=19">
 <style>
-  /* ── ENGINE METRIC GRID ── */
-  .eng-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-bottom: 20px;
-  }
-  @media (max-width: 600px) {
-    .eng-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  .eng-cell {
-    background: var(--cell);
-    border: 2px solid var(--rule);
-    border-radius: 16px;
-    padding: 16px 12px 14px;
-    text-align: center;
-    cursor: default;
-    transition: background .25s, border-color .25s;
-    position: relative; overflow: hidden;
-  }
-  .eng-cell.adv {
-    background: var(--adv-bg);
-    border-color: var(--adv-bdr);
-    animation: advBorder 2s ease-in-out infinite;
-  }
-  .eng-cell.alrt {
-    background: var(--alrt-bg);
-    border-color: var(--alrt-bdr);
-    animation: alrtFlash 1.3s ease-in-out infinite;
-  }
-  .eng-cell.crit {
-    background: var(--crit-bg);
-    border-color: var(--crit-bdr);
-    animation: critFlash .65s ease-in-out infinite;
-  }
-  .eng-lbl {
-    font-size: 18px; font-weight: 700; letter-spacing: .16em;
-    text-transform: uppercase; color: var(--ink3);
-    margin-bottom: 6px;
-  }
-  .eng-cell.adv  .eng-lbl { color: var(--adv); }
-  .eng-cell.alrt .eng-lbl { color: var(--alrt); }
-  .eng-cell.crit .eng-lbl { color: var(--crit); }
-  .eng-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 60px; line-height: .9;
-    color: var(--g-txt); letter-spacing: .02em;
-    white-space: nowrap;
-  }
-  [data-night] .eng-val { text-shadow: 0 0 20px rgba(0,196,0,.3); }
-  .eng-cell.adv  .eng-val { color: var(--adv-num); }
-  .eng-cell.alrt .eng-val { color: var(--alrt-num); font-size: 66px; }
-  .eng-cell.crit .eng-val { color: var(--crit-num); font-size: 66px; }
-  .eng-unit {
-    font-size: 18px; font-weight: 600; letter-spacing: .06em;
-    color: var(--ink2); margin-top: 6px;
-  }
-  .eng-cell.adv  .eng-unit { color: var(--adv);  opacity:.8; }
-  .eng-cell.alrt .eng-unit { color: var(--alrt); }
-  /* Alert border pulse (reuse keyframes from main CSS) */
-  .eng-cell.adv::after {
-    content:''; position:absolute; inset:0;
-    border: 3px solid var(--adv-bdr); pointer-events:none;
-    animation: advBorder 2s ease-in-out infinite;
-  }
-  .eng-cell.alrt::after {
-    content:''; position:absolute; inset:0;
-    border: 4px solid var(--alrt-bdr); pointer-events:none;
-    animation: alrtBorder 1.3s ease-in-out infinite;
-  }
-  .eng-cell.crit::after {
-    content:''; position:absolute; inset:0;
-    border: 4px solid var(--crit-bdr); pointer-events:none;
-    animation: critBorder .65s ease-in-out infinite;
-  }
-  /* Connection status banner */
-  #conn-banner {
-    display: flex; align-items: center; gap: 10px;
-    padding: 11px 16px; border-radius: 10px;
-    font-size: 18px; font-weight: 700; letter-spacing: .07em;
-    margin-bottom: 16px;
-  }
-  #conn-banner.ok   { background: var(--g-dim);   border: 1px solid var(--g-bdr);   color: var(--g-txt); }
-  #conn-banner.warn { background: var(--adv-bg);  border: 1px solid var(--adv-bdr); color: var(--adv); }
-  #conn-banner.err  { background: var(--crit-bg); border: 1px solid var(--crit-bdr);color: var(--crit); }
-  .conn-dot {
-    width: 9px; height: 9px; border-radius: 50%;
-    background: currentColor; flex-shrink: 0;
-  }
-  .conn-dot.pulse { animation: aiPulse 2s ease-in-out infinite; }
+/* ── ENGINE CELL GRID ── */
+.eng-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 4px;
+}
+.eng-grid-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 700px) {
+  .eng-grid   { grid-template-columns: repeat(2, 1fr); }
+  .eng-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+.eng-cell {
+  background: var(--cell);
+  border: 2px solid var(--rule);
+  border-radius: 16px;
+  padding: 16px 12px 12px;
+  text-align: center;
+  cursor: default;
+  transition: background .25s, border-color .25s;
+  position: relative; overflow: hidden;
+}
+.eng-cell.adv  { background: var(--adv-bg);  border-color: var(--adv-bdr);  animation: advBorder 2s ease-in-out infinite; }
+.eng-cell.alrt { background: var(--alrt-bg); border-color: var(--alrt-bdr); animation: alrtFlash 1.3s ease-in-out infinite; }
+.eng-cell.crit { background: var(--crit-bg); border-color: var(--crit-bdr); animation: critFlash .65s ease-in-out infinite; }
+.eng-cell.adv::after  { content:''; position:absolute; inset:0; border:3px solid var(--adv-bdr);  pointer-events:none; animation: advBorder 2s ease-in-out infinite; }
+.eng-cell.alrt::after { content:''; position:absolute; inset:0; border:4px solid var(--alrt-bdr); pointer-events:none; animation: alrtBorder 1.3s ease-in-out infinite; }
+.eng-cell.crit::after { content:''; position:absolute; inset:0; border:4px solid var(--crit-bdr); pointer-events:none; animation: critBorder .65s ease-in-out infinite; }
+
+.eng-lbl {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink3);
+  margin-bottom: 4px;
+}
+.eng-cell.adv  .eng-lbl { color: var(--adv); }
+.eng-cell.alrt .eng-lbl { color: var(--alrt); }
+.eng-cell.crit .eng-lbl { color: var(--crit); }
+
+.eng-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 60px; line-height: .9;
+  color: var(--g-txt); letter-spacing: .02em;
+  white-space: nowrap;
+}
+[data-night] .eng-val { text-shadow: 0 0 20px rgba(0,196,0,.3); }
+.eng-cell.adv  .eng-val { color: var(--adv-num); }
+.eng-cell.alrt .eng-val { color: var(--alrt-num); font-size: 66px; }
+.eng-cell.crit .eng-val { color: var(--crit-num); font-size: 66px; }
+
+.eng-unit {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 600; letter-spacing: .06em;
+  color: var(--ink2); margin-top: 4px;
+}
+.eng-cell.adv  .eng-unit { color: var(--adv);  opacity:.8; }
+.eng-cell.alrt .eng-unit { color: var(--alrt); }
+
+/* Progress bar */
+.eng-bar-wrap {
+  width: 100%; height: 8px;
+  background: var(--rule);
+  border-radius: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.eng-bar {
+  height: 100%; border-radius: 4px;
+  background: var(--g-txt);
+  transition: width .5s ease;
+  min-width: 0;
+}
+.eng-cell.adv  .eng-bar { background: var(--adv); }
+.eng-cell.alrt .eng-bar { background: var(--alrt); }
+.eng-cell.crit .eng-bar { background: var(--crit); }
+
+/* ── SYSTEM STATUS CELLS ── */
+.sys-cell {
+  background: var(--cell);
+  border: 2px solid var(--rule);
+  border-radius: 16px;
+  padding: 16px 12px 12px;
+  text-align: center;
+}
+.sys-lbl {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink3);
+  margin-bottom: 4px;
+}
+.sys-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px; line-height: .95;
+  color: var(--g-txt); letter-spacing: .02em;
+}
+[data-night] .sys-val { text-shadow: 0 0 16px rgba(0,196,0,.25); }
+.sys-unit {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 600; color: var(--ink2);
+  margin-top: 4px;
+}
+
+/* ── NETWORK STATUS ── */
+.net-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (max-width: 500px) {
+  .net-grid { grid-template-columns: 1fr; }
+}
+.net-card {
+  background: var(--cell);
+  border: 2px solid var(--rule);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.net-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--ink3);
+  transition: background .3s;
+}
+.net-dot.ok   { background: var(--g-txt); }
+.net-dot.err  { background: var(--crit-bdr); }
+.net-dot.pulse { animation: aiPulse 2s ease-in-out infinite; }
+.net-info { flex: 1; }
+.net-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px; font-weight: 700; color: var(--ink);
+  letter-spacing: .06em;
+}
+.net-status {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; color: var(--ink3);
+  margin-top: 2px;
+}
+.net-status.ok  { color: var(--g-txt); }
+.net-status.err { color: var(--crit); }
+
+/* ── CONNECTION BANNER ── */
+#conn-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px; border-radius: 10px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: .07em;
+  margin-bottom: 16px;
+}
+#conn-banner.ok   { background: var(--g-dim);   border: 1px solid var(--g-bdr);   color: var(--g-txt); }
+#conn-banner.warn { background: var(--adv-bg);  border: 1px solid var(--adv-bdr); color: var(--adv); }
+#conn-banner.err  { background: var(--crit-bg); border: 1px solid var(--crit-bdr);color: var(--crit); }
+.conn-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.conn-dot.pulse { animation: aiPulse 2s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -104,26 +172,26 @@
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
-  <span class="brand">&#128295; Engine Monitor</span>
+  <span class="brand">&#9881; Engine Dashboard</span>
   <div class="dn" style="margin-left:auto">
-    <button class="dn-b" id="btnDay"   onclick="setTheme('day')">D</button>
-    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)">DAY</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)">NGT</button>
   </div>
-  <span id="clock"></span>
+  <span id="clock" style="margin-left:12px"></span>
 </div>
 
-<!-- SCROLLABLE CONTENT -->
-<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
-<div style="max-width:900px;margin:0 auto;padding:20px">
+<!-- SCROLLABLE BODY -->
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y">
+<div style="max-width:960px;margin:0 auto;padding:16px 16px 32px">
 
   <!-- CONNECTION BANNER -->
   <div id="conn-banner" class="warn">
     <div class="conn-dot pulse"></div>
     <span id="conn-text">Connecting to Signal K&hellip;</span>
-    <button class="btn" style="margin-left:auto;height:36px;font-size: 18px" onclick="reconnect()">Reconnect</button>
+    <button class="btn" style="margin-left:auto;height:40px;font-size:18px" onclick="reconnect()">Reconnect</button>
   </div>
 
-  <!-- MAIN ENGINE METRICS -->
+  <!-- ── 1 · ENGINE & PROPULSION ── -->
   <div class="sec">
     <div class="sec-header">&#9881; Engine &amp; Propulsion</div>
     <div class="eng-grid">
@@ -131,21 +199,24 @@
         <div class="eng-lbl">RPM</div>
         <div class="eng-val" id="val-rpm">—</div>
         <div class="eng-unit" id="unit-rpm">rpm</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-rpm" style="width:0%"></div></div>
       </div>
       <div class="eng-cell" id="cell-coolant">
         <div class="eng-lbl">Coolant Temp</div>
         <div class="eng-val" id="val-coolant">—</div>
         <div class="eng-unit" id="unit-coolant">°C</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-coolant" style="width:0%"></div></div>
       </div>
       <div class="eng-cell" id="cell-oil">
         <div class="eng-lbl">Oil Pressure</div>
         <div class="eng-val" id="val-oil">—</div>
         <div class="eng-unit" id="unit-oil">PSI</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-oil" style="width:0%"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- ELECTRICAL & FUEL -->
+  <!-- ── 2 · ELECTRICAL & FUEL ── -->
   <div class="sec">
     <div class="sec-header">&#9889; Electrical &amp; Fuel</div>
     <div class="eng-grid">
@@ -153,84 +224,154 @@
         <div class="eng-lbl">Battery</div>
         <div class="eng-val" id="val-bat">—</div>
         <div class="eng-unit" id="unit-bat">V</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-bat" style="width:0%"></div></div>
       </div>
       <div class="eng-cell" id="cell-fuel">
         <div class="eng-lbl">Fuel Level</div>
         <div class="eng-val" id="val-fuel">—</div>
         <div class="eng-unit" id="unit-fuel">%</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-fuel" style="width:0%"></div></div>
       </div>
       <div class="eng-cell" id="cell-trim">
         <div class="eng-lbl">Trim Tab</div>
         <div class="eng-val" id="val-trim">—</div>
         <div class="eng-unit" id="unit-trim">°</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-trim" style="width:50%"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- SIGNAL K PATHS REFERENCE -->
+  <!-- ── 3 · TANK LEVELS ── -->
   <div class="sec">
-    <div class="sec-header" style="font-size: 18px">&#128225; Signal K Source Paths</div>
-    <table class="port-table" style="width:100%">
-      <thead>
-        <tr>
-          <th>Metric</th>
-          <th>Signal K Path</th>
-          <th>Unit</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>RPM</td>            <td><code style="font-size: 18px">propulsion.0.revolutions</code></td>    <td>Hz → RPM</td></tr>
-        <tr><td>Coolant Temp</td>   <td><code style="font-size: 18px">propulsion.0.coolantTemperature</code></td><td>K → °C</td></tr>
-        <tr><td>Oil Pressure</td>   <td><code style="font-size: 18px">propulsion.0.oilPressure</code></td>     <td>Pa → PSI</td></tr>
-        <tr><td>Battery</td>        <td><code style="font-size: 18px">electrical.batteries.0.voltage</code></td><td>V</td></tr>
-        <tr><td>Fuel Level</td>     <td><code style="font-size: 18px">tanks.fuel.0.currentLevel</code></td>    <td>fraction → %</td></tr>
-        <tr><td>Trim Tab</td>       <td><code style="font-size: 18px">propulsion.0.trimTabPosition</code></td> <td>rad → °</td></tr>
-      </tbody>
-    </table>
-    <p style="font-size: 18px;color:var(--ink3);margin-top:12px">
-      &#128225; Signal K WebSocket: <code>ws://localhost:8099/signalk/v1/stream</code>
-    </p>
+    <div class="sec-header">&#128703; Tank Levels</div>
+    <div class="eng-grid eng-grid-4">
+      <div class="eng-cell" id="cell-fw">
+        <div class="eng-lbl">Fresh Water</div>
+        <div class="eng-val" id="val-fw">—</div>
+        <div class="eng-unit" id="unit-fw">%</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-fw" style="width:0%"></div></div>
+      </div>
+      <div class="eng-cell" id="cell-bw">
+        <div class="eng-lbl">Black Water</div>
+        <div class="eng-val" id="val-bw">—</div>
+        <div class="eng-unit" id="unit-bw">%</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-bw" style="width:0%"></div></div>
+      </div>
+      <div class="eng-cell" id="cell-fuelp">
+        <div class="eng-lbl">Fuel</div>
+        <div class="eng-val" id="val-fuelp">—</div>
+        <div class="eng-unit" id="unit-fuelp">%</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-fuelp" style="width:0%"></div></div>
+      </div>
+      <div class="eng-cell" id="cell-batp">
+        <div class="eng-lbl">Battery</div>
+        <div class="eng-val" id="val-batp">—</div>
+        <div class="eng-unit" id="unit-batp">%</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-batp" style="width:0%"></div></div>
+      </div>
+    </div>
   </div>
 
-</div><!-- /max-width -->
+  <!-- ── 4 · SYSTEM STATUS ── -->
+  <div class="sec">
+    <div class="sec-header">&#128187; System Status</div>
+    <div class="eng-grid eng-grid-4">
+      <div class="sys-cell">
+        <div class="sys-lbl">CPU Temp</div>
+        <div class="sys-val" id="sys-cpu">—</div>
+        <div class="sys-unit">°C</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-cpu" style="width:0%"></div></div>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-lbl">Memory</div>
+        <div class="sys-val" id="sys-mem">—</div>
+        <div class="sys-unit">% used</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-mem" style="width:0%"></div></div>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-lbl">Storage</div>
+        <div class="sys-val" id="sys-disk">—</div>
+        <div class="sys-unit">% used</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-disk" style="width:0%"></div></div>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-lbl">Uptime</div>
+        <div class="sys-val" id="sys-uptime" style="font-size:34px;line-height:1.05">—</div>
+        <div class="sys-unit" id="sys-ip">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5 · NETWORK STATUS ── -->
+  <div class="sec">
+    <div class="sec-header">&#128225; Network Status</div>
+    <div class="net-grid">
+      <div class="net-card">
+        <div class="net-dot pulse" id="dot-signalk"></div>
+        <div class="net-info">
+          <div class="net-name">Signal K</div>
+          <div class="net-status" id="net-signalk">Checking&hellip;</div>
+        </div>
+      </div>
+      <div class="net-card">
+        <div class="net-dot pulse" id="dot-internet"></div>
+        <div class="net-info">
+          <div class="net-name">Internet</div>
+          <div class="net-status" id="net-internet">Checking&hellip;</div>
+        </div>
+      </div>
+      <div class="net-card">
+        <div class="net-dot pulse" id="dot-avnav"></div>
+        <div class="net-info">
+          <div class="net-name">AvNav Charts</div>
+          <div class="net-status" id="net-avnav">Checking&hellip;</div>
+        </div>
+      </div>
+      <div class="net-card">
+        <div class="net-dot pulse" id="dot-ai"></div>
+        <div class="net-info">
+          <div class="net-name">AI Service</div>
+          <div class="net-status" id="net-ai">Checking&hellip;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /inner -->
 </div><!-- /scroll -->
 
-<!-- TOAST -->
 <div id="toast"></div>
 
 <script>
 /* ── THEME ── */
-function setTheme(t) {
+function setTheme(t, manual) {
   if (t === 'night') document.body.setAttribute('data-night', '');
   else               document.body.removeAttribute('data-night');
   document.getElementById('btnDay').classList.toggle('on',   t === 'day');
   document.getElementById('btnNight').classList.toggle('on', t === 'night');
-  localStorage.setItem('d3kTheme', t);
+  if (manual) localStorage.setItem('d3kTheme', t);
 }
-(function () { setTheme(localStorage.getItem('d3kTheme') || 'day'); })();
+(function () {
+  const stored = localStorage.getItem('d3kTheme');
+  if (stored) { setTheme(stored); return; }
+  setTheme(new Date().getHours() >= 7 && new Date().getHours() < 20 ? 'day' : 'night');
+})();
 
 /* ── CLOCK ── */
 (function tick() {
   const n = new Date();
-  document.getElementById('clock').textContent =
-    String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  const el = document.getElementById('clock');
+  if (el) el.textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
   setTimeout(tick, 10000);
 })();
 
-/* ── TOAST ── */
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3500);
-}
-
-/* ── ALERT THRESHOLDS (mirrored from instruments.js Section 23) ── */
+/* ── ALERT THRESHOLDS ── */
 const THR = {
-  coolant: { adv: 88,   alrt: 98,   crit: 105  },   // °C, above = alarm
-  oil:     { adv: 30,   alrt: 25,   crit: 20   },   // PSI, below = alarm
-  bat:     { adv: 12.4, alrt: 12.0, crit: 11.5 },   // V,   below = alarm
-  fuel:    { adv: 0.25, alrt: 0.15, crit: 0.10 },   // fraction, below = alarm
+  coolant: { adv: 88,   alrt: 98,   crit: 105  },  // °C above
+  oil:     { adv: 30,   alrt: 25,   crit: 20   },  // PSI below
+  bat:     { adv: 12.4, alrt: 12.0, crit: 11.5 },  // V below
+  fuel:    { adv: 0.25, alrt: 0.15, crit: 0.10 },  // fraction below
+  fw:      { adv: 0.20, alrt: 0.10, crit: 0.05 },  // fraction below
 };
 
 function _evalAbove(v, thr) {
@@ -246,79 +387,113 @@ function _evalBelow(v, thr) {
   return '';
 }
 
-function _setCell(id, val, unit, state) {
-  const cell = document.getElementById('cell-' + id);
-  const valEl = document.getElementById('val-' + id);
+function _setCell(id, val, unit, state, pct) {
+  const cell   = document.getElementById('cell-' + id);
+  const valEl  = document.getElementById('val-'  + id);
   const unitEl = document.getElementById('unit-' + id);
+  const barEl  = document.getElementById('bar-'  + id);
   if (!cell) return;
   valEl.textContent  = val;
   unitEl.textContent = unit;
   cell.className = 'eng-cell' + (state ? ' ' + state : '');
+  if (barEl && pct !== undefined) barEl.style.width = Math.max(0, Math.min(100, pct)) + '%';
+}
+
+function _setTank(id, pct, frac, state) {
+  const cell   = document.getElementById('cell-' + id);
+  const valEl  = document.getElementById('val-'  + id);
+  const unitEl = document.getElementById('unit-' + id);
+  const barEl  = document.getElementById('bar-'  + id);
+  if (!valEl) return;
+  valEl.textContent  = pct.toString();
+  unitEl.textContent = state ? '% · ' + state.toUpperCase() : '%';
+  if (cell)  cell.className = 'eng-cell' + (state ? ' ' + state : '');
+  if (barEl) barEl.style.width = Math.max(0, Math.min(100, pct)) + '%';
 }
 
 /* ── SIGNAL K HANDLERS ── */
 const SK_HANDLERS = {
   'propulsion.0.revolutions': (v) => {
     const rpm = Math.round(v * 60);
-    _setCell('rpm', rpm.toString(), 'rpm', '');   /* no RPM threshold defined */
+    _setCell('rpm', rpm.toString(), 'rpm', '', Math.min(100, rpm / 4500 * 100));
   },
   'propulsion.0.coolantTemperature': (v) => {
     const c     = v - 273.15;
     const state = _evalAbove(c, THR.coolant);
-    _setCell('coolant', c.toFixed(0), state ? '°C · ' + state.toUpperCase() : '°C', state);
+    _setCell('coolant', c.toFixed(0), state ? '°C · ' + state.toUpperCase() : '°C', state, Math.min(100, c / 120 * 100));
   },
   'propulsion.0.oilPressure': (v) => {
     const psi   = Math.round(v * 0.000145038);
     const state = _evalBelow(psi, THR.oil);
-    _setCell('oil', psi.toString(), state ? 'PSI · ' + state.toUpperCase() : 'PSI', state);
+    _setCell('oil', psi.toString(), state ? 'PSI · ' + state.toUpperCase() : 'PSI', state, Math.min(100, psi / 100 * 100));
   },
   'electrical.batteries.0.voltage': (v) => {
-    const state = _evalBelow(v, THR.bat);
-    const note  = state ? state.toUpperCase() : (v > 13.0 ? 'charging' : 'normal');
-    _setCell('bat', v.toFixed(1), 'V · ' + note, state);
+    const state  = _evalBelow(v, THR.bat);
+    const note   = state ? state.toUpperCase() : (v > 13.0 ? 'charging' : 'normal');
+    const pct    = Math.max(0, Math.min(100, (v - 11) / (14.4 - 11) * 100));
+    _setCell('bat', v.toFixed(1), 'V · ' + note, state, pct);
+    /* Mirror to Tank Levels battery % */
+    const bp = Math.round(pct);
+    const bpEl = document.getElementById('val-batp');
+    const buEl = document.getElementById('unit-batp');
+    const bbEl = document.getElementById('bar-batp');
+    if (bpEl) bpEl.textContent = bp.toString();
+    if (buEl) buEl.textContent = '%';
+    if (bbEl) bbEl.style.width = bp + '%';
   },
   'tanks.fuel.0.currentLevel': (v) => {
     const pct   = Math.round(v * 100);
     const state = _evalBelow(v, THR.fuel);
-    _setCell('fuel', pct.toString(), state ? '% · ' + state.toUpperCase() : '%', state);
+    _setCell('fuel', pct.toString(), state ? '% · ' + state.toUpperCase() : '%', state, pct);
+    _setTank('fuelp', pct, v, state);
   },
   'propulsion.0.trimTabPosition': (v) => {
     const deg = Math.round(v * 180 / Math.PI);
-    _setCell('trim', deg.toString(), '°', '');
+    /* Bar centred at 50% = 0° trim; range -30° to +30° */
+    _setCell('trim', deg.toString(), '°', '', Math.max(0, Math.min(100, (deg + 30) / 60 * 100)));
+  },
+  'tanks.freshWater.0.currentLevel': (v) => {
+    const pct   = Math.round(v * 100);
+    const state = _evalBelow(v, THR.fw);
+    _setTank('fw', pct, v, state);
+  },
+  'tanks.blackWater.0.currentLevel': (v) => {
+    const pct   = Math.round(v * 100);
+    /* Black water: high level = warning */
+    const state = v >= 0.90 ? 'crit' : v >= 0.75 ? 'alrt' : v >= 0.60 ? 'adv' : '';
+    _setTank('bw', pct, v, state);
   },
 };
 
-/* ── CONNECTION ── */
+/* ── SIGNAL K CONNECTION ── */
 const SK_WS = 'ws://localhost:8099/signalk/v1/stream';
-let _ws = null;
-let _reconnectTimer = null;
+let _ws = null, _reconnectTimer = null;
 
 function setBanner(state, text) {
   const b = document.getElementById('conn-banner');
   const t = document.getElementById('conn-text');
-  b.className = 'warn'; /* reset */
-  if (state === 'ok')  b.className = 'ok';
-  if (state === 'err') b.className = 'err';
+  b.className = state === 'ok' ? 'ok' : state === 'err' ? 'err' : 'warn';
   t.textContent = text;
 }
 
 function openSK() {
   if (_ws) { try { _ws.close(); } catch (_) {} }
-  setBanner('warn', 'Connecting to Signal K…');
+  setBanner('warn', 'Connecting to Signal K\u2026');
   _ws = new WebSocket(SK_WS);
 
   _ws.onopen = () => {
-    setBanner('ok', 'Signal K connected — live data flowing');
-    /* Subscribe to engine/electrical/fuel paths */
+    setBanner('ok', 'Signal K connected \u2014 live data flowing');
     _ws.send(JSON.stringify({
       context: 'vessels.self',
       subscribe: [
-        { path: 'propulsion.0.revolutions',         period: 1000 },
-        { path: 'propulsion.0.coolantTemperature',  period: 2000 },
-        { path: 'propulsion.0.oilPressure',         period: 2000 },
-        { path: 'electrical.batteries.0.voltage',   period: 5000 },
-        { path: 'tanks.fuel.0.currentLevel',        period: 10000 },
-        { path: 'propulsion.0.trimTabPosition',     period: 2000 },
+        { path: 'propulsion.0.revolutions',           period: 1000  },
+        { path: 'propulsion.0.coolantTemperature',    period: 2000  },
+        { path: 'propulsion.0.oilPressure',           period: 2000  },
+        { path: 'electrical.batteries.0.voltage',     period: 5000  },
+        { path: 'tanks.fuel.0.currentLevel',          period: 10000 },
+        { path: 'propulsion.0.trimTabPosition',       period: 2000  },
+        { path: 'tanks.freshWater.0.currentLevel',    period: 15000 },
+        { path: 'tanks.blackWater.0.currentLevel',    period: 15000 },
       ],
     }));
   };
@@ -326,36 +501,73 @@ function openSK() {
   _ws.onmessage = (ev) => {
     let msg;
     try { msg = JSON.parse(ev.data); } catch (_) { return; }
-    const updates = msg.updates || [];
-    for (const upd of updates) {
+    for (const upd of (msg.updates || [])) {
       for (const kv of (upd.values || [])) {
-        const handler = SK_HANDLERS[kv.path];
-        if (handler && kv.value !== null && kv.value !== undefined) {
-          try { handler(kv.value); } catch (_) {}
+        const h = SK_HANDLERS[kv.path];
+        if (h && kv.value !== null && kv.value !== undefined) {
+          try { h(kv.value); } catch (_) {}
         }
       }
     }
   };
 
-  _ws.onerror = () => {
-    setBanner('err', 'Signal K connection error — check that signalk is running on :8099');
-  };
-
+  _ws.onerror = () => setBanner('err', 'Signal K error \u2014 check :8099');
   _ws.onclose = () => {
-    setBanner('err', 'Signal K disconnected — reconnecting in 5 s…');
+    setBanner('err', 'Signal K disconnected \u2014 retry in 5\u202fs\u2026');
     _reconnectTimer = setTimeout(openSK, 5000);
   };
 }
 
-function reconnect() {
-  clearTimeout(_reconnectTimer);
-  openSK();
+function reconnect() { clearTimeout(_reconnectTimer); openSK(); }
+
+/* ── SYSTEM INFO — polls /sysinfo every 30 s ── */
+function updateSysinfo() {
+  fetch('/sysinfo')
+    .then(r => r.json())
+    .then(d => {
+      const cpuRaw = parseFloat(d.cpu_temp);
+      const cpuNum = isNaN(cpuRaw) ? 0 : cpuRaw;
+      document.getElementById('sys-cpu').textContent  = isNaN(cpuRaw) ? (d.cpu_temp || '—') : cpuNum.toFixed(0);
+      document.getElementById('bar-cpu').style.width  = Math.min(100, Math.max(0, (cpuNum - 30) / 55 * 100)) + '%';
+      document.getElementById('sys-mem').textContent  = d.mem_pct  || '—';
+      document.getElementById('bar-mem').style.width  = (d.mem_pct  || 0) + '%';
+      document.getElementById('sys-disk').textContent = d.disk_pct || '—';
+      document.getElementById('bar-disk').style.width = (d.disk_pct || 0) + '%';
+      document.getElementById('sys-uptime').textContent = d.uptime || '—';
+      document.getElementById('sys-ip').textContent     = d.ip     || '—';
+    })
+    .catch(() => {});
+}
+
+/* ── NETWORK STATUS — polls /status every 30 s ── */
+function setNetCard(id, ok, label) {
+  const dot = document.getElementById('dot-' + id);
+  const val = document.getElementById('net-' + id);
+  if (!dot || !val) return;
+  dot.className = 'net-dot ' + (ok ? 'ok' : 'err');
+  val.className = 'net-status ' + (ok ? 'ok' : 'err');
+  val.textContent = label;
+}
+
+function updateNetwork() {
+  fetch('/status')
+    .then(r => r.json())
+    .then(d => {
+      setNetCard('signalk',  d.signalk,               d.signalk  ? 'Connected' : 'Offline');
+      setNetCard('internet', d.internet,              d.internet ? 'Online'    : 'Offline');
+      setNetCard('avnav',    d.avnav,                 d.avnav    ? 'Running'   : 'Stopped');
+      setNetCard('ai',       d.gemini || d.ai_bridge, (d.gemini || d.ai_bridge) ? 'Available' : 'Offline');
+    })
+    .catch(() => {});
 }
 
 /* ── INIT ── */
 openSK();
+updateSysinfo();
+updateNetwork();
+setInterval(updateSysinfo, 30000);
+setInterval(updateNetwork, 30000);
 
-/* Clean up on page unload */
 window.addEventListener('beforeunload', () => {
   clearTimeout(_reconnectTimer);
   if (_ws) try { _ws.close(); } catch (_) {}
