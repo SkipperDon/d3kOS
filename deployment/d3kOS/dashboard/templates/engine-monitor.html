@@ -15,9 +15,14 @@
   margin-bottom: 4px;
 }
 .eng-grid-4 { grid-template-columns: repeat(4, 1fr); }
-@media (max-width: 700px) {
+.eng-grid-5 { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 800px) {
   .eng-grid   { grid-template-columns: repeat(2, 1fr); }
   .eng-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .eng-grid-5 { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 500px) {
+  .eng-grid-5 { grid-template-columns: repeat(2, 1fr); }
 }
 
 .eng-cell {
@@ -191,40 +196,15 @@
     <button class="btn" style="margin-left:auto;height:40px;font-size:18px" onclick="reconnect()">Reconnect</button>
   </div>
 
-  <!-- ── 1 · ENGINE & PROPULSION ── -->
+  <!-- ── 1 · ENGINE ── -->
   <div class="sec">
-    <div class="sec-header">&#9881; Engine &amp; Propulsion</div>
-    <div class="eng-grid">
+    <div class="sec-header">&#9881; Engine</div>
+    <div class="eng-grid eng-grid-5">
       <div class="eng-cell" id="cell-rpm">
         <div class="eng-lbl">RPM</div>
         <div class="eng-val" id="val-rpm">—</div>
         <div class="eng-unit" id="unit-rpm">rpm</div>
         <div class="eng-bar-wrap"><div class="eng-bar" id="bar-rpm" style="width:0%"></div></div>
-      </div>
-      <div class="eng-cell" id="cell-coolant">
-        <div class="eng-lbl">Coolant Temp</div>
-        <div class="eng-val" id="val-coolant">—</div>
-        <div class="eng-unit" id="unit-coolant">°C</div>
-        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-coolant" style="width:0%"></div></div>
-      </div>
-      <div class="eng-cell" id="cell-oil">
-        <div class="eng-lbl">Oil Pressure</div>
-        <div class="eng-val" id="val-oil">—</div>
-        <div class="eng-unit" id="unit-oil">PSI</div>
-        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-oil" style="width:0%"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 2 · ELECTRICAL & FUEL ── -->
-  <div class="sec">
-    <div class="sec-header">&#9889; Electrical &amp; Fuel</div>
-    <div class="eng-grid">
-      <div class="eng-cell" id="cell-bat">
-        <div class="eng-lbl">Battery</div>
-        <div class="eng-val" id="val-bat">—</div>
-        <div class="eng-unit" id="unit-bat">V</div>
-        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-bat" style="width:0%"></div></div>
       </div>
       <div class="eng-cell" id="cell-fuel">
         <div class="eng-lbl">Fuel Level</div>
@@ -232,11 +212,23 @@
         <div class="eng-unit" id="unit-fuel">%</div>
         <div class="eng-bar-wrap"><div class="eng-bar" id="bar-fuel" style="width:0%"></div></div>
       </div>
-      <div class="eng-cell" id="cell-trim">
-        <div class="eng-lbl">Trim Tab</div>
-        <div class="eng-val" id="val-trim">—</div>
-        <div class="eng-unit" id="unit-trim">°</div>
-        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-trim" style="width:50%"></div></div>
+      <div class="eng-cell" id="cell-coolant">
+        <div class="eng-lbl">Coolant Temp</div>
+        <div class="eng-val" id="val-coolant">—</div>
+        <div class="eng-unit" id="unit-coolant">°C</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-coolant" style="width:0%"></div></div>
+      </div>
+      <div class="eng-cell" id="cell-bat">
+        <div class="eng-lbl">Battery</div>
+        <div class="eng-val" id="val-bat">—</div>
+        <div class="eng-unit" id="unit-bat">V</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-bat" style="width:0%"></div></div>
+      </div>
+      <div class="eng-cell" id="cell-oil">
+        <div class="eng-lbl">Oil Pressure</div>
+        <div class="eng-val" id="val-oil">—</div>
+        <div class="eng-unit" id="unit-oil">PSI</div>
+        <div class="eng-bar-wrap"><div class="eng-bar" id="bar-oil" style="width:0%"></div></div>
       </div>
     </div>
   </div>
