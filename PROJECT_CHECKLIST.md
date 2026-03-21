@@ -144,6 +144,8 @@ On-boat verification still pending:
 | 12 | Engine Dashboard — restore original layout | Claude | `[x]` **COMPLETE 2026-03-21.** Full rebuild: 5 sections (Engine, Electrical, Tanks, System Status, Network Status), progress bars on all cells, alert states retained, DAY/NGT toggle, back arrow, one-finger scroll. CSS v=19, AODA compliant. |
 | 13 | Helm Assistant — new page | Claude | `[x]` **COMPLETE 2026-03-21.** 4 quick-action buttons (Engine Status, Check Issues, System Health, Run Diagnostics), chat UI, RAG→Gemini fallback (MANUAL/GEMINI source badge), AODA fonts (18px min), keyboard-fix.js. Added to More menu. |
 | 14 | Gemini CORS fix — d3kos-gemini proxy | Claude | `[x]` **COMPLETE 2026-03-21.** Root cause: no CORS headers on gemini_proxy.py. Browser at :3000 was blocked making cross-origin calls to :3001. Fix: `@app.after_request` CORS handler added. Key and service were correctly configured — proxy was working, browser was blocked. |
+| 15 | Gemini system prompt — expand to full vessel operation | Claude | `[x]` **COMPLETE 2026-03-21.** Navigation-only prompt caused Helm Assistant to give unhelpful answers to engine/mechanical questions. Prompt now covers: engine diagnostics, electrical, mechanical, maintenance, on-board systems, navigation, safety. `_ragUseful()` threshold also tightened (30→60 chars, +8 no-info patterns). |
+| 16 | Engine Dashboard + Settings — remove 960px max-width | Claude | `[x]` **COMPLETE 2026-03-21.** Engine gauge cells were ~174px wide on 1280px display due to 960px container. Settings had same constraint in `.settings-content`. Both now fill full screen width (~238px per engine cell). |
 
 ---
 

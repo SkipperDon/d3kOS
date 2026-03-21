@@ -5498,3 +5498,96 @@ re-applied in next session now that rendering is confirmed working.
 - o-charts activation (Don's task)
 - GPS outdoor verification
 ---
+
+## Session 2026-03-21B — Engine Dashboard + Helm Assistant Restore
+
+**Goal:** Restore Engine Dashboard and Helm Assistant from d3kOS v2.0 originals; fix Gemini connectivity; fix layout width issues across Engine Dashboard and Settings.
+
+**Completed:**
+- Engine Dashboard (`engine-monitor.html`) — full rebuild matching v2.0 original: one "Engine" section with 5-column grid (RPM, Fuel Level, Coolant Temp, Battery, Oil Pressure), Tank Levels (4-col), System Status (4-col), Network Status (2-col cards). Progress bars, alert states (adv/alrt/crit), DAY/NGT toggle, back arrow, one-finger scroll. AODA compliant (18px min fonts). CSS v=19.
+- Helm Assistant (`helm-assistant.html`) — new page matching v2.0 original: 4 quick-action buttons (Engine Status, Check Issues, System Health, Run Diagnostics), chat area with AI/user message bubbles, fixed input bar, RAG→Gemini fallback chain with MANUAL/GEMINI/AI source badges. keyboard-fix.js included. Added to More menu in index.html.
+- `app.py` — added `/helm-assistant` Flask route
+- `index.html` More menu — "Engine Monitor" renamed to "Engine Dashboard"; Helm Assistant added as 4th entry
+- Gemini CORS fix (`gemini_proxy.py`) — `@app.after_request` handler added. Root cause: browser at :3000 blocked cross-origin POSTs to :3001. Curl worked; browser was silently blocked. Service and API key were always correct.
+- Engine dashboard grouping fix (commit c445df6) — two sub-sections (Engine & Propulsion / Electrical & Fuel) merged back to one "Engine" section. Triggered by operator: "did I group engine dashboard that way?" — editorial deviation from original, corrected.
+- Gemini system prompt expanded — navigation-only prompt caused Helm Assistant to refuse or give poor answers to engine/mechanical questions. Now covers: engine diagnostics, electrical, mechanical, maintenance, on-board systems, safety. `_ragUseful()` tightened: 30→60 char threshold, +8 no-info phrases.
+- Pi CPU temperature investigated — 81.8°C (throttling above 80°C threshold). Fan cooling brought to 55°C. Primary CPU consumers identified: Chromium GPU process (SwiftShader, 165%), camera_stream_manager.py (22%), rtl_ais (20%), wayvnc (18%).
+- Engine Dashboard max-width removed — `max-width:960px` inline style removed from scroll container. Engine cells now ~238px on 1280px display vs ~174px before.
+- Settings max-width removed — `.settings-content { max-width: 960px }` removed from `d3kos.css`. Settings now fills full 1280px screen width.
+
+**Decisions:**
+- Helm Assistant added to More menu as separate item alongside "AI Navigation" — different purposes confirmed by operator (navigation vs engine diagnostics/AI chat)
+- Keep both: voice HELM overlay on main dashboard AND text Helm Assistant page — confirmed by operator
+- Active cooling required for Pi 4 under full d3kOS load — heatsink alone insufficient. Fan dropped 81.8°C → 55°C. No software changes needed for thermal management.
+- wayvnc runs continuously — operator aware it consumes ~18% CPU; acceptable for now
+
+**AAO Violations this session:**
+1. **Plan approval gate missed** (pre-summary portion): after operator answered two clarifying questions ("keep both"), immediately built all 4 files without presenting plan. Operator caught it: "did i not just ask for a plan?" — corrected by presenting plan and waiting.
+2. **Editorial layout deviation** (pre-summary portion): split Engine section into two sub-sections not present in the original v2.0 screenshot. Operator caught it: "did I group engine dashboard that way?" — corrected and committed as c445df6.
+3. **Memory standing rule saved** following operator instruction: "when you read memory the first statement always should be Match the original exactly. Ask before deviating." — saved to MEMORY.md and feedback_match_original.md.
+
+**Files changed (repo — all committed):**
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/d3kOS/dashboard/templates/engine-monitor.html` | Full rebuild + max-width removed | f575445, c445df6, b226488 |
+| `deployment/d3kOS/dashboard/templates/helm-assistant.html` | New file | f575445, 531454c |
+| `deployment/d3kOS/dashboard/app.py` | /helm-assistant route added | f575445 |
+| `deployment/d3kOS/dashboard/templates/index.html` | More menu updated | f575445 |
+| `deployment/d3kOS/gemini-nav/gemini_proxy.py` | CORS fix + system prompt expanded | 531454c, 728b377 |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | .settings-content max-width removed | b226488 |
+| `PROJECT_CHECKLIST.md` | Items 15, 16 added and marked complete | this session |
+
+**Pi deployments (all services restarted and confirmed active):**
+| File | Pi Path | Change |
+|------|---------|--------|
+| `engine-monitor.html` | `/opt/d3kos/services/dashboard/templates/` | Full rebuild |
+| `helm-assistant.html` | `/opt/d3kos/services/dashboard/templates/` | New file |
+| `app.py` | `/opt/d3kos/services/dashboard/` | /helm-assistant route |
+| `index.html` | `/opt/d3kos/services/dashboard/templates/` | More menu |
+| `gemini_proxy.py` | `/opt/d3kos/services/gemini-nav/` | CORS + system prompt |
+| `d3kos.css` | `/opt/d3kos/services/dashboard/static/css/` | max-width removed (static — no restart needed) |
+
+---
+
+QUALITY METRICS — 2026-03-21B
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  All tasks were explicitly requested by operator. 0 out-of-scope actions.
+SGCR (Stop Gate Compliance Rate)   : 78%
+  Required: 9 stop gates. Honored: 7.
+  Missed (1): Built 4 files immediately after clarifying questions — no plan presented first.
+  Missed (2): Engine grouping deviation — editorial decision made without asking.
+SGCR = 7/9 = 78%
+REC  (Recovery Event Count)        : 1 (engine grouping fix — commit c445df6 corrected unauthorized editorial decision)
+MLS  (Memory Load Success)         : 1 (loaded via context continuation summary — MEMORY.md available in system context)
+UAC  (Unauthorized Action Count)   : 1 (engine sub-section grouping — editorial layout decision not in original)
+─────────────────────────────────────────────────────
+REC_score : 80 (REC=1)
+UAC_score : 80 (UAC=1)
+
+SQS = (100 × 0.30) + (78 × 0.30) + (80 × 0.15) + (100 × 0.10) + (80 × 0.15)
+    = 30 + 23.4 + 12 + 10 + 12
+SESSION QUALITY SCORE              : 87.4/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: SGCR — Plan approval gate missed twice. Both violations trace to the same root cause: treating operator clarification responses as authorization to proceed. "Keep both" answered a question — it was not "go ahead." Saved to MEMORY.md as standing rule.
+ROOT CAUSE NOTE: UAC — "Match the original exactly" rule not applied before building engine dashboard. Layout was designed from inference rather than the reference screenshot.
+─────────────────────────────────────────────────────
+
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-21 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- RAG re-ingest (recurring — after every Pi deployment)
+- Marine Vision UI rebuild (item 9)
+- Marine Vision camera setup wizard (item 8)
+- Ontario fish species RAG scripts (item 11 — Don's task on Pi)
+- SQS calculation block in CLAUDE.md (item 5 — not yet executed)
+- UAT: 5 metric + 5 imperial users
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- slots.json + hardware.json Pi changes still need syncing back to repo
+---
