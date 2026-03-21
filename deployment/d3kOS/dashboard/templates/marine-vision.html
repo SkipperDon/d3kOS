@@ -248,7 +248,7 @@
    Frame polling via :8084/camera/frame/<slot_id>
 ══════════════════════════════════════════════════════════════ */
 
-const MV_CAM  = '';  /* use relative URLs — nginx proxies /camera/ to :8084 (CORS fix) */
+const MV_CAM  = 'http://localhost:8084';
 const MV_FISH = 'http://localhost:8086';
 const MV_FPS_FOCUS = 500;    /* primary frame poll ms */
 const MV_FPS_GRID  = 2000;   /* grid tile poll ms */
