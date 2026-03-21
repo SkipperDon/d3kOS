@@ -471,11 +471,15 @@ function addAIMsg(text, source) {
 
 /* Returns true if a RAG answer is substantive enough to show */
 function _ragUseful(answer) {
-  if (!answer || answer.trim().length < 30) return false;
+  if (!answer || answer.trim().length < 60) return false;
   const lc = answer.toLowerCase();
-  const noInfo = ['no information', "don't have", "i don't", 'not found', 'no relevant',
-                  'unable to find', 'no data', 'cannot find', 'no results', 'no match',
-                  'nothing found', 'no documents'];
+  const noInfo = [
+    'no information', "don't have", "i don't", 'not found', 'no relevant',
+    'unable to find', 'no data', 'cannot find', 'no results', 'no match',
+    'nothing found', 'no documents', 'i have no', 'i do not have',
+    'i was unable', 'i could not', 'no specific', 'no context',
+    'i cannot provide', 'not in the', 'outside my', 'i am unable',
+  ];
   return !noInfo.some(p => lc.includes(p));
 }
 
