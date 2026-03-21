@@ -709,20 +709,43 @@ function runDetection() {
         html += '<div class="detect-item" style="color:var(--g-txt);font-weight:700;">&#128247; CAPTURE TRIGGERED — ID: ' + data.capture_id + '</div>';
       }
       if (data.detections && data.detections.length > 0) {
-        html += '<div class="detect-item" style="font-weight:700;">Fish detected: ' + data.detections.length + (data.detections.length === 1 ? ' fish' : ' fish') + '</div>';
-        data.detections.forEach(function(d) {
-          html += '<div class="detect-item">' + d.class_name + ' — detection confidence ' + (d.confidence * 100).toFixed(1) + '%</div>';
-        });
-        if (data.species && data.species_confidence !== null && data.species_confidence !== undefined) {
-          var speciesDisplay = data.species.replace(/_/g, ' ');
-          html += '<div class="detect-item" style="margin-top:8px;"><strong>Classifier:</strong> ' +
-                  speciesDisplay + ' — ' + (data.species_confidence * 100).toFixed(1) + '%</div>';
-        }
-        if (data.species_note) {
-          html += '<div class="detect-item" style="color:var(--g-txt);font-size:17px;margin-top:4px;">&#9432; ' + data.species_note + '</div>';
+        var cnt = data.detections.length;
+        html += '<div class="detect-item" style="font-weight:700;font-size:22px;">' +
+                '&#10003; ' + cnt + (cnt === 1 ? ' fish detected' : ' fish detected') + '</div>';
+
+        /* ── Gemini Vision species ID (primary) ── */
+        var g = data.gemini_id;
+        if (g && g.common_name && g.common_name !== 'Unknown') {
+          var confColour = g.confidence === 'high' ? 'var(--ink)' :
+                           g.confidence === 'medium' ? '#e6a817' : 'var(--g-txt)';
+          html += '<div class="detect-item" style="margin-top:10px;padding:10px;' +
+                  'border:2px solid var(--g-bdr);border-radius:6px;">';
+          html += '<div style="font-weight:700;font-size:22px;color:' + confColour + ';">' +
+                  g.common_name + '</div>';
+          if (g.scientific_name) {
+            html += '<div style="font-style:italic;font-size:17px;color:var(--g-txt);">' +
+                    g.scientific_name + '</div>';
+          }
+          html += '<div style="font-size:17px;margin-top:4px;">Confidence: ' + g.confidence + '</div>';
+          if (g.visual_features) {
+            html += '<div style="font-size:17px;margin-top:4px;color:var(--g-txt);">' +
+                    g.visual_features + '</div>';
+          }
+          if (g.ontario_note) {
+            html += '<div style="font-size:17px;margin-top:6px;color:#e6a817;">&#9888; ' +
+                    g.ontario_note + '</div>';
+          }
+          html += '</div>';
+        } else if (g && g.source !== 'gemini_unavailable') {
+          html += '<div class="detect-item" style="color:var(--g-txt);margin-top:8px;">' +
+                  '&#9432; Species not identified: ' + (g.visual_features || 'unclear image') + '</div>';
+        } else if (!g) {
+          /* No Gemini result yet */
+          html += '<div class="detect-item" style="color:var(--g-txt);margin-top:8px;">' +
+                  '&#9432; Species lookup pending...</div>';
         }
       } else {
-        html += '<div class="detect-item" style="color:var(--ink3);">No objects detected</div>';
+        html += '<div class="detect-item" style="color:var(--ink3);">No fish detected</div>';
       }
       dataDiv.innerHTML   = html;
       btn.textContent     = 'Run Detection Now';

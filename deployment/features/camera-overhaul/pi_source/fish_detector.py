@@ -11,6 +11,7 @@ from datetime import datetime
 import sqlite3
 import os
 import io
+import base64
 import requests
 import json
 
@@ -29,6 +30,47 @@ CAPTURES_PATH = "/home/d3kos/camera-recordings/captures"
 DB_PATH = "/opt/d3kos/data/marine-vision/captures.db"
 CAMERA_STREAM_URL = "http://localhost:8084/camera/frame"
 SLOTS_CONFIG      = "/opt/d3kos/config/slots.json"
+
+
+# ── Gemini Vision configuration ────────────────────────────────────────────
+
+def _load_gemini_key():
+    """Read GEMINI_API_KEY from Pi env files — same paths as gemini-proxy."""
+    for path in [
+        '/opt/d3kos/services/gemini-nav/config/gemini.env',
+        '/opt/d3kos/services/dashboard/config/api-keys.env',
+    ]:
+        if os.path.exists(path):
+            with open(path) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('GEMINI_API_KEY='):
+                        key = line.split('=', 1)[1].strip().strip('"\'')
+                        if key and key != 'YOUR_KEY_HERE':
+                            return key
+    return ''
+
+
+GEMINI_API_KEY = _load_gemini_key()
+GEMINI_MODEL   = 'gemini-2.5-flash'
+GEMINI_URL     = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent'
+
+FISH_ID_PROMPT = (
+    "You are a fishing assistant for Ontario, Canada (Great Lakes, Lake Simcoe, and inland lakes). "
+    "Identify the fish species in this photo. The fish was caught by an angler.\n\n"
+    "Respond ONLY in this exact JSON format, with no other text:\n"
+    '{"common_name":"Walleye","scientific_name":"Sander vitreus","confidence":"high",'
+    '"visual_features":"Brief description of key identifying features you see",'
+    '"ontario_note":"Brief Ontario regulation note if applicable, otherwise empty string"}\n\n'
+    "If the image does not clearly show a fish or you cannot identify it:\n"
+    '{"common_name":"Unknown","scientific_name":"","confidence":"low",'
+    '"visual_features":"Reason identification was not possible","ontario_note":""}'
+)
+
+if GEMINI_API_KEY:
+    print(f"✓ Gemini Vision ready — model: {GEMINI_MODEL}")
+else:
+    print("⚠ Gemini API key not found — species ID via Gemini will be skipped")
 
 
 def load_fish_detection_slots():
@@ -97,7 +139,12 @@ def init_db():
     if 'slot_id' not in columns:
         c.execute('ALTER TABLE captures ADD COLUMN slot_id TEXT')
         print("✓ Added slot_id column to captures table")
-    
+
+    if 'gemini_species' not in columns:
+        c.execute('ALTER TABLE captures ADD COLUMN gemini_species TEXT')
+        c.execute('ALTER TABLE captures ADD COLUMN gemini_response TEXT')
+        print("✓ Added gemini_species / gemini_response columns to captures table")
+
     c.execute('''CREATE TABLE IF NOT EXISTS captures
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   timestamp TEXT NOT NULL,
@@ -110,7 +157,9 @@ def init_db():
                   species_confidence REAL,
                   species_top3 TEXT,
                   location TEXT,
-                  slot_id TEXT)''')
+                  slot_id TEXT,
+                  gemini_species TEXT,
+                  gemini_response TEXT)''')
     conn.commit()
     conn.close()
 
@@ -149,11 +198,78 @@ def preprocess_species(image):
     
     return img_batch
 
+def identify_species_gemini(img):
+    """
+    Send captured JPEG to Gemini Vision for Ontario fish species identification.
+    Returns dict: common_name, scientific_name, confidence, visual_features, ontario_note
+    Falls back gracefully if Gemini unavailable.
+    """
+    if not GEMINI_API_KEY:
+        return {
+            'common_name': 'Unknown', 'scientific_name': '', 'confidence': 'low',
+            'visual_features': 'Gemini API key not configured on this device.',
+            'ontario_note': '', 'source': 'gemini_unavailable'
+        }
+
+    try:
+        # Encode image as base64 JPEG
+        _, buf = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        img_b64 = base64.b64encode(buf.tobytes()).decode('utf-8')
+
+        payload = {
+            'contents': [{
+                'parts': [
+                    {'inline_data': {'mime_type': 'image/jpeg', 'data': img_b64}},
+                    {'text': FISH_ID_PROMPT}
+                ]
+            }],
+            'generationConfig': {'maxOutputTokens': 250, 'temperature': 0.1}
+        }
+
+        resp = requests.post(
+            f'{GEMINI_URL}?key={GEMINI_API_KEY}',
+            json=payload, timeout=20
+        )
+        resp.raise_for_status()
+
+        raw = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+
+        # Strip markdown code fences if Gemini wraps response
+        if '```' in raw:
+            parts = raw.split('```')
+            raw = parts[1] if len(parts) > 1 else raw
+            if raw.startswith('json'):
+                raw = raw[4:]
+        raw = raw.strip()
+
+        result = json.loads(raw)
+        result['source'] = 'gemini'
+        print(f"✓ Gemini ID: {result.get('common_name')} ({result.get('confidence')})")
+        return result
+
+    except requests.exceptions.Timeout:
+        print("⚠ Gemini Vision timeout")
+        return {
+            'common_name': 'Unknown', 'scientific_name': '', 'confidence': 'low',
+            'visual_features': 'Gemini request timed out — check internet connection.',
+            'ontario_note': '', 'source': 'gemini_timeout'
+        }
+    except Exception as e:
+        print(f"⚠ Gemini Vision error: {e}")
+        return {
+            'common_name': 'Unknown', 'scientific_name': '', 'confidence': 'low',
+            'visual_features': f'Identification error: {str(e)[:100]}',
+            'ontario_note': '', 'source': 'gemini_error'
+        }
+
+
 def classify_species(image):
     """
     Classify fish species from image.
     Returns: (species_name, confidence, top_3_predictions)
     NOTE: model outputs log-softmax — apply exp() to convert to probability.
+    NOTE: This model was trained on Australian/Indo-Pacific fish. For Ontario
+    freshwater species, use identify_species_gemini() instead.
     """
     input_tensor = preprocess_species(image)
     outputs = species_session.run(None, {species_input_name: input_tensor})
@@ -333,15 +449,19 @@ def detect_frame():
     fish_detected = len(detections) > 0
     fish_confidence = max([d['confidence'] for d in detections]) if fish_detected else 0.0
 
-    # Step 2: Species Identification (if fish detected)
+    # Step 2: ONNX species classifier (background — kept for data, not shown to user)
     species_name = None
     species_confidence = None
     species_top3 = None
-    
+
     if fish_detected:
-        print(f"Fish detected with {fish_confidence:.2%} confidence, running species ID...")
         species_name, species_confidence, species_top3 = classify_species(img)
-        print(f"✓ Species: {species_name} ({species_confidence:.2%} confidence)")
+
+    # Step 3: Gemini Vision species identification (primary species display)
+    gemini_result = None
+    if fish_detected:
+        print(f"Fish detected ({fish_confidence:.2%}) — sending capture to Gemini Vision...")
+        gemini_result = identify_species_gemini(img)
 
     # Person detection (disabled for now)
     person_detected = False
@@ -359,7 +479,8 @@ def detect_frame():
             species_name,
             species_confidence,
             species_top3,
-            slot_id=slot_id
+            slot_id=slot_id,
+            gemini_result=gemini_result
         )
 
     return jsonify({
@@ -370,40 +491,41 @@ def detect_frame():
         'person_confidence': person_confidence,
         'fish_detected': fish_detected,
         'fish_confidence': fish_confidence,
-        'species': species_name,
-        'species_confidence': species_confidence,
-        'species_top3': species_top3,
-        'species_note': 'Classifier trained on 483 marine species — may not match Ontario freshwater fish. For walleye, perch, pike, bass: ask the voice assistant.',
+        'gemini_id': gemini_result,
         'capture_triggered': capture_triggered,
         'capture_id': capture_id
     })
 
-def save_capture(img, person_conf, fish_conf, species=None, species_conf=None, species_top3=None, slot_id=None):
+def save_capture(img, person_conf, fish_conf, species=None, species_conf=None,
+                 species_top3=None, slot_id=None, gemini_result=None):
     """Save capture to database and disk"""
     timestamp = datetime.now().isoformat()
     filename = f"catch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
     filepath = os.path.join(CAPTURES_PATH, filename)
 
-    # Save image
     cv2.imwrite(filepath, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
 
-    # Save to database
+    gemini_species = gemini_result.get('common_name') if gemini_result else None
+    gemini_json    = json.dumps(gemini_result) if gemini_result else None
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''INSERT INTO captures
                  (timestamp, image_path, person_detected, fish_detected,
-                  person_confidence, fish_confidence, species, species_confidence, species_top3, slot_id)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  person_confidence, fish_confidence, species, species_confidence,
+                  species_top3, slot_id, gemini_species, gemini_response)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
               (timestamp, filepath, 0, 1,
                float(person_conf), float(fish_conf),
                species, float(species_conf) if species_conf else None,
                json.dumps(species_top3) if species_top3 else None,
-               slot_id))
+               slot_id, gemini_species, gemini_json))
     capture_id = c.lastrowid
     conn.commit()
     conn.close()
 
-    print(f"✓ Capture saved: {filename} (ID: {capture_id}, Species: {species}, Slot: {slot_id})")
+    label = gemini_species or species or 'unidentified'
+    print(f"✓ Capture saved: {filename} (ID: {capture_id}, Species: {label}, Slot: {slot_id})")
     return capture_id
 
 @app.route('/captures', methods=['GET'])
@@ -429,7 +551,9 @@ def list_captures():
             'location': row[8] if len(row) > 8 else None,
             'species_confidence': row[9] if len(row) > 9 else None,
             'species_top3': json.loads(row[10]) if len(row) > 10 and row[10] else None,
-            'slot_id': row[11] if len(row) > 11 else None
+            'slot_id': row[11] if len(row) > 11 else None,
+            'gemini_species': row[12] if len(row) > 12 else None,
+            'gemini_response': json.loads(row[13]) if len(row) > 13 and row[13] else None,
         })
 
     return jsonify({'captures': captures, 'count': len(captures)})
@@ -458,7 +582,9 @@ def get_capture(capture_id):
         'location': row[8] if len(row) > 8 else None,
         'species_confidence': row[9] if len(row) > 9 else None,
         'species_top3': json.loads(row[10]) if len(row) > 10 and row[10] else None,
-        'slot_id': row[11] if len(row) > 11 else None
+        'slot_id': row[11] if len(row) > 11 else None,
+        'gemini_species': row[12] if len(row) > 12 else None,
+        'gemini_response': json.loads(row[13]) if len(row) > 13 and row[13] else None,
     })
 
 @app.route('/captures/<int:capture_id>/image', methods=['GET'])
