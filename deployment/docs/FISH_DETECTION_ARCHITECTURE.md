@@ -1,231 +1,224 @@
 # Fish Detection & Species Identification — Architecture
-**Version:** 1.0.0 | **Date:** 2026-03-21 | **Status:** Active — Ontario freshwater model pending
+**Version:** 1.1.0 | **Date:** 2026-03-21 | **Status:** Fish detection complete. Species ID via Gemini Vision — pending connection.
 
 ---
 
-## Overview
+## What Is Done vs. What Is Not Done
 
-The d3kOS fish detection system has two parallel tracks:
-
-1. **Real-time video detection** — ONNX models running on the Pi (port :8086)
-2. **Species knowledge base** — RAG/PDF data in the d3kOS document service (voice AI)
-
-These two tracks are currently independent. The ONNX classifier detects fish and attempts species ID from video frames. The RAG knowledge base contains detailed Ontario freshwater fish information that the voice AI assistant can query.
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Fish detection (YOLOv8n) | ✓ Working | Detects fish-shaped objects in frame |
+| NMS (duplicate box collapse) | ✓ Fixed 2026-03-21 | Was showing 11 boxes for 2 fish |
+| Detection confidence display | ✓ Fixed 2026-03-21 | exp(log-softmax) fix — was showing -34.2% |
+| Auto-capture on detection | ✓ Working | Saves JPEG to `/home/d3kos/camera-recordings/captures/` |
+| Ontario species RAG (PDFs) | ✓ Scripts built | Voice AI text queries only — NOT visual ID |
+| Gemini API key on Pi | ✓ Installed | At `/opt/d3kos/services/gemini-nav/config/gemini.env` |
+| ONNX species classifier (EfficientNet-483) | ⚠ Wrong model | Trained on Australian/Indo-Pacific fish. Not Ontario. |
+| Gemini Vision species ID from capture | ✗ Not built | **This is the completion step** — send JPEG to Gemini Vision |
+| Ontario RAG scripts run on Pi | ✗ Not confirmed | `create_fish_species_pdfs.py` + `add_fish_to_rag.py` — not logged as run |
 
 ---
 
-## Architecture Diagram
+## Architecture: What Was Built
 
 ```
-Camera frame (Helm camera, starboard-facing)
+Camera frame (Helm camera — faces starboard for fish brought aboard)
          │
          ▼
-┌─────────────────────────────────────┐
-│  Stage 1: Fish Detection            │
-│  Model: fish_detector.onnx          │
-│  Type: YOLOv8n (single class)       │
-│  Training: 21,719 labeled images    │
-│  Output: bounding boxes + count     │
-│  NMS: IoU threshold 0.4             │
-│  Confidence threshold: 0.45         │
-└──────────────┬──────────────────────┘
-               │ (if fish detected)
+┌─────────────────────────────────────────────┐
+│  Stage 1: Fish Detection (WORKING)          │
+│  Model: fish_detector.onnx (YOLOv8n)        │
+│  Confidence threshold: 0.45                 │
+│  NMS: IoU 0.4 — collapses duplicate boxes   │
+│  Output: fish count + bounding boxes        │
+└──────────────┬──────────────────────────────┘
+               │ fish detected
                ▼
-┌─────────────────────────────────────┐
-│  Stage 2: Species Classifier        │
-│  Model: fish_classifier_483         │
-│         species_best.onnx           │
-│  Type: EfficientNet (483 classes)   │
-│  Training: Australian/Indo-Pacific  │
-│           reef fish dataset         │
-│  Output: species name + probability │
-│  NOTE: Wrong model for Ontario use  │
-│  ⚠ Walleye, pike, perch NOT in set │
-└──────────────┬──────────────────────┘
+┌─────────────────────────────────────────────┐
+│  Auto-capture                               │
+│  Saves JPEG: /home/d3kos/camera-recordings/ │
+│  captures/catch_YYYYMMDD_HHMMSS.jpg         │
+└──────────────┬──────────────────────────────┘
                │
                ▼
-        ┌──────────────┐
-        │  Marine Vision│
-        │  UI display   │
-        │  + Note to use│
-        │  voice AI for │
-        │  Ontario fish │
-        └──────────────┘
+┌─────────────────────────────────────────────┐
+│  Stage 2: Species ID via EfficientNet-483   │
+│  STATUS: WRONG MODEL                        │
+│  Trained on: Australian / Indo-Pacific fish │
+│  Will NOT correctly identify Ontario fish   │
+│  (walleye, pike, perch, bass NOT in set)    │
+└──────────────┬──────────────────────────────┘
+               │
+               ▼
+     ┌─────────────────────┐
+     │  Marine Vision UI   │
+     │  Shows: fish count  │
+     │  Shows: classifier  │
+     │  result (wrong for  │
+     │  Ontario species)   │
+     └─────────────────────┘
 
-Voice AI (separate path):
+Ontario Fish RAG (SEPARATE PATH — voice AI only):
   User asks: "What does a walleye look like?"
          │
          ▼
-  ┌──────────────────────────────────┐
-  │  RAG Knowledge Base (ChromaDB)   │
-  │  Ontario fish species PDFs       │
-  │  22 species × full detail:       │
-  │  • Visual characteristics        │
-  │  • Size range + weight           │
-  │  • Habitat + distribution        │
-  │  • Ontario fishing regulations   │
-  └──────────────────────────────────┘
+  d3kOS Voice Assistant → query_handler.py → RAG → answer
+  (text responses only — does NOT look at camera images)
 ```
 
 ---
 
-## ONNX Detection Models
+## The Completion Path: Gemini Vision (No Model Training Required)
 
-### Stage 1: YOLOv8n Fish Detector
-- **File:** `/opt/d3kos/models/marine-vision/fish_detector.onnx`
-- **Input:** 640×640 grayscale (converted to 3-channel)
-- **Output:** Bounding boxes with fish confidence
-- **Use:** Detect fish in frame, count fish held up for identification
-- **Status:** ✓ Working — correctly fires on fish-shaped objects
+The Gemini API is **already configured on the Pi** at:
+`/opt/d3kos/services/gemini-nav/config/gemini.env` (holds `GEMINI_API_KEY`)
 
-### Stage 2: EfficientNet-483 Species Classifier
-- **File:** `/opt/d3kos/models/fish-species/fish_classifier_483species_best.onnx`
-- **Species list:** `/opt/d3kos/models/fish-species/species_list.json`
-- **Input:** Full frame (not cropped bounding box) at model input size
-- **Output:** 483-class log-softmax (convert with `exp()` for probability)
-- **Training dataset:** Primarily Australian and Indo-Pacific reef species
-  - Examples: `acanthaluteres_brownii` (Australian filefish), `acanthopagrus_australis` (Yellowfin Bream), `achoerodus_gouldii` (Blue Groper)
-- **Known limitation:** Ontario freshwater species (walleye, pike, perch, bass) are NOT in the 483-species training set
-- **Status:** ⚠ Mismatched to use case — displays best-guess marine species
+Gemini 2.5 Flash supports multimodal input (text + image). It can correctly identify walleye, pike, perch, bass, and other Ontario freshwater species from a photograph with no training required.
 
-#### Confidence display fix (applied 2026-03-21)
-The model outputs **log-softmax** values, not probabilities. Raw values are always negative.
-- **Wrong:** `species_confidence * 100` → shows `-34.2%`
-- **Correct:** `exp(species_confidence) * 100` → shows `71.3%`
-- Fix applied in `classify_species()`: `probabilities = np.exp(log_probs)` before computing top-3
+### Proposed completion (awaiting authorization):
+
+**Step 1:** Add `/detect/identify` endpoint to `fish_detector.py`
+- Accepts a capture JPEG (by capture ID or direct upload)
+- Reads Gemini API key from env
+- Sends JPEG + Ontario-specific prompt to `gemini-2.5-flash` vision API
+- Returns: species common name, scientific name, key visual features, confidence statement
+
+**Step 2:** Call `/detect/identify` automatically when a capture is saved
+- fish_detector.py calls Gemini Vision after each auto-capture
+- Stores Gemini species result in `captures.db` (new `gemini_species` column)
+
+**Step 3:** Display in Marine Vision UI
+- Detection result panel shows Gemini species name (not ONNX classifier)
+- Shows confidence statement from Gemini
+
+### Gemini prompt for Ontario fishing:
+```
+You are an AI fishing assistant for Ontario, Canada. Identify the fish species
+in this photo. Provide:
+1. Common name (as used in Ontario)
+2. Scientific name
+3. Your confidence: high / medium / low
+4. Key visual features you see that support your identification
+5. Whether this fish has Ontario size or bag limit rules you can note
+
+If you cannot identify the species with confidence, say so honestly.
+```
+
+This approach:
+- Uses existing Gemini API key (no new accounts, no cost setup)
+- Works for Ontario freshwater fish (walleye, pike, perch, bass, trout, etc.)
+- More accurate than any specialized ONNX model for uncommon species
+- Provides regulation context in the same response
 
 ---
 
-## RAG Knowledge Base — Ontario Fish Species
+## Ontario Species RAG — What It Does and Does Not Do
 
-### What was built
-Two scripts build and populate the Ontario fish species knowledge base:
+### What the RAG IS for (voice AI text queries)
+The RAG knowledge base allows the voice assistant to answer:
+- "What does a walleye look like?"
+- "What's the size limit for walleye on Lake Erie?"
+- "How do I tell a sauger from a walleye?"
+- "What habitat does northern pike prefer?"
 
-**Script 1: `create_fish_species_pdfs.py`** (project root)
-- Creates individual PDF files for 22 Great Lakes / Lake Simcoe fish species
-- Uses `reportlab` to generate structured PDFs
-- Output: `/opt/d3kos/datasets/fish-rag/species_pdfs/`
-- Each PDF contains: description, visual characteristics, habitat, size range, distribution, Ontario fishing regulations
+The RAG is a **text knowledge base** queried by the voice assistant. It does NOT look at camera images.
 
-**Species covered (22 total):**
-| Species | Scientific Name | Use Case |
-|---------|----------------|----------|
-| Yellow Perch | Perca flavescens | Ice fishing, summer |
-| Walleye | Sander vitreus | Lake Erie trophy fishery |
-| Largemouth Bass | Micropterus salmoides | Shallow weedy areas |
-| Smallmouth Bass | Micropterus dolomieu | Rocky areas, Lake Simcoe |
-| Northern Pike | Esox lucius | Ambush predator |
-| Lake Trout | Salvelinus namaycush | Deep cold water |
-| Muskellunge | Esox masquinongy | Trophy, Georgian Bay |
-| Lake Whitefish | Coregonus clupeaformis | Deep, stocked annually |
-| Bluegill | Lepomis macrochirus | Panfish |
-| Black Crappie | Pomoxis nigromaculatus | Schools, ice fishing |
-| Burbot | Lota lota | Winter fishery |
-| Chinook Salmon | Oncorhynchus tshawytscha | Great Lakes stocked |
-| Coho Salmon | Oncorhynchus kisutch | Great Lakes stocked |
-| Rainbow Trout / Steelhead | Oncorhynchus mykiss | Lakes + tributaries |
-| Brown Trout | Salmo trutta | Cool streams |
-| Brook Trout | Salvelinus fontinalis | Cold headwater streams |
-| Channel Catfish | Ictalurus punctatus | Erie, Huron, Ontario |
-| Rock Bass | Ambloplites rupestris | Rocky areas |
-| Pumpkinseed | Lepomis gibbosus | Shallow weedy areas |
-| White Bass | Morone chrysops | Open water, schooling |
-| Sauger | Sander canadensis | Deep, similar to walleye |
+### Ontario species PDF scripts (built — run status unconfirmed on Pi)
 
-**Script 2: `add_fish_to_rag.py`** (project root)
-- Reads PDFs from `/opt/d3kos/datasets/fish-rag/species_pdfs/`
-- Adds each PDF to the Pi's RAG document service via `PDFProcessor`
-- Pi path: `/opt/d3kos/services/documents/pdf_processor.py`
-- Result: Species data ingested as chunks into ChromaDB/vector store
+**`create_fish_species_pdfs.py`** (repo root)
+Creates 22 Ontario / Great Lakes species PDFs using reportlab:
 
-**Script 3: `build_fish_rag_knowledge_base.py`** (project root)
-- Scrapes `ontariofishes.ca` for full Ontario species list
-- Downloads Ontario Fishing Regulations PDF (`files.ontario.ca`)
-- Downloads visual identification guides
-- Builds complete RAG corpus at `/opt/d3kos/datasets/fish-rag/knowledge_base/`
+| Species | Scientific Name |
+|---------|----------------|
+| Yellow Perch | Perca flavescens |
+| Walleye | Sander vitreus |
+| Largemouth Bass | Micropterus salmoides |
+| Smallmouth Bass | Micropterus dolomieu |
+| Northern Pike | Esox lucius |
+| Lake Trout | Salvelinus namaycush |
+| Muskellunge | Esox masquinongy |
+| Lake Whitefish | Coregonus clupeaformis |
+| Bluegill | Lepomis macrochirus |
+| Black Crappie | Pomoxis nigromaculatus |
+| Burbot | Lota lota |
+| Chinook Salmon | Oncorhynchus tshawytscha |
+| Coho Salmon | Oncorhynchus kisutch |
+| Rainbow Trout / Steelhead | Oncorhynchus mykiss |
+| Brown Trout | Salmo trutta |
+| Brook Trout | Salvelinus fontinalis |
+| Channel Catfish | Ictalurus punctatus |
+| Rock Bass | Ambloplites rupestris |
+| Pumpkinseed | Lepomis gibbosus |
+| White Bass | Morone chrysops |
+| Sauger | Sander canadensis |
 
-### How to run (Pi — one-time setup)
+Each PDF contains: description, visual characteristics, habitat, size range, distribution, Ontario fishing regulations.
+
+**`add_fish_to_rag.py`** (repo root)
+Adds those PDFs to the Pi's document RAG service via `PDFProcessor`.
+
+**To run on Pi (one-time setup — if not already done):**
 ```bash
-# Step 1: Create PDFs
 cd /home/d3kos
-python3 /home/d3kos/Helm-OS/create_fish_species_pdfs.py
-
-# Step 2: Add to RAG
-python3 /home/d3kos/Helm-OS/add_fish_to_rag.py
-
-# Step 3: (Optional) build full corpus from Ontario Fishes DB
-python3 /home/d3kos/Helm-OS/build_fish_rag_knowledge_base.py
+python3 /path/to/create_fish_species_pdfs.py
+python3 /path/to/add_fish_to_rag.py
 ```
 
-### How the RAG connects to fish detection (current)
-The RAG is queried via the **voice AI assistant** (d3kos-voice-assistant.service).
-
-When fish are detected on the Helm camera:
-1. Marine Vision UI shows detection count + classifier guess
-2. Classifier note reminds user to ask voice AI for Ontario species ID
-3. User says: "d3kOS, what fish did I catch?" or "d3kOS, is this a walleye?"
-4. Voice AI routes query to RAG → returns visual ID tips, size, regulations
-
-Example RAG queries that work:
-- "What does a walleye look like?" → visual characteristics from PDF
-- "What's the size limit for walleye on Lake Erie?" → Ontario regulations
-- "How do I tell the difference between a sauger and a walleye?" → comparison data
+**`build_fish_rag_knowledge_base.py`** (repo root)
+Scrapes `ontariofishes.ca` + downloads Ontario Fishing Regulations PDF.
+Builds full corpus at `/opt/d3kos/datasets/fish-rag/knowledge_base/`.
 
 ---
 
-## Phase 2: Ontario-Trained Species Model (Planned)
+## EfficientNet-483 — Why It Is Wrong
 
-### What was planned (not built yet)
-`fish_species_phase1.json` defines a 200-species training dataset:
-- **50 North American freshwater species** (includes walleye, pike, perch, bass, trout)
-- 40 North American saltwater species
-- 40 European freshwater species
-- 40 Asia-Pacific species
-- 30 global saltwater species
+The ONNX classifier `fish_classifier_483species_best.onnx` was trained on an **Australian and Indo-Pacific reef fish dataset**. The first entries in the species list confirm this:
+- `acanthaluteres_brownii` — Australian toadstool filefish
+- `acanthopagrus_australis` — Yellowfin Bream (Australia)
+- `achoerodus_gouldii` — Blue Groper (Australia)
 
-Source: iNaturalist taxon IDs, 100 images per species, research-grade observations
+Ontario freshwater species (walleye, pike, perch, bass, Lake Trout) are not in this training set. The model will always return a wrong species name for Ontario fish.
 
-Training script: `train_fish_model_483species.py` (existing — needs re-run with freshwater dataset)
+The model is NOT discarded — it is useful as a "fish-vs-not-fish" signal (Stage 1 result is reliable). The species classification output from Stage 2 should be suppressed until Gemini Vision is connected.
 
-### To build the Ontario freshwater model
-1. Run `download_fish_datasets.py` — downloads images from iNaturalist by taxon ID
-2. Focus on `north_america_freshwater` region in `fish_species_phase1.json` (50 species)
-3. Re-train EfficientNet using `train_fish_model_483species.py` on freshwater dataset
-4. Replace `/opt/d3kos/models/fish-species/fish_classifier_483species_best.onnx`
-5. Replace `/opt/d3kos/models/fish-species/species_list.json`
-
-This is a **GPU training task** — run on the workstation (192.168.1.36), not the Pi.
+**If a future Ontario freshwater classifier is desired (optional):**
+- Training plan: `fish_species_phase1.json` (50 North American freshwater species, iNaturalist taxon IDs)
+- Training script: `train_fish_model_483species.py`
+- Data download: `download_fish_datasets.py`
+- Runs on workstation GPU (192.168.1.36) — NOT the Pi
+- This is a Phase 2 improvement, not required for working species ID
 
 ---
 
 ## File Index
 
-| File | Location | Purpose |
-|------|----------|---------|
-| `fish_detector.py` | `deployment/features/camera-overhaul/pi_source/` | Flask service :8086 — detect + classify |
-| `fish_detector.onnx` | `/opt/d3kos/models/marine-vision/` (Pi) | YOLOv8n single-class detection |
-| `fish_classifier_483species_best.onnx` | `/opt/d3kos/models/fish-species/` (Pi) | EfficientNet species classifier (marine) |
-| `species_list.json` | `/opt/d3kos/models/fish-species/` (Pi) | 483-class species name map |
-| `create_fish_species_pdfs.py` | `Helm-OS/` root | Build Ontario species PDFs |
-| `add_fish_to_rag.py` | `Helm-OS/` root | Ingest Ontario PDFs into RAG |
-| `build_fish_rag_knowledge_base.py` | `Helm-OS/` root | Scrape + build full Ontario corpus |
-| `fish_species_phase1.json` | `Helm-OS/` root | 200-species training plan (Phase 2) |
-| `train_fish_model_483species.py` | `Helm-OS/` root | Training script (workstation GPU) |
-| `captures.db` | `/opt/d3kos/data/marine-vision/` (Pi) | Detection + capture history |
-| Species PDFs | `/opt/d3kos/datasets/fish-rag/species_pdfs/` (Pi) | 22 Ontario species PDFs |
+| File | Location | Purpose | Status |
+|------|----------|---------|--------|
+| `fish_detector.py` | `deployment/features/camera-overhaul/pi_source/` → Pi `/opt/d3kos/services/marine-vision/` | Flask :8086 — detect + classify | ✓ Deployed |
+| `fish_detector.onnx` | Pi `/opt/d3kos/models/marine-vision/` | YOLOv8n detection | ✓ Working |
+| `fish_classifier_483species_best.onnx` | Pi `/opt/d3kos/models/fish-species/` | EfficientNet species (wrong dataset) | ⚠ Wrong species |
+| `species_list.json` | Pi `/opt/d3kos/models/fish-species/` | 483-class name map | ⚠ Australian fish |
+| `create_fish_species_pdfs.py` | `Helm-OS/` root | Build Ontario species PDFs | ✓ Script ready — run on Pi |
+| `add_fish_to_rag.py` | `Helm-OS/` root | Ingest Ontario PDFs into RAG | ✓ Script ready — run on Pi |
+| `build_fish_rag_knowledge_base.py` | `Helm-OS/` root | Scrape + build full Ontario corpus | ✓ Script ready — optional |
+| `fish_species_phase1.json` | `Helm-OS/` root | 200-species iNaturalist training plan | 📋 Phase 2 optional |
+| `train_fish_model_483species.py` | `Helm-OS/` root | EfficientNet training script | 📋 Phase 2 optional |
+| `captures.db` | Pi `/opt/d3kos/data/marine-vision/` | Detection + capture history | ✓ Active |
+| Species PDFs | Pi `/opt/d3kos/datasets/fish-rag/species_pdfs/` | 22 Ontario species PDFs | ✗ Run create script |
+| `gemini.env` | Pi `/opt/d3kos/services/gemini-nav/config/` | Gemini API key | ✓ Installed |
 
 ---
 
-## Known Issues and Gaps
+## Open Items
 
-| # | Issue | Impact | Fix |
-|---|-------|--------|-----|
-| 1 | EfficientNet-483 trained on marine species | Species name is wrong for Ontario fish | Phase 2: train freshwater model |
-| 2 | Stage 2 classifies full frame, not cropped fish | Less accurate even for in-set species | Crop to bounding box before classify |
-| 3 | RAG and ONNX classifier not connected | UI shows wrong species; voice AI has right data | Phase 2: Gemini Vision API for species ID from captured frame |
-| 4 | Ontario species PDFs may not be ingested on Pi | RAG won't answer Ontario fish questions | Run add_fish_to_rag.py on Pi |
+| # | Item | Priority | Path |
+|---|------|----------|------|
+| 1 | Connect Gemini Vision to fish captures for species ID | **High** | Add `/detect/identify` to fish_detector.py — awaiting authorization |
+| 2 | Run Ontario species RAG scripts on Pi | **Medium** | Run `create_fish_species_pdfs.py` then `add_fish_to_rag.py` on Pi |
+| 3 | Suppress ONNX species name in Marine Vision UI (show Gemini result instead) | Completes with item 1 |
+| 4 | Phase 2 (optional): Train freshwater ONNX model | **Low** | Workstation GPU — not blocking anything |
 
 ---
 
-*d3kOS Fish Detection Architecture — maintained in `deployment/docs/FISH_DETECTION_ARCHITECTURE.md`*
-*See also: `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md` for camera slot architecture*
+*d3kOS Fish Detection Architecture — `deployment/docs/FISH_DETECTION_ARCHITECTURE.md`*
+*See also: `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md`*
