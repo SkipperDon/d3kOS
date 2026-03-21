@@ -99,7 +99,7 @@
 }
 .msg-meta {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink3);
   margin-top: 4px;
   padding: 0 4px;
@@ -457,15 +457,26 @@ function addUserMsg(text) {
   _scrollBottom();
 }
 
-function addAIMsg(text) {
+function addAIMsg(text, source) {
   _removeWelcome();
   const inner = document.getElementById('chat-inner');
   const div = document.createElement('div');
   div.className = 'msg ai';
-  div.innerHTML = '<div class="msg-bubble">' + _esc(text) + '</div><div class="msg-meta">Helm \u00b7 ' + _ts() + '</div>';
+  const badge = source ? ' &middot; <span style="color:var(--g-txt);font-weight:700;font-size:18px">' + source + '</span>' : '';
+  div.innerHTML = '<div class="msg-bubble">' + _esc(text) + '</div><div class="msg-meta">Helm \u00b7 ' + _ts() + badge + '</div>';
   inner.appendChild(div);
   _scrollBottom();
   return div;
+}
+
+/* Returns true if a RAG answer is substantive enough to show */
+function _ragUseful(answer) {
+  if (!answer || answer.trim().length < 30) return false;
+  const lc = answer.toLowerCase();
+  const noInfo = ['no information', "don't have", "i don't", 'not found', 'no relevant',
+                  'unable to find', 'no data', 'cannot find', 'no results', 'no match',
+                  'nothing found', 'no documents'];
+  return !noInfo.some(p => lc.includes(p));
 }
 
 function addThinking() {
@@ -555,24 +566,52 @@ async function sendMessage() {
     return;
   }
 
-  /* Fall through to RAG */
+  /* Fall through to RAG → Gemini */
   _busy = true;
   document.getElementById('send-btn').disabled = true;
   const thinking = addThinking();
 
   try {
-    const res  = await fetch('/ai/query', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ question: text, provider: 'rag' }),
-    });
-    const data = await res.json();
-    thinking.remove();
-    if (data.error) addAIMsg('\u26a0\ufe0f ' + data.error);
-    else            addAIMsg(data.answer || '(no response)');
-  } catch (e) {
-    thinking.remove();
-    addAIMsg('\u26a0\ufe0f Could not reach the AI service. Check that the server is running.');
+    /* Step 1 — RAG: search boat manuals */
+    let ragAnswer = null;
+    try {
+      const ragRes  = await fetch('/ai/query', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ question: text, provider: 'rag' }),
+      });
+      const ragData = await ragRes.json();
+      if (!ragData.error && _ragUseful(ragData.answer)) {
+        ragAnswer = ragData.answer;
+      }
+    } catch (_) { /* RAG unavailable — fall through */ }
+
+    if (ragAnswer) {
+      thinking.remove();
+      addAIMsg(ragAnswer, 'MANUAL');
+      return;
+    }
+
+    /* Step 2 — Gemini proxy (Gemini → Ollama fallback built in at :3001) */
+    try {
+      const gemRes  = await fetch('http://localhost:3001/ask', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: text }),
+      });
+      const gemData = await gemRes.json();
+      thinking.remove();
+      if (gemData.error) {
+        addAIMsg('\u26a0\ufe0f ' + gemData.error);
+      } else {
+        const src = gemData.source === 'ollama' ? 'AI' : 'GEMINI';
+        addAIMsg(gemData.response || '(no response)', src);
+      }
+    } catch (_) {
+      thinking.remove();
+      addAIMsg('\u26a0\ufe0f Could not reach AI service. Check that d3kos-gemini is running on :3001.');
+    }
+
   } finally {
     _busy = false;
     document.getElementById('send-btn').disabled = false;

@@ -24,6 +24,14 @@ load_dotenv(Path(__file__).parent.parent / 'dashboard' / 'config' / 'api-keys.en
 
 app = Flask(__name__)
 
+
+@app.after_request
+def add_cors(response):
+    response.headers['Access-Control-Allow-Origin']  = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    return response
+
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 GEMINI_MODEL   = os.getenv('GEMINI_MODEL',   'gemini-2.5-flash')
 OLLAMA_URL     = os.getenv('OLLAMA_URL',     'http://192.168.1.36:11434')
