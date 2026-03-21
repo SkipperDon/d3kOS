@@ -44,7 +44,7 @@ These documents explain what problem was solved and exactly how the solution wor
 | `deployment/docs/VOICE_QUERY_SPEED.md` | Voice query 7.6s → 0.9s — lazy PDF import + bulk Signal K fetch |
 | `deployment/docs/MARINE_VISION_CAMERA_SYSTEM.md` | **[SUPERSEDED — 2026-03-11]** Original two-camera cameras.json system. Replaced by camera-overhaul. Read-only history. |
 | `deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md` | **[ACTIVE]** Slot/Hardware camera architecture — dynamic 1–20 camera management, slots.json + hardware.json, frame buffer, discovery scan, Settings UI camera management tab, Marine Vision dynamic tile renderer, fish detector multi-slot tagging |
-| `deployment/docs/FISH_DETECTION_ARCHITECTURE.md` | **[NEW 2026-03-21]** Fish detection two-track architecture: ONNX pipeline (YOLOv8n + EfficientNet-483) vs. RAG/PDF Ontario species knowledge base. NMS fix, log-softmax confidence fix, species note, Phase 2 freshwater model plan. |
+| `deployment/docs/FISH_DETECTION_ARCHITECTURE.md` | **[v1.1.0 — 2026-03-21]** Fish detection two-track architecture: ONNX pipeline (YOLOv8n + EfficientNet-483) vs. RAG/PDF Ontario species knowledge base. NMS fix, log-softmax confidence fix, Gemini Vision on-demand species ID, Phase 2 freshwater model plan. |
 | `deployment/docs/VERIFY_AGENT.md` | Independent code reviewer on TrueNAS VM — how it works, endpoints |
 | `deployment/docs/WORKFLOW.md` | Ollama executor workflow — how features are built via Ollama |
 | `deployment/docs/EXPORT_BOOT_RACE_FIX.md` | `d3kos-export-boot.service` FAILED since 2026-03-04 — root cause: `set -e` + `curl` exit 7 before Flask bound port 8094. Fix: `nc -z` port-ready loop, removed `set -e`, guarded curl/jq. Resolved 2026-03-11. |

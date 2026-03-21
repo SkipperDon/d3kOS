@@ -128,6 +128,75 @@ ROOT CAUSE NOTE: MLS=0 — /project:session-start was broken at session start (m
 
 ---
 
+## Session — 2026-03-21 — Fish Detection: Gemini Vision + 429 Rate Limit Architectural Fix
+
+**Goal:** Fix fish detection system to correctly identify Ontario freshwater species (walleye, pike, perch, bass); fix persistent Gemini Vision 429 rate limit errors caused by automatic API calls on every detection event.
+
+**Tasks completed:**
+
+*Prior context (pre-summary):*
+- Diagnosed "11 fish — -34.2%" root causes: (1) no NMS applied → duplicate bounding boxes; (2) EfficientNet-483 outputs log-softmax but code displayed raw values as percentage
+- Added `compute_iou()` + `apply_nms(iou_threshold=0.4)` to fish_detector.py — collapses duplicate boxes; verified: 2 fish = 2 boxes
+- Fixed `classify_species()`: applied `np.exp(log_probs)` before computing top-3 predictions — confidence now displays as positive percentage
+- Confirmed EfficientNet-483 is trained on Australian/Indo-Pacific fish — wrong model for Ontario; ONNX kept for detection only, species output suppressed
+- Confirmed Ontario fish RAG knowledge base (22-species PDFs) is text-only / voice AI only — does NOT do visual ID from camera frames. Two separate systems.
+- Added Gemini Vision species ID pipeline: `_load_gemini_key()`, `_call_gemini_api()`, `identify_species_gemini()` with 15s cooldown + single 8s retry on 429
+- Updated `init_db()`: added `gemini_species`, `gemini_response` columns
+- Created `deployment/docs/FISH_DETECTION_ARCHITECTURE.md` v1.1.0: full architecture audit
+
+*This continuation:*
+- Root cause of persistent 429: `identify_species_gemini()` was called automatically inside `detect_frame()` on every fish detection — even 2 button presses triggered multiple API calls
+- Removed Gemini from `detect_frame()` — detect returns fish count + capture_id only
+- Added `POST /detect/identify/<capture_id>` endpoint: loads JPEG from DB, calls Gemini once, updates captures.db
+- Updated marine-vision.html: `runDetection()` shows "Identify Species" button per capture; `identifyCapture()` with full retry support (low confidence → "Try Again" enabled; high confidence → button locks; rate limit → always re-enables)
+
+**Files changed:**
+- `deployment/features/camera-overhaul/pi_source/fish_detector.py` — NMS, log-softmax fix, Gemini Vision pipeline, on-demand endpoint
+- `deployment/d3kOS/dashboard/templates/marine-vision.html` — Identify Species button + retry UX
+- `deployment/docs/FISH_DETECTION_ARCHITECTURE.md` — NEW v1.1.0
+- `PROJECT_CHECKLIST.md` — items 10 (Gemini ID complete) and 11 (Ontario RAG scripts pending) added
+
+**Decisions:**
+- Gemini Vision is correct Ontario species ID path — uses existing API key, no model training required
+- RAG PDFs and Gemini Vision are separate systems — RAG = voice AI text queries; Gemini = visual ID from captures
+- On-demand identification is correct architecture — free tier ~10 RPM makes auto-calling on each frame unsustainable
+- Retry UX: angler taps until satisfied — matches Don's stated workflow
+
+**Release Package Manifest:** Not applicable — no Pi deployment this session.
+To deploy: SCP `fish_detector.py` → Pi `/opt/d3kos/services/marine-vision/` and `marine-vision.html` → Pi `/opt/d3kos/services/dashboard/templates/`; restart both services.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-21 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+QUALITY METRICS — 2026-03-21
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+**Open items for next session:**
+- Deploy fish_detector.py + marine-vision.html to Pi; test end-to-end
+- Ontario fish species RAG: run create_fish_species_pdfs.py + add_fish_to_rag.py on Pi (checklist item 11)
+- Marine Vision UI expectations gap (checklist item 9)
+- Marine Vision plug-and-play camera wizard (checklist item 8)
+- v0.9.2 UAT
+- MEMORY.md trim (342 lines, limit 200 — truncating)
+
+**Sign-off:** Don — silence = approval
+
+---
+
 ## Session — 2026-03-20 — Checklist Consolidation & Worktree Audit
 
 **Tasks completed:**

@@ -497,11 +497,8 @@ def detect_frame():
     if fish_detected:
         species_name, species_confidence, species_top3 = classify_species(img)
 
-    # Step 3: Gemini Vision species identification (primary species display)
-    gemini_result = None
-    if fish_detected:
-        print(f"Fish detected ({fish_confidence:.2%}) — sending capture to Gemini Vision...")
-        gemini_result = identify_species_gemini(img)
+    # Step 3: Gemini Vision — NOT called automatically.
+    # User calls POST /detect/identify/<capture_id> on demand to avoid rate limits.
 
     # Person detection (disabled for now)
     person_detected = False
@@ -520,7 +517,7 @@ def detect_frame():
             species_confidence,
             species_top3,
             slot_id=slot_id,
-            gemini_result=gemini_result
+            gemini_result=None
         )
 
     return jsonify({
@@ -531,7 +528,6 @@ def detect_frame():
         'person_confidence': person_confidence,
         'fish_detected': fish_detected,
         'fish_confidence': fish_confidence,
-        'gemini_id': gemini_result,
         'capture_triggered': capture_triggered,
         'capture_id': capture_id
     })
@@ -640,6 +636,43 @@ def get_capture_image(capture_id):
         return jsonify({'error': 'Image not found'}), 404
 
     return send_file(row[0], mimetype='image/jpeg')
+
+@app.route('/detect/identify/<int:capture_id>', methods=['POST'])
+def identify_capture(capture_id):
+    """
+    On-demand species identification for a saved capture via Gemini Vision.
+    Called by the angler when they want a species ID — not automatically.
+    Supports retries: call again if first result was low confidence or Unknown.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('SELECT image_path FROM captures WHERE id = ?', (capture_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({'error': 'Capture not found'}), 404
+    if not os.path.exists(row[0]):
+        return jsonify({'error': 'Image file not found on disk'}), 404
+
+    img = cv2.imread(row[0])
+    if img is None:
+        return jsonify({'error': 'Failed to decode capture image'}), 400
+
+    result = identify_species_gemini(img)
+
+    # Persist result to DB — overwrites prior attempt so UI always shows latest
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute(
+        'UPDATE captures SET gemini_species = ?, gemini_response = ? WHERE id = ?',
+        (result.get('common_name'), json.dumps(result), capture_id)
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({'capture_id': capture_id, 'gemini_id': result})
+
 
 @app.route('/detect/reload', methods=['POST'])
 def reload_slots():
