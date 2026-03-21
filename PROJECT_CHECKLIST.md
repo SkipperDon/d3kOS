@@ -137,6 +137,7 @@ On-boat verification still pending:
 | 5 | SQS calculation block — add to CLAUDE.md session-close | Claude | `[ ]` AAO Section 19 |
 | 6 | RAG re-ingest after each Pi deployment | Claude (recurring) | `[~]` Must run after every deploy session |
 | 7 | Remove git worktrees (v0.9.2, v0.9.2.1, v0.9.3) from disk | Claude | `[ ]` `build-v0.9.2.1` has 5 unmerged commits — decide: merge or discard before removing |
+| 8 | Marine Vision — plug-and-play camera setup wizard | Claude | `[ ]` **Confirmed solution 2026-03-21:** Two-layer approach. Layer 1 (auto): on scan, read ONVIF device name from each camera — if name matches a known position (Bow/Helm/Port/Starboard) auto-assign silently, no wizard needed. Layer 2 (fallback): Initial Setup wizard shows live thumbnail per discovered camera → user taps image and selects position from dropdown → assigned by MAC (IP-change safe). Settings camera section also needs: correct API field names (currently reads slot.id/slot.name/slot.camera_id — API returns slot_id/label/hardware_id), scan button, and assign controls for post-setup changes. |
 
 ---
 
