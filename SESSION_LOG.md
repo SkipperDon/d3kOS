@@ -5785,3 +5785,118 @@ Trend                    : Improving. 2026-03-21B anomaly (plan approval miss)
 - o-charts activation (Don's task)
 - GPS outdoor verification (Don's task)
 ---
+
+## Session 2026-03-22
+
+**Goal:** Signal K v2.23.0 upgrade, boatlog voice transcription fix, Settings doc overlay.
+
+**Completed:**
+- Session start: committed prior session's uncommitted changes (aa8de90) — helm-assistant nav routing, 500MB upload limit, nginx config, ai service files
+- Sprint 1 (signalk-forward-watch): added PROJECT_CHECKLIST.md + MEMORY.md with SK v2.23.0 compatibility tasks. Commit 205c190.
+- Researched SK v2.23.0 unknowns: auth (non-breaking for unauthenticated clients), unit preferences (non-breaking — values stay SI). Plan simplified from 9 steps to 6.
+- Added Item 17 to Helm-OS PROJECT_CHECKLIST.md — SK upgrade plan with revised scope.
+- Sprint 2 (SK upgrade): fixed remote_api.py port bug (:3000→:8099, ffbef9b), upgraded SK v2.22.1→v2.23.0 on Pi (sudo npm install -g), verified AvNav patch survives, smoke test passed.
+- Item 18 (boatlog voice-to-text): root cause vosk-transcribe CLI not installed. Fix: replaced subprocess CLI call with Vosk Python API + ffmpeg webm→16kHz WAV conversion. Deployed. Commit 0bb269e.
+- Items 19+20 (Settings doc overlay): openDoc() was showing toast with file path only. Fix: Flask GET /docs/<name> route serving .md from /opt/d3kos/docs/, full-screen overlay with inline markdown renderer, day/night theme via CSS vars (--bg/--ink/--g-txt), 48px close button, Bebas Neue/Chakra Petch fonts. Three docs deployed to Pi. Commit e7801d2.
+
+**Decisions:**
+- SK security confirmed off on Pi (no security.json, dummysecurity) — no token work required
+- SK installs globally (/usr/lib/node_modules/) not in ~/.signalk — upgrade command is sudo npm install -g
+- Markdown rendered client-side with inline JS (~60 lines) — no CDN dependency, works offline on boat
+- Doc overlay inherits data-night theme attribute automatically via CSS custom properties — no extra JS needed
+
+**Files changed (Helm-OS repo):**
+| File | Change | Commit |
+|------|--------|--------|
+| SESSION_LOG.md | Prior session entry + quality metrics | aa8de90 |
+| deployment/d3kOS/dashboard/templates/helm-assistant.html | Nav query routing (_isNavQuery) | aa8de90 |
+| deployment/d3kOS/dashboard/templates/upload-documents.html | 50MB→500MB limit | aa8de90 |
+| deployment/nginx/sites-available-default | client_max_body_size 500M | aa8de90 |
+| deployment/v0.9.2/nginx/d3kos-nginx.conf | client_max_body_size 500M | aa8de90 |
+| deployment/v0.9.2/nginx/default.conf | client_max_body_size 500M | aa8de90 |
+| deployment/d3kOS/ai/document_processor.py | New file (untracked, now committed) | aa8de90 |
+| deployment/d3kOS/ai/upload_api.py | New file (untracked, now committed) | aa8de90 |
+| PROJECT_CHECKLIST.md | Item 17 plan, items 18-20 added, items 17/18/19/20 closed | fae52f6, e59e626, 7c71eed, 2b1a5b5, e698cf8 |
+| deployment/v0.9.4/pi_source/remote_api.py | SK port :3000→:8099 | ffbef9b |
+| deployment/features/boatlog-voice-note/pi_source/boatlog-export-api.py | Vosk Python API replaces CLI | 0bb269e |
+| deployment/d3kOS/dashboard/app.py | GET /docs/<name> route | e7801d2 |
+| deployment/d3kOS/dashboard/templates/settings.html | Doc overlay + openDoc() | e7801d2 |
+
+**Files changed (signalk-forward-watch repo):**
+| File | Change | Commit |
+|------|--------|--------|
+| PROJECT_CHECKLIST.md | New — SK v2.23.0 compat tasks | 205c190 |
+| MEMORY.md | New — SK v2.23.0 stable facts | 205c190 |
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| remote_api.py | /opt/d3kos/services/remote/ | base | SK port :3000→:8099 |
+| signalk-server (npm) | /usr/lib/node_modules/signalk-server/ | base | v2.22.1→v2.23.0 |
+| boatlog-export-api.py | /opt/d3kos/services/boatlog/ | base | Vosk Python API transcription |
+| app.py | /opt/d3kos/services/dashboard/ | base | GET /docs/<name> route |
+| settings.html | /opt/d3kos/services/dashboard/templates/ | base | Doc overlay |
+| AVNAV_OCHARTS_INSTALL.md | /opt/d3kos/docs/ | base | New doc file |
+| AVNAV_PLUGINS.md | /opt/d3kos/docs/ | base | New doc file |
+| OPENPLOTTER_REFERENCE.md | /opt/d3kos/docs/ | base | New doc file |
+
+- Pre-install steps: none
+- Post-install steps: d3kos-remote-api restarted, d3kos-boatlog-api restarted, d3kos-dashboard restarted, signalk restarted — all done this session
+- Rollback: git checkout <prior-commit> -- <file> + redeploy + restart per service; SK rollback: sudo npm install -g signalk-server@2.22.1
+- Health check: curl http://localhost:8099/signalk (SK), curl http://localhost:8095/api/boatlog/status, curl http://localhost:3000/docs/AVNAV_OCHARTS_INSTALL
+
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-22 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
+QUALITY METRICS — 2026-03-22
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  Sprint 1: 3/3 tasks in scope. Sprint 2: 5/5 tasks in scope.
+  Autonomous tasks (18/19/20) all operator-directed.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Sprint 1: 3 stop gates — all honored.
+  Sprint 2: 5 stop gates — all honored.
+  Item 18: plan presented, waited for proceed. ✅
+  Item 19: options presented, selection waited for, day/night feedback
+  incorporated before proceeding. ✅
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (session-start run, all 3 files read)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+REC_score : 100
+UAC_score : 100
+
+SQS = (100 × 0.30) + (100 × 0.30) + (100 × 0.15) + (100 × 0.10) + (100 × 0.15)
+    = 30 + 30 + 15 + 10 + 15
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+TREND ANALYSIS (last 6 scored sessions):
+  2026-03-17     : 100/100
+  2026-03-21     : 100/100
+  2026-03-21B    : 87.4/100
+  2026-03-21C    : 100/100
+  2026-03-21D    : 100/100
+  2026-03-22     : 100/100
+─────────────────────────────────────────────────────
+Average (last 6) : 97.9/100
+Lowest metric    : SGCR — only metric to drop below 100 (2026-03-21B only)
+Trend            : Stable-high. Four consecutive 100/100 sessions.
+─────────────────────────────────────────────────────
+
+**Pending:**
+- RAG re-ingest (recurring — after Pi deployments)
+- UAT: 5 metric + 5 imperial users
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- Camera on-boat tests (on-boat dependency)
+- Marine Vision UI rebuild (item 9 — Don to describe expected layout)
+- SQS calculation block in CLAUDE.md (item 5)
+- signalk-forward-watch: test v2.23.0 compatibility + unit preferences framework
+---
