@@ -5688,3 +5688,100 @@ Primary target   : SGCR — the only metric that has dropped below 100. Root cau
 - Camera setup wizard (item 8)
 - SQS calculation block in CLAUDE.md (item 5)
 ---
+
+## Session 2026-03-21D — Camera Setup Wizard
+
+**Goal:** Design and build the camera setup wizard — scan, thumbnail preview, position assignment, role presets — accessible from Settings §6 and linked from Initial Setup Step 6.
+
+**Completed:**
+- Solution plan produced: two-layer architecture (auto-assign if already configured, visual wizard for unassigned cameras). Confirmed: N cameras (not fixed at 4), preset roles, free-text position names with suggestions, thumbnails before assignment, placeholder acceptable.
+- `camera_stream_manager.py` — new endpoint `GET /camera/frame/hw/<hardware_id>`: serves JPEG frame by hardware_id directly from frame buffer, before slot assignment. Falls back to offline placeholder if no frame yet. Required for wizard thumbnails.
+- `settings.html` §6 Camera Setup — full replacement:
+  - Scan button: POST /camera/scan → 3s wait → GET /camera/hardware → splits assigned/unassigned
+  - Assigned camera cards: label, model, IP, active roles, Unassign button per slot
+  - Unassigned camera wizard cards: live thumbnail (/camera/frame/hw/<id>), model/IP/MAC, free-text position input with datalist suggestions (Bow, Helm, Port, Starboard, Stern, Anchor, Cockpit, Engine Room), role preset badge updates as user types
+  - Role presets: Bow → forward_watch:true, Helm → fish_detection:true, all others → display_in_grid:true only
+  - Assign All: creates slot (POST /camera/slots) + assigns hardware (POST /camera/slots/<id>/assign) per card in sequence
+  - Fixed broken field names: slot.id→slot.slot_id, slot.name→slot.label, slot.camera_id→slot.hardware_id, slot.roles array→object entries
+  - Loads assigned list on page open automatically
+- `setup.html` Step 6 (Done) — Camera Setup prompt added: green card with "Set Up Cameras" button linking to /settings#s-camera. User can configure cameras before launch or any time from Settings.
+- Deployed all three files to Pi. Both services restarted and confirmed active. New endpoint verified: HTTP 200 on /camera/frame/hw/<hardware_id>.
+
+**Decisions:**
+- Primary home = Settings §6, not a wizard step in Initial Setup — cameras can be added post-install at any time, so Settings is the right persistent location
+- Initial Setup only gets a prompt/link, not a full embedded wizard — keeps the onboarding flow clean
+- Position names are free text with suggestions — not a fixed dropdown. User can create "Engine Room", "Anchor", custom names
+- Role presets are suggestions shown as badges — user sees what will be set, changes position name to change preset
+- slot_id is auto-generated from position name: lowercase, non-alphanumeric → underscore (e.g. "Engine Room" → "engine_room")
+
+**Files changed (repo — all committed, commit 6d0d913):**
+| File | Change |
+|------|--------|
+| `deployment/features/camera-overhaul/pi_source/camera_stream_manager.py` | GET /camera/frame/hw/<hardware_id> endpoint added |
+| `deployment/d3kOS/dashboard/templates/settings.html` | §6 Camera Setup full wizard replacement |
+| `deployment/d3kOS/dashboard/templates/setup.html` | Camera Setup prompt added to Step 6 Done screen |
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `camera_stream_manager.py` | `/opt/d3kos/services/marine-vision/` | base | New /camera/frame/hw/<hardware_id> endpoint |
+| `settings.html` | `/opt/d3kos/services/dashboard/templates/` | base | §6 camera wizard replacement |
+| `setup.html` | `/opt/d3kos/services/dashboard/templates/` | base | Camera Setup prompt on Done step |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-camera-stream d3kos-dashboard` — done
+- Rollback: `git checkout HEAD~1 -- <file>` + redeploy + restart
+- Health check: `curl http://localhost:8084/camera/frame/hw/<any_hardware_id>` returns 200; Settings §6 loads camera list on open
+
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-21 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
+QUALITY METRICS — 2026-03-21D
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  Tasks: plan, build endpoint, build settings wizard, build setup prompt,
+  deploy, verify. All in scope. 0 out of scope.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  1 stop gate: plan presented, operator authorized "proceed to build and deploy". Honored.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (loaded via context continuation)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+REC_score : 100
+UAC_score : 100
+
+SQS = (100 × 0.30) + (100 × 0.30) + (100 × 0.15) + (100 × 0.10) + (100 × 0.15)
+    = 30 + 30 + 15 + 10 + 15
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+TREND ANALYSIS (last 5 scored sessions):
+  Session 2026-03-17     : 100/100
+  Session 2026-03-21     : 100/100
+  Session 2026-03-21B    : 87.4/100
+  Session 2026-03-21C    : 100/100
+  Session 2026-03-21D    : 100/100
+─────────────────────────────────────────────────────
+Average (last 5)         : 97.5/100
+Lowest metric average    : SGCR — only metric to drop below 100 (2026-03-21B)
+Trend                    : Improving. 2026-03-21B anomaly (plan approval miss)
+                           not repeated in subsequent sessions. Section 21 now
+                           structural in both CLAUDE.md files.
+─────────────────────────────────────────────────────
+
+**Pending:**
+- RAG re-ingest (recurring — after every Pi deployment)
+- Marine Vision UI rebuild (item 9)
+- Ontario fish species RAG scripts (item 11 — Don's task)
+- SQS calculation block in CLAUDE.md (item 5)
+- slots.json + hardware.json Pi changes still need syncing to repo
+- UAT: 5 metric + 5 imperial users
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+---
