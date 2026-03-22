@@ -237,17 +237,38 @@ def export_boatlog():
             'message': str(e)
         }), 500
 
+_MIME_EXT = {
+    'audio/webm':  '.webm',
+    'audio/ogg':   '.ogg',
+    'audio/mp4':   '.mp4',
+    'audio/mpeg':  '.mp3',
+    'audio/wav':   '.wav',
+    'audio/x-wav': '.wav',
+}
+
+
 @app.route('/api/boatlog/voice-note', methods=['POST'])
 def save_voice_note():
     """Save voice note and transcribe it"""
     if 'audio' not in request.files:
         return jsonify({'success': False, 'error': 'No audio file'}), 400
-    
+
     audio = request.files['audio']
-    
-    # Save audio file
+
+    # Reject empty uploads — browser recorded nothing (e.g. unsupported codec)
+    audio.stream.seek(0, 2)
+    size = audio.stream.tell()
+    audio.stream.seek(0)
+    if size == 0:
+        logger.warning('Voice note upload rejected: 0-byte file')
+        return jsonify({'success': False, 'error': 'Empty audio — nothing was recorded. Check browser microphone permissions.'}), 400
+
+    # Use MIME type to pick correct extension so ffmpeg detects format reliably
+    mime = (audio.mimetype or 'audio/webm').split(';')[0].strip().lower()
+    ext  = _MIME_EXT.get(mime, '.webm')
+
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'voice_note_{ts}.webm'
+    filename = f'voice_note_{ts}{ext}'
     path = os.path.join(VOICE_NOTE_DIR, filename)
     audio.save(path)
     
