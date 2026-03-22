@@ -6009,3 +6009,76 @@ Trend            : Stable-high. This session's SQS drop is entirely attributable
 - SQS calculation block in CLAUDE.md (item 5)
 - signalk-forward-watch: test v2.23.0 compatibility + unit preferences framework
 ---
+
+## Session 2026-03-22C — Signal K / Forward Watch Status Check + npm v0.2.1
+**Goal:** Verify Signal K and signalk-forward-watch are working; publish corrected v0.2.1 to npm
+
+**Completed:**
+- Completed session-close from 2026-03-22B (MEMORY.md updated, governance files committed d895479)
+- Verified Signal K v2.23.0 running healthy on Pi — active 2h+, all API endpoints 200 OK
+- Verified signalk-forward-watch v0.2.0 loaded cleanly on SK 2.23.0 — no errors, no breaking changes
+- Confirmed forward-watch correctly configured on bow camera (10.42.0.100, Reolink RLC-810A) — not helm camera
+- Clarified KIP: bundled with SK server, not used by d3kOS; degraded due to Node 20 vs required 22 for sqlite
+- Fixed three README inaccuracies: SK version (2.22.1→2.23.0), detection interval default (30→300s in config table and troubleshooting)
+- Added .npmignore exclusions: MEMORY.md, PROJECT_CHECKLIST.md, export_onnx.bat (were being published to npm)
+- Bumped version to 0.2.1, published signalk-forward-watch@0.2.1 to npm
+- Added Signal K v2.23.0 compatibility verification statement to README (Compatibility section)
+- Added README accuracy todo to PROJECT_CHECKLIST.md section 4.9
+
+**Decisions:**
+- Forward watch bow camera assignment confirmed correct — no change needed
+- KIP left as-is — not wired into d3kOS, Node 20 sqlite issue is non-critical
+- ONNX model retained in npm package (12.3MB) — README Step 2 model download instructions now redundant; todo logged to fix in future patch
+
+**Files changed:**
+| File | Repo | Change |
+|------|------|--------|
+| README.md | signalk-forward-watch | SK version, detection interval, troubleshooting, compatibility section added |
+| package.json | signalk-forward-watch | Version 0.2.0 → 0.2.1 |
+| .npmignore | signalk-forward-watch | Excluded MEMORY.md, PROJECT_CHECKLIST.md, export_onnx.bat |
+| PROJECT_CHECKLIST.md | Helm-OS | README accuracy todo added to section 4.9 |
+| MEMORY.md | ~/.claude memory | Boatlog voice note status updated; boatlog architecture facts section added |
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-22 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+No Pi deployment this session — read-only SSH investigation. No Release Package Manifest required.
+
+QUALITY METRICS — 2026-03-22C
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS — continuation session after context compaction; session-start not re-run. Recurring pattern for continuation sessions.
+
+TREND ANALYSIS (last 5 scored sessions):
+  2026-03-21C    : 100/100
+  2026-03-21D    : 100/100
+  2026-03-22     : 100/100
+  2026-03-22B    : 90/100
+  2026-03-22C    : 90/100
+─────────────────────────────────────────────────────
+Average (last 5) : 96.0/100
+Lowest metric    : MLS — 0 in both recent continuation sessions. Primary watch metric.
+Trend            : Stable-high. Both 90s are continuation sessions (MLS=0). All execution metrics 100.
+─────────────────────────────────────────────────────
+
+**Pending:**
+- signalk-forward-watch: push README + commits to GitHub (Don's task — when ready)
+- signalk-forward-watch: fix README Step 2 (model download now redundant — bundled in package)
+- UAT: 5 metric + 5 imperial users
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- Camera on-boat tests (on-boat dependency)
+---

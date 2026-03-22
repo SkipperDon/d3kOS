@@ -96,12 +96,14 @@ Full hands-free voice pipeline deployed on Pi. Vosk wake word detection, Piper T
 **Status: COMPLETE** — `d3kos-export-boot.service` race resolved with `set -e` + `curl` exit 7 fix. See `deployment/docs/EXPORT_BOOT_RACE_FIX.md`.
 
 ### 4.9 signalk-forward-watch (npm Plugin)
-**Status: COMPLETE** — v0.2.0 published to GitHub + npm 2026-03-11. Worker thread architecture. 21,719 labeled images, YOLOv8n model.
+**Status: COMPLETE** — v0.2.1 published to npm 2026-03-22. SK v2.23.0 compatibility verified on Pi. Worker thread architecture. 21,719 labeled images, YOLOv8n model.
 
 | Open item | Status |
 |-----------|--------|
 | Add download-on-first-run (auto-fetch model from GitHub Releases) | `[ ]` |
 | Test on OpenPlotter | `[ ]` |
+| Fix README accuracy — Step 2 (model download) is now unnecessary since model is bundled in npm package; remove or update that step | `[ ]` |
+| Push v0.2.1 commits + README to GitHub | `[ ]` Don's task — when ready |
 
 ---
 
