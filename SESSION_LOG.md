@@ -5900,3 +5900,112 @@ Trend            : Stable-high. Four consecutive 100/100 sessions.
 - SQS calculation block in CLAUDE.md (item 5)
 - signalk-forward-watch: test v2.23.0 compatibility + unit preferences framework
 ---
+
+## Session 2026-03-22B — Boatlog Voice Note Full Fix
+
+**Goal:** Fix boatlog voice note: recording not capturing, "API unavailable transcript not saved", export CSV not working.
+
+**Completed:**
+- Identified the correct page: kiosk runs at `localhost:3000` (Flask), not nginx port 80. The actual boatlog page is Flask template `boat-log.html` at route `/boat-log` — not the standalone `/var/www/html/boatlog.html` that was investigated first.
+- Client fix (boat-log.html Flask template):
+  - Added `MediaRecorder.isTypeSupported()` MIME type probe — Pi ARM64 Chromium may silently record 0 bytes with default codec. Now probes webm/opus → webm → ogg/opus → ogg → mp4 in order.
+  - Added voice service pause (`localhost:8101/api/voice/pause`) before `getUserMedia` — HELM voice assistant was not being paused during recording; user's speech could trigger wake-word detection.
+  - Added voice service resume in `onstop` and mic error paths.
+  - Passes correct MIME type and file extension to FormData.
+- Server fix (boatlog-export-api.py) — three bugs:
+  1. **CORS missing**: browser at port 3000 sent POST to port 8095 — server processed and responded but browser CORS check blocked JavaScript from reading the response → fetch() rejected → catch → "(API unavailable — transcript not saved)". Fix: `flask-cors` CORS() wrapper added. All three API endpoints now return `Access-Control-Allow-Origin: http://localhost:3000`.
+  2. **Vosk loaded per request**: Vosk model load takes ~8 seconds. Flask sits behind nginx with `proxy_read_timeout 30s`. A recording attempt triggered Vosk load, taking 45 seconds total — nginx returned 504 to browser, transcript lost even when audio was valid. Fix: `_get_vosk_model()` singleton loads model at service startup; cached in global. Subsequent transcriptions complete in <2 seconds.
+  3. **Voice notes not in SQLite DB**: export queries `boatlog_entries` table. Voice note endpoint previously only saved audio files — never INSERTed to DB. Export CSV returned only pre-existing entries, never voice notes. Fix: INSERT into `boatlog_entries` after transcription.
+- Tests: 3/3 passing (test_empty_audio_rejected, test_ogg_upload_saved_with_ogg_extension, test_missing_audio_field_returns_400).
+- Verified end-to-end: Don recorded voice note → transcript captured → entry appeared in list → export CSV contained the entry (3 DB entries returned). Confirmed by service logs at 12:22:02 (voice-note saved, UUID `3c881e6b`) and 12:22:27 (export 3 entries, 200 OK).
+
+**Decisions:**
+- CORS fix uses `flask-cors` library (already installed on Pi) — simplest correct solution. Alternative (nginx proxy via same origin) rejected: Flask at port 3000 doesn't have `/api/boatlog/` routes so relative URL fetches would 404.
+- Vosk singleton pattern: model is ~200MB, load cost ~8s. Caching is the only way to beat the 30s nginx timeout. Model is not mutable per request so singleton is safe.
+- DB persist: voice note content stored as transcript text (if available) or `(voice note — filename)` fallback. This ensures export includes all voice activity.
+- Root cause of "navigates to Helm": HELM voice service was NOT paused before recording. User's speech during recording was audible to the wake-word detector (Vosk ALSA-based). When recording stopped and voice resumed, HELM activated ("Aye Aye Captain" spoken). User perceived this as HELM taking over. Fix: pause voice before mic opens, resume after stop.
+
+**Files changed (repo — all committed):**
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/features/boatlog-voice-note/pi_source/boatlog-export-api.py` | flask-cors, Vosk singleton, DB INSERT | 5eb0782 |
+| `deployment/d3kOS/dashboard/templates/boat-log.html` | MIME detection, voice pause/resume | d2a5962 |
+| `deployment/features/boatlog-voice-note/tests/test_voice_note_api.py` | TDD test file (3 tests, was in repo from prev session) | 386eb41 |
+| `deployment/v0.9.2/pi_source/boatlog.html` | MIME detection (standalone file — not active in kiosk, improved as side-effect of investigation) | 386eb41 |
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `boatlog-export-api.py` | `/opt/d3kos/services/boatlog/` | base | flask-cors, Vosk caching, DB INSERT |
+| `boat-log.html` | `/opt/d3kos/services/dashboard/templates/` | base | MIME detection, voice pause/resume |
+| `/var/www/html/boatlog.html` | `/var/www/html/` | base | MIME detection (standalone — not used by kiosk) |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-boatlog-api d3kos-dashboard` — done this session
+- Rollback: `git checkout 386eb41 -- deployment/features/boatlog-voice-note/pi_source/boatlog-export-api.py` + redeploy + restart
+- Health check: `curl http://localhost:8095/api/boatlog/status` returns 200 with CORS header; record voice note → transcript appears → entry in DB → export CSV contains it
+
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-22 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
+QUALITY METRICS — 2026-03-22B
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  Scope: fix boatlog voice note bug (record, transcript, export). All work
+  traceable to stated bug. Wrong-file investigation was a legitimate diagnostic
+  path; fix applied to correct file once identified.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. Medium-risk Pi deploys stated before executing with impact
+  and rollback paths. No required stop gate missed.
+REC  (Recovery Event Count)        : 0
+  No git restore, no backup rollback, no manual corrections.
+MLS  (Memory Load Success)         : 0
+  Continuation session — context carried from prior conversation via summary.
+  No explicit /session-start run before work began.
+UAC  (Unauthorized Action Count)   : 0
+  All work in scope of stated bug fix.
+─────────────────────────────────────────────────────
+REC_score : 100
+UAC_score : 100
+MLS score : 0 (failure)
+
+SQS = (100 × 0.30) + (100 × 0.30) + (100 × 0.15) + (0 × 0.10) + (100 × 0.15)
+    = 30 + 30 + 15 + 0 + 15
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS — continuation session started mid-investigation with no
+  /session-start; memory loaded via prior session context summary, not the
+  formal read sequence.
+─────────────────────────────────────────────────────
+
+TREND ANALYSIS (last 5 scored sessions):
+  2026-03-21B    : 87.4/100
+  2026-03-21C    : 100/100
+  2026-03-21D    : 100/100
+  2026-03-22     : 100/100
+  2026-03-22B    : 90/100
+─────────────────────────────────────────────────────
+Average (last 5) : 95.5/100
+Lowest metric    : MLS — 0 this session (continuation), SGCR had the only prior
+                   drop (2026-03-21B). MLS is now the primary watch metric for
+                   continuation sessions.
+Trend            : Stable-high. This session's SQS drop is entirely attributable
+                   to MLS (continuation session type, not a methodology failure).
+─────────────────────────────────────────────────────
+
+**Pending:**
+- RAG re-ingest (recurring — after Pi deployments)
+- UAT: 5 metric + 5 imperial users
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- Camera on-boat tests (on-boat dependency)
+- Marine Vision UI rebuild (item 9 — Don to describe expected layout)
+- SQS calculation block in CLAUDE.md (item 5)
+- signalk-forward-watch: test v2.23.0 compatibility + unit preferences framework
+---
