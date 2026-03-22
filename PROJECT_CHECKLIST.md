@@ -148,8 +148,8 @@ On-boat verification still pending:
 | 16 | Engine Dashboard + Settings — remove 960px max-width | Claude | `[x]` **COMPLETE 2026-03-21.** Engine gauge cells were ~174px wide on 1280px display due to 960px container. Settings had same constraint in `.settings-content`. Both now fill full screen width (~238px per engine cell). |
 | 17 | Signal K upgrade v2.22.1 → v2.23.0 + remote_api.py port fix | Claude | `[x]` **COMPLETE 2026-03-22.** SK upgraded to v2.23.0 on Pi. remote_api.py port fixed (:3000→:8099). AvNav patch survives. All SK REST endpoints responding. Smoke test passed. |
 | 18 | Boat log — voice-to-text "api unavailable, transcript not saved" | Claude | `[x]` **COMPLETE 2026-03-22.** Root cause: `vosk-transcribe` CLI not installed. Fix: replaced with Vosk Python API + ffmpeg webm→WAV conversion. Deployed, service active. |
-| 19 | Settings — o-charts section not working as intended | Don + Claude | `[ ]` Reported 2026-03-22. Needs Don to describe what is broken vs expected. |
-| 20 | Settings — AvNav charts documentation section not working as intended | Don + Claude | `[ ]` Reported 2026-03-22. Needs Don to describe what is broken vs expected. |
+| 19 | Settings — o-charts section not working as intended | Don + Claude | `[x]` **COMPLETE 2026-03-22.** Root cause: openDoc() only showed toast with file path. Fix: /docs/<name> Flask route + full-screen markdown overlay with day/night theme support. Three docs deployed to Pi at /opt/d3kos/docs/. |
+| 20 | Settings — AvNav charts documentation section not working as intended | Don + Claude | `[x]` **COMPLETE 2026-03-22.** Same fix as item 19 — resolved by same overlay implementation. |
 
 ### Item 17 — Signal K v2.22.1 → v2.23.0 Upgrade Plan (revised 2026-03-22)
 
