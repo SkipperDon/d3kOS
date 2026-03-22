@@ -483,6 +483,33 @@ function _ragUseful(answer) {
   return !noInfo.some(p => lc.includes(p));
 }
 
+/* Returns true if query is a navigation/distance question — skip RAG, go straight to Gemini */
+function _isNavQuery(text) {
+  const lc = text.toLowerCase();
+  const navPatterns = [
+    /how far (is|to|from)/,
+    /distance (to|from|between)/,
+    /how (many|long).*(nm|miles|kilomet|nautical)/,
+    /\bnm\b.*from/,
+    /route to/,
+    /bearing (to|from)/,
+    /heading to/,
+    /eta to/,
+    /time to (reach|get to|arrive)/,
+    /waypoint/,
+    /navigate to/,
+    /weather (at|for|near|in)/,
+    /wind (at|for|near|in)/,
+    /tide (at|for|near|in)/,
+    /depth (at|near|of)/,
+    /anchorage (at|near|in)/,
+    /marina (at|near|in)/,
+    /fuel dock/,
+    /port (of|at|near)/,
+  ];
+  return navPatterns.some(p => p.test(lc));
+}
+
 function addThinking() {
   _removeWelcome();
   const inner = document.getElementById('chat-inner');
@@ -576,19 +603,21 @@ async function sendMessage() {
   const thinking = addThinking();
 
   try {
-    /* Step 1 — RAG: search boat manuals */
+    /* Step 1 — RAG: search boat manuals (skip for navigation/distance queries) */
     let ragAnswer = null;
-    try {
-      const ragRes  = await fetch('/ai/query', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ question: text, provider: 'rag' }),
-      });
-      const ragData = await ragRes.json();
-      if (!ragData.error && _ragUseful(ragData.answer)) {
-        ragAnswer = ragData.answer;
-      }
-    } catch (_) { /* RAG unavailable — fall through */ }
+    if (!_isNavQuery(text)) {
+      try {
+        const ragRes  = await fetch('/ai/query', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ question: text, provider: 'rag' }),
+        });
+        const ragData = await ragRes.json();
+        if (!ragData.error && _ragUseful(ragData.answer)) {
+          ragAnswer = ragData.answer;
+        }
+      } catch (_) { /* RAG unavailable — fall through */ }
+    }
 
     if (ragAnswer) {
       thinking.remove();

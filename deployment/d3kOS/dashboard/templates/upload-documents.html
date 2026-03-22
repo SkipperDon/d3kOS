@@ -29,7 +29,7 @@
     <div class="sec-header">&#128228; Upload a PDF Manual</div>
     <p style="font-size: 18px;color:var(--ink2);line-height:1.7;margin-bottom:20px">
       Upload PDF manuals for your equipment. Uploaded files are indexed for AI-assisted answers
-      about your vessel systems. Maximum file size: 50 MB.
+      about your vessel systems. Maximum file size: 500 MB.
     </p>
 
     <!-- File picker -->
@@ -155,8 +155,8 @@ async function doUpload() {
     showToast('Only PDF files are supported.');
     return;
   }
-  if (file.size > 52428800) {
-    showToast('File too large — maximum 50 MB.');
+  if (file.size > 524288000) {
+    showToast('File too large — maximum 500 MB.');
     return;
   }
 
