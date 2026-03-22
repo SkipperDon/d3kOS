@@ -316,6 +316,7 @@ var audioChunks   = [];
 var recTimerID    = null;
 var recSeconds    = 0;
 var isRecording   = false;
+var activeMimeType = '';     // detected codec for this recording session
 var LS_KEY        = 'd3kos-boatlog-entries';
 
 /* ── Clock ── */
@@ -469,19 +470,29 @@ function startRecord() {
   if (!window.MediaRecorder) {
     setRecState('error', 'BROWSER NOT SUPPORTED'); return;
   }
+  // Pause HELM voice service so it does not process speech during recording
+  fetch('http://localhost:8101/api/voice/pause', { method: 'POST' }).catch(function(){});
+
+  // Detect best supported MIME type for Pi Chromium ARM64
+  var mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg', 'audio/mp4'];
+  activeMimeType = mimeTypes.find(function(t) { return MediaRecorder.isTypeSupported(t); }) || '';
+
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(function(stream) {
-      mediaRecorder = new MediaRecorder(stream);
+      var opts = activeMimeType ? { mimeType: activeMimeType } : {};
+      mediaRecorder = new MediaRecorder(stream, opts);
       audioChunks   = [];
       isRecording   = true;
 
       mediaRecorder.ondataavailable = function(e) {
-        if (e.data.size > 0) audioChunks.push(e.data);
+        if (e.data && e.data.size > 0) audioChunks.push(e.data);
       };
       mediaRecorder.onstop = function() {
-        var blob = new Blob(audioChunks, { type: 'audio/webm' });
+        var blobType = (activeMimeType.split(';')[0]) || 'audio/webm';
+        var blob = new Blob(audioChunks, { type: blobType });
         stream.getTracks().forEach(function(t) { t.stop(); });
-        submitVoiceNote(blob);
+        fetch('http://localhost:8101/api/voice/resume', { method: 'POST' }).catch(function(){});
+        submitVoiceNote(blob, blobType);
       };
 
       mediaRecorder.start(250);
@@ -496,6 +507,7 @@ function startRecord() {
       document.getElementById('bl-transcript').classList.remove('show');
     })
     .catch(function(err) {
+      fetch('http://localhost:8101/api/voice/resume', { method: 'POST' }).catch(function(){});
       setRecState('error', 'MICROPHONE UNAVAILABLE');
       console.error('Mic error:', err);
     });
@@ -528,9 +540,10 @@ function setRecState(cls, text) {
 }
 
 /* ── Submit voice note ── */
-function submitVoiceNote(blob) {
+function submitVoiceNote(blob, blobType) {
+  var ext = (blobType === 'audio/ogg') ? 'ogg' : (blobType === 'audio/mp4') ? 'mp4' : 'webm';
   var fd = new FormData();
-  fd.append('audio', blob, 'voice-note.webm');
+  fd.append('audio', blob, 'voice-note.' + ext);
 
   fetch(BOATLOG_API + '/api/boatlog/voice-note', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
