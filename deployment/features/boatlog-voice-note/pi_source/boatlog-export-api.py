@@ -48,23 +48,41 @@ def get_db_connection():
     return conn
 
 def transcribe_audio(audio_path):
-    """Transcribe audio using Vosk"""
+    """Transcribe audio using Vosk Python API.
+    Browser records .webm — convert to 16kHz mono WAV first via ffmpeg,
+    then feed PCM frames to Vosk recogniser.
+    """
+    import vosk, json as _json, tempfile
+    wav_path = audio_path + '.wav'
     try:
-        # Use vosk-transcribe if available
-        result = subprocess.run([
-            'vosk-transcribe',
-            '--model', '/opt/d3kos/models/vosk-model-small-en-us-0.15',
-            '--audio', audio_path
-        ], capture_output=True, text=True, timeout=30)
-        
-        if result.returncode == 0:
-            return result.stdout.strip()
-        else:
-            logger.warning(f"Vosk transcription failed: {result.stderr}")
+        # Convert webm → 16kHz mono PCM WAV
+        conv = subprocess.run([
+            'ffmpeg', '-y', '-i', audio_path,
+            '-ar', '16000', '-ac', '1', '-f', 'wav', wav_path
+        ], capture_output=True, timeout=30)
+        if conv.returncode != 0:
+            logger.warning(f"ffmpeg conversion failed: {conv.stderr.decode()}")
             return ""
+
+        model = vosk.Model('/opt/d3kos/models/vosk/vosk-model-small-en-us-0.15')
+        rec   = vosk.KaldiRecognizer(model, 16000)
+        words = []
+        with wave.open(wav_path, 'rb') as wf:
+            while True:
+                data = wf.readframes(4000)
+                if not data:
+                    break
+                if rec.AcceptWaveform(data):
+                    words.append(_json.loads(rec.Result()).get('text', ''))
+        words.append(_json.loads(rec.FinalResult()).get('text', ''))
+        return ' '.join(w for w in words if w).strip()
+
     except Exception as e:
         logger.warning(f"Vosk transcription error: {e}")
         return ""
+    finally:
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
 
 @app.route('/api/boatlog/status', methods=['GET'])
 def status():
