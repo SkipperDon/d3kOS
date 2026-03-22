@@ -31,7 +31,7 @@ app = Flask(__name__)
 CONFIG_PATH          = Path('/opt/d3kos/config/api-keys.json')
 PREFS_PATH           = Path('/opt/d3kos/config/user-preferences.json')
 MAINTENANCE_LOG_PATH = Path('/opt/d3kos/data/maintenance-log.json')
-SIGNALK_API          = 'http://localhost:3000/signalk/v1/api/'
+SIGNALK_API          = 'http://localhost:8099/signalk/v1/api/'
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
