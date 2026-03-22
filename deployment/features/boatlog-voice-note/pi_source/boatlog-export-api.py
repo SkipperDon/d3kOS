@@ -14,6 +14,7 @@ Date: 2026-02-20
 """
 
 from flask import Flask, jsonify, Response, request
+from flask_cors import CORS
 import sqlite3
 import csv
 from io import StringIO
@@ -22,6 +23,7 @@ import os
 import logging
 import wave
 import subprocess
+import uuid
 
 # Configure logging
 logging.basicConfig(
@@ -31,12 +33,30 @@ logging.basicConfig(
 logger = logging.getLogger('boatlog-export-api')
 
 app = Flask(__name__)
+CORS(app)   # allow cross-origin from Flask dashboard (port 3000)
 
 # Configuration
 BOATLOG_DB = '/opt/d3kos/data/boatlog/boatlog.db'
 PORT = 8095
 VOICE_NOTE_DIR = '/opt/d3kos/data/boatlog-audio'
+VOSK_MODEL_PATH = '/opt/d3kos/models/vosk/vosk-model-small-en-us-0.15'
 os.makedirs(VOICE_NOTE_DIR, exist_ok=True)
+
+# ── Vosk model — loaded once at startup, not per request ─────────────────────
+_vosk_model = None
+
+def _get_vosk_model():
+    """Return cached Vosk model, loading it on first call."""
+    global _vosk_model
+    if _vosk_model is None:
+        try:
+            import vosk
+            _vosk_model = vosk.Model(VOSK_MODEL_PATH)
+            logger.info("Vosk model loaded and cached")
+        except Exception as e:
+            logger.warning(f"Vosk model load failed: {e}")
+    return _vosk_model
+
 
 def get_db_connection():
     """Create database connection"""
@@ -48,11 +68,16 @@ def get_db_connection():
     return conn
 
 def transcribe_audio(audio_path):
-    """Transcribe audio using Vosk Python API.
+    """Transcribe audio using cached Vosk model.
     Browser records .webm — convert to 16kHz mono WAV first via ffmpeg,
     then feed PCM frames to Vosk recogniser.
     """
-    import vosk, json as _json, tempfile
+    import json as _json
+    model = _get_vosk_model()
+    if model is None:
+        return ""
+
+    import vosk
     wav_path = audio_path + '.wav'
     try:
         # Convert webm → 16kHz mono PCM WAV
@@ -64,7 +89,6 @@ def transcribe_audio(audio_path):
             logger.warning(f"ffmpeg conversion failed: {conv.stderr.decode()}")
             return ""
 
-        model = vosk.Model('/opt/d3kos/models/vosk/vosk-model-small-en-us-0.15')
         rec   = vosk.KaldiRecognizer(model, 16000)
         words = []
         with wave.open(wav_path, 'rb') as wf:
@@ -249,7 +273,7 @@ _MIME_EXT = {
 
 @app.route('/api/boatlog/voice-note', methods=['POST'])
 def save_voice_note():
-    """Save voice note and transcribe it"""
+    """Save voice note, transcribe it, and persist to DB"""
     if 'audio' not in request.files:
         return jsonify({'success': False, 'error': 'No audio file'}), 400
 
@@ -271,19 +295,34 @@ def save_voice_note():
     filename = f'voice_note_{ts}{ext}'
     path = os.path.join(VOICE_NOTE_DIR, filename)
     audio.save(path)
-    
-    # Transcription via Vosk (best-effort — return empty if Vosk unavailable)
+
+    # Transcription via cached Vosk (best-effort — return empty if unavailable)
     transcript = ''
     try:
         transcript = transcribe_audio(path)
     except Exception as e:
         logger.warning(f"Transcription failed: {e}")
-        pass
-    
+
+    # Persist to SQLite so export includes voice notes
+    iso_ts = datetime.now().isoformat()
+    entry_id = str(uuid.uuid4())
+    content = transcript if transcript else f'(voice note — {filename})'
+    try:
+        conn = get_db_connection()
+        conn.execute(
+            "INSERT INTO boatlog_entries (entry_id, timestamp, entry_type, content) VALUES (?,?,?,?)",
+            (entry_id, iso_ts, 'voice', content)
+        )
+        conn.commit()
+        conn.close()
+        logger.info(f"Voice note saved to DB: {entry_id}")
+    except Exception as e:
+        logger.warning(f"DB insert failed: {e}")
+
     return jsonify({
-        'success': True, 
-        'filename': filename, 
-        'transcript': transcript, 
+        'success': True,
+        'filename': filename,
+        'transcript': transcript,
         'timestamp': ts
     })
 
@@ -295,6 +334,10 @@ def health():
 if __name__ == '__main__':
     logger.info(f"Starting d3kOS Boatlog Export API on port {PORT}")
     logger.info(f"Database path: {BOATLOG_DB}")
+
+    # Pre-load Vosk model so first voice note responds quickly
+    logger.info("Pre-loading Vosk model...")
+    _get_vosk_model()
 
     # Verify database exists
     if os.path.exists(BOATLOG_DB):
