@@ -375,5 +375,19 @@ def helm_assistant():
     return render_template('helm-assistant.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
 
 
+@app.route('/docs/<name>')
+def serve_doc(name):
+    """Serve a markdown doc file from /opt/d3kos/docs/ as plain text."""
+    import re
+    # Sanitise: allow only uppercase letters, underscores, digits
+    if not re.fullmatch(r'[A-Z0-9_]+', name):
+        return ('Not found', 404)
+    doc_path = f'/opt/d3kos/docs/{name}.md'
+    if not os.path.exists(doc_path):
+        return ('Not found', 404)
+    with open(doc_path, 'r') as f:
+        return (f.read(), 200, {'Content-Type': 'text/plain; charset=utf-8'})
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=False)
