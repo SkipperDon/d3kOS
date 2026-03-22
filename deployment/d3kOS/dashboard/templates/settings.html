@@ -877,7 +877,115 @@
     loadStatus();
     loadSysinfo();
     loadCameraSlots();
+
+    /* ── DOC OVERLAY ── */
+    function openDoc(name) {
+      var overlay = document.getElementById('doc-overlay');
+      var title   = document.getElementById('doc-overlay-title');
+      var body    = document.getElementById('doc-overlay-body');
+      body.innerHTML = '<p style="color:var(--ink2);font-size:20px;">Loading…</p>';
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      fetch('/docs/' + name)
+        .then(function(r) {
+          if (!r.ok) throw new Error('Not found');
+          return r.text();
+        })
+        .then(function(md) {
+          title.textContent = md.split('\n')[0].replace(/^#+\s*/, '') || name;
+          body.innerHTML = renderMd(md);
+        })
+        .catch(function() {
+          body.innerHTML = '<p style="color:var(--ink2);font-size:20px;">Document not available.</p>';
+        });
+    }
+
+    function closeDoc() {
+      document.getElementById('doc-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    /* Minimal markdown renderer — headings, bold, code blocks, bullets, hr */
+    function renderMd(md) {
+      var html = '';
+      var lines = md.split('\n');
+      var inCode = false, inList = false;
+      for (var i = 0; i < lines.length; i++) {
+        var l = lines[i];
+        if (l.startsWith('```')) {
+          if (!inCode) { if (inList) { html += '</ul>'; inList = false; } html += '<pre>'; inCode = true; }
+          else         { html += '</pre>'; inCode = false; }
+          continue;
+        }
+        if (inCode) { html += escHtml(l) + '\n'; continue; }
+        if (l.match(/^---+$/)) { if (inList) { html += '</ul>'; inList = false; } html += '<hr>'; continue; }
+        var hm = l.match(/^(#{1,4})\s+(.*)/);
+        if (hm) {
+          if (inList) { html += '</ul>'; inList = false; }
+          var hn = hm[1].length;
+          html += '<h' + hn + ' class="doc-h">' + inlineMd(hm[2]) + '</h' + hn + '>';
+          continue;
+        }
+        if (l.match(/^[-*]\s+/)) {
+          if (!inList) { html += '<ul class="doc-ul">'; inList = true; }
+          html += '<li>' + inlineMd(l.replace(/^[-*]\s+/, '')) + '</li>';
+          continue;
+        }
+        if (inList) { html += '</ul>'; inList = false; }
+        if (l.trim() === '') { html += '<br>'; continue; }
+        html += '<p class="doc-p">' + inlineMd(l) + '</p>';
+      }
+      if (inList) html += '</ul>';
+      if (inCode) html += '</pre>';
+      return html;
+    }
+
+    function inlineMd(s) {
+      s = escHtml(s);
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*]+)\*/g,     '<em>$1</em>');
+      return s;
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
   </script>
+
+  <!-- Doc overlay — responds to data-night via CSS vars -->
+  <div id="doc-overlay" style="display:none;position:fixed;inset:0;z-index:9000;
+       background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;
+         padding:16px 20px;border-bottom:1px solid var(--ink3);flex-shrink:0;">
+      <span id="doc-overlay-title" style="font-family:'Bebas Neue',sans-serif;
+            font-size:28px;color:var(--g-txt);letter-spacing:.04em;"></span>
+      <button onclick="closeDoc()" style="min-width:48px;min-height:48px;
+              background:transparent;border:1px solid var(--ink3);border-radius:6px;
+              color:var(--ink);font-size:24px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="doc-overlay-body" style="flex:1;overflow-y:auto;padding:20px 24px;
+         font-family:'Chakra Petch',sans-serif;color:var(--ink);font-size:20px;
+         line-height:1.7;"></div>
+  </div>
+
+  <style>
+    .doc-h  { font-family:'Bebas Neue',sans-serif; color:var(--g-txt);
+              letter-spacing:.04em; margin:20px 0 8px; }
+    h1.doc-h { font-size:32px; } h2.doc-h { font-size:26px; }
+    h3.doc-h { font-size:22px; } h4.doc-h { font-size:20px; }
+    .doc-p  { margin:0 0 10px; }
+    .doc-ul { margin:0 0 10px 24px; padding:0; }
+    .doc-ul li { margin-bottom:6px; }
+    #doc-overlay pre { background:var(--ink3); border-radius:6px;
+      padding:14px 16px; font-size:17px; overflow-x:auto;
+      color:var(--ink); white-space:pre-wrap; margin:0 0 12px; }
+    #doc-overlay code { background:var(--ink3); border-radius:3px;
+      padding:1px 5px; font-size:17px; color:var(--ink); }
+    #doc-overlay hr { border:none; border-top:1px solid var(--ink3); margin:16px 0; }
+    #doc-overlay strong { color:var(--ink); }
+  </style>
 
 </body>
 </html>
