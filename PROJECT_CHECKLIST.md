@@ -146,65 +146,56 @@ On-boat verification still pending:
 | 14 | Gemini CORS fix — d3kos-gemini proxy | Claude | `[x]` **COMPLETE 2026-03-21.** Root cause: no CORS headers on gemini_proxy.py. Browser at :3000 was blocked making cross-origin calls to :3001. Fix: `@app.after_request` CORS handler added. Key and service were correctly configured — proxy was working, browser was blocked. |
 | 15 | Gemini system prompt — expand to full vessel operation | Claude | `[x]` **COMPLETE 2026-03-21.** Navigation-only prompt caused Helm Assistant to give unhelpful answers to engine/mechanical questions. Prompt now covers: engine diagnostics, electrical, mechanical, maintenance, on-board systems, navigation, safety. `_ragUseful()` threshold also tightened (30→60 chars, +8 no-info patterns). |
 | 16 | Engine Dashboard + Settings — remove 960px max-width | Claude | `[x]` **COMPLETE 2026-03-21.** Engine gauge cells were ~174px wide on 1280px display due to 960px container. Settings had same constraint in `.settings-content`. Both now fill full screen width (~238px per engine cell). |
-| 17 | Signal K upgrade v2.22.1 → v2.23.0 + token auth | Claude | `[ ]` See plan below. |
+| 17 | Signal K upgrade v2.22.1 → v2.23.0 + remote_api.py port fix | Claude | `[ ]` See plan below. |
 
-### Item 17 — Signal K v2.22.1 → v2.23.0 Upgrade Plan
+### Item 17 — Signal K v2.22.1 → v2.23.0 Upgrade Plan (revised 2026-03-22)
 
-**Current state:** SK v2.22.1 on Pi. All d3kOS connections are unauthenticated. v2.23.0 introduces authentication changes and Unit Preferences Framework.
+**Current state:** SK v2.22.1 on Pi. All d3kOS connections are unauthenticated.
 
-**Affected files (all must be tested after upgrade):**
+**Unknowns resolved (2026-03-22 research):**
+- **Auth:** v2.23.0 change only affects clients that send a *bad/revoked token* — they now get 401 instead of silent read-only fallback. Unauthenticated clients are unaffected. No token work needed **unless** security is enabled on the Pi (check Step 1).
+- **Unit Preferences Framework:** Non-breaking. Values always served in SI. Framework only adds conversion formulas to metadata — never touches `value` fields. d3kOS unaffected.
+
+**Affected files:**
 
 | File | What it does with SK | Risk |
 |------|---------------------|------|
-| `signalk_client.py` | REST polling — position, SOG, COG, anchor, engine via `/v1/api/` | High — unauthenticated |
-| `instruments.js` | WebSocket `ws://localhost:8099/signalk/v1/stream` — live instrument data | High — unauthenticated |
-| `boatlog-engine.js` | WebSocket `ws://localhost:8099/signalk/v1/stream` — engine snapshot data | High — unauthenticated |
-| `engine-monitor.html` | WebSocket `ws://localhost:8099/signalk/v1/stream` — engine gauges | High — unauthenticated |
-| `remote_api.py` (v0.9.4) | REST — uses wrong port `:3000` instead of `:8099` | Pre-existing bug — fix in this task |
-| AvNav `signalkhandler.py` | Resources API `/v2/api/` — patched 2026-03-18 | Low — patch may survive upgrade |
+| `signalk_client.py` | REST polling via `/v1/api/` | Low — unaffected if security off |
+| `instruments.js` | WebSocket `ws://localhost:8099/signalk/v1/stream` | Low — unaffected if security off |
+| `boatlog-engine.js` | WebSocket `ws://localhost:8099/signalk/v1/stream` | Low — unaffected if security off |
+| `engine-monitor.html` | WebSocket `ws://localhost:8099/signalk/v1/stream` | Low — unaffected if security off |
+| `remote_api.py` (v0.9.4) | REST — pre-existing port bug `:3000` instead of `:8099` | Fix regardless of upgrade |
+| AvNav `signalkhandler.py` | Resources API `/v2/api/` — patched 2026-03-18 | Low — npm upgrade won't touch AvNav |
 
-**Step 1 — Pre-upgrade snapshot (Don's task)**
-- [ ] Take UpdraftPlus-equivalent Pi snapshot (or `dd` image of SD card) before any changes
-- [ ] Confirm current state works: instruments live, AvNav charts load, engine data visible
+**Step 1 — Security check on Pi (Claude — before anything else)**
+- [ ] Read `~/.signalk/settings.json` on Pi — look for `"strategy": "./tokensecurity"`
+- If `dummysecurity` or no security key: security is off — skip Steps 2 & 3
+- If `tokensecurity`: check `allow_readonly` value and decide if token work is needed
 
-**Step 2 — Read v2.23.0 release notes (Claude)**
-- [ ] Review auth changes: does localhost bypass auth by default? Is a token required for REST? For WebSocket?
-- [ ] Review Unit Preferences: does SK serve raw SI units or user-preferred units via REST/WS by default?
-- [ ] Confirm v1 API (`/v1/api/`, `/v1/stream`) still served in v2.23.0
+**Step 2 — Token auth in Python + JS (Claude — conditional, only if security enabled)**
+- [ ] Generate long-lived token: `signalk-generate-token -u <admin> -e 0 -s ~/.signalk/security.json`
+- [ ] Store in `/opt/d3kos/config/signalk.env` — never hardcode
+- [ ] `signalk_client.py`: add `Authorization: Bearer <token>` header to all REST calls; `is_reachable()` stays unauthenticated
+- [ ] `instruments.js`, `boatlog-engine.js`, `engine-monitor.html`: append `?token=<token>` to WS URL; token injected via Flask template
 
-**Step 3 — Add token support to `signalk_client.py` (Claude)**
-- [ ] Generate SK API token on Pi (SK Admin UI → Security → Access Requests, or via `POST /signalk/v1/auth/login`)
-- [ ] Store token in `/opt/d3kos/config/signalk.env` — never hardcode
-- [ ] Update `signalk_client.py`: read token from env, add `Authorization: Bearer <token>` header to all REST calls
-- [ ] Update `is_reachable()` — health check remains unauthenticated (hits `/signalk` not `/v1/api/`)
-
-**Step 4 — Add token support to WebSocket consumers (Claude)**
-- [ ] `instruments.js`, `boatlog-engine.js`, `engine-monitor.html`: pass token as query param `?token=<token>` on WS URL (SK standard pattern) or via `hello` message — confirm which SK v2.23.0 requires
-- [ ] Token served to frontend via Flask template injection from `signalk.env` (same pattern as `SIGNALK_PORT`)
-
-**Step 5 — Fix `remote_api.py` port error (Claude)**
+**Step 3 — Fix `remote_api.py` port bug (Claude — do regardless)**
 - [ ] Change `SIGNALK_API = 'http://localhost:3000/signalk/v1/api/'` → `http://localhost:8099/signalk/v1/api/`
-- [ ] Add token header to all SK calls in this file
 
-**Step 6 — Upgrade SK on Pi (Don's task)**
-- [ ] SSH into Pi (Claude runs this): `cd ~/.signalk && npm install signalk-server@2.23.0`
-- [ ] Restart: `sudo systemctl restart signalk`
-- [ ] Verify SK admin UI loads at `localhost:8099`
+**Step 4 — Upgrade SK on Pi (Claude runs)**
+- [ ] `cd ~/.signalk && npm install signalk-server@2.23.0`
+- [ ] `sudo systemctl restart signalk`
+- [ ] Verify SK responds: `curl http://localhost:8099/signalk`
 
-**Step 7 — Verify AvNav patch survives (Claude)**
-- [ ] Confirm `signalkhandler.py` line 1580 still reads `/v2/api/` after SK upgrade (npm upgrade does not touch AvNav files — patch should survive)
-- [ ] Load charts in AvNav and confirm no 404s on resources endpoint
+**Step 5 — Verify AvNav patch survives (Claude)**
+- [ ] Confirm `signalkhandler.py` line 1580 still reads `/v2/api/` post-upgrade
+- [ ] `curl http://localhost:8080` — confirm AvNav loads and charts render
 
-**Step 8 — Smoke test all SK integration points (Don confirms on Pi screen)**
-- [ ] Instruments panel shows live SOG, COG, position
-- [ ] Engine monitor shows live data (or graceful "no NMEA2000" state)
+**Step 6 — Smoke test (Don confirms on Pi screen)**
+- [ ] Instruments panel — live SOG, COG, position
+- [ ] Engine monitor — live data or graceful "no NMEA2000"
 - [ ] Boat log engine capture fires correctly
 - [ ] AvNav charts visible
 - [ ] Settings §12 Signal K status shows LIVE
-
-**Step 9 — Unit Preferences check**
-- [ ] Confirm `signalk_client.py` still receives SI units (m/s not knots, Kelvin not °C, radians not degrees) — d3kOS does its own conversion via `units.js` / Preferences API `:8107`. If SK sends preferred units, conversions will be wrong.
-- [ ] If SK sends preferred units by default: disable Unit Preferences Framework in SK config for d3kOS compatibility, or update conversion layer.
 
 ---
 
