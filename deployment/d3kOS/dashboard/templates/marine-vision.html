@@ -110,11 +110,18 @@ h1 {
 .cam-btn.offline {
   border-color: var(--ink3);
   color: var(--ink3);
-  cursor: default;
+  cursor: not-allowed;
+  opacity: .45;
 }
 .cam-btn.offline.active {
   background: var(--ink3);
   color: var(--bg);
+}
+/* connecting = RTSP reconnecting — show dimmed but keep tappable */
+.cam-btn.connecting {
+  border-color: var(--ink3);
+  color: var(--ink3);
+  opacity: .65;
 }
 
 .grid-btn {
@@ -495,10 +502,17 @@ function loadSlots() {
     .then(function(r) { return r.json(); })
     .then(function(slots) {
       allSlots = slots;
-      /* find active slot — active_default or first online */
+      /* find active slot — active_default if it has a frame, else first with frame */
       if (!activeSlotId) {
         var def = slots.find(function(s) { return s.roles && s.roles.active_default; });
-        activeSlotId = def ? def.slot_id : (slots[0] ? slots[0].slot_id : null);
+        if (def && def.has_frame) {
+          activeSlotId = def.slot_id;
+        } else {
+          var withFrame = slots.find(function(s) { return s.has_frame; });
+          activeSlotId = withFrame ? withFrame.slot_id
+                       : def       ? def.slot_id
+                       : (slots[0] ? slots[0].slot_id : null);
+        }
       }
       renderSelector(slots);
       renderAllCamsGrid(slots);
@@ -517,8 +531,12 @@ function renderSelector(slots) {
   var html = '';
   slots.forEach(function(s) {
     var isActive  = s.slot_id === activeSlotId && !gridMode;
-    var isOffline = s.status !== 'online';
-    var cls = 'cam-btn' + (isActive ? ' active' : '') + (isOffline ? ' offline' : '');
+    /* offline = hardware truly offline; connecting = dimmed but still tappable */
+    var isOffline    = s.hardware && s.hardware.status === 'offline';
+    var isConnecting = !isOffline && s.status !== 'online';
+    var cls = 'cam-btn' + (isActive ? ' active' : '')
+                        + (isOffline    ? ' offline'    : '')
+                        + (isConnecting ? ' connecting' : '');
     html += '<button class="' + cls + '" onclick="switchCamera(\'' + s.slot_id + '\')">' + s.label + '</button>';
   });
   if (slots.length > 1) {

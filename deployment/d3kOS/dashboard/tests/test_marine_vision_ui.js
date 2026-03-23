@@ -18,6 +18,7 @@
 let passed = 0;
 let failed = 0;
 
+/* assert — counts toward pass/fail exit code */
 function assert(condition, message) {
   if (condition) {
     console.log('  PASS:', message);
@@ -25,6 +26,15 @@ function assert(condition, message) {
   } else {
     console.error('  FAIL:', message);
     failed++;
+  }
+}
+
+/* demonstrateBug — shows what the buggy code does; does NOT count toward exit code */
+function demonstrateBug(condition, message) {
+  if (!condition) {
+    console.log('  BUG CONFIRMED:', message);
+  } else {
+    console.log('  (bug not triggered):', message);
   }
 }
 
@@ -42,12 +52,14 @@ function selectActiveSlot_BUGGY(slots) {
 
 function selectActiveSlot_FIXED(slots) {
   var def = slots.find(function(s) { return s.roles && s.roles.active_default; });
-  if (def && def.has_frame) return def.slot_id;
-  // active_default has no frame — fall back to first slot with a frame
-  var withFrame = slots.find(function(s) { return s.has_frame; });
-  if (withFrame) return withFrame.slot_id;
-  // nothing has a frame — fall back to active_default or first slot
-  return def ? def.slot_id : (slots[0] ? slots[0].slot_id : null);
+  if (def && def.has_frame) {
+    return def.slot_id;
+  } else {
+    var withFrame = slots.find(function(s) { return s.has_frame; });
+    return withFrame ? withFrame.slot_id
+         : def       ? def.slot_id
+         : (slots[0] ? slots[0].slot_id : null);
+  }
 }
 
 /**
@@ -60,7 +72,9 @@ function slotIsDisabled_BUGGY(slot) {
 }
 
 function slotIsDisabled_FIXED(slot) {
-  return slot.hardware && slot.hardware.status === 'offline';
+  // offline = hardware truly offline (cursor:not-allowed)
+  // connecting = dimmed but still tappable — NOT disabled
+  return !!(slot.hardware && slot.hardware.status === 'offline');
 }
 
 /* ── Test data matching Pi's actual state ── */
@@ -120,9 +134,8 @@ const SLOTS_DEFAULT_HAS_FRAME = [
    ───────────────────────────────────────────────────────────── */
 console.log('\nBug 1: active default fallback\n');
 
-// These should FAIL with current buggy code — they demonstrate the bug
-console.log('  [BUGGY behaviour — these should FAIL before the fix]');
-assert(
+// Demonstrate the bug (does not count toward exit code)
+demonstrateBug(
   selectActiveSlot_BUGGY(SLOTS_PI) !== 'port',
   'BUGGY: active_default=port (no frame) should NOT be selected — falls back to bow'
 );
@@ -155,15 +168,14 @@ const helmSlot      = SLOTS_PI[1]; // status:connecting, hardware.status:online
 const portSlot      = SLOTS_PI[2]; // status:connecting, hardware.status:online
 const trueOffline   = SLOTS_ALL_OFFLINE[0]; // hardware.status:offline
 
-// These should FAIL with current buggy code — they demonstrate the bug
-console.log('  [BUGGY behaviour — these should FAIL before the fix]');
-assert(
+// Demonstrate the bugs (do not count toward exit code)
+demonstrateBug(
   slotIsDisabled_BUGGY(helmSlot) === false,
-  'BUGGY: helm (connecting, hardware online) should NOT be disabled — is still tappable'
+  'BUGGY: helm connecting+hardware online was disabled (cursor:not-allowed) — should be tappable'
 );
-assert(
+demonstrateBug(
   slotIsDisabled_BUGGY(portSlot) === false,
-  'BUGGY: port (connecting, hardware online) should NOT be disabled'
+  'BUGGY: port connecting+hardware online was disabled (cursor:not-allowed) — should be tappable'
 );
 
 // These should PASS with fixed code
