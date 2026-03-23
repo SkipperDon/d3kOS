@@ -58,7 +58,7 @@ app = Flask(__name__)
 AVNAV_PORT    = os.getenv('AVNAV_PORT',    '8080')
 GEMINI_PORT   = os.getenv('GEMINI_PORT',   '3001')
 SIGNALK_PORT  = os.getenv('SIGNALK_PORT',  '8099')
-OLLAMA_HOST   = os.getenv('OLLAMA_HOST',   '192.168.1.36:11434')
+OLLAMA_HOST   = os.getenv('OLLAMA_HOST',   '127.0.0.1:11434')
 VESSEL_NAME   = os.getenv('VESSEL_NAME',   'MV SERENITY')
 HOME_PORT_VAL = os.getenv('HOME_PORT',     'Home Port')
 UI_LANG       = os.getenv('UI_LANG',       'en-GB')
@@ -315,6 +315,43 @@ def action_reboot():
         return jsonify({'ok': True})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/settings/vessel', methods=['POST'])
+def api_settings_vessel():
+    """
+    Save vessel name and home port from the settings page.
+    Body: {"vessel_name": "...", "home_port": "..."}
+    Writes to vessel.env, preserving any other existing keys.
+    """
+    global VESSEL_NAME, HOME_PORT_VAL
+    data = request.get_json(silent=True) or {}
+    vessel_name = data.get('vessel_name', '').strip()
+    home_port   = data.get('home_port', '').strip()
+    if not vessel_name:
+        return jsonify({'ok': False, 'error': 'Vessel name is required'}), 400
+
+    # Preserve existing keys (e.g. ONBOARDING_RUNS, UI_LANG, EQUIPMENT_NOTES)
+    existing = {}
+    if os.path.exists(_VESSEL_ENV_PATH):
+        with open(_VESSEL_ENV_PATH) as f:
+            for line in f:
+                line = line.strip()
+                if '=' in line and not line.startswith('#'):
+                    k, v = line.split('=', 1)
+                    existing[k] = v
+    existing['VESSEL_NAME'] = vessel_name
+    existing['HOME_PORT']   = home_port
+
+    os.makedirs(_cfg_dir, exist_ok=True)
+    with open(_VESSEL_ENV_PATH, 'w') as f:
+        for k, v in existing.items():
+            f.write(f'{k}={v}\n')
+
+    load_dotenv(_VESSEL_ENV_PATH, override=True)
+    VESSEL_NAME   = os.getenv('VESSEL_NAME', vessel_name)
+    HOME_PORT_VAL = os.getenv('HOME_PORT',   home_port)
+    return jsonify({'ok': True})
 
 
 @app.route('/api/vessel-home')
