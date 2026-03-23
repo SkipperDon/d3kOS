@@ -194,6 +194,9 @@
             <input type="text" id="home-port" class="fc" value="{{ home_port }}" placeholder="e.g. Toronto, ON">
           </div>
         </div>
+        <div class="btn-group" style="margin-bottom:14px;">
+          <button class="btn btn-primary" onclick="saveVesselSettings()">&#128190; Save Vessel Settings</button>
+        </div>
         <div class="card" style="margin-bottom:14px;">
           <div style="background:rgba(0,20,0,.5);border:1px solid rgba(0,204,0,.25);border-radius:6px;padding:14px 16px;margin-bottom:14px;font-size: 20px;color:var(--muted);line-height:1.9;">
             <strong style="color:var(--text);">Gemini API Key</strong> &mdash; Get at
@@ -226,17 +229,17 @@
           <div class="ai-modes">
             <button class="ai-mode sel" onclick="selAI(this)">&#128260; Auto<br><span style="font-size: 20px;font-weight:400;">Gemini &rarr; Ollama</span></button>
             <button class="ai-mode" onclick="selAI(this)">&#127758; Gemini<br><span style="font-size: 20px;font-weight:400;">Online only</span></button>
-            <button class="ai-mode" onclick="selAI(this)">&#128187; Ollama<br><span style="font-size: 20px;font-weight:400;">192.168.1.36:11434</span></button>
+            <button class="ai-mode" onclick="selAI(this)">&#128187; Ollama<br><span style="font-size: 20px;font-weight:400;">127.0.0.1:11434</span></button>
           </div>
           <div style="margin-top:14px;">
             <div style="font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
-            <input type="text" class="fc" value="192.168.1.36:11434" style="font-family:'Courier New',monospace;margin-bottom:10px;">
+            <input type="text" class="fc" value="127.0.0.1:11434" style="font-family:'Courier New',monospace;margin-bottom:10px;">
             <div style="font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
-            <input type="text" class="fc" value="qwen3-coder:30b" style="font-family:'Courier New',monospace;">
+            <input type="text" class="fc" value="phi3.5:latest" style="font-family:'Courier New',monospace;">
           </div>
           <div>
             <div style="font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview</div>
-            <div class="prompt-box" id="prompt-preview">You are a marine navigation assistant for a vessel named <strong style="color:rgba(0,255,0,0.9);">{{ vessel_name }}</strong>, home port <strong style="color:rgba(0,255,0,0.9);">{{ home_port }}</strong>. Respond only to marine queries: port info, fuel, anchorages, passages, weather, local attractions. Keep answers concise and practical for use at sea. Route: Gemini API (online) &rarr; Ollama 192.168.1.36:11434 (offline). Never store query text.</div>
+            <div class="prompt-box" id="prompt-preview">You are a marine navigation assistant for a vessel named <strong style="color:rgba(0,255,0,0.9);">{{ vessel_name }}</strong>, home port <strong style="color:rgba(0,255,0,0.9);">{{ home_port }}</strong>. Respond only to marine queries: port info, fuel, anchorages, passages, weather, local attractions. Keep answers concise and practical for use at sea. Route: Gemini API (online) &rarr; Ollama 127.0.0.1:11434 (offline). Never store query text.</div>
           </div>
           <div style="margin-top:12px;">
             <div class="trow">
@@ -944,6 +947,20 @@
 
     function escHtml(s) {
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function saveVesselSettings() {
+      const name = (document.getElementById('vessel-name').value || '').trim();
+      const port = (document.getElementById('home-port').value  || '').trim();
+      if (!name) { showToast('\u2717 Vessel name is required'); return; }
+      fetch('/api/settings/vessel', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({vessel_name: name, home_port: port})
+      })
+      .then(r => r.json())
+      .then(d => showToast(d.ok ? '\u2713 Vessel settings saved' : '\u2717 ' + d.error))
+      .catch(() => showToast('\u2717 Save failed \u2014 check connection'));
     }
 
   </script>
