@@ -998,5 +998,34 @@
     #doc-overlay strong { color:var(--ink); }
   </style>
 
+<script>
+  /* ── Setup Wizard return banner ──
+   * If settings was opened with ?from=setup (from the wizard step 7
+   * camera button), show a fixed banner so the user knows the wizard
+   * is still open in the other tab.
+   */
+  (function () {
+    if (!/[?&]from=setup/.test(window.location.search)) return;
+
+    var banner = document.createElement('div');
+    banner.style.cssText =
+      'position:fixed;bottom:0;left:0;right:0;z-index:9999;' +
+      'background:#003200;border-top:2px solid #00CC00;' +
+      'display:flex;align-items:center;justify-content:space-between;' +
+      'padding:0 20px;height:56px;font-family:"Chakra Petch",sans-serif;';
+    banner.innerHTML =
+      '<span style="font-size:18px;color:rgba(214,237,214,.8);font-weight:600;">' +
+        '&#9875; Setup Wizard is open in your other tab' +
+      '</span>' +
+      '<a href="/setup" style="display:flex;align-items:center;gap:8px;height:40px;' +
+        'padding:0 18px;background:#004400;border:2px solid #00CC00;border-radius:8px;' +
+        'color:#00CC00;font-family:inherit;font-size:18px;font-weight:700;' +
+        'letter-spacing:.06em;text-decoration:none;cursor:pointer;">' +
+        '&#8592; Return to Setup Wizard' +
+      '</a>';
+    document.body.appendChild(banner);
+  })();
+</script>
+
 </body>
 </html>
