@@ -135,14 +135,6 @@ function setWxView(overlay) {
 function openMenu()  { document.getElementById('menuBack').classList.add('open');  }
 function closeMenu() { document.getElementById('menuBack').classList.remove('open'); }
 
-/* ── OPENCPN LAUNCH (Node-RED via /launch/opencpn) ── */
-function launchOpenCPN() {
-  fetch('/launch/opencpn', { method: 'POST' })
-    .then(r => r.json())
-    .then(d => toast(d.ok ? 'OpenCPN launching\u2026' : 'OpenCPN unavailable'))
-    .catch(() => toast('OpenCPN unavailable'));
-}
-
 /* ── WINDOWED MODE TOGGLE (keyboard-api.py :8087) ── */
 function toggleWindowedMode() {
   closeMenu();

@@ -124,10 +124,3 @@ function openCameras() {
   window.open('http://localhost:8084', '_blank');
 }
 
-/** Trigger OpenCPN launch via Node-RED POST (route: /launch/opencpn). */
-function launchOpenCPN() {
-  fetch('/launch/opencpn', { method: 'POST' })
-    .then(r => r.json())
-    .then(d => { if (!d.ok) console.warn('OpenCPN launch error:', d.error); })
-    .catch(e => console.warn('OpenCPN launch failed:', e));
-}
