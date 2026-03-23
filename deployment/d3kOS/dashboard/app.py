@@ -127,8 +127,37 @@ def setup_post():
     vessel_name     = request.form.get('vessel_name', '').strip()
     home_port       = request.form.get('home_port', '').strip()
     ui_lang         = request.form.get('ui_lang', 'en-GB').strip()
-    equipment_notes = request.form.get('equipment_notes', '').strip()
     gemini_key      = request.form.get('gemini_api_key', '').strip()
+
+    # Vessel particulars
+    boat_make       = request.form.get('boat_make', '').strip()
+    boat_year       = request.form.get('boat_year', '').strip()
+    boat_model      = request.form.get('boat_model', '').strip()
+    boat_type       = request.form.get('boat_type', '').strip()
+    boat_loa        = request.form.get('boat_loa', '').strip()
+    boat_region     = request.form.get('boat_region', '').strip()
+
+    # Engine 1
+    engine_make     = request.form.get('engine_make', '').strip()
+    engine_model    = request.form.get('engine_model', '').strip()
+    engine_year     = request.form.get('engine_year', '').strip()
+    engine_hp       = request.form.get('engine_hp', '').strip()
+    engine_cylinders= request.form.get('engine_cylinders', '').strip()
+    engine_fuel     = request.form.get('engine_fuel', '').strip()
+    engine_induction= request.form.get('engine_induction', '').strip()
+    engine_idle_rpm = request.form.get('engine_idle_rpm', '').strip()
+    engine_max_rpm  = request.form.get('engine_max_rpm', '').strip()
+    engine_count    = request.form.get('engine_count', '1').strip()
+
+    # Engine 2 (twin only)
+    engine2_make    = request.form.get('engine2_make', '').strip()
+    engine2_model   = request.form.get('engine2_model', '').strip()
+    engine2_year    = request.form.get('engine2_year', '').strip()
+
+    # Electronics
+    nmea_gateway    = request.form.get('nmea_gateway', '').strip()
+    chartplotter    = request.form.get('chartplotter', '').strip()
+    vhf_radio       = request.form.get('vhf_radio', '').strip()
 
     run_count = int(os.getenv('ONBOARDING_RUNS', '0')) + 1
 
@@ -141,16 +170,38 @@ def setup_post():
 
     # Write vessel.env (non-sensitive owner config)
     os.makedirs(_cfg_dir, exist_ok=True)
-    vessel_lines = [
-        f'VESSEL_NAME={vessel_name}',
-        f'HOME_PORT={home_port}',
-        f'UI_LANG={ui_lang}',
-        f'ONBOARDING_RUNS={run_count}',
-    ]
-    if equipment_notes:
-        vessel_lines.append(f'EQUIPMENT_NOTES={equipment_notes}')
+    vessel_data = {
+        'VESSEL_NAME':       vessel_name,
+        'HOME_PORT':         home_port,
+        'UI_LANG':           ui_lang,
+        'ONBOARDING_RUNS':   str(run_count),
+        'BOAT_MAKE':         boat_make,
+        'BOAT_YEAR':         boat_year,
+        'BOAT_MODEL':        boat_model,
+        'BOAT_TYPE':         boat_type,
+        'BOAT_LOA':          boat_loa,
+        'BOAT_REGION':       boat_region,
+        'ENGINE_MAKE':       engine_make,
+        'ENGINE_MODEL':      engine_model,
+        'ENGINE_YEAR':       engine_year,
+        'ENGINE_HP':         engine_hp,
+        'ENGINE_CYLINDERS':  engine_cylinders,
+        'ENGINE_FUEL':       engine_fuel,
+        'ENGINE_INDUCTION':  engine_induction,
+        'ENGINE_IDLE_RPM':   engine_idle_rpm,
+        'ENGINE_MAX_RPM':    engine_max_rpm,
+        'ENGINE_COUNT':      engine_count,
+        'ENGINE2_MAKE':      engine2_make,
+        'ENGINE2_MODEL':     engine2_model,
+        'ENGINE2_YEAR':      engine2_year,
+        'NMEA_GATEWAY':      nmea_gateway,
+        'CHARTPLOTTER':      chartplotter,
+        'VHF_RADIO':         vhf_radio,
+    }
     with open(_VESSEL_ENV_PATH, 'w') as f:
-        f.write('\n'.join(vessel_lines) + '\n')
+        for k, v in vessel_data.items():
+            if v:  # skip empty fields — avoids blank lines in env file
+                f.write(f'{k}={v}\n')
 
     # Write api-keys.env (gitignored — Gemini key only written if provided)
     if gemini_key:
