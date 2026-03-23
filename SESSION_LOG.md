@@ -6478,3 +6478,146 @@ Trend: improving | Primary improvement target: MLS (22C scored 0 — session-sta
 - GPS outdoor verification (Don's task)
 
 ---
+
+## Session — 2026-03-23F — Ollama Config Fix + Settings Vessel Save
+
+**Goal:** Fix Ollama not appearing as online in /status; fix vessel name/home port save on settings page doing nothing.
+
+---
+
+### Issue 1 — Ollama health check returning false
+
+**Root cause (two-layer):**
+
+Layer 1 (pre-compaction): `gemini.env` on Pi had `OLLAMA_URL=http://192.168.1.36:11434`
+and `OLLAMA_MODEL=qwen3-coder:30b`. Workstation address was wrong — Ollama runs on the Pi
+at `127.0.0.1:11434`. Model `qwen3-coder:30b` was not installed on Pi.
+Fix: updated `gemini.env` to `OLLAMA_URL=http://127.0.0.1:11434` and `OLLAMA_MODEL=phi3.5:latest`.
+Backup: `gemini.env.bak-20260323`.
+
+Layer 2 (post-compaction): `/status` still returned `ollama: false` despite app.py default
+being corrected. Found that `/opt/d3kos/services/dashboard/config/d3kos-config.env` had
+`OLLAMA_HOST=192.168.1.36:11434` — this env var is loaded at Flask startup via `load_dotenv`
+and overrides the app.py default. Fixed to `127.0.0.1:11434` directly on Pi.
+Result: `curl http://localhost:3000/status` → `{"ollama":true,...}`.
+
+### Issue 2 — Settings vessel save does nothing
+
+**Root cause:** The settings page has `id="vessel-name"` and `id="home-port"` inputs but no
+save button and no corresponding API endpoint. The `/setup POST` route handles the onboarding
+wizard save but is not connected to the settings page. Feature was never wired up.
+
+**Fix:**
+- Added `POST /api/settings/vessel` endpoint to `app.py` — reads vessel_name + home_port
+  from JSON body, reads existing `vessel.env`, updates only VESSEL_NAME and HOME_PORT
+  (preserving other keys: UI_LANG, HOME_PORT_LAT, HOME_PORT_LON, ONBOARDING_RUNS etc.),
+  writes back, reloads env, updates runtime globals.
+- Added `saveVesselSettings()` JS function to `settings.html` — fetches the new endpoint,
+  shows toast on success or error.
+- Added "Save Vessel Settings" button (`.btn.btn-primary`) between the vessel/home port
+  inputs and the Gemini API key card.
+
+**Endpoint verified on Pi:**
+```
+curl -X POST http://localhost:3000/api/settings/vessel \
+  -H 'Content-Type: application/json' \
+  -d '{"vessel_name":"Test","home_port":"Test Port"}'
+→ {"ok":true}
+vessel.env preserved: UI_LANG, HOME_PORT_LAT, HOME_PORT_LON
+```
+
+### Issue 3 — Settings page showing wrong Ollama address and model
+
+Settings.html had three hardcoded instances of the old workstation values:
+- AI mode button label: `192.168.1.36:11434`
+- Ollama LAN Address input: `192.168.1.36:11434`
+- Ollama Model input: `qwen3-coder:30b`
+- System Prompt Preview text: `Ollama 192.168.1.36:11434`
+
+All updated to `127.0.0.1:11434` and `phi3.5:latest`.
+
+---
+
+**Completed:**
+- Fixed `d3kos-config.env` on Pi: `OLLAMA_HOST=192.168.1.36:11434` → `127.0.0.1:11434`
+- Fixed `gemini.env` on Pi: `OLLAMA_URL` + `OLLAMA_MODEL` (pre-compaction, Pi only)
+- `/status` endpoint returns `ollama:true` — confirmed
+- Added `POST /api/settings/vessel` endpoint to `app.py`
+- Added save button + `saveVesselSettings()` JS to `settings.html`
+- Corrected all 3 Ollama display values in `settings.html` (address + model)
+- Deployed: `app.py`, `settings.html` → Pi; `d3kos-dashboard` restarted
+- Commit: `86f85d2`
+
+---
+
+**Files changed:**
+
+Local repo:
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/d3kOS/dashboard/app.py` | Added `POST /api/settings/vessel` endpoint; fixed `OLLAMA_HOST` default | 86f85d2 |
+| `deployment/d3kOS/dashboard/templates/settings.html` | Added vessel save button + JS; fixed 3 Ollama display values | 86f85d2 |
+
+Pi only (no local repo copy — gitignored):
+| File | Pi Path | Change |
+|------|---------|--------|
+| `d3kos-config.env` | `/opt/d3kos/services/dashboard/config/` | `OLLAMA_HOST`: workstation → `127.0.0.1:11434` |
+| `gemini.env` | `/opt/d3kos/services/gemini-nav/config/` | `OLLAMA_URL` + `OLLAMA_MODEL` corrected. Backup: `.bak-20260323` |
+
+---
+
+### Release Package Manifest
+
+- Version: v0.9.2 (bug fixes, no version bump)
+- Update type: hotfix
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `app.py` | `/opt/d3kos/services/dashboard/` | base | Added `/api/settings/vessel` endpoint |
+| `settings.html` | `/opt/d3kos/services/dashboard/templates/` | base | Vessel save button + JS; Ollama display corrected |
+| `d3kos-config.env` | `/opt/d3kos/services/dashboard/config/` | runtime | `OLLAMA_HOST` corrected |
+| `gemini.env` | `/opt/d3kos/services/gemini-nav/config/` | runtime | `OLLAMA_URL` + `OLLAMA_MODEL` corrected |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` (done); `d3kos-gemini-proxy` restarted (done)
+- Rollback: `git checkout 86f85d2~1 -- deployment/d3kOS/dashboard/app.py deployment/d3kOS/dashboard/templates/settings.html` + redeploy + restart; restore `gemini.env.bak-20260323` on Pi
+- Health check: Settings page → AI section → type new vessel name → Save Vessel Settings → toast "✓ Vessel settings saved". `/status` → `ollama:true`.
+
+---
+
+QUALITY METRICS — 2026-03-23F
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: diagnose ollama:false, fix d3kos-config.env + gemini.env,
+  add vessel save endpoint + button + JS, fix Ollama display values, deploy, commit.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. Pi config changes stated before executing.
+  No required stop gate missed.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (loaded via context continuation)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (23B→23F): 100, 100, 100, 100, 100 = 100/100
+Trend: stable at perfect | Primary improvement target: none — all metrics at ceiling
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don to decide: remove `/opt/d3kos/scripts/install-opencpn.sh` and stale root `dashboard/index.html`
+- UAT: 5 metric + 5 imperial users
+- Marine Vision UI rebuild if layout still not as expected (checklist item 9)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+
+---
