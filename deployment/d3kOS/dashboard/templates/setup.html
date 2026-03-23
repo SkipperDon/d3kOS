@@ -51,7 +51,6 @@
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
     flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,.3); position: relative; z-index: 10;
   }
-  /* Back button — always on left */
   .sb-back {
     display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px;
     background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.22);
@@ -71,11 +70,11 @@
   #setup-scroll { position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
     overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 
-  /* ── Outer wrapper — full width ── */
+  /* ── Outer wrapper ── */
   #setup-wrap { display: flex; align-items: flex-start; justify-content: center;
     padding: 0 0 60px; min-height: 100%; }
 
-  /* ── Card — full width on Pi, max sensible on desktop ── */
+  /* ── Card ── */
   #setup-card { width: 100%; max-width: 1100px; background: var(--cell); }
 
   /* ── Progress bar ── */
@@ -166,31 +165,58 @@
   .pairing-copied { display: none; font-size: 20px; font-weight: 700; color: var(--g-txt); margin-top: 8px; }
 
   /* ── DIP switch section ── */
-  .dip-section { display: none; margin-top: 18px; }
-  .dip-section.visible { display: block; }
   .dip-block { background: var(--panel); border: 1px solid var(--rule);
-    border-radius: 10px; padding: 18px 22px; margin-bottom: 14px; }
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
   .dip-block-title { font-size: 20px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
     color: var(--g-txt); margin-bottom: 16px; }
   .dip-switches { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-  .dip-sw { width: 48px; height: 68px; border-radius: 6px; display: flex; flex-direction: column;
-    align-items: center; justify-content: space-between; padding: 7px 4px;
+  .dip-sw { width: 52px; height: 72px; border-radius: 6px; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; padding: 8px 4px;
     border: 2px solid var(--rule); transition: all .2s; }
   .dip-sw.on  { background: var(--g-txt); border-color: var(--g-txt); }
   .dip-sw.off { background: var(--bg); border-color: var(--ink3); }
-  .dip-sw-num { font-size: 14px; font-weight: 700; }
+  .dip-sw-num { font-size: 15px; font-weight: 700; }
   .dip-sw.on  .dip-sw-num   { color: #fff; }
   .dip-sw.off .dip-sw-num   { color: var(--ink3); }
   .dip-sw-state { font-size: 13px; font-weight: 900; letter-spacing: .04em; }
   .dip-sw.on  .dip-sw-state { color: #fff; }
   .dip-sw.off .dip-sw-state { color: var(--ink3); }
-  .dip-key { font-size: 19px; color: var(--ink2); line-height: 1.9; }
+  .dip-key { font-size: 19px; color: var(--ink2); line-height: 2; }
   .dip-key strong { color: var(--g-txt); }
+
+  /* ── DIP "why" box ── */
+  .dip-why { background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 10px;
+    padding: 18px 22px; margin-bottom: 16px; }
+  .dip-why-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .08em;
+    color: var(--g-txt); margin-bottom: 12px; }
+  .dip-why-body { font-size: 20px; color: var(--ink2); line-height: 1.8; }
+  .dip-why-body p { margin-bottom: 8px; }
+  .dip-why-body strong { color: var(--ink); }
+
+  /* ── DIP install steps ── */
+  .dip-install { background: var(--adv-bg); border: 1px solid var(--adv-bdr); border-radius: 10px;
+    padding: 16px 22px; margin-bottom: 16px; }
+  .dip-install-title { font-size: 20px; font-weight: 700; color: var(--adv-num); margin-bottom: 10px; }
+  .dip-install ol { padding-left: 22px; }
+  .dip-install ol li { font-size: 20px; color: var(--adv-num); line-height: 1.8; }
+
+  /* ── DIP context header ── */
+  .dip-context { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 22px; margin-bottom: 20px; }
+  .dip-context-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: .08em;
+    color: var(--g-txt); margin-bottom: 6px; }
+  .dip-context-sub { font-size: 20px; color: var(--ink2); line-height: 1.6; }
 
   /* ── Notice box ── */
   .notice-box { background: var(--adv-bg); border: 1px solid var(--adv-bdr);
     border-radius: 10px; padding: 16px 20px; font-size: 20px; color: var(--adv-num);
-    line-height: 1.7; margin-top: 18px; }
+    line-height: 1.7; margin-bottom: 16px; }
+
+  /* ── No gateway notice ── */
+  .no-gw-box { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 32px 28px; text-align: center; margin-bottom: 16px; }
+  .no-gw-icon { font-size: 48px; margin-bottom: 14px; }
+  .no-gw-text { font-size: 22px; color: var(--ink2); line-height: 1.7; }
 
   /* ── API key step ── */
   .key-steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
@@ -241,8 +267,6 @@
     font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
     letter-spacing: .08em; cursor: pointer; transition: all .15s; }
   .btn-back:hover { border-color: var(--g-bdr); color: var(--ink2); }
-
-  /* ── Skip step button ── */
   .btn-skip-step { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
     font-size: 20px; font-weight: 700; color: var(--ink3); cursor: pointer;
     display: block; margin: 14px auto 0; letter-spacing: .06em; padding: 6px 0; }
@@ -317,7 +341,7 @@
 <div id="setup-wrap">
 <div id="setup-card">
 
-  <!-- Progress — 7 steps -->
+  <!-- Progress — 8 steps -->
   <div class="wiz-progress" id="wiz-progress">
     <div class="wiz-dot act" id="dot-1"></div>
     <div class="wiz-dot"     id="dot-2"></div>
@@ -326,7 +350,8 @@
     <div class="wiz-dot"     id="dot-5"></div>
     <div class="wiz-dot"     id="dot-6"></div>
     <div class="wiz-dot"     id="dot-7"></div>
-    <div class="wiz-step-lbl" id="step-lbl">STEP 1 OF 7</div>
+    <div class="wiz-dot"     id="dot-8"></div>
+    <div class="wiz-step-lbl" id="step-lbl">STEP 1 OF 8</div>
   </div>
 
   <form id="wiz-form" method="POST" action="/setup">
@@ -337,9 +362,9 @@
         <div class="card-head-over">Welcome to d3kOS</div>
         <div class="card-head-title">Your marine<br>navigation hub</div>
         <div class="card-head-sub">
-          This wizard takes about 5 minutes. It personalises your
-          dashboard, configures your NMEA gateway, and sets up your AI First Officer.
-          Every step except your vessel name is optional — skip anything you don't know yet.
+          This wizard takes about 5 minutes. It personalises your dashboard,
+          configures your NMEA gateway DIP switches, and sets up your AI First Officer.
+          Every step except your vessel name is optional — skip anything you don&rsquo;t know yet.
         </div>
       </div>
       <div class="card-body">
@@ -354,7 +379,7 @@
           </div>
           <div class="wl-item">
             <div class="wl-icon">🔧</div>
-            <div class="wl-text"><strong>NMEA 2000 setup</strong> — DIP switch configuration for your gateway, tuned to your engine and region.</div>
+            <div class="wl-text"><strong>NMEA 2000 DIP switch setup</strong> — complete CX5106 configuration diagram generated from your engine and region.</div>
           </div>
           <div class="wl-item">
             <div class="wl-icon">📱</div>
@@ -375,7 +400,7 @@
     <!-- ═══ STEP 2 — VESSEL IDENTITY ═══ -->
     <div class="wiz-step" id="wiz-2">
       <div class="card-head">
-        <div class="card-head-over">Step 2 of 7 &mdash; Vessel Identity</div>
+        <div class="card-head-over">Step 2 of 8 &mdash; Vessel Identity</div>
         <div class="card-head-title">Tell us about<br>your vessel</div>
         <div class="card-head-sub">
           Used in AI prompts, voyage logs, and manual searches.
@@ -427,7 +452,7 @@
           <div class="hint">Sets HELM voice recognition language (BCP 47 tag).</div>
         </div>
 
-        <div class="sec-div">Boat Particulars — Optional</div>
+        <div class="sec-div">Boat Particulars &mdash; Optional</div>
 
         <div class="field-row">
           <div class="field">
@@ -495,12 +520,12 @@
     <!-- ═══ STEP 3 — ENGINE & DRIVE ═══ -->
     <div class="wiz-step" id="wiz-3">
       <div class="card-head">
-        <div class="card-head-over">Step 3 of 7 &mdash; Engine &amp; Drive</div>
+        <div class="card-head-over">Step 3 of 8 &mdash; Engine &amp; Drive</div>
         <div class="card-head-title">Engine<br>configuration</div>
         <div class="card-head-sub">
           Used to calibrate engine monitor baselines, find your manuals,
-          and configure NMEA gateway DIP switches.
-          <strong>Skip if you don&rsquo;t have your engine specs handy — you can add them later in Settings.</strong>
+          and compute NMEA gateway DIP switch settings.
+          <strong>Skip if you don&rsquo;t have your engine specs — add them later in Settings.</strong>
         </div>
       </div>
       <div class="card-body">
@@ -653,11 +678,11 @@
     <!-- ═══ STEP 4 — ELECTRONICS & NMEA ═══ -->
     <div class="wiz-step" id="wiz-4">
       <div class="card-head">
-        <div class="card-head-over">Step 4 of 7 &mdash; Electronics &amp; NMEA</div>
+        <div class="card-head-over">Step 4 of 8 &mdash; Electronics &amp; NMEA</div>
         <div class="card-head-title">Nav gear &amp;<br>NMEA gateway</div>
         <div class="card-head-sub">
-          Select your NMEA 2000 gateway to see the correct DIP switch settings
-          for your engine and region.
+          Select your chartplotter, VHF, and NMEA 2000 gateway.
+          The next step will show your complete gateway configuration.
           <strong>Skip if your gateway is not installed yet.</strong>
         </div>
       </div>
@@ -677,7 +702,7 @@
 
         <div class="field">
           <label for="s4_gateway">Gateway Model</label>
-          <select id="s4_gateway" onchange="onGatewayChange()">
+          <select id="s4_gateway" onchange="saveState()">
             <option value="none">None / Not installed</option>
             <option value="cx5106">Actisense CX5106</option>
             <option value="emu1">Actisense EMU-1</option>
@@ -685,58 +710,17 @@
             <option value="garmin">Garmin NMEA 2000</option>
             <option value="other">Other</option>
           </select>
-          <div class="hint">Connects your engine ECU to NMEA 2000 / Signal K.</div>
+          <div class="hint">Connects your engine ECU to NMEA 2000 / Signal K. Next step shows the full configuration for your selection.</div>
         </div>
 
-        <!-- Tank sender standard — needed for CX5106 row 2 -->
+        <!-- Tank sender standard — needed for CX5106 row 2, collected here, used in step 5 -->
         <div class="field" id="tank-sender-field" style="display:none;">
           <label for="s4_tank_sender">Fuel / Level Sender Standard</label>
-          <select id="s4_tank_sender" onchange="renderDIP()">
+          <select id="s4_tank_sender" onchange="saveState()">
             <option value="north-america">North America &mdash; 240&ndash;33 &Omega; (high to low)</option>
             <option value="europe">Europe / International &mdash; 0&ndash;190 &Omega; (low to high)</option>
           </select>
           <div class="hint">Matches the resistance range of your fuel and water tank senders.</div>
-        </div>
-
-        <!-- CX5106 DIP section -->
-        <div class="dip-section" id="dip-cx5106">
-          <div id="dip-port-block" class="dip-block">
-            <div class="dip-block-title" id="dip-port-title">&#128261; DIP Switch Settings</div>
-            <div class="dip-switches" id="dip-port-row1"></div>
-            <div class="dip-key" id="dip-port-key1"></div>
-            <div style="margin-top:14px;border-top:1px solid var(--rule);padding-top:14px;">
-              <div class="dip-block-title" style="font-size:19px;margin-bottom:12px;">ROW 2 &mdash; Regional</div>
-              <div class="dip-switches" id="dip-port-row2"></div>
-              <div class="dip-key" id="dip-port-key2"></div>
-            </div>
-          </div>
-          <div id="dip-stbd-block" class="dip-block" style="display:none;">
-            <div class="dip-block-title">&#128261; DIP Switch Settings &mdash; Starboard Engine</div>
-            <div class="dip-switches" id="dip-stbd-row1"></div>
-            <div class="dip-key" id="dip-stbd-key1"></div>
-            <div style="margin-top:14px;border-top:1px solid var(--rule);padding-top:14px;">
-              <div class="dip-block-title" style="font-size:19px;margin-bottom:12px;">ROW 2 &mdash; Regional</div>
-              <div class="dip-switches" id="dip-stbd-row2"></div>
-              <div class="dip-key" id="dip-stbd-key2"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- EMU-1 notice -->
-        <div class="notice-box" id="notice-emu1" style="display:none;">
-          <strong>Actisense EMU-1</strong><br>
-          DIP switches on the EMU-1 are set using the Actisense NMEA Reader software on a PC.
-          Refer to the EMU-1 Quick Reference Card included in the box. Key settings:
-          select your cylinder count, set the engine instance (0 = single/port, 1 = starboard),
-          and match the tank sender standard for your region.
-        </div>
-
-        <!-- Generic notice -->
-        <div class="notice-box" id="notice-other" style="display:none;">
-          <strong>NMEA 2000 Gateway</strong><br>
-          Refer to the configuration guide included with your gateway.
-          Key parameters to set: engine instance number (0 for single/port, 1 for starboard),
-          cylinder count, and fuel/level sender resistance range for your region.
         </div>
 
         <button type="button" class="btn-submit" onclick="goTo(5)">NEXT &rsaquo;</button>
@@ -745,10 +729,116 @@
       </div>
     </div>
 
-    <!-- ═══ STEP 5 — MOBILE PAIRING ═══ -->
+    <!-- ═══ STEP 5 — GATEWAY CONFIGURATION (DIP SWITCHES) ═══ -->
     <div class="wiz-step" id="wiz-5">
       <div class="card-head">
-        <div class="card-head-over">Step 5 of 7 &mdash; Mobile Pairing</div>
+        <div class="card-head-over">Step 5 of 8 &mdash; Gateway Configuration</div>
+        <div class="card-head-title" id="dip-step-title">NMEA Gateway<br>DIP Switches</div>
+        <div class="card-head-sub" id="dip-step-sub">
+          Complete configuration for your selected NMEA 2000 gateway,
+          computed from your engine and region settings.
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- CX5106 content -->
+        <div id="dip-cx5106-content" style="display:none;">
+
+          <!-- Context header — engine / region summary -->
+          <div class="dip-context" id="dip-context-header">
+            <div class="dip-context-title" id="dip-context-title">CX5106 Configuration</div>
+            <div class="dip-context-sub" id="dip-context-sub"></div>
+          </div>
+
+          <!-- PORT / single engine block -->
+          <div class="dip-block">
+            <div class="dip-block-title" id="dip-port-title">&#128261; Row 1 &mdash; Engine Configuration (8 switches)</div>
+            <div class="dip-switches" id="dip-port-row1"></div>
+            <div class="dip-key" id="dip-port-key1"></div>
+            <div style="margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;">
+              <div class="dip-block-title" style="font-size:19px;margin-bottom:12px;">Row 2 &mdash; Regional &amp; Position (2 switches)</div>
+              <div class="dip-switches" id="dip-port-row2"></div>
+              <div class="dip-key" id="dip-port-key2"></div>
+            </div>
+          </div>
+
+          <!-- STARBOARD engine block (twin only) -->
+          <div id="dip-stbd-block" class="dip-block" style="display:none;">
+            <div class="dip-block-title">&#128261; Row 1 &mdash; Starboard Engine (8 switches)</div>
+            <div class="dip-switches" id="dip-stbd-row1"></div>
+            <div class="dip-key" id="dip-stbd-key1"></div>
+            <div style="margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;">
+              <div class="dip-block-title" style="font-size:19px;margin-bottom:12px;">Row 2 &mdash; Regional &amp; Position (2 switches)</div>
+              <div class="dip-switches" id="dip-stbd-row2"></div>
+              <div class="dip-key" id="dip-stbd-key2"></div>
+            </div>
+          </div>
+
+          <!-- Why these settings -->
+          <div class="dip-why" id="dip-why-box">
+            <div class="dip-why-title">Why These Settings?</div>
+            <div class="dip-why-body" id="dip-why-body"></div>
+          </div>
+
+          <!-- Installation steps -->
+          <div class="dip-install">
+            <div class="dip-install-title">&#9888; Before Changing DIP Switches</div>
+            <ol>
+              <li>Power off the CX5106 before touching any switches</li>
+              <li>Use a small flat-head screwdriver or pen tip to flip each switch</li>
+              <li>Take a photo of this screen or write down the settings</li>
+              <li>Reconnect power — changes take effect immediately</li>
+              <li>Verify data is flowing in Signal K at localhost:8099</li>
+            </ol>
+          </div>
+
+        </div><!-- /#dip-cx5106-content -->
+
+        <!-- EMU-1 content -->
+        <div class="notice-box" id="notice-emu1" style="display:none;">
+          <strong style="font-size:22px;display:block;margin-bottom:10px;">Actisense EMU-1 — Software Configuration</strong>
+          DIP switches on the EMU-1 are configured using <strong>Actisense NMEA Reader</strong> software on a Windows PC.
+          Refer to the EMU-1 Quick Reference Card included in the box.<br><br>
+          Key settings to configure:
+          <ul style="margin:10px 0 0 22px;">
+            <li>Cylinder count: <strong id="emu1-cyl">see Step 3</strong></li>
+            <li>Engine instance: <strong>0</strong> for single/port &mdash; <strong>1</strong> for starboard</li>
+            <li>Tank sender standard: <strong id="emu1-tank">see Step 4</strong></li>
+          </ul>
+        </div>
+
+        <!-- Other gateways -->
+        <div class="notice-box" id="notice-other" style="display:none;">
+          <strong style="font-size:22px;display:block;margin-bottom:10px;">NMEA 2000 Gateway Configuration</strong>
+          Refer to the configuration guide included with your gateway.<br><br>
+          Key parameters to set:
+          <ul style="margin:10px 0 0 22px;">
+            <li>Engine instance: <strong>0</strong> for single/port &mdash; <strong>1</strong> for starboard</li>
+            <li>Cylinder count: <strong id="other-cyl">see Step 3</strong></li>
+            <li>Fuel/level sender resistance range for your region</li>
+          </ul>
+        </div>
+
+        <!-- No gateway -->
+        <div class="no-gw-box" id="notice-none" style="display:none;">
+          <div class="no-gw-icon">&#128225;</div>
+          <div class="no-gw-text">
+            No NMEA 2000 gateway selected.<br>
+            You can add one later from <strong>Settings &rarr; Engine Configuration</strong>.<br>
+            The DIP switch diagram will be generated when you add a gateway.
+          </div>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="goTo(6)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(4)">&larr; Back</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(6)">Skip &rsaquo;</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 6 — MOBILE PAIRING ═══ -->
+    <div class="wiz-step" id="wiz-6">
+      <div class="card-head">
+        <div class="card-head-over">Step 6 of 8 &mdash; Mobile Pairing</div>
         <div class="card-head-title">Connect your<br>mobile phone</div>
         <div class="card-head-sub">
           Scan the QR code or type your unique vessel ID to pair the
@@ -771,16 +861,16 @@
             &bull; You can pair later &mdash; tap Skip to continue
           </div>
         </div>
-        <button type="button" class="btn-submit" onclick="goTo(6)">NEXT &rsaquo;</button>
-        <button type="button" class="btn-back" onclick="goTo(4)">&larr; Back</button>
-        <button type="button" class="btn-skip-step" onclick="goTo(6)">Skip &mdash; I&rsquo;ll pair later &rsaquo;</button>
+        <button type="button" class="btn-submit" onclick="goTo(7)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(5)">&larr; Back</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(7)">Skip &mdash; I&rsquo;ll pair later &rsaquo;</button>
       </div>
     </div>
 
-    <!-- ═══ STEP 6 — GEMINI API KEY ═══ -->
-    <div class="wiz-step" id="wiz-6">
+    <!-- ═══ STEP 7 — GEMINI API KEY ═══ -->
+    <div class="wiz-step" id="wiz-7">
       <div class="card-head">
-        <div class="card-head-over">Step 6 of 7 &mdash; AI Key</div>
+        <div class="card-head-over">Step 7 of 8 &mdash; AI Key</div>
         <div class="card-head-title">Gemini API<br>Key</div>
         <div class="card-head-sub">
           HELM uses Google Gemini for marine AI. A free API key gives you
@@ -809,19 +899,19 @@
           <div class="hint">Stored securely on this Pi &mdash; never shared or committed to git.</div>
         </div>
         <div class="key-skip-row">
-          <button type="button" class="key-skip" onclick="document.getElementById('gemini_api_key').value=''; goTo(7)">
+          <button type="button" class="key-skip" onclick="document.getElementById('gemini_api_key').value=''; goTo(8)">
             Skip for now
           </button>
         </div>
-        <button type="button" class="btn-submit" onclick="goTo(7)">NEXT &rsaquo;</button>
-        <button type="button" class="btn-back" onclick="goTo(5)">&larr; Back</button>
+        <button type="button" class="btn-submit" onclick="goTo(8)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(6)">&larr; Back</button>
       </div>
     </div>
 
-    <!-- ═══ STEP 7 — DONE ═══ -->
-    <div class="wiz-step" id="wiz-7">
+    <!-- ═══ STEP 8 — DONE ═══ -->
+    <div class="wiz-step" id="wiz-8">
       <div class="card-head">
-        <div class="card-head-over">Step 7 of 7 &mdash; All done</div>
+        <div class="card-head-over">Step 8 of 8 &mdash; All done</div>
         <div class="card-head-title">Ready to<br>set sail</div>
         <div class="card-head-sub">Your vessel is configured. Tap Launch to start d3kOS.</div>
       </div>
@@ -831,7 +921,7 @@
         <div style="background:var(--panel);border:2px solid var(--g-bdr);border-radius:14px;padding:20px 24px;margin:18px 0;text-align:left;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.08em;color:var(--g-txt);margin-bottom:8px;">&#128249; Camera Setup</div>
           <div style="font-size:20px;color:var(--ink2);line-height:1.6;margin-bottom:16px;">
-            Set up your cameras now — or any time from<br><strong>Settings &rarr; Camera Setup</strong>.
+            Set up your cameras now — or any time from <strong>Settings &rarr; Camera Setup</strong>.
             Opening camera setup will not interrupt your wizard — it opens in a new tab.
           </div>
           <button type="button" class="btn-submit" style="margin:0;"
@@ -840,7 +930,7 @@
           </button>
         </div>
         <button type="submit" class="btn-submit" onclick="assembleFinalData()">LAUNCH d3kOS &rsaquo;</button>
-        <button type="button" class="btn-back" onclick="goTo(6)">&larr; Back</button>
+        <button type="button" class="btn-back" onclick="goTo(7)">&larr; Back</button>
       </div>
     </div>
 
@@ -878,17 +968,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
   onerror="document.getElementById('qr-fallback').style.display='block'"></script>
 <script>
-  /* Night mode — applied before render */
+  /* Night mode */
   (function () {
     var h = new Date().getHours();
     if (h < 7 || h >= 20) document.body.setAttribute('data-night', '');
   })();
 
-  /* === Wizard state === */
   var currentStep = 1;
-  var DEVICE_UUID  = '{{ device_uuid }}';
-  var twinEnabled  = false;
-  var WIZ_KEY      = 'd3kos_wiz_v2';
+  var STEPS       = 8;
+  var DEVICE_UUID = '{{ device_uuid }}';
+  var twinEnabled = false;
+  var WIZ_KEY     = 'd3kos_wiz_v3';
 
   /* ── Helpers ── */
   function gv(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
@@ -897,11 +987,16 @@
     var e = document.getElementById(id);
     if (!e || !val) return;
     for (var i = 0; i < e.options.length; i++) {
-      if (e.options[i].value === val || e.options[i].text === val) {
-        e.selectedIndex = i; break;
-      }
+      if (e.options[i].value === val || e.options[i].text === val) { e.selectedIndex = i; break; }
     }
   }
+
+  /* ── Show/hide tank sender field when gateway changes ── */
+  document.getElementById('s4_gateway').addEventListener('change', function() {
+    var gw = this.value;
+    document.getElementById('tank-sender-field').style.display = (gw === 'cx5106') ? 'block' : 'none';
+    saveState();
+  });
 
   /* ── localStorage save ── */
   function saveState() {
@@ -955,13 +1050,21 @@
       sel('s4_tank_sender',s.s4_tank_sender);
       sv('s4_chartplotter',s.s4_chartplotter);
       sv('s4_vhf',         s.s4_vhf);
-      if (s.twin) { twinEnabled = true; document.getElementById('twin-tgl').classList.add('on'); document.getElementById('engine2-block').classList.add('visible'); document.getElementById('h_engine_count').value = 'twin'; }
-      onGatewayChange();
+      /* restore tank sender visibility */
+      var gw = gv('s4_gateway');
+      if (gw === 'cx5106') document.getElementById('tank-sender-field').style.display = 'block';
+      /* restore twin */
+      if (s.twin) {
+        twinEnabled = true;
+        document.getElementById('twin-tgl').classList.add('on');
+        document.getElementById('engine2-block').classList.add('visible');
+        document.getElementById('h_engine_count').value = 'twin';
+      }
       if (s.step && s.step > 1) goTo(s.step);
     } catch(e) {}
   }
 
-  /* === Navigation === */
+  /* ── Navigation ── */
   function goTo(n) {
     var from = document.getElementById('wiz-' + currentStep);
     var to   = document.getElementById('wiz-' + n);
@@ -970,26 +1073,26 @@
     to.classList.add('active');
     currentStep = n;
     updateProgress(n);
-    if (n === 4) renderDIP();
-    if (n === 5) initQR();
-    if (n === 7) buildSummary();
+    if (n === 5) renderDIP();
+    if (n === 6) initQR();
+    if (n === 8) buildSummary();
     document.getElementById('setup-scroll').scrollTop = 0;
     saveState();
   }
 
   function updateProgress(n) {
-    for (var i = 1; i <= 7; i++) {
+    for (var i = 1; i <= STEPS; i++) {
       var dot = document.getElementById('dot-' + i);
       if (!dot) continue;
       dot.className = 'wiz-dot';
-      if (i < n)      dot.classList.add('done');
+      if (i < n)       dot.classList.add('done');
       else if (i === n) dot.classList.add('act');
     }
     var lbl = document.getElementById('step-lbl');
-    if (lbl) lbl.textContent = 'STEP ' + n + ' OF 7';
+    if (lbl) lbl.textContent = 'STEP ' + n + ' OF ' + STEPS;
   }
 
-  /* === Step 2 validation === */
+  /* ── Step 2 validation ── */
   function validateStep2() {
     var name = document.getElementById('vessel_name').value.trim();
     if (!name) {
@@ -1001,23 +1104,21 @@
     goTo(3);
   }
 
-  /* === QR code === */
+  /* ── QR code ── */
   function initQR() {
     var canvas = document.getElementById('qr-canvas');
     if (!canvas || canvas.children.length > 0) return;
-    var payload = 'd3kos://pair/' + DEVICE_UUID;
     if (typeof QRCode !== 'undefined') {
       new QRCode(canvas, {
-        text: payload, width: 200, height: 200,
-        colorDark: '#000000', colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
+        text: 'd3kos://pair/' + DEVICE_UUID, width: 200, height: 200,
+        colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
       });
     } else {
       document.getElementById('qr-fallback').style.display = 'block';
     }
   }
 
-  /* === Copy UUID === */
+  /* ── Copy UUID ── */
   function copyUUID() {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(DEVICE_UUID).then(showCopied).catch(fallbackCopy);
@@ -1035,35 +1136,21 @@
     setTimeout(function () { el.style.display = 'none'; }, 2000);
   }
 
-  /* === Twin engine toggle === */
+  /* ── Twin engine toggle ── */
   function toggleTwin() {
     twinEnabled = !twinEnabled;
-    var tgl   = document.getElementById('twin-tgl');
-    var block = document.getElementById('engine2-block');
-    if (twinEnabled) { tgl.classList.add('on'); block.classList.add('visible'); }
-    else             { tgl.classList.remove('on'); block.classList.remove('visible'); }
+    document.getElementById('twin-tgl').classList.toggle('on', twinEnabled);
+    document.getElementById('engine2-block').classList.toggle('visible', twinEnabled);
     document.getElementById('h_engine_count').value = twinEnabled ? 'twin' : 'single';
     saveState();
   }
 
-  /* === NMEA gateway change === */
-  function onGatewayChange() {
-    var gw = document.getElementById('s4_gateway').value;
-    document.getElementById('tank-sender-field').style.display = (gw === 'cx5106') ? 'block' : 'none';
-    document.getElementById('dip-cx5106').classList.toggle('visible', gw === 'cx5106');
-    document.getElementById('notice-emu1').style.display  = (gw === 'emu1')  ? 'block' : 'none';
-    document.getElementById('notice-other').style.display =
-      (gw === 'ydab' || gw === 'garmin' || gw === 'other') ? 'block' : 'none';
-    if (gw === 'cx5106') renderDIP();
-  }
-
-  /* === DIP switch renderer (CX5106) ===
-   *
+  /* ── DIP switch renderer (CX5106) ──
    * Row 1 — 8 switches (Engine Configuration)
-   *   SW1-2 : Engine instance  00=single/port  01=port(twin)  10=starboard
-   *   SW3-4 : RPM sensor type  00=alternator W-terminal (most common)
-   *   SW5-6 : Cylinder count   see cylinderMap below
-   *   SW7   : Stroke           0=4-stroke  1=2-stroke
+   *   SW1-2 : Engine instance  00=single/port  10=starboard
+   *   SW3-4 : RPM sensor type  00=alternator W-terminal
+   *   SW5-6 : Cylinder count   cylinderMap below
+   *   SW7   : Stroke type      0=4-stroke  1=2-stroke
    *   SW8   : Gear ratio       0=1:1 direct drive
    *
    * Row 2 — 2 switches (Regional)
@@ -1071,84 +1158,140 @@
    *   SW2   : Position     0=primary/port  1=starboard
    */
   var cylinderMap = {
-    '1':  [0,0], '2':  [1,0], '3':  [0,1],
-    '4':  [0,0], '6':  [1,0], '8':  [0,1], '12': [1,1]
+    '1':[0,0],'2':[1,0],'3':[0,1],'4':[0,0],'6':[1,0],'8':[0,1],'12':[1,1]
   };
 
   function buildDIPRow1(cylinders, isTwoStroke, instance) {
-    var cylConf = cylinderMap[String(cylinders)] || [0,0];
-    var instSW  = (instance === 1) ? [1,0] : [0,0];
-    return [instSW[0], instSW[1], 0, 0, cylConf[0], cylConf[1], isTwoStroke ? 1 : 0, 0];
+    var c = cylinderMap[String(cylinders)] || [0,0];
+    var inst = (instance === 1) ? [1,0] : [0,0];
+    return [inst[0], inst[1], 0, 0, c[0], c[1], isTwoStroke ? 1 : 0, 0];
   }
-
   function buildDIPRow2(tankSender, instance) {
-    var tSW = (tankSender === 'north-america') ? 1 : 0;
-    var pSW = (instance === 1) ? 1 : 0;
-    return [tSW, pSW];
+    return [(tankSender === 'north-america') ? 1 : 0, (instance === 1) ? 1 : 0];
   }
 
   function renderSwitches(containerId, states) {
     var el = document.getElementById(containerId);
     if (!el) return;
-    var html = '';
-    for (var i = 0; i < states.length; i++) {
-      var on = states[i] === 1;
-      html += '<div class="dip-sw ' + (on ? 'on' : 'off') + '">' +
-              '<span class="dip-sw-num">' + (i+1) + '</span>' +
-              '<span class="dip-sw-state">' + (on ? 'ON' : 'OFF') + '</span>' +
-              '</div>';
-    }
-    el.innerHTML = html;
+    el.innerHTML = states.map(function(v, i) {
+      var on = v === 1;
+      return '<div class="dip-sw ' + (on ? 'on' : 'off') + '">' +
+             '<span class="dip-sw-num">' + (i+1) + '</span>' +
+             '<span class="dip-sw-state">' + (on ? 'ON' : 'OFF') + '</span></div>';
+    }).join('');
   }
 
   function buildRow1Key(cylinders, isTwoStroke, instance) {
-    var instLabel = (instance === 1) ? 'Starboard' : 'Single / Port';
-    var cylLabel  = cylinders + ' cylinder';
-    var strkLabel = isTwoStroke ? '2-stroke' : '4-stroke';
-    return '<strong>SW 1&ndash;2:</strong> ' + instLabel + ' (engine instance)' +
-           ' &nbsp;&bull;&nbsp; <strong>SW 3&ndash;4:</strong> Alternator W-terminal RPM' +
-           ' &nbsp;&bull;&nbsp; <strong>SW 5&ndash;6:</strong> ' + cylLabel +
-           ' &nbsp;&bull;&nbsp; <strong>SW 7:</strong> ' + strkLabel +
-           ' &nbsp;&bull;&nbsp; <strong>SW 8:</strong> 1:1 gear ratio';
+    var inst  = (instance === 1) ? 'Starboard (Instance 2)' : 'Single / Port (Instance 1)';
+    var strk  = isTwoStroke ? '2-stroke' : '4-stroke';
+    return '<strong>SW 1&ndash;2:</strong> ' + inst +
+           ' &bull; <strong>SW 3&ndash;4:</strong> Alternator W-terminal RPM' +
+           ' &bull; <strong>SW 5&ndash;6:</strong> ' + cylinders + ' cylinders' +
+           ' &bull; <strong>SW 7:</strong> ' + strk +
+           ' &bull; <strong>SW 8:</strong> 1:1 gear ratio';
+  }
+  function buildRow2Key(tankSender, instance) {
+    var t = (tankSender === 'north-america') ? 'North America 240&ndash;33 &Omega;' : 'Europe 0&ndash;190 &Omega;';
+    var p = (instance === 1) ? 'Starboard' : 'Primary / Port';
+    return '<strong>SW 1:</strong> ' + t + ' tank senders &bull; <strong>SW 2:</strong> ' + p + ' engine';
   }
 
-  function buildRow2Key(tankSender, instance) {
-    var tLabel = (tankSender === 'north-america') ? 'North America 240&ndash;33 &Omega;' : 'Europe 0&ndash;190 &Omega;';
-    var pLabel = (instance === 1) ? 'Starboard' : 'Primary / Port';
-    return '<strong>SW 1:</strong> ' + tLabel + ' tank senders' +
-           ' &nbsp;&bull;&nbsp; <strong>SW 2:</strong> ' + pLabel + ' engine';
+  function buildWhyText(cylinders, fuel, tankSender, isTwoStroke, twin) {
+    var fuelLabel = fuel === 'diesel' ? 'diesel' : (isTwoStroke ? '2-stroke outboard' : 'gasoline/4-stroke');
+    var tankLabel = (tankSender === 'north-america') ? 'North American (240&ndash;33 &Omega;)' : 'European (0&ndash;190 &Omega;)';
+    var html = '';
+    html += '<p><strong>SW 1&ndash;2 (Engine Instance):</strong> ';
+    html += twin ? 'Set to separate instances so the NMEA 2000 network distinguishes port from starboard engine data.'
+                 : 'Single engine — Instance 1 (OFF/OFF). Each engine on a network must have a unique instance.';
+    html += '</p>';
+    html += '<p><strong>SW 3&ndash;4 (RPM Sensor):</strong> OFF/OFF = Alternator W-terminal signal. ';
+    html += 'This is the most common RPM input for marine engines. Change only if using a dedicated tach signal.</p>';
+    html += '<p><strong>SW 5&ndash;6 (Cylinder Count):</strong> Computed from your ' + cylinders + '-cylinder ' + fuelLabel + ' engine. ';
+    html += 'Affects the RPM pulse multiplication factor.</p>';
+    html += '<p><strong>SW 7 (Stroke Type):</strong> ' + (isTwoStroke ? 'ON — 2-stroke engine.' : 'OFF — 4-stroke engine.') + '</p>';
+    html += '<p><strong>SW 8 (Gear Ratio):</strong> OFF = 1:1 direct drive. Change only if using a reduction gear.</p>';
+    html += '<p><strong>Row 2 SW 1 (Tank Sender):</strong> ' + tankLabel + ' resistance standard. ';
+    html += 'Ensures correct fuel, fresh water, and waste tank readings. Wrong setting inverts the reading.</p>';
+    return html;
   }
 
   function renderDIP() {
-    if (gv('s4_gateway') !== 'cx5106') return;
-
-    var cylinders   = gv('s3_eng_cyl')      || '4';
-    var fuel        = gv('s3_eng_fuel')     || 'gasoline';
-    var tankSender  = gv('s4_tank_sender')  || 'north-america';
+    var gw         = gv('s4_gateway') || 'none';
+    var cylinders  = gv('s3_eng_cyl')     || '4';
+    var fuel       = gv('s3_eng_fuel')    || 'gasoline';
+    var tankSender = gv('s4_tank_sender') || 'north-america';
+    var engMake    = gv('s3_eng_make');
+    var engModel   = gv('s3_eng_model');
+    var engYear    = gv('s3_eng_year');
+    var region     = gv('s2_boat_region') || gv('s4_tank_sender') || 'north-america';
     var isTwoStroke = (fuel === 'outboard-2s');
 
-    renderSwitches('dip-port-row1', buildDIPRow1(cylinders, isTwoStroke, 0));
-    renderSwitches('dip-port-row2', buildDIPRow2(tankSender, 0));
-    document.getElementById('dip-port-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 0);
-    document.getElementById('dip-port-key2').innerHTML = buildRow2Key(tankSender, 0);
+    /* Hide all panels first */
+    document.getElementById('dip-cx5106-content').style.display = 'none';
+    document.getElementById('notice-emu1').style.display  = 'none';
+    document.getElementById('notice-other').style.display = 'none';
+    document.getElementById('notice-none').style.display  = 'none';
 
-    var portTitle = document.getElementById('dip-port-title');
-    var stbdBlock = document.getElementById('dip-stbd-block');
+    if (gw === 'cx5106') {
+      document.getElementById('dip-cx5106-content').style.display = 'block';
 
-    if (twinEnabled) {
-      portTitle.textContent   = '&#128261; DIP Switch Settings \u2014 Port Engine';
-      stbdBlock.style.display = 'block';
-      renderSwitches('dip-stbd-row1', buildDIPRow1(cylinders, isTwoStroke, 1));
-      renderSwitches('dip-stbd-row2', buildDIPRow2(tankSender, 1));
-      document.getElementById('dip-stbd-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 1);
-      document.getElementById('dip-stbd-key2').innerHTML = buildRow2Key(tankSender, 1);
+      /* Context header */
+      var ctxTitle = 'Actisense CX5106 &mdash; Complete Configuration';
+      var ctxSub   = '';
+      var parts = [];
+      if (engMake || engModel) parts.push([engYear, engMake, engModel].filter(Boolean).join(' '));
+      if (cylinders) parts.push(cylinders + ' cyl');
+      if (fuel)      parts.push(fuel.replace('outboard-2s','outboard 2-stroke').replace('outboard-4s','outboard 4-stroke'));
+      if (tankSender === 'north-america') parts.push('North American senders');
+      else if (tankSender === 'europe')   parts.push('European senders');
+      if (twinEnabled) parts.push('Twin engines');
+      ctxSub = parts.join(' &bull; ') || 'Engine details from Step 3';
+      document.getElementById('dip-context-title').innerHTML = ctxTitle;
+      document.getElementById('dip-context-sub').innerHTML   = ctxSub;
+
+      /* Step title adaptation */
+      document.getElementById('dip-step-title').textContent = twinEnabled
+        ? 'CX5106 DIP Switches\u2014Port & Stbd'
+        : 'CX5106 DIP\nSwitch Settings';
+
+      /* Port / single */
+      var portTitle = document.getElementById('dip-port-title');
+      portTitle.textContent = twinEnabled ? '⚓ Port Engine — Row 1 (8 switches)' : '⚓ Row 1 — Engine Configuration (8 switches)';
+      renderSwitches('dip-port-row1', buildDIPRow1(cylinders, isTwoStroke, 0));
+      renderSwitches('dip-port-row2', buildDIPRow2(tankSender, 0));
+      document.getElementById('dip-port-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 0);
+      document.getElementById('dip-port-key2').innerHTML = buildRow2Key(tankSender, 0);
+
+      /* Starboard (twin) */
+      var stbdBlock = document.getElementById('dip-stbd-block');
+      if (twinEnabled) {
+        stbdBlock.style.display = 'block';
+        renderSwitches('dip-stbd-row1', buildDIPRow1(cylinders, isTwoStroke, 1));
+        renderSwitches('dip-stbd-row2', buildDIPRow2(tankSender, 1));
+        document.getElementById('dip-stbd-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 1);
+        document.getElementById('dip-stbd-key2').innerHTML = buildRow2Key(tankSender, 1);
+      } else {
+        stbdBlock.style.display = 'none';
+      }
+
+      /* Why these settings */
+      document.getElementById('dip-why-body').innerHTML =
+        buildWhyText(cylinders, fuel, tankSender, isTwoStroke, twinEnabled);
+
+      /* Update EMU-1/Other cylinder display */
+    } else if (gw === 'emu1') {
+      document.getElementById('notice-emu1').style.display = 'block';
+      document.getElementById('emu1-cyl').textContent  = cylinders ? cylinders + ' cylinders' : 'see Step 3';
+      document.getElementById('emu1-tank').textContent = (tankSender === 'north-america') ? 'North America 240-33Ω' : 'Europe 0-190Ω';
+    } else if (gw === 'none') {
+      document.getElementById('notice-none').style.display = 'block';
     } else {
-      portTitle.textContent   = '&#128261; DIP Switch Settings';
-      stbdBlock.style.display = 'none';
+      document.getElementById('notice-other').style.display = 'block';
+      document.getElementById('other-cyl').textContent = cylinders ? cylinders + ' cylinders' : 'see Step 3';
     }
   }
 
-  /* === Assemble all data into hidden fields before submit === */
+  /* ── Assemble hidden fields before submit ── */
   function assembleFinalData() {
     document.getElementById('h_boat_make').value   = gv('s2_boat_make');
     document.getElementById('h_boat_year').value   = gv('s2_boat_year');
@@ -1156,7 +1299,6 @@
     document.getElementById('h_boat_loa').value    = gv('s2_boat_loa');
     document.getElementById('h_boat_type').value   = gv('s2_boat_type');
     document.getElementById('h_boat_region').value = gv('s2_boat_region');
-
     document.getElementById('h_engine_make').value      = gv('s3_eng_make');
     document.getElementById('h_engine_model').value     = gv('s3_eng_model');
     document.getElementById('h_engine_year').value      = gv('s3_eng_year');
@@ -1166,85 +1308,66 @@
     document.getElementById('h_engine_induction').value = gv('s3_eng_induction');
     document.getElementById('h_engine_idle_rpm').value  = gv('s3_eng_idle');
     document.getElementById('h_engine_max_rpm').value   = gv('s3_eng_maxrpm');
-
     document.getElementById('h_engine2_make').value  = gv('s3_eng2_make');
     document.getElementById('h_engine2_model').value = gv('s3_eng2_model');
     document.getElementById('h_engine2_year').value  = gv('s3_eng2_year');
-
     document.getElementById('h_nmea_gateway').value = gv('s4_gateway');
     document.getElementById('h_chartplotter').value = gv('s4_chartplotter');
     document.getElementById('h_vhf_radio').value    = gv('s4_vhf');
 
     var parts = [];
-    var make = gv('s3_eng_make'); var model = gv('s3_eng_model');
-    if (make || model) parts.push('Engine: ' + [make, model].filter(Boolean).join(' '));
-    if (twinEnabled) {
-      var m2 = gv('s3_eng2_make'); var mo2 = gv('s3_eng2_model');
-      if (m2 || mo2) parts.push('Engine2: ' + [m2, mo2].filter(Boolean).join(' '));
-    }
-    if (gv('s4_chartplotter')) parts.push('Chartplotter: ' + gv('s4_chartplotter'));
-    if (gv('s4_vhf'))          parts.push('VHF: ' + gv('s4_vhf'));
-    if (gv('s4_gateway') && gv('s4_gateway') !== 'none')
-      parts.push('NMEA Gateway: ' + gv('s4_gateway'));
+    var em = gv('s3_eng_make'); var emo = gv('s3_eng_model');
+    if (em||emo) parts.push('Engine: ' + [em,emo].filter(Boolean).join(' '));
+    if (twinEnabled) { var m2=gv('s3_eng2_make'); var mo2=gv('s3_eng2_model'); if(m2||mo2) parts.push('Engine2: '+[m2,mo2].filter(Boolean).join(' ')); }
+    if (gv('s4_chartplotter')) parts.push('Chartplotter: '+gv('s4_chartplotter'));
+    if (gv('s4_vhf'))          parts.push('VHF: '+gv('s4_vhf'));
+    if (gv('s4_gateway') && gv('s4_gateway') !== 'none') parts.push('NMEA: '+gv('s4_gateway'));
     document.getElementById('equipment_notes').value = parts.join('; ');
 
-    /* Clear saved state — wizard complete */
     try { localStorage.removeItem(WIZ_KEY); } catch(e) {}
   }
 
-  /* === Done summary === */
+  /* ── Done summary ── */
   function buildSummary() {
     var name    = gv('vessel_name') || '—';
     var port    = gv('home_port')   || '—';
     var langEl  = document.getElementById('ui_lang');
     var langTxt = langEl && langEl.options ? langEl.options[langEl.selectedIndex].text : '—';
-    var engMake  = gv('s3_eng_make');
-    var engModel = gv('s3_eng_model');
-    var engStr   = [engMake, engModel].filter(Boolean).join(' ') || null;
-    var gateway  = gv('s4_gateway');
-    var gemini   = gv('gemini_api_key');
-    var boatMake = gv('s2_boat_make');
-    var boatYear = gv('s2_boat_year');
-    var boatModel= gv('s2_boat_model');
-    var boatStr  = [boatYear, boatMake, boatModel].filter(Boolean).join(' ') || null;
+    var engStr  = [gv('s3_eng_make'), gv('s3_eng_model')].filter(Boolean).join(' ') || null;
+    var gateway = gv('s4_gateway');
+    var gemini  = gv('gemini_api_key');
+    var boatStr = [gv('s2_boat_year'), gv('s2_boat_make'), gv('s2_boat_model')].filter(Boolean).join(' ') || null;
 
+    var hasDIP = (gateway === 'cx5106');
     var items = [
-      { icon: '&#9875;', text: 'Vessel: <strong>' + name + '</strong>, home port <strong>' + port + '</strong>', done: !!name },
-      { icon: '&#128674;', text: boatStr ? 'Boat: <strong>' + boatStr + '</strong>' : 'Boat particulars skipped', done: !!boatStr },
-      { icon: '&#128295;', text: engStr ? 'Engine: <strong>' + engStr + '</strong>' + (twinEnabled ? ' (Twin)' : '') : 'Engine step skipped', done: !!engStr },
-      { icon: '&#128225;', text: gateway && gateway !== 'none' ? 'NMEA gateway: <strong>' + gateway.toUpperCase() + '</strong>' : 'No NMEA gateway', done: !!(gateway && gateway !== 'none') },
-      { icon: '&#127760;', text: 'Language: <strong>' + langTxt + '</strong>', done: true },
-      { icon: '&#128241;', text: 'Mobile pairing ID ready', done: true },
-      { icon: '&#129302;', text: gemini ? 'Gemini API key saved' : 'Gemini key skipped &mdash; add in Settings', done: !!gemini },
+      { t: 'Vessel: <strong>'+name+'</strong>, home port <strong>'+port+'</strong>', ok: !!name },
+      { t: boatStr ? 'Boat: <strong>'+boatStr+'</strong>' : 'Boat particulars skipped', ok: !!boatStr },
+      { t: engStr ? 'Engine: <strong>'+engStr+'</strong>'+(twinEnabled?' (Twin)':'') : 'Engine step skipped', ok: !!engStr },
+      { t: hasDIP ? 'CX5106 DIP switches computed' : (gateway && gateway!=='none' ? 'Gateway: <strong>'+gateway.toUpperCase()+'</strong>' : 'No NMEA gateway'), ok: !!(gateway && gateway!=='none') },
+      { t: 'Language: <strong>'+langTxt+'</strong>', ok: true },
+      { t: 'Mobile pairing ID ready', ok: true },
+      { t: gemini ? 'Gemini API key saved' : 'Gemini key skipped &mdash; add in Settings', ok: !!gemini },
     ];
-
-    var html = '';
-    items.forEach(function (it) {
-      html += '<div class="done-item">' +
-              '<span class="' + (it.done ? 'di-tick' : 'di-skip') + '">' + (it.done ? '&#10003;' : '&mdash;') + '</span>' +
-              '<span>' + it.icon + ' ' + it.text + '</span></div>';
-    });
-    document.getElementById('done-summary').innerHTML = html;
+    document.getElementById('done-summary').innerHTML = items.map(function(it) {
+      return '<div class="done-item"><span class="'+(it.ok?'di-tick':'di-skip')+'">'+(it.ok?'&#10003;':'&mdash;')+'</span><span>'+it.t+'</span></div>';
+    }).join('');
   }
 
-  /* === AvNav chart readiness check === */
-  (function checkCharts() {
-    fetch('/status')
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var dot  = document.getElementById('chartDot');
+  /* ── AvNav chart readiness check ── */
+  (function () {
+    fetch('/status').then(function(r){return r.json();}).then(function(d){
+      if (d && d.avnav) {
+        var dot = document.getElementById('chartDot');
         var note = document.getElementById('chartNote');
-        if (d && d.avnav) {
-          if (dot)  dot.classList.add('ok');
-          if (note) note.textContent = 'Chart system ready \u2014 AvNav connected at :8080.';
-        }
-      }).catch(function () {});
+        if (dot) dot.classList.add('ok');
+        if (note) note.textContent = 'Chart system ready \u2014 AvNav connected at :8080.';
+      }
+    }).catch(function(){});
   })();
 
-  /* === Restore saved state on page load === */
+  /* ── Restore saved state on page load ── */
   window.addEventListener('DOMContentLoaded', restoreState);
 
-  /* === If form was submitted with errors, jump to step 2 === */
   {% if error %}
   goTo(2);
   {% endif %}
