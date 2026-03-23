@@ -51,7 +51,12 @@ window.addEventListener('beforeunload', function(e) {
 }, true);
 
 /* ── INTERNAL NAVIGATION — stops HELM speech before navigating ── */
+/* Pre-empt AvNav iframe beforeunload: navigate iframe to about:blank first.
+ * AvNav's beforeunload fires as an iframe navigation (no dialog shown by
+ * Chromium). When the parent then navigates, the iframe is already blank. */
 function navTo(url) {
+  const avnavFrame = document.getElementById('avnav-frame');
+  if (avnavFrame) avnavFrame.src = 'about:blank';
   if (typeof closeHelm === 'function') closeHelm();
   window.location = url;
 }
