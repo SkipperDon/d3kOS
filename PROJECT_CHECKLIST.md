@@ -152,6 +152,7 @@ On-boat verification still pending:
 | 18 | Boat log — voice-to-text "api unavailable, transcript not saved" | Claude | `[x]` **COMPLETE 2026-03-22B.** Three root causes: (1) CORS missing — browser at :3000 blocked reading API responses from :8095; (2) Vosk loaded per-request (~8s) exceeding nginx 30s timeout; (3) voice notes not persisted to SQLite DB. Fixes: flask-cors, Vosk singleton, DB INSERT, MIME type detection + HELM pause/resume in client. End-to-end confirmed: record → transcript → DB → export CSV. |
 | 19 | Settings — o-charts section not working as intended | Don + Claude | `[x]` **COMPLETE 2026-03-22.** Root cause: openDoc() only showed toast with file path. Fix: /docs/<name> Flask route + full-screen markdown overlay with day/night theme support. Three docs deployed to Pi at /opt/d3kos/docs/. |
 | 20 | Settings — AvNav charts documentation section not working as intended | Don + Claude | `[x]` **COMPLETE 2026-03-22.** Same fix as item 19 — resolved by same overlay implementation. |
+| 21 | Onboarding wizard — UX overhaul + DIP switch step restore | Claude | `[x]` **COMPLETE 2026-03-23G.** 8-step wizard: back arrow, full-width, AODA marine fonts, skip buttons, localStorage persistence (d3kos_wiz_v3), camera opens new tab, settings return banner. DIP switches restored as dedicated Step 5 (option B). Commit d970afc. |
 
 ### Item 17 — Signal K v2.22.1 → v2.23.0 Upgrade Plan (revised 2026-03-22)
 
