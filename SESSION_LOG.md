@@ -6082,3 +6082,101 @@ Trend            : Stable-high. Both 90s are continuation sessions (MLS=0). All 
 - GPS outdoor verification (Don's task)
 - Camera on-boat tests (on-boat dependency)
 ---
+
+## Session 2026-03-23 — Leave Site Dialog Fix
+
+**Goal:** Identify and fix "Leave site?" Chromium dialog appearing when switching pages from the main dashboard.
+
+**Completed:**
+- Ran /session-start: MEMORY.md (200 lines), PROJECT_CHECKLIST.md (307 lines), SESSION_LOG.md (last 2 entries) all read. Git working tree confirmed clean on Helm-OS/main.
+- Verified Signal K (v2.23.0, active 5h 43min) and Node-RED (active ~2min, flows started cleanly) — both healthy.
+- Full analysis of beforeunload handlers across the dashboard codebase:
+  - `nav.js`: has `delete e.returnValue` suppressor in capture phase + `navTo()` closes HELM before navigating — was the prior attempted fix
+  - `instruments.js`, `overlays.js`, `cameras.js`, `ai-bridge.js`: no beforeunload handlers
+  - `engine-monitor.html`, `helm-assistant.html`: cleanup-only handlers (WebSocket close) — no returnValue set
+  - `helm.js`: uses `window.SpeechRecognition` (webkitSpeechRecognition) — async `.stop()` race condition identified as secondary cause; not the primary cause
+- Root cause identified: **AvNav iframe** (`localhost:8080`, cross-origin from main page at `:3000`). `avnav_min.js` contains a `beforeunload` handler that sets `e.returnValue` and calls `e.preventDefault()` when its internal `n.prevent` flag is true. When the parent page navigates away, Chromium fires `beforeunload` for all child frames — the AvNav iframe handler triggers the dialog. The `delete e.returnValue` in nav.js only covers the parent window object; it cannot reach a cross-origin iframe's event.
+- Confirmed why the dialog never appears going back: sub-pages (engine-monitor, boat-log, helm-assistant, settings) contain no AvNav iframe. AvNav's handler only fires when leaving the main index page.
+- Fix applied to `navTo()` in `nav.js`: blank the AvNav iframe (`avnavFrame.src = 'about:blank'`) before navigating the parent. AvNav's `beforeunload` fires as an iframe navigation — Chromium does not show the dialog for iframe-level navigation, only top-level. Parent then navigates with no problematic handler present.
+- Deployed `nav.js` to Pi (`/opt/d3kos/services/dashboard/static/js/nav.js`) — static file, no service restart required.
+- Committed: `d1c1e84`
+
+**Decisions:**
+- Fix placed in `navTo()` only — all internal navigation goes through this function. No other files needed to change.
+- `about:blank` chosen over `removeAttribute('src')` — cleaner, well-defined behaviour in all browsers.
+- No delay/setTimeout added — the iframe src change forces AvNav's beforeunload to fire synchronously during the iframe navigation, so the parent navigation on the next line is safe.
+
+**Files changed:**
+| File | Repo path | Change | Commit |
+|------|-----------|--------|--------|
+| `nav.js` | `deployment/d3kOS/dashboard/static/js/nav.js` | navTo() blanks AvNav iframe before parent navigation | d1c1e84 |
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `nav.js` | `/opt/d3kos/services/dashboard/static/js/nav.js` | base | navTo() AvNav iframe blank — suppresses Leave Site dialog |
+
+- Pre-install steps: none
+- Post-install steps: none — static JS file served fresh from disk
+- Rollback: `git checkout HEAD~1 -- deployment/d3kOS/dashboard/static/js/nav.js` + redeploy
+- Health check: tap Marine Vision, Boat Log, Engine Monitor, Helm Assistant from main dashboard — no "Leave site?" dialog should appear on any transition
+
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
+QUALITY METRICS — 2026-03-23
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  Tasks: check Pi SK/Node-RED status; analyze + fix Leave Site dialog.
+  All work directly traceable to operator requests. No scope creep.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Stop gate: presented full root cause analysis and plan, waited for
+  explicit "go ahead" before implementing. Honored.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+  /session-start run at session open. MEMORY.md, PROJECT_CHECKLIST.md,
+  SESSION_LOG.md all read before any work began.
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+REC_score : 100
+UAC_score : 100
+MLS score : 100
+
+SQS = (100 × 0.30) + (100 × 0.30) + (100 × 0.15) + (100 × 0.10) + (100 × 0.15)
+    = 30 + 30 + 15 + 10 + 15
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+TREND ANALYSIS (last 5 scored sessions):
+  2026-03-21D    : 100/100
+  2026-03-22     : 100/100
+  2026-03-22B    : 90/100
+  2026-03-22C    : 90/100
+  2026-03-23     : 100/100
+─────────────────────────────────────────────────────
+Average (last 5) : 96.0/100
+Lowest metric    : MLS — the two 90/100 sessions were both continuation
+                   sessions where /session-start was not re-run after
+                   context compaction. This session: MLS=100 (fresh start).
+Trend            : Stable-high. Execution metrics (SCR, SGCR, REC, UAC)
+                   have been 100 across all 5 sessions. MLS is the only
+                   variable metric and only drops on continuation sessions.
+─────────────────────────────────────────────────────
+
+**Pending:**
+- UAT: 5 metric + 5 imperial users (Don)
+- o-charts activation (Don)
+- GPS outdoor verification (Don)
+- Camera on-boat tests (on-boat dependency)
+- Marine Vision UI rebuild (Don to describe expected layout)
+- SQS calculation block in CLAUDE.md (item 5)
+- RAG re-ingest after deploys (recurring)
+- Remove git worktrees (item 7 — build-v0.9.2.1 has 5 unmerged commits)
+- signalk-forward-watch: README Step 2 fix; GitHub push (Don)
+---
