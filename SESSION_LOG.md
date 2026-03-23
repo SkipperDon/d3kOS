@@ -6403,3 +6403,78 @@ Trend: improving | Primary improvement target: MLS (22C scored 0 — session-sta
 - GPS outdoor verification (Don's task)
 
 ---
+
+## Session — 2026-03-23E — Marine Vision Day Mode Fix
+
+**Goal:** Fix Marine Vision: back button and title invisible in day mode; large margins; feed not filling screen.
+
+**Root cause:**
+`--g-txt` in day mode = `#004400` (dark green). Header `background: var(--bar)` = `#003200` (also dark green). Dark text on dark background = invisible. The `--bar` variable is dark in BOTH modes (day: #003200, night: #001A00), so header elements needed hardcoded bright color rather than the CSS variable.
+
+Layout issue: `.container` had `padding: 20px; max-width: 1400px; margin: 0 auto;` and `.camera-container` had `padding: 18px`. 40px+ of wasted horizontal space.
+
+**Completed:**
+- Read `marine-vision.html` and `d3kos.css` to confirm root cause
+- Fixed `.back-btn`: changed `color: var(--g-txt)` → `rgba(180,255,180,0.92)`, background/border to match — readable over dark bar in both day and night
+- Fixed `h1`: changed `color: var(--g-txt)` → `rgba(180,255,180,0.92)` — title now visible in day mode
+- Removed `max-width: 1400px` and `margin: 0 auto` from `.container`
+- Reduced `.container` padding: `20px` → `10px`
+- Reduced `.camera-container` padding: `18px` → `8px`, margin-bottom `20px` → `10px`, border-radius `12px` → `8px`
+- Reduced `.camera-selector` margin-bottom: `18px` → `10px`
+- Deployed to Pi; restarted `d3kos-dashboard` to flush Jinja2 cache
+- Commit: `299ad5e`
+
+**Files changed:**
+
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/d3kOS/dashboard/templates/marine-vision.html` | Day mode header colours + full-screen layout | 299ad5e |
+
+**Release Package Manifest:**
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `marine-vision.html` | `/opt/d3kos/services/dashboard/templates/` | base | Header visibility fix (day mode) + layout padding reduction |
+
+- Version: v0.9.2 (UI fix, no version bump)
+- Update type: hotfix
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` (done)
+- Rollback: `git checkout 299ad5e~1 -- deployment/d3kOS/dashboard/templates/marine-vision.html` + redeploy + restart
+- Health check: open Marine Vision in day mode — back button and "Marine Vision" title visible in header; camera feed fills screen with minimal margin
+
+QUALITY METRICS — 2026-03-23E
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: investigate CSS variables, fix back-btn colour, fix h1 colour,
+  remove max-width/margin, reduce container/feed/selector padding, deploy, commit.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. File edits + deploy stated before executing.
+  No required stop gate missed.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (loaded via context continuation)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (22C→23E): 90, 100, 100, 100, 100 = 98/100
+Trend: improving | Primary improvement target: MLS (22C scored 0 — session-start skipped before work)
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Verify Marine Vision visually on Pi display (day mode back button + title + full-screen layout)
+- UAT: 5 metric + 5 imperial users
+- Marine Vision UI rebuild if layout still not as expected (checklist item 9)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+
+---
