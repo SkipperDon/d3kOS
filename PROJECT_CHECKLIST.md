@@ -135,7 +135,7 @@ On-boat verification still pending:
 | 1 | UAT: 5 metric + 5 imperial users | Don (recruit users) | `[ ]` Ready — S-06 fixes deployed 2026-03-17 |
 | 2 | o-charts chart activation | Don | `[ ]` See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` |
 | 3 | GPS outdoor verification | Don (Pi at dock) | `[!]` Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position outdoors, confirm lat/lon non-zero. Do after UAT. |
-| 4 | Camera on-boat tests (DHCP reservations, 24hr stability, performance, storage) | Don (on boat with cameras) | `[!]` On-boat dependency |
+| 4 | Camera on-boat tests (24hr stability, performance, storage) | Don (on boat with cameras) | `[!]` On-boat dependency. DHCP reservations DONE 2026-03-23C (MAC→IP infinite lease, all 4 cameras). Remaining: 24hr stability test, performance, storage management. |
 | 5 | SQS calculation block — add to CLAUDE.md session-close | Claude | `[ ]` AAO Section 19 |
 | 6 | RAG re-ingest after each Pi deployment | Claude (recurring) | `[~]` Must run after every deploy session |
 | 7 | Remove git worktrees (v0.9.2, v0.9.2.1, v0.9.3) from disk | Claude | `[ ]` `build-v0.9.2.1` has 5 unmerged commits — decide: merge or discard before removing |

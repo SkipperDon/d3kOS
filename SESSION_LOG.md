@@ -6258,16 +6258,42 @@ Trend            : Stable-high. Execution metrics (SCR, SGCR, REC, UAC)
 - `deployment/d3kOS/dashboard/tests/test_camera_stream_manager_rtsp_sync.py` (new — TDD test)
 - `deployment/d3kOS/dashboard/tests/test_hardware_json.js` (from prior session)
 
+**Release Package Manifest:**
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `camera_stream_manager.py` | `/opt/d3kos/services/marine-vision/` | base | rtsp_url sync fix — 1 line added in run_discovery_scan() |
+| `hardware.json` | `/opt/d3kos/config/` | runtime | RTSP URLs corrected for port/starboard; all 4 IPs current |
+| `camera-reservation.conf` | `/etc/NetworkManager/dnsmasq-shared.d/` | runtime | MAC→IP reservations for all 4 cameras, infinite lease |
+
+- Version: v0.9.2 (patch, no version bump required)
+- Update type: hotfix
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-camera-stream` (done); `sudo kill -SIGHUP $(pgrep -f dnsmasq-shared)` (done)
+- Rollback: restore from `/opt/d3kos/config/hardware.json.bak-20260323` and `/opt/d3kos/services/marine-vision/camera_stream_manager.py.bak-20260323b`
+- Health check: `curl http://localhost:8084/camera/slots` — all 4 slots should show `"status":"online"` and `"has_frame":true`
+- Plain-language release notes: Port and Starboard cameras were offline because their RTSP URLs pointed to wrong IPs (off by 1 from a data entry error). Fixed manually, then found and fixed the root cause: the discovery scanner was updating camera IPs when DHCP leases changed but not updating the RTSP stream URLs. Added DHCP reservations by MAC address so all 4 cameras always get the same IP. All 4 cameras confirmed streaming.
+
 **QUALITY METRICS — 2026-03-23C**
 ─────────────────────────────────────────────────────
 SCR  (Scope Compliance Rate)       : 100%
+  In-scope: TDD test (hardware.json), TDD test (rtsp sync), hardware.json fix,
+  camera_stream_manager.py fix, DHCP reservations, session close governance.
+  Out-of-scope: none.
 SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. Pi file modifications stated before executing.
+  No required stop gate missed.
 REC  (Recovery Event Count)        : 0
-MLS  (Memory Load Success)         : 1
+MLS  (Memory Load Success)         : 1 (loaded via context continuation from 23B)
 UAC  (Unauthorized Action Count)   : 0
 ─────────────────────────────────────────────────────
 SESSION QUALITY SCORE              : 100/100
 ─────────────────────────────────────────────────────
+
+**5-Session SQS Average (sessions 22B through 23C):**
+- 22B: 90/100 | 22C: 90/100 | 23: 100/100 | 23B: 100/100 | 23C: 100/100
+- Average: **96/100** — Trend: **improving** (two 90s, then three 100s)
+- Primary improvement target: **MLS** — session 22C had MLS=0 (session-start skipped before work began)
 
 **Costs:**
 | Source | Metric | Cost |
@@ -6276,8 +6302,10 @@ SESSION QUALITY SCORE              : 100/100
 | Ollama | 0 calls | $0.00 |
 
 **Pending:**
-- Sync `camera_stream_manager.py` fix back to local repo (Pi was patched directly — diff not tracked in git)
 - UAT with physical cameras (reconnect/reboot test to verify DHCP reservations hold)
-- Marine Vision UI rebuild (checklist item 9)
+- Marine Vision UI rebuild (checklist item 9 in PROJECT_CHECKLIST.md)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- UAT: 5 metric + 5 imperial users (Don's task)
 
 ---
