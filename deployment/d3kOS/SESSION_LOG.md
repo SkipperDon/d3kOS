@@ -653,6 +653,21 @@ The correct target port is **8087** (confirmed free after full nginx port map gr
 
 **Pi deploy still required (Session 1 task):** reload nginx, restart d3kos-keyboard-api.service, verify /keyboard/show and /window/toggle still work on 8087.
 
+## Session 2026-03-13 — Phase 5 Pi Deploy
+**Goal:** Deploy d3kOS AI Bridge to Pi at /opt/d3kos/services/ai-bridge/, start service, verify live.
+**Completed:**
+- rsync ai-bridge/ to /opt/d3kos/services/ai-bridge/ (13 source files)
+- ai-bridge.env created on Pi with correct paths. Vessel name = "My Vessel" placeholder.
+- d3kos-ai-bridge.service installed, enabled + started. systemctl is-active: ACTIVE
+- GET :3002/status → {signalk:up, avnav:up, gemini_proxy:up, tts_available:true} ✓
+- GET :3000/status → {ai_bridge:true, avnav:true, gemini:true, ollama:true, signalk:true} ✓
+- Bug fixed: all _call_ai() sending {"prompt":...} → corrected to {"message":...} in 5 files. Commit 2e457ea.
+- End-to-end: POST :3002/webhook/query → :3001/ask → Gemini → VHF ch16 response ✓
+**Decisions:** ai-bridge.env NOT committed — Pi only. VESSEL_NAME="My Vessel" — Don to update.
+**Pending:** Set VESSEL_NAME/HOME_PORT in ai-bridge.env; run integration tests; test Ollama fallback.
+
+---
+
 ## Session 2026-03-13 — Phase 5 AI Bridge Source Build
 **Goal:** Build complete Phase 5 AI + AvNav Integration source — all 4 features, full service.
 **Completed:**

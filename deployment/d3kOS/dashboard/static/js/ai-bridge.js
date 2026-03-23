@@ -190,6 +190,35 @@ function _handleVoyageSummary(d) {
   }
 }
 
+// ── Voyage Summary ────────────────────────────────────────────────────────────
+
+function summarizeVoyage() {
+  const stateEl = document.getElementById('voyage-state');
+  const textEl  = document.getElementById('voyage-text');
+  const btn     = document.querySelector('#voyage-body .ai-action-btn');
+
+  if (stateEl) { stateEl.textContent = 'Generating summary...'; stateEl.className = 'ai-state dim'; }
+  if (textEl)  { textEl.textContent = ''; }
+  if (btn)     { btn.disabled = true; btn.textContent = 'WORKING...'; }
+
+  fetch(AI_BRIDGE + '/summarize-voyage', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        if (stateEl) { stateEl.textContent = d.source === 'ollama' ? 'OFFLINE AI' : ''; stateEl.className = d.source === 'ollama' ? 'ai-state offline' : 'ai-state hidden'; }
+        if (textEl)  { textEl.textContent = d.summary || ''; }
+      } else {
+        if (stateEl) { stateEl.textContent = d.error || 'No track available.'; stateEl.className = 'ai-state dim'; }
+      }
+    })
+    .catch(() => {
+      if (stateEl) { stateEl.textContent = 'AI Bridge unreachable.'; stateEl.className = 'ai-state warn'; }
+    })
+    .finally(() => {
+      if (btn) { btn.disabled = false; btn.textContent = 'SUMMARIZE LAST VOYAGE'; }
+    });
+}
+
 // ── Panel helpers ─────────────────────────────────────────────────────────────
 
 function togglePanel(id) {

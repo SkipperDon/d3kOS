@@ -84,7 +84,8 @@ class VoyageLogger:
         if not tracks:
             return {'ok': False, 'error': 'No tracks available in AvNav.'}
 
-        # Most recent track is usually first in the list
+        # Sort by 'time' field descending — newest track first
+        tracks.sort(key=lambda t: t.get('time', 0), reverse=True)
         latest = tracks[0]
         track_name = latest.get('name', '')
         if not track_name:
@@ -290,7 +291,7 @@ def _call_ai(prompt: str) -> dict:
     try:
         resp = requests.post(
             f'{GEMINI_PROXY_URL}/ask',
-            json={'prompt': prompt},
+            json={'message': prompt},
             timeout=60,
         )
         resp.raise_for_status()

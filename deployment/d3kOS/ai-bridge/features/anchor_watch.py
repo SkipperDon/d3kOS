@@ -309,7 +309,7 @@ def _call_ai(prompt: str) -> dict:
     try:
         resp = requests.post(
             f'{GEMINI_PROXY_URL}/ask',
-            json={'prompt': prompt},
+            json={'message': prompt},
             timeout=60,
         )
         resp.raise_for_status()
