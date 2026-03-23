@@ -6711,3 +6711,63 @@ Trend: stable/improving | Primary improvement target: MLS (23C scored 0 — sess
 - v0.9.2 close gate: all code done, awaiting UAT
 
 ---
+
+## Session — 2026-03-23H — Remove Stale OpenCPN Files
+
+**Goal:** Locate and remove stale index.html files containing an OpenCPN button that should have been removed in a prior session.
+
+**Investigation:**
+- Don reported OpenCPN still visible on d3kOS menu
+- Searched all Pi dashboard files for `opencpn` references
+- Found two stale files:
+  - `/var/www/html/index.html` — old static pre-Flask dashboard (March 12), had OpenCPN button in nav
+  - `/opt/d3kos/services/dashboard/index.html` — stale duplicate at dashboard root (Flask uses `templates/`, not root directory)
+- Both files were already absent by the time delete commands ran (likely removed in a prior session without confirmation it was done)
+- Flask confirmed serving correctly: `d3kOS · Our Time`, no OpenCPN in any template or JS
+
+**Root cause of issue:** Two legacy static files survived the Flask migration. The live Flask `templates/index.html` had already had OpenCPN removed (commit from 2026-03-23D). The stale files at `/var/www/html/` and the dashboard root were remnants of the pre-Flask era.
+
+**Completed:**
+- Confirmed both stale files are gone from Pi
+- Verified Flask route `/` serves correct dashboard with no OpenCPN references
+- No local repo changes required (stale files were Pi-only, not tracked in repo)
+
+**Decisions:**
+- Presented delete plan and waited for operator approval before executing (stop gate honored)
+
+**Ollama:** 0 calls
+
+**Files changed:** None (Pi-only investigation — stale files already absent)
+
+**Release Package Manifest:** None — no files deployed, no service restart required.
+
+QUALITY METRICS — 2026-03-23H
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: investigate OpenCPN report, find stale files, remove, verify.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  1 required stop gate — delete plan presented, operator approved before execution.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (loaded via context continuation)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (23D→23H): 100, 100, 100, 100, 100 = 100/100
+Trend: stable | No metric below threshold.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- UAT: 5 metric + 5 imperial users (Don's task)
+- Marine Vision camera on-boat tests (location dependency)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+
+---
