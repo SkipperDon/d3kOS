@@ -382,3 +382,12 @@ Every time work is completed:
 | `deployment/features/boatlog-voice-note/pi_source/boatlog-export-api.py` | **[UPDATED 2026-03-22B]** Three fixes: (1) `flask-cors` CORS() wrapper — browser at :3000 can now read API responses from :8095; (2) `_get_vosk_model()` singleton — Vosk loaded once at startup, cached; beats nginx 30s proxy timeout; (3) voice notes now INSERT into `boatlog_entries` SQLite table after transcription so export CSV includes them. Pi: `/opt/d3kos/services/boatlog/boatlog-export-api.py` |
 | `deployment/d3kOS/dashboard/templates/boat-log.html` | **[UPDATED 2026-03-22B]** Client fix: `MediaRecorder.isTypeSupported()` MIME probe for Pi ARM64 codec detection; voice service pause before `getUserMedia` (prevents HELM wake-word activation during recording); voice service resume in onstop and error paths. Pi: `/opt/d3kos/services/dashboard/templates/boat-log.html` |
 | `deployment/features/boatlog-voice-note/tests/test_voice_note_api.py` | **[2026-03-22 — NEW]** TDD test suite: 3 tests covering 0-byte rejection, OGG extension mapping, missing audio field. All 3 passing. |
+
+## Session 2026-03-23F Updates
+
+| File | Description |
+|------|-------------|
+| `deployment/d3kOS/dashboard/app.py` | **[UPDATED 2026-03-23F]** Added `POST /api/settings/vessel` endpoint — reads vessel_name + home_port from JSON, updates vessel.env (preserves all other keys), reloads runtime globals. Also fixed `OLLAMA_HOST` default: `192.168.1.36:11434` → `127.0.0.1:11434`. Pi: `/opt/d3kos/services/dashboard/app.py` |
+| `deployment/d3kOS/dashboard/templates/settings.html` | **[UPDATED 2026-03-23F]** Added "Save Vessel Settings" button + `saveVesselSettings()` JS in AI section — was missing despite inputs existing. Fixed 3 hardcoded Ollama display values: address `192.168.1.36:11434` → `127.0.0.1:11434`, model `qwen3-coder:30b` → `phi3.5:latest`. Pi: `/opt/d3kos/services/dashboard/templates/settings.html` |
+| Pi: `d3kos-config.env` | **[UPDATED 2026-03-23F — Pi only]** `OLLAMA_HOST=192.168.1.36:11434` → `127.0.0.1:11434`. Root cause of `/status` returning `ollama:false` despite Ollama running locally. Pi: `/opt/d3kos/services/dashboard/config/d3kos-config.env` |
+| Pi: `gemini.env` | **[UPDATED 2026-03-23F — Pi only]** `OLLAMA_URL=http://192.168.1.36:11434` → `http://127.0.0.1:11434`. `OLLAMA_MODEL=qwen3-coder:30b` → `phi3.5:latest` (installed on Pi). Backup: `gemini.env.bak-20260323`. Pi: `/opt/d3kos/services/gemini-nav/config/gemini.env` |
