@@ -6309,3 +6309,97 @@ SESSION QUALITY SCORE              : 100/100
 - UAT: 5 metric + 5 imperial users (Don's task)
 
 ---
+
+## Session — 2026-03-23D — OpenCPN Removal
+
+**Goal:** Remove OpenCPN from d3kOS menu and settings page; check all Pi instances and remove if no dependencies.
+
+**Completed:**
+- Investigation: grepped local repo + Pi for all OpenCPN references. Found 5 locations needing action.
+- Confirmed active Flask template (`templates/index.html`) already had no OpenCPN button — the stale `dashboard/index.html` root-level file (not served by Flask or nginx) was the only HTML with the old button. No action needed on index.html.
+- Removed `launchOpenCPN()` function from `nav.js` (local + Pi `static/js/nav.js`)
+- Removed `launchOpenCPN()` function from `panel-toggle.js` (local + Pi)
+- Removed OpenCPN Fallback Guide doc-btn from `settings.html` (documentation section)
+- Removed "AvNav down → Use OpenCPN Fallback" emergency procedure step from `settings.html`
+- Deployed all three files to Pi; restarted `d3kos-dashboard` to flush Jinja2 cache
+- Removed 3 Node-RED flow nodes from `flows.json` (with backup): `launch_opencpn_http_in`, `launch_opencpn_exec`, `launch_opencpn_http_response`. Restarted Node-RED — active.
+- Archived stale `templates/nav.js` Pi artifact → `.bak-20260323` (was not served by anything; contained old `launchOpenCPN()`)
+- Commit: `7fea0fb`
+
+**Root cause context:**
+OpenCPN was previously included as an emergency fallback chartplotter via Flatpak. Don has decided to remove it from the d3kOS interface. The Node-RED flow route was `/launch-opencpn` (hyphen) while the JS fetch called `/launch/opencpn` (slash) — these didn't match, so the feature likely never worked correctly anyway.
+
+**Items left in place (no active references, no user-visible impact):**
+- `/opt/d3kos/scripts/install-opencpn.sh` — install script, no active callers. Harmless at rest. Awaiting Don's decision to remove or keep.
+- Pi root `dashboard/index.html` — stale static file, not served by Flask or nginx. Had old OpenCPN button but unreachable. Awaiting Don's decision.
+
+**Files changed:**
+
+Local repo:
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/d3kOS/dashboard/static/js/nav.js` | Removed `launchOpenCPN()` 8-line block | 7fea0fb |
+| `deployment/d3kOS/dashboard/static/js/panel-toggle.js` | Removed `launchOpenCPN()` 7-line block | 7fea0fb |
+| `deployment/d3kOS/dashboard/templates/settings.html` | Removed OpenCPN Fallback Guide doc-btn + emergency step | 7fea0fb |
+
+Pi only:
+| File | Pi Path | Change |
+|------|---------|--------|
+| `nav.js` | `/opt/d3kos/services/dashboard/static/js/nav.js` | Deployed — launchOpenCPN removed |
+| `panel-toggle.js` | `/opt/d3kos/services/dashboard/static/js/panel-toggle.js` | Deployed — launchOpenCPN removed |
+| `settings.html` | `/opt/d3kos/services/dashboard/templates/settings.html` | Deployed — 2 references removed |
+| `flows.json` | `/home/d3kos/.node-red/flows.json` | 3 opencpn nodes removed. Backup: `flows.json.bak-20260323-opencpn` |
+| `templates/nav.js` | `/opt/d3kos/services/dashboard/templates/nav.js` | Archived to `.bak-20260323` |
+
+**Release Package Manifest:**
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `nav.js` | `/opt/d3kos/services/dashboard/static/js/` | base | `launchOpenCPN()` removed |
+| `panel-toggle.js` | `/opt/d3kos/services/dashboard/static/js/` | base | `launchOpenCPN()` removed |
+| `settings.html` | `/opt/d3kos/services/dashboard/templates/` | base | OpenCPN Fallback Guide btn + emergency step removed |
+| `flows.json` | `/home/d3kos/.node-red/` | runtime | 3 opencpn flow nodes removed |
+
+- Version: v0.9.2 (cleanup, no version bump)
+- Update type: hotfix / cleanup
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` (done); `sudo systemctl restart nodered` (done)
+- Rollback: restore `flows.json.bak-20260323-opencpn` for Node-RED; `git checkout 7fea0fb~1` + redeploy for dashboard files
+- Health check: Open d3kOS Settings → documentation section — no OpenCPN card visible. Node-RED admin UI → no `/launch-opencpn` route in flows.
+
+QUALITY METRICS — 2026-03-23D
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: investigate all references, remove launchOpenCPN() (nav.js,
+  panel-toggle.js), remove settings.html references (2 items), remove
+  Node-RED flow nodes (3), archive stale templates/nav.js, deploy, commit.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. All Pi modifications stated before executing.
+  No required stop gate missed.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (loaded via context continuation)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (22B→23D): 90, 90, 100, 100, 100 = 96/100
+Trend: improving | Primary improvement target: MLS (22C scored 0 — session-start skipped)
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don to decide: remove `/opt/d3kos/scripts/install-opencpn.sh` and stale root `dashboard/index.html`?
+- UAT: 5 metric + 5 imperial users
+- Marine Vision UI rebuild (checklist item 9)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+
+---
