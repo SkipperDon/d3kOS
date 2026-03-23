@@ -49,10 +49,10 @@ header {
   gap: 8px;
   padding: 0 20px;
   height: 48px;
-  background: var(--g-dim);
-  border: 2px solid var(--g-bdr);
+  background: rgba(0,80,0,0.4);
+  border: 2px solid rgba(80,200,80,0.5);
   border-radius: 8px;
-  color: var(--g-txt);
+  color: rgba(180,255,180,0.92);
   font-family: 'Chakra Petch', sans-serif;
   font-size: 20px;
   font-weight: 700;
@@ -66,23 +66,21 @@ h1 {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 28px;
   letter-spacing: .12em;
-  color: var(--g-txt);
+  color: rgba(180,255,180,0.92);
 }
 
 /* .dn-b intentionally not redefined — d3kos.css handles it correctly */
 
 /* ── LAYOUT ── */
 .container {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 10px;
 }
 
 /* ── CAMERA SELECTOR ── */
 .camera-selector {
   display: flex;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
   align-items: center;
 }
@@ -145,9 +143,9 @@ h1 {
 .camera-container {
   background: var(--g-dim);
   border: 2px solid var(--g-bdr);
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 20px;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
 }
 
 .feed-label {
