@@ -6180,3 +6180,104 @@ Trend            : Stable-high. Execution metrics (SCR, SGCR, REC, UAC)
 - Remove git worktrees (item 7 — build-v0.9.2.1 has 5 unmerged commits)
 - signalk-forward-watch: README Step 2 fix; GitHub push (Don)
 ---
+
+## Session 2026-03-23B — Marine Vision UI Bug Fixes
+
+**Goal:** Fix two UI bugs in Marine Vision — blank feed on page load + connecting cameras locked out.
+
+**Completed:**
+- Diagnosed Marine Vision: camera service healthy, Bow streaming, Helm/Port/Starboard at boat (10.42.0.x unreachable from home network — expected, on-boat dependency). Hardware is fine.
+- Bug 1 (active default fallback): `loadSlots()` selected Port as active slot because `active_default:true` in slots.json. Port has `has_frame:false` → blank feed on page load. Fix: if active_default has no frame, fall back to first slot with `has_frame:true`. Graceful chain: active_default+frame → first-with-frame → active_default → slots[0].
+- Bug 2 (connecting/offline distinction): `renderSelector()` used `status !== 'online'` to disable cameras — marked all 3 'connecting' cameras as `cursor:not-allowed`. Helm has a 37KB stale cached frame (was tappable before RTSP dropped) but appeared locked. Fix: disabled only when `hardware.status === 'offline'`. New `.connecting` CSS class — `opacity:0.65`, still tappable.
+- TDD: failing tests committed `d5a87f0` before fix. 8/8 tests pass after fix.
+- Deployed `marine-vision.html` to Pi. Restarted `d3kos-dashboard` to flush Jinja2 template cache.
+- Committed fix: `f56ee11`
+
+**Root causes:**
+- Bug 1: `slots.json` sets Port as `active_default` (was assigned during camera setup). No code guarded against active_default having no frame.
+- Bug 2: `status !== 'online'` is too broad — treats 'connecting' (RTSP reconnecting, camera may be reachable) same as 'offline' (hardware gone). These are different states with different UX implications.
+
+**Files changed:**
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/d3kOS/dashboard/templates/marine-vision.html` | Bug 1 + Bug 2 fix + .connecting CSS | f56ee11 |
+| `deployment/d3kOS/dashboard/tests/test_marine_vision_ui.js` | TDD tests (new file) | d5a87f0, f56ee11 |
+
+**Release Package Manifest:**
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `marine-vision.html` | `/opt/d3kos/services/dashboard/templates/` | base | active default fallback + connecting CSS |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` — done
+- Rollback: `git checkout f56ee11~1 -- deployment/d3kOS/dashboard/templates/marine-vision.html` + redeploy + restart
+- Health check: open Marine Vision — Bow feed shows immediately on page load; Helm/Port/Starboard buttons are dimmed but tappable (not locked out)
+
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+---
+
+## Session — 2026-03-23C — Port/Starboard cameras offline (bug-fix)
+
+**Goal:** Fix Port and Starboard cameras not streaming — `has_frame:false`, status:`connecting`.
+
+**Completed:**
+- TDD test `test_hardware_json.js` — confirmed RTSP IP mismatch for Port (134≠135) and Starboard (182≠183). 7/7 pass.
+- TDD test `test_camera_stream_manager_rtsp_sync.py` — confirmed structural bug: `run_discovery_scan()` updates `ip` but not `rtsp_url`. 6/6 pass.
+- Fixed `/opt/d3kos/config/hardware.json` on Pi — corrected RTSP URLs to match current ARP IPs:
+  - Helm: 10.42.0.63
+  - Port: 10.42.0.133
+  - Starboard: 10.42.0.181
+- Fixed structural bug in `camera_stream_manager.py` line 347 on Pi:
+  Added `hw['rtsp_url'] = re.sub(r'(?<=@)[^:]+(?=:)', ip, hw.get('rtsp_url', ''))` after `hw['ip'] = ip`
+  This ensures RTSP URL stays in sync with IP on every DHCP lease change.
+- Created/updated `/etc/NetworkManager/dnsmasq-shared.d/camera-reservation.conf` with MAC→IP reservations (infinite lease) for all 4 cameras:
+  - ec:71:db:f9:7c:7c → 10.42.0.100 (bow)
+  - ec:71:db:99:78:04 → 10.42.0.63 (helm)
+  - ec:71:db:43:ef:c1 → 10.42.0.133 (port)
+  - ec:71:db:be:0b:7b → 10.42.0.181 (starboard)
+- Sent SIGHUP to NetworkManager dnsmasq (PID 1457) to reload reservations
+- Verified all 4 cameras: bow/helm/port/starboard — all `online`, `has_frame:True`
+- Commit: `fa2325f` (test file)
+
+**Root cause:**
+1. Original data entry error — hardware.json had Port RTSP pointing to 10.42.0.134 (ip=.135) and Starboard to 10.42.0.182 (ip=.183). Cameras never connected.
+2. Structural bug — `run_discovery_scan()` updates `ip` on DHCP change but never updates `rtsp_url`, making stale URLs permanent until manual intervention.
+
+**Pi files changed:**
+- `/opt/d3kos/config/hardware.json` — corrected IPs and RTSP URLs (Pi only, not in repo)
+- `/opt/d3kos/services/marine-vision/camera_stream_manager.py` — rtsp_url sync fix (Pi only)
+- `/etc/NetworkManager/dnsmasq-shared.d/camera-reservation.conf` — DHCP reservations (Pi only)
+- Backups: `hardware.json.bak-20260323`, `camera_stream_manager.py.bak-20260323b`
+
+**Repo files changed:**
+- `deployment/d3kOS/dashboard/tests/test_camera_stream_manager_rtsp_sync.py` (new — TDD test)
+- `deployment/d3kOS/dashboard/tests/test_hardware_json.js` (from prior session)
+
+**QUALITY METRICS — 2026-03-23C**
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Sync `camera_stream_manager.py` fix back to local repo (Pi was patched directly — diff not tracked in git)
+- UAT with physical cameras (reconnect/reboot test to verify DHCP reservations hold)
+- Marine Vision UI rebuild (checklist item 9)
+
+---
