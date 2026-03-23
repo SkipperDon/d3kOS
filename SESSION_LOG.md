@@ -6621,3 +6621,93 @@ Trend: stable at perfect | Primary improvement target: none — all metrics at c
 - GPS outdoor verification (Don's task)
 
 ---
+
+## Session — 2026-03-23G — Setup Wizard 8-Step with DIP Switch Step
+
+**Goal:** Deploy 8-step onboarding wizard with dedicated DIP switch step (Step 5) to Pi.
+
+**Completed:**
+- Deployed `setup.html` (8-step wizard) to Pi → `/opt/d3kos/services/dashboard/templates/setup.html`
+- Restarted `d3kos-dashboard` — confirmed active
+- Committed as `d970afc`
+
+**Wizard structure deployed:**
+| Step | Content |
+|------|---------|
+| 1 | Welcome |
+| 2 | Vessel Identity (name required; boat particulars optional) |
+| 3 | Engine & Drive (skip button) |
+| 4 | Electronics & NMEA (gateway selection, tank sender) |
+| 5 | **Gateway Configuration** — dedicated DIP switch step (CX5106 Row 1+Row 2 diagrams, port+starboard for twin engines, Why These Settings box, install warning, EMU-1/generic/no-gateway notices) |
+| 6 | Mobile Pairing (skip button) |
+| 7 | Gemini API Key (skip button) |
+| 8 | Done (camera opens new tab, wizard state intact) |
+
+**Key UX improvements (from prior session, deployed this session):**
+- Back arrow top-left on all steps
+- Full-width layout (removed max-width constraint)
+- AODA marine fonts (labels 22px/700, inputs h60px, buttons h68px)
+- Skip buttons for optional fields
+- localStorage `d3kos_wiz_v3` saves all field values + step on every navigate
+- Camera setup button opens new tab — wizard state preserved at Step 8
+- Settings page `?from=setup` banner: "← Return to Setup Wizard"
+
+**Decisions:**
+- DIP switches restored as dedicated Step 5 (operator chose option B — separate step, not embedded in Step 4). Original v0.9.1 ONBOARDING.md spec intent restored.
+- localStorage key bumped from `d3kos_wiz_v2` (7-step) to `d3kos_wiz_v3` (8-step) to avoid restoring wrong step numbers from prior incomplete wizard sessions.
+
+**Ollama:** 0 calls
+
+**Files changed:**
+
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/d3kOS/dashboard/templates/setup.html` | 8-step wizard with dedicated DIP switch step, back arrow, AODA fonts, skip buttons, localStorage persistence | d970afc |
+
+**Release Package Manifest:**
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `setup.html` | `/opt/d3kos/services/dashboard/templates/` | base | 8-step wizard replacing 7-step — adds dedicated DIP switch step, back arrow, full-width layout, AODA fonts, skip buttons, localStorage persistence |
+
+- Version: v0.9.2 (feature addition, no version bump)
+- Update type: incremental
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-dashboard` (done — Jinja2 cache flush required)
+- Rollback: `git checkout d970afc~1 -- deployment/d3kOS/dashboard/templates/setup.html` + redeploy + restart
+- Health check: open `http://192.168.1.237:3000/setup` → 8 steps visible; select CX5106 in Step 4 → Step 5 shows full DIP diagram with computed switch positions
+- Plain-language release notes: The onboarding wizard now has 8 steps. The CX5106 DIP switch configuration has been restored as its own dedicated step (Step 5) as originally designed in v0.9.1. The wizard now has a back arrow on every screen, larger fonts for daylight readability, skip buttons for fields you don't know yet, and your progress is saved in the browser so navigating to camera setup and back no longer restarts the wizard from the beginning.
+
+QUALITY METRICS — 2026-03-23G
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: deploy setup.html, restart dashboard, commit.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. Pre-action stated before scp and systemctl.
+  No required stop gate missed.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (loaded via context continuation)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (23C→23G): 90, 100, 100, 100, 100 = 98/100
+Trend: stable/improving | Primary improvement target: MLS (23C scored 0 — session-start skipped before work)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- UAT: 5 metric + 5 imperial users (Don's task)
+- Marine Vision camera tests: DHCP reservations, 24hr stability, performance, storage (requires cameras)
+- o-charts chart activation (Don's task)
+- GPS outdoor verification (Don's task)
+- Manual search automation after wizard completion (Option 3 hybrid — selected but not built)
+- v0.9.2 close gate: all code done, awaiting UAT
+
+---
