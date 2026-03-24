@@ -2,6 +2,46 @@
 
 ---
 
+## Session — 2026-03-24C — v0.9.3 Sessions 1–5 autonomous build
+**Goal:** Build and commit v0.9.3 AtMyBoat.com community platform Sessions 1–5 (authorized autonomous build — Don not in attendance)
+
+**Completed:**
+- Session 1 — Auth + Legal: page-register.php (AJAX registration, CASL, MailPoet), page-pair-device.php (QR pairing), page-privacy.php (GDPR+CASL+PIPEDA, 11 sections), page-terms.php (11 sections, marketplace disclaimer), page-warranty.php (GPL v3), inc/registration.php (WP AJAX handler)
+- Session 2 — Hardware + Downloads: page-hardware.php (BOM driven by data/hardware.json), data/hardware.json (8 items, $485 CAD / $358 USD), page-download.php (v0.9.2.2 release + install guide), page-app.php (PWA install + tier table)
+- Session 3 — Community: page-community.php (auth-gated, Leaflet map, stats, forum feed, HoF), page-marketplace.php (buy/sell modal, marine items only), page-features.php (voting anyone + T1+ submit), page-challenges.php (sponsored contests + leaderboard), page-hall-of-fame.php (monthly + all-time + most helpful + scoring), inc/community-functions.php (all AJAX handlers + bbPress score hooks), js/community.js (Leaflet community map + live stats)
+- Session 4 — Directory + Dashboard: page-directory.php (Leaflet business map, 4-tier system), page-dashboard.php (The Chart Room — snapshot, FMP history, PDF reports), inc/directory-functions.php (directory map AJAX + submit), inc/dashboard-functions.php (tier helpers, FMP allowance, dashboard AJAX), js/directory.js (Leaflet directory map with popup pins)
+- Session 5 — Mobile Backend: mobile/config.php.example (all constants documented), mobile/auth.php (API key + device token auth), mobile/register-device.php (Pi pairing → WP user link), mobile/pair-device.php (QR confirm WP AJAX handler), mobile/command-queue.php (Pi polls + ACKs), mobile/data-ingress.php (engine/position/alerts + points), mobile/tier-features.php (entitlements per tier), mobile/fix-my-pi-billing.php (Stripe checkout + webhook + T2/T3 free path), mobile/pdf-report.php (mPDF + Gemini 2.5 Flash, T2/T3 only), mobile/version-registry.php (OTA version check), page-fix-my-pi.php (Stripe page + free T2/T3 + history), setup/mobile-schema.sql (7 MySQL tables), setup/install-pages.php (one-time WP page creation)
+- functions.php updated: all requires, FMP AJAX handlers, pair-device handler, CPT amboat_challenge_entry, nonce keys corrected for Leaflet maps
+- Commit 959ef65 — 39 files, 6291 insertions
+
+**Decisions:**
+- Anonymous feature voting tracked by httponly cookie — no account required as confirmed by Don
+- Community map blur: 500m random offset ±0.0045° applied on read, exact position stored in user meta (Find My Boat needs it)
+- Fix My Pi T1: Stripe checkout redirects; T2 with allowance + T3: direct queue via amboat_command_queue table
+- PDF reports use mPDF if available, fall back to HTML if mPDF not installed on HostPapa
+- Gemini prompt sends only aggregate stats — no GPS coordinates, no question text, no voice content (GDPR/CASL compliant)
+- Directory tier pricing: Basic free / Verified $5/mo / Premium $15/mo / Featured $35/mo (contact-to-list model for now)
+- Challenge entry CPT (amboat_challenge_entry) added — leaderboard in page-challenges.php queries it
+
+**Ollama:** N/A — all files written directly (complex multi-file build, no Ollama calls this session)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-24 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending / Operator Actions Required:**
+- Don must create `mobile/config.php` from `config.php.example` with real DB credentials, Stripe keys, Gemini API key, and random API key
+- Import `setup/mobile-schema.sql` via phpMyAdmin (7 tables)
+- Run `setup/install-pages.php?key=<key>` once to create all WP pages, then delete the file
+- Install MailPoet on staging if not already installed (registration.php calls MailPoet_Subscriber::add())
+- Create `.env` from `.env.example` with FTP credentials for staging deploy
+- style.css AODA audit still needed — Sessions 1–5 add many new page classes that need min 18px, 48px touch targets, 4.5:1 contrast
+- Session 6 (SEO) not started
+
+---
+
 ## Session — 2026-03-20 — PROJECT_CHECKLIST rename + AAO commands install
 
 **Goal:** Rename MASTER_CHECKLIST.md → PROJECT_CHECKLIST.md and update all references; install AAO slash commands; fix /project:session-start not found.

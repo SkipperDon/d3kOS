@@ -206,7 +206,7 @@ On-boat verification still pending:
 ---
 
 ## PART 7 — v0.9.3 AtMyBoat.com Community Platform (WordPress)
-**Status: IN PROGRESS — Planning complete 2026-03-24. Ready for Session 1.**
+**Status: IN PROGRESS — Sessions 1–5 complete 2026-03-24. Commit 959ef65.**
 **Platform:** WordPress + Twenty Twenty child theme on HostPapa staging
 **Repo:** github.com/SkipperDon/atmyboat-forum (first commit e354c23 — 2026-03-24)
 **Rules:** Child theme only · PHP + cURL · No Node.js · AI model = **Gemini 2.5 Flash** · AODA enforced
@@ -222,18 +222,25 @@ On-boat verification still pending:
 ### Phase 2 — Features (8-session plan — see BUILD_REFERENCE Part 16)
 | Session | Item | Status |
 |---------|------|--------|
-| S1 | Registration page + login styling + QR pairing flow | `[ ]` Not started |
-| S1 | Legal pages — /privacy, /terms, /warranty | `[ ]` Not started |
-| S1 | 2A — MailPoet email notifications | `[ ]` Not started |
-| S1 | 2B — AODA CSS completion (font audit) | `[~]` Core done — audit incomplete |
+| S1 | Registration page + login styling + QR pairing flow | `[x]` **COMPLETE 2026-03-24** |
+| S1 | Legal pages — /privacy, /terms, /warranty | `[x]` **COMPLETE 2026-03-24** |
+| S1 | 2A — MailPoet email notifications | `[~]` Hook in registration.php — needs MailPoet installed on staging |
+| S1 | 2B — AODA CSS completion (font audit) | `[~]` Core done — style.css audit still needed |
 | Done | 2C — AI Assistant (Gemini 2.5 Flash) | `[x]` Complete — on staging + committed |
 | Done | 2D — Products Hub | `[x]` Complete — on staging + committed |
-| S2 | /hardware, /download, /app pages | `[ ]` Not started |
-| S3 | /community (map), /marketplace, /features, /challenges, /hall-of-fame | `[ ]` Not started |
-| S4 | /directory (business listings + Stripe), /dashboard (The Chart Room T1+) | `[ ]` Not started |
-| S5 | 2F — Mobile app backend (7 tables, 8 PHP endpoints, Stripe, mPDF, notifications) | `[ ]` Not started |
+| S2 | /hardware, /download, /app pages | `[x]` **COMPLETE 2026-03-24** |
+| S3 | /community (map), /marketplace, /features, /challenges, /hall-of-fame | `[x]` **COMPLETE 2026-03-24** |
+| S4 | /directory (business listings), /dashboard (The Chart Room T1+) | `[x]` **COMPLETE 2026-03-24** |
+| S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
 | S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Not started |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
+
+### Operator Actions Required Before Staging Deploy (Sessions 1–5)
+- [ ] Create `mobile/config.php` from `config.php.example` — add DB credentials, Stripe keys, Gemini key, API key
+- [ ] Import `setup/mobile-schema.sql` via phpMyAdmin → 7 tables
+- [ ] Run `setup/install-pages.php?key=<key>` once to create all WP pages, then delete the file
+- [ ] Install MailPoet plugin on staging if not already installed
+- [ ] Create `.env` from `.env.example` with FTP credentials, then run `deploy/sync-staging.sh`
 
 ### Phase 3 — AODA Compliance Audit (Session 7)
 **Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
