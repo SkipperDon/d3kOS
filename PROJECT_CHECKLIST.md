@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 1.2 | **Last Updated:** 2026-03-20 (Session: anti-sycophancy deploy + checklist updates)
+**Version:** 1.3 | **Last Updated:** 2026-03-24 (Session B: v0.9.3 Phase 2B root cause confirmed)
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -225,7 +225,7 @@ On-boat verification still pending:
 | S1 | Registration page + login styling + QR pairing flow | `[x]` **COMPLETE 2026-03-24** |
 | S1 | Legal pages — /privacy, /terms, /warranty | `[x]` **COMPLETE 2026-03-24** |
 | S1 | 2A — MailPoet email notifications | `[~]` Hook in registration.php — needs MailPoet installed on staging |
-| S1 | 2B — AODA CSS completion (font audit) | `[~]` Core done — style.css audit still needed |
+| S1 | 2B — AODA CSS completion (font fix) | `[~]` Root cause confirmed 2026-03-24: only 3 lines wrong in style.css (Playfair→Fraunces, Source Serif→Nunito). Plan presented. Awaiting operator authorization to apply. |
 | Done | 2C — AI Assistant (Gemini 2.5 Flash) | `[x]` Complete — on staging + committed |
 | Done | 2D — Products Hub | `[x]` Complete — on staging + committed |
 | S2 | /hardware, /download, /app pages | `[x]` **COMPLETE 2026-03-24** |
