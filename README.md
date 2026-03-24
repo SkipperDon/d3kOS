@@ -1,208 +1,85 @@
-# d3kOS - Marine Intelligence Operating System
+# d3kOS — AI Marine Intelligence Platform
 
-**Intelligent Marine Electronics Platform for Modern Boaters**
+**An open-source helm operating system for Raspberry Pi**
 
-d3kOS (d3k Operating System) is a comprehensive, AI-powered marine electronics platform designed for the d3-k1 hardware system. Built on Debian Linux, d3kOS transforms a Raspberry Pi into a professional-grade marine helm control system with real-time engine monitoring, voice-controlled AI assistance, GPS/AIS navigation, IP camera surveillance, and intelligent anomaly detection.
+d3kOS transforms a Raspberry Pi 4 into a professional-grade marine helm system: real-time instrument dashboard, AI-powered vessel assistant, chart navigation, engine monitoring, IP camera system with fish detection, and a full boat log with voice notes — all running locally, no subscription required.
 
-**What is d3kOS?**
-d3kOS is an open-source operating system specifically engineered for marine environments. It provides boat owners with enterprise-level monitoring and control capabilities at a fraction of traditional marine electronics costs. The system integrates seamlessly with NMEA2000 networks, processes sensor data in real-time, and delivers actionable intelligence through voice commands, touchscreen interfaces, and automated alerts.
-
-**Key Differentiators:**
-- **100% Offline Operation:** All core features work without internet connectivity
-- **Voice-First Interface:** Hands-free control via natural language ("Helm, what's the engine status?")
-- **AI-Powered Analysis:** Real-time anomaly detection with >95% accuracy
-- **Open Architecture:** Standard web technologies, RESTful APIs, Signal K integration
-- **Touch-Optimized:** Large buttons, on-screen keyboard, designed for wet hands and rough seas
-- **Cost-Effective:** ~$500 hardware vs $5,000+ traditional systems
-
-**Version**: 2.0-T3 (Testing Build)
-**Release Date**: February 22, 2026
+**Version**: v0.9.2.2 — Release Candidate
+**Released**: March 23, 2026
 **OS**: Debian GNU/Linux 13 (Trixie)
-**Status**: Pre-release - Tier 3 Enabled for Testing
+**Status**: Code complete — UAT in progress
 
 ---
 
-## 📥 Download
+## What is d3kOS?
 
-**Latest Release: v2.0-T3** (Testing Build)
+d3kOS runs on a Raspberry Pi 4 mounted at your helm. It integrates:
 
-- **Image File**: `d3kOS-v2.0-tier3-full.zip`
-- **Size**: 9.2 GB (compressed)
-- **SHA256**: `51f5a3115c24f77b0998d06d7e4b31ca8b54418cb3791531d8e18538e53ec368`
-- **Download**: [Google Drive](https://drive.google.com/file/d/1pGdv_EGTI4CZ5JDrbiIRJYr09Dz5dvIS/view?usp=sharing)
-- **Release Notes**: [v2.0-T3 Release Notes](doc/RELEASE_NOTES_v2.0-T3.md)
+- **AvNav** chart plotter (replaces or complements your MFD)
+- **HELM** — voice-activated AI assistant powered by Gemini + local RAG
+- **Signal K** — NMEA 2000 / 0183 data aggregation hub
+- **Marine Vision** — up to 20 IP cameras with YOLOv8 fish detection and Gemini Vision species ID
+- **Engine Dashboard** — real-time gauges and alert monitoring
+- **Boat Log** — voice-to-text entries, engine auto-capture, CSV/JSON export
+- **18-language i18n** framework (UI language selectable in Settings)
 
-**System Requirements:**
-- Raspberry Pi 4B (8GB RAM recommended)
-- 16GB+ microSD card (32GB+ recommended for camera recordings)
-- PiCAN-M HAT or compatible NMEA2000 interface
-- 7" touchscreen (1024×600 minimum resolution)
-- Anker S330 speakerphone (for Tier 2+ voice features)
+**d3kOS is not a standalone chartplotter.** It works alongside your existing MFD and VHF. It adds an AI intelligence layer and centralized monitoring that your MFD does not provide.
 
-**⚠️ Testing Build Notice:**
-This is a pre-release testing build (T3) with all Tier 3 features enabled for evaluation. Not recommended for production use yet.
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Hardware Requirements](#hardware-requirements)
-- [Software Stack](#software-stack)
-- [Quick Start](#quick-start)
-- [Licensing & Tiers](#licensing--tiers)
-- [Voice Assistant](#voice-assistant)
-- [Documentation](#documentation)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
+**Key characteristics:**
+- 100% local operation — all core features work without internet
+- Touch-optimized for 1m helm viewing distance (IEC 62288 / ISO 9241-303 compliant fonts)
+- Offline-capable: Gemini AI with local RAG fallback
+- Open architecture: Flask, Signal K, standard web technologies
+- ~$500 hardware cost vs $5,000+ for traditional marine electronics
 
 ---
 
-## What's New in v2.0-T3
+## What's New in v0.9.2.2
 
-**Released**: February 22, 2026
-**Status**: Testing/Pre-release Build
+See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
 
-### Session A: Foundation
-- ✅ **Timezone Auto-Detection**: 3-tier fallback system (GPS → Internet → UTC)
-- ✅ **Voice Assistant Enabled**: Vosk wake word detection (helm, advisor, counsel)
-- ✅ **System Version**: Updated to 0.9.1.2
-- ✅ **Testing Mode**: Tier 3 enabled for feature testing
-
-### Session B: Self-Healing System
-- ✅ **Issue Detection**: CPU temp, memory, disk space, service monitoring
-- ✅ **Auto-Remediation**: Service restarts, temp file cleanup
-- ✅ **Self-Healing UI**: Real-time status and issue tracking
-- ✅ **API**: Port 8099 for programmatic access
-
-### Session C: Data Export & Backup
-- ✅ **Export Queue**: Retry logic with 3 attempts
-- ✅ **Boatlog CSV Export**: Download boat log as CSV
-- ✅ **Backup System**: Automated 36MB compressed backups
-- ✅ **Backup API**: Port 8100 for backup management
-
-### Session E: Chromium Fix & Network Investigation
-- ✅ **Chromium Session Reset**: Prevents "Restore pages?" prompt after reboot
-- ✅ **Network Investigation**: Identified BCM4345/6 hotspot hardware limitation
-- ❌ **Hotspot Mode**: Not supported (firmware error -52: EOPNOTSUPP)
-- ✅ **Documentation**: Workaround via manual WiFi connection
-
-### Session F: Network Settings UI
-- ✅ **Network Management API**: Flask backend (port 8101) for WiFi control
-- ✅ **Touch-Optimized UI**: WiFi scan, connect/disconnect, status display
-- ✅ **PolicyKit Authorization**: NetworkManager control without sudo
-- ✅ **On-Screen Keyboard Compatible**: Password entry works with touchscreen
-- ✅ **Auto-Refresh**: 10-second status updates
-
-### Session G: Emergency Voice Reboot
-- ✅ **Voice-Triggered System Reboot**: Emergency recovery via voice command
-- ✅ **D-Bus + Polkit Implementation**: Industry-standard system command execution
-- ✅ **Touchscreen Recovery**: Reboot system when touch input fails
-- ✅ **Single-Word Commands**: "reboot", "restart", "shutdown", "power cycle"
-- ✅ **12-Second Response**: Wake word → reboot initiation in ~12 seconds
-- ✅ **Security**: Fine-grained authorization (reboot only, not all sudo commands)
-
-### Session H: Marine Vision System
-- ✅ **Camera Integration**: Reolink RLC-810A (4K, IP67, night vision)
-- ✅ **Live Feed**: 8 FPS streaming (720p/1080p sub-stream optimized)
-- ✅ **Video Recording**: VLC backend with start/stop control
-- ✅ **Photo Capture**: High-resolution JPEG snapshots
-- ✅ **Object Detection**: YOLOv8n via ONNX Runtime (person detection working)
-- ✅ **Storage Management**: Auto-cleanup after 7 days
-- ✅ **APIs**: Camera (8084), Detection (8086), Unified (8089)
-
-### Session I: Installation ID & License System
-- ✅ **16-Character Installation ID**: SHA-256 hex format (persistent)
-- ✅ **File-Based Storage**: `/opt/d3kos/config/license.json`
-- ✅ **Tier Detection**: Auto-upgrade to Tier 2 when OpenCPN installed
-- ✅ **Feature Restrictions**: Tier-based access control
-- ✅ **Reset Counter**: Track onboarding resets (10 max for Tier 0)
-- ✅ **QR Code Generation**: Simplified format for mobile app pairing
-- ✅ **APIs**: License (8091), Tier (8093)
-
-### Session J: Voice & AI Improvements
-- ✅ **AI Response Caching**: Signal K data cached (3s TTL) for 100× speed boost
-- ✅ **Pattern Expansion**: 8 → 13 instant-answer query types
-- ✅ **Phi-2 Removal**: Removed slow LLM (60-180s), improved reliability
-- ✅ **OpenRouter Integration**: Complex queries use online AI (6-8s)
-- ✅ **Response Times**: 0.17-0.22s (cached), 6-8s (online), instant (time/help)
-- ✅ **Logo Update**: Transparent background AtMyBoat.com logo
-
----
-
-## Features
-
-### Core Capabilities (All Tiers)
-
-- **AI-Assisted Onboarding**: 13-question engine wizard with automatic CX5106 DIP switch configuration
-- **NMEA2000 Integration**: Real-time engine and sensor data via PiCAN-M HAT
-- **Engine Health Monitoring**: Baseline establishment, anomaly detection (>95% accuracy), trend analysis
-- **Raspberry Pi Monitoring**: CPU, memory, storage, GPU, thermal monitoring with auto-protection
-- **Dashboard**: Real-time gauges at 1Hz update rate with Node-RED Dashboard 2.0
-- **OpenCPN Integration**: Auto-install chartplotter software for navigation
-- **Boat Log**: Voice-to-text logging system
-- **GPS/AIS Support**: Position tracking and vessel traffic awareness
-- **Offline-First Design**: Full functionality without internet connectivity
-- **AODA Compliant**: Accessibility-first UI for marine environments
-
-### Premium Features (Tier 2+)
-
-- **Offline Voice Assistant ("Helm")**: Wake word detection, STT, TTS, local LLM (Phi-2)
-- **IP Camera Integration**: Live view, recording, intelligent storage management
-- **Unlimited Onboarding Resets**: No limit on configuration changes
-- **Extended Data Retention**: Unlimited boat log and historical data storage
-
-### Advanced Features (Tier 3)
-
-- **Cloud Sync**: Optional backup and remote access
-- **Remote Monitoring**: Access dashboard from anywhere
-- **Multi-Device Support**: Synchronized across devices
-- **Priority Support**: Direct email support (24-hour response)
+**Highlights:**
+- Full marine-grade instrument dashboard (Bebas Neue / Chakra Petch design system)
+- 8-step onboarding wizard with CX5106 DIP switch auto-configuration
+- Helm AI assistant with RAG → Gemini fallback
+- Engine Dashboard: 5 sections, full 1280px width, alert states
+- Marine Vision: slot/hardware architecture, 1–20 cameras, fish detection + species ID
+- Boat Log: voice-to-text (Vosk), engine auto-capture, CSV/JSON export
+- Weather: fullscreen Windy embed (no API key required)
+- Signal K v2.23.0
+- NMEA2000 simulator removed
+- User manual ingested into Pi RAG knowledge base
 
 ---
 
 ## Hardware Requirements
 
-### Core Components (Required)
+### Core (Required)
 
 | Component | Specification | Est. Cost |
 |-----------|---------------|-----------|
-| **Raspberry Pi 4 Model B** | 4GB RAM minimum, 8GB recommended | $55-$75 |
-| **PiCAN-M HAT** | NMEA2000 interface with micro-fit connector | $60 |
-| **MicroSD Card** | 64GB minimum (Class 10 A2), 128GB recommended | $12-$20 |
-| **Touchscreen** | 10.1" 1920×1200, 1000 nit, capacitive touch | $120 |
-| **DC-DC Converter** | 12V→5V, 5A, galvanic isolation (Victron Orion-Tr) | $35 |
-| **USB GPS Receiver** | VK-162 or equivalent | $15 |
-| **USB AIS Receiver** | dAISy or equivalent | $80 |
-| **Enclosure** | Aluminum or 3D-printed case | $20-$50 |
+| Raspberry Pi 4B | 4GB RAM minimum, 8GB recommended | $55–75 |
+| microSD Card | 32GB minimum, Class 10 A2 | $12–20 |
+| Touchscreen | 10.1" 1280×800, capacitive touch, HDMI+USB | $80–120 |
+| DC-DC Converter | 12V→5V, 5A, galvanic isolation (Victron Orion-Tr) | $35 |
+| USB GPS Receiver | Any gpsd-compatible (VK-162 or equivalent) | $15 |
 
-**Total Core System**: ~$470
+**Total Core System**: ~$350–450
 
-### Optional Hardware (Tier 2+)
+### Optional
 
 | Component | Specification | Est. Cost |
 |-----------|---------------|-----------|
-| **Anker PowerConf S330** | USB speakerphone for voice assistant | $130 |
-| **Reolink RLC-810A** | 4K IP camera with night vision | $90 |
-| **PoE Injector** | For IP camera power | $12 |
+| Anker PowerConf S330 | USB speakerphone for HELM voice assistant | $130 |
+| Reolink RLC-810A | 4K IP camera, PoE, night vision (up to 20) | $90/each |
+| CX5106 or compatible | NMEA 2000 engine gateway (PiCAN-M also supported) | $120–200 |
 
-**Total with Voice + Camera**: ~$837
+### Display
 
-### Display Requirements
-
-- **Resolution**: 1920×1200 (minimum for AODA compliance)
-- **Brightness**: 1000 nit (sunlight readable, critical for marine use)
-- **Touch**: Capacitive multi-touch, glove-operable
-- **Connection**: HDMI + USB (for touch)
-
-### Environmental Specifications
-
-- **Operating Temperature**: 0°C to 50°C (32°F to 122°F)
-- **Humidity**: 5% to 95% non-condensing
-- **IP Rating**: IP20 (enclosure required for marine use)
-- **Vibration**: Marine-grade mounting with strain relief required
-
-**See**: [HARDWARE.md](doc/reference/HARDWARE.md) for complete specifications, assembly guide, and troubleshooting
+- **Tested**: 10.1" 1280×800, 150 PPI
+- **Minimum**: 1024×600 (some layout degradation below 1280px)
+- **Brightness**: 1000 nit recommended for sunlight readability
+- **Touch**: Capacitive multi-touch (ILITEK controller confirmed working)
 
 ---
 
@@ -210,606 +87,173 @@ This is a pre-release testing build (T3) with all Tier 3 features enabled for ev
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| **Raspberry Pi OS** | Bookworm (64-bit) | Base operating system (Debian 12) |
-| **Signal K Server** | Latest | Marine data aggregation hub |
-| **Node-RED** | 3.x | Data flow automation and dashboard |
-| **Node-RED Dashboard** | 2.0 | Vue-based dashboard UI |
-| **GPSd** | Latest | GPS data processing |
-| **OpenCPN** | 5.8.x | Chart plotting (auto-installed) |
-| **PocketSphinx** | Latest | Wake word detection ("Helm") - Tier 2+ |
-| **Vosk** | 0.15 | Speech-to-text (offline) - Tier 2+ |
-| **Piper** | Latest | Text-to-speech (offline) - Tier 2+ |
-| **Phi-2** (llama.cpp) | 2.7B | Local AI reasoning - Tier 2+ |
-| **VLC (libvlc)** | Latest | RTSP camera stream viewer - Tier 2+ |
-| **Chromium** | Latest | Browser-based interface |
-
-**All Processing Local** - No cloud dependencies for core functionality
+| Debian (Trixie) | GNU/Linux 13 | Base OS |
+| Flask | 3.x | Dashboard server (:3000) |
+| Signal K Server | 2.23.0 | NMEA 2000/0183 aggregation (:8099) |
+| AvNav | 20250822 | Chart navigation (:8080) |
+| Node-RED | 3.x | Engine data flows |
+| Gemini 2.5 Flash | via API | AI assistant + fish species ID |
+| Vosk | small-en-us | Offline speech-to-text (voice notes) |
+| Piper | en_US-amy | Offline text-to-speech (HELM responses) |
+| ChromaDB | local | RAG vector database (manuals + fish species) |
+| YOLOv8n | ONNX | Fish and obstacle detection |
+| OpenCPN | 5.12.4 Flatpak | Chart plotter (fallback / o-charts) |
+| Chromium | Latest | Kiosk browser (Wayland, `--app` mode) |
+| labwc | Latest | Wayland compositor |
 
 ---
 
 ## Quick Start
 
-### 1. Download Pre-Built Image
+### Prerequisites
 
-**Latest Release**: v0.9.1.2 (February 20, 2026)
+- Raspberry Pi 4 running Debian 13 (Trixie) with Wayland/labwc
+- Signal K Server installed and running on port 8099
+- Python 3.13, Node.js 20+, AvNav installed
 
-**Image Specifications**:
-- **Compressed Size**: ~3.2 GB (.img.gz)
-- **Uncompressed Size**: ~14.5 GB (.img)
-- **Required SD Card**: 16GB minimum, 32GB+ recommended
-- **Includes**: All services, voice assistant, camera support, testing mode (Tier 3)
+### Clone and Deploy
 
 ```bash
-# Download latest release from GitHub
-wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v0.9.1.2.img.gz
+# On your workstation
+git clone https://github.com/SkipperDon/d3kOS.git
+cd d3kOS
 
-# Download checksum
-wget https://github.com/SkipperDon/d3kOS/releases/latest/d3kos-v0.9.1.2.img.gz.sha256
-
-# Verify integrity
-sha256sum -c d3kos-v0.9.1.2.img.gz.sha256
+# Deploy to Pi (replace with your Pi IP)
+scp -r deployment/d3kOS/dashboard/ d3kos@192.168.1.237:/opt/d3kos/services/
+scp -r deployment/d3kOS/services/ d3kos@192.168.1.237:/opt/d3kos/services/
 ```
 
-**Alternative Download** (Google Drive):
-- Direct Link: [d3kos-v0.9.1.2.img.gz](https://drive.google.com/PLACEHOLDER)
-- Size: ~3.2 GB compressed
+See `deployment/` for full deployment scripts and configuration.
 
-### 2. Flash to SD Card
+### First Boot
 
-#### Raspberry Pi Imager (Recommended)
-1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
-2. Launch Imager
-3. **Choose OS** → **Use custom** → Select `d3kos-v0.9.1.2.img.gz`
-4. **Choose Storage** → Select SD card (16GB minimum, 32GB+ recommended)
-5. **Write** → Wait for completion (~8-12 minutes for 3.2GB compressed image)
+1. Power on Pi — wait ~60 seconds
+2. Chromium opens at `http://localhost:3000` in kiosk mode
+3. First-run: Setup Wizard launches automatically (8 steps)
+4. Complete vessel identity, engine type, NMEA gateway config, Gemini API key
+5. Dashboard is live
 
-#### Command Line (Linux/Mac)
-```bash
-# Decompress
-gunzip d3kos-v0.9.1.2.img.gz
+### Services
 
-# Flash (replace /dev/sdX with your SD card)
-sudo dd if=d3kos-v0.9.1.2.img of=/dev/sdX bs=4M status=progress conv=fsync
-```
-
-### 3. Hardware Assembly
-
-1. **Attach PiCAN-M HAT** to Raspberry Pi GPIO header
-2. **Insert microSD card** into Raspberry Pi
-3. **Connect touchscreen** (HDMI + USB)
-4. **Connect peripherals** (GPS, AIS, speakerphone if Tier 2+)
-5. **Connect NMEA2000** via micro-fit 4-pin connector:
-   - Pin 1 (red): 12V+
-   - Pin 2 (black): GND
-   - Pin 3 (white): CAN-H
-   - Pin 4 (blue): CAN-L
-6. **Connect power** via DC-DC converter (12V boat power → 5V Pi)
-
-**See**: [HARDWARE.md](doc/reference/HARDWARE.md) for detailed assembly instructions
-
-### 4. First Boot
-
-1. Power on (wait ~60 seconds for boot)
-2. **Default credentials** (SSH/Desktop):
-   - Username: `d3kos`
-   - Password: `d3kos2026`
-   - ⚠️ **Change password after first login**: `passwd`
-3. **Connect to WiFi** (Client Mode Only - ~~Hotspot Not Supported~~):
-   - Touchscreen shows Chromium with main menu
-   - Navigate to: **Settings → Network Settings**
-   - Tap **"Scan for Networks"**
-   - Select your WiFi network (home WiFi, phone hotspot, Starlink, etc.)
-   - Enter password using on-screen keyboard
-   - Tap **"Connect"**
-   - Wait for connection confirmation
-   - ⚠️ **Note**: Built-in WiFi is **client-only** (BCM4345/6 firmware limitation). ~~Cannot act as WiFi hotspot/AP~~
-4. **Access from other devices** (optional):
-   - Once connected, note the IP address shown in Network Settings
-   - From mobile/laptop on same network: `http://[IP-ADDRESS]` or `http://d3kos.local`
-
-### 5. Complete Onboarding Wizard
-
-The 13-question wizard collects engine specifications:
-
-1. Engine Manufacturer (autocomplete)
-2. Engine Model
-3. Engine Year (1950-2026)
-4. Number of Cylinders (3, 4, 6, 8)
-5. Engine Displacement (Liters or Cubic Inches)
-6. Compression Ratio
-7. Stroke Length (mm or inches)
-8. Induction Type (NA, Turbo, Supercharged)
-9. Rated Horsepower
-10. Idle RPM Specification
-11. WOT RPM Range
-12. Maximum Coolant Temperature
-13. Minimum Oil Pressure (Idle & Cruise)
-
-**Output**:
-- CX5106 DIP switch configuration diagram with explanations
-- QR code for mobile app pairing
-- Installation ID generation
-
-**Time**: 10-20 minutes
+| Service | Port | Purpose |
+|---------|------|---------|
+| `d3kos-dashboard` | 3000 | Flask dashboard (main UI) |
+| `avnav` | 8080 | Chart navigation |
+| `upload_api` | 8081 | Manual upload |
+| `history_api` | 8082 | History data |
+| `manuals_api` | 8083 | Manual serving |
+| `camera` | 8084 | Camera stream manager |
+| `fish_detector` | 8086 | YOLOv8 fish detection |
+| `keyboard-api` | 8087 | On-screen keyboard control |
+| `ai_api` | 8089 | HELM voice AI service |
+| `boatlog-export-api` | 8095 | Boat log + voice notes |
+| `signalk` | 8099 | Signal K server |
+| `language_api` | 8101 | i18n language service |
+| `preferences_api` | 8107 | Metric/imperial preferences |
+| `remote_api` | 8111 | Remote access API |
 
 ---
 
-## Licensing & Tiers
+## Features
 
-### Tier Structure
+### Dashboard
 
-| Feature | Tier 0 (Free) | Tier 2 (App) | Tier 3 (Subscription) |
-|---------|---------------|--------------|----------------------|
-| Dashboard & Gauges | ✓ | ✓ | ✓ |
-| Engine Health Monitoring | ✓ | ✓ | ✓ |
-| Pi Health Monitoring | ✓ | ✓ | ✓ |
-| OpenCPN Integration | ✓ | ✓ | ✓ |
-| Boat Log (30 days) | ✓ | Unlimited | Unlimited |
-| Onboarding Resets | 10 max | Unlimited | Unlimited |
-| **Voice Assistant** | ✗ | ✓ | ✓ |
-| **Camera Integration** | ✗ | ✓ | ✓ |
-| Historical Graphs | 30 days | 90 days | 90 days |
-| Cloud Sync | ✗ | ✗ | ✓ |
-| Remote Access | ✗ | ✗ | ✓ |
-| Priority Support | ✗ | ✗ | ✓ |
+- Instrument rows: ENGINE (RPM, coolant, oil, battery, fuel) + NAV (SOG, COG, position, next waypoint)
+- 3-way row toggle: ENGINE / NAV / BOTH
+- AvNav chart iframe (full chart plotter integration)
+- Day/Night theme — auto-schedule with manual override
+- Status bar: internet, AvNav, Gemini AI, Signal K, Ollama
+- 6-tab bottom nav: NAV, MARINE VISION, ENGINE, BOAT LOG, MORE + HELM button
 
-### Tier 0: Opensource (Default)
+### HELM — AI Voice Assistant
 
-**Free and Open Source**
+- Wake word: "Helm" (Vosk small-en-us, offline)
+- TTS: Piper en_US-amy (offline)
+- AI: Gemini 2.5 Flash (online) with local RAG fallback
+- RAG knowledge base: d3kOS user manual + Ontario fish regulations + vessel manuals
+- Software mute toggle (persists across reload)
+- Helm Assistant page: 4 quick-action buttons + full chat UI
 
-Includes all core functionality:
-- NMEA2000 integration via Signal K
-- Real-time dashboard at 1Hz
-- Engine health monitoring with anomaly detection
-- Raspberry Pi health monitoring
-- GPS/AIS integration
-- OpenCPN auto-installation
-- Boat log (30-day retention)
-- Manual onboarding (10 resets maximum)
+### Marine Vision — Camera System
 
-**Limitation**: Maximum 10 onboarding resets. After 10th reset, must download fresh image or upgrade to Tier 2+.
+- Slot/Hardware architecture: named positions decouple from physical cameras
+- Up to 20 IP cameras, RTSP streams
+- Focus+filmstrip default view; grid mode available
+- Fish detection: YOLOv8n ONNX + EfficientNet-483 classifier
+- Fish species ID: Gemini Vision on-demand (common name, scientific name, Ontario regulation note)
+- 21 Ontario freshwater species in RAG knowledge base
+- Settings: scan, live thumbnails, role assignment (forward watch, active default, fish detection, grid display)
 
-### Tier 2: App-Based Upgrade
+### Engine Dashboard
 
-**Free upgrade by installing paid app (OpenCPN or other)**
+- 5 sections: Engine, Electrical, Tanks, System Status, Network Status
+- Progress bars, alert states (warning/critical), DAY/NGT toggle
+- Full 1280px width on Pi display
 
-**How to Upgrade**:
-- Install OpenCPN (included, free to enable)
-- Or install other paid marine apps
-- System automatically detects and upgrades to Tier 2
+### Boat Log
 
-**Additional Features**:
-- ✓ Offline voice assistant ("Helm")
-- ✓ IP camera integration
-- ✓ Unlimited onboarding resets
-- ✓ Unlimited boat log retention
-- ✓ Extended historical data (90 days)
+- Manual text and voice entries (voice: Vosk offline transcription)
+- Engine auto-capture: start event, 30-min snapshots, stop event, alert crossings
+- Export: CSV + JSON with unit metadata
+- Metric and imperial configurations supported
 
-**Cost**: Free (OpenCPN included, just enable it)
+### Settings (16 Sections)
 
-### Tier 3: Cloud Subscription (Future)
+Vessel identity, units (metric/imperial), display, audio, engine gateway, camera setup, language, Gemini API key, Signal K status, remote access, onboarding wizard, documentation viewer, and more.
 
-**Planned Features**:
-- Cloud backup and sync
-- Remote monitoring from anywhere
-- Multi-device access
-- Advanced analytics
-- Priority email support (24-hour response)
+### i18n — 18 Languages
 
-**Cost**: TBD (subscription model)
+All 13 UI pages wired with `data-i18n`. Language selectable in Settings → Language.
 
-### Reset Counter
-
-Located in footer of onboarding wizard:
-- **Displays**: "Resets used: 7/10 (Tier 0)"
-- **Warning at 8**: "Only 2 resets remaining. Consider upgrading to Tier 2."
-- **Warning at 9**: "This is your last reset."
-- **At 10**: "Maximum resets reached. Download fresh image or upgrade to Tier 2."
-
-**Tier 2+ Bypass**: Unlimited resets (counter doesn't increment)
-
----
-
-## Voice Assistant
-
-### "Helm" - Offline AI Assistant (Tier 2+ Only)
-
-Fully offline voice assistant with wake word detection, speech recognition, and local AI reasoning.
-
-### Voice Pipeline
-
-```
-Microphone (16kHz)
-      ↓
-PocketSphinx (Wake Word Detection)
-      ↓ "Helm" detected (<500ms)
-Vosk (Speech-to-Text)
-      ↓ Transcription (<1s)
-Phi-2 via llama.cpp (AI Reasoning)
-      ↓ Response generation (<1s)
-Piper (Text-to-Speech)
-      ↓ Audio output (<500ms)
-Speaker
-```
-
-**Total Response Time**: < 2 seconds from wake word to response
-
-### Supported Commands
-
-**Engine & Health**:
-- "Helm, what's the engine status?"
-- "Helm, any anomalies?"
-- "Helm, show benchmark report"
-- "Helm, start benchmarking"
-
-**Navigation**:
-- "Helm, open OpenCPN"
-- "Helm, GPS status"
-- "Helm, AIS status"
-
-**Boat Log**:
-- "Helm, record boat log" (starts recording)
-- "Helm, post to boat log" (saves entry)
-- "Helm end" (stops listening)
-
-**System**:
-- "Helm, query system status"
-- "Helm, restart services"
-- **"Helm, reboot"** (Emergency reboot - use when touchscreen fails)
-
-### Technology Stack
-
-| Component | Technology | Size | Purpose |
-|-----------|-----------|------|---------|
-| Wake Word | PocketSphinx | ~10MB | Detect "Helm" |
-| STT | Vosk (small-en-us) | 50MB | Speech to text |
-| LLM | Phi-2 (Q4_K_M) | 5GB | AI reasoning |
-| TTS | Piper (en_US-amy) | ~20MB | Text to speech |
-
-**100% Offline** - All processing on Raspberry Pi, no cloud required
-
-**RAM Requirement**: 8GB Pi recommended for voice features (3GB RAM for Phi-2 model)
+Supported: Arabic, Danish, German, Greek, English, Spanish, Finnish, French, Croatian, Italian, Japanese, Dutch, Norwegian, Portuguese, Swedish, Turkish, Ukrainian, Chinese.
 
 ---
 
 ## Documentation
 
-### Core Documentation
-
-- **[MASTER_SYSTEM_SPEC.md](MASTER_SYSTEM_SPEC.md)** - Complete system specification (2,040 lines)
-- **[architecture.md](architecture.md)** - System architecture, data flow, component diagrams
-- **[HARDWARE.md](doc/reference/HARDWARE.md)** - Hardware specs, assembly guide, troubleshooting
-- **[CLAUDE.md](CLAUDE.md)** - AI assistant development guidelines
-
-### CX5106 Documentation
-
-- **[CX5106_USER_MANUAL.md](doc/CX5106_USER_MANUAL.md)** - Complete manual for CX5106 engine gateway
-- **[CX5106_CONFIGURATION_GUIDE.md](doc/CX5106_CONFIGURATION_GUIDE.md)** - DIP switch configuration logic
-- **[CX5106_DIP_SWITCH.md](reference/CX5106_DIP_SWITCH.md)** - Quick reference
+| Document | Description |
+|----------|-------------|
+| [CHANGELOG.md](CHANGELOG.md) | Full release notes for all versions |
+| [CLAUDE.md](CLAUDE.md) | AI development guidelines and project operating procedures |
+| [deployment/docs/D3KOS_USER_MANUAL_v0922.md](deployment/docs/D3KOS_USER_MANUAL_v0922.md) | Full user manual — Setup Wizard, Dashboard, all features, Troubleshooting |
+| [deployment/docs/DEPLOYMENT_INDEX.md](deployment/docs/DEPLOYMENT_INDEX.md) | Index of all solution docs, feature dirs, tools |
+| [deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md](deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md) | Camera slot/hardware architecture |
+| [deployment/docs/FISH_DETECTION_ARCHITECTURE.md](deployment/docs/FISH_DETECTION_ARCHITECTURE.md) | YOLOv8 + Gemini Vision fish detection design |
+| [deployment/docs/OPENCPN_FLATPAK_OCHARTS.md](deployment/docs/OPENCPN_FLATPAK_OCHARTS.md) | OpenCPN + o-charts installation guide |
+| [PROJECT_CHECKLIST.md](PROJECT_CHECKLIST.md) | Master task list — all versions |
 
 ---
 
-## Main Features
-
-### Dashboard Gauges (Node-RED Dashboard 2.0)
-
-**Page 1: Engine & System**
-- **Row 1**: Engine gauges
-  - Tachometer (circular, 270° arc)
-  - Tilt/Trim
-  - Engine Temperature (with thresholds)
-  - Battery Voltage
-  - Oil Pressure
-- **Row 2**: Tank levels (horizontal bars with gradients)
-  - Fresh Water (%)
-  - Black Water (%)
-  - Fuel Level (%, gallons/liters)
-  - House Battery (%)
-- **Row 3**: System status
-  - CPU Usage (with temp monitoring)
-  - Memory Usage
-  - Storage Remaining
-  - GPU Temperature
-- **Row 4**: Network status (color-coded indicators)
-  - WiFi (SSID, signal strength)
-  - Ethernet (IP address)
-  - NMEA2000 (device count)
-  - Internet (connected/disconnected)
-
-**Page 2: Boat Log**
-- Voice recording interface
-- Log entry list (last 30 days for Tier 0, unlimited for Tier 2+)
-- Export options (CSV/JSON)
-
-**Page 3: Health Reports**
-- Engine health summary
-- Anomaly history timeline
-- Trend graphs (CPU, memory, engine metrics)
-- Maintenance recommendations
-
-### Engine Health Monitoring
-
-**Baseline Establishment**:
-- 30-minute benchmark run
-- Captures: RPM (idle/cruise), temperature warmup curve, oil pressure, fuel rate
-- Statistical analysis: mean, stddev, min/max for each metric
-- Stored in: `/opt/d3kos/config/benchmark-results.json`
-
-**Anomaly Detection**:
-- Statistical Process Control (SPC) method
-- Alerts:
-  - **INFO**: 1σ deviation (log only)
-  - **WARNING**: 2σ deviation (visual alert)
-  - **CRITICAL**: 3σ deviation (visual + voice alert)
-- False positive rate: < 5%
-- Accuracy: > 95%
-
-**Example Alerts**:
-- "Engine temperature is 210°F, 30 degrees above normal. Please check coolant system."
-- "Oil pressure declining 2 PSI/week over last 2 weeks. Consider oil change within 10 engine hours."
-
-### Camera Integration (Tier 2+ Only)
-
-**Supported Camera**: Reolink RLC-810A (4K, night vision, IP66)
-
-**Features**:
-- Live RTSP stream view (< 500ms latency)
-- Hardware-accelerated H.264 decode (GPU)
-- Manual recording with 10-minute segments
-- Intelligent storage management:
-  - Warning at 20% free space
-  - Auto-stop recording at 18% free space
-  - FIFO deletion of oldest recordings
-- Playback interface with timeline scrubber
-- Night vision auto-switching
-
-**Storage Path**: `/opt/d3kos/data/camera/`
-**Format**: MP4 (H.264), 1080p @ 30fps
-
-### Network Configuration
-
-**WiFi Client Mode**:
-- **Connection Method**: Manual connection to existing WiFi networks
-- **Supported Networks**: Home WiFi, phone hotspots, Starlink, marina WiFi, etc.
-- **Management**: Touch-optimized Network Settings UI (Settings → Network Settings)
-- **Features**:
-  - WiFi network scanning
-  - WPA2/WPA3 password authentication
-  - Saved network profiles with auto-reconnect
-  - Real-time signal strength monitoring
-  - On-screen keyboard for password entry
-
-**Network Settings UI** (Session F):
-- Path: Settings → Network Settings
-- API: Port 8101 (Flask backend)
-- Features: Scan, connect, disconnect, status display
-- Touch-optimized: 60px buttons, 22px+ fonts
-
-**Services** (when connected to WiFi):
-- Main Menu: `http://d3kos.local` or `http://[IP-ADDRESS]`
-- Dashboard: `http://d3kos.local:1880/dashboard`
-- Signal K: `http://d3kos.local:3000`
-- Camera: `rtsp://d3kos.local:554/camera` (Tier 2+)
-
-**~~Hotspot Mode~~**: ❌ **NOT SUPPORTED** - Built-in WiFi (BCM4345/6) cannot operate as Access Point due to firmware limitation (error -52: EOPNOTSUPP). Use external WiFi adapter or connect to existing network. See `doc/SESSION_E_F_FINAL_STATUS.md` for technical details.
-
-**Ethernet**: Wired connection supported via RJ45 port
-
----
-
-## UI/UX Design
-
-### AODA/WCAG 2.1 AA Compliant
-
-**Color Scheme**:
-- Background: Pure black (#000000)
-- Primary text: White (#FFFFFF)
-- Accent: Green (#00CC00)
-- Warning: Amber (#FFA500)
-- Critical: Red (#FF0000)
-
-**Typography**:
-- Font: Roboto, Arial, sans-serif
-- Minimum size: 22px
-- Button text: 24px bold
-- Headings: 32px bold
-- Line height: 1.5
-
-**Touch Targets**:
-- Minimum: 120×80px
-- Padding: 16px
-- Gap: 20px horizontal, 16px vertical
-
-**Accessibility Features**:
-- Keyboard navigation (Tab, Enter, Escape, Arrows)
-- Screen reader support (aria-labels)
-- High contrast (21:1 white on black)
-- Focus indicators (3px solid green)
-- Text alternatives for all icons
-
-**Marine Optimization**:
-- 1000 nit display (sunlight readable)
-- Large touch targets (glove-operable)
-- Bottom 1/3 reserved for on-screen keyboard
-- Minimal scrolling (critical info always visible)
-
----
-
-## Performance Specifications
-
-### Boot Time
-- **Target**: < 60 seconds from power-on to operational
-- **Actual**: ~45-60 seconds on Pi 4 with Class 10 A2 SD card
-
-### Response Times
-- **Dashboard update**: 1 Hz (1000ms intervals)
-- **Voice response**: < 2 seconds (wake word to audio output)
-- **Anomaly detection**: Real-time (< 100ms)
-- **Camera latency**: < 500ms (RTSP stream)
-
-### Resource Usage
-- **CPU**: < 70% sustained (dashboard + voice + camera)
-- **Memory**: < 4GB (fits in 4GB Pi), 8GB recommended for voice
-- **Storage writes**: < 100 MB/hour
-- **Network**: < 10 KB/sec (Signal K updates)
-
-### Thermal Management
-- **Normal**: < 60°C CPU temperature
-- **Warning**: 70°C (visual alert)
-- **Critical**: 80°C (voice alert, reduce services)
-- **Throttle**: 82°C (hardware thermal throttling)
-
----
-
-## CX5106 Engine Gateway
-
-### Automatic DIP Switch Configuration
-
-d3kOS calculates correct CX5106 settings from onboarding answers.
-
-**8 DIP Switches**:
-- **SW 1-2**: Engine instance (0-3)
-- **SW 3-4**: RPM source (alternator, ignition, magnetic, ECU)
-- **SW 5-6**: Cylinders (3, 4, 6, 8)
-- **SW 7**: Stroke (2-stroke, 4-stroke)
-- **SW 8**: Gear ratio (1:1, 2:1, or custom)
-
-**Output Includes**:
-- Visual DIP switch diagram (which switches ON/OFF)
-- Explanation for each setting
-- Special handling for non-standard ratios (e.g., Bravo II 1.5:1)
-
-**See**: [CX5106_USER_MANUAL.md](doc/CX5106_USER_MANUAL.md) for manual configuration
-
----
-
-## Known Issues & Important Notes
-
-### System Boot Behavior
-
-**Keyring Password Prompt**
-- **Issue**: On boot, system prompts for keyring password
-- **Password**: `pi` (default keyring password)
-- **When**: Appears once per boot session
-- **Why**: Required for secure credential storage (WiFi passwords, SSH keys)
-- **Workaround**: Enter `pi` when prompted, then system continues boot
-- **Note**: This is expected behavior for secure credential management
-
-### WiFi Connection Behavior
-
-**Default Network Selection**
-- **Issue**: System may default to incorrect WiFi network after reboot
-- **Example**: May connect to neighbor's WiFi instead of intended network
-- **Workaround**:
-  1. Navigate to **Settings → Network Settings**
-  2. Disconnect from incorrect network
-  3. Connect to correct network manually
-  4. System remembers correct network for future boots
-- **Note**: This occurs when multiple WiFi networks with saved credentials are in range
-- **Permanent Fix**: Delete unwanted saved networks in Network Settings
-
-### Voice Assistant & Touchscreen Interaction
-
-**Touchscreen Pause During Voice Response (Tier 2+ Only)**
-- **Issue**: Touchscreen becomes unresponsive while voice assistant is speaking
-- **Duration**: Pauses until voice response finishes playing (typically 2-5 seconds)
-- **When**: Only occurs during active voice assistant audio output
-- **Why**: Audio subsystem temporarily locks input during TTS (text-to-speech) playback
-- **Behavior**:
-  - Touch input queued while voice is speaking
-  - Touchscreen resumes immediately after audio completes
-  - Visual display remains responsive
-- **Workaround**: Wait for voice response to finish before tapping screen
-- **Note**: This is expected behavior, not a bug - prevents audio/input conflicts
-
-**Summary**:
-- ✅ **Keyring password**: Enter `pi` on boot
-- ✅ **WiFi defaults**: Manually select correct network if needed
-- ✅ **Touchscreen pause**: Wait for voice to finish speaking
-
----
-
-## Troubleshooting
-
-### Power Issues
-
-**Pi won't power on (no LED)**:
-1. Check voltage at USB-C: must be 5.0V ±0.25V
-2. Verify USB-C cable quality (use official Pi cable)
-3. Check 12V input polarity (red=+, black=-)
-4. Test with known-good 5V 3A power supply
-
-**Random reboots**:
-1. Check for undervoltage: `vcgencmd get_throttled`
-2. Monitor CPU temp: `vcgencmd measure_temp` (should be < 80°C)
-3. Test SD card: `sudo fsck /dev/mmcblk0p2`
-
-### NMEA2000 Issues
-
-**No CAN0 data**:
-```bash
-# Check CAN interface
-ifconfig can0
-
-# Monitor bus traffic
-candump can0
-
-# Check for devices
-dmesg | grep mcp251x
-```
-
-**Solutions**:
-- Verify 12V present on NMEA2000 bus
-- Check termination: 60Ω between CAN-H and CAN-L
-- Swap CAN-H/CAN-L if wired backwards
-- Reseat PiCAN-M HAT on GPIO header
-
-### Display Issues
-
-**No display output**:
-1. Reseat HDMI cable (both ends)
-2. Try different HDMI cable
-3. Verify touchscreen power LED is on
-4. Check Pi green LED flashing (SD card activity)
-
-**Touchscreen not responding**:
-1. Check USB touch cable connected
-2. Verify device detected: `lsusb | grep -i touch`
-3. Test with USB mouse to verify OS running
-4. Recalibrate: `xinput-calibrator`
-
-### GPS/AIS Issues
-
-**No GPS fix**:
-1. Check GPS LED blinking (satellite acquisition)
-2. Verify USB connection: `lsusb | grep -i prolific`
-3. Check gpsd: `systemctl status gpsd`
-4. View GPS data: `cgps -s`
-5. Ensure clear view of sky (not inside metal cabin)
-6. Wait 5 minutes for cold start
-
-**No AIS data**:
-1. Check AIS LED flashing (messages received)
-2. Verify USB: `lsusb | grep -i ftdi`
-3. Monitor serial: `cat /dev/ttyUSB1`
-4. Check antenna connected (SMA connector)
-5. Verify antenna location (high = better range)
-
-### Voice Assistant Issues (Tier 2+ Only)
-
-**Wake word not detected**:
-1. Check service: `systemctl status d3kos-voice`
-2. Verify microphone: `arecord -l`
-3. Test audio levels: `arecord -d 5 test.wav && aplay test.wav`
-4. Check logs: `/var/log/d3kos-voice.log`
-
-**Slow or no response**:
-1. Check CPU temp (thermal throttling slows inference)
-2. Verify Phi-2 model loaded: `ps aux | grep llama`
-3. Check RAM usage: `free -h` (need ~3GB free for LLM)
-4. Verify 8GB Pi for best performance
-
-**See**: [HARDWARE.md](doc/reference/HARDWARE.md) for comprehensive troubleshooting
+## Roadmap
+
+### v0.9.2.2 (Current — Release Candidate)
+- [x] Full instrument dashboard
+- [x] HELM AI assistant (Gemini + RAG)
+- [x] Marine Vision (1–20 cameras, fish detection + species ID)
+- [x] Boat Log with voice notes
+- [x] Engine Dashboard
+- [x] Signal K v2.23.0
+- [x] 18-language i18n
+- [x] 8-step onboarding wizard
+- [ ] UAT (5 metric + 5 imperial users) — in progress
+
+### v0.9.3 — AtMyBoat.com Community Platform
+- WordPress + child theme on HostPapa
+- bbPress forum at /forum/
+- AI assistant widget (Gemini via PHP)
+- AODA compliant
+
+### v0.9.4 — d3kOS Mobile Companion App
+- PWA on GitHub Pages (no App Store)
+- WebRTC/STUN P2P live tunnel (Pi ↔ phone)
+- Find My Boat, boat health dashboard
+- Fix My Pi diagnostic + restore
+- $0 ongoing infrastructure cost
+
+### v1.0
+- Multi-language voice (Whisper-small, 18-language Piper)
+- Mobile app + signalk-forward-watch public release
+- CJK keyboard support
 
 ---
 
@@ -817,137 +261,43 @@ dmesg | grep mcp251x
 
 ```
 d3kOS/
-├── MASTER_SYSTEM_SPEC.md           # Complete system specification (v2.0)
-├── architecture.md                  # System architecture documentation
 ├── README.md                        # This file
-├── LICENSE                          # License file
+├── CHANGELOG.md                     # Version history
 ├── CLAUDE.md                        # AI development guidelines
+├── PROJECT_CHECKLIST.md             # Master task tracker
+├── SESSION_LOG.md                   # Development session log
 │
-├── doc/                             # Documentation
-│   ├── CX5106_USER_MANUAL.md       # CX5106 complete manual
-│   ├── CX5106_CONFIGURATION_GUIDE.md # DIP switch logic
-│   └── reference/                   # Reference documentation
-│       └── HARDWARE.md              # Hardware specs & assembly
+├── deployment/
+│   ├── docs/                        # Solution documents and specs
+│   │   ├── D3KOS_USER_MANUAL_v0922.md
+│   │   ├── DEPLOYMENT_INDEX.md
+│   │   ├── MARINE_VISION_CAMERA_OVERHAUL.md
+│   │   └── ...
+│   ├── d3kOS/
+│   │   └── dashboard/               # Flask dashboard source
+│   │       ├── app.py
+│   │       ├── templates/           # Jinja2 HTML templates
+│   │       └── static/              # CSS, JS modules
+│   └── scripts/                     # Deploy and utility scripts
 │
-├── reference/                       # Quick references
-│   └── CX5106_DIP_SWITCH.md        # Quick DIP switch guide
-│
-├── services/                        # System services (on image)
-│   ├── onboarding/                 # Configuration wizard
-│   ├── voice/                      # Voice assistant (Tier 2+)
-│   ├── camera/                     # Camera management (Tier 2+)
-│   ├── health/                     # Health monitoring
-│   └── boatlog/                    # Boat log system
-│
-├── config/                          # Configuration files (on image)
-│   ├── onboarding.json             # User responses
-│   ├── benchmark-results.json      # Engine baseline
-│   ├── license.json                # Tier & features
-│   └── engine-manufacturers.json   # Manufacturer database
-│
-├── state/                           # Runtime state (on image)
-│   ├── onboarding-reset-count.json # Reset tracking
-│   └── pi-health-status.json       # System metrics
-│
-└── scripts/                         # Utility scripts (on image)
-    ├── install-*.sh                # Component installers
-    ├── configure-*.sh              # Configuration scripts
-    ├── backup.sh                   # Backup automation
-    └── restore.sh                  # Restore from backup
-```
-
----
-
-## Development
-
-### Prerequisites
-
-```bash
-# For Node.js development
-npm install
-
-# For Python development
-pip3 install -r requirements.txt
-
-# For voice assistant (Tier 2+)
-# Install Vosk, Piper, llama.cpp, Phi-2 model
-```
-
-### Running Services Locally
-
-```bash
-# Signal K Server
-signalk-server
-
-# Node-RED
-node-red
-
-# Voice Assistant (Tier 2+)
-cd services/voice
-python3 assistant.py
-```
-
-### Testing
-
-```bash
-# Test CAN interface
-candump can0
-
-# Test Signal K API
-curl http://localhost:3000/signalk/v1/api/
-
-# Test GPS
-cgps -s
-
-# Test voice (Tier 2+)
-echo "Helm, test" | python3 services/voice/test_stt.py
+├── deployment/features/             # Feature build checklists
+└── deployment/v0.9.3/               # AtMyBoat.com platform files
 ```
 
 ---
 
 ## Contributing
 
-Contributions welcome! Please:
+Contributions welcome. Please:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Read `CLAUDE.md` for development guidelines
-4. Follow existing code style
-5. Add tests for new features
-6. Update documentation
-7. Commit changes (`git commit -m 'Add amazing feature'`)
-8. Push to branch (`git push origin feature/amazing-feature`)
-9. Open a Pull Request
+2. Read [CLAUDE.md](CLAUDE.md) for development and coding standards
+3. Create a feature branch
+4. Follow the existing code style (Flask, vanilla JS, no frameworks in dashboard)
+5. Add tests where applicable
+6. Submit a pull request
 
----
-
-## Roadmap
-
-### Version 2.0 (Current - Feb 2026) ✅
-- [x] NMEA2000 integration via Signal K
-- [x] AI-assisted onboarding (13 questions)
-- [x] CX5106 DIP switch auto-configuration
-- [x] Engine health monitoring with anomaly detection
-- [x] Raspberry Pi health monitoring
-- [x] Offline voice assistant (Tier 2+)
-- [x] IP camera integration (Tier 2+)
-- [x] OpenCPN auto-install
-- [x] AODA-compliant UI
-- [x] Tiered licensing system
-
-### Version 2.1 (Q2 2026) - Planned
-- [ ] Mobile app (iOS/Android)
-- [ ] QR code pairing functional
-- [ ] Cloud sync for Tier 3
-- [ ] Remote monitoring dashboard
-- [ ] Push notifications
-
-### Version 2.2 (Q3 2026) - Future
-- [ ] Multi-boat support (Tier 3)
-- [ ] Fleet management dashboard
-- [ ] Advanced AI recommendations
-- [ ] PDF report generation
-- [ ] Integration with more engine gateways
+**Note:** This project uses the AAO Autonomous Action Operating Methodology. All AI-assisted development follows the standards documented in `CLAUDE.md`.
 
 ---
 
@@ -955,24 +305,22 @@ Contributions welcome! Please:
 
 - **Issues**: [GitHub Issues](https://github.com/SkipperDon/d3kOS/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/SkipperDon/d3kOS/discussions)
-- **Documentation**: [Master Spec](MASTER_SYSTEM_SPEC.md) | [Architecture](architecture.md) | [Hardware](doc/reference/HARDWARE.md)
+- **User Manual**: [D3KOS_USER_MANUAL_v0922.md](deployment/docs/D3KOS_USER_MANUAL_v0922.md)
 
 ---
 
 ## Acknowledgments
 
-Built with exceptional open-source projects:
+Built on exceptional open-source projects:
 
-- **[Signal K](https://signalk.org/)** - Universal marine data standard
-- **[Node-RED](https://nodered.org/)** - Flow-based automation platform
-- **[OpenCPN](https://opencpn.org/)** - Open-source chartplotter
-- **[Vosk](https://alphacephei.com/vosk/)** - Offline speech recognition
-- **[Piper](https://github.com/rhasspy/piper)** - Fast neural text-to-speech
-- **[PocketSphinx](https://github.com/cmusphinx/pocketsphinx)** - Wake word detection
-- **[llama.cpp](https://github.com/ggerganov/llama.cpp)** - Efficient LLM inference
-- **[Phi-2](https://huggingface.co/microsoft/phi-2)** - Microsoft's small language model
-
-Special thanks to the marine open-source community and all contributors.
+- **[Signal K](https://signalk.org/)** — Universal marine data standard
+- **[AvNav](https://www.wellenvogel.net/software/avnav/docs/en_index.html)** — Marine chart navigation
+- **[OpenCPN](https://opencpn.org/)** — Open-source chartplotter
+- **[Vosk](https://alphacephei.com/vosk/)** — Offline speech recognition
+- **[Piper](https://github.com/rhasspy/piper)** — Fast neural text-to-speech
+- **[YOLOv8](https://github.com/ultralytics/ultralytics)** — Real-time object detection
+- **[ChromaDB](https://www.trychroma.com/)** — Local vector database
+- **[Node-RED](https://nodered.org/)** — Flow-based automation
 
 ---
 
@@ -981,40 +329,25 @@ Special thanks to the marine open-source community and all contributors.
 d3kOS is dual licensed:
 
 **Open Source — GPL v3**
-Free to use, modify, and distribute under the terms of the 
-GNU General Public License v3.0. Any derivative works must 
-also be released under GPL v3. See [LICENSE](./LICENSE).
+Free to use, modify, and distribute under the GNU General Public License v3.0.
+Any derivative works must also be released under GPL v3. See [LICENSE](./LICENSE).
 
 **Commercial License**
-Commercial use — including bundling with hardware for resale 
-or distribution in paid products — requires a separate 
-commercial license agreement.
+Commercial use — including bundling with hardware for resale or distribution
+in paid products — requires a separate commercial license agreement.
 Contact: skipperdont@atmyboat.com | https://atmyboat.com
-See [LICENSE-COMMERCIAL](./LICENSE-COMMERCIAL).
-
 
 ---
 
 ## Version History
 
-| Version | Date | Status | Key Changes |
-|---------|------|--------|-------------|
-| 2.0 | Feb 6, 2026 | **Current** | Integrated gap analysis, added voice/camera, comprehensive docs |
-| 1.0 | Feb 4, 2026 | Legacy | Initial release, core features only |
+| Version | Date | Status | Summary |
+|---------|------|--------|---------|
+| v0.9.2.2 | Mar 23, 2026 | **Release Candidate** | Full marine intelligence platform |
+| v0.9.2.1 | Mar 13, 2026 | Closed | Flask dashboard architecture, all 6 phases |
+| v0.9.2 | Mar 12, 2026 | Closed | Camera overhaul, i18n, Signal K upgrade |
+| v0.9.1.2 | Feb 20, 2026 | Closed | Voice assistant, self-healing, data export |
 
 ---
 
-## Quick Links
-
-- 📥 [Download Latest Release](https://github.com/SkipperDon/d3kOS/releases/latest)
-- 📖 [Master System Spec](MASTER_SYSTEM_SPEC.md)
-- 🏗️ [System Architecture](architecture.md)
-- 🔧 [Hardware Guide](doc/reference/HARDWARE.md)
-- 🎛️ [CX5106 Manual](doc/CX5106_USER_MANUAL.md)
-- 💬 [GitHub Discussions](https://github.com/SkipperDon/d3kOS/discussions)
-
----
-
-**d3kOS v2.0 - Software for the d3-k1 Marine Platform** - *Marine Intelligence, Simplified.*
-
-*Built by boaters, for boaters. Powered by open source.*
+*d3kOS v0.9.2.2 — Built by boaters, for boaters. Powered by open source.*

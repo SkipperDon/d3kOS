@@ -7,83 +7,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.9.2.3] - 2026-03-16
+## [0.9.2.2] - 2026-03-23
 
 ### Summary
 
-**v0.9.2.3 — UI Remediation: 19 issues resolved across 5 sessions (A–E)**
+**v0.9.2.2 — Release Candidate: Full Marine Intelligence Dashboard**
 
-Complete remediation of all deficiencies identified during the v0.9.2.2 investigation. Sessions ran in parallel and were integrated and deployed as a single release. All 9 routes verified HTTP 200 on Pi. CSS at ?v=14.
+d3kOS v0.9.2.2 is the complete marine intelligence platform. This release delivers the full instrument dashboard, AI assistant, camera system, engine monitoring, boat logging with voice notes, weather integration, onboarding wizard, and an 18-language i18n framework — all running locally on a Raspberry Pi 4.
 
-### Added
-- **Weather overlay panel (I-11/I-12/I-13):** Left-side 28% overlay slides over AvNav when Weather is tapped. Shows alerts, wind speed/direction/gusts, sea state (wave height/period/direction), and atmospheric (pressure, temp, humidity, visibility, precip). GPS from Signal K with Lake Simcoe fallback. Auto-logs weather snapshot to boat log every 30 minutes while panel is open. New `weather-panel.js` module.
-- **HELM software mute (I-07):** Mute toggle button inside HELM overlay. Green = talking active, grey = muted. Persists across page reload via localStorage. Cancels speechSynthesis on mute.
-- **Engine auto-capture (I-17):** `boatlog-engine.js` subscribes to Signal K WebSocket. Records engine start, every-30-min snapshot, stop, and alert threshold crossings (oil low, coolant high, battery out of range). Entries appear in Boat Log with ENGINE badge and data grid.
-- **`POST /api/boatlog/engine-entry` endpoint (Bug Fix 2):** Added to `boatlog-export-api.py` — creates boatlog_entries table if absent, inserts engine snapshot. Resolves silent 404 from boatlog-engine.js.
+**Status:** Release Candidate — all code complete and deployed. UAT (5 metric + 5 imperial users) is the only remaining gate before final release.
 
-### Fixed
-- **I-01/I-02:** NAV ribbon Position cell: label top-aligned, value at 50% of SOG size
-- **I-03/I-04:** NAV ribbon Next Waypoint: label top-aligned, value same size as position data
-- **I-05/I-06:** Bottom nav active state: only last-tapped button highlighted; HELM only when overlay is open; Weather button width matches other nav buttons
-- **I-08:** All close/X buttons: 48×48px min, dark `rgba(0,0,0,0.85)`, bold, 24px inset from edges — entire app via `.close-btn` class
-- **I-09/I-10:** More popup: icons 28px → 40px, labels 18px → 28px (matches bottom nav)
-- **I-14/I-15:** Leave app dialog suppressed for internal route navigation (Marine Vision, Boat Log)
-- **I-16:** Boat Log fonts: full Bebas Neue / Chakra Petch rewrite, dashboard-consistent sizing
-- **I-18:** All dropdowns: global CSS rule, min-height 52px, 20px font, Chakra Petch — all pages
-- **I-19:** Bebas Neue / Chakra Petch enforced via body-level CSS; all Roboto Mono references removed; zero font-size violations below 18px
-- **Bug Fix 1:** `weather-panel.js` localStorage key corrected (`'d3kBoatLog'` → `'d3kos-boatlog-entries'`), entry format aligned with boat-log.html schema (`ts` → `timestamp`, `text` field added). Weather entries now visible in Boat Log page.
-- **Font audit:** `.bl-eng-lbl` 14px → 18px; `.wx-u` + `.wx-gps-note` 16px → 18px; settings.html `'Roboto Mono',monospace` → `'Courier New',monospace` (6 instances)
+**Hardware:** Raspberry Pi 4, 10.1" touchscreen (1280×800), Anker S330 USB audio, NMEA 2000 gateway (optional), IP cameras (optional).
 
-### Verification
-- All 9 routes HTTP 200 on Pi ✓
-- CSS deployed at ?v=14 ✓
-- `POST /api/boatlog/engine-entry` returns 200 on live Pi ✓
-- weather-panel.js present on Pi ✓
-- IEC 62288 font compliance: zero violations ✓
-
-### Pending (Don's tasks)
-- INC-16: Visual verify 32px labels readable at helm distance (Pi screen)
-- UAT: 5 metric + 5 imperial users — use `deployment/d3kOS/docs/D3KOS_UAT_V0923.md`
-- o-charts chart activation — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`
-- Node-RED inactive status — confirm intentional or re-enable
+**Design system:** Bebas Neue (numerals) + Chakra Petch (UI). White day mode / near-black night mode (`#020702`). Single green accent. IEC 62288 / ISO 9241-303 font sizing for 1m helm viewing distance.
 
 ---
 
-## [0.9.2.2] - 2026-03-14 (Session 1 Complete — Session 2 next)
+### Added
 
-### Summary
+#### Dashboard & UI
+- **Instrument dashboard** — continuous layout: status bar, row toggle (ENGINE/NAV/BOTH), engine row, nav row, AvNav chart pane, split pane (AI/Weather/Cameras), 6-tab bottom nav with protruding HELM button.
+- **Day/Night theme** — auto-schedule + manual override. `manualTheme` flag prevents auto-timer from overriding manual selection.
+- **Weather panel** — fullscreen Windy embed (free public tile, no API key). WX toggle in bottom nav. Weather snapshot auto-logged to Boat Log every 30 minutes while panel is open.
+- **HELM AI overlay** — voice command passthrough to voice assistant. Software mute toggle (persists via localStorage). Cancels speechSynthesis on mute.
+- **More menu** — 40px icons, 28px labels, Windowed Mode toggle, Helm Assistant link.
+- **AvNav beforeunload fix** — `navTo()` sets `avnav-frame.src = 'about:blank'` before navigating, preventing Chromium's "Leave site?" dialog on AvNav iframe navigation.
 
-**v0.9.2.2 — Frontend UI Rebuild: Marine-Grade Instrument Dashboard**
+#### Onboarding Wizard (8 steps)
+- Step 1: Welcome
+- Step 2: Vessel Identity (name required; particulars optional)
+- Step 3: Engine & Drive
+- Step 4: Electronics & NMEA (gateway selection, tank sender)
+- Step 5: Gateway Configuration — dedicated DIP switch step (CX5106 Row 1+Row 2 diagrams, computed switch positions for twin engine and single engine)
+- Step 6: Mobile Pairing (skip button)
+- Step 7: Gemini API Key (skip button)
+- Step 8: Done (camera setup opens new tab; wizard state preserved)
+- Back arrow on every step. Full-width layout. localStorage persistence (`d3kos_wiz_v3`). Skip buttons for optional fields. Settings page shows return banner when opened from wizard.
 
-Complete replacement of the v0.9.2.1 frontend with the v12 design. Backend services (Flask :3000, Gemini proxy :3001, AI Bridge :3002) are unchanged. This version implements the full UI spec produced from the d3kOS mockup v12 design review.
+#### Engine Dashboard
+- Full rebuild: 5 sections — Engine, Electrical, Tanks, System Status, Network Status.
+- Progress bars on all metric cells. Alert states (warning/critical). DAY/NGT toggle. Back arrow. One-finger scroll. Full 1280px width.
 
-**Design system:** White day mode / dark night mode (`#020702`). Bebas Neue for all numerals. Chakra Petch for all UI. Single green accent. Replaces black/Roboto from v0.9.2.1.
+#### Helm Assistant (AI Chat)
+- Dedicated page at `/helm-assistant`. 4 quick-action buttons (Engine Status, Check Issues, System Health, Run Diagnostics).
+- RAG → Gemini fallback with source badge (MANUAL / GEMINI). AODA fonts (18px min). on-screen keyboard support.
+- Gemini system prompt covers: engine diagnostics, electrical, mechanical, maintenance, on-board systems, navigation, safety.
 
-**Layout:** Continuous instrument dashboard — status bar + row toggle + engine row + nav row + AvNav chart pane + split pane (AI Nav/Weather/Cameras) + 6-tab bottom nav with HELM button protruding 24px.
+#### Marine Vision — Camera System
+- **Slot/Hardware architecture** — named positions (slots) decouple from physical cameras (hardware). Supports 1–20 cameras. `slots.json` + `hardware.json` replace `cameras.json`.
+- **camera_stream_manager.py** — frame buffer (1 background thread per hardware), full CRUD API, discovery scan (probes TCP 554, reads ARP for MAC).
+- **Dynamic tile renderer** — focus+filmstrip default, grid mode, staggered polling, canvas fish bbox overlay, bfcache-safe `pageshow` handling.
+- **Settings Camera Setup tab** — scan, live thumbnails, position input with datalist, role presets, Assign All, Unassign.
+- **Fish Detection** — YOLOv8n ONNX pipeline + EfficientNet-483 species classifier. Multi-slot. Gemini Vision on-demand species ID (common name, scientific name, confidence, Ontario regulation note). 21 Ontario freshwater species in ChromaDB RAG.
 
-**Wayland architecture fix:** `--kiosk` → `--app --start-maximized`. Kiosk mode places Chromium on the Wayland fullscreen layer, above Squeekboard, permanently hiding the on-screen keyboard. Maximised normal window stays below Squeekboard. labwc strips decorations via rc.xml windowRules. New launch script: `scripts/launch-d3kos.sh`.
+#### Boat Log
+- **Voice notes** — MediaRecorder → Vosk speech-to-text (singleton, cached at startup). Transcript saved to SQLite. HELM voice service paused during recording. MIME type probe for Pi ARM64 compatibility.
+- **Engine auto-capture** — `boatlog-engine.js` subscribes to Signal K WebSocket. Records engine start, 30-min snapshots, stop, and alert threshold crossings (oil low, coolant high, battery out of range). ENGINE badge + data grid in Boat Log view.
+- **Data export** — CSV + JSON with `unit_metadata`. Metric and imperial configs verified.
 
-**Known bugs fixed in spec:** Auto-theme timer overrides manual day/night selection (fix: manualTheme flag). Nav row has `hidden` class in HTML despite BOTH being default (fix: remove class).
+#### Metric/Imperial Conversion
+- `units.js` — 25 conversion functions, 25 passing unit tests.
+- Preferences API (:8107) — persists user unit preference.
+- Settings toggle. All pages updated to respect unit preference.
 
-**Specs committed:** D3KOS_UI_SPEC.md v1.0.0, D3KOS_UI_SPEC_ADDENDUM_01.md v1.0.0, d3kos-mockup-v12.html (canonical reference), D3KOS_V12_FINDINGS.md.
+#### Remote Access API (:8111)
+- API key auth. Endpoints: `/remote/health`, `/remote/status`, `/remote/maintenance`, `/remote/note`.
+- SSE endpoint `/remote/status-stream` — real-time push to `remote-access.html` via `EventSource`.
 
-**Build plan:** 3 sessions — Session 1 (static template + Step 0 system prerequisites), Session 2 (live Signal K + AvNav + AI wiring), Session 3 (cameras + More menu + onboarding).
+#### Signal K v2.23.0
+- Upgraded from v2.22.1. AIS memory leak fixed. mDNS disabled. `@signalk/resources-provider` built-in (no install needed). Resources API on `/signalk/v2/api/resources/`.
 
-### Session 1 (2026-03-14, commit d94b2f9) — Static Template Complete
+#### i18n Framework (18 Languages)
+- All 13 HTML pages wired with `data-i18n` attributes. 38 translation keys. All 15 index.html menu tiles wired.
+- Languages: ar, da, de, el, en, es, fi, fr, hr, it, ja, nl, no, pt, sv, tr, uk, zh.
 
-**Changed:**
-- `index.html` — full v12 Jinja2 template replaces v4 9-button hub. `lang="{{ ui_lang }}"`. 3-way BOTH/ENGINE/NAV row toggle. All Phase 5 AI Bridge IDs present. More menu position 9 = Windowed Mode toggle.
-- `d3kos.css` — v12 design system (Bebas Neue + Chakra Petch, white/forest theme). Phase 5 additions: `.ai-state`, `#anchor-widget`, `#voyage-notice`.
-- `app.py` — `vessel.env` loaded (override), `UI_LANG` injected into template.
+#### Documentation
+- `deployment/docs/D3KOS_USER_MANUAL_v0922.md` v1.0.0 — full user manual (11 sections, 626 lines). Ingested into Pi ChromaDB RAG — Helm Assistant can answer how-to questions directly from the manual.
 
-**New:**
-- `static/js/instruments.js` — `showRow()` 3-way toggle + context menu
-- `static/js/helm.js` — HELM overlay + mic, locale from `document.documentElement.lang`
-- `static/js/overlays.js` — all 5 overlays + toast
-- `static/js/nav.js` — Bug 1 fix (manualTheme), clock, ticker, split pane, Windowed Mode, keyboard shortcuts, /status polling
-- `dashboard/config/vessel.env` — owner config (VESSEL_NAME, HOME_PORT, UI_LANG=en-GB)
+---
 
-**Pending (Session 2):** instruments.js Signal K WebSocket wiring, AvNav iframe, AI chat → :3001, Route AI SSE from :3002.
+### Fixed
+
+- **Wayland kiosk bug** — `--kiosk` → `--app --start-maximized`. Kiosk mode placed Chromium above Squeekboard, permanently hiding on-screen keyboard. New launch script: `scripts/launch-d3kos.sh`.
+- **Gemini CORS** — `@app.after_request` CORS handler added to `gemini_proxy.py`. Browser at :3000 was blocked reading cross-origin responses from :3001.
+- **Vosk 504 timeout** — Vosk model loaded per-request (~9s) exceeded nginx `proxy_read_timeout 30s`. Fix: `_get_vosk_model()` singleton cached at startup.
+- **Voice note CORS** — `flask-cors` `CORS(app)` added to `boatlog-export-api.py`. Browser at :3000 blocked from reading :8095 responses.
+- **AvNav signalkhandler.py** — line 1580 patched: `/v1/api/` → `/v2/api/` for Signal K resources endpoint (Python 3.13 + SK 2.22.1+ requirement).
+- **AvNav Python 3.13** — `cgi.parse_qs` → `urllib.parse.parse_qs` in `httphandler.py` line 108 (cgi module removed in Python 3.13).
+- **Export boot race** — `d3kos-export-boot.service` failed since v0.9.2 due to `set -e` + `curl` exit 7 before Flask bound port 8094. Fix: `nc -z` port-ready loop.
+- **Nav ribbon alignment** — Position and Next Waypoint cells: label top-aligned, value correctly sized.
+- **Bottom nav active state** — only last-tapped button highlighted. HELM active only when overlay is open.
+- **Close buttons** — 48×48px min, `rgba(0,0,0,0.85)`, bold, 24px inset — entire app via `.close-btn`.
+- **Dropdowns** — global CSS: min-height 52px, 20px font, Chakra Petch — all pages.
+- **Font compliance** — Bebas Neue / Chakra Petch enforced app-wide. Zero font-size violations below 18px. IEC 62288 Option B: labels 32px, nav 28px, forms 20px min-height 52px.
+- **Node-RED context** — `contextStorage: localfilesystem` enabled. Flow context persists across restarts.
+- **fake-hwclock** — installed on Pi. Saves/loads clock across reboots (no hardware RTC on Pi 4).
+
+---
+
+### Removed
+
+- **NMEA2000 Simulator** — removed all simulator components (safety/liability risk). `d3kos-simulator-api.service`, `d3kos-simulator.service`, simulator directories, `settings-simulator.html`, nginx proxy block, `vcan0-simulator` SK provider. Archive at `/home/boatiq/archive/simulator-2026-02-21/`.
+- **Tailscale** — removed from Pi. Replaced with LAN-only access + v0.9.4 WebRTC/STUN placeholder.
+- **APT OpenCPN** — removed v5.10.2. Only Flatpak 5.12.4 (`org.opencpn.OpenCPN`) remains.
+
+---
+
+### Pending (UAT gate — final step before release)
+
+- UAT: 5 metric + 5 imperial users
+- o-charts chart activation (Don's task — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`)
+- GPS outdoor verification (Don's task)
+- Marine Vision 24hr stability test (requires cameras at dock)
 
 ---
 
@@ -505,4 +540,4 @@ d3kOS uses semantic versioning with the following convention:
 - **2.0.x**: Tier 2 features complete
 - **3.0.x**: Tier 3 features complete
 
-**Current**: v0.9.1.2 = Tier 0 Installation Complete + bugfixes
+**Current**: v0.9.2.2 = Release Candidate — full marine intelligence platform
