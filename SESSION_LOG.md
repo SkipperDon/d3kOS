@@ -6861,3 +6861,94 @@ Trend: stable | No metric below threshold.
 - v0.9.3 staging work continues
 
 ---
+
+## Session — 2026-03-24A — GitHub Push Prep + v0.9.2.2 Release Docs
+
+**Goal:** Reconstruct interrupted session 23I, close it properly, then prepare and push v0.9.2.2 release documentation to GitHub.
+
+**Sprint Mode:** ON — scope: reconstruct session 23I, update CHANGELOG + README for v0.9.2.2, push to GitHub.
+
+**Completed:**
+
+1. **Session 23I reconstruction** — power outage before session-close last session. Entry reconstructed from commit `be8e83d`. SESSION_LOG.md updated, MEMORY.md updated with v0.9.2.2 RC status + Pi disk facts. Commit `7c86baa`.
+
+2. **CHANGELOG.md update:**
+   - Removed `[0.9.2.3]` entry entirely (version was abandoned, features were backported to v0.9.2.2)
+   - Replaced stale `[0.9.2.2]` "Session 1 complete — Session 2 next" stub with full release entry covering all shipped features: dashboard, 8-step wizard, engine, cameras, fish detection, voice notes, Helm AI, weather, i18n, exports, Signal K v2.23.0, fixes (Vosk, CORS, AvNav, boot race), removals (simulator, Tailscale, APT OpenCPN)
+   - Updated version numbering note to v0.9.2.2
+
+3. **README.md full rewrite** — 1,020 lines → 353 lines:
+   - Version: `v2.0-T3 (Testing Build)` → `v0.9.2.2 — Release Candidate`
+   - Accurate software stack: Flask, AvNav, Signal K v2.23.0, Gemini, Vosk, YOLOv8, ChromaDB
+   - Correct display spec: 10.1" 1280×800
+   - Full port map (all 14 services)
+   - Accurate features section
+   - Updated roadmap: v0.9.3, v0.9.4, v1.0
+   - Updated project structure (deployment/ layout)
+   - Removed: image download section, MASTER_SYSTEM_SPEC (doesn't exist), Node-RED Dashboard 2.0, Phi-2/llama.cpp, PocketSphinx, architecture.md refs
+   - CHANGELOG + README committed as `1ab53e8`
+
+4. **GitHub push** — one-time operator-authorized push:
+   - `settings.json` deny rules temporarily removed
+   - `git push origin main` executed: `a8d3987..1ab53e8`
+   - 60+ commits pushed — all accumulated sessions since last push (23B through 24A)
+   - `settings.json` deny rules restored immediately after push
+   - Files pushed included: all dashboard templates, JS/CSS, backend services, tests, docs, governance files
+   - Security verified: no API keys in any pushed file (pre-commit hook + .gitignore confirmed clean)
+
+**Decisions:**
+- v0.9.2.3 CHANGELOG entry removed entirely (operator instruction: "remove 9.2.3 entirely")
+- MASTER_SYSTEM_SPEC.md dead reference removed from README, pointing to D3KOS_USER_MANUAL_v0922.md instead (option b — creating a new spec doc is out of sprint scope)
+- git push authorized one-time only by operator: "i authorize this one time only push"
+
+**Ollama:** 0 calls
+
+**Files changed this session:**
+
+| File | Change | Commit |
+|------|--------|--------|
+| `SESSION_LOG.md` | Session 23I reconstructed entry added | 7c86baa |
+| `MEMORY.md` (memory dir) | v0.9.2.2 RC status + user manual + Pi disk facts | local |
+| `CHANGELOG.md` | v0.9.2.3 removed; v0.9.2.2 full release entry | 1ab53e8 |
+| `README.md` | Full rewrite — 1020 → 353 lines, v0.9.2.2 accurate | 1ab53e8 |
+| `~/.claude/settings.json` | Temporarily modified for push; restored immediately | local (not committed) |
+
+**Release Package Manifest:** None — no Pi deployment this session.
+
+**Git push:** One authorized push executed — `a8d3987..1ab53e8` → `origin/main`. Operator authorization: one-time only. settings.json deny rules restored. No further pushes permitted without new explicit authorization.
+
+QUALITY METRICS — 2026-03-24A
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: session 23I reconstruction, CHANGELOG update, README rewrite,
+  settings.json temp modify, push, restore. Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  6 required stop gates — all honored.
+  Sprint checkpoints: after plan, after CHANGELOG, after README.
+  High-risk: settings.json change stated before executing; push stated as
+  HIGH RISK with explicit operator authorization confirmed.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (session-start run at session open;
+  MEMORY.md, PROJECT_CHECKLIST.md, SESSION_LOG.md all read)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (23G→24A): 100, 100, 100, 100, 100 = 100/100
+Trend: stable | No metric below threshold.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-24 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- UAT: 5 metric + 5 imperial users (Don's task — final gate for v0.9.2.2 close)
+- Marine Vision camera on-boat tests (location dependency)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- v0.9.3 staging work continues
+
+---
