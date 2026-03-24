@@ -233,6 +233,7 @@ On-boat verification still pending:
 | S4 | /directory (business listings), /dashboard (The Chart Room T1+) | `[x]` **COMPLETE 2026-03-24** |
 | S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
 | S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Not started |
+| S6 | Community API endpoints — 5 PHP files: POST/GET /api/community/markers, POST /api/telemetry/push, POST /api/community/benchmark, POST /api/community/position. GPS blur (500m) enforced on GET output. 30-day inactivity drop. See Part 8A §8A.3 for full spec. | `[ ]` Not started |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
 
 ### Operator Actions Required Before Staging Deploy (Sessions 1–5)
@@ -258,12 +259,7 @@ On-boat verification still pending:
 ### Post-Launch
 - [ ] Monitor Gemini API usage (free tier: 20 req/day)
 - [ ] UAT with real boaters (ages 45–70)
-- [ ] Node-RED flow verification once AtMyBoat.com APIs are live (see Part 4.7)
-  - POST /api/telemetry/push
-  - POST /api/community/benchmark
-  - POST /api/community/position
-  - Replace placeholder URL in "Post to Community DB" nodes (2 nodes)
-  - Create /opt/d3kos/config/cloud-credentials.json with AtMyBoat.com API key
+- [ ] Node-RED flow activation — endpoints now built in S6. After live push: replace placeholder URL in "Post to Community DB" nodes, create /opt/d3kos/config/cloud-credentials.json, enable 3 flows. See Part 8A §8A.2.
 
 ### Abandoned v0.9.3 Concept
 **Status: ABANDONED** — An earlier v0.9.3 concept (Next.js 15 + Supabase + Stripe + Vercel) was superseded by the current WordPress + HostPapa approach. The original spec is archived at `deployment/v0.9.3/old instructions/PROJECT_CHECKLIST.md.bak`. Do not action any items from that spec.
