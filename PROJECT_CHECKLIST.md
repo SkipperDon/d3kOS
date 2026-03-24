@@ -206,38 +206,46 @@ On-boat verification still pending:
 ---
 
 ## PART 7 — v0.9.3 AtMyBoat.com Community Platform (WordPress)
-**Status: IN PROGRESS — Staging build underway**
+**Status: IN PROGRESS — Planning complete 2026-03-24. Ready for Session 1.**
 **Platform:** WordPress + Twenty Twenty child theme on HostPapa staging
-**Repo:** github.com/SkipperDon/atmyboat-forum
-**Rules:** Child theme only · PHP + cURL · No Node.js · AI model = claude-haiku-4-5-20251001 · AODA enforced
+**Repo:** github.com/SkipperDon/atmyboat-forum (first commit e354c23 — 2026-03-24)
+**Rules:** Child theme only · PHP + cURL · No Node.js · AI model = **Gemini 2.5 Flash** · AODA enforced
+**Full decisions:** `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` Part 16 (authoritative)
 
 ### Phase 0 — Repo & Staging Setup
 - [x] GitHub repo created, staging confirmed, FTP access established, child theme created
+- [x] First git commit e354c23 — all 2026-03-13 build work under version control
 
 ### Phase 1 — bbPress Forum
 - [x] bbPress installed on staging, /forum/ slug confirmed
 
-### Phase 2 — Features
-| Item | Status |
-|------|--------|
-| 2A — MailPoet email notifications | `[ ]` Not started |
-| 2B — AODA CSS & design system (style.css, bbpress.css, functions.php) | `[~]` Core done — font sizes need final audit |
-| 2C — AI Assistant (inc/ai-assistant.php, ai-widget.php, AJAX handler) | `[x]` Complete — renders and submits on staging |
-| 2D — Products Hub (page-products.php, products.json) | `[x]` Complete — renders on staging |
-| 2E — SEO (Yoast/RankMath, sitemap, Bing Webmaster) | `[ ]` Not started |
+### Phase 2 — Features (8-session plan — see BUILD_REFERENCE Part 16)
+| Session | Item | Status |
+|---------|------|--------|
+| S1 | Registration page + login styling + QR pairing flow | `[ ]` Not started |
+| S1 | Legal pages — /privacy, /terms, /warranty | `[ ]` Not started |
+| S1 | 2A — MailPoet email notifications | `[ ]` Not started |
+| S1 | 2B — AODA CSS completion (font audit) | `[~]` Core done — audit incomplete |
+| Done | 2C — AI Assistant (Gemini 2.5 Flash) | `[x]` Complete — on staging + committed |
+| Done | 2D — Products Hub | `[x]` Complete — on staging + committed |
+| S2 | /hardware, /download, /app pages | `[ ]` Not started |
+| S3 | /community (map), /marketplace, /features, /challenges, /hall-of-fame | `[ ]` Not started |
+| S4 | /directory (business listings + Stripe), /dashboard (The Chart Room T1+) | `[ ]` Not started |
+| S5 | 2F — Mobile app backend (7 tables, 8 PHP endpoints, Stripe, mPDF, notifications) | `[ ]` Not started |
+| S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Not started |
+| Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
 
-### Phase 3 — AODA Compliance Audit
+### Phase 3 — AODA Compliance Audit (Session 7)
 **Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
+- [ ] All audit steps complete and issues fixed
 
-- [ ] All 5 audit steps complete and issues fixed
-
-### Phase 4 — Staging → Live
+### Phase 4 — Staging → Live (Session 8)
 **Owner: Don's hands only**
 - [ ] UpdraftPlus full backup of live site
 - [ ] cPanel Staging → Push to Live
-- [ ] Post-push smoke test (forum, products, AI widget)
+- [ ] Post-push smoke test (all pages, AI widget, Stripe Fix My Pi)
 - [ ] GitHub repo set to Private
-- [ ] Remove Gemini API key from atmyboat-config.php and rotate
+- [ ] Rotate Gemini API key
 - [ ] Change FTP password for d3kos@atmyboat.com
 
 ### Post-Launch

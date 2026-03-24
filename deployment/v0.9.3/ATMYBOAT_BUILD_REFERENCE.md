@@ -1170,3 +1170,258 @@ Record these constraints — do not ask Claude Code to attempt them:
 ---
 
 *Part 15 added March 2026. Deployment strategy confirmed for HostPapa Growth shared hosting (no SSH). Primary deploy path: FTPS via lftp. Version control: GitHub → cPanel Git Version Control.*
+
+---
+
+## PART 16 — DECISION RECORD: 2026-03-24 SESSION
+**Version update: 2.1 · Recorded by Claude Code · Authorized by Donald Moskaluk**
+**Cross-reference: v0.9.4 impact recorded in `deployment/docs/MOBILE_APP_QA_RECORD.md` Session 3**
+
+This part supersedes any conflicting information in Parts 1–15. All decisions below are final.
+
+---
+
+### 16.1 — TIER SYSTEM CORRECTIONS AND FINAL DEFINITIONS
+
+#### T0 — Open Water (Free, Offline Only) — CORRECTION
+- Fix My Pi: **NOT available at T0.** Removed from T0 entirely.
+- **Only upgrade path for T0:** Download new d3kOS image from atmyboat.com/download, reinstall on Pi. No remote fix. No OTA. No exceptions.
+- T0 must upgrade to T1 (create free account, pair app) before Fix My Pi is accessible.
+
+#### T1 — First Mate (Free, Cloud Connected)
+- Fix My Pi: **$29.99 per incident via Stripe. Payment must authorize first — then mobile app launches fix deployment to Pi.**
+- PDF Boat Reports: **NOT included.** T2+ only. (Confirmed correction — original spec was wrong.)
+- Requires account registration on atmyboat.com before any mobile or cloud feature is accessible.
+- Community map: appears automatically after pairing. Opt-out available in Settings.
+
+#### T2 — Skipper ($9.99/month)
+- Fix My Pi: 3 free checks/month included.
+- PDF Boat Reports: included.
+- SMS alerts: included (Twilio — T2+ only).
+- Multiple phones (family/crew).
+
+#### T3 — Admiral (**$99.99/YEAR — annual billing only**)
+- **CORRECTION: T3 is annual billing at $99.99/year. Not monthly.**
+- Fix My Pi: unlimited free checks/month.
+- PDF Boat Reports: unlimited.
+- Fleet management: multiple Pis on one account.
+- Fleet GPS map (all Pis shown on map with status).
+- B2B data API access.
+- Commercial data export.
+
+---
+
+### 16.2 — FORUM AI ASSISTANT — CORRECTION
+
+**AI model: Gemini 2.5 Flash ONLY.**
+**NOT Claude Haiku.** Remove all references to `claude-haiku-4-5-20251001` and Anthropic API from the forum AI assistant.
+
+Updated `atmyboat-config.php` constants:
+```php
+define( 'GEMINI_API_KEY',    'YOUR_GEMINI_KEY_HERE' );
+define( 'GEMINI_MODEL',      'gemini-2.5-flash' );
+define( 'GEMINI_MAX_TOKENS', 1000 );
+```
+
+Updated `ai-assistant.php` endpoint:
+```
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+```
+
+Hard billing cap: set in Google AI Studio (not Anthropic Console).
+Cost: ~$5/month at early forum volumes.
+
+---
+
+### 16.3 — REGISTRATION AND LOGIN FLOW (FINAL)
+
+#### Registration Page Fields (complete, in order)
+1. First name
+2. Last name
+3. Email address
+4. Password
+5. Confirm password
+6. ☐ "I agree to the Terms of Service and Privacy Policy" — required, blocks submission if unticked
+7. ☐ "Send me product updates and community news" — optional, CASL compliance (Canadian anti-spam law)
+
+Post-submit: WordPress sends verification email. Account inactive until link clicked.
+After verification: redirected to login page.
+
+#### Login Page
+- Standard WordPress login form. No custom design required.
+- Email + password only. **No social login (no Google, no Facebook).**
+- "Forgot password" link standard WordPress behaviour.
+- "Register here" link → separate `/register` page.
+
+#### Post-Login QR Pairing
+- QR pairing happens **after login** — not on the login page.
+- First login with no Pi paired: "Connect Your Pi" prompt displayed.
+- Flow: Pi Settings → Pair Mobile App → QR displays on Pi → user scans with phone → paired.
+- Pairing can be skipped and completed later.
+
+---
+
+### 16.4 — WEBSITE PAGES — COMPLETE SCOPE
+
+#### IN SCOPE — v0.9.3 Build
+| Page | Type | Notes |
+|------|------|-------|
+| `/` | Public | Existing homepage — do not touch |
+| `/products` | Public | Product hub — Phase 2D (already in plan) |
+| `/hardware` | Public | BOM + shop links (parts list, prices, affiliate links) |
+| `/download` | Public | Image download + release notes + compatibility matrix |
+| `/compatible` | Public | Engine compatibility checker (make/model → yes/no/maybe) |
+| `/app` | Public | Mobile PWA install landing (instructions for iOS/Android) |
+| `/blog` | Public | Existing — SEO config only via Yoast |
+| `/privacy` | Public | Privacy policy — Claude writes, GDPR + CASL compliant |
+| `/terms` | Public | Terms of Service — Claude writes |
+| `/warranty` | Public | Warranty terms — Claude writes |
+| `/forum` | Community | bbPress forum — Phase 2A (already in plan) |
+| `/community` | Community | Community hub page (see §16.6) |
+| `/directory` | Community | Installer/dealer/marina directory (see §16.5) |
+| `/marketplace` | Community | Buy/sell used equipment (see §16.5) |
+| `/features` | Community | Feature request voting (see §16.5) |
+| `/challenges` | Community | Sponsored contests + leaderboard |
+| `/hall-of-fame` | Community | Top community members |
+| `/dashboard` | Authenticated T1+ | The Chart Room (see §16.7) |
+
+#### DEFERRED — Not this build
+| Page | Reason |
+|------|--------|
+| `/academy` | Video courses — deferred, no content ready |
+| `/docs` | Knowledge base — deferred |
+| `/b2b` | B2B portal — post v0.9.4 launch |
+
+---
+
+### 16.5 — NEW COMMUNITY PAGES
+
+#### /directory — Business Directory
+Tier system for business listings:
+- **Basic** — Free (name, description, contact details)
+- **Verified** — $29.99/month (verified badge, priority placement, photo gallery)
+- **Premium** — $99.99/month (featured placement, analytics, lead tracking)
+- **Featured** — Sponsored top-of-page placement
+
+Map: Leaflet + OpenStreetMap. Business pins on map.
+Stripe processes Verified/Premium subscription payments on atmyboat.com.
+
+#### /marketplace — Buy/Sell Used Equipment
+- Free to list. No transaction fees. No payment processing through the site.
+- Buyer contacts seller directly (email or forum message).
+- **Marine items only** — listings moderated for category compliance.
+- Disclaimer (prominent): "AtMyBoat.com is not responsible for transactions between buyers and sellers. Buy and sell at your own risk."
+- Listing fields: item name, category, condition, price, description, photos, contact method.
+
+#### /features — Feature Request Voting
+- **Anyone can vote** — no login required. No account needed.
+- **Registered T1+ users only can submit** new feature requests.
+- Each request shows: title, description, vote count, status badge.
+- Status values: `Submitted` → `Planned` → `In Progress` → `Shipped`
+- Status updated manually by Don in WP Admin.
+
+---
+
+### 16.6 — /community PAGE — FULL SPECIFICATION
+
+**Access:** T1+ only. Must be registered and app paired. Not visible to anonymous visitors.
+
+**Layout (top to bottom):**
+1. **Community Map** — full width, Leaflet + OpenStreetMap
+   - Your boat: red dot
+   - Other d3kOS boats: green dots
+   - Privacy zone indicator + "Turn off sharing" toggle
+2. **Community Stats bar** — boats on the water today / total members / forum posts
+3. **Recent Forum Activity** — latest 5 threads (title, category, time, reply count) + "View All in Forum" link
+4. **Featured Discussions** — pinned or high-activity threads
+5. **Hall of Fame** — top 3 members this month + "See Full Leaderboard" link
+6. **Upcoming Challenges** — active contest, prize, days remaining + "Join Challenge" link
+
+**Community Map Privacy Rules (non-negotiable):**
+1. Position blurred to ~500 metres. Never exact GPS coordinates.
+2. Clicking a dot shows nothing. No name, no owner, no details. Dot only.
+3. Privacy zone: user sets radius in Settings. Boat disappears from map inside that zone.
+4. 30-day inactivity: boat drops off map automatically if not synced in 30 days.
+5. Opt-out: available in Settings at any time. T1 default is on (auto-appears after pairing).
+
+---
+
+### 16.7 — /dashboard — THE CHART ROOM (T1+ BROWSER DASHBOARD)
+
+**Purpose:** History and management view. NOT real-time — that is the PWA via WebRTC.
+The browser dashboard is the captain's log review station. The app is the helm.
+
+**T1 Sections:**
+1. **Boat Status** — last sync snapshot (timestamp, Pi online/offline, last known engine readings, last known GPS)
+2. **Boatlog** — full voyage history, searchable, filterable, CSV/JSON download
+3. **Alerts History** — all past alerts, resolved/unresolved, timestamp, severity
+4. **Fix My Pi History** — reports from past incidents (date, issues found, issues resolved)
+5. **Account** — tier display (T1 — First Mate), Pi pairing status, "Upgrade to Skipper $9.99/mo" button
+
+**Locked sections shown to T1 with upgrade prompt:**
+- PDF Reports → T2+
+- Analytics / Trends → T2+
+- Fleet Map → T3
+
+---
+
+### 16.8 — BOAT NOTIFICATIONS AND ALERT SYSTEM
+
+#### Alert Triggers
+| Alert | Severity | Notes |
+|-------|----------|-------|
+| Engine — oil pressure low | Critical | Send immediately |
+| Engine — coolant temp high | Critical | Send immediately |
+| Engine — RPM spike | Warning | Send immediately |
+| Battery voltage below threshold | Warning | Send immediately |
+| Motion detected (Marine Vision) | Warning | Boat should be stationary |
+| Geofence breach / anchor drag | Critical | See §16.9 |
+| Pi went offline | Warning | After user-configurable threshold (default: 30 min) |
+| Fix My Pi completed | Info | Report ready — here's what was fixed |
+| OTA upgrade available | Info | New d3kOS version ready |
+| T2 Fix My Pi allowance low | Info | 1 check remaining this month |
+
+#### Delivery by Tier
+| Channel | T1 | T2 | T3 |
+|---------|----|----|-----|
+| In-app push (PWA) | ✓ | ✓ | ✓ |
+| Email (MailPoet) | ✓ | ✓ | ✓ |
+| SMS (Twilio) | — | ✓ | ✓ |
+
+#### Notification Content Rules
+- Identify boat clearly (boat name or installation ID).
+- Plain English — no raw sensor values without context ("Oil pressure critically low" not "PSI: 12").
+- Include direct link to relevant dashboard section or app screen.
+- Critical alerts: sent immediately.
+- Non-critical (upgrade available, report ready): batched, max 1 per day.
+
+#### User Controls (in App Settings)
+- Toggle each alert type on/off independently.
+- Set geofence radius (centre point is GPS-automatic — see §16.9).
+- Set "Pi offline" threshold (default: 30 minutes).
+- Set SMS number (T2+ only).
+- Quiet hours: no notifications between user-set times.
+
+#### Infrastructure
+- Pi detects alert → writes to HostPapa command queue via `data-ingress.php`.
+- HostPapa processes → sends email via MailPoet + SMS via Twilio (T2+).
+- PWA receives push via live WebRTC connection if Pi online; falls back to polling queue if offline.
+
+---
+
+### 16.9 — GEOFENCE / ANCHOR DRAG — GPS-BASED
+
+**"Set Anchor" flow:**
+1. User taps "Set Anchor" in PWA.
+2. App captures current GPS position automatically — no manual coordinate entry.
+3. User sets radius (slider in app — default: 50 metres).
+4. Geofence active immediately.
+5. Pi monitors position. If boat moves outside radius → Critical alert fires.
+6. User taps "Weigh Anchor" to deactivate.
+
+No manual lat/lon entry required. Centre point is always current GPS at time of tap.
+
+---
+
+*Part 16 added 2026-03-24. Decisions from session with Donald Moskaluk. All items in this part supersede conflicting content in Parts 1–15.*
+*v0.9.4 cross-reference: `deployment/docs/MOBILE_APP_QA_RECORD.md` Session 3.*
