@@ -7095,3 +7095,92 @@ Trend: stable | No metric below threshold.
 - v0.9.3 SESSION_LOG.md: needs a planning session entry for 2026-03-24B
 
 ---
+
+## Session — 2026-03-24B — archive.org Hosting + README Download Links
+
+**Goal:** Advise on file hosting options for 28GB disk image, add download links to README, push to GitHub.
+
+**Note:** Continuation after session 24A close. Sprint Mode carried over but sprint scope was complete — this segment was advisory + small targeted edits.
+
+**Completed:**
+
+1. **Hosting research** — Don reported Google Drive can't host 28GB file.
+   - Reviewed free options: archive.org (already uploading), OpenMarine Cloud
+   - Reviewed paid options: Cloudflare R2, Backblaze B2, Wasabi, DigitalOcean Spaces
+   - Checked atmyboat.com DNS → HostPapa nameservers (not on Cloudflare — B2+CF free egress not available without DNS migration)
+   - Recommendation: DigitalOcean Spaces ($5/mo flat) for simplicity; Cloudflare R2 ($0.42/mo) if CF account created
+
+2. **OpenMarine research** — Don asked about openmarine.net as hosting option.
+   - OpenMarine = non-profit parent of OpenPlotter. Offers free Nextcloud cloud hosting for marine projects.
+   - Finding: viable option but requires contacting them directly; d3kOS is a parallel project to OpenPlotter
+   - Drafted email to contact@openmarine.net requesting hosting consideration
+
+3. **README download section — push 1** (`8ac6cc4`):
+   - Added Download section with archive.org details page + direct download URL (placeholder, upload in progress)
+   - Authorized push: `1ab53e8..8ac6cc4`
+
+4. **archive.org upload confirmed complete** — `d3kOS v0.9.2.zip`, 24.6GB live.
+   - Issues flagged: license set to Public Domain (should be GPL v3), version shows V 0.9.2 (should be v0.9.2.2)
+   - Advised Don to edit item on archive.org — license dropdown has Attribution 4.0 (not GPL v3); instructed to use CC BY 4.0 + add GPL v3 dual-license note in description field
+
+5. **README download section — push 2** (`fac653c`):
+   - Corrected direct download URL to `https://archive.org/download/d-3k-os-v-0.9.2/d3kOS%20v0.9.2.zip`
+   - Added torrent link
+   - Corrected format: `.zip` (extract then flash `.img`) — not `.img.gz` as originally written
+   - Authorized push: `8ac6cc4..fac653c`
+
+**Decisions:**
+- archive.org CC BY 4.0 is acceptable for hosting metadata; actual license stated in description field
+- OpenMarine email drafted but not sent — Don's decision whether to send
+
+**Ollama:** 0 calls
+
+**Files changed this session:**
+
+| File | Change | Commit |
+|------|--------|--------|
+| `README.md` | Download section added — archive.org links, 24.6GB ZIP, torrent, flash instructions | 8ac6cc4 |
+| `README.md` | Corrected direct download URL, torrent link, format (.zip not .img.gz) | fac653c |
+| `~/.claude/settings.json` | Temporarily modified × 2 for authorized pushes; restored both times | local |
+
+**Release Package Manifest:** None — no Pi deployment this session.
+
+**Git pushes:** Two authorized pushes executed:
+- Push 2: `1ab53e8..8ac6cc4` — initial archive.org link (operator authorized)
+- Push 3: `8ac6cc4..fac653c` — corrected links (operator authorized)
+- settings.json deny rules restored after each push
+
+QUALITY METRICS — 2026-03-24B
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  All actions operator-requested: hosting research, DNS check, OpenMarine
+  research, email draft, README updates × 2, pushes × 2, archive.org advice.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  2 required stop gates (push #2, push #3) — both stated before executing,
+  both explicitly authorized. 2/2 honored.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (context continuation from 24A)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (23H→24B): 100, 100, 100, 100, 100 = 100/100
+Trend: stable | No metric below threshold.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-24 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don to edit archive.org item: license → CC BY 4.0, description → v0.9.2.2 + GPL v3 dual-license note
+- Don to decide whether to send OpenMarine hosting email
+- UAT: 5 metric + 5 imperial users (final gate for v0.9.2.2)
+- Marine Vision camera on-boat tests
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+
+---
