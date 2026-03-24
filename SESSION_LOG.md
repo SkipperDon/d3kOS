@@ -6771,3 +6771,93 @@ Trend: stable | No metric below threshold.
 - GPS outdoor verification (Don's task)
 
 ---
+
+## Session — 2026-03-23I — Pi Cleanup + v0.9.2.2 User Manual + RAG Ingest
+
+**Goal:** Clean up Pi disk, write full d3kOS user manual for v0.9.2.2, ingest manual into Pi ChromaDB RAG, mark v0.9.2.2 as release candidate.
+
+**Note:** Session-close did not run — power outage before close sequence. This entry is reconstructed from commit `be8e83d` on 2026-03-24. All work was committed before power loss. No data lost.
+
+**Completed:**
+- Pi disk cleanup — ~44GB recovered:
+  - 32GB: temp files
+  - 10GB: ML archives
+  - 824MB: pyinaturalist dataset
+  - 119 `.bak` files removed
+  - Old backups, logs, cache cleared
+  - Disk: 34% used → 21% used (87GB free)
+- `version.txt` updated to `v0.9.2.2` on Pi
+- Wrote `deployment/docs/D3KOS_USER_MANUAL_v0922.md` — full user manual v1.0.0 (626 lines)
+  - 11 sections: Introduction, Setup Wizard (8 steps), Dashboard, Weather, Marine Vision, Engine Dashboard, Helm AI, Boat Log, Settings, Remote Access, Troubleshooting
+- Ingested user manual into Pi ChromaDB RAG (DB size: 8.4MB after ingest)
+- `DEPLOYMENT_INDEX.md` — user manual entry added
+- `PROJECT_CHECKLIST.md` — audit pass: items 5, 6, 7, 8, 9, 11 confirmed complete and marked accordingly
+
+**Decisions:**
+- User manual ingested into RAG so Helm AI can answer "how do I…" questions from the manual content. This was the stated goal.
+- v0.9.2.2 designated as release candidate — all code complete, version.txt updated. UAT is the final gate before close.
+
+**Ollama:** 0 calls
+
+**Files changed:**
+
+| File | Change | Commit |
+|------|--------|--------|
+| `deployment/docs/D3KOS_USER_MANUAL_v0922.md` | Created — full v0.9.2.2 user manual v1.0.0 | be8e83d |
+| `deployment/docs/DEPLOYMENT_INDEX.md` | Manual entry added | be8e83d |
+| `PROJECT_CHECKLIST.md` | Items 5, 6, 7, 8, 9, 11 marked complete | be8e83d |
+
+**Release Package Manifest:**
+
+### Release Package Manifest
+- Version: v0.9.2.2 (release candidate)
+- Update type: incremental
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `version.txt` | `/opt/d3kos/` | runtime | Updated to `v0.9.2.2` |
+| (RAG DB) | `/opt/d3kos/data/chromadb/` | user-data | User manual ingested — 8.4MB DB |
+| (Disk cleanup) | various `/tmp/`, `/opt/d3kos/`, `/home/d3kos/` | runtime / user-data | ~44GB temp/archive files removed |
+
+- Pre-install steps: none
+- Post-install steps: none (RAG ingest was live — no service restart needed)
+- Rollback: disk cleanup is irreversible; manual RAG ingest can be reversed by dropping the manual document from ChromaDB if needed. version.txt can be edited directly.
+- Health check: `curl http://192.168.1.237:3000/status` → `version: v0.9.2.2`. Helm AI answering questions about setup wizard and dashboard confirms RAG ingest active.
+- Plain-language release notes: The Pi has been cleaned up — about 44GB of old temp files, ML archives, and backups have been removed, freeing disk space from 34% to 21% used. A complete user manual for d3kOS v0.9.2.2 has been written covering every feature (Setup Wizard, Dashboard, Weather, Marine Vision, Engine, Helm AI, Boat Log, Settings, Remote Access, and Troubleshooting). The manual has been loaded into the AI knowledge base, so the Helm Assistant can now answer "how do I…" questions directly from the manual. The system version is now marked as v0.9.2.2. Only UAT remains before this version officially closes.
+
+QUALITY METRICS — 2026-03-23I
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  In-scope: Pi cleanup, version.txt update, write user manual, RAG ingest,
+  DEPLOYMENT_INDEX update, PROJECT_CHECKLIST audit.
+  Out-of-scope: none.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Autonomous mode. Pi disk cleanup (Medium risk) pre-stated before execution.
+  No required stop gate missed. (Reconstructed — no REC events in commit.)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (context continuation from 23H)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+ROOT CAUSE NOTE: MLS — reconstructed session. Session-close never ran (power outage). This entry written on 2026-03-24 from commit record. MLS scored 1 because session-start was run in 23H (same context). SQS metrics are best-reconstruction from commit evidence.
+
+5-Session SQS Average (23E→23I): 100, 100, 100, 100, 100 = 100/100
+Trend: stable | No metric below threshold.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-23 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- UAT: 5 metric + 5 imperial users (Don's task — final gate for v0.9.2.2 close)
+- Marine Vision camera on-boat tests (location dependency)
+- o-charts activation (Don's task)
+- GPS outdoor verification (Don's task)
+- v0.9.3 staging work continues
+
+---
