@@ -1,6 +1,6 @@
 #  d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 3.8 **Date**: February 26, 2026 **Status**: APPROVED - Bug Fix: Added sysstat dependency **Previous Version**: 3.7 (February 22, 2026)
+**Version**: 3.9 **Date**: March 24, 2026 **Status**: APPROVED - v0.9.4.1 Integration Specification added **Previous Version**: 3.8 (February 26, 2026)
 
 
 ## DOCUMENT CONTROL
@@ -27,6 +27,7 @@
 | 3.6 | 2026-02-20 | d3kOS Team | **Session A Implementation for v0.9.1.2**: Updated system version from 1.0.3 to 0.9.1.2, set tier from 2 to 3 for testing mode with all features enabled, implemented complete timezone auto-detection system (GPS→Internet→UTC with timezonefinder library), created timezone API service on port 8098 with nginx proxy (/api/timezone), enabled and verified voice assistant service with Vosk wake word detection (helm/advisor/counsel), Anker S330 microphone at plughw:2,0. All Session A changes verified, tested, and documented in doc/SESSION\_A\_FOUNDATION\_COMPLETE.md. Foundation ready for Sessions B/C/D. |
 | 3.7 | 2026-02-22 | d3kOS Team | **CRITICAL UPDATE - OS Version Corrected**: Updated all OS references from Bookworm to Trixie (Debian 13), kernel from 6.1.x to 6.12.x, window manager from Openbox to Labwc (Wayland compositor). **Phi-2 LLM REMOVED** (Feb 16, 2026): Removed due to 60-180s response time (unusable on boat helm), freed 1.7GB storage. Replaced with OpenRouter (gpt-3.5-turbo, 6-8s) for online queries + rule-based system (13 patterns, 0.17s) for offline simple queries. Updated Node-RED from 3.x to v4.1.4. Documented actual system state: d3kOS v0.9.1.2, Tier 3, 22+ services running. Complete architecture audit performed, architecture.md v3.0 created. |
 | 3.8 | 2026-02-26 | d3kOS Team | **Bug Fix**: Added `sysstat` package to Appendix B Software Dependencies. Signal K's rpi-monitor plugin requires `mpstat` command for CPU core utilization monitoring. Missing package caused recurring "mpstat: not found" errors every 30 seconds in Signal K logs. Reported by Holger (Linz/Danube) during field testing. Fix: `sudo apt install sysstat`. Also documented UART GPIO configuration for Moitessier HAT GPS/AIS and MCP2515 oscillator frequency configuration (12MHz vs 16MHz). |
+| 3.9 | 2026-03-24 | d3kOS Team | **v0.9.4.1 Integration Specification added** — Added Section 8.4: Pi ↔ Website ↔ App full data pipeline integration. Defines all connection gaps between independently-built systems: export_worker Pi-side wiring (URL, auth headers, command pickup, alert triggers), Node-RED community flow activation, website community API endpoints (5 new endpoints), Chart Room + Find My Boat data display, command queue round-trip, and integration test plan (6 tests). All items blocked on v0.9.3 live push. |
 
 
 
@@ -6199,6 +6200,171 @@ async function processQueue() \{
 \}
 ```
 
+
+### 8.4 v0.9.4.1 — Pi ↔ Website ↔ App Full Integration Specification
+
+**Version**: 0.9.4.1
+**Date added**: 2026-03-24
+**Status**: SPECIFIED — Not started. Blocked on v0.9.3 live push.
+**Purpose**: The three systems (Pi, AtMyBoat.com website, d3kOS mobile PWA) were built independently. v0.9.4.1 completes the wiring: live data flows from Pi to website, commands flow back from app to Pi, and the community map displays real Pi position data.
+
+---
+
+#### 8.4.1 Data Flow Architecture
+
+```
+Pi (export_worker.py)
+  ─── HTTPS POST every 30 min (or on alert event) ───▶  HostPapa data-ingress.php
+                                                              │
+                                                    stores in MySQL:
+                                                    · amboat_engine_snapshots
+                                                    · wp_usermeta (position, sync time)
+                                                    · amboat_alerts
+                                                              │
+                                                    returns pending_commands[]
+                                                              │
+  ◀── Pi reads commands, executes, POSTs result ────────────┘
+
+Mobile PWA (v0.9.4)
+  ─── HTTPS POST ────────────────────────────────▶  command-queue.php
+                                                    (writes command for Pi)
+
+AtMyBoat.com Chart Room (/dashboard)
+  ─── reads MySQL ────────────────────────────────▶  displays:
+                                                    · Last sync timestamp
+                                                    · Engine snapshot
+                                                    · Find My Boat map pin
+                                                    · Alert history
+                                                    · PDF report list (T2/T3)
+
+Community Map (/community)
+  ─── reads MySQL ────────────────────────────────▶  displays boat dots
+                                                    (GPS blurred to 500m on output)
+```
+
+---
+
+#### 8.4.2 Pi-Side Integration Work (v0.9.4.1)
+
+**File:** `services/export/export_worker.py`
+
+**P1 — Endpoint URL correction**
+- Current: `https://d3kos-cloud-api.example.com/api/v1/data/import` (placeholder — never connected)
+- Required: `https://atmyboat.com/mobile/data-ingress.php`
+- Config source: `/opt/d3kos/config/cloud-credentials.json`
+
+**P2 — Authentication header correction**
+- Current: `Authorization: Bearer <installation_id>` (incorrect — installation_id is not the API key)
+- Required: `Authorization: Bearer <atmyboat_api_key>` + `X-Device-Token: <device_uuid>`
+- Both values from `/opt/d3kos/config/cloud-credentials.json`
+
+**P3 — Command pickup loop**
+- `data-ingress.php` returns `{ "pending_commands": [ { "id": 1, "command": "restart_service", "payload": {...} } ] }` in every response
+- `export_worker.py` currently discards the response body — this must be parsed
+- Each pending command must be: (1) executed locally on the Pi, (2) result POSTed back to `command-queue.php`
+- Supported commands: `restart_service`, `fix_my_pi`, `ota_update`, `reboot`
+- Unknown commands: log and skip — never execute
+
+**P4 — Alert-triggered export**
+- Current: export only fires on the 30-second worker timer
+- Required: critical alert types (anchor_drag, engine_overtemp, low_fuel, low_battery) must call `export_queue.add()` immediately — do not wait for timer
+- Alert hook added to the alert detection service; export_worker picks it up on its next 30-second loop
+
+**P5 — cloud-credentials.json**
+- File: `/opt/d3kos/config/cloud-credentials.json`
+- Contents: `{ "atmyboat_api_key": "<key from AtMyBoat.com account>", "device_uuid": "<auto-generated UUID>" }`
+- UUID auto-generated on first run if not present — stored permanently thereafter
+- File must be in `.gitignore` — never committed
+- Template `cloud-credentials.json.example` committed with placeholder values
+
+---
+
+#### 8.4.3 Node-RED Community Flow Activation (v0.9.4.1)
+
+Three flows deployed to Pi but disabled (waiting for live endpoints):
+
+| Flow | Node-RED trigger | Destination | Status |
+|------|-----------------|-------------|--------|
+| Telemetry push | Engine benchmark schedule | `POST /mobile/data-ingress.php` | Disabled — URL placeholder |
+| Community benchmark | Performance comparison schedule | `POST /mobile/data-ingress.php` | Disabled — URL placeholder |
+| Community position | GPS update interval | `POST /mobile/data-ingress.php` | Disabled — URL placeholder |
+
+**Required changes:**
+1. Replace placeholder URL in "Post to Community DB" HTTP Request nodes → `https://atmyboat.com/mobile/data-ingress.php`
+2. Wire API key from `cloud-credentials.json` via environment injection node (not hardcoded in flow)
+3. Enable all three flows
+4. End-to-end test: enable community sharing in Settings → verify dot appears on /community map within one interval
+
+---
+
+#### 8.4.4 Website-Side Community API Endpoints (v0.9.4.1)
+
+Five new PHP endpoints required in `mobile/` directory of the child theme:
+
+| File | Method | Purpose |
+|------|--------|---------|
+| `community-markers-post.php` | POST | Receives anonymised hazard marker from Pi. Auth: Bearer + X-Device-Token. Stores in `amboat_community_markers` table. |
+| `community-markers-get.php` | GET `?bbox=lat1,lng1,lat2,lng2` | Returns markers within bounding box. GPS rounded to 2 decimal places on output (≈1.1km blur). No auth required. |
+| `telemetry-push.php` | POST | Receives engine benchmark data from Node-RED. Stores in `amboat_telemetry` table. Used for fleet benchmarking. |
+| `community-benchmark.php` | POST | Receives performance comparison payload. Stored for community averages. |
+| `community-position.php` | POST | Receives boat position update. Checks user's `atmyboat_map_sharing` preference. Stores/updates position for community map dot. Drops positions inactive > 30 days. |
+
+**Community map privacy rules (enforced at output):**
+- All GET endpoints round GPS to 2 decimal places (≈1.1km)
+- Positions not updated in 30+ days are excluded from map output
+- No vessel name, MMSI, or callsign ever returned in any GET response
+- User must have `atmyboat_map_sharing = 1` for their dot to appear
+
+---
+
+#### 8.4.5 Website Chart Room — Pi Data Display (v0.9.4.1)
+
+The Chart Room (`/dashboard`) must display synced Pi data for T1+ users.
+
+**Data sources (all from MySQL / wp_usermeta):**
+
+| Display element | Source | Tier |
+|----------------|--------|------|
+| Last sync time | `wp_usermeta.atmyboat_last_sync` | T1+ |
+| d3kOS version | `wp_usermeta.atmyboat_d3kos_version` | T1+ |
+| Engine snapshot (RPM, coolant, fuel, hours) | `amboat_engine_snapshots` latest row for user | T1+ |
+| Find My Boat map pin | `wp_usermeta.atmyboat_position_lat/lng + atmyboat_last_position_time` | T1+ |
+| "Pi offline" indicator | If `atmyboat_last_sync` > 2 hours ago | T1+ |
+| Alert history (last 20) | `amboat_alerts` for user | T1+ |
+| PDF report download list | `wp_usermeta.atmyboat_pdf_reports` JSON array | T2/T3 |
+
+**Find My Boat display rules:**
+- Shows last known position as map pin with timestamp
+- If Pi has been offline > 2 hours: show greyed pin with "Last seen [timestamp]"
+- If never synced: show "No data — Pi has not synced yet"
+- Position is exact (not blurred) — this is the owner's own boat, private to their account
+
+---
+
+#### 8.4.6 Integration Test Plan (v0.9.4.1)
+
+| # | Test | Method | Pass criteria |
+|---|------|--------|---------------|
+| T1 | Pi sync → website | POST to data-ingress.php with real credentials from Pi | HTTP 200, engine snapshot row in DB, `atmyboat_last_sync` updated |
+| T2 | Command round-trip | App queues `restart_service` → Pi picks up on next sync → executes → posts result | App shows "completed" within 35 min (one sync cycle) |
+| T3 | Community data flow | Enable boat_map in Pi Settings → Node-RED tick fires → position received by website | Dot appears on /community map within one Node-RED interval |
+| T4 | Alert-triggered export | Simulate anchor_drag alert on Pi | Export fires within 30 seconds (not 30 minutes); alert appears in `amboat_alerts` |
+| T5 | Find My Boat | Pi syncs position → log into Chart Room on phone | Map pin at correct location, sync time shown |
+| T6 | PDF report | T2 user requests engine report from Chart Room | PDF generated, download link returned, Gemini recommendations present |
+
+---
+
+#### 8.4.7 Dependencies and Ordering
+
+1. **v0.9.3 must go live first** — all HostPapa PHP endpoints require the live site
+2. **P5 (cloud-credentials.json)** must be done before P1, P2, or N2 — it is the credential source
+3. **P1 + P2** (URL + auth fix) before T1 test
+4. **P3** (command pickup) before T2 test
+5. **W1–W5** (community endpoints) before N3 (activate Node-RED flows) before T3 test
+6. **P4** (alert trigger) is independent — can be done any order
+7. **D1–D4** (Chart Room display) requires P1+P2 to have synced data first
+
+---
 
 ## 9. SECURITY & LICENSING
 

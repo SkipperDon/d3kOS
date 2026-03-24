@@ -288,6 +288,71 @@ On-boat verification still pending:
 
 ---
 
+## PART 8A — v0.9.4.1 Pi ↔ Website ↔ App Integration
+**Status: NOT STARTED — All three systems built independently. This version wires them together.**
+**Definition:** v0.9.4.1 completes the full data pipeline: Pi exports reach the real website endpoint, Node-RED community flows activate, the command queue is read by the Pi, community API endpoints go live on the website, and the Chart Room + Find My Boat display live Pi data.
+**Depends on:** v0.9.3 staging → live push (Phase 4). All items below are blocked until website is live.
+
+### 8A.1 — Pi Side: Connect Export Worker to Real Endpoint
+
+| # | Item | File | Status |
+|---|------|------|--------|
+| P1 | Update `export_worker.py` URL from placeholder to real endpoint | `services/export/export_worker.py` line 30 — `d3kos-cloud-api.example.com` → `https://atmyboat.com/mobile/data-ingress.php` | `[ ]` |
+| P2 | Fix auth headers in `export_worker.py` — current: `Bearer <installation_id>` wrong. Needs: `Authorization: Bearer <API_KEY>` + `X-Device-Token: <device_uuid>` to match `data-ingress.php` auth.php | `services/export/export_worker.py` | `[ ]` |
+| P3 | Add command pickup loop — `data-ingress.php` returns `pending_commands` array in response body. `export_worker.py` currently discards it. Pi must read and execute each command. | `services/export/export_worker.py` | `[ ]` |
+| P4 | Alert-triggered export — critical alerts (anchor drag, engine overtemp, low fuel) must trigger immediate export, not wait for next 30-min timer. Add event hook from alert system → export queue. | `services/export/export_worker.py` + alert service | `[ ]` |
+| P5 | Create `/opt/d3kos/config/cloud-credentials.json` with AtMyBoat.com device API key. Add to `.gitignore`. Template: `{ "atmyboat_api_key": "YOUR_KEY_HERE", "device_uuid": "auto-generated-on-first-run" }` | Pi config | `[ ]` |
+
+### 8A.2 — Pi Side: Activate Node-RED Community Flows
+
+| # | Item | Status |
+|---|------|--------|
+| N1 | Update placeholder URL in 2 Node-RED "Post to Community DB" flow nodes → real `https://atmyboat.com/mobile/data-ingress.php` | `[ ]` |
+| N2 | Wire API key from `/opt/d3kos/config/cloud-credentials.json` into Node-RED HTTP Request nodes (not hardcoded) | `[ ]` |
+| N3 | Enable the 3 disabled Node-RED flows: telemetry/push, community/benchmark, community/position | `[ ]` |
+| N4 | End-to-end test: toggle community sharing ON → data flows to atmyboat.com → appears on community map | `[ ]` Blocked on v0.9.3 live |
+
+### 8A.3 — Website Side: Community API Endpoints
+
+| # | Item | Endpoint | Status |
+|---|------|----------|--------|
+| W1 | Build `POST /api/community/markers` endpoint — receives anonymised hazard markers from Pi, stores in WP custom table | New PHP file | `[ ]` |
+| W2 | Build `GET /api/community/markers?bbox=` endpoint — returns markers within bounding box for community map display | New PHP file | `[ ]` |
+| W3 | Build `POST /api/telemetry/push` endpoint — receives engine benchmark telemetry from Node-RED flow | New PHP file | `[ ]` |
+| W4 | Build `POST /api/community/benchmark` endpoint — receives performance comparison data from Node-RED flow | New PHP file | `[ ]` |
+| W5 | Build `POST /api/community/position` endpoint — receives boat position update for community map dot | New PHP file | `[ ]` |
+| W6 | Community map 500m blur on read — `/api/community/markers` GET must round coordinates to 2 decimal places on output even if stored with higher precision | `[ ]` |
+
+### 8A.4 — Website Side: Display Synced Pi Data
+
+| # | Item | Page | Status |
+|---|------|------|--------|
+| D1 | Chart Room dashboard — display last sync time, d3kOS version, engine snapshot (RPM, coolant, fuel) from `amboat_engine_snapshots` for logged-in T1+ user | `/dashboard` (The Chart Room) | `[ ]` |
+| D2 | Find My Boat — display last known GPS position + timestamp from `atmyboat_position_lat/lng` user meta. T1+ only. Show "Pi offline" state if >2h since last sync. | `/dashboard` | `[ ]` |
+| D3 | Alert history panel — list last 20 alerts from `amboat_alerts` table for the logged-in user | `/dashboard` | `[ ]` |
+| D4 | PDF report download list — show the user's last 20 reports from `atmyboat_pdf_reports` user meta with download links | `/dashboard` (T2/T3 only) | `[ ]` |
+
+### 8A.5 — App Side: Command Queue Integration
+
+| # | Item | Status |
+|---|------|--------|
+| A1 | App writes command to `command-queue.php` (e.g. `fix_my_pi`, `ota_update`, `restart_service`) | `[ ]` Depends on PWA build (v0.9.4) |
+| A2 | Pi's command pickup loop (P3 above) executes commands and POSTs result back to `command-queue.php` | `[ ]` Depends on P3 |
+| A3 | App polls `command-queue.php` for command result — shows status to user | `[ ]` Depends on PWA build |
+
+### 8A.6 — Integration Test Plan
+
+| # | Test | Expected result | Status |
+|---|------|-----------------|--------|
+| T1 | Pi sync → website: POST to data-ingress.php with real API key | 200 OK, engine snapshot row in DB, last_sync updated | `[ ]` |
+| T2 | Command round-trip: app queues `restart_service` → Pi picks up on next sync → executes → result returned | App shows "completed" within 35 minutes | `[ ]` |
+| T3 | Community data flow: enable boat_map in Settings → next Node-RED tick → position appears on /community map | Dot appears within 30 minutes of enabling | `[ ]` |
+| T4 | Alert trigger: simulate anchor drag → immediate export fires (not wait for timer) → alert in DB | Alert in `amboat_alerts` within 2 minutes | `[ ]` |
+| T5 | Find My Boat: Pi syncs position → Chart Room shows marker at correct location | Position on map within 35 minutes of sync | `[ ]` |
+| T6 | PDF report: T2 user requests engine report → Gemini called → PDF generated → download link returned | PDF available within 30 seconds | `[ ]` |
+
+---
+
 ## PART 9 — v1.1 Multi-Language Platform
 **Status: LAYER 0 COMPLETE — Layers 1–5 not started**
 **Full spec:** `doc/MULTILANGUAGE_PLATFORM_SPEC.md` | `deployment/v1.1/`
@@ -313,6 +378,7 @@ On-boat verification still pending:
 | v0.9.2 | Core platform — cameras, units, Gemini, remote access, UI rebuild | `[~]` Code complete — UAT + on-boat tasks remain |
 | v0.9.3 | AtMyBoat.com community platform (WordPress) | `[~]` Staging in progress |
 | v0.9.4 | d3kOS Mobile Companion App (PWA) | `[ ]` Planned |
+| v0.9.4.1 | Pi ↔ Website ↔ App full integration (data pipeline wiring) | `[ ]` Planned — blocked on v0.9.3 live |
 | v1.0 | Multi-language + v0.9.4 + signalk-forward-watch AppStore | `[ ]` Planned |
 | v1.1 | CJK keyboard, self-hosted STUN coordination server, fleet features | `[ ]` Future |
 
