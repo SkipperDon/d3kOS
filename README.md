@@ -11,6 +11,28 @@ d3kOS transforms a Raspberry Pi 4 into a professional-grade marine helm system: 
 
 ---
 
+## Download
+
+**Latest Release: v0.9.2.2 — Release Candidate**
+
+| | |
+|---|---|
+| **Archive.org page** | https://archive.org/details/d-3k-os-v-0.9.2 |
+| **Direct download** | https://archive.org/download/d-3k-os-v-0.9.2/ |
+| **Size** | ~28 GB (full Pi disk image) |
+| **Format** | `.img.gz` — flash directly with Raspberry Pi Imager |
+| **Hardware** | Raspberry Pi 4B, 4GB RAM minimum |
+
+**Flash with Raspberry Pi Imager:**
+1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
+2. Choose OS → Use custom → select the `.img.gz` file
+3. Choose Storage → select your SD card (32GB+ recommended)
+4. Write
+
+**Note:** Upload in progress — file will be available at the link above once complete.
+
+---
+
 ## What is d3kOS?
 
 d3kOS runs on a Raspberry Pi 4 mounted at your helm. It integrates:
