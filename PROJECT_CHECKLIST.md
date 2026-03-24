@@ -271,16 +271,33 @@ On-boat verification still pending:
 **Strategy:** `deployment/docs/MOBILE_APP_STRATEGY_BRIEF.md` v2.0.0
 **Q&A record (authoritative):** `deployment/docs/MOBILE_APP_QA_RECORD.md` v1.0.0
 
+### 8.1 — PWA Foundation & Live Tunnel
+
 | Build step | Status |
 |------------|--------|
 | Pre-build: Remove Tailscale from Pi | `[x]` Done 2026-03-19 |
+| Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[x]` **DONE — Built in v0.9.3 S5** (register-device.php, pair-device.php, command-queue.php, fix-my-pi-billing.php, pdf-report.php + 7-table schema) |
 | Foundation (PWA shell on GitHub Pages) | `[ ]` |
 | WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
 | Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
 | Fix My Pi (diagnostic + restore, $29.99/incident) | `[ ]` |
 | PDF Reports via mPDF + Gemini 2.5 Flash (T2/T3 only) | `[ ]` |
 | OS Lockdown (apt-mark hold + pre-upgrade hook) | `[ ]` |
-| Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[ ]` |
+
+### 8.2 — App ↔ Website API Integration (app-side JavaScript)
+**Note:** All website PHP endpoints listed here were built in v0.9.3 S5 and are on staging. The app-side calls (this section) are entirely unbuilt — this is the missing connection.
+
+| # | App feature | Calls | What it does | Status |
+|---|------------|-------|--------------|--------|
+| AW1 | First install — device registration | `POST register-device.php` | Generates device UUID, stores on HostPapa, links to install | `[ ]` |
+| AW2 | QR pairing — link device to user account | `POST pair-device.php` | User scans QR on Pi → app sends UUID + user token → account linked | `[ ]` |
+| AW3 | Fix My Pi — trigger diagnostic | `POST fix-my-pi-billing.php` → Stripe → `POST command-queue.php` | Charges $29.99, writes `fix_my_pi` command for Pi to pick up | `[ ]` |
+| AW4 | Send command to Pi | `POST command-queue.php` | App writes command (restart_service, ota_update, reboot) with payload | `[ ]` |
+| AW5 | Poll command result | `GET command-queue.php?id=<id>` | App checks if Pi has completed the command; shows status | `[ ]` |
+| AW6 | Request PDF report | `POST pdf-report.php` | App triggers engine/health/voyage report generation; returns download URL | `[ ]` T2/T3 only |
+| AW7 | Read boat health dashboard data | `GET dashboard-data.php` (to be built in v0.9.4.1 §8A.4) | App reads last engine snapshot, sync time, alerts for health screen | `[ ]` Blocked on §8A.4 |
+| AW8 | Find My Boat | `GET dashboard-data.php` position fields | App reads last known GPS + timestamp; displays on map | `[ ]` Blocked on §8A.4 |
+| AW9 | User authentication | WordPress cookie auth or JWT via `auth.php` | App must authenticate before any endpoint call; session token stored on device | `[ ]` Auth mechanism to be decided |
 
 ---
 
