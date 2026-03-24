@@ -6952,3 +6952,106 @@ Trend: stable | No metric below threshold.
 - v0.9.3 staging work continues
 
 ---
+
+## Session — 2026-03-24B — v0.9.3 Product Planning + Decision Record
+
+**Goal:** Read all v0.9.3 and v0.9.4 documentation, identify gaps, conduct Q&A with Don to lock in all product decisions, update governing documents, make first git commit on atmyboat-forum repo.
+
+**Sprint Mode:** OFF — open planning session, all actions operator-directed.
+
+**Completed:**
+
+1. **Full v0.9.3 / v0.9.4 doc audit** — read all: ATMYBOAT_BUILD_REFERENCE.md (all 15 parts), ATMYBOAT_STANDING_INSTRUCTION.md, SESSION_LOG (v0.9.3), old instructions/ATMYBOAT_CLAUDE_CODE_SPEC.md, MOBILE_APP_STRATEGY_BRIEF.md, MOBILE_APP_QA_RECORD.md. Identified: Gemini vs Claude Haiku conflict, missing T3 annual pricing, missing website pages, missing community map, missing notifications, no registration flow defined.
+
+2. **7-question Q&A with Don** — all product decisions locked in:
+   - Q1: T0 Fix My Pi = NOT available. T0 upgrade path = download + reinstall only.
+   - Q2: Login = standard WP form, no social login, separate register page.
+   - Q3: Registration = first name, last name, email, password, ToS + CASL checkboxes.
+   - Q4: Website scope = 18 pages in, /academy + /docs + /b2b deferred.
+   - Q5: Community map = T1+, red/green dots, 500m blur, privacy zone, 30-day inactivity drop.
+   - Q6: Dashboard = history/management only (not real-time), 5 sections for T1.
+   - Q7: /community page = map + stats + forum feed + hall of fame + challenges.
+
+3. **Additional decisions captured:**
+   - Forum AI = Gemini 2.5 Flash only (NOT Claude Haiku — cost constraint).
+   - T3 = $99.99/year annual billing (was missing from all docs).
+   - T1 Fix My Pi = payment authorizes first, then app launches fix deployment.
+   - Notifications: in-app + email (T1); + SMS/Twilio (T2/T3). 10 alert triggers defined.
+   - Geofence/anchor drag = GPS-based "Set Anchor" button, auto-captures position.
+   - /directory = 4-tier business listing system (Basic free → Verified $29.99mo → Premium $99.99mo → Featured).
+   - /marketplace = free listings, marine items only, no transaction processing, disclaimer.
+   - /features voting = anyone votes (no login), T1+ submits.
+   - QR pairing = post-login step, not on login page.
+   - /compatible page deferred — needs engine compatibility data from Don first.
+
+4. **BUILD_REFERENCE.md Part 16 appended** — 9 subsections covering all decisions above. Supersedes any conflicting content in Parts 1–15. Version bumped to 2.1.
+
+5. **MOBILE_APP_QA_RECORD.md Session 3 added** — v0.9.4-relevant decisions recorded (T0/T1/T3 corrections, Decisions 13–16). Cross-reference to BUILD_REFERENCE Part 16.
+
+6. **Memory files updated** — new `project_v093_v094_decisions.md` created, MEMORY.md index updated.
+
+7. **First git commit on atmyboat-forum repo** — `e354c23`. 8 files, 2,039 lines. Captured all 2026-03-13 build work that had been deployed to staging but never committed. API key file confirmed excluded via .gitignore. No push to GitHub.
+
+8. **8-session build plan produced** — complete revised plan covering all new scope.
+
+**Decisions:**
+- Forum AI = Gemini only. All atmyboat-config.php references to Anthropic/Haiku are superseded by Part 16.
+- T3 pricing = $99.99/year. Annual billing only. Confirmed final.
+- T0 has no Fix My Pi path under any circumstances.
+- /compatible deferred until Don provides engine compatibility data.
+- Registration captures first name + last name only at sign-up; all boat details in Pi onboarding wizard.
+
+**Ollama:** 0 calls
+
+**Files changed this session:**
+
+| File | Change | Location |
+|------|--------|----------|
+| `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` | Part 16 appended (9 subsections, all 2026-03-24 decisions) | Helm-OS repo |
+| `deployment/docs/MOBILE_APP_QA_RECORD.md` | Session 3 appended (v0.9.4-relevant decisions, Decisions 13–16) | Helm-OS repo |
+| `memory/project_v093_v094_decisions.md` | NEW — complete product decisions record for v0.9.3 and v0.9.4 | Claude memory |
+| `memory/MEMORY.md` | Index entry added for v0.9.3/v0.9.4 decisions file | Claude memory |
+| `atmyboat-forum` (repo) | First commit e354c23 — 8 child theme files (style.css, functions.php, bbpress.css, ai-assistant.php, ai-widget.php, ai-widget.php, products.json, page-products.php, .gitignore) | Local repo |
+
+**Release Package Manifest:** None — no Pi deployment this session.
+
+**Git:** One local commit on atmyboat-forum repo (e354c23). No push. Helm-OS repo unchanged (no new commits — governance docs edited but not committed yet — see Operator Actions below).
+
+QUALITY METRICS — 2026-03-24B
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  All actions operator-directed. No sprint scope declared — open planning session.
+  Every file touched traceable to explicit operator instruction.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  4 required stop gates — all honored.
+  BUILD_REFERENCE edit: pre-stated, waited for "yes absolutely."
+  QA_RECORD edit: same authorization.
+  First git commit: pre-stated, waited for "yes."
+  Session plan: waited for "yes."
+REC  (Recovery Event Count)        : 0
+  One Edit tool failure (string not found) — corrected immediately via Grep.
+  Normal tool operation, not a recovery event.
+MLS  (Memory Load Success)         : 1
+  Session-start run at open. MEMORY.md, PROJECT_CHECKLIST.md, SESSION_LOG.md
+  all read before any work began.
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (24A, 23I×3, 24B): 100, 100, 100, 100, 100 = 100/100
+Trend: stable | No metric below threshold.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-24 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don to authorize Session 1 of v0.9.3 build (registration, legal pages, AODA, MailPoet)
+- Don to compile engine compatibility list for /compatible page (deferred — needed before that page can be built)
+- Helm-OS repo: BUILD_REFERENCE.md and QA_RECORD.md edits need to be committed (see Operator Actions)
+- v0.9.3 SESSION_LOG.md: needs a planning session entry for 2026-03-24B
+
+---

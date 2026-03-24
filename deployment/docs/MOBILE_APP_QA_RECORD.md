@@ -115,6 +115,63 @@ Removal is a tracked task — see PROJECT_CHECKLIST.md.
 
 ---
 
+## SESSION 3 — 2026-03-24 (product decisions Q&A with operator)
+
+**Cross-reference:** All decisions in this session are fully recorded in
+`deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` Part 16 (authoritative source).
+This entry records the v0.9.4-relevant subset only.
+
+### Decision Corrections — v0.9.4 Impact
+
+**T0 Fix My Pi — CORRECTION (supersedes all prior references):**
+T0 cannot use Fix My Pi under any circumstances.
+T0 has no mobile app and no account.
+The ONLY path for T0 is: download new image from atmyboat.com/download, reinstall on Pi.
+T0 must upgrade to T1 (register free account, pair app) before Fix My Pi is accessible.
+
+**T3 pricing — CORRECTION:**
+T3 = $99.99/YEAR (annual billing only). Not monthly.
+Previous brief did not specify billing frequency. Annual is now confirmed and final.
+
+**T1 Fix My Pi flow — CLARIFICATION:**
+$29.99 per incident. Stripe payment must authorize first.
+Only after payment is authorized does the mobile app launch the fix deployment to the Pi.
+Sequence: user taps Fix My Pi → Stripe payment page → payment completes → fix command
+written to command queue → Pi picks up in 30s → fix executes → report returned to app.
+
+### New Decisions — v0.9.4 Relevant
+
+**Decision 13 — Boat Notifications:**
+- T1: in-app push (PWA) + email (MailPoet)
+- T2/T3: in-app push + email + SMS (Twilio)
+- Alert triggers: engine critical (oil, coolant, RPM), low battery, motion detected,
+  geofence breach/anchor drag, Pi offline (30-min default), Fix My Pi complete,
+  OTA available, T2 check allowance low (1 remaining)
+- Critical alerts sent immediately. Non-critical batched (max 1/day).
+- User controls: per-alert toggle, geofence radius, Pi offline threshold,
+  SMS number (T2+), quiet hours.
+
+**Decision 14 — Geofence / Anchor Drag:**
+Centre point = automatic GPS position when user taps "Set Anchor" in app.
+No manual coordinate entry. User sets radius only (slider, default 50m).
+"Weigh Anchor" deactivates. Pi monitors, fires Critical alert if boat exits radius.
+
+**Decision 15 — Registration required for T1+:**
+T1 and higher require account registration on atmyboat.com.
+Registration captures: first name, last name, email, password.
+CASL opt-in checkbox required (Canadian anti-spam law).
+All boat details captured in Pi onboarding wizard — not at registration.
+QR pairing happens post-login, not on login page.
+
+**Decision 16 — Community Map access:**
+T1+ only. Must be registered and app paired.
+Your boat = red dot. Other d3kOS boats = green dots.
+Leaflet + OpenStreetMap. Position blurred to ~500m. Clicking dot shows nothing.
+Privacy zone available in Settings. 30-day inactivity → drops off map.
+Auto-on after T1 pairing. Opt-out in Settings.
+
+---
+
 ## STANDING RULES DERIVED FROM THIS RECORD
 
 1. Pi-to-phone connectivity = WebRTC/STUN (v0.9.4). Not polling. Not message broker for live connection.
