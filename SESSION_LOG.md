@@ -2,6 +2,48 @@
 
 ---
 
+## Session — 2026-03-24D — v0.9.3 planning: page audit, connectivity gaps, content plan
+
+**Goal:** Audit all v0.9.3 pages, identify missing fundamental pages, document the WiFi/Ethernet/NMEA 2000 connectivity story, create Session 6 content plan for operator review before building.
+
+**Completed:**
+- Full page inventory: 23 pages on disk, 2 with known gaps (data-ingress tier return, fix-my-pi-billing lifecycle webhooks), 9 missing pages never in the original plan
+- Identified missing fundamental pages: /about, /contact, /pricing, /upgrade, /help, /help/software-update, /help/software-downgrade, /help/create-subscription, /help/cancel-subscription, /account
+- Identified missing connectivity story: WiFi, Ethernet, NMEA 2000 (PiCAN-M HAT, CX5106 analogue gateway) not documented anywhere on the website
+- Located original content documents in `doc/`: ATMYBOAT_LANDING_PAGE_CONTENT.md, ATMYBOAT_ABOUT_PAGE.html — these were not being referenced in prior sessions
+- Created `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — full content plan for all 9 missing pages + connectivity section, with exact wording for review
+- Updated PROJECT_CHECKLIST.md: added all 9 missing pages to S6 scope with references to content plan
+- Revised session plan: S6 now covers 9 new pages + 5 infrastructure fixes + connectivity updates; /account moved to S7
+
+**Decisions:**
+- /account page (subscription management with Stripe Customer Portal) deferred to S7 — more complex than content pages, requires Stripe API integration
+- Connectivity story (NMEA 2000 / WiFi / Ethernet) assigned to S6 as updates to existing /hardware and /products pages — not a new page
+- SESSION6_CONTENT_PLAN.md is the gate: Don reviews and approves before any S6 building starts
+
+**Corrections made:**
+- Prior session incorrectly listed MailPoet as outstanding — it was built in registration.php. Marked COMPLETE.
+- Prior session incorrectly listed config.php as an operator pre-session action — it was completed 2026-03-13. Stale item removed from pre-conditions.
+
+**Files changed:**
+- `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — new file, 9-page content plan + connectivity section
+- `PROJECT_CHECKLIST.md` — S6 section expanded: 9 new pages added, session plan updated
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-24 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Operator Actions Required Before Session 6:**
+- Read `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` and confirm all content is correct
+- Answer 6 review questions at the bottom of that document (T3 vessel limit, contact email, photo on About page, etc.)
+- Authorize the 2B CSS font fix (3 lines — already confirmed as root cause)
+- T3 vessel limit decision still open (Options A/B/C — needed before v0.9.4 build)
+
+---
+
 ## Session — 2026-03-24C — v0.9.3 Sessions 1–5 autonomous build
 **Goal:** Build and commit v0.9.3 AtMyBoat.com community platform Sessions 1–5 (authorized autonomous build — Don not in attendance)
 

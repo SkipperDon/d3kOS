@@ -232,14 +232,27 @@ On-boat verification still pending:
 | S3 | /community (map), /marketplace, /features, /challenges, /hall-of-fame | `[x]` **COMPLETE 2026-03-24** |
 | S4 | /directory (business listings), /dashboard (The Chart Room T1+) | `[x]` **COMPLETE 2026-03-24** |
 | S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
-| S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Not started |
-| S6 | Community API endpoints — 5 PHP files: POST/GET /api/community/markers, POST /api/telemetry/push, POST /api/community/benchmark, POST /api/community/position. GPS blur (500m) enforced on GET output. 30-day inactivity drop. See Part 8A §8A.3 for full spec. | `[ ]` Not started |
-| S6 | **Multi-boat schema fix** — ALTER TABLE before live push (see §8.3 Multi-Boat below for full spec). Must be done in S6 while still on staging. | `[ ]` Not started |
-| S6 | **Subscription upgrade page** — build `/upgrade` page on website with T2 ($9.99/mo) and T3 ($99.99/yr) subscribe buttons. Creates Stripe subscription checkout session. Currently no way to purchase T2 or T3 anywhere on the site. | `[ ]` Not started |
-| S6 | **Stripe subscription lifecycle webhooks** — add handlers in `fix-my-pi-billing.php` for `invoice.payment_failed`, `customer.subscription.deleted`, `customer.subscription.updated`. Without these, a cancelled or failed T2/T3 subscription stays active in the DB forever. | `[ ]` Not started |
-| S6 | **Downgrade logic** — when subscription cancels or payment fails: revert tier to T1 in DB, send downgrade email, apply 7-day grace period before features lock. | `[ ]` Not started |
-| S6 | **data-ingress.php returns current tier** — add `"tier": "T2"` (or T1/T3) to the response JSON so the Pi can read it on next sync. One-line addition. This is what gets the tier change from the website to the Pi. | `[ ]` Not started |
-| S6 | **T2 monthly Fix My Pi counter reset** — add cPanel cron job (runs 1st of each month) to reset `atmyboat_fmp_used_month` to 0 for all T2 users. Without this, T2 users hit "allowance exhausted" permanently after their first month. | `[ ]` Not started |
+| S6 | **CONTENT PLAN REVIEW** — `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — operator must approve before S6 build starts | `[!]` **Awaiting Don's review** |
+| S6 | **2B CSS font fix** — 3 lines: Playfair→Fraunces, Source Serif→Nunito in style.css. First task. Every page inherits this. | `[~]` Awaiting authorization |
+| S6 | **`/about`** — Our Story page. Content: Lake Erie origin, Skipper Don, mission, why d3kOS. Source: `doc/ATMYBOAT_ABOUT_PAGE.html` (exists). See SESSION6_CONTENT_PLAN.md §PAGE1. | `[ ]` |
+| S6 | **`/contact`** — Contact Us. AI assistant answers first (Gemini widget), then form + service@atmyboat.com. See SESSION6_CONTENT_PLAN.md §PAGE2. | `[ ]` |
+| S6 | **`/pricing`** — Tier comparison T0/T1/T2/T3. Full feature matrix, FAQ, CTAs. Most critical revenue page. Source: `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md`. See SESSION6_CONTENT_PLAN.md §PAGE3. | `[ ]` |
+| S6 | **`/upgrade`** — Subscription checkout (T2 $9.99/mo · T3 $99.99/yr). Stripe Checkout. Authenticated. See SESSION6_CONTENT_PLAN.md §PAGE4. | `[ ]` |
+| S6 | **`/help`** — Help Centre. AI widget + 6 quick-link cards. See SESSION6_CONTENT_PLAN.md §PAGE5. | `[ ]` |
+| S6 | **`/help/software-update`** — How to update d3kOS. OTA method (T1+) + manual image method (T0). See SESSION6_CONTENT_PLAN.md §PAGE6. | `[ ]` |
+| S6 | **`/help/software-downgrade`** — How to downgrade d3kOS. Manual reflash + previous release links. See SESSION6_CONTENT_PLAN.md §PAGE7. | `[ ]` |
+| S6 | **`/help/create-subscription`** — Step-by-step: how to upgrade to T2 or T3. See SESSION6_CONTENT_PLAN.md §PAGE8. | `[ ]` |
+| S6 | **`/help/cancel-subscription`** — Step-by-step: how to cancel. Grace period explained. See SESSION6_CONTENT_PLAN.md §PAGE9. | `[ ]` |
+| S6 | **`/hardware` connectivity update** — Add "How d3kOS Connects to Your Boat": NMEA 2000 (PiCAN-M HAT + CX5106 analogue gateway), WiFi, Ethernet. See SESSION6_CONTENT_PLAN.md Connectivity section. | `[ ]` |
+| S6 | **`/products` connectivity update** — Add "How It Connects" section with text diagram showing engine→CX5106→NMEA2000→Pi→phone. See SESSION6_CONTENT_PLAN.md Connectivity section. | `[ ]` |
+| S6 | **Multi-boat schema fix** — ALTER TABLE before live push (see §8.3 Multi-Boat below for full spec). Must be done in S6 while still on staging. | `[ ]` |
+| S6 | **Stripe subscription lifecycle webhooks** — add handlers in `fix-my-pi-billing.php` for `invoice.payment_failed`, `customer.subscription.deleted`, `customer.subscription.updated`. Without these, a cancelled or failed T2/T3 subscription stays active in the DB forever. | `[ ]` |
+| S6 | **Downgrade logic** — when subscription cancels or payment fails: revert tier to T1 in DB, send downgrade email, apply 7-day grace period before features lock. | `[ ]` |
+| S6 | **data-ingress.php returns current tier** — add `"tier": "T2"` (or T1/T3) to the response JSON so the Pi can read it on next sync. One-line addition. | `[ ]` |
+| S6 | **T2 monthly Fix My Pi counter reset** — add cPanel cron job (runs 1st of each month) to reset `atmyboat_fmp_used_month` to 0 for all T2 users. | `[ ]` |
+| S6 | Community API endpoints — 5 PHP files: POST/GET /api/community/markers, POST /api/telemetry/push, POST /api/community/benchmark, POST /api/community/position. GPS blur (500m) enforced. See Part 8A §8A.3. | `[ ]` |
+| S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Lowest priority — only if time remains |
+| S7 | **`/account`** — Account management: current tier, billing history, cancel subscription, paired devices. Reads Stripe Customer Portal. See SESSION6_CONTENT_PLAN.md §PAGE10. | `[ ]` |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
 
 ### Open Decision — T3 Vessel Limit
