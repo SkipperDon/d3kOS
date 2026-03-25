@@ -315,8 +315,9 @@ Continuous-operation diagnostic session. 6 anomalies found and resolved directly
 | `deployment/v0.9.2/docs/UNITS_FEATURE_README.md` | Metric/Imperial feature — what it does, how to test |
 | `deployment/v0.9.2-multicam/` | **[SUPERSEDED — 2026-03-11]** Pre-overhaul camera source — cameras.json, old camera_stream_manager.py, old marine-vision.html. Read-only history. Active source now at `deployment/features/camera-overhaul/pi_source/` |
 | `deployment/v0.9.3/` | AtMyBoat.com build references and spec |
-| `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` | WordPress + bbPress + HostPapa build master reference |
+| `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` | WordPress + bbPress + HostPapa build master reference — v2.1 (Part 17 added 2026-03-25: typography fix, Fix My Pi architecture, T3 unlimited, contact email, content workflow) |
 | `deployment/v0.9.3/ATMYBOAT_STANDING_INSTRUCTION.md` | Hard rules for all v0.9.3 AI sessions |
+| `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` | S6 content plan — APPROVED 2026-03-25 — 9 pages + connectivity sections, all Q&A decisions recorded |
 | `deployment/v1.1/README.md` | v1.1 multilanguage platform — 6-layer build order |
 
 ---

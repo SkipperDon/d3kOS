@@ -1,5 +1,5 @@
 # ATMYBOAT.COM — MASTER BUILD REFERENCE
-**Version 2.0 · March 2026 · Donald Moskaluk Consulting**
+**Version 2.1 · 2026-03-25 · Donald Moskaluk Consulting**
 **Classification: Authoritative build document — all decisions made, no ambiguity**
 
 > **HOW TO USE THIS DOCUMENT**
