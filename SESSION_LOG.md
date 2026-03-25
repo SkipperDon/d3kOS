@@ -7248,3 +7248,91 @@ Trend: stable | No metric below threshold.
 - GPS outdoor verification (Don's task)
 
 ---
+
+## Session — 2026-03-25 — v0.9.3 Session 6 Planning & Documentation
+
+**Goal:** Complete Session 6 pre-build Q&A, document all decisions, correct build reference, cross-index into all governance files.
+
+**Completed:**
+
+1. **Session 6 Q&A — all 6 questions answered by Don:**
+   - T3 vessel limit: unlimited (no cap)
+   - About page: real photos (Don's existing site photos), PHP placeholders
+   - Contact email: `skipperdon@atmyboat.com` — `service@atmyboat.com` does not exist, corrected everywhere
+   - T2/T3 at launch: live from day one, no "Coming Soon"
+   - Fix My Pi T1 price: $29.99/incident, automatic Stripe refund if repair fails
+   - CX5106: named on site as recommended least-expensive analogue-to-NMEA 2000 gateway
+
+2. **Fix My Pi automation architecture designed (Don's requirement):**
+   - Request initiated from mobile app (not Pi — Pi may be broken)
+   - Pi bash watchdog script (not Python — survives broken Python)
+   - Systemd timer, 5–10 min poll interval
+   - HostPapa PHP message broker (job queue, results receiver, timeout handler)
+   - 30-min timeout → automatic Stripe refund + reflash instructions email
+   - Expectation disclaimer required before payment
+   - Full spec: BUILD_REFERENCE Part 17.4
+
+3. **Brand and design system review:**
+   - Design philosophy confirmed: "Nostalgic Workshop × Modern AI" — dark navy, amber instrument glow, teal circuit precision
+   - Typography corrected throughout: Fraunces + Nunito + JetBrains Mono (NOT Playfair Display / Source Serif 4)
+   - Mockup (`atmyboat-mockup-v2-accessible.html`) confirmed as authoritative CSS source — build reference Part 3 was wrong
+   - Content-first workflow established: content document → Don approves → build PHP
+
+4. **Governance files updated:**
+   - `ATMYBOAT_BUILD_REFERENCE.md` — Part 17 added (typography fix, email correction, T3 unlimited, Fix My Pi architecture, content workflow, about page photos)
+   - `SESSION6_CONTENT_PLAN.md` — status DRAFT→APPROVED, Q&A table added, `service@` corrected to `skipperdon@` throughout
+   - `PROJECT_CHECKLIST.md` — S6 content plan marked approved, 2B CSS updated, T3 decision resolved, Fix My Pi task added
+   - `MEMORY.md` — updated with new stable facts
+
+**Decisions:**
+- Fix My Pi refund is automatic via Stripe API — Don never manually processes refunds
+- Bash watchdog (not Python) is required to survive broken application layer on Pi
+- Build reference typography was wrong — mockup is authoritative from this session forward
+- Content-first workflow is mandatory for all S6+ pages
+
+**Ollama:** 0 calls
+
+**Files changed this session:**
+| File | Change |
+|------|--------|
+| `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` | Part 17 added — all S6 decisions. Typography corrected (Fraunces+Nunito). |
+| `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` | Status APPROVED, Q&A table added, email corrected throughout |
+| `PROJECT_CHECKLIST.md` | S6 content plan approved, T3 decision resolved, Fix My Pi task added |
+| `deployment/v0.9.3/SESSION_LOG.md` | New session entry |
+| `~/.claude/projects/-home-boatiq/memory/MEMORY.md` | Stable facts updated |
+
+**Release Package Manifest:** None — no Pi deployment this session.
+
+**Pending (next session — S6 build):**
+- Content document for `/about` → Don approves → build PHP
+- Continue through all S6 pages in content-first order
+- Fix My Pi bash watchdog + HostPapa PHP endpoints
+- Stripe subscription lifecycle webhooks
+
+QUALITY METRICS — 2026-03-25
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  All actions within stated scope: Q&A session, documentation, governance updates.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  No High-risk actions this session.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 — MEMORY.md, PROJECT_CHECKLIST.md, SESSION_LOG.md all read at session start.
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-Session SQS Average (24A, 24B, 25): 100, 100, 100 = 100/100
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-25 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- S6 build: content-first workflow, all pages listed in SESSION6_CONTENT_PLAN.md
+- Fix My Pi: bash watchdog + HostPapa PHP endpoints
+- Don: check console.anthropic.com for today's Claude API cost
+
+---

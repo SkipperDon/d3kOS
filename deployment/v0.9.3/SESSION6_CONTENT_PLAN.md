@@ -1,11 +1,11 @@
 # AtMyBoat.com — Session 6 Content Plan
-**Version 1.0 · 2026-03-24 · For Operator Review Before Any Building Starts**
-**Status: DRAFT — awaiting operator approval before Session 6 begins**
+**Version 1.1 · 2026-03-25 · APPROVED**
+**Status: APPROVED 2026-03-25 — Q&A complete. Session 6 build may proceed.**
 
 > This document draws from original content documents:
 > - `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md` (Feb 2026 — original brand copy, tiers)
 > - `doc/ATMYBOAT_ABOUT_PAGE.html` (original About page — Lake Erie origin story, mission)
-> - `doc/ATMYBOAT_CONTACT_PAGE.html` (original Contact page — service@atmyboat.com, form, support hours)
+> - `doc/ATMYBOAT_CONTACT_PAGE.html` (original Contact page — skipperdon@atmyboat.com, form, support hours)
 > - `doc/d3kOS-MARKETING-SHEET.md` (connectivity: NMEA 2000, WiFi, Ethernet, CX5106, PiCAN-M)
 > - `deployment/v0.9.3/atmyboat-mockup-v2-accessible.html` (visual design spec)
 > - `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` (tier definitions, Part 9 + 16)
@@ -111,7 +111,7 @@ After submit: *"Message received. Don usually responds within 1–2 business day
 
 **DIRECT CONTACT**
 Source: `doc/ATMYBOAT_CONTACT_PAGE.html`
-- Email: `service@atmyboat.com`
+- Email: `skipperdon@atmyboat.com`
 - Support hours: Monday–Friday 9:00 AM – 5:00 PM EST. Weekend support for urgent issues.
 - Note: *"For urgent Pi issues — T2 and T3 subscribers use Fix My Pi for faster response."* (link to `/fix-my-pi`)
 
@@ -508,7 +508,7 @@ Works alongside your existing chartplotter — d3kOS does not replace Garmin, Si
 | Page | Content source | Notes |
 |------|---------------|-------|
 | `/about` | `doc/ATMYBOAT_ABOUT_PAGE.html` — original story exists, needs dark theme | Style update + adapt to current design |
-| `/contact` | [NEW — structure above] | AI widget + form + service@atmyboat.com |
+| `/contact` | [NEW — structure above] | AI widget + form + skipperdon@atmyboat.com |
 | `/pricing` | `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md` tiers + BUILD_REFERENCE Part 9 | Most critical page — drives revenue |
 | `/upgrade` | BUILD_REFERENCE Part 9 + Stripe | Authenticated, Stripe checkout |
 | `/help` | [NEW — structure above] | AI widget + 6 quick links |
@@ -524,18 +524,19 @@ Works alongside your existing chartplotter — d3kOS does not replace Garmin, Si
 
 ---
 
-## OPERATOR REVIEW QUESTIONS
+## OPERATOR REVIEW — Q&A ANSWERS (2026-03-25 — ALL CONFIRMED)
 
-Before S6 starts, the following need Don's answer:
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | T3 vessel limit | **Unlimited.** No cap, no soft limit. Admiral tier = fleet, no ceiling. |
+| 2 | About page photo | **Real photos** — Don's photos already on live site. PHP uses `<!-- Photo placeholder: [description] -->` comments. Don inserts images after deploy. |
+| 3 | Contact email | **`skipperdon@atmyboat.com`** displayed publicly + contact form. `service@atmyboat.com` does not exist — corrected throughout. |
+| 4 | T2/T3 live at launch | **Yes — live from day one.** No "Coming Soon." Stripe Checkout working. |
+| 5 | Fix My Pi T1 price | **$29.99 per incident.** Full automatic Stripe refund if fix cannot complete. Architecture documented in BUILD_REFERENCE Part 17.4. |
+| 6 | CX5106 analogue gateway | **Named on site** as recommended option — least expensive analogue-to-NMEA 2000 gateway available. |
 
-1. **T3 vessel limit** — unlimited, hard cap of 10, or soft limit with admin override? (decision was needed before v0.9.4 but also affects /pricing copy)
-2. **About page photo** — the original About page is text only. Do you want a photo of Don at the helm, or keep it text/illustration?
-3. **Contact page** — is `service@atmyboat.com` the right email to display publicly? Or a contact form only?
-4. **Pricing page** — the original had "Coming Soon" on T2 and T3. Are these live now? (yes, per BUILD_REFERENCE — Stripe is built in S5)
-5. **Fix My Pi price** — confirmed $29.99 per incident for T1?
-6. **Hardware connectivity section** — is the CX5106 analogue gateway still the recommended gateway for boats with old analogue gauges?
+**Session 6 approved. Build may proceed.**
 
 ---
 
-*Review this document. Confirm or correct any item. Session 6 does not start until approved.*
-*Source documents: `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md` · `doc/ATMYBOAT_ABOUT_PAGE.html` · `deployment/v0.9.3/atmyboat-mockup-v2-accessible.html` · `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md`*
+*Approved 2026-03-25. Source documents: `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md` · `doc/ATMYBOAT_ABOUT_PAGE.html` · `deployment/v0.9.3/atmyboat-mockup-v2-accessible.html` · `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` (Parts 16–17)*

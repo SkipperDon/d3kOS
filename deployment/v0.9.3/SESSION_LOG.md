@@ -89,3 +89,41 @@
 **Sign-off:** Don — silence = approval
 
 ---
+
+---
+
+## Session — 2026-03-25 — S6 Pre-Build Q&A + Documentation
+
+**Goal:** Answer all 6 Session 6 review questions, document decisions, correct build reference, cross-index into governance files.
+
+**Completed:**
+
+1. All 6 SESSION6_CONTENT_PLAN.md review questions answered:
+   - T3: unlimited vessels
+   - About page: real photos (placeholders in PHP)
+   - Contact email: `skipperdon@atmyboat.com` — `service@` does not exist
+   - T2/T3: live from day one
+   - Fix My Pi: $29.99 T1, automatic refund if fails
+   - CX5106: named on site as least-expensive gateway
+
+2. Fix My Pi automation architecture designed:
+   - App-initiated (not Pi — Pi may be broken)
+   - Bash watchdog on Pi (survives broken Python)
+   - HostPapa PHP message broker + 30-min timeout + auto Stripe refund
+   - Expectation disclaimer before payment
+   - Full spec in ATMYBOAT_BUILD_REFERENCE.md Part 17.4
+
+3. Design system review and typography correction:
+   - Fraunces + Nunito + JetBrains Mono confirmed (NOT Playfair Display / Source Serif 4)
+   - Mockup is authoritative — build reference Part 3 was wrong, now corrected
+   - Content-first workflow established
+
+**Files changed:**
+- `ATMYBOAT_BUILD_REFERENCE.md` — Part 17 added
+- `SESSION6_CONTENT_PLAN.md` — APPROVED, Q&A recorded, email corrected
+- `PROJECT_CHECKLIST.md` — updated
+- `Helm-OS/SESSION_LOG.md` — new entry
+- `~/.claude/projects/-home-boatiq/memory/MEMORY.md` — updated
+
+**Next:** S6 build — content document for `/about` first.
+

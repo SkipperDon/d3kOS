@@ -225,17 +225,17 @@ On-boat verification still pending:
 | S1 | Registration page + login styling + QR pairing flow | `[x]` **COMPLETE 2026-03-24** |
 | S1 | Legal pages — /privacy, /terms, /warranty | `[x]` **COMPLETE 2026-03-24** |
 | S1 | 2A — MailPoet email notifications | `[x]` **COMPLETE** — Hook built in registration.php. Subscribes on CASL consent at registration. |
-| S1 | 2B — AODA CSS completion (font fix) | `[~]` Root cause confirmed 2026-03-24: only 3 lines wrong in style.css (Playfair→Fraunces, Source Serif→Nunito). Plan presented. Awaiting operator authorization to apply. |
+| S1 | 2B — AODA CSS completion (font fix) | `[~]` BUILD_REFERENCE corrected 2026-03-25 (Fraunces+Nunito confirmed). Content-first workflow now in place — CSS applied as part of first S6 page build, not as standalone task. |
 | Done | 2C — AI Assistant (Gemini 2.5 Flash) | `[x]` Complete — on staging + committed |
 | Done | 2D — Products Hub | `[x]` Complete — on staging + committed |
 | S2 | /hardware, /download, /app pages | `[x]` **COMPLETE 2026-03-24** |
 | S3 | /community (map), /marketplace, /features, /challenges, /hall-of-fame | `[x]` **COMPLETE 2026-03-24** |
 | S4 | /directory (business listings), /dashboard (The Chart Room T1+) | `[x]` **COMPLETE 2026-03-24** |
 | S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
-| S6 | **CONTENT PLAN REVIEW** — `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — operator must approve before S6 build starts | `[!]` **Awaiting Don's review** |
+| S6 | **CONTENT PLAN REVIEW** — `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — operator must approve before S6 build starts | `[x]` **APPROVED 2026-03-25** — All 6 Q&A answers recorded. See BUILD_REFERENCE Part 17. |
 | S6 | **2B CSS font fix** — 3 lines: Playfair→Fraunces, Source Serif→Nunito in style.css. First task. Every page inherits this. | `[~]` Awaiting authorization |
 | S6 | **`/about`** — Our Story page. Content: Lake Erie origin, Skipper Don, mission, why d3kOS. Source: `doc/ATMYBOAT_ABOUT_PAGE.html` (exists). See SESSION6_CONTENT_PLAN.md §PAGE1. | `[ ]` |
-| S6 | **`/contact`** — Contact Us. AI assistant answers first (Gemini widget), then form + service@atmyboat.com. See SESSION6_CONTENT_PLAN.md §PAGE2. | `[ ]` |
+| S6 | **`/contact`** — Contact Us. AI assistant answers first (Gemini widget), then form + skipperdon@atmyboat.com. See SESSION6_CONTENT_PLAN.md §PAGE2. | `[ ]` |
 | S6 | **`/pricing`** — Tier comparison T0/T1/T2/T3. Full feature matrix, FAQ, CTAs. Most critical revenue page. Source: `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md`. See SESSION6_CONTENT_PLAN.md §PAGE3. | `[ ]` |
 | S6 | **`/upgrade`** — Subscription checkout (T2 $9.99/mo · T3 $99.99/yr). Stripe Checkout. Authenticated. See SESSION6_CONTENT_PLAN.md §PAGE4. | `[ ]` |
 | S6 | **`/help`** — Help Centre. AI widget + 6 quick-link cards. See SESSION6_CONTENT_PLAN.md §PAGE5. | `[ ]` |
@@ -255,14 +255,20 @@ On-boat verification still pending:
 | S7 | **`/account`** — Account management: current tier, billing history, cancel subscription, paired devices. Reads Stripe Customer Portal. See SESSION6_CONTENT_PLAN.md §PAGE10. | `[ ]` |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
 
-### Open Decision — T3 Vessel Limit
-**`[!]` DECISION REQUIRED before v0.9.4 build starts**
-T3 is defined as "unlimited" but no maximum vessel count is specified anywhere in the plan.
-- Option A: Truly unlimited — no cap. Simple, matches the "unlimited" promise.
-- Option B: Reasonable cap (e.g. 10 vessels) — prevents abuse, easier to support.
-- Option C: Soft limit with admin override — default 5, Don can raise per account.
-**This decision affects:** `d3kos_pairings` schema, boat selector UI, tier enforcement logic in `pair-device.php`, and marketing copy on /pricing.
-**Owner: Don** — decision needed before v0.9.4 build.
+### T3 Vessel Limit — RESOLVED 2026-03-25
+**`[x]` DECISION MADE: T3 = unlimited vessels. No cap. No soft limit.**
+Rationale: Admiral tier positioning. No abuse risk at launch volumes. Future enterprise conversations handled ad hoc.
+Affects: `d3kos_pairings` schema (no enforced limit), pricing copy ("unlimited vessels"), `pair-device.php` (no ceiling check for T3).
+
+### Fix My Pi Automation Architecture — NEW S6 TASK
+**`[ ]` Build Fix My Pi end-to-end automation (S6)**
+Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
+- Pi bash watchdog script (`fix-my-pi-watchdog.sh`) — bash only, survives broken Python
+- Systemd timer on Pi (5–10 min poll interval)
+- HostPapa PHP endpoints: `fix-my-pi-job.php`, `fix-my-pi-result.php`, `fix-my-pi-timeout.php`
+- 30-min timeout → automatic Stripe refund + reflash email
+- Expectation disclaimer shown before payment on `/fix-my-pi` page
+- Request initiated from mobile app (not Pi dashboard)
 
 ### 8.3 — Multi-Boat Schema Fix (S6 — before live push)
 **Why S6:** Current schema breaks silently for any user with >1 Pi. ALTER TABLE on staging costs nothing. On a live HostPapa database it requires a migration. Fix now.

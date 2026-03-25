@@ -113,12 +113,15 @@ The visual identity is a dark-mode workshop aesthetic: warmly lit workbench dark
 
 ```css
 /* Google Fonts — load in child theme functions.php */
-/* Playfair Display: 400, 700, 900 */
-/* Source Serif 4: 300, 400, 600 (italic 400) */
+/* ⚠️ CORRECTION 2026-03-25: Playfair Display and Source Serif 4 are WRONG.
+   Mockup (atmyboat-mockup-v2-accessible.html) is the authoritative source.
+   Mockup uses Fraunces + Nunito + JetBrains Mono. Build here. */
+/* Fraunces: 400, 600, 700, 900 (optical size 9–144, italic 400) */
+/* Nunito: 400, 500, 600, 700, 800 */
 /* JetBrains Mono: 400, 600 (monospace for labels, code, meta) */
 
---font-display: 'Playfair Display', Georgia, serif;   /* Display headings — editorial, nostalgic */
---font-body:    'Source Serif 4', Georgia, serif;      /* Body text, forum posts — readable, warm */
+--font-display: 'Fraunces', Georgia, serif;          /* Display headings — optical serif, distinctive nautical character */
+--font-body:    'Nunito', 'Segoe UI', sans-serif;    /* Body text — clean, rounded, warm, highly readable */
 --font-mono:    'JetBrains Mono', 'Courier New', monospace; /* Labels, tags, code, thread meta */
 ```
 
@@ -126,18 +129,24 @@ The visual identity is a dark-mode workshop aesthetic: warmly lit workbench dark
 
 | Element | Size | Font | Weight | Colour |
 |---|---|---|---|---|
-| Page H1 | clamp(2.2rem, 5vw, 3.8rem) | Playfair Display | 900 | --text-primary |
-| Page H2 | clamp(1.6rem, 3vw, 2.4rem) | Playfair Display | 700 | --text-primary |
-| Page H3 | 1.3rem | Playfair Display | 700 | --text-primary |
-| Section label | 0.65rem / 0.2em tracking | JetBrains Mono | 600 | --amber-bright |
-| Forum post body | **18px minimum** | Source Serif 4 | 400 | --text-primary |
-| Forum post body line-height | **1.8** | — | — | — |
-| Thread title | 1rem | Source Serif 4 | 600 | --text-primary |
-| Thread meta | 0.65rem | JetBrains Mono | 400 | --text-muted |
-| Navigation | 0.9rem | Source Serif 4 | 400 | --text-secondary |
+| Page H1 | clamp(2rem, 4.5vw, 3.5rem) | Fraunces | 400 | --text-primary |
+| Page H2 | clamp(1.7rem, 3vw, 2.4rem) | Fraunces | 400 | --text-primary |
+| Page H3 | 1.1rem | Fraunces | 400 | --text-primary |
+| Section label | 0.78rem / 0.18em tracking | Nunito | 700 | --amber-bright |
+| Body text | **20px minimum** | Nunito | 400 | --text-primary |
+| Body line-height | **1.85** | — | — | — |
+| Thread title | 0.95rem | Nunito | 700 | --text-primary |
+| Thread meta | 0.78rem | Nunito | 400 | --text-muted |
+| Navigation | 1rem | Nunito | 400 | --text-secondary |
 | Code | 0.9rem | JetBrains Mono | 400 | --teal-bright |
+| Hero eyebrow | 0.8rem / 0.18em tracking | Nunito | 600 | --teal-pale |
 
-**AODA Rule: 18px minimum for all body and forum post text. Never reduce below this.**
+**AODA Rule: 20px minimum for all body text (html font-size: 20px base). Never reduce below this.**
+
+**Google Fonts link tag (copy exactly into functions.php enqueue):**
+```
+https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap
+```
 
 ### Background Texture
 
@@ -606,12 +615,12 @@ All new URLs are subfolders of atmyboat.com. **No subdomains.** This keeps all S
 ---
 
 ### Phase 2B — AODA Design (Twenty Twenty Child Theme)
-*Design system: Navy/Amber/Teal. Fonts: Playfair Display + Source Serif 4. All WCAG 2.0 AA.*
+*Design system: Navy/Amber/Teal. Fonts: **Fraunces + Nunito + JetBrains Mono** (⚠️ CORRECTION 2026-03-25 — mockup overrides build reference). All WCAG 2.0 AA.*
 
-- [ ] Add CSS variables and Google Fonts (Playfair Display, Source Serif 4, JetBrains Mono) to `style.css`
+- [ ] Add CSS variables and Google Fonts (Fraunces, Nunito, JetBrains Mono) to `style.css`
 - [ ] Add blueprint grid background texture to `body::before`
 - [ ] Create `bbpress.css` — style forum thread list, post layout, member avatars, category cards
-- [ ] Thread list: dark card style, amber/teal tags, 18px Source Serif 4 body text
+- [ ] Thread list: dark card style, amber/teal tags, 20px Nunito body text
 - [ ] Minimum 48×48px touch targets for all buttons, links, and nav items
 - [ ] Skip-to-content link as first focusable element on every page (`header.php` override)
 - [ ] Sticky header: backdrop blur, logo left, nav links, amber CTA right
@@ -1425,3 +1434,117 @@ No manual lat/lon entry required. Centre point is always current GPS at time of 
 
 *Part 16 added 2026-03-24. Decisions from session with Donald Moskaluk. All items in this part supersede conflicting content in Parts 1–15.*
 *v0.9.4 cross-reference: `deployment/docs/MOBILE_APP_QA_RECORD.md` Session 3.*
+
+---
+
+## PART 17 — SESSION 6 DECISIONS (2026-03-25)
+**All items in this part supersede conflicting content in Parts 1–16.**
+**Source: Q&A session with Donald Moskaluk, 2026-03-25.**
+
+---
+
+### 17.1 — TYPOGRAPHY CORRECTION (FINAL — OVERRIDES BUILD REFERENCE PART 3)
+
+**Fonts in use: Fraunces + Nunito + JetBrains Mono.**
+The mockup file `atmyboat-mockup-v2-accessible.html` is the authoritative source for all CSS.
+The build reference Part 3 typography section contained wrong fonts (Playfair Display, Source Serif 4) — corrected 2026-03-25.
+**Never use Playfair Display or Source Serif 4 anywhere in this project.**
+
+---
+
+### 17.2 — CONTACT EMAIL CORRECTION
+
+**Contact email: `skipperdon@atmyboat.com`**
+All prior references to `service@atmyboat.com` are wrong. That address does not exist.
+Every page, template, PHP file, and email template must use `skipperdon@atmyboat.com`.
+
+---
+
+### 17.3 — T3 VESSEL LIMIT (FINAL)
+
+**T3 — Admiral: unlimited vessels. No cap. No soft limit.**
+Rationale: T3 is positioned as fleet management. Capping it undercuts the Admiral positioning.
+At launch volumes, no abuse risk exists. If a commercial operator with 50+ boats joins, that is a future enterprise conversation, not an engineering constraint today.
+Update `/pricing` copy: "Manage unlimited vessels from one account."
+
+---
+
+### 17.4 — FIX MY PI — AUTOMATION ARCHITECTURE (FINAL)
+
+#### What Fix My Pi is and is not
+
+Fix My Pi is a **software-level remote diagnostic and repair service**. It handles the most common failure modes (crashed services, wrong versions, config corruption, disk pressure). It cannot fix hardware failures or a Pi that won't boot.
+
+**Scope boundary — what it handles:**
+- d3kOS services crashed, won't restart → restart and verify
+- Wrong Node-RED or Python version installed by user → restore correct version
+- Config file corrupted → restore from on-Pi backup
+- Disk full (logs) → clear old logs
+- Permission errors → fix
+- Service dependencies broken → rebuild
+
+**Scope boundary — what it cannot fix:**
+- Pi won't boot (corrupted OS, bad microSD, hardware failure) → reflash required
+- Python completely removed from OS → reflash required
+- Filesystem corruption at OS level → reflash required
+
+#### Service expectation — must be shown before payment
+
+Before any Fix My Pi payment is processed, the user must see and acknowledge:
+> *"Fix My Pi remotely diagnoses and repairs common software issues on your d3-k1. It cannot recover a Pi that won't boot or has a corrupted operating system. If remote repair is not possible, your charge is fully and automatically refunded."*
+
+#### Request flow
+
+1. **User initiates from mobile app** — not from the Pi dashboard (Pi may be broken/inaccessible)
+2. App shows expectation disclaimer → user acknowledges → Stripe payment ($29.99 T1; deducted allowance T2; free T3)
+3. Stripe webhook confirms payment → PHP creates pending job in MySQL
+4. **Pi bash watchdog** (systemd timer, runs every 5–10 minutes, written in `bash` not Python — survives broken Python) polls HostPapa endpoint with `curl`
+5. Pi sees pending job → downloads instructions → executes fix script locally
+6. Pi uploads diagnostic report to HostPapa MySQL (services checked, actions taken, outcomes)
+7. User receives email at `skipperdon@atmyboat.com` CC'd + report saved to `/account`
+
+#### Timeout and automatic refund
+
+- If Pi does not respond within **30 minutes**: HostPapa PHP automatically issues full Stripe refund via API
+- Refund email sent to user explaining: what was attempted, why it could not complete, that charge has been fully refunded, link to `/download` for manual reflash instructions
+- **Don never manually processes refunds.** The system handles this automatically.
+
+#### Why bash (not Python)
+
+The Pi's watchdog must survive the most common failure scenario: broken Python. If the fix script is Python and Python is broken, the fix script cannot run. Bash + curl are available on every Linux system regardless of application-layer damage.
+
+#### Files required (new — S6 build)
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `fix-my-pi-watchdog.sh` | Pi: `/opt/d3kos/services/` | Bash script — polls HostPapa, runs diagnostics, posts results |
+| `fix-my-pi-watchdog.service` | Pi: systemd | Systemd timer unit — runs watchdog every 5–10 min |
+| `fix-my-pi-job.php` | HostPapa: `mobile/` | Returns pending job for this device ID (Pi polls this) |
+| `fix-my-pi-result.php` | HostPapa: `mobile/` | Receives diagnostic report from Pi |
+| `fix-my-pi-timeout.php` | HostPapa: cron | Runs every 5 min — finds jobs > 30 min old, issues Stripe refund, sends email |
+| `page-fix-my-pi.php` | WordPress child theme | User-facing page — expectation disclaimer, payment, status |
+
+---
+
+### 17.5 — CONTENT-FIRST BUILD WORKFLOW (MANDATORY — ALL S6+ PAGES)
+
+Before writing any PHP for any page:
+1. Produce a **plain text content document** — every heading, every paragraph, every CTA, exact wording, page structure
+2. Don reviews and approves the content document
+3. Only after approval: build the PHP matching the mockup exactly
+4. Don reviews on staging before anything is committed
+
+**No page is built without content approval first.**
+
+---
+
+### 17.6 — ABOUT PAGE — PHOTOS
+
+Real photos of Don will be used on the `/about` page.
+Photos already exist on the live atmyboat.com site.
+PHP templates use `<!-- Photo placeholder: [description] -->` comments.
+Don drops in the actual images after deployment.
+
+---
+
+*Part 17 added 2026-03-25. All items supersede conflicting content in Parts 1–16.*
