@@ -234,6 +234,7 @@ On-boat verification still pending:
 | S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
 | S6 | **CONTENT PLAN REVIEW** — `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — operator must approve before S6 build starts | `[x]` **APPROVED 2026-03-25** — All 6 Q&A answers recorded. See BUILD_REFERENCE Part 17. |
 | S6 | **2B CSS font fix** — 3 lines: Playfair→Fraunces, Source Serif→Nunito in style.css. First task. Every page inherits this. | `[~]` Awaiting authorization |
+| **BLOCKING** | **Footer not rendering correctly on staging** — session closed 2026-03-25 with footer broken. Don will not deploy until fixed. Diagnose FIRST next session before any other S6 work. | `[!]` |
 | S6 | **`/about`** — Our Story page. Content: Lake Erie origin, Skipper Don, mission, why d3kOS. Source: `doc/ATMYBOAT_ABOUT_PAGE.html` (exists). See SESSION6_CONTENT_PLAN.md §PAGE1. | `[ ]` |
 | S6 | **`/contact`** — Contact Us. AI assistant answers first (Gemini widget), then form + skipperdon@atmyboat.com. See SESSION6_CONTENT_PLAN.md §PAGE2. | `[ ]` |
 | S6 | **`/pricing`** — Tier comparison T0/T1/T2/T3. Full feature matrix, FAQ, CTAs. Most critical revenue page. Source: `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md`. See SESSION6_CONTENT_PLAN.md §PAGE3. | `[ ]` |
