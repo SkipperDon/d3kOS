@@ -3,8 +3,10 @@
 **Status: DRAFT — awaiting operator approval before Session 6 begins**
 
 > This document draws from original content documents:
-> - `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md` (Feb 2026 — original brand copy)
-> - `doc/ATMYBOAT_ABOUT_PAGE.html` (original About page — Lake Erie origin story)
+> - `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md` (Feb 2026 — original brand copy, tiers)
+> - `doc/ATMYBOAT_ABOUT_PAGE.html` (original About page — Lake Erie origin story, mission)
+> - `doc/ATMYBOAT_CONTACT_PAGE.html` (original Contact page — service@atmyboat.com, form, support hours)
+> - `doc/d3kOS-MARKETING-SHEET.md` (connectivity: NMEA 2000, WiFi, Ethernet, CX5106, PiCAN-M)
 > - `deployment/v0.9.3/atmyboat-mockup-v2-accessible.html` (visual design spec)
 > - `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` (tier definitions, Part 9 + 16)
 >
@@ -102,12 +104,15 @@ Source: `doc/ATMYBOAT_ABOUT_PAGE.html`
 - Note below widget: *"AI responses are generated from our documentation. For billing disputes or account issues, use the form below."*
 
 **CONTACT FORM**
+Source: `doc/ATMYBOAT_CONTACT_PAGE.html` (fully written — needs dark theme adaptation)
 Fields: Name · Email · Subject (dropdown: General Inquiry / Billing & Subscriptions / Technical Support / Partnership / Other) · Message
 Submit button: `Send Message`
 After submit: *"Message received. Don usually responds within 1–2 business days."*
 
 **DIRECT CONTACT**
+Source: `doc/ATMYBOAT_CONTACT_PAGE.html`
 - Email: `service@atmyboat.com`
+- Support hours: Monday–Friday 9:00 AM – 5:00 PM EST. Weekend support for urgent issues.
 - Note: *"For urgent Pi issues — T2 and T3 subscribers use Fix My Pi for faster response."* (link to `/fix-my-pi`)
 
 **WHERE TO FIND COMMON THINGS** (3 quick-link cards)
