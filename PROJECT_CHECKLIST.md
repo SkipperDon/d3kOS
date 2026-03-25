@@ -345,7 +345,24 @@ T3 is defined as "unlimited" but no maximum vessel count is specified anywhere i
 | MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[ ]` |
 | MB7 | Vessel name displayed on QR pairing | During QR scan flow: prompt "Name this vessel" + vessel type dropdown before completing pairing | `[ ]` |
 
-### 8.4 — Deployment Solutions (all required before v0.9.4 ships)
+### 8.4 — Tier Change System (what needs to be built)
+
+**Tier lives in two places: `wp_usermeta.atmyboat_tier` (website) and `license.json` (Pi). Both must stay in sync. Currently no sync mechanism exists.**
+
+| # | Item | Where | Status |
+|---|------|-------|--------|
+| TC1 | **T2/T3 subscription checkout flow** — build Stripe subscription checkout session for T2 ($9.99/mo) and T3 ($99.99/yr). Webhook handler already exists — it just has no checkout page to trigger it. Needs: `/upgrade` page with tier cards + "Subscribe" buttons + Stripe session creation. | Website (v0.9.3 S6 or new session) | `[ ]` Cannot purchase T2/T3 without this |
+| TC2 | **Stripe subscription lifecycle webhooks** — handle `invoice.payment_failed`, `customer.subscription.deleted`, `customer.subscription.updated` in `fix-my-pi-billing.php`. Currently only `checkout.session.completed` is handled. Without this, a cancelled or lapsed T2/T3 stays at that tier forever in the DB. | Website | `[ ]` |
+| TC3 | **Downgrade logic** — when subscription cancels or payment fails: revert `atmyboat_tier` to T1, write downgrade record to billing table, send downgrade email via MailPoet. Grace period: 7 days before features lock (configurable). | Website | `[ ]` |
+| TC4 | **Pi license.json sync** — when tier changes on the website, the Pi must be notified. Solution: `data-ingress.php` response includes `{ "tier": "T2" }`. Pi reads it and writes the new tier integer to `license.json`. No separate push needed — piggybacks on the 30-min sync. | Pi + Website | `[ ]` Critical gap — Pi stays on old tier until fixed |
+| TC5 | **Tier service on Pi (port 8093)** — nginx already routes `/tier/` to port 8093 but no service exists. Dashboard and Settings both call `/tier/status`. Must be built: reads `license.json`, returns `{ "tier": 2, "features": { "export": true, "pdf": true, ... } }`. | Pi | `[ ]` Pi UI feature gating is broken without this |
+| TC6 | **T0 → T1 upgrade path** — when a T0 user creates a free account and pairs the app, the Pi's `license.json` must update from `tier: 0` to `tier: 1`. Path: pairing completion → `pair-device.php` returns `{ "tier": "T1" }` → Pi writes to `license.json` via command queue. | Pi + Website | `[ ]` |
+| TC7 | **T2 Fix My Pi monthly reset** — `atmyboat_fmp_used_month` counter is checked but never reset. Needs a monthly cron job or reset-on-read logic (check if last reset was prior month, reset if so). HostPapa has cron via cPanel. | Website | `[ ]` T2 allowance permanently exhausted after first month without this |
+| TC8 | **Grace period** — 7-day grace after failed payment before tier downgrade takes effect. Store `subscription_grace_until` datetime in user meta. `tier-features.php` checks grace period before locking features. | Website | `[ ]` |
+| TC9 | **Upgrade prompt in app + Chart Room** — locked features show tier upgrade prompt with link to `/upgrade` page. Chart Room shows locked sections (PDF Reports → T2+, Fleet Map → T3) with upgrade CTA. | App + Website | `[ ]` Depends on TC1 |
+
+### 8.5 — Deployment Solutions (all required before v0.9.4 ships)
+
 
 | # | Item | Status |
 |---|------|--------|
