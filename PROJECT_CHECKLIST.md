@@ -234,7 +234,40 @@ On-boat verification still pending:
 | S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
 | S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Not started |
 | S6 | Community API endpoints — 5 PHP files: POST/GET /api/community/markers, POST /api/telemetry/push, POST /api/community/benchmark, POST /api/community/position. GPS blur (500m) enforced on GET output. 30-day inactivity drop. See Part 8A §8A.3 for full spec. | `[ ]` Not started |
+| S6 | **Multi-boat schema fix** — ALTER TABLE before live push (see §8.3 Multi-Boat below for full spec). Must be done in S6 while still on staging. | `[ ]` Not started |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
+
+### Open Decision — T3 Vessel Limit
+**`[!]` DECISION REQUIRED before v0.9.4 build starts**
+T3 is defined as "unlimited" but no maximum vessel count is specified anywhere in the plan.
+- Option A: Truly unlimited — no cap. Simple, matches the "unlimited" promise.
+- Option B: Reasonable cap (e.g. 10 vessels) — prevents abuse, easier to support.
+- Option C: Soft limit with admin override — default 5, Don can raise per account.
+**This decision affects:** `d3kos_pairings` schema, boat selector UI, tier enforcement logic in `pair-device.php`, and marketing copy on /pricing.
+**Owner: Don** — decision needed before v0.9.4 build.
+
+### 8.3 — Multi-Boat Schema Fix (S6 — before live push)
+**Why S6:** Current schema breaks silently for any user with >1 Pi. ALTER TABLE on staging costs nothing. On a live HostPapa database it requires a migration. Fix now.
+
+**Schema changes required:**
+
+| Table | Change | SQL |
+|-------|--------|-----|
+| `d3kos_pairings` | Add `vessel_name VARCHAR(80) NOT NULL DEFAULT ''` | `ALTER TABLE d3kos_pairings ADD COLUMN vessel_name VARCHAR(80) NOT NULL DEFAULT '';` |
+| `d3kos_pairings` | Add `vessel_type VARCHAR(50) DEFAULT 'powerboat'` | `ALTER TABLE d3kos_pairings ADD COLUMN vessel_type VARCHAR(50) DEFAULT 'powerboat';` |
+| `d3kos_pairings` | Add `is_primary TINYINT(1) DEFAULT 0` — marks the default boat shown on app open | `ALTER TABLE d3kos_pairings ADD COLUMN is_primary TINYINT(1) NOT NULL DEFAULT 0;` |
+| `amboat_engine_snapshots` | Add `pi_installation_id VARCHAR(64)` — without this, two Pis write to the same user bucket and overwrite each other | `ALTER TABLE amboat_engine_snapshots ADD COLUMN pi_installation_id VARCHAR(64) DEFAULT NULL;` |
+| `amboat_alerts` | Add `pi_installation_id VARCHAR(64)` — same issue for alerts | `ALTER TABLE amboat_alerts ADD COLUMN pi_installation_id VARCHAR(64) DEFAULT NULL;` |
+
+**`data-ingress.php` logic change (S6):**
+- Currently writes engine snapshot and alerts to `user_id` only
+- Must also write `pi_installation_id` to each snapshot and alert row
+- Pi sends its `installation_id` in the request body already — just needs to be stored
+
+**`pair-device.php` logic change (S6):**
+- On QR pairing, prompt for `vessel_name` and `vessel_type`
+- If this is the account's first pairing: set `is_primary = 1` automatically
+- If not the first: set `is_primary = 0` (user can change in app settings)
 
 ### Operator Actions Required Before Staging Deploy (Sessions 1–5)
 - [ ] Create `mobile/config.php` from `config.php.example` — add DB credentials, Stripe keys, Gemini key, API key
@@ -290,14 +323,27 @@ On-boat verification still pending:
 | # | App feature | Calls | What it does | Status |
 |---|------------|-------|--------------|--------|
 | AW1 | First install — device registration | `POST register-device.php` | Generates device UUID, stores on HostPapa, links to install | `[ ]` |
-| AW2 | QR pairing — link device to user account | `POST pair-device.php` | User scans QR on Pi → app sends UUID + user token → account linked | `[ ]` |
-| AW3 | Fix My Pi — trigger diagnostic | `POST fix-my-pi-billing.php` → Stripe → `POST command-queue.php` | Charges $29.99, writes `fix_my_pi` command for Pi to pick up | `[ ]` |
-| AW4 | Send command to Pi | `POST command-queue.php` | App writes command (restart_service, ota_update, reboot) with payload | `[ ]` |
+| AW2 | QR pairing — link device to account + vessel | `POST pair-device.php` | User scans QR on Pi → app sends UUID + user token + vessel name/type → account linked. T3: can pair multiple Pis. | `[ ]` |
+| AW3 | Fix My Pi — trigger diagnostic | `POST fix-my-pi-billing.php` → Stripe → `POST command-queue.php` | Charges $29.99, writes `fix_my_pi` command for the active Pi | `[ ]` |
+| AW4 | Send command to Pi | `POST command-queue.php` | App writes command for the active Pi (restart_service, ota_update, reboot) | `[ ]` |
 | AW5 | Poll command result | `GET command-queue.php?id=<id>` | App checks if Pi has completed the command; shows status | `[ ]` |
-| AW6 | Request PDF report | `POST pdf-report.php` | App triggers engine/health/voyage report generation; returns download URL | `[ ]` T2/T3 only |
-| AW7 | Read boat health dashboard data | `GET dashboard-data.php` (to be built in v0.9.4.1 §8A.4) | App reads last engine snapshot, sync time, alerts for health screen | `[ ]` Blocked on §8A.4 |
-| AW8 | Find My Boat | `GET dashboard-data.php` position fields | App reads last known GPS + timestamp; displays on map | `[ ]` Blocked on §8A.4 |
+| AW6 | Request PDF report | `POST pdf-report.php` | App triggers report for the active Pi; returns download URL | `[ ]` T2/T3 only |
+| AW7 | Read boat health dashboard data | `GET dashboard-data.php?pi=<installation_id>` (to be built in v0.9.4.1 §8A.4) | App reads last engine snapshot, sync time, alerts for the active Pi | `[ ]` Blocked on §8A.4 |
+| AW8 | Find My Boat | `GET dashboard-data.php?pi=<installation_id>` position fields | App reads last known GPS + timestamp for the active Pi; displays on map | `[ ]` Blocked on §8A.4 |
 | AW9 | User authentication | WordPress cookie auth or JWT via `auth.php` | App must authenticate before any endpoint call; session token stored on device | `[ ]` Auth mechanism to be decided |
+
+### 8.3 — Multi-Boat: Boat Selector (app-side, T3)
+**Depends on:** v0.9.3 S6 schema fix (vessel_name, is_primary columns in d3kos_pairings)
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| MB1 | Fetch paired vessels list | `GET list-vessels.php` (new endpoint, v0.9.4.1 §8A.4) — returns all Pis paired to this account: vessel name, type, last sync time, online/offline state | `[ ]` |
+| MB2 | Boat selector screen | Shown on app open if account has >1 paired Pi. Cards per vessel: name, type icon, last sync time, online indicator. Tap to select. | `[ ]` |
+| MB3 | Active boat state | Selected `pi_installation_id` stored in device localStorage. All subsequent API calls pass it as a parameter. | `[ ]` |
+| MB4 | Boat switcher in app nav | Persistent control in header/nav showing current vessel name. Tap → returns to boat selector screen. | `[ ]` |
+| MB5 | Primary boat default | On app open with >1 vessel: auto-select the `is_primary` vessel. User can change primary in app settings. | `[ ]` |
+| MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[ ]` |
+| MB7 | Vessel name displayed on QR pairing | During QR scan flow: prompt "Name this vessel" + vessel type dropdown before completing pairing | `[ ]` |
 
 ---
 
@@ -336,14 +382,18 @@ On-boat verification still pending:
 | W5 | Build `POST /api/community/position` endpoint — receives boat position update for community map dot | New PHP file | `[ ]` |
 | W6 | Community map 500m blur on read — `/api/community/markers` GET must round coordinates to 2 decimal places on output even if stored with higher precision | `[ ]` |
 
-### 8A.4 — Website Side: Display Synced Pi Data
+### 8A.4 — Website Side: Display Synced Pi Data + Multi-Boat Endpoints
 
-| # | Item | Page | Status |
-|---|------|------|--------|
-| D1 | Chart Room dashboard — display last sync time, d3kOS version, engine snapshot (RPM, coolant, fuel) from `amboat_engine_snapshots` for logged-in T1+ user | `/dashboard` (The Chart Room) | `[ ]` |
-| D2 | Find My Boat — display last known GPS position + timestamp from `atmyboat_position_lat/lng` user meta. T1+ only. Show "Pi offline" state if >2h since last sync. | `/dashboard` | `[ ]` |
-| D3 | Alert history panel — list last 20 alerts from `amboat_alerts` table for the logged-in user | `/dashboard` | `[ ]` |
-| D4 | PDF report download list — show the user's last 20 reports from `atmyboat_pdf_reports` user meta with download links | `/dashboard` (T2/T3 only) | `[ ]` |
+**Note:** All queries in D1–D4 must filter by `pi_installation_id`, not just `user_id`. Without this, T3 multi-boat data is mixed together.
+
+| # | Item | Page / Endpoint | Status |
+|---|------|-----------------|--------|
+| D1 | Chart Room dashboard — display last sync time, d3kOS version, engine snapshot (RPM, coolant, fuel) from `amboat_engine_snapshots WHERE pi_installation_id = ?` | `/dashboard` (The Chart Room) | `[ ]` |
+| D2 | Find My Boat — display last known GPS + timestamp. T1+ only. "Pi offline" if >2h since last sync. Per-Pi (not per-user). | `/dashboard` | `[ ]` |
+| D3 | Alert history — last 20 alerts from `amboat_alerts WHERE pi_installation_id = ?` | `/dashboard` | `[ ]` |
+| D4 | PDF report download list — last 20 from `atmyboat_pdf_reports` user meta | `/dashboard` (T2/T3 only) | `[ ]` |
+| D5 | Build `dashboard-data.php` — GET endpoint, accepts `?pi=<installation_id>`, returns engine snapshot + position + alerts + sync time for that Pi. Auth required. | New PHP file | `[ ]` |
+| D6 | Build `list-vessels.php` — GET endpoint, returns all Pis paired to the authenticated account: vessel_name, vessel_type, pi_installation_id, is_primary, last_sync, online/offline state. Used by app boat selector (MB1). | New PHP file | `[ ]` |
 
 ### 8A.5 — App Side: Command Queue Integration
 
