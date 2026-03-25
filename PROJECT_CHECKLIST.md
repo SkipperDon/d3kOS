@@ -345,6 +345,18 @@ T3 is defined as "unlimited" but no maximum vessel count is specified anywhere i
 | MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[ ]` |
 | MB7 | Vessel name displayed on QR pairing | During QR scan flow: prompt "Name this vessel" + vessel type dropdown before completing pairing | `[ ]` |
 
+### 8.4 — Deployment Solutions (all required before v0.9.4 ships)
+
+| # | Item | Status |
+|---|------|--------|
+| DEP1 | **OTA download source** — confirm GitHub Releases as the Pi's download source. Decide release package format (tar.gz). Document the public download URL pattern. | `[ ]` Decision needed |
+| DEP2 | **Pi upgrade script** — build the script the Pi runs when it receives an `ota_update` command: check disk space, snapshot current install, curl download from GitHub Releases, SHA-256 verify, stop services, overwrite files, restart, health check, rollback on failure, report result back via command queue. | `[ ]` Largest gap in v0.9.4 |
+| DEP3 | **Fix My Pi file manifest** — generate a SHA-256 manifest of every file in a clean d3kOS installation. Host on HostPapa. Fix My Pi compares Pi files against it. Must be regenerated for every new d3kOS release. | `[ ]` Required for Fix My Pi integrity check |
+| DEP4 | **SQL-before-PHP deploy gate** — add hard gate to v0.9.4.1 deploy checklist: run S6 MySQL ALTER TABLE statements via phpMyAdmin BEFORE deploying any new PHP files. If PHP deploys first and ALTERs haven't run, multi-boat writes will fail silently. | `[ ]` Sequencing risk |
+| DEP5 | **T3 multi-Pi OTA** — add "Update all vessels" to app UX. Queues one `ota_update` command per paired Pi. App shows per-Pi progress bars simultaneously. | `[ ]` T3 users can't update all boats at once without this |
+| DEP6 | **PWA version enforcement** — app calls `version-registry.php` on launch, compares to running service worker version. Shows "Update available — tap to refresh" banner if stale. Prevents users running old app against new Pi firmware. | `[ ]` |
+| DEP7 | **OS Lockdown delivery path** — decide how `apt-mark hold` + pre-upgrade hook gets onto the Pi: (a) manually via SSH by Don before v0.9.4 ships, (b) `setup_lockdown` command via command queue on first connect, or (c) bundled in the v0.9.4 OTA package. | `[ ]` Decision needed |
+
 ---
 
 ## PART 8A — v0.9.4.1 Pi ↔ Website ↔ App Integration
