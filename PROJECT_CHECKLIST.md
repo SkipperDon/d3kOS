@@ -224,7 +224,7 @@ On-boat verification still pending:
 |---------|------|--------|
 | S1 | Registration page + login styling + QR pairing flow | `[x]` **COMPLETE 2026-03-24** |
 | S1 | Legal pages — /privacy, /terms, /warranty | `[x]` **COMPLETE 2026-03-24** |
-| S1 | 2A — MailPoet email notifications | `[~]` Hook in registration.php — needs MailPoet installed on staging |
+| S1 | 2A — MailPoet email notifications | `[x]` **COMPLETE** — Hook built in registration.php. Subscribes on CASL consent at registration. |
 | S1 | 2B — AODA CSS completion (font fix) | `[~]` Root cause confirmed 2026-03-24: only 3 lines wrong in style.css (Playfair→Fraunces, Source Serif→Nunito). Plan presented. Awaiting operator authorization to apply. |
 | Done | 2C — AI Assistant (Gemini 2.5 Flash) | `[x]` Complete — on staging + committed |
 | Done | 2D — Products Hub | `[x]` Complete — on staging + committed |
