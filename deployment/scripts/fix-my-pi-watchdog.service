@@ -1,0 +1,20 @@
+[Unit]
+Description=d3kOS Fix My Pi Watchdog
+Documentation=https://atmyboat.com/help/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/d3kos/services/fix-my-pi-watchdog.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=d3kos-fmp-watchdog
+# Run as d3kos user (has access to services and config)
+User=d3kos
+Group=d3kos
+# Give it up to 10 minutes (30s curl timeout × several checks + margin)
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

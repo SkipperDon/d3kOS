@@ -1,0 +1,13 @@
+[Unit]
+Description=d3kOS Fix My Pi Watchdog — runs every 5 minutes
+After=network-online.target
+
+[Timer]
+# Run 2 minutes after boot, then every 5 minutes
+OnBootSec=2min
+OnUnitActiveSec=5min
+# If the system was sleeping and missed a run, run immediately on wake
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
