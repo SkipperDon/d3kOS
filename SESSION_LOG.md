@@ -38,9 +38,31 @@
 
 **Operator Actions Required Before Session 6:**
 - Read `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` and confirm all content is correct
-- Answer 6 review questions at the bottom of that document (T3 vessel limit, contact email, photo on About page, etc.)
+- Read `deployment/v0.9.3/MASTER_BUILD_SCHEDULE.md` — full API/page/GitHub schedule
+- Answer 6 review questions at the bottom of SESSION6_CONTENT_PLAN.md
 - Authorize the 2B CSS font fix (3 lines — already confirmed as root cause)
 - T3 vessel limit decision still open (Options A/B/C — needed before v0.9.4 build)
+- Set `github.com/SkipperDon/atmyboat-forum` to **Private** before Session 6 GitHub push
+- Complete Part 6 pre-session operator actions in MASTER_BUILD_SCHEDULE.md (config.php, schema import, install-pages.php)
+
+```
+QUALITY METRICS — 2026-03-24
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+OIC NOTE (operator to assess): Initial SESSION6_CONTENT_PLAN.md was written
+without first checking whether original content existed in doc/. User caught
+this ("i do not believe you — the original information is missing"). Searched
+doc/ properly — found 3 fully-written source documents that were not being
+used. Plan corrected to reference them. Accuracy failure caught by operator.
+OIC impact: operator's call.
+```
 
 ---
 
