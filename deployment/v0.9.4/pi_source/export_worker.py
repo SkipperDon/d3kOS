@@ -26,6 +26,7 @@ from export_queue import ExportQueue
 
 CLOUD_CONFIG_FILE  = Path('/opt/d3kos/config/cloud-config.json')
 DEVICE_TOKEN_FILE  = Path('/opt/d3kos/config/device-token.json')
+LICENSE_FILE       = Path('/opt/d3kos/config/license.json')
 
 
 class ExportWorker:
@@ -200,6 +201,24 @@ class ExportWorker:
 
         return payload
 
+    def _sync_tier_from_response(self, tier_str):
+        """P6: Sync tier from data-ingress.php response to license.json."""
+        tier_map = {'T1': 1, 'T2': 2, 'T3': 3}
+        tier_int = tier_map.get(str(tier_str).upper())
+        if tier_int is None:
+            return
+        try:
+            with open(LICENSE_FILE) as f:
+                license_data = json.load(f)
+            current = license_data.get('tier', 0)
+            if current != tier_int:
+                license_data['tier'] = tier_int
+                with open(LICENSE_FILE, 'w') as f:
+                    json.dump(license_data, f, indent=2)
+                print(f"Tier synced from server: {current} → {tier_int}")
+        except Exception as e:
+            print(f"Tier sync failed: {e}")
+
     def _process_export(self, entry):
         """Upload export to AtMyBoat.com data-ingress.php."""
         queue_id    = entry['queue_id']
@@ -248,6 +267,14 @@ class ExportWorker:
             if response.status_code == 200:
                 self.queue.mark_success(queue_id)
                 print(f"✓ Export uploaded: {queue_id}")
+                # P6: Read tier from response and sync to license.json
+                try:
+                    resp_data = response.json()
+                    resp_tier = resp_data.get('data', {}).get('tier')
+                    if resp_tier:
+                        self._sync_tier_from_response(resp_tier)
+                except Exception:
+                    pass
             else:
                 error = f"HTTP {response.status_code}: {response.text[:200]}"
                 self.queue.mark_failed(queue_id, error)

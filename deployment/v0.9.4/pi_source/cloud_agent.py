@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """
-d3kOS Cloud Command Agent (v0.9.4 S1)
+d3kOS Cloud Command Agent (v0.9.4 S2)
 Polls AtMyBoat.com command queue every 30s, executes commands, writes results back.
 
-Commands handled in S1:
+Commands handled:
   ping        - Respond with current version + timestamp. Confirms agent is alive.
   export_now  - Trigger immediate export via export-manager POST to :8094.
   tier_change - Read new tier from payload, update license.json.
-
-Commands deferred to later sessions:
-  fix_my_pi   - S4
-  ota_upgrade - S3
+  fix_my_pi   - Run diagnostics + service restarts, report results back.
+  ota_upgrade - Download, verify, install latest release, restart services.
 
 Config:  /opt/d3kos/config/cloud-config.json  (amboat_api_key, amboat_base_url)
 Token:   /opt/d3kos/config/device-token.json  (created on first run if absent)
@@ -19,7 +17,7 @@ Log:     /opt/d3kos/logs/cloud-agent.log      (rotating, max 5MB × 3 files)
 
 Service: d3kos-cloud-agent
 Author:  d3kOS Team
-Version: 0.9.4-S1
+Version: 0.9.4-S2
 """
 
 import json
@@ -32,6 +30,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import requests
+
+import sys
+sys.path.insert(0, '/opt/d3kos/services')
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 CLOUD_CONFIG_FILE  = Path('/opt/d3kos/config/cloud-config.json')
@@ -230,6 +231,46 @@ def handle_tier_change(cmd_id, payload, base_url, api_key, device_token):
         logger.error(f"tier_change exception: {e}")
 
 
+def handle_fix_my_pi(cmd_id, base_url, api_key, device_token):
+    """Run diagnostics and service repairs. Report results back."""
+    try:
+        from fix_my_pi import run_diagnostics
+        result = run_diagnostics(base_url)
+        status = 'completed' if result.get('ok') else 'failed'
+        ack_command(base_url, api_key, device_token, cmd_id, status, result)
+        logger.info(
+            f"fix_my_pi: ok={result.get('ok')} actions={len(result.get('actions_taken', []))} "
+            f"errors={len(result.get('errors', []))}"
+        )
+    except ImportError:
+        err = 'fix_my_pi.py not found at /opt/d3kos/services/fix_my_pi.py'
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': err})
+        logger.error(f"fix_my_pi: {err}")
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f"fix_my_pi exception: {e}")
+
+
+def handle_ota_upgrade(cmd_id, base_url, api_key, device_token):
+    """Download, verify, and install the latest d3kOS release."""
+    try:
+        from ota_upgrade import run_upgrade
+        result = run_upgrade(base_url, api_key, device_token)
+        status = 'completed' if result.get('ok') else 'failed'
+        ack_command(base_url, api_key, device_token, cmd_id, status, result)
+        logger.info(
+            f"ota_upgrade: ok={result.get('ok')} "
+            f"{result.get('old_version')} → {result.get('new_version')}"
+        )
+    except ImportError:
+        err = 'ota_upgrade.py not found at /opt/d3kos/services/ota_upgrade.py'
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': err})
+        logger.error(f"ota_upgrade: {err}")
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f"ota_upgrade exception: {e}")
+
+
 def dispatch(cmd, base_url, api_key, device_token):
     """Dispatch a single command to its handler."""
     cmd_id   = cmd.get('id')
@@ -247,11 +288,11 @@ def dispatch(cmd, base_url, api_key, device_token):
     elif command == 'tier_change':
         handle_tier_change(cmd_id, payload, base_url, api_key, device_token)
 
-    elif command in ('fix_my_pi', 'ota_upgrade'):
-        # Deferred: fix_my_pi → S4, ota_upgrade → S3
-        ack_command(base_url, api_key, device_token, cmd_id, 'failed',
-                    {'error': f'Command {command} not yet implemented (deferred to future session)'})
-        logger.info(f"Deferred command received and rejected: {command}")
+    elif command == 'fix_my_pi':
+        handle_fix_my_pi(cmd_id, base_url, api_key, device_token)
+
+    elif command == 'ota_upgrade':
+        handle_ota_upgrade(cmd_id, base_url, api_key, device_token)
 
     else:
         ack_command(base_url, api_key, device_token, cmd_id, 'failed',
@@ -262,7 +303,7 @@ def dispatch(cmd, base_url, api_key, device_token):
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 def run():
-    logger.info("d3kOS Cloud Agent starting (v0.9.4 S1)")
+    logger.info("d3kOS Cloud Agent starting (v0.9.4 S2)")
 
     # Config load with retry on missing/invalid config
     while True:

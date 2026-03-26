@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Tier Service
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/tier
+ExecStart=/usr/bin/python3 tier_service.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

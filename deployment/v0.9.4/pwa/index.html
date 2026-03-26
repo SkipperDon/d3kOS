@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="description" content="d3kOS Mobile Companion — monitor your vessel from your phone.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AtMyBoat">
+
+  <!-- Apple touch icon (placeholder path — replace with real icon before launch) -->
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+  <!-- Google Fonts — Nunito (body) + JetBrains Mono (mono values) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+
+  <link rel="stylesheet" href="app.css">
+
+  <title>AtMyBoat — d3kOS</title>
+</head>
+<body>
+  <!-- Skip-to-content link (AODA) -->
+  <a href="#screen" class="sr-only" style="
+    position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;
+  " onfocus="this.style.cssText='position:fixed;left:8px;top:8px;z-index:9999;padding:8px 16px;background:#00b4d8;color:#0a1628;border-radius:6px;font-weight:700;width:auto;height:auto;overflow:visible;'">
+    Skip to content
+  </a>
+
+  <div id="app" role="main">
+
+    <!-- App Header (hidden on login screen) -->
+    <header id="app-header" style="display:none" aria-label="Vessel status header">
+      <div id="online-dot" class="online-dot offline" role="status" title="Offline" aria-label="Connection status"></div>
+      <h1>AtMyBoat</h1>
+      <span id="header-vessel" aria-live="polite"></span>
+    </header>
+
+    <!-- Screen Content -->
+    <main id="screen" aria-live="polite" aria-atomic="false">
+      <!-- Populated by app.js -->
+    </main>
+
+    <!-- Bottom Navigation (hidden on login screen) -->
+    <nav id="bottom-nav" style="display:none" aria-label="App navigation">
+
+      <button class="nav-btn active" data-screen="dashboard" aria-label="Dashboard" aria-current="page">
+        <!-- Home icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20A1 1 0 006 21H9M19 10L21 12M19 10V20A1 1 0 0118 21H15M9 21V15A1 1 0 0110 14H14A1 1 0 0115 15V21M9 21H15"/>
+        </svg>
+        Dashboard
+      </button>
+
+      <button class="nav-btn" data-screen="alerts" aria-label="Alerts" style="position:relative">
+        <!-- Bell icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 17H9m6 0a3 3 0 01-6 0m6 0H3s2-2 2-7a7 7 0 0114 0c0 5 2 7 2 7H15zM12 3a2 2 0 00-2 2"/>
+        </svg>
+        <span id="alert-badge" class="nav-badge" aria-label="alerts" style="display:none">0</span>
+        Alerts
+      </button>
+
+      <button class="nav-btn" data-screen="boatlog" aria-label="Boatlog">
+        <!-- Clipboard icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2M9 12h6M9 16h4"/>
+        </svg>
+        Boatlog
+      </button>
+
+      <button class="nav-btn" data-screen="settings" aria-label="Settings">
+        <!-- Gear icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        Settings
+      </button>
+
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
