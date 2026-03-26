@@ -320,6 +320,21 @@ Continuous-operation diagnostic session. 6 anomalies found and resolved directly
 | `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` | S6 content plan — APPROVED 2026-03-25 — 9 pages + connectivity sections, all Q&A decisions recorded |
 | `deployment/v1.1/README.md` | v1.1 multilanguage platform — 6-layer build order |
 
+### v0.9.3 Child Theme — PHP Endpoints & Pages (2026-03-26)
+
+| File | Description |
+|------|-------------|
+| `wp-content/themes/twentytwenty-child/mobile/community-get.php` | GET community map data — blurred positions + hazard markers. No auth. Bounding box query, 60s cache. |
+| `wp-content/themes/twentytwenty-child/mobile/community-markers.php` | POST hazard marker from Pi. Auth required. Rate-limited 20/day. Awards 1 community point. |
+| `wp-content/themes/twentytwenty-child/page-accessibility.php` | /accessibility — AODA compliance statement (Ontario legal requirement). Static page. Template: Accessibility Statement. |
+| `wp-content/themes/twentytwenty-child/page-account.php` | /account — Account management. Updated: AODA font fixes, refund status in billing, last_seen_at on devices. |
+| `wp-content/themes/twentytwenty-child/mobile/data-ingress.php` | Pi heartbeat. Updated: pi_id + last_seen_at + d3kos_version written to amboat_devices; d3kos_pairings.last_seen_at updated; full feature matrix + fmp_remaining in response. |
+| `wp-content/themes/twentytwenty-child/mobile/fix-my-pi-billing.php` | FMP billing. Updated: report_result endpoint (Pi reports success/failed/timeout), auto-refund on T1 failure, charge.refunded webhook. |
+| `wp-content/themes/twentytwenty-child/setup/mobile-schema.sql` | DB schema. Updated: 7 ALTER TABLE statements for multi-boat support + refund columns. |
+| `wp-content/themes/twentytwenty-child/functions.php` | WordPress functions. Bug fix: T2 FMP monthly cron reset wrong meta key (fmp_month_count → fmp_used_month). |
+| `wp-content/themes/twentytwenty-child/style.css` | Master stylesheet. Updated: --text-faint CSS variable (5.36:1 AA), code/kbd/samp 18px override. |
+| `wp-content/themes/twentytwenty-child/page-community.php` | /community — Updated: full Leaflet 1.9.4 map wiring (fleet dots + hazard markers + auto-refresh + privacy blurring). |
+
 ---
 
 ## Architectural Specs

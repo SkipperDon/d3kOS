@@ -92,6 +92,80 @@
 
 ---
 
+## Session — 2026-03-26 — AODA Pass 2 + All Remaining Code Tasks (S6 Close)
+
+**Goal:** Fix all remaining WAVE accessibility failures and complete all 8 outstanding code tasks.
+
+**Completed:**
+
+1. **AODA Pass 2 — All remaining WAVE issues cleared**
+   - `style.css`: Added `--text-faint: #A89D8E` to `:root` (5.36:1 on bg-card — WAVE-flagged 27× on /pricing because variable was undefined, falling back to #5A5448 at ~1.6:1)
+   - `style.css`: Added `code, kbd, samp` override — `font-size: 18px`, `color: var(--teal-bright)`, teal background tint (fixes /download page `<code>` element contrast failure)
+   - `page-help.php`: Fixed 3 sub-18px inline style sizes: `.hlp-eyebrow` (0.78rem→18px), `.hlp-ai-label` (0.75rem→18px), `.hlp-link-content p` (0.82rem→18px)
+   - Don confirmed: "done all have items on the page have been fixed and are not red"
+
+2. **data-ingress.php gap fix** — Pi pings now write `pi_id` + `last_seen_at` + `d3kos_version` back to `amboat_devices`, update `d3kos_pairings.last_seen_at` for T3 fleet view, and return full feature matrix + `fix_my_pi_remaining` in one call (eliminates separate tier-features.php call on startup)
+
+3. **T2 FMP monthly cron bug** — `functions.php` was resetting `atmyboat_fmp_month_count` (wrong key — never existed). Corrected to `atmyboat_fmp_used_month`. T2 3-FMP monthly allowance was never resetting.
+
+4. **Fix My Pi lifecycle** — `fix-my-pi-billing.php` new `?action=report_result` endpoint: Pi reports job completion (success/failed/timeout). On T1 failure/timeout: fetches `payment_intent` from Stripe session, issues auto-refund via Stripe API, marks `refunded=1` in `amboat_billing`, emails user. Added `charge.refunded` webhook case. Added `amboat_stripe_get()` helper for Stripe GET requests.
+
+5. **Multi-boat schema** — `mobile-schema.sql` updated with 7 ALTER TABLE statements:
+   - `amboat_billing`: ADD `refunded TINYINT(1) DEFAULT 0`, `refunded_at DATETIME DEFAULT NULL`
+   - `amboat_community_positions`: ADD `pi_id CHAR(36)`, rebuild PRIMARY KEY as (user_id, pi_id)
+   - `amboat_command_queue`: ADD KEY `pi_pending` (pi_id, status, created_at)
+   - `amboat_engine_snapshots`: ADD KEY `vessel_date` (user_id, pi_installation_id, snapshot_at)
+   - `amboat_alerts`: ADD KEY `vessel_date` (user_id, pi_installation_id, triggered_at)
+   - `d3kos_pairings`: ADD COLUMN `last_seen_at DATETIME DEFAULT NULL`
+
+6. **Community API endpoints** — `mobile/community-get.php` (GET, no auth, blurred coords, bounding box query, 60s Cache-Control) and `mobile/community-markers.php` (POST, Pi auth, rate-limited 20/day, awards 1 community point, expires_hours support). Both wired into Leaflet 1.9.4 map on `page-community.php` — OSM tiles, fleet dots (teal), hazard markers by type, auto-refresh every 5 min, centers on user's last GPS or Lake Erie default.
+
+7. **Account page AODA + billing fixes** — `page-account.php`: 6 sub-18px inline sizes fixed (eyebrow 0.7rem, panel-label 0.7rem, tier-badge 0.8rem, primary-badge 0.62rem, device-meta 0.72rem, billing th 0.68rem → all 18px). Billing query updated (removed stripe_session_id, added refunded — shows 'Refunded' when refunded=1). Device query adds last_seen_at — shows "Last seen X ago". SVG stroke colour corrected (#22A090 → #2EB5A3 × 4).
+
+8. **`/accessibility` AODA compliance page** — Static legal page for Ontario AODA requirements. Sections: commitment, WCAG 2.0 AA + AODA standards, 10 measures taken, known limitations (map/bbPress/Stripe), d3kOS IEC 62288 note, contact info (skipperdon@atmyboat.com), Accessibility Directorate of Ontario formal complaints process.
+
+**All 72 theme files deployed to staging via Python FTPS.**
+
+**Commits this session:**
+- fb9bb5b — AODA pass 2: contrast + font-size failures
+- 0c0c6d9 — data-ingress.php gaps: pi_id write-back + feature flags
+- 143edad — FMP lifecycle: report_result + auto-refund + charge.refunded
+- 0bc5b29 — Multi-boat schema fix: 5 ALTERs
+- c88c444 — T2 FMP cron meta key fix
+- c0ecd6d — Community API endpoints + Leaflet map
+- bf1f0a5 — Account page AODA + refund status + last_seen_at
+- 7c0dfe0 — /accessibility AODA compliance statement page
+
+**Decisions:**
+- All 8 remaining S6 code tasks are now COMPLETE
+- Phase 3 (AODA): COMPLETE — Don confirmed all WAVE items cleared
+- Remaining before Phase 4: Don's operator tasks (schema import, Stripe keys, WP page for /accessibility, footer menu, Phase 4 push)
+- AODA deferred item: footer still not rendering correctly — Don said "move on" in previous session, still not resolved, does not block Phase 4
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Operator tasks before Phase 4:**
+- phpMyAdmin: import `setup/mobile-schema.sql` (new ALTER TABLE statements for multi-boat + refund columns)
+- WordPress Admin: create new Page titled "Accessibility Statement", template "Accessibility Statement", slug `accessibility`
+- WordPress Admin: update Footer menu (still not set up)
+- cPanel: verify `mobile/config.php` on server has all keys
+- UpdraftPlus: full backup of live site before pushing
+- cPanel: "Push to Live"
+
+**Pending:**
+- Footer not rendering correctly on staging — root cause unknown, Don deferred
+- Phase 4 (staging → live) — Don's hands only
+- Post-launch: Gemini key rotation, FTP password change, GitHub repo set to Private, Node-RED community flows enabled
+
+---
+
 ## Session — 2026-03-25 — S6 Pre-Build Q&A + Documentation
 
 **Goal:** Answer all 6 Session 6 review questions, document decisions, correct build reference, cross-index into governance files.

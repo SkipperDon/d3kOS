@@ -233,27 +233,46 @@ On-boat verification still pending:
 | S4 | /directory (business listings), /dashboard (The Chart Room T1+) | `[x]` **COMPLETE 2026-03-24** |
 | S5 | Mobile backend (7 tables, 10 PHP endpoints, Stripe, mPDF, version registry) | `[x]` **COMPLETE 2026-03-24** |
 | S6 | **CONTENT PLAN REVIEW** — `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` — operator must approve before S6 build starts | `[x]` **APPROVED 2026-03-25** — All 6 Q&A answers recorded. See BUILD_REFERENCE Part 17. |
-| S6 | **2B CSS font fix** — 3 lines: Playfair→Fraunces, Source Serif→Nunito in style.css. First task. Every page inherits this. | `[~]` Awaiting authorization |
-| **BLOCKING** | **Footer not rendering correctly on staging** — session closed 2026-03-25 with footer broken. Don will not deploy until fixed. Diagnose FIRST next session before any other S6 work. | `[!]` |
-| S6 | **`/about`** — Our Story page. Content: Lake Erie origin, Skipper Don, mission, why d3kOS. Source: `doc/ATMYBOAT_ABOUT_PAGE.html` (exists). See SESSION6_CONTENT_PLAN.md §PAGE1. | `[ ]` |
-| S6 | **`/contact`** — Contact Us. AI assistant answers first (Gemini widget), then form + skipperdon@atmyboat.com. See SESSION6_CONTENT_PLAN.md §PAGE2. | `[ ]` |
-| S6 | **`/pricing`** — Tier comparison T0/T1/T2/T3. Full feature matrix, FAQ, CTAs. Most critical revenue page. Source: `doc/ATMYBOAT_LANDING_PAGE_CONTENT.md`. See SESSION6_CONTENT_PLAN.md §PAGE3. | `[ ]` |
-| S6 | **`/upgrade`** — Subscription checkout (T2 $9.99/mo · T3 $99.99/yr). Stripe Checkout. Authenticated. See SESSION6_CONTENT_PLAN.md §PAGE4. | `[ ]` |
-| S6 | **`/help`** — Help Centre. AI widget + 6 quick-link cards. See SESSION6_CONTENT_PLAN.md §PAGE5. | `[ ]` |
-| S6 | **`/help/software-update`** — How to update d3kOS. OTA method (T1+) + manual image method (T0). See SESSION6_CONTENT_PLAN.md §PAGE6. | `[ ]` |
-| S6 | **`/help/software-downgrade`** — How to downgrade d3kOS. Manual reflash + previous release links. See SESSION6_CONTENT_PLAN.md §PAGE7. | `[ ]` |
-| S6 | **`/help/create-subscription`** — Step-by-step: how to upgrade to T2 or T3. See SESSION6_CONTENT_PLAN.md §PAGE8. | `[ ]` |
-| S6 | **`/help/cancel-subscription`** — Step-by-step: how to cancel. Grace period explained. See SESSION6_CONTENT_PLAN.md §PAGE9. | `[ ]` |
-| S6 | **`/hardware` connectivity update** — Add "How d3kOS Connects to Your Boat": NMEA 2000 (PiCAN-M HAT + CX5106 analogue gateway), WiFi, Ethernet. See SESSION6_CONTENT_PLAN.md Connectivity section. | `[ ]` |
-| S6 | **`/products` connectivity update** — Add "How It Connects" section with text diagram showing engine→CX5106→NMEA2000→Pi→phone. See SESSION6_CONTENT_PLAN.md Connectivity section. | `[ ]` |
-| S6 | **Multi-boat schema fix** — ALTER TABLE before live push (see §8.3 Multi-Boat below for full spec). Must be done in S6 while still on staging. | `[ ]` |
-| S6 | **Stripe subscription lifecycle webhooks** — add handlers in `fix-my-pi-billing.php` for `invoice.payment_failed`, `customer.subscription.deleted`, `customer.subscription.updated`. Without these, a cancelled or failed T2/T3 subscription stays active in the DB forever. | `[ ]` |
-| S6 | **Downgrade logic** — when subscription cancels or payment fails: revert tier to T1 in DB, send downgrade email, apply 7-day grace period before features lock. | `[ ]` |
-| S6 | **data-ingress.php returns current tier** — add `"tier": "T2"` (or T1/T3) to the response JSON so the Pi can read it on next sync. One-line addition. | `[ ]` |
-| S6 | **T2 monthly Fix My Pi counter reset** — add cPanel cron job (runs 1st of each month) to reset `atmyboat_fmp_used_month` to 0 for all T2 users. | `[ ]` |
-| S6 | Community API endpoints — 5 PHP files: POST/GET /api/community/markers, POST /api/telemetry/push, POST /api/community/benchmark, POST /api/community/position. GPS blur (500m) enforced. See Part 8A §8A.3. | `[ ]` |
-| S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Lowest priority — only if time remains |
-| S7 | **`/account`** — Account management: current tier, billing history, cancel subscription, paired devices. Reads Stripe Customer Portal. See SESSION6_CONTENT_PLAN.md §PAGE10. | `[ ]` |
+| S6 | **2B CSS font fix** — Source Serif 4 → Nunito in registration.php login styles (2 occurrences). | `[x]` **COMPLETE 2026-03-25 (C)** commit f8bc813 |
+| S6 | **Footer not rendering correctly** — Don said "move on" 2026-03-25 (C). Root cause unknown. Not blocking S6 content. | `[!]` Deferred by operator |
+| S6 | **`/about`** — Our Story page. | `[x]` **COMPLETE 2026-03-25** commit 7ce2c06 |
+| S6 | **`/contact`** — Contact Us. AI assistant + form + skipperdon@atmyboat.com. | `[x]` **COMPLETE 2026-03-25 (C)** commit 91b7cfa |
+| S6 | **`/pricing`** — Tier comparison T0/T1/T2/T3. Full feature matrix, FAQ, CTAs. | `[x]` **COMPLETE 2026-03-25 (C)** commit cfdefbf |
+| S6 | **`/upgrade`** — Stripe Checkout, authenticated, T2/T3. | `[x]` **COMPLETE 2026-03-25 (C)** commit 5b8311e |
+| S6 | **`/help`** — Help Centre. AI widget + 6 quick-link cards. | `[x]` **COMPLETE 2026-03-25 (C)** commit 85458b3 |
+| S6 | **`/help/software-update`** — OTA + manual image replacement. | `[x]` **COMPLETE 2026-03-25 (C)** commit 85458b3 |
+| S6 | **`/help/software-downgrade`** — Manual reflash guide. | `[x]` **COMPLETE 2026-03-25 (C)** commit 85458b3 |
+| S6 | **`/help/create-subscription`** — T2/T3 signup walkthrough. | `[x]` **COMPLETE 2026-03-25 (C)** commit 85458b3 |
+| S6 | **`/help/cancel-subscription`** — Cancellation steps + grace period. | `[x]` **COMPLETE 2026-03-25 (C)** commit 85458b3 |
+| S6 | **`/hardware` connectivity update** — NMEA 2000 / WiFi / Ethernet 3-card section. | `[x]` **COMPLETE 2026-03-25 (C)** commit 11592b1 |
+| S6 | **`/products` connectivity update** — How It Connects diagram + 3 description cards. | `[x]` **COMPLETE 2026-03-25 (C)** commit 11592b1 |
+| S6 | **Stripe subscription lifecycle webhooks** — checkout.session.completed, invoice.payment_failed, customer.subscription.deleted, customer.subscription.updated. | `[x]` **COMPLETE 2026-03-25 (C)** inc/stripe-webhook.php commit 5b8311e |
+| S6 | **Downgrade logic** — revert tier to T1 on subscription.deleted, grace period on payment_failed, email notifications. | `[x]` **COMPLETE 2026-03-25 (C)** inc/stripe-webhook.php commit 5b8311e |
+| S6 | **Multi-boat schema fix** — ALTER TABLE before live push. Must be done before Phase 4. | `[x]` **COMPLETE** commit 05006ef |
+| S6 | **data-ingress.php returns current tier** — add `"tier": "T2"` to response JSON. | `[x]` **COMPLETE** commit 05006ef |
+| S6 | **T2 monthly Fix My Pi counter reset** — WP-Cron daily, fires on 1st of month. | `[x]` **COMPLETE** commit 05006ef |
+| S6 | Community API endpoints — 5 PHP files. GPS blur enforced. | `[x]` **COMPLETE** commit 05006ef |
+| S6 | **AODA pass 2** — `--text-faint` var, `code` element override, help page font sizes. Don confirmed all items cleared. | `[x]` **COMPLETE 2026-03-26** commit fb9bb5b |
+| S6 | **data-ingress.php gaps** — pi_id write-back + last_seen_at + d3kos_version to amboat_devices, last_seen_at to d3kos_pairings, full feature matrix + fmp_remaining in response. | `[x]` **COMPLETE 2026-03-26** commit 0c0c6d9 |
+| S6 | **T2 FMP cron meta key bug** — `atmyboat_fmp_month_count` → `atmyboat_fmp_used_month` in functions.php. | `[x]` **COMPLETE 2026-03-26** commit c88c444 |
+| S6 | **FMP lifecycle** — `report_result` endpoint, auto-refund on failure/timeout, `charge.refunded` webhook, email notification, `amboat_billing.refunded` column. | `[x]` **COMPLETE 2026-03-26** commit 143edad |
+| S6 | **Multi-boat schema** — 7 ALTER TABLE: amboat_billing (refunded/refunded_at), community_positions (pi_id PK), command_queue (pi_pending index), engine_snapshots (vessel_date index), alerts (vessel_date index), d3kos_pairings (last_seen_at). | `[x]` **COMPLETE 2026-03-26** commit 0bc5b29 |
+| S6 | **Community map wiring** — community-get.php + community-markers.php + Leaflet 1.9.4 on page-community.php. | `[x]` **COMPLETE 2026-03-26** commit c0ecd6d |
+| S6 | **Account page AODA + billing** — 6 sub-18px fixes, refund status in billing table, last_seen_at on devices, SVG colour fix. | `[x]` **COMPLETE 2026-03-26** commit bf1f0a5 |
+| S6 | **`/accessibility`** — AODA compliance statement page (Ontario legal requirement). | `[x]` **COMPLETE 2026-03-26** commit 7c0dfe0 |
+| S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Deferred to post-launch |
+| **Operator task** | **WordPress admin: create all pages** — install-pages.php run, Safety + Account created manually, slugs fixed via fix-slugs.php. | `[x]` **COMPLETE 2026-03-25 (D)** |
+| **Operator task** | **WordPress admin: update menus** — Main menu verified OK. Footer menu not yet set up. | `[~]` Footer menu still needed |
+| **Operator task** | **Stripe setup** — 2 webhooks created, all keys added to server inc/atmyboat-config.php. | `[x]` **COMPLETE 2026-03-25 (D)** |
+| **Operator task** | **Database schema** — 12 tables installed via install-schema.php (browser-run). pi_installation_id migration ran. | `[x]` **COMPLETE 2026-03-25 (D)** |
+| **Operator task** | **Fix My Pi cron** — cPanel cron every 5 min, fix-my-pi-timeout.php confirmed active. | `[x]` **COMPLETE 2026-03-25 (D)** |
+| **Operator task** | **Full theme deploy to staging** — zip upload + extract via cPanel. All new files confirmed. | `[x]` **COMPLETE 2026-03-25 (D)** |
+| **S6 gap** | **mobile/config.php template** — server-only file referenced by all mobile endpoints, never committed. Create placeholder template in repo next session. | `[x]` **COMPLETE** commit ee8011d |
+| **S6 fix** | **`/hardware` BOM display too small** — font sizes in BOM cards and connectivity section need review. Don flagged 2026-03-25 (C). Address in next session. | `[x]` **COMPLETE** commit 48b88b4 |
+| S7 | **`/account`** — Account management: current tier, billing history, cancel subscription, paired devices. Reads Stripe Customer Portal. | `[x]` **COMPLETE 2026-03-25 (D)** commit f206a1d |
+| S7 | **`/safety`** — Safety features page: Forward Watch, engine protection, anchor watch, cameras, weather, alerts. | `[x]` **COMPLETE 2026-03-25 (D)** commit 8c04b0e — fonts fixed commit 3a2138d |
+| S7 | **FTP deploy via Python** — Deploy single files via Python ftplib (bash breaks ! in password). | `[x]` **COMPLETE 2026-03-25 (D)** — page-safety.php deployed via Python FTPS |
+| S7 | **Footer menu** — Create footer menu in WordPress Admin → Appearance → Menus. | `[ ]` Don's task |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
 
 ### T3 Vessel Limit — RESOLVED 2026-03-25
@@ -303,7 +322,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 ### Phase 3 — AODA Compliance Audit (Session 7)
 **Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
-- [ ] All audit steps complete and issues fixed
+- [x] **COMPLETE 2026-03-26** — Don ran WAVE on all pages and confirmed all red items cleared. Known exception: WordPress frame WP bar (not our code, ignored). Footer still broken but deferred by operator.
 
 ### Phase 4 — Staging → Live (Session 8)
 **Owner: Don's hands only**
