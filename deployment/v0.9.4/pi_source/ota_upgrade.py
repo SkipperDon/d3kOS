@@ -240,10 +240,16 @@ def run_upgrade(base_url, api_key, device_token):
             }
 
         download_url     = release.get('download_url')
-        expected_sha256  = release.get('sha256')
+        expected_sha256  = release.get('sha256', '')
 
-        if not download_url or not expected_sha256:
-            raise RuntimeError('Release info missing download_url or sha256.')
+        if not download_url:
+            raise RuntimeError('Release info missing download_url.')
+        if not expected_sha256:
+            raise RuntimeError(
+                f'No SHA-256 checksum available for {latest_ver}. '
+                'The server administrator must set the sha256 field in version-registry.php '
+                'before OTA upgrades can be enabled. Download will not proceed without verification.'
+            )
 
         actions.append(f'Upgrading {old_version} → {latest_ver}')
 

@@ -447,5 +447,5 @@ Every time work is completed:
 | `deployment/v0.9.4/pwa/app.js` | **[NEW — 2026-03-26 S2]** Vanilla JS SPA. API wrappers, screen renderers, auto-refresh, session persistence. |
 | `deployment/v0.9.4/pwa/manifest.json` | **[NEW — 2026-03-26 S2]** PWA install manifest. |
 | `deployment/v0.9.4/pwa/sw.js` | **[NEW — 2026-03-26 S2]** Service worker: cache-first static, network-first API. |
-| `deployment/v0.9.4/pwa/icons/icon.svg` | **[NEW — 2026-03-26 S2]** Source SVG icon. Convert to 192px + 512px PNG before deploy. |
+| `deployment/v0.9.4/pwa/icons/icon.svg` | **[UPDATED — 2026-03-26 S2C]** Self-contained SVG — AtMyBoat logo base64-embedded on dark navy (#0a1628) background. No external URL. CORS-safe for canvas PNG export. Deployed to `staging/app/icons/icon.svg`. |
 | `deployment/v0.9.4/pwa/README.md` | **[NEW — 2026-03-26 S2]** GitHub Pages deploy instructions for PWA. |

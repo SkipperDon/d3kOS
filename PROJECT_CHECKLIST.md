@@ -357,7 +357,10 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[x]` **DONE — Built in v0.9.3 S5** (register-device.php, pair-device.php, command-queue.php, fix-my-pi-billing.php, pdf-report.php + 7-table schema) |
 | **v0.9.4 S1 — Pi cloud infrastructure** | `[x]` **DONE 2026-03-26** — export_worker.py (ingress format + auth), export_categories.py (13 categories), cloud_agent.py (command consumer), cloud-config.json, device-token.json, d3kos-cloud-agent.service. End-to-end test passed. |
 | **Security: Rotate AMBOAT_API_KEY** | `[!]` Key exposed in session chat. Update cloud-config.json on Pi + mobile/config.php on staging. Don's decision on timing. |
-| Foundation (PWA shell on GitHub Pages) | `[x]` **DONE 2026-03-26 S2** — manifest.json, sw.js, index.html, app.css, app.js, 6 screens. Ready for GitHub Pages deploy. |
+| Foundation (PWA shell on GitHub Pages) | `[x]` **DONE 2026-03-26 S2** — manifest.json, sw.js, index.html, app.css, app.js, 6 screens. Deployed to `atmyboat.com/staging/app/`. |
+| PWA icon — SVG source | `[x]` **DONE 2026-03-26 S2C** — icon.svg has AtMyBoat logo base64-embedded on navy background. Deployed to `staging/app/icons/icon.svg`. |
+| PWA icon — PNG files (192px + 512px) | `[!]` **Operator action** — Generate via Chrome DevTools console script (provided in session), upload icon-192.png + icon-512.png to `staging/app/icons/` via cPanel. |
+| Delete d3kos-app GitHub repo | `[!]` **Operator action** — github.com/SkipperDon/d3kos-app → Settings → Danger Zone → Delete. (Token lacked delete_repo scope.) |
 | WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
 | Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
 | Fix My Pi (diagnostic + restore, $29.99/incident) | `[x]` **DONE 2026-03-26 S2** — fix_my_pi.py deployed. Pi-side diagnostics + service restarts + disk + config + network checks. PWA Stripe flow = S4. |

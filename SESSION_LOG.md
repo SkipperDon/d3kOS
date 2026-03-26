@@ -7686,3 +7686,59 @@ SESSION QUALITY SCORE              : 97/100 (pending OIC — operator assessed a
 - Health check: `curl localhost:8093/tier/status` → success:true | `systemctl is-active d3kos-alert-watcher` → active
 - Release notes: S2 completes the v0.9.4 Pi service stack and PWA foundation. The Pi now has: tier service, OTA upgrade, Fix My Pi diagnostics, alert-triggered export, OS lockdown. The PWA app has all 6 screens built and is ready for GitHub Pages deployment.
 
+
+---
+
+## Session 2026-03-26 S2C — v0.9.4 Icon Fix (Continuation)
+**Goal:** Fix PWA icon so real AtMyBoat logo renders correctly when generating PNG icons via Chrome DevTools canvas script.
+
+**Completed:**
+- Diagnosed root cause of blank/broken PNG output: icon.svg referenced an external URL (`atmyboat.com/staging/wp-content/uploads/.../cropped-logo-with-better-lines-1.png`). When drawn onto an HTML canvas, the canvas becomes CORS-tainted and `toDataURL()` returns blank. Browser security prevents exporting cross-origin images.
+- Downloaded the AtMyBoat logo (65,885 bytes) and embedded it as base64 data URI directly in icon.svg — no external URL references.
+- Uploaded self-contained icon.svg to `staging/app/icons/icon.svg` via FTPS.
+- Provided updated Chrome DevTools console script. Don confirmed icons generated successfully.
+
+**Files changed this session:**
+| File | Change |
+|------|--------|
+| `deployment/v0.9.4/pwa/icons/icon.svg` | Updated twice: first to external URL, then replaced with base64-embedded logo (88KB self-contained SVG) |
+| `staging/app/icons/icon.svg` | Uploaded to HostPapa staging (deployed, live) |
+
+**Decisions:**
+- Base64 embedding is the correct approach for SVG icons used as canvas source — avoids all CORS issues regardless of hosting configuration.
+
+**Not completed / deferred:**
+- icon-192.png and icon-512.png: Don generates via DevTools script and uploads via cPanel (operator action)
+- d3kos-app GitHub repo: Don deletes manually at github.com/SkipperDon/d3kos-app → Settings → Danger Zone
+- All other v0.9.4 deferred items carry forward from S2 entry above
+
+**Known gaps / uncertainties:**
+- None identified.
+
+**Operator actions required:**
+1. Generate PNG icons via Chrome DevTools console script (provided in session)
+2. Upload icon-192.png + icon-512.png to `staging/app/icons/` via cPanel File Manager
+3. Delete d3kos-app GitHub repo (token lacked delete_repo scope — Claude could not complete)
+4. Install PWA to iPhone via Safari → Share → Add to Home Screen
+
+QUALITY METRICS — 2026-03-26 S2C
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-SESSION ROLLING AVERAGE (S2C, S2, prior×3): 79.4/100
+Primary improvement target: MLS — continuation sessions after context compaction frequently skip /project:session-start re-run. Trend: improving (last 3 sessions 97–100).
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+No Pi deploy this session — no Release Package Manifest required.
