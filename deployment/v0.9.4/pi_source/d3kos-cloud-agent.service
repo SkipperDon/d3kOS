@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Cloud Command Agent
+After=network.target d3kos-export-manager.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/cloud-agent
+ExecStart=/usr/bin/python3 cloud_agent.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
