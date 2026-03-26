@@ -324,10 +324,11 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 **Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
 - [x] **COMPLETE 2026-03-26** — Don ran WAVE on all pages and confirmed all red items cleared. Known exception: WordPress frame WP bar (not our code, ignored). Footer still broken but deferred by operator.
 
-### Phase 4 — Staging → Live (Session 8)
-**Owner: Don's hands only**
-- [ ] UpdraftPlus full backup of live site
-- [ ] cPanel Staging → Push to Live
+### Phase 4 — Staging → Live
+**Owner: Don's hands only — DEFERRED by operator decision 2026-03-26**
+**Trigger: After v0.9.4 and v0.9.4.1 are complete. No live push before then.**
+- [x] UpdraftPlus full backup of live site — done 2026-03-26
+- [ ] Proper live deploy plan — to be scoped when v0.9.4.1 is complete
 - [ ] Post-push smoke test (all pages, AI widget, Stripe Fix My Pi)
 - [ ] GitHub repo set to Private
 - [ ] Rotate Gemini API key
