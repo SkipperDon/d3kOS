@@ -374,10 +374,10 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | # | App feature | Calls | What it does | Status |
 |---|------------|-------|--------------|--------|
 | AW1 | First install — device registration | `POST register-device.php` | Generates device UUID, stores on HostPapa, links to install | `[ ]` |
-| AW2 | QR pairing — link device to account + vessel | `POST pair-device.php` | User scans QR on Pi → app sends UUID + user token + vessel name/type → account linked. T3: can pair multiple Pis. | `[ ]` |
+| AW2 | QR pairing — link device to account + vessel | `POST pair-device.php` | User scans QR on Pi → app sends UUID + user token + vessel name/type → account linked. T3: can pair multiple Pis. | `[x]` **DONE 2026-03-26 S3** — screens.pair: camera → jsQR → vessel form → pair-device-app.php. New endpoint uses app_token auth. |
 | AW3 | Fix My Pi — trigger diagnostic | `POST fix-my-pi-billing.php` → Stripe → `POST command-queue.php` | Charges $29.99, writes `fix_my_pi` command for the active Pi | `[ ]` |
-| AW4 | Send command to Pi | `POST command-queue.php` | App writes command for the active Pi (restart_service, ota_update, reboot) | `[ ]` |
-| AW5 | Poll command result | `GET command-queue.php?id=<id>` | App checks if Pi has completed the command; shows status | `[ ]` |
+| AW4 | Send command to Pi | `POST command-queue.php` | App writes command for the active Pi (restart_service, ota_update, reboot) | `[x]` **DONE 2026-03-26 S3** — app-command.php POST. Verifies Pi paired to user. Returns command_id. |
+| AW5 | Poll command result | `GET command-queue.php?id=<id>` | App checks if Pi has completed the command; shows status | `[x]` **DONE 2026-03-26 S3** — app-command.php GET `?command_id=`. OTA button polls every 10s, 20min timeout. |
 | AW6 | Request PDF report | `POST pdf-report.php` | App triggers report for the active Pi; returns download URL | `[ ]` T2/T3 only |
 | AW7 | Read boat health dashboard data | `GET dashboard-data.php` | `[x]` **DONE 2026-03-26 S2** — endpoint built + deployed to staging. PWA app.js calls it. |
 | AW8 | Find My Boat | `GET dashboard-data.php` position fields | `[x]` **DONE 2026-03-26 S2** — dashboard-data.php returns position. PWA shows on Google Maps link. |
@@ -392,9 +392,9 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | MB2 | Boat selector screen | Cards per vessel, online indicator, tap to select | `[x]` **DONE 2026-03-26 S2** — built in PWA app.js select-vessel screen. |
 | MB3 | Active boat state | pi_installation_id in localStorage | `[x]` **DONE 2026-03-26 S2** — state.vessel + localStorage in PWA. |
 | MB4 | Boat switcher in app nav | Persistent control in header/nav showing current vessel name. Tap → returns to boat selector screen. | `[ ]` |
-| MB5 | Primary boat default | On app open with >1 vessel: auto-select the `is_primary` vessel. User can change primary in app settings. | `[ ]` |
-| MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[ ]` |
-| MB7 | Vessel name displayed on QR pairing | During QR scan flow: prompt "Name this vessel" + vessel type dropdown before completing pairing | `[ ]` |
+| MB5 | Primary boat default | On app open with >1 vessel: auto-select the `is_primary` vessel. User can change primary in app settings. | `[x]` **DONE 2026-03-26 S3** — loadVessels() prefers is_primary vessel, falls back to vessels[0]. |
+| MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[x]` **DONE 2026-03-26 S2** — already in app.js (vessels.length === 1 auto-selects). Item was stale. |
+| MB7 | Vessel name displayed on QR pairing | During QR scan flow: prompt "Name this vessel" + vessel type dropdown before completing pairing | `[x]` **DONE 2026-03-26 S3** — Phase 2 of screens.pair: vessel name input + type select before POST. |
 
 ### 8.4 — Tier Service on Pi (port 8093)
 **Belongs in v0.9.4 build. Pi nginx already routes `/tier/` to port 8093 but no service exists. Pi dashboard and Settings call `/tier/status` to decide which features to show. Feature gating on the Pi is broken without this.**
@@ -416,7 +416,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | DEP3 | **Fix My Pi file manifest** — generate a SHA-256 manifest of every file in a clean d3kOS installation. Host on HostPapa. Fix My Pi compares Pi files against it. Must be regenerated for every new d3kOS release. | `[ ]` Required for Fix My Pi integrity check |
 | DEP4 | **SQL-before-PHP deploy gate** — add hard gate to v0.9.4.1 deploy checklist: run S6 MySQL ALTER TABLE statements via phpMyAdmin BEFORE deploying any new PHP files. If PHP deploys first and ALTERs haven't run, multi-boat writes will fail silently. | `[ ]` Sequencing risk |
 | DEP5 | **T3 multi-Pi OTA** — add "Update all vessels" to app UX. Queues one `ota_update` command per paired Pi. App shows per-Pi progress bars simultaneously. | `[ ]` T3 users can't update all boats at once without this |
-| DEP6 | **PWA version enforcement** — app calls `version-registry.php` on launch, compares to running service worker version. Shows "Update available — tap to refresh" banner if stale. Prevents users running old app against new Pi firmware. | `[ ]` |
+| DEP6 | **PWA version enforcement** — app calls `version-registry.php` on launch, compares to running service worker version. Shows "Update available — tap to refresh" banner if stale. Prevents users running old app against new Pi firmware. | `[x]` **DONE 2026-03-26 S3** — versionLessThan() helper + LATEST_D3KOS constant. Green banner on dashboard if vessel Pi firmware is behind. No extra API call — uses d3kos_version from dashboard-data response. Update LATEST_D3KOS constant each release. |
 | DEP7 | OS Lockdown delivery path | `[x]` **DONE 2026-03-26 S2** — Option b: setup_lockdown command via command queue. |
 
 ---

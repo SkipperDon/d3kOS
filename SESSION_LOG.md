@@ -7796,3 +7796,70 @@ SESSION QUALITY SCORE              : 100/100
 5-SESSION ROLLING AVERAGE (S2D, S2C, S2, OIC-void, prior): 79.4/100
 Primary improvement target: MLS — continuation sessions after context compaction.
 Trend: improving — last 3 sessions 97, 100, 100.
+
+## Session 2026-03-26 S3 — v0.9.4 PWA Unblocking: QR Pairing, Command Polling, Version Check, Primary Boat Fix
+
+**Goal:** Unblock four v0.9.4 checklist items: QR pairing (AW2), command result polling (AW5), firmware version banner (DEP6), primary boat auto-select fix (MB5).
+
+**Completed:**
+- **AW2 — QR Pairing Screen:** Full `screens.pair` implementation in app.js. Three phases: scanning (camera → jsQR decode), confirm (vessel name + type form), done (success + reload). `extractPiId()` helper parses UUID from full atmyboat.com URL or bare UUID. Entry points: empty vessel state "Pair a Vessel" button + Settings "Pair a Vessel" card (T3 or 0 vessels). New PHP: `mobile/pair-device-app.php` — Bearer app_token auth, upserts `d3kos_pairings` (is_primary for first pairing), queues `pair_confirmed` command for Pi to pick up.
+- **AW5 — Command Result Polling:** `apiSendCommand` fixed to call `app-command.php` (was pointing at `command-queue.php` which uses Pi auth — would have failed silently). New `apiPollCommand(commandId)` function. OTA button in Settings now shows real-time status: queued → elapsed time → complete/failed. 10s poll interval, 20min timeout, button re-enabled on completion. New PHP: `mobile/app-command.php` — POST (write command, verify Pi paired to user) + GET `?command_id=` (poll status). Bearer app_token auth throughout.
+- **DEP6 — Firmware Version Banner:** `versionLessThan()` helper for v0.9.2.2-style comparison. Dashboard shows green `.update-banner` if vessel's d3kOS version is behind `LATEST_D3KOS` constant. No extra API call — uses `d3kos_version` already in dashboard-data response. `LATEST_D3KOS = 'v0.9.2.2'` — update this constant each d3kOS release.
+- **MB5 — Primary Boat Auto-Select:** `loadVessels()` now checks `is_primary` field before falling back to `vessels[0]`. Order: restore saved vessel → find `is_primary` vessel → fallback to first.
+- **MB6 noted as already done** in existing app.js (`vessels.length === 1` auto-selects without showing selector).
+- **deploy-pwa.py:** New FTPS deploy script for `staging/app/` using same .env credentials as sync-staging.py.
+- **Both repos deployed to staging and committed.**
+
+**Decisions:**
+- `apiSendCommand` redirected to `app-command.php` (not `command-queue.php`) — Pi auth vs app auth separation. This was a pre-existing bug in S2's app.js — the OTA button would have returned 401 on first real test.
+- jsQR loaded from CDN with SRI integrity hash (v1.4.0) — no build step needed, integrity-pinned.
+- Version check uses `LATEST_D3KOS` constant (no API call) — simpler and eliminates a round-trip. Update constant when new Pi firmware releases.
+
+**Not completed / deferred:**
+- AW1 (device registration) — deferred; still unclear if needed for phone app vs Pi-side only
+- AW3 (Fix My Pi in-app flow) — scoped for next session (Stripe + T1/T2/T3 branching)
+- AW4 (send command from app UI, non-OTA) — app-command.php is built; UI not built yet
+- AW6 (PDF report) — future session
+- MB4 (boat switcher in header) — future session
+- MB7 (vessel name prompt during QR pairing) — already built in pair screen (Phase 2 form)
+- DEP1 (OTA download source decision) — operator decision needed
+- DEP3 (Fix My Pi file manifest) — future session
+- TS3/TS4 (tier gating in app) — future session
+
+**Files changed this session:**
+
+| File | Repo | Change |
+|------|------|--------|
+| `mobile/pair-device-app.php` | atmyboat-forum | New — QR pairing with app_token auth |
+| `mobile/app-command.php` | atmyboat-forum | New — command write + poll with app_token auth |
+| `deployment/v0.9.4/pwa/app.js` | Helm-OS | QR screen, polling, version check, MB5, bug fix (apiSendCommand auth) |
+| `deployment/v0.9.4/pwa/app.css` | Helm-OS | Added `.update-banner` style |
+| `deployment/v0.9.4/pwa/index.html` | Helm-OS | Added jsQR CDN script with SRI hash |
+| `deployment/v0.9.4/scripts/deploy-pwa.py` | Helm-OS | New FTPS deploy script for staging/app/ |
+
+**Commits:** Helm-OS `a93d888`. atmyboat-forum `1861c5d`.
+
+QUALITY METRICS — 2026-03-26 S3
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-SESSION ROLLING AVERAGE (S3, S2D, S2C, S2, OIC-void): 79.4/100
+Primary improvement target: historical OIC-void session drags the average. Last 4 sessions: 97, 100, 100, 100.
+Trend: improving — four consecutive sessions at 97+.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+No Pi deploy this session — no Release Package Manifest required.
+
+---

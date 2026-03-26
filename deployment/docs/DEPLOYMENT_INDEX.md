@@ -463,3 +463,14 @@ Every time work is completed:
 | `atmyboat-forum: images/amboat-logo.png` | **[NEW — 2026-03-26 S2D]** AtMyBoat logo PNG stored in child theme (120×90, 65KB). Used in header and footer. Not dependent on media library. |
 | `atmyboat-forum: page-privacy.php` | **[UPDATED — 2026-03-26 S2D]** "Donald Moskaluk" → "Skipper Don". |
 | `atmyboat-forum: page-accessibility.php` | **[UPDATED — 2026-03-26 S2D]** "Don Moskaluk" → "Skipper Don". |
+
+## Session 2026-03-26 S3 Updates — v0.9.4 QR Pairing, Command Polling, Version Check
+
+| File | Description |
+|------|-------------|
+| `atmyboat-forum: mobile/pair-device-app.php` | **[NEW — 2026-03-26 S3]** AW2: PWA QR pairing endpoint. Bearer app_token auth. POST: pi_id + vessel_name + vessel_type → upserts d3kos_pairings (is_primary on first pairing) + queues pair_confirmed command. Staging: `/staging/wp-content/themes/twentytwenty-child/mobile/pair-device-app.php` |
+| `atmyboat-forum: mobile/app-command.php` | **[NEW — 2026-03-26 S3]** AW4+AW5: App-to-Pi command endpoint. Bearer app_token auth. POST: write command (ota_upgrade, restart_service, reboot, fix_my_pi, export_now) → returns command_id. GET `?command_id=`: poll status + result. Separate from Pi-facing command-queue.php (which uses Pi API key auth). Staging: `/staging/wp-content/themes/twentytwenty-child/mobile/app-command.php` |
+| `deployment/v0.9.4/pwa/app.js` | **[UPDATED — 2026-03-26 S3]** Added: screens.pair (QR scanning → vessel form → pairing), apiPairDevice(), apiPollCommand(), versionLessThan(), extractPiId(). Fixed: apiSendCommand now calls app-command.php (was command-queue.php — Pi auth, would have 401'd). OTA button now polls for completion. Version banner on dashboard. MB5 primary boat fix in loadVessels(). |
+| `deployment/v0.9.4/pwa/app.css` | **[UPDATED — 2026-03-26 S3]** Added .update-banner style (green border, dark green bg). |
+| `deployment/v0.9.4/pwa/index.html` | **[UPDATED — 2026-03-26 S3]** Added jsQR CDN script (v1.4.0, SRI integrity hash) for QR scanning in pair screen. |
+| `deployment/v0.9.4/scripts/deploy-pwa.py` | **[NEW — 2026-03-26 S3]** FTPS deploy script for staging/app/ (PWA files). Reads FTP credentials from atmyboat-forum/.env. Usage: `python3 deployment/v0.9.4/scripts/deploy-pwa.py` from Helm-OS root. |
