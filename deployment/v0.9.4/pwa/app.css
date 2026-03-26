@@ -509,3 +509,14 @@ html, body {
   background: var(--accent);
   color: #0a1628;
 }
+
+/* ── Update banner (DEP6) ───────────────────────────────────── */
+.update-banner {
+  background: #1a3a1a;
+  border: 1px solid #22c55e;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: #86efac;
+  margin-bottom: 12px;
+}

@@ -7,7 +7,9 @@
 'use strict';
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const API_BASE = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile';
+const API_BASE     = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile';
+const APP_VERSION  = '0.9.4';      // PWA version
+const LATEST_D3KOS = 'v0.9.2.2';  // Latest known Pi firmware — update each d3kOS release
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const state = {
@@ -90,10 +92,27 @@ async function apiDashboard(piId) {
   return apiFetch(`dashboard-data.php${qs}`);
 }
 
+// Send a command to the Pi via app-command.php (app auth, not Pi auth).
+// Returns { command_id: 123 } — use apiPollCommand to check completion.
 async function apiSendCommand(piId, commandType, payload = {}) {
-  return apiFetch('command-queue.php', {
+  return apiFetch('app-command.php', {
     method: 'POST',
     body: JSON.stringify({ pi_installation_id: piId, command: commandType, payload }),
+  });
+}
+
+// Poll the status of a queued command.
+// Returns { command_id, command, status, result, created_at, completed_at }
+async function apiPollCommand(commandId) {
+  return apiFetch(`app-command.php?command_id=${encodeURIComponent(commandId)}`);
+}
+
+// Confirm QR pairing from the app.
+// pi_id is the UUID from the Pi's QR code (atmyboat.com/pair-device/?pi_id=<UUID>)
+async function apiPairDevice(piId, vesselName, vesselType) {
+  return apiFetch('pair-device-app.php', {
+    method: 'POST',
+    body: JSON.stringify({ pi_id: piId, vessel_name: vesselName, vessel_type: vesselType }),
   });
 }
 
@@ -149,6 +168,35 @@ function fmtVal(v, unit = '', decimals = 1) {
 
 function spinner() {
   return el('div', { class: 'spinner', 'aria-label': 'Loading', role: 'status' });
+}
+
+// Compare 'v0.9.2.2' style version strings. Returns true if a < b.
+function versionLessThan(a, b) {
+  const pa = (a || '').replace(/^v/, '').split('.').map(Number);
+  const pb = (b || '').replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0, nb = pb[i] || 0;
+    if (na < nb) return true;
+    if (na > nb) return false;
+  }
+  return false;
+}
+
+// Parse pi_id UUID from a QR code string.
+// QR format: https://atmyboat.com/pair-device/?pi_id=<UUID>  OR  bare UUID
+function extractPiId(qrText) {
+  try {
+    const url = new URL(qrText.startsWith('http') ? qrText : 'https://' + qrText);
+    const id  = url.searchParams.get('pi_id');
+    if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return id;
+    }
+  } catch { /* fall through */ }
+  const bare = qrText.trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bare)) {
+    return bare;
+  }
+  return null;
 }
 
 // ── Header update ─────────────────────────────────────────────────────────────
@@ -268,10 +316,18 @@ screens['select-vessel'] = function renderVesselSelect() {
   container.appendChild(el('p', { class: 'card-title', style: 'margin-bottom:16px' }, 'Select Vessel'));
 
   if (state.vessels.length === 0) {
+    const pairBtn = el('button', {
+      class: 'btn btn-primary',
+      style: 'margin-top: 16px;',
+    }, 'Pair a Vessel');
+    pairBtn.addEventListener('click', () => navigate('pair'));
+
     container.appendChild(
       el('div', { class: 'empty-state' },
         el('p', {}, 'No vessels paired to your account.'),
-        el('p', {}, 'Visit atmyboat.com to pair your d3kOS device.'),
+        el('p', { style: 'font-size: 0.9rem; color: var(--text-muted);' },
+          'Scan the QR code on your Pi\'s Settings page to link your vessel.'),
+        pairBtn,
       )
     );
     return;
@@ -338,6 +394,14 @@ screens.dashboard = function renderDashboard() {
 
   const d = state.dashboard;
   const online = d.online;
+
+  // DEP6: firmware update banner
+  if (d.d3kos_version && versionLessThan(d.d3kos_version, LATEST_D3KOS)) {
+    const banner = el('div', { class: 'update-banner', role: 'status' },
+      `Update available: d3kOS ${LATEST_D3KOS} — go to Settings to upgrade.`,
+    );
+    container.appendChild(banner);
+  }
 
   // Sync line
   container.appendChild(
@@ -633,34 +697,89 @@ screens.settings = function renderSettings() {
   // OTA Upgrade
   const otaCard = el('div', { class: 'card' });
   otaCard.appendChild(el('div', { class: 'card-title' }, 'OTA Upgrade'));
-  const otaStatus = el('div', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;' },
+  const otaDesc = el('div', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;' },
     'Trigger a d3kOS software upgrade on your vessel.'
   );
-  const otaBtn = el('button', { class: 'btn btn-ghost' }, 'Check for Update');
+  const otaBtn    = el('button', { class: 'btn btn-ghost' }, 'Start Upgrade');
   const otaResult = el('div', { style: 'margin-top: 8px; font-size: 0.9rem; display: none;' });
 
   otaBtn.addEventListener('click', async () => {
-    if (!state.vessel) { otaResult.textContent = 'No vessel selected.'; otaResult.style.display = 'block'; return; }
-    otaBtn.disabled = true;
-    otaBtn.textContent = 'Sending…';
-    try {
-      await apiSendCommand(state.vessel.pi_installation_id, 'ota_upgrade', {});
-      otaResult.textContent = '✓ Upgrade command queued. Your Pi will update when it next syncs.';
-      otaResult.style.color = 'var(--green)';
-    } catch (err) {
-      otaResult.textContent = '✗ ' + (err.message || 'Command failed.');
-      otaResult.style.color = 'var(--red)';
-    } finally {
+    if (!state.vessel) {
+      otaResult.textContent  = 'No vessel selected.';
+      otaResult.style.color  = 'var(--red)';
       otaResult.style.display = 'block';
-      otaBtn.disabled = false;
-      otaBtn.textContent = 'Check for Update';
+      return;
+    }
+    otaBtn.disabled    = true;
+    otaBtn.textContent = 'Sending…';
+    otaResult.style.display = 'none';
+
+    try {
+      const { command_id } = await apiSendCommand(state.vessel.pi_installation_id, 'ota_upgrade', {});
+      otaResult.textContent  = `Command queued (#${command_id}). Waiting for Pi to connect…`;
+      otaResult.style.color  = 'var(--text-muted)';
+      otaResult.style.display = 'block';
+      otaBtn.textContent = 'Upgrading…';
+
+      // Poll for completion every 10 s, timeout after 20 min
+      let elapsed = 0;
+      const MAX_WAIT = 20 * 60 * 1000;
+      const pollId = setInterval(async () => {
+        elapsed += 10000;
+        try {
+          const status = await apiPollCommand(command_id);
+          if (status.status === 'completed') {
+            clearInterval(pollId);
+            otaResult.textContent  = '✓ Upgrade complete. Pi is restarting.';
+            otaResult.style.color  = 'var(--green)';
+            otaBtn.disabled    = false;
+            otaBtn.textContent = 'Start Upgrade';
+          } else if (status.status === 'failed') {
+            clearInterval(pollId);
+            const msg = status.result?.error || 'Upgrade failed.';
+            otaResult.textContent  = '✗ ' + msg;
+            otaResult.style.color  = 'var(--red)';
+            otaBtn.disabled    = false;
+            otaBtn.textContent = 'Start Upgrade';
+          } else if (elapsed >= MAX_WAIT) {
+            clearInterval(pollId);
+            otaResult.textContent  = 'Timed out — Pi did not respond within 20 minutes.';
+            otaResult.style.color  = 'var(--red)';
+            otaBtn.disabled    = false;
+            otaBtn.textContent = 'Start Upgrade';
+          } else {
+            otaResult.textContent = `Upgrading… (${Math.round(elapsed / 60000)}m elapsed)`;
+          }
+        } catch { /* poll failure is non-fatal — keep trying */ }
+      }, 10000);
+
+    } catch (err) {
+      otaResult.textContent  = '✗ ' + (err.message || 'Command failed.');
+      otaResult.style.color  = 'var(--red)';
+      otaResult.style.display = 'block';
+      otaBtn.disabled    = false;
+      otaBtn.textContent = 'Start Upgrade';
     }
   });
 
-  otaCard.appendChild(otaStatus);
+  otaCard.appendChild(otaDesc);
   otaCard.appendChild(otaBtn);
   otaCard.appendChild(otaResult);
   container.appendChild(otaCard);
+
+  // Pair New Vessel (T3 multi-boat or any user without a vessel)
+  const showPairBtn = (state.tier === 'T3') || (state.vessels.length === 0);
+  if (showPairBtn) {
+    const pairCard = el('div', { class: 'card' });
+    pairCard.appendChild(el('div', { class: 'card-title' }, 'Pair a Vessel'));
+    pairCard.appendChild(el('div', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;' },
+      state.tier === 'T3' ? 'Add another vessel to your account.' : 'Link your d3kOS Pi to this account.'
+    ));
+    const pairNavBtn = el('button', { class: 'btn btn-ghost' }, 'Scan QR Code');
+    pairNavBtn.addEventListener('click', () => navigate('pair'));
+    pairCard.appendChild(pairNavBtn);
+    container.appendChild(pairCard);
+  }
 
   // Sign out
   container.appendChild(
@@ -673,6 +792,192 @@ screens.settings = function renderSettings() {
       },
     }, 'Sign Out')
   );
+};
+
+// ── Pair Screen ───────────────────────────────────────────────────────────────
+// Three phases: scanning → confirm → done
+screens.pair = function renderPair() {
+  const container = getEl('screen');
+
+  // Phase state
+  let videoStream = null;
+  let scanInterval = null;
+  let detectedPiId = null;
+
+  function stopCamera() {
+    if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+    if (videoStream)  { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+  }
+
+  // ── Phase 1: Scanning ────────────────────────────────────────────────────
+  function showScanning() {
+    container.innerHTML = '';
+
+    const title = el('div', { class: 'card-title', style: 'margin-bottom: 8px;' }, 'Pair a Vessel');
+    const hint  = el('div', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;' },
+      'Point your camera at the QR code on your Pi\'s Settings page.');
+
+    const video  = el('video', { autoplay: 'true', playsinline: 'true',
+                                  style: 'width:100%;border-radius:8px;background:#000;' });
+    const canvas = el('canvas', { style: 'display:none;' });
+    const status = el('div', { style: 'margin-top: 12px; font-size: 0.9rem; color: var(--text-muted);' },
+      'Starting camera…');
+
+    const backBtn = el('button', {
+      class: 'btn btn-ghost',
+      style: 'margin-top: 12px;',
+    }, 'Cancel');
+    backBtn.addEventListener('click', () => {
+      stopCamera();
+      navigate(state.vessels.length > 0 ? 'dashboard' : 'select-vessel');
+    });
+
+    container.appendChild(title);
+    container.appendChild(hint);
+    container.appendChild(video);
+    container.appendChild(canvas);
+    container.appendChild(status);
+    container.appendChild(backBtn);
+
+    // Request rear camera
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        videoStream      = stream;
+        video.srcObject  = stream;
+        status.textContent = 'Scanning…';
+
+        // Sample frames for QR every 250 ms
+        scanInterval = setInterval(() => {
+          if (video.readyState < video.HAVE_ENOUGH_DATA) return;
+
+          canvas.width  = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx  = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          // jsQR is loaded from CDN — check it is available
+          if (typeof jsQR !== 'function') {
+            status.textContent = 'QR scanner not loaded. Check your connection.';
+            return;
+          }
+
+          const code = jsQR(imgData.data, imgData.width, imgData.height);
+          if (code) {
+            const piId = extractPiId(code.data);
+            if (piId) {
+              stopCamera();
+              detectedPiId = piId;
+              showConfirm(piId);
+            } else {
+              status.textContent = 'QR code found but not a d3kOS device. Try again.';
+            }
+          }
+        }, 250);
+      })
+      .catch(err => {
+        status.textContent = 'Camera access denied. Allow camera in browser settings.';
+        status.style.color = 'var(--red)';
+        console.error('Camera error:', err);
+      });
+  }
+
+  // ── Phase 2: Confirm vessel details ─────────────────────────────────────
+  function showConfirm(piId) {
+    container.innerHTML = '';
+
+    const title = el('div', { class: 'card-title', style: 'margin-bottom: 8px;' }, 'Name Your Vessel');
+    const hint  = el('div', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;' },
+      'Pi ID: ' + piId.slice(0, 8) + '…');
+
+    const nameInput = el('input', {
+      type: 'text', placeholder: 'e.g. Morning Star', maxlength: '80',
+      style: 'width:100%;margin-bottom:12px;',
+    });
+
+    const typeSelect = el('select', { style: 'width:100%;margin-bottom:16px;' });
+    [
+      ['powerboat', 'Powerboat'],
+      ['sailboat',  'Sailboat'],
+      ['catamaran', 'Catamaran'],
+      ['trawler',   'Trawler'],
+      ['pontoon',   'Pontoon'],
+      ['other',     'Other'],
+    ].forEach(([val, label]) => {
+      const opt = el('option', { value: val }, label);
+      typeSelect.appendChild(opt);
+    });
+
+    const errBanner = el('div', { class: 'error-banner', role: 'alert' });
+    const confirmBtn = el('button', { class: 'btn btn-primary', style: 'width:100%;' }, 'Confirm Pairing');
+    const backBtn2   = el('button', {
+      class: 'btn btn-ghost',
+      style: 'margin-top: 8px; width:100%;',
+    }, 'Back — Scan Again');
+    backBtn2.addEventListener('click', () => showScanning());
+
+    confirmBtn.addEventListener('click', async () => {
+      const vesselName = nameInput.value.trim();
+      const vesselType = typeSelect.value;
+
+      if (!vesselName) {
+        errBanner.textContent = 'Please enter a vessel name.';
+        errBanner.classList.add('visible');
+        return;
+      }
+
+      confirmBtn.disabled    = true;
+      confirmBtn.textContent = 'Pairing…';
+      errBanner.classList.remove('visible');
+
+      try {
+        await apiPairDevice(piId, vesselName, vesselType);
+        showDone(vesselName);
+      } catch (err) {
+        errBanner.textContent = err.message || 'Pairing failed. Please try again.';
+        errBanner.classList.add('visible');
+        confirmBtn.disabled    = false;
+        confirmBtn.textContent = 'Confirm Pairing';
+      }
+    });
+
+    // Allow Enter in name field to submit
+    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') confirmBtn.click(); });
+
+    container.appendChild(title);
+    container.appendChild(hint);
+    container.appendChild(el('label', { style: 'font-size:0.9rem;display:block;margin-bottom:4px;' }, 'Vessel Name'));
+    container.appendChild(nameInput);
+    container.appendChild(el('label', { style: 'font-size:0.9rem;display:block;margin-bottom:4px;' }, 'Vessel Type'));
+    container.appendChild(typeSelect);
+    container.appendChild(errBanner);
+    container.appendChild(confirmBtn);
+    container.appendChild(backBtn2);
+
+    nameInput.focus();
+  }
+
+  // ── Phase 3: Success ────────────────────────────────────────────────────
+  function showDone(vesselName) {
+    container.innerHTML = '';
+    container.appendChild(
+      el('div', { class: 'empty-state' },
+        el('div', { style: 'font-size: 2rem; margin-bottom: 12px;' }, '✓'),
+        el('p', { style: 'font-weight: 700;' }, vesselName + ' paired!'),
+        el('p', { style: 'font-size:0.9rem; color: var(--text-muted);' },
+          'Your Pi will sync automatically within a few minutes.'),
+      )
+    );
+
+    const goBtn = el('button', { class: 'btn btn-primary', style: 'margin-top: 16px;' }, 'Go to Dashboard');
+    goBtn.addEventListener('click', async () => {
+      // Reload vessels so the new pairing appears
+      await loadVessels();
+    });
+    container.appendChild(goBtn);
+  }
+
+  showScanning();
 };
 
 // ── App shell toggle ──────────────────────────────────────────────────────────
@@ -695,16 +1000,21 @@ async function loadVessels() {
     const data = await apiListVessels();
     state.vessels = data.vessels || [];
 
-    // Auto-select: if single vessel or if a vessel was previously selected, use that
+    // Auto-select vessel: restore saved → prefer is_primary → fallback to first
     if (!state.vessel) {
       if (state.vessels.length === 1) {
         state.vessel = state.vessels[0];
         saveSession();
       } else if (state.vessels.length > 1) {
-        // Restore previously selected if still in list
+        // Restore previously saved vessel if it's still in the list
         const savedId = state.vessel?.pi_installation_id;
         if (savedId) {
-          state.vessel = state.vessels.find(v => v.pi_installation_id === savedId) || state.vessels[0];
+          state.vessel = state.vessels.find(v => v.pi_installation_id === savedId) || null;
+        }
+        // MB5: fall back to the primary boat, then first boat
+        if (!state.vessel) {
+          state.vessel = state.vessels.find(v => v.is_primary) || state.vessels[0];
+          saveSession();
         }
       }
     }
