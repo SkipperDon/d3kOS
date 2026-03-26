@@ -423,3 +423,29 @@ Every time work is completed:
 | `atmyboat-forum: setup/mobile-schema.sql` | **[UPDATED 2026-03-26]** Added amboat_boatlog table — v0.9.4 S1 addition. UNIQUE KEY on (pi_installation_id, pi_entry_id) prevents duplicate imports. |
 | `atmyboat-forum: setup/s1-setup.php` | **[2026-03-26 — Setup script, run and kept as doc]** Created amboat_boatlog table on staging. |
 | `atmyboat-forum: setup/s1-migrate.php` | **[2026-03-26 — Setup script, run and kept as doc]** Added d3kos_pairings.last_seen_at column (was missing, caused HTTP 500 in data-ingress.php). |
+
+## Session 2026-03-26 S2 Updates — v0.9.4 S2 Full Build
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.4/pi_source/tier_service.py` | **[NEW — 2026-03-26 S2]** Flask service port 8093. Reads license.json, returns tier int + feature matrix per tier (0–3). Pi: `/opt/d3kos/services/tier/tier_service.py` |
+| `deployment/v0.9.4/pi_source/d3kos-tier.service` | **[NEW — 2026-03-26 S2]** systemd unit for tier_service.py. Pi: `/etc/systemd/system/d3kos-tier.service` |
+| `deployment/v0.9.4/pi_source/export_worker.py` | **[UPDATED — 2026-03-26 S2]** P6: added `_sync_tier_from_response()` — reads tier from data-ingress.php response, updates license.json. Pi: `/opt/d3kos/services/export/export_worker.py` |
+| `deployment/v0.9.4/pi_source/fix_my_pi.py` | **[NEW — 2026-03-26 S2]** Diagnostic + repair script. Checks services (auto-restart), disk, config files, network. Returns structured JSON report. Pi: `/opt/d3kos/services/cloud-agent/fix_my_pi.py` |
+| `deployment/v0.9.4/pi_source/ota_upgrade.py` | **[NEW — 2026-03-26 S2]** Full OTA pipeline: version check → download → SHA-256 verify → backup → install → restart → rollback. Pi: `/opt/d3kos/services/cloud-agent/ota_upgrade.py` |
+| `deployment/v0.9.4/pi_source/alert_watcher.py` | **[NEW — 2026-03-26 S2]** P4: polls issues.db every 30s, triggers immediate export on critical alerts. 2-min cooldown. Pi: `/opt/d3kos/services/alert_watcher.py` |
+| `deployment/v0.9.4/pi_source/d3kos-alert-watcher.service` | **[NEW — 2026-03-26 S2]** systemd unit for alert_watcher.py. Pi: `/etc/systemd/system/d3kos-alert-watcher.service` |
+| `deployment/v0.9.4/pi_source/os_lockdown.py` | **[NEW — 2026-03-26 S2]** DEP7: apt-mark hold on critical packages. Delivered via setup_lockdown cloud_agent command. Pi: `/opt/d3kos/services/os_lockdown.py` |
+| `deployment/v0.9.4/pi_source/cloud_agent.py` | **[UPDATED — 2026-03-26 S2]** S2: handlers added for fix_my_pi, ota_upgrade, setup_lockdown. 6 commands total. Pi: `/opt/d3kos/services/cloud-agent/cloud_agent.py` |
+| `atmyboat-forum: mobile/auth.php` | **[UPDATED — 2026-03-26 S2]** Added `amboat_auth_app_request()` for PWA Bearer app_token auth. |
+| `atmyboat-forum: mobile/user-login.php` | **[NEW — 2026-03-26 S2]** PWA auth endpoint. POST credentials → app_token. Uses wp-load.php + wp_authenticate(). |
+| `atmyboat-forum: mobile/dashboard-data.php` | **[NEW — 2026-03-26 S2]** GET last known boat state: synced_at, online, position, engine, system, alerts, boatlog. |
+| `atmyboat-forum: mobile/list-vessels.php` | **[NEW — 2026-03-26 S2]** GET all paired Pi vessels for authenticated user. |
+| `atmyboat-forum: mobile/version-registry.php` | **[UPDATED — 2026-03-26 S2]** sha256 field + latest_release block. download_url format updated. |
+| `deployment/v0.9.4/pwa/index.html` | **[NEW — 2026-03-26 S2]** PWA SPA shell. 6 screens: login, vessel selector, dashboard, alerts, boatlog, settings. |
+| `deployment/v0.9.4/pwa/app.css` | **[NEW — 2026-03-26 S2]** Dark marine theme. AODA AA contrast. 18px+ text. 48px touch targets. |
+| `deployment/v0.9.4/pwa/app.js` | **[NEW — 2026-03-26 S2]** Vanilla JS SPA. API wrappers, screen renderers, auto-refresh, session persistence. |
+| `deployment/v0.9.4/pwa/manifest.json` | **[NEW — 2026-03-26 S2]** PWA install manifest. |
+| `deployment/v0.9.4/pwa/sw.js` | **[NEW — 2026-03-26 S2]** Service worker: cache-first static, network-first API. |
+| `deployment/v0.9.4/pwa/icons/icon.svg` | **[NEW — 2026-03-26 S2]** Source SVG icon. Convert to 192px + 512px PNG before deploy. |
+| `deployment/v0.9.4/pwa/README.md` | **[NEW — 2026-03-26 S2]** GitHub Pages deploy instructions for PWA. |

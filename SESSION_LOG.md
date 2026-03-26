@@ -7590,3 +7590,99 @@ SESSION QUALITY SCORE              : 100/100 (pending OIC — operator assessed 
 | Ollama | 0 calls | $0.00 |
 
 ---
+
+---
+
+## Session 2026-03-26 (S2 continued) — v0.9.4 S2: PWA Foundation + Pi Services Full Build
+
+**Goal:** Complete all remaining v0.9.4 build items: PWA app, tier service, Fix My Pi, OTA upgrade, alert-triggered export, OS lockdown.
+
+**Completed:**
+
+### Pi Deployments
+
+1. **tier_service.py + d3kos-tier.service** — Flask service on port 8093. Reads /opt/d3kos/config/license.json, returns tier integer + feature matrix. Service installed, enabled, running. Verified via curl.
+
+2. **export_worker.py (P6)** — Added `_sync_tier_from_response()`. After successful export upload, reads `data.tier` from data-ingress.php JSON response and updates license.json. Deployed.
+
+3. **fix_my_pi.py** — Diagnostic + repair script. Checks: services (auto-restart), disk, config files, network. Import-tested: `ok=True checks=8`. Deployed to cloud-agent directory.
+
+4. **ota_upgrade.py** — Full OTA pipeline: version check → download → SHA-256 verify → backup → install → restart → rollback on failure. SHA-256 field left empty in version-registry.php until real release zip published.
+
+5. **alert_watcher.py + d3kos-alert-watcher.service (P4)** — Polls issues.db every 30s. Triggers immediate export on critical alerts (anchor_drag, engine_overtemp, oil_pressure, low_fuel, gps_lost, collision_risk). 2-min cooldown. Service running.
+
+6. **os_lockdown.py (DEP7)** — apt-mark hold on python3, signalk-server, nodejs, avnav, chromium-browser, nginx. Delivered as `setup_lockdown` command via cloud_agent.
+
+7. **cloud_agent.py (S2)** — Handlers added: fix_my_pi, ota_upgrade, setup_lockdown. Now handles 6 commands. S2 confirmed in logs.
+
+### AtMyBoat.com Staging
+
+8. **auth.php** — amboat_auth_app_request() for PWA Bearer app_token auth.
+9. **user-login.php** — New. POST credentials → returns app_token + user info.
+10. **dashboard-data.php** — New. GET last known boat state for PWA.
+11. **list-vessels.php** — New. GET all paired Pi vessels for multi-boat selector.
+12. **version-registry.php** — sha256 field + latest_release block added.
+
+### PWA Foundation
+
+13. **deployment/v0.9.4/pwa/** — Full installable PWA (manifest.json, sw.js, index.html, app.css, app.js, icon.svg). 6 screens: login, vessel selector, dashboard, alerts, boatlog, settings. Dark marine theme. AODA AA contrast. 18px+ text. 48px touch targets.
+
+**Pi services running:** d3kos-cloud-agent (S2), d3kos-export-manager, d3kos-tier, d3kos-alert-watcher
+**Staging:** 79 files deployed.
+**Commits:** Helm-OS c2ac55e, d833986. atmyboat-forum 3f8e53e, eb08e78.
+
+**Decisions:**
+- DEP7: setup_lockdown via command queue (option b)
+- OTA sha256 left empty — operator must populate when release zip is published
+- N1-N4 Node-RED flows: blocked on Phase 4 live push
+
+**Not completed / deferred:**
+- Node-RED N1-N4 — blocked on Phase 4
+- PWA GitHub Pages repo creation — operator action
+- PWA icon PNG generation — see icons/ICONS_NEEDED.md
+- DEP3 Fix My Pi file manifest — future session
+- DEP5 T3 multi-Pi OTA — future session
+- WebRTC live tunnel — S6 per BUILD_PLAN.md
+- Fix My Pi Stripe payment in PWA — S4
+- PDF report in PWA — S7
+
+QUALITY METRICS — 2026-03-26 S2
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 95%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 1 (cloud_agent.py deployed to /opt/d3kos/services/ instead of /opt/d3kos/services/cloud-agent/ — corrected same message)
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 97/100 (pending OIC — operator assessed at close)
+─────────────────────────────────────────────────────
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+### Release Package Manifest
+- Version: v0.9.4 S1 → v0.9.4 S2
+- Update type: incremental
+- Changed files on Pi:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| tier_service.py | /opt/d3kos/services/tier/tier_service.py | base | New |
+| d3kos-tier.service | /etc/systemd/system/ | runtime | New |
+| export_worker.py | /opt/d3kos/services/export/ | base | P6 tier sync |
+| cloud_agent.py | /opt/d3kos/services/cloud-agent/ | base | S2: 3 new handlers |
+| fix_my_pi.py | /opt/d3kos/services/cloud-agent/ | base | New |
+| ota_upgrade.py | /opt/d3kos/services/cloud-agent/ | base | New |
+| alert_watcher.py | /opt/d3kos/services/ | base | New |
+| d3kos-alert-watcher.service | /etc/systemd/system/ | runtime | New |
+| os_lockdown.py | /opt/d3kos/services/ | base | New |
+
+- Pre-install: none
+- Post-install: `sudo systemctl daemon-reload && sudo systemctl enable d3kos-tier d3kos-alert-watcher && sudo systemctl start d3kos-tier d3kos-alert-watcher && sudo systemctl restart d3kos-cloud-agent`
+- Rollback: restore export_worker.py.bak-* from Pi backup; redeploy cloud_agent.py from Helm-OS commit c2ac55e
+- Health check: `curl localhost:8093/tier/status` → success:true | `systemctl is-active d3kos-alert-watcher` → active
+- Release notes: S2 completes the v0.9.4 Pi service stack and PWA foundation. The Pi now has: tier service, OTA upgrade, Fix My Pi diagnostics, alert-triggered export, OS lockdown. The PWA app has all 6 screens built and is ready for GitHub Pages deployment.
+

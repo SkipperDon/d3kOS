@@ -357,12 +357,12 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[x]` **DONE — Built in v0.9.3 S5** (register-device.php, pair-device.php, command-queue.php, fix-my-pi-billing.php, pdf-report.php + 7-table schema) |
 | **v0.9.4 S1 — Pi cloud infrastructure** | `[x]` **DONE 2026-03-26** — export_worker.py (ingress format + auth), export_categories.py (13 categories), cloud_agent.py (command consumer), cloud-config.json, device-token.json, d3kos-cloud-agent.service. End-to-end test passed. |
 | **Security: Rotate AMBOAT_API_KEY** | `[!]` Key exposed in session chat. Update cloud-config.json on Pi + mobile/config.php on staging. Don's decision on timing. |
-| Foundation (PWA shell on GitHub Pages) | `[ ]` |
+| Foundation (PWA shell on GitHub Pages) | `[x]` **DONE 2026-03-26 S2** — manifest.json, sw.js, index.html, app.css, app.js, 6 screens. Ready for GitHub Pages deploy. |
 | WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
 | Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
-| Fix My Pi (diagnostic + restore, $29.99/incident) | `[ ]` |
+| Fix My Pi (diagnostic + restore, $29.99/incident) | `[x]` **DONE 2026-03-26 S2** — fix_my_pi.py deployed. Pi-side diagnostics + service restarts + disk + config + network checks. PWA Stripe flow = S4. |
 | PDF Reports via mPDF + Gemini 2.5 Flash (T2/T3 only) | `[ ]` |
-| OS Lockdown (apt-mark hold + pre-upgrade hook) | `[ ]` |
+| OS Lockdown (apt-mark hold + pre-upgrade hook) | `[x]` **DONE 2026-03-26 S2** — os_lockdown.py, delivered via setup_lockdown cloud_agent command (DEP7 option b). |
 
 ### 8.2 — App ↔ Website API Integration (app-side JavaScript)
 **Note:** All website PHP endpoints listed here were built in v0.9.3 S5 and are on staging. The app-side calls (this section) are entirely unbuilt — this is the missing connection.
@@ -375,18 +375,18 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | AW4 | Send command to Pi | `POST command-queue.php` | App writes command for the active Pi (restart_service, ota_update, reboot) | `[ ]` |
 | AW5 | Poll command result | `GET command-queue.php?id=<id>` | App checks if Pi has completed the command; shows status | `[ ]` |
 | AW6 | Request PDF report | `POST pdf-report.php` | App triggers report for the active Pi; returns download URL | `[ ]` T2/T3 only |
-| AW7 | Read boat health dashboard data | `GET dashboard-data.php?pi=<installation_id>` (to be built in v0.9.4.1 §8A.4) | App reads last engine snapshot, sync time, alerts for the active Pi | `[ ]` Blocked on §8A.4 |
-| AW8 | Find My Boat | `GET dashboard-data.php?pi=<installation_id>` position fields | App reads last known GPS + timestamp for the active Pi; displays on map | `[ ]` Blocked on §8A.4 |
-| AW9 | User authentication | WordPress cookie auth or JWT via `auth.php` | App must authenticate before any endpoint call; session token stored on device | `[ ]` Auth mechanism to be decided |
+| AW7 | Read boat health dashboard data | `GET dashboard-data.php` | `[x]` **DONE 2026-03-26 S2** — endpoint built + deployed to staging. PWA app.js calls it. |
+| AW8 | Find My Boat | `GET dashboard-data.php` position fields | `[x]` **DONE 2026-03-26 S2** — dashboard-data.php returns position. PWA shows on Google Maps link. |
+| AW9 | User authentication | Bearer app_token UUID via user-login.php + auth.php | `[x]` **DONE 2026-03-26 S2** — token stored in localStorage. |
 
 ### 8.3 — Multi-Boat: Boat Selector (app-side, T3)
 **Depends on:** v0.9.3 S6 schema fix (vessel_name, is_primary columns in d3kos_pairings)
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| MB1 | Fetch paired vessels list | `GET list-vessels.php` (new endpoint, v0.9.4.1 §8A.4) — returns all Pis paired to this account: vessel name, type, last sync time, online/offline state | `[ ]` |
-| MB2 | Boat selector screen | Shown on app open if account has >1 paired Pi. Cards per vessel: name, type icon, last sync time, online indicator. Tap to select. | `[ ]` |
-| MB3 | Active boat state | Selected `pi_installation_id` stored in device localStorage. All subsequent API calls pass it as a parameter. | `[ ]` |
+| MB1 | Fetch paired vessels list | `GET list-vessels.php` | `[x]` **DONE 2026-03-26 S2** — endpoint built + deployed. |
+| MB2 | Boat selector screen | Cards per vessel, online indicator, tap to select | `[x]` **DONE 2026-03-26 S2** — built in PWA app.js select-vessel screen. |
+| MB3 | Active boat state | pi_installation_id in localStorage | `[x]` **DONE 2026-03-26 S2** — state.vessel + localStorage in PWA. |
 | MB4 | Boat switcher in app nav | Persistent control in header/nav showing current vessel name. Tap → returns to boat selector screen. | `[ ]` |
 | MB5 | Primary boat default | On app open with >1 vessel: auto-select the `is_primary` vessel. User can change primary in app settings. | `[ ]` |
 | MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[ ]` |
@@ -397,8 +397,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 | # | Item | Status |
 |---|------|--------|
-| TS1 | Build tier service Python script on Pi (port 8093) — reads `license.json`, returns `{ "tier": 2, "features": { "export": true, "pdf_reports": true, "community": true, ... } }`. One service, lightweight, reads a local file. | `[ ]` |
-| TS2 | Register as systemd service (`d3kos-tier.service`) — starts on boot, restarts on crash | `[ ]` |
+| TS1 | Build tier service Python script on Pi (port 8093) | `[x]` **DONE 2026-03-26 S2** |
+| TS2 | Register as systemd service (d3kos-tier.service) — starts on boot, restarts on crash | `[x]` **DONE 2026-03-26 S2** |
 | TS3 | Upgrade prompt in app — locked features show "Upgrade to [tier] to unlock" with link to `/upgrade` page on atmyboat.com | `[ ]` |
 | TS4 | Chart Room locked sections — PDF Reports, Analytics, Fleet Map shown as locked cards with upgrade CTA for users below required tier | `[ ]` |
 
@@ -408,12 +408,12 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | # | Item | Status |
 |---|------|--------|
 | DEP1 | **OTA download source** — confirm GitHub Releases as the Pi's download source. Decide release package format (tar.gz). Document the public download URL pattern. | `[ ]` Decision needed |
-| DEP2 | **Pi upgrade script** — build the script the Pi runs when it receives an `ota_update` command: check disk space, snapshot current install, curl download from GitHub Releases, SHA-256 verify, stop services, overwrite files, restart, health check, rollback on failure, report result back via command queue. | `[ ]` Largest gap in v0.9.4 |
+| DEP2 | Pi upgrade script (ota_upgrade.py) | `[x]` **DONE 2026-03-26 S2** — download, SHA-256 verify, backup, install, rollback. SHA-256 field in version-registry.php must be populated before first OTA. |
 | DEP3 | **Fix My Pi file manifest** — generate a SHA-256 manifest of every file in a clean d3kOS installation. Host on HostPapa. Fix My Pi compares Pi files against it. Must be regenerated for every new d3kOS release. | `[ ]` Required for Fix My Pi integrity check |
 | DEP4 | **SQL-before-PHP deploy gate** — add hard gate to v0.9.4.1 deploy checklist: run S6 MySQL ALTER TABLE statements via phpMyAdmin BEFORE deploying any new PHP files. If PHP deploys first and ALTERs haven't run, multi-boat writes will fail silently. | `[ ]` Sequencing risk |
 | DEP5 | **T3 multi-Pi OTA** — add "Update all vessels" to app UX. Queues one `ota_update` command per paired Pi. App shows per-Pi progress bars simultaneously. | `[ ]` T3 users can't update all boats at once without this |
 | DEP6 | **PWA version enforcement** — app calls `version-registry.php` on launch, compares to running service worker version. Shows "Update available — tap to refresh" banner if stale. Prevents users running old app against new Pi firmware. | `[ ]` |
-| DEP7 | **OS Lockdown delivery path** — decide how `apt-mark hold` + pre-upgrade hook gets onto the Pi: (a) manually via SSH by Don before v0.9.4 ships, (b) `setup_lockdown` command via command queue on first connect, or (c) bundled in the v0.9.4 OTA package. | `[ ]` Decision needed |
+| DEP7 | OS Lockdown delivery path | `[x]` **DONE 2026-03-26 S2** — Option b: setup_lockdown command via command queue. |
 
 ---
 
@@ -430,9 +430,9 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | P2 | Fix auth headers in `export_worker.py` — current: `Bearer <installation_id>` wrong. Needs: `Authorization: Bearer <API_KEY>` + `X-Device-Token: <device_uuid>` to match `data-ingress.php` auth.php | `services/export/export_worker.py` | `[x]` **COMPLETE 2026-03-26 S1** |
 | P2.5 | **cloud_agent.py command consumer** — new service polls `command-queue.php` every 30s, executes ping/export_now/tier_change. d3kos-cloud-agent.service installed + enabled on Pi. | `services/cloud-agent/cloud_agent.py` | `[x]` **COMPLETE 2026-03-26 S1** |
 | P3 | Add command pickup loop — `data-ingress.php` returns `pending_commands` array in response body. Pi must read and execute each command. | Handled by `cloud_agent.py` (polls separately) — `export_worker.py` not changed | `[x]` **COMPLETE via cloud_agent.py 2026-03-26 S1** |
-| P4 | Alert-triggered export — critical alerts (anchor drag, engine overtemp, low fuel) must trigger immediate export, not wait for next 30-min timer. Add event hook from alert system → export queue. | `services/export/export_worker.py` + alert service | `[ ]` |
+| P4 | Alert-triggered export | `[x]` **DONE 2026-03-26 S2** — alert_watcher.py polls issues.db, triggers immediate export on critical/priority alerts. Service running. |
 | P5 | Create `/opt/d3kos/config/cloud-config.json` with AtMyBoat.com API key. Template in repo (placeholder). | Pi config | `[x]` **COMPLETE 2026-03-26 S1** — `cloud-config.json` created, key written directly to Pi |
-| P6 | **Pi reads tier from sync response and updates license.json** — when `data-ingress.php` returns `"tier": "T2"` in the response body, `export_worker.py` must read it and write the new tier integer to `/opt/d3kos/config/license.json`. This is how a tier upgrade paid on the website reaches the Pi (max 30-min delay). | `services/export/export_worker.py` | `[ ]` |
+| P6 | Pi reads tier from sync response, updates license.json | `[x]` **DONE 2026-03-26 S2** — export_worker.py _sync_tier_from_response() |
 | P7 | **T0 → T1 upgrade path** — when `pair-device.php` confirms pairing, response includes `"tier": "T1"`. Pi reads it and upgrades `license.json` from tier 0 to tier 1. Enables export and cloud sync for the first time. | `services/export/export_worker.py` | `[ ]` |
 
 ### 8A.2 — Pi Side: Activate Node-RED Community Flows
@@ -465,8 +465,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | D2 | Find My Boat — display last known GPS + timestamp. T1+ only. "Pi offline" if >2h since last sync. Per-Pi (not per-user). | `/dashboard` | `[ ]` |
 | D3 | Alert history — last 20 alerts from `amboat_alerts WHERE pi_installation_id = ?` | `/dashboard` | `[ ]` |
 | D4 | PDF report download list — last 20 from `atmyboat_pdf_reports` user meta | `/dashboard` (T2/T3 only) | `[ ]` |
-| D5 | Build `dashboard-data.php` — GET endpoint, accepts `?pi=<installation_id>`, returns engine snapshot + position + alerts + sync time for that Pi. Auth required. | New PHP file | `[ ]` |
-| D6 | Build `list-vessels.php` — GET endpoint, returns all Pis paired to the authenticated account: vessel_name, vessel_type, pi_installation_id, is_primary, last_sync, online/offline state. Used by app boat selector (MB1). | New PHP file | `[ ]` |
+| D5 | Build `dashboard-data.php` — engine + position + alerts + sync time | `[x]` **DONE 2026-03-26 S2** — built + deployed to staging. |
+| D6 | Build `list-vessels.php` — all paired Pis for authenticated account | `[x]` **DONE 2026-03-26 S2** — built + deployed to staging. |
 
 ### 8A.5 — App Side: Command Queue Integration
 
