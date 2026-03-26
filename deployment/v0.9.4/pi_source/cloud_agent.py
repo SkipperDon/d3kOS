@@ -4,11 +4,12 @@ d3kOS Cloud Command Agent (v0.9.4 S2)
 Polls AtMyBoat.com command queue every 30s, executes commands, writes results back.
 
 Commands handled:
-  ping        - Respond with current version + timestamp. Confirms agent is alive.
-  export_now  - Trigger immediate export via export-manager POST to :8094.
-  tier_change - Read new tier from payload, update license.json.
-  fix_my_pi   - Run diagnostics + service restarts, report results back.
-  ota_upgrade - Download, verify, install latest release, restart services.
+  ping            - Respond with current version + timestamp. Confirms agent is alive.
+  export_now      - Trigger immediate export via export-manager POST to :8094.
+  tier_change     - Read new tier from payload, update license.json.
+  fix_my_pi       - Run diagnostics + service restarts, report results back.
+  ota_upgrade     - Download, verify, install latest release, restart services.
+  setup_lockdown  - Apply apt-mark hold on critical packages to prevent OS upgrades breaking d3kOS.
 
 Config:  /opt/d3kos/config/cloud-config.json  (amboat_api_key, amboat_base_url)
 Token:   /opt/d3kos/config/device-token.json  (created on first run if absent)
@@ -271,6 +272,27 @@ def handle_ota_upgrade(cmd_id, base_url, api_key, device_token):
         logger.error(f"ota_upgrade exception: {e}")
 
 
+def handle_setup_lockdown(cmd_id, base_url, api_key, device_token):
+    """Apply OS package lockdown — apt-mark hold on critical packages."""
+    try:
+        from os_lockdown import apply_lockdown
+        result = apply_lockdown()
+        status = 'completed' if result.get('ok') else 'failed'
+        ack_command(base_url, api_key, device_token, cmd_id, status, result)
+        logger.info(
+            f"setup_lockdown: ok={result.get('ok')} "
+            f"held={len(result.get('packages_held', []))} "
+            f"errors={len(result.get('errors', []))}"
+        )
+    except ImportError:
+        err = 'os_lockdown.py not found at /opt/d3kos/services/os_lockdown.py'
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': err})
+        logger.error(f"setup_lockdown: {err}")
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f"setup_lockdown exception: {e}")
+
+
 def dispatch(cmd, base_url, api_key, device_token):
     """Dispatch a single command to its handler."""
     cmd_id   = cmd.get('id')
@@ -293,6 +315,9 @@ def dispatch(cmd, base_url, api_key, device_token):
 
     elif command == 'ota_upgrade':
         handle_ota_upgrade(cmd_id, base_url, api_key, device_token)
+
+    elif command == 'setup_lockdown':
+        handle_setup_lockdown(cmd_id, base_url, api_key, device_token)
 
     else:
         ack_command(base_url, api_key, device_token, cmd_id, 'failed',

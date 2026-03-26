@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Alert Watcher — Immediate Export on Critical Alerts
+After=network.target d3kos-export-manager.service
+Requires=d3kos-export-manager.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services
+ExecStart=/usr/bin/python3 alert_watcher.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
