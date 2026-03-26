@@ -449,3 +449,17 @@ Every time work is completed:
 | `deployment/v0.9.4/pwa/sw.js` | **[NEW — 2026-03-26 S2]** Service worker: cache-first static, network-first API. |
 | `deployment/v0.9.4/pwa/icons/icon.svg` | **[UPDATED — 2026-03-26 S2C]** Self-contained SVG — AtMyBoat logo base64-embedded on dark navy (#0a1628) background. No external URL. CORS-safe for canvas PNG export. Deployed to `staging/app/icons/icon.svg`. |
 | `deployment/v0.9.4/pwa/README.md` | **[NEW — 2026-03-26 S2]** GitHub Pages deploy instructions for PWA. |
+
+## Session 2026-03-26 S2D Updates — Site Polish + Blog + Footer
+
+| File | Description |
+|------|-------------|
+| `atmyboat-forum: header.php` | **[UPDATED — 2026-03-26 S2D]** Replaced hardcoded SVG compass with real AtMyBoat logo PNG (158×118px, vertically centered). |
+| `atmyboat-forum: footer.php` | **[UPDATED — 2026-03-26 S2D]** Full rewrite — 5 columns (brand + Platform/Community/Resources/Legal), all 29 pages covered, `wp_nav_menu()` with hardcoded fallback, AtMyBoat logo PNG, Skipper Don in copyright. |
+| `atmyboat-forum: functions.php` | **[UPDATED — 2026-03-26 S2D]** Registered 4 footer nav menu locations: footer-platform, footer-community, footer-resources, footer-legal. |
+| `atmyboat-forum: style.css` | **[UPDATED — 2026-03-26 S2D]** Header logo CSS (158×118, centered), 5-col footer grid, footer-nav-list styles, full blog archive + single post CSS, footer link spacing halved, Skipper Don author line. |
+| `atmyboat-forum: index.php` | **[NEW — 2026-03-26 S2D]** Blog archive template — dark theme, 3-col card grid, featured image, category badge, excerpt, pagination. Also handles search, category, tag archives. |
+| `atmyboat-forum: single.php` | **[NEW — 2026-03-26 S2D]** Blog single post template — dark theme, back breadcrumb, featured image, formatted content (headings/blockquotes/code), tags, prev/next nav. |
+| `atmyboat-forum: images/amboat-logo.png` | **[NEW — 2026-03-26 S2D]** AtMyBoat logo PNG stored in child theme (120×90, 65KB). Used in header and footer. Not dependent on media library. |
+| `atmyboat-forum: page-privacy.php` | **[UPDATED — 2026-03-26 S2D]** "Donald Moskaluk" → "Skipper Don". |
+| `atmyboat-forum: page-accessibility.php` | **[UPDATED — 2026-03-26 S2D]** "Don Moskaluk" → "Skipper Don". |

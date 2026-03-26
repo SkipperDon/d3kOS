@@ -262,7 +262,8 @@ On-boat verification still pending:
 | S6 | **`/accessibility`** — AODA compliance statement page (Ontario legal requirement). | `[x]` **COMPLETE 2026-03-26** commit 7c0dfe0 |
 | S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Deferred to post-launch |
 | **Operator task** | **WordPress admin: create all pages** — install-pages.php run, Safety + Account created manually, slugs fixed via fix-slugs.php. | `[x]` **COMPLETE 2026-03-25 (D)** |
-| **Operator task** | **WordPress admin: update menus** — Main menu verified OK. Footer menu not yet set up. | `[~]` Footer menu still needed |
+| **Operator task** | **WordPress admin: update menus** — Main menu verified OK. Footer menus set up. | `[x]` **COMPLETE 2026-03-26** |
+| **Operator task** | **WordPress admin: /accessibility page** — page created in WP admin, accessibility template assigned. | `[x]` **COMPLETE 2026-03-26** confirmed by Don |
 | **Operator task** | **Stripe setup** — 2 webhooks created, all keys added to server inc/atmyboat-config.php. | `[x]` **COMPLETE 2026-03-25 (D)** |
 | **Operator task** | **Database schema** — 12 tables installed via install-schema.php (browser-run). pi_installation_id migration ran. | `[x]` **COMPLETE 2026-03-25 (D)** |
 | **Operator task** | **Fix My Pi cron** — cPanel cron every 5 min, fix-my-pi-timeout.php confirmed active. | `[x]` **COMPLETE 2026-03-25 (D)** |
@@ -272,7 +273,7 @@ On-boat verification still pending:
 | S7 | **`/account`** — Account management: current tier, billing history, cancel subscription, paired devices. Reads Stripe Customer Portal. | `[x]` **COMPLETE 2026-03-25 (D)** commit f206a1d |
 | S7 | **`/safety`** — Safety features page: Forward Watch, engine protection, anchor watch, cameras, weather, alerts. | `[x]` **COMPLETE 2026-03-25 (D)** commit 8c04b0e — fonts fixed commit 3a2138d |
 | S7 | **FTP deploy via Python** — Deploy single files via Python ftplib (bash breaks ! in password). | `[x]` **COMPLETE 2026-03-25 (D)** — page-safety.php deployed via Python FTPS |
-| S7 | **Footer menu** — Create footer menu in WordPress Admin → Appearance → Menus. | `[ ]` Don's task |
+| S7 | **Footer menu** — Create footer menu in WordPress Admin → Appearance → Menus. | `[x]` **DONE 2026-03-26** — 4 nav locations registered (footer-platform, footer-community, footer-resources, footer-legal). Don confirmed menus set up. |
 | Deferred | /compatible — engine checker (needs Don's compatibility data list first) | `[!]` Blocked on data |
 
 ### T3 Vessel Limit — RESOLVED 2026-03-25
@@ -315,7 +316,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 ### Operator Actions Required Before Staging Deploy (Sessions 1–5)
 - [ ] Create `mobile/config.php` from `config.php.example` — add DB credentials, Stripe keys, Gemini key, API key
-- [ ] Import `setup/mobile-schema.sql` via phpMyAdmin → 7 tables
+- [x] Import `setup/mobile-schema.sql` via phpMyAdmin → 7 tables — **DONE 2026-03-26** (tables installed via s1-setup.php scripts in S1 session; confirmed by Don 2026-03-26)
 - [ ] Run `setup/install-pages.php?key=<key>` once to create all WP pages, then delete the file
 - [ ] Install MailPoet plugin on staging if not already installed
 - [ ] Create `.env` from `.env.example` with FTP credentials, then run `deploy/sync-staging.sh`

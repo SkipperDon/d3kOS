@@ -7742,3 +7742,57 @@ Primary improvement target: MLS — continuation sessions after context compacti
 | Ollama | 0 calls | $0.00 |
 
 No Pi deploy this session — no Release Package Manifest required.
+
+---
+
+## Session 2026-03-26 S2D — Operator Confirmations + Site Polish
+
+**Goal:** Confirm completed operator actions, fix footer/blog, replace logo sitewide, fix name.
+
+**Operator actions confirmed complete (Don's confirmation 2026-03-26):**
+- mobile-schema.sql imported via phpMyAdmin (7 tables on staging) — was done in S1 via scripts
+- /accessibility WordPress page created in WP admin, template assigned
+- Footer menus set up in Appearance → Menus (all 4 locations: platform, community, resources, legal)
+- UpdraftPlus backup — already confirmed 2026-03-26
+
+**Claude actions completed this session:**
+- Header logo: replaced hardcoded SVG compass with real AtMyBoat logo PNG (158×118px, vertically centered)
+- WordPress site icon: updated to new square navy PNG via Customizer
+- Footer: rewritten with 5 columns (29 pages covered), wp_nav_menu() calls with fallback, AtMyBoat logo PNG
+- Blog: created index.php (archive, 3-col card grid) and single.php (post view, dark theme)
+- Name: "Donald Moskaluk" / "Don Moskaluk" → "Skipper Don" across all 4 occurrences (footer.php, page-privacy.php, page-accessibility.php, style.css)
+- Footer link spacing halved (10px → 5px)
+- icon.svg: base64 logo embedded (CORS-safe), deployed to staging/app/icons/
+- functions.php: registered 4 footer nav menu locations
+
+**Files changed this session:**
+header.php, footer.php, functions.php, style.css, index.php (new), single.php (new),
+page-privacy.php, page-accessibility.php, images/amboat-logo.png (new),
+pwa/icons/icon.svg
+
+**Not completed / deferred:**
+- Footer brand column still has old SVG compass (not yet swapped to logo image)
+- PWA PNG icons (icon-192.png, icon-512.png) — operator upload pending
+- d3kos-app GitHub repo delete — operator action
+- Phase 4 live push — deferred until v0.9.4.1 complete
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+QUALITY METRICS — 2026-03-26 S2D
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-SESSION ROLLING AVERAGE (S2D, S2C, S2, OIC-void, prior): 79.4/100
+Primary improvement target: MLS — continuation sessions after context compaction.
+Trend: improving — last 3 sessions 97, 100, 100.
