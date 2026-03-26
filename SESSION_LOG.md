@@ -7453,3 +7453,140 @@ ROOT CAUSE NOTE: REC=1 — unauthorized changes from prior session discovered an
 
 ---
 ---
+
+## Session 2026-03-26 — v0.9.4 S1: Pi Cloud Infrastructure + End-to-End Test
+
+**Goal:** Build all Pi-side cloud infrastructure for v0.9.4 S1: export categories, command consumer, export worker fix, data-ingress boatlog handling, and verify end-to-end data flow Pi → staging database.
+
+**Completed:**
+
+1. **export-manager.py** — Fixed `CENTRAL_API_URL` placeholder → `https://atmyboat.com/staging`. Deployed to Pi.
+
+2. **export_categories.py** — Added 5 new categories (GPS, Engine, System Health, System Alerts, Version). Collect all now produces 13 categories.
+   - GPS: Signal K navigation.position, SOG (knots), COG (deg), has_fix
+   - Engine: Signal K propulsion.port — rpm, coolant_temp_c, oil_pressure_kpa, fuel_level_pct, engine_hours
+   - System Health: 11 service statuses, uptime, memory, disk, cpu_temp
+   - System Alerts: last 50 records from self-healing/issues.db
+   - Version: parses /opt/d3kos/config/version.txt
+
+3. **export_worker.py** — Full rewrite. Reads `amboat_api_key` + `amboat_base_url` from `/opt/d3kos/config/cloud-config.json`. Reads device token from `device-token.json`. POSTs to `data-ingress.php` (not old placeholder API). `_build_ingress_payload()` maps 13-category export to data-ingress.php format (position, engine, system, alerts, boatlog).
+
+4. **cloud_agent.py + d3kos-cloud-agent.service** — New command consumer agent. Polls `command-queue.php` every 30s. Handles: ping, export_now, tier_change. fix_my_pi and ota_upgrade ACK'd as "not yet implemented". Generates device-token UUID on first run. Service installed at `/etc/systemd/system/d3kos-cloud-agent.service`.
+
+5. **cloud-config.json** — New file at `/opt/d3kos/config/cloud-config.json`. Stores AMBOAT_API_KEY + base URL. Template committed to repo (placeholder value); real key written directly to Pi via SSH.
+
+6. **data-ingress.php** — Added boatlog text entries handling (INSERT IGNORE into amboat_boatlog). mobile/config.php on staging fixed: syntax error (>? → ?>), DB credentials corrected to match wp-config.php, AMBOAT_DB_* aliases added, WP_DB_PREFIX = 'wpax_' added.
+
+7. **mobile-schema.sql** — Added amboat_boatlog table definition.
+
+8. **S1 Schema Setup** — All 13 mobile tables confirmed present on staging. `d3kos_pairings.last_seen_at` column was missing (ALTER migration not applied) → caused HTTP 500. Applied via s1-migrate.php. All tables now complete.
+
+9. **Device token registration** — UUID `701e5754-e2ce-4fa3-97a6-f2c7c7e020c6` registered for WordPress admin user (ID=1) in `wpax_usermeta`.
+
+10. **End-to-end test — PASSED:**
+    - Ping command: Pi picked up in <35s, responded correctly
+    - export_now command: Pi picked up, triggered export, uploaded to staging
+    - Verified on staging DB: last_sync updated, d3kos_version=0.9.2.2, 2 engine snapshots stored, 3 boatlog entries stored (test-001, test-002, voice transcript)
+
+11. **Temp setup scripts deleted from staging** — s1-setup.php, s1-debug.php, s1-users.php, s1-token.php, s1-ping.php, s1-export.php, s1-result.php, s1-schema-check.php, s1-migrate.php, s1-verify.php — all 10 deleted.
+
+**Decisions:**
+
+- **cloud_agent.py as separate service** — rather than embedding command polling in export_worker.py, built as standalone Python service on its own port. Cleaner separation: export_worker handles outbound data, cloud_agent handles inbound commands.
+- **AMBOAT_API_KEY in cloud-config.json not repo** — shared secret (same value in Pi cloud-config.json and HostPapa mobile/config.php). Template committed with placeholder; real key never committed.
+- **Boatlog to website, marine_vision to Pi** — per operator direction: boatlog text entries go to AtMyBoat.com via data-ingress.php; marine_vision captures stay on Pi (stream to phone via WebRTC in S6). Audio files stay on Pi — only text content exported.
+- **Device token for admin user (ID=1)** — staging has no 'd3kos' WP user; admin is the only account. For production, the real user account will be used.
+- **WP table prefix is `wpax_`** — staging uses `wpax_` not `wp_`. auth.php's `amboat_get_user_by_device_token()` uses `WP_DB_PREFIX` which is now correctly set in mobile/config.php.
+
+**Files changed (local repo):**
+
+| File | Repo | Change |
+|------|------|--------|
+| `deployment/v0.9.4/pi_source/export-manager.py` | Helm-OS | CENTRAL_API_URL fix |
+| `deployment/v0.9.4/pi_source/export_categories.py` | Helm-OS | 5 new categories + collect_all update |
+| `deployment/v0.9.4/pi_source/export_worker.py` | Helm-OS | Full rewrite — ingress format + auth |
+| `deployment/v0.9.4/pi_source/cloud_agent.py` | Helm-OS | New — command consumer service |
+| `deployment/v0.9.4/pi_source/cloud-config.json` | Helm-OS | New — template (placeholder key) |
+| `deployment/v0.9.4/pi_source/d3kos-cloud-agent.service` | Helm-OS | New — systemd unit |
+| `mobile/data-ingress.php` | atmyboat-forum | Boatlog section added |
+| `setup/mobile-schema.sql` | atmyboat-forum | amboat_boatlog table added |
+| `setup/s1-setup.php` | atmyboat-forum | New — created amboat_boatlog (run on staging, kept as doc) |
+| `setup/s1-migrate.php` | atmyboat-forum | New — added last_seen_at column (run on staging, kept as doc) |
+| `setup/s1-schema-check.php` | atmyboat-forum | New — schema check script (kept as doc) |
+| `setup/s1-verify.php` | atmyboat-forum | New — E2E verification script (kept as doc) |
+
+**Pi deployments:**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `export-manager.py` | `/opt/d3kos/services/export/` | CENTRAL_API_URL |
+| `export_categories.py` | `/opt/d3kos/services/export/` | 5 new categories |
+| `export_worker.py` | `/opt/d3kos/services/export/` | Full rewrite |
+| `cloud_agent.py` | `/opt/d3kos/services/cloud-agent/` | New service |
+| `cloud-config.json` | `/opt/d3kos/config/` | New (real key — not committed) |
+| `device-token.json` | `/opt/d3kos/config/` | New — UUID generated |
+| `d3kos-cloud-agent.service` | `/etc/systemd/system/` | New — enabled + started |
+
+**Staging deployments (direct FTP — not in Helm-OS repo):**
+
+| File | Server Path | Change |
+|------|-------------|--------|
+| `mobile/config.php` | `/staging/wp-content/themes/twentytwenty-child/mobile/` | Syntax fix, DB creds, AMBOAT_DB_*, WP_DB_PREFIX |
+
+**Release Package Manifest:**
+
+### Release Package Manifest — v0.9.4 S1 (Pi)
+- Version: v0.9.2.2 → no version bump (infrastructure addition, no version.txt change)
+- Update type: incremental
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `export-manager.py` | `/opt/d3kos/services/export/` | base | CENTRAL_API_URL |
+| `export_categories.py` | `/opt/d3kos/services/export/` | base | 5 new categories |
+| `export_worker.py` | `/opt/d3kos/services/export/` | base | Rewrite: ingress format + cloud-config auth |
+| `cloud_agent.py` | `/opt/d3kos/services/cloud-agent/` | base | New service |
+| `d3kos-cloud-agent.service` | `/etc/systemd/system/` | base | New systemd unit |
+| `cloud-config.json` | `/opt/d3kos/config/` | runtime | New — API key + base URL |
+| `device-token.json` | `/opt/d3kos/config/` | runtime | New — Pi UUID |
+
+- Pre-install steps: none
+- Post-install steps: `systemctl restart d3kos-export-manager` + `systemctl enable --now d3kos-cloud-agent`
+- Rollback: `cp /opt/d3kos/services/export/*.bak-20260326 /opt/d3kos/services/export/` (backups in place)
+- Health check: `curl http://127.0.0.1:8094/health` → `{"status":"healthy"}` + `systemctl status d3kos-cloud-agent`
+- Release notes: Pi now syncs data to AtMyBoat.com every 30 minutes. Uploads engine telemetry, GPS position, system health, and boatlog text entries. Receives and executes commands (ping, export_now, tier_change) from AtMyBoat.com. New d3kos-cloud-agent service handles command polling. Boatlog text goes to website; audio/voice files stay on Pi.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending (next session):**
+- Security: rotate AMBOAT_API_KEY — key was present in session chat output during this session. New key: update `/opt/d3kos/config/cloud-config.json` on Pi + `mobile/config.php` on staging + `wpax_usermeta.atmyboat_device_token` entry if needed. Don's decision on timing.
+- 2 remaining export queue items (HTTP 500 from before migration fix) — will auto-retry at ~14:08/14:09 UTC, expected to complete
+- v0.9.4.1 integration items P3–P7 (command execution from data-ingress.php response, alert-triggered export, tier sync from response body)
+- v0.9.4 PWA build (the mobile app itself)
+
+QUALITY METRICS — 2026-03-26
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+  All tasks were within stated S1 sprint scope.
+SGCR (Stop Gate Compliance Rate)   : 100%
+  Pi deployments, staging config changes, service restarts — all pre-stated.
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1 (memory loaded via session continuation context)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100 (pending OIC — operator assessed at close)
+─────────────────────────────────────────────────────
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-26 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---

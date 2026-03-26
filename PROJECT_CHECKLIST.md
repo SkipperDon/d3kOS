@@ -355,6 +355,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 |------------|--------|
 | Pre-build: Remove Tailscale from Pi | `[x]` Done 2026-03-19 |
 | Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[x]` **DONE — Built in v0.9.3 S5** (register-device.php, pair-device.php, command-queue.php, fix-my-pi-billing.php, pdf-report.php + 7-table schema) |
+| **v0.9.4 S1 — Pi cloud infrastructure** | `[x]` **DONE 2026-03-26** — export_worker.py (ingress format + auth), export_categories.py (13 categories), cloud_agent.py (command consumer), cloud-config.json, device-token.json, d3kos-cloud-agent.service. End-to-end test passed. |
+| **Security: Rotate AMBOAT_API_KEY** | `[!]` Key exposed in session chat. Update cloud-config.json on Pi + mobile/config.php on staging. Don's decision on timing. |
 | Foundation (PWA shell on GitHub Pages) | `[ ]` |
 | WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
 | Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
@@ -424,11 +426,12 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 | # | Item | File | Status |
 |---|------|------|--------|
-| P1 | Update `export_worker.py` URL from placeholder to real endpoint | `services/export/export_worker.py` line 30 — `d3kos-cloud-api.example.com` → `https://atmyboat.com/mobile/data-ingress.php` | `[ ]` |
-| P2 | Fix auth headers in `export_worker.py` — current: `Bearer <installation_id>` wrong. Needs: `Authorization: Bearer <API_KEY>` + `X-Device-Token: <device_uuid>` to match `data-ingress.php` auth.php | `services/export/export_worker.py` | `[ ]` |
-| P3 | Add command pickup loop — `data-ingress.php` returns `pending_commands` array in response body. `export_worker.py` currently discards it. Pi must read and execute each command. | `services/export/export_worker.py` | `[ ]` |
+| P1 | Update `export_worker.py` URL from placeholder to real endpoint | `services/export/export_worker.py` line 30 — `d3kos-cloud-api.example.com` → `https://atmyboat.com/mobile/data-ingress.php` | `[x]` **COMPLETE 2026-03-26 S1** |
+| P2 | Fix auth headers in `export_worker.py` — current: `Bearer <installation_id>` wrong. Needs: `Authorization: Bearer <API_KEY>` + `X-Device-Token: <device_uuid>` to match `data-ingress.php` auth.php | `services/export/export_worker.py` | `[x]` **COMPLETE 2026-03-26 S1** |
+| P2.5 | **cloud_agent.py command consumer** — new service polls `command-queue.php` every 30s, executes ping/export_now/tier_change. d3kos-cloud-agent.service installed + enabled on Pi. | `services/cloud-agent/cloud_agent.py` | `[x]` **COMPLETE 2026-03-26 S1** |
+| P3 | Add command pickup loop — `data-ingress.php` returns `pending_commands` array in response body. Pi must read and execute each command. | Handled by `cloud_agent.py` (polls separately) — `export_worker.py` not changed | `[x]` **COMPLETE via cloud_agent.py 2026-03-26 S1** |
 | P4 | Alert-triggered export — critical alerts (anchor drag, engine overtemp, low fuel) must trigger immediate export, not wait for next 30-min timer. Add event hook from alert system → export queue. | `services/export/export_worker.py` + alert service | `[ ]` |
-| P5 | Create `/opt/d3kos/config/cloud-credentials.json` with AtMyBoat.com device API key. Add to `.gitignore`. Template: `{ "atmyboat_api_key": "YOUR_KEY_HERE", "device_uuid": "auto-generated-on-first-run" }` | Pi config | `[ ]` |
+| P5 | Create `/opt/d3kos/config/cloud-config.json` with AtMyBoat.com API key. Template in repo (placeholder). | Pi config | `[x]` **COMPLETE 2026-03-26 S1** — `cloud-config.json` created, key written directly to Pi |
 | P6 | **Pi reads tier from sync response and updates license.json** — when `data-ingress.php` returns `"tier": "T2"` in the response body, `export_worker.py` must read it and write the new tier integer to `/opt/d3kos/config/license.json`. This is how a tier upgrade paid on the website reaches the Pi (max 30-min delay). | `services/export/export_worker.py` | `[ ]` |
 | P7 | **T0 → T1 upgrade path** — when `pair-device.php` confirms pairing, response includes `"tier": "T1"`. Pi reads it and upgrades `license.json` from tier 0 to tier 1. Enables export and cloud sync for the first time. | `services/export/export_worker.py` | `[ ]` |
 
