@@ -534,6 +534,16 @@ screens.dashboard = function renderDashboard() {
         )
       );
     }
+    // Only show battery voltage if the Pi is sending it (requires NMEA2000 battery monitor)
+    if (eng.battery_voltage !== null && eng.battery_voltage !== undefined) {
+      const batClass = eng.battery_voltage < 11.8 ? 'danger' : eng.battery_voltage < 12.2 ? 'warn' : '';
+      statItems.push(
+        el('div', { class: 'stat-item' },
+          el('div', { class: 'stat-label' }, 'Battery'),
+          el('div', { class: `stat-value ${batClass}` }, fmtVal(eng.battery_voltage, 'V')),
+        )
+      );
+    }
 
     engCard.appendChild(el('div', { class: 'stat-grid' }, ...statItems));
     const engDetailBtn = el('button', {
@@ -887,6 +897,15 @@ screens.engine = function renderEngine() {
         )
       );
     }
+    if (eng.battery_voltage !== null && eng.battery_voltage !== undefined) {
+      const batClass = eng.battery_voltage < 11.8 ? 'danger' : eng.battery_voltage < 12.2 ? 'warn' : '';
+      curItems.push(
+        el('div', { class: 'stat-item' },
+          el('div', { class: 'stat-label' }, 'Battery'),
+          el('div', { class: `stat-value ${batClass}` }, fmtVal(eng.battery_voltage, 'V')),
+        )
+      );
+    }
     curCard.appendChild(el('div', { class: 'stat-grid' }, ...curItems));
     if (eng.snapshot_at) {
       curCard.appendChild(el('div', {
@@ -920,6 +939,7 @@ screens.engine = function renderEngine() {
     const temps   = snaps.map(s => s.coolant_temp);
     const oils    = snaps.map(s => s.oil_pressure_kpa);
     const fuels   = snaps.map(s => s.fuel_level_pct);
+    const bats    = snaps.map(s => s.battery_voltage_v);
     const hours   = snaps.map(s => s.engine_hours_h);
     const tFirst  = fmtTime(snaps[0].snapshot_at);
     const tLast   = fmtTime(snaps[snaps.length - 1].snapshot_at);
@@ -928,13 +948,15 @@ screens.engine = function renderEngine() {
     }, `${tFirst} → ${tLast}`);
     chartsWrap.appendChild(timeRange);
 
-    // Include oil pressure sparkline only if the Pi is sending it
+    // Include oil pressure and battery sparklines only if the Pi is sending them
     const hasOil = oils.some(v => v !== null && !isNaN(v));
+    const hasBat = bats.some(v => v !== null && !isNaN(v));
     const chartSeries = [
       { label: 'RPM',             values: rpms,  color: '#00b4d8', unit: ''    },
       { label: 'Coolant (°C)',    values: temps, color: '#f59e0b', unit: '°C'  },
       { label: 'Oil Press. (kPa)',values: oils,  color: '#ef4444', unit: 'kPa', skip: !hasOil },
-      { label: 'Fuel (%)',        values: fuels, color: '#22c55e', unit: '%'   },
+      { label: 'Battery (V)',     values: bats,  color: '#22c55e', unit: 'V',   skip: !hasBat },
+      { label: 'Fuel (%)',        values: fuels, color: '#60a5fa', unit: '%'   },
     ];
 
     chartSeries.filter(s => !s.skip).forEach(({ label, values, color, unit }) => {
