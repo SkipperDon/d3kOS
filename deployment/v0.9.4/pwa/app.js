@@ -270,7 +270,26 @@ function extractPiId(qrText) {
 function updateHeader(vesselName = null, online = null) {
   const nameEl = getEl('header-vessel');
   const dotEl  = getEl('online-dot');
-  if (vesselName !== null) nameEl.textContent = vesselName;
+  if (vesselName !== null) {
+    nameEl.textContent = vesselName;
+    // MB4 — boat switcher: make vessel name tappable when account has >1 vessel
+    const multiVessel = state.vessels && state.vessels.length > 1;
+    if (multiVessel) {
+      nameEl.classList.add('vessel-switcher');
+      nameEl.setAttribute('role', 'button');
+      nameEl.setAttribute('tabindex', '0');
+      nameEl.setAttribute('aria-label', `Switch vessel — currently ${vesselName}`);
+      nameEl.onclick    = () => navigate('select-vessel');
+      nameEl.onkeydown  = e => { if (e.key === 'Enter' || e.key === ' ') navigate('select-vessel'); };
+    } else {
+      nameEl.classList.remove('vessel-switcher');
+      nameEl.removeAttribute('role');
+      nameEl.removeAttribute('tabindex');
+      nameEl.removeAttribute('aria-label');
+      nameEl.onclick   = null;
+      nameEl.onkeydown = null;
+    }
+  }
   if (online !== null) {
     dotEl.className = 'online-dot ' + (online ? 'online' : 'offline');
     dotEl.setAttribute('title', online ? 'Online' : 'Offline');
@@ -1179,6 +1198,75 @@ screens.settings = function renderSettings() {
     pairNavBtn.addEventListener('click', () => navigate('pair'));
     pairCard.appendChild(pairNavBtn);
     container.appendChild(pairCard);
+  }
+
+  // TS3/TS4 — Locked features upgrade section
+  // Show features locked for this tier with upgrade CTAs.
+  const LOCKED_FEATURES = [
+    {
+      name:    'PDF Reports',
+      desc:    'Download monthly engine performance and trip reports.',
+      minTier: 'T2',
+      label:   'T2+',
+    },
+    {
+      name:    'SMS Alerts',
+      desc:    'Receive anchor drag, engine fault, and critical alerts by text.',
+      minTier: 'T2',
+      label:   'T2+',
+    },
+    {
+      name:    'Multiple Phones',
+      desc:    'Share access with your crew or family — up to 3 devices.',
+      minTier: 'T2',
+      label:   'T2+',
+    },
+    {
+      name:    'Fleet Management',
+      desc:    'Monitor and manage multiple vessels from one account.',
+      minTier: 'T3',
+      label:   'T3',
+    },
+  ];
+  const tierRank = { T0: 0, T1: 1, T2: 2, T3: 3 };
+  const userRank = tierRank[state.tier] ?? 1;
+  const lockedForUser = LOCKED_FEATURES.filter(f => tierRank[f.minTier] > userRank);
+
+  if (lockedForUser.length > 0) {
+    const upgradeSection = el('div', { class: 'locked-features-section' });
+    upgradeSection.appendChild(
+      el('div', { class: 'card-title', style: 'margin-bottom: 12px;' }, 'Upgrade Your Plan')
+    );
+    const upgradeUrl = API_BASE.replace('/wp-content/themes/twentytwenty-child/mobile', '/upgrade');
+    lockedForUser.forEach(feature => {
+      const featureCard = el('div', { class: 'locked-feature-card' });
+
+      const titleRow = el('div', { class: 'locked-feature-top' });
+      titleRow.appendChild(
+        el('span', { class: 'locked-feature-name' },
+          '\uD83D\uDD12 ' + feature.name)   // 🔒
+      );
+      titleRow.appendChild(
+        el('span', { class: 'locked-badge' }, feature.label)
+      );
+      featureCard.appendChild(titleRow);
+
+      featureCard.appendChild(
+        el('div', { class: 'locked-feature-desc' }, feature.desc)
+      );
+
+      const upgradeBtn = el('a', {
+        href:   upgradeUrl,
+        target: '_blank',
+        rel:    'noopener noreferrer',
+        class:  'btn btn-ghost locked-upgrade-btn',
+        'aria-label': `Upgrade to ${feature.minTier} to unlock ${feature.name}`,
+      }, `Upgrade to ${feature.minTier} →`);
+      featureCard.appendChild(upgradeBtn);
+
+      upgradeSection.appendChild(featureCard);
+    });
+    container.appendChild(upgradeSection);
   }
 
   // Sign out

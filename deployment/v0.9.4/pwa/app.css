@@ -682,3 +682,64 @@ html, body {
   padding: 0 8px;
 }
 .fmp-error-item:last-child { border-bottom: none; }
+
+/* ── MB4 — Vessel switcher in header ─────────────────────── */
+#header-vessel.vessel-switcher {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#header-vessel.vessel-switcher::after {
+  content: ' ›';
+  opacity: 0.7;
+}
+#header-vessel.vessel-switcher:hover,
+#header-vessel.vessel-switcher:focus {
+  color: var(--accent);
+  outline: none;
+}
+
+/* ── TS3/TS4 — Locked features upgrade section ───────────── */
+.locked-features-section {
+  margin-top: 8px;
+}
+.locked-feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.locked-feature-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+.locked-feature-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.locked-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: #1e293b;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.locked-feature-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.locked-upgrade-btn {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
