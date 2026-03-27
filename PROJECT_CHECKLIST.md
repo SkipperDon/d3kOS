@@ -505,6 +505,119 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 ---
 
+## PART 8B — v0.9.5 Predictive Maintenance
+**Status: NOT STARTED**
+**Depends on:** v0.9.4.1 (data pipeline active — 30-day baseline requires live Pi → HostPapa sync)
+**Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.10.0
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| PM1 | Predictive maintenance service (Port 8106) | New Flask service on Pi. Reads engine snapshot history from local SQLite. Calculates normal operating ranges. | `[ ]` |
+| PM2 | 30-day baseline data collection | Collect RPM, coolant temp, oil pressure, battery voltage — sufficient history before anomaly detection can fire | `[ ]` Blocked on live data |
+| PM3 | Statistical anomaly detection | Trend analysis (7-day, 30-day slopes). Alert when reading deviates >2σ from baseline. | `[ ]` |
+| PM4 | ML models — 5 targets | Overheating predictor (LSTM autoencoder), oil pressure failure (time-series), battery failure (voltage trend), SD card failure (I/O error pattern), GPS failure (satellite loss trend) | `[ ]` |
+| PM5 | Alert system integration | Integrate with existing alert_watcher. Voice alerts (Tier 2+). Push notification (Tier 2+). | `[ ]` |
+| PM6 | Dashboard widget | Predictive alert card on d3kOS dashboard. Shows: current risk level, days until predicted failure, recommended action. | `[ ]` |
+| PM7 | Additional automation | Weather-triggered storm warnings. Fuel optimization (RPM efficiency analysis). Maintenance scheduling (engine hours tracking). Geofence alerts (Tier 3). | `[ ]` |
+| PM8 | Boatlog integration | Auto-generate boatlog entries when predictive alert fires (e.g. "Coolant temp trend — check coolant level") | `[ ]` |
+
+**Deliverable:** d3kOS v0.9.5 — predictive maintenance with 24h advance failure warnings
+
+---
+
+## PART 8C — v0.9.6 Fleet Management
+**Status: NOT STARTED**
+**Depends on:** v0.9.4.1 (multi-boat data pipeline), v0.9.3 live push
+**Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.10.1
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| FM1 | Fleet creation + invitation system | Fleet types: charter, fishing, marina. Invitation via installation ID. Permission levels: owner, manager, member, view. | `[ ]` |
+| FM2 | Fleet map | Live vessel positions on Leaflet.js. All fleet boats visible. Privacy controls: opt-in, 500m position randomization. | `[ ]` |
+| FM3 | Fleet analytics | Engine hours aggregation across fleet. Fuel consumption tracking. Alert history (30 days per vessel). Fleet-wide reporting. | `[ ]` |
+| FM4 | Fleet management API endpoints | HostPapa PHP: `fleet-create.php`, `fleet-invite.php`, `fleet-map.php`, `fleet-analytics.php` — all app_token auth | `[ ]` |
+| FM5 | App UX — fleet screen | Fleet switcher in PWA. Per-vessel health cards. Fleet map view. Analytics dashboard. | `[ ]` |
+| FM6 | Tier 3 activation gate | All fleet features gated to Tier 3 ($99.99/yr). T1/T2 users see locked upgrade card. | `[ ]` |
+
+**Deliverable:** d3kOS v0.9.6 — fleet management for Tier 3 operators
+
+---
+
+## PART 8D — v0.9.7 Remote Diagnostic Console
+**Status: NOT STARTED**
+**Depends on:** v0.9.4 (PWA + Pi command queue), v0.9.3 live push
+**Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.11.0
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| RD1 | Support ticket system | User submits ticket (problem description) from PWA. Admin receives notification within 60 seconds. Ticket tracking and status updates. | `[ ]` |
+| RD2 | Diagnostic consent flow | Per-session approval required from user. Time-limited access (2 hours max). Auto-expiry after session. | `[ ]` |
+| RD3 | Diagnostic agent on Pi (Port 8103) | Controlled log collection. Bundle creation (<60 seconds). Upload to AtMyBoat.com. | `[ ]` |
+| RD4 | AI diagnosis engine | Claude API integration (admin console only). Log analysis and diagnosis. Follow-up questions. Fix recommendations. | `[ ]` |
+| RD5 | Fix delivery system | Admin creates fix (AI or manual). User approval notification (one-tap in PWA). Fix execution via whitelisted command queue. Real-time output streaming. | `[ ]` |
+| RD6 | Knowledge base | Resolved cases logged. Pattern detection (3+ matches → auto-rule). Recurrence tracking. | `[ ]` |
+| RD7 | Admin console UI | `admin.atmyboat.com`. 3-panel layout: ticket list, diagnostic data, AI diagnosis. Real-time. | `[ ]` |
+
+**Deliverable:** d3kOS v0.9.7 — remote diagnostic console for operator support
+
+---
+
+## PART 8E — v0.9.8 Autonomous Agents + Failure Intelligence
+**Status: NOT STARTED**
+**Depends on:** v0.9.7 (action layer + whitelisted command queue)
+**Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.12.0 + v0.13.0
+
+### 8E.1 — Autonomous Agents
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| AA1 | Agent framework | Base agent class, scheduler, communication bus, management API. Settings page: agent status, last run, history, manual trigger. | `[ ]` |
+| AA2 | Update agent | GitHub integration — check for d3kOS updates. Backup/restore logic. Risk analysis. Auto-rollback on failure. Runs: daily 3:00 AM. | `[ ]` |
+| AA3 | Performance agent | CPU/memory/disk monitoring. Auto-remediation: clear cache >90% disk, restart crashed services, thermal throttle management. Runs: every 15 min. | `[ ]` |
+| AA4 | Storage agent | Cleanup automation (old logs, temp files). Predictive warnings (7 days before full). Runs: daily 4:00 AM. | `[ ]` |
+| AA5 | Health check agent | Daily health reports (all systems). Weekly deep scans (DB integrity, filesystem). Health score 0–100. Runs: daily 5:00 AM, deep scan Sunday 2:00 AM. | `[ ]` |
+| AA6 | Backup agent | Incremental backups daily. Full system images weekly. Cloud sync (Tier 3). Restoration testing. Runs: daily 6:00 AM. | `[ ]` |
+
+### 8E.2 — Failure Intelligence & Recovery
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| FI1 | Failure reporter service (Port 8106) | Internal API for all Pi services. 4-field failure capture: what was system doing, what went wrong, immediate consequence, what fixed it. 5KB max per record. Local SQLite, background sync to AtMyBoat.com. | `[ ]` |
+| FI2 | Anonymized failure DB at AtMyBoat.com | Receives anonymized records (hashed installation ID). Pattern analysis. Recurrence tracking (24h, 7d). Top failure patterns dashboard. | `[ ]` |
+| FI3 | Personalized config packages | Stored per installation at AtMyBoat.com. Engine specs, settings, boatlog. Updated on every cloud sync. Used for recovery. | `[ ]` |
+| FI4 | Recovery mode boot sequence | Fresh SD card detection. Auto-connect to mesh. Download personalized config. Restore settings + boatlog. Resume normal operation. | `[ ]` |
+
+**Deliverable:** d3kOS v0.9.8 — autonomous agents + failure intelligence
+
+---
+
+## PART 8F — v0.9.9 Security Audit & Penetration Testing
+**Status: NOT STARTED — REQUIRED before v1.0 launch**
+**Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.16.0
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| SA1 | Automated scanning | `npm audit`, `pip-audit`, OWASP ZAP (all web endpoints), SQLMap (all DB queries), scan for hardcoded secrets, check file permissions | `[ ]` |
+| SA2 | Manual code review | Auth/authorization (all endpoints require auth, JWT validation, session management). Input validation (XSS, parameterized queries, file upload, command injection, directory traversal). | `[ ]` |
+| SA3 | Secrets management review | API key storage (encrypted at rest), password hashing (bcrypt/scrypt), certificate management, webhook signature verification | `[ ]` |
+| SA4 | External penetration test | Contract professional pen test firm. Network-level attacks, privilege escalation, API fuzzing (all 20+ services), MQTT broker (TLS + ACLs), Signal K security, rate limiting + DDoS. | `[ ]` |
+| SA5 | Fixes | Fix all critical vulnerabilities (must be zero). Fix all high vulnerabilities (must be zero). Document medium/low with mitigation plans. Retest after fixes. | `[ ]` |
+| SA6 | Privacy compliance | GDPR: data retention policy, user data export (Article 20), data deletion (Article 17), privacy policy review. CCPA: California compliance. | `[ ]` |
+| SA7 | Certification | Obtain penetration test certificate. Document all cleared findings. | `[ ]` |
+
+**Critical gate — v1.0 blocked until all of these pass:**
+- Zero critical vulnerabilities
+- Zero high vulnerabilities
+- All API endpoints require authentication
+- All DB queries use parameterized statements
+- No hardcoded secrets
+- GDPR/CCPA compliant
+- Penetration test certificate obtained
+
+**Deliverable:** d3kOS v0.9.9 — security certified, production ready for v1.0 launch
+
+---
+
 ## PART 9 — v1.1 Multi-Language Platform
 **Status: LAYER 0 COMPLETE — Layers 1–5 not started**
 **Full spec:** `doc/MULTILANGUAGE_PLATFORM_SPEC.md` | `deployment/v1.1/`
@@ -529,10 +642,15 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | v0.9.1 | Voice AI Assistant | `[x]` Shipped |
 | v0.9.2 | Core platform — cameras, units, Gemini, remote access, UI rebuild | `[~]` Code complete — UAT + on-boat tasks remain |
 | v0.9.3 | AtMyBoat.com community platform (WordPress) | `[~]` Staging in progress |
-| v0.9.4 | d3kOS Mobile Companion App (PWA) | `[ ]` Planned |
+| v0.9.4 | d3kOS Mobile Companion App (PWA) | `[~]` In progress |
 | v0.9.4.1 | Pi ↔ Website ↔ App full integration (data pipeline wiring) | `[ ]` Planned — blocked on v0.9.3 live |
-| v1.0 | Multi-language + v0.9.4 + signalk-forward-watch AppStore | `[ ]` Planned |
-| v1.1 | CJK keyboard, self-hosted STUN coordination server, fleet features | `[ ]` Future |
+| v0.9.5 | Predictive Maintenance — 30-day baseline, anomaly detection, 5 ML models | `[ ]` Planned |
+| v0.9.6 | Fleet Management — fleet map, analytics, Tier 3 activation | `[ ]` Planned |
+| v0.9.7 | Remote Diagnostic Console — support tickets, AI diagnosis, fix delivery | `[ ]` Planned |
+| v0.9.8 | Autonomous Agents + Failure Intelligence — self-healing Pi, recovery mode | `[ ]` Planned |
+| v0.9.9 | Security Audit & Penetration Testing — required gate before v1.0 | `[ ]` Planned |
+| v1.0 | Production launch — signalk-forward-watch AppStore, incremental OTA | `[ ]` Planned — blocked on v0.9.9 |
+| v1.1 | CJK keyboard, self-hosted STUN coordination server, multi-language full | `[ ]` Future |
 
 ---
 
