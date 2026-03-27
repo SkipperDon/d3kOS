@@ -499,11 +499,15 @@ screens.dashboard = function renderDashboard() {
     const engCard = el('div', { class: 'card' });
     engCard.appendChild(el('div', { class: 'card-title' }, 'Engine'));
 
-    const rpmClass = eng.rpm > 4000 ? 'danger' : eng.rpm > 2500 ? 'warn' : '';
+    const rpmClass  = eng.rpm > 4000 ? 'danger' : eng.rpm > 2500 ? 'warn' : '';
     const tempClass = eng.coolant_temp > 95 ? 'danger' : eng.coolant_temp > 85 ? 'warn' : '';
     const fuelClass = eng.fuel_level < 15 ? 'danger' : eng.fuel_level < 30 ? 'warn' : '';
+    // Oil pressure in kPa: < 138 kPa (~20 psi) = critical, < 207 kPa (~30 psi) = warn
+    const oilClass  = eng.oil_pressure !== null
+      ? (eng.oil_pressure < 138 ? 'danger' : eng.oil_pressure < 207 ? 'warn' : '')
+      : '';
 
-    engCard.appendChild(el('div', { class: 'stat-grid' },
+    const statItems = [
       el('div', { class: 'stat-item' },
         el('div', { class: 'stat-label' }, 'RPM'),
         el('div', { class: `stat-value ${rpmClass}` }, fmtVal(eng.rpm, '', 0)),
@@ -520,7 +524,18 @@ screens.dashboard = function renderDashboard() {
         el('div', { class: 'stat-label' }, 'Engine Hours'),
         el('div', { class: 'stat-value' }, fmtVal(eng.engine_hours, 'h')),
       ),
-    ));
+    ];
+    // Only show oil pressure if the Pi is sending it
+    if (eng.oil_pressure !== null && eng.oil_pressure !== undefined) {
+      statItems.push(
+        el('div', { class: 'stat-item' },
+          el('div', { class: 'stat-label' }, 'Oil Press.'),
+          el('div', { class: `stat-value ${oilClass}` }, fmtVal(eng.oil_pressure, 'kPa', 0)),
+        )
+      );
+    }
+
+    engCard.appendChild(el('div', { class: 'stat-grid' }, ...statItems));
     const engDetailBtn = el('button', {
       class: 'btn btn-ghost',
       style: 'margin-top: 12px; width: 100%;',
@@ -842,9 +857,11 @@ screens.engine = function renderEngine() {
     const rpmClass  = eng.rpm > 4000 ? 'danger' : eng.rpm > 2500 ? 'warn' : '';
     const tempClass = eng.coolant_temp > 95 ? 'danger' : eng.coolant_temp > 85 ? 'warn' : '';
     const fuelClass = eng.fuel_level < 15 ? 'danger' : eng.fuel_level < 30 ? 'warn' : '';
+    const oilClass  = eng.oil_pressure !== null && eng.oil_pressure !== undefined
+      ? (eng.oil_pressure < 138 ? 'danger' : eng.oil_pressure < 207 ? 'warn' : '') : '';
     const curCard = el('div', { class: 'card' });
     curCard.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:8px;font-size:0.9rem;' }, 'Current'));
-    curCard.appendChild(el('div', { class: 'stat-grid' },
+    const curItems = [
       el('div', { class: 'stat-item' },
         el('div', { class: 'stat-label' }, 'RPM'),
         el('div', { class: `stat-value ${rpmClass}` }, fmtVal(eng.rpm, '', 0)),
@@ -861,7 +878,16 @@ screens.engine = function renderEngine() {
         el('div', { class: 'stat-label' }, 'Engine Hours'),
         el('div', { class: 'stat-value' }, fmtVal(eng.engine_hours, 'h')),
       ),
-    ));
+    ];
+    if (eng.oil_pressure !== null && eng.oil_pressure !== undefined) {
+      curItems.push(
+        el('div', { class: 'stat-item' },
+          el('div', { class: 'stat-label' }, 'Oil Press.'),
+          el('div', { class: `stat-value ${oilClass}` }, fmtVal(eng.oil_pressure, 'kPa', 0)),
+        )
+      );
+    }
+    curCard.appendChild(el('div', { class: 'stat-grid' }, ...curItems));
     if (eng.snapshot_at) {
       curCard.appendChild(el('div', {
         style: 'font-size:0.82rem;color:var(--text-muted);margin-top:8px;',
@@ -892,6 +918,7 @@ screens.engine = function renderEngine() {
 
     const rpms    = snaps.map(s => s.rpm);
     const temps   = snaps.map(s => s.coolant_temp);
+    const oils    = snaps.map(s => s.oil_pressure_kpa);
     const fuels   = snaps.map(s => s.fuel_level_pct);
     const hours   = snaps.map(s => s.engine_hours_h);
     const tFirst  = fmtTime(snaps[0].snapshot_at);
@@ -901,11 +928,16 @@ screens.engine = function renderEngine() {
     }, `${tFirst} → ${tLast}`);
     chartsWrap.appendChild(timeRange);
 
-    [
-      { label: 'RPM',          values: rpms,  color: '#00b4d8', unit: '' },
-      { label: 'Coolant (°C)', values: temps, color: '#f59e0b', unit: '°C' },
-      { label: 'Fuel (%)',     values: fuels, color: '#22c55e', unit: '%' },
-    ].forEach(({ label, values, color, unit }) => {
+    // Include oil pressure sparkline only if the Pi is sending it
+    const hasOil = oils.some(v => v !== null && !isNaN(v));
+    const chartSeries = [
+      { label: 'RPM',             values: rpms,  color: '#00b4d8', unit: ''    },
+      { label: 'Coolant (°C)',    values: temps, color: '#f59e0b', unit: '°C'  },
+      { label: 'Oil Press. (kPa)',values: oils,  color: '#ef4444', unit: 'kPa', skip: !hasOil },
+      { label: 'Fuel (%)',        values: fuels, color: '#22c55e', unit: '%'   },
+    ];
+
+    chartSeries.filter(s => !s.skip).forEach(({ label, values, color, unit }) => {
       const pts = values.filter(v => v !== null && !isNaN(v));
       if (pts.length < 2) return;
 
