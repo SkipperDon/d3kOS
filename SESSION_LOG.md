@@ -2,6 +2,60 @@
 
 ---
 
+## Session — 2026-03-27 S7 — Roadmap planning: v0.9.5–v0.9.9 defined, pre-launch requirements captured
+
+**Goal:** Answer "what is v0.9.5", research original version definitions, add v0.9.5–v0.9.9 to checklist, capture pre-launch requirements from operator.
+
+**Completed:**
+
+**Version roadmap research:**
+- Read `doc/D3KOS_VERSION_ROADMAP_2026.md` (original March 1, 2026 roadmap) — found v0.9.5 (Mobile + Cloud) and v0.9.6 (Remote Access) defined, then v0.10.x onwards
+- Read backup checklist `.aao-backups/20260320_000000_checklist-merge/Helm-OS/PROJECT_CHECKLIST.md.bak` — found v0.9.5–v0.9.8 defined with duplicate version numbers (two v0.9.5s, two v0.9.6s, two v0.9.7s); v0.9.9–v0.9.12 not defined in any document
+- Resolved duplicate numbering by distributing 6 items across 5 clean version slots (v0.9.5–v0.9.9). Operator confirmed mapping.
+
+**Added to PROJECT_CHECKLIST.md:**
+- Part 8B — v0.9.5 Predictive Maintenance (PM1–PM8): 30-day baseline, anomaly detection, 5 ML models, dashboard widget
+- Part 8C — v0.9.6 Fleet Management (FM1–FM6): fleet creation/map/analytics, Tier 3 activation
+- Part 8D — v0.9.7 Remote Diagnostic Console (RD1–RD7): support tickets, AI diagnosis, fix delivery, admin console
+- Part 8E — v0.9.8 Autonomous Agents + Failure Intelligence (AA1–AA6, FI1–FI4): self-healing Pi, recovery mode boot
+- Part 8F — v0.9.9 Security Audit & Penetration Testing (SA1–SA7): required gate before v1.0
+- Part 10 roadmap table updated to include v0.9.5–v0.9.9 and corrected v1.0 description
+- Part 7 Phase 3B — Gemini AI security hardening (GS1–GS6) + Stripe E2E testing (ST1–ST7): both required before Phase 4 live push
+- Part 7A (new) — Pre-deployment architecture diagram (AD1–AD5) + credential audit (CA1–CA5)
+- Part 6 item 22 — Pi boot splash screen (branded d3kOS)
+- Part 8 DEP11–DEP12 — brand asset consistency + Pi boot splash
+
+**Roadmap decisions confirmed:**
+- v0.9.9 completes → all three platforms (website, d3kOS, PWA) promote to v1.0. Operator confirmed.
+- signalk-forward-watch confirmed already COMPLETE: v0.2.1 on npm, SK v2.23.0 verified on Pi. Was incorrectly flagged as open — corrected.
+- v0.9.4 remaining open items: AW1 (device registration), P7 (T0→T1 upgrade), DEP3 (Fix My Pi manifest), DEP4 (deploy gate doc), DEP5 (T3 multi-Pi OTA). Work resumes tomorrow.
+- Phase 4 live push now has three explicit gates: architecture diagram + Gemini security + Stripe E2E testing all complete first.
+
+**Decisions:**
+- Architecture flow diagram is the first pre-deployment artifact to build — needed before any live exposure
+- Gemini AI chat must have system prompt hardening + prompt injection defence + rate limiting before live (security requirement, not optional)
+- Stripe must be tested end-to-end in test mode before live key swap — all 7 flows (T2, T3, payment failure, cancellation, Fix My Pi charge, auto-refund, live key test)
+- All three platforms share one canonical logo asset — consistency audit required before launch
+- Pi boot splash replaces Raspberry Pi rainbow with branded AtMyBoat screen showing version + copyright
+
+**Ollama:** 0 calls — planning and checklist work only.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-27 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Release Package Manifest:** None — no Pi deployment this session.
+
+**Pending:**
+- v0.9.4 code work resumes tomorrow: AW1 (device registration) first
+- Camera feed over cellular (TURN + camera combined) — LAN tested, cellular not yet
+- 131 stale alerts from camera stream crash loop — clear from phpMyAdmin or age out
+- Architecture flow diagram (Part 7A AD1–AD5) — first pre-launch deliverable to build
+
+---
+
 ## Session — 2026-03-27 S6c — v0.9.4: TURN relay, camera live feed, service alert storm
 
 **Goal:** Fix WebRTC cellular connectivity (TURN relay), diagnose 131 stream service alerts, fix camera live feed over WebRTC.

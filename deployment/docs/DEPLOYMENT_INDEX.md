@@ -532,3 +532,12 @@ Every time work is completed:
 | `deployment/v0.9.4/pi_source/tier_service.py` | **[UPDATED — 2026-03-27 S6c]** (1) Added `camera: True` to T1/T2/T3 feature matrices (T0: False). (2) Added `/tier/feature/<name>` GET route returning `{"feature": "...", "enabled": bool}`. d3kos-camera-stream.service ExecStartPre was calling this missing route, causing 131-alert crash loop. Pi deployed: `/opt/d3kos/services/tier/tier_service.py` |
 | `deployment/v0.9.4/pi_source/camera_stream_manager.py` | **[UPDATED — 2026-03-27 S6c]** (1) Added `Response` to Flask imports. (2) Added `/camera/stream/hw/<hardware_id>` MJPEG stream endpoint — serves Pi-cached frames from `hw_state` dict as `multipart/x-mixed-replace; boundary=frame` at ~10fps. This is the URL that `live_session.py`'s `get_camera_url()` returns; without it, MediaPlayer received 404 and fell back to blank YUV frame (green screen). Pi deployed: `/opt/d3kos/services/marine-vision/camera_stream_manager.py` |
 | `atmyboat-forum: mobile/turn-credentials.php` | **[UPDATED — 2026-03-27 S6c]** TURN URLs corrected from `atmyboat.metered.live` to `a.relay.metered.ca` (actual relay infrastructure). Deployed to HostPapa staging via FTPS. |
+
+## Session 2026-03-27 S7 Updates — Roadmap planning
+
+No new files deployed this session. Checklist and governance updates only:
+
+| File | Description |
+|------|-------------|
+| `PROJECT_CHECKLIST.md` | **[UPDATED — 2026-03-27 S7]** Added Parts 8B–8F (v0.9.5–v0.9.9 roadmap sections). Added Part 7A (pre-deployment architecture diagram + credential audit). Added Phase 3B (Gemini AI security hardening GS1–GS6, Stripe E2E testing ST1–ST7). Added Part 6 item 22 (Pi boot splash). Added DEP11–DEP12 (brand asset consistency). Updated Part 10 roadmap table. |
+| `SESSION_LOG.md` | **[UPDATED — 2026-03-27 S7]** Session S7 entry appended — roadmap research, version planning decisions. |
