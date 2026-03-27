@@ -344,7 +344,8 @@ function updateHeader(vesselName = null, online = null) {
   }
   if (online !== null) {
     dotEl.className = 'online-dot ' + (online ? 'online' : 'offline');
-    dotEl.setAttribute('title', online ? 'Online' : 'Offline');
+    dotEl.setAttribute('title',      online ? 'Online' : 'Offline');
+    dotEl.setAttribute('aria-label', online ? 'Vessel online' : 'Vessel offline');
   }
 }
 
