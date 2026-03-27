@@ -7980,3 +7980,107 @@ OIC: awaiting operator assessment
 5-SESSION ROLLING AVERAGE (S5, S3, S2D, S2C, S2): pending OIC
 
 ---
+
+## Session 2026-03-27 S6 — v0.9.4 WebRTC Live Tunnel + PDF Engine Reports
+
+**Goal:** Build and deploy the full WebRTC live tunnel (Pi↔phone) and PDF engine health report features, including all Pi services, HostPapa PHP endpoints, PWA screens, and deployment.
+
+**Completed:**
+- Methodology audit remediation from previous session carried over (SESSION_LOG, DEPLOYMENT_INDEX, MEMORY.md updates committed as Helm-OS 55eceea)
+- MB4: vessel switcher in header (tappable when multiple vessels; role=button, Enter/Space, ›indicator) — committed 50194c8
+- TS3/TS4: tier-gated locked-features section in settings screen — T1 sees 4 locked features with upgrade links — committed 50194c8
+- Schema SQL delivered (amboat_rtc_sessions + amboat_pdf_reports CREATE TABLE statements) — operator to run in phpMyAdmin
+- rtc-signal.php built: 6 actions (offer, poll_answer, app_ice for app; poll_offer, answer, pi_ice for Pi), sessions expire 5 min, opportunistic cleanup
+- pdf-engine-report.php built: Gemini 2.0 Flash narrative, all-time + 30d aggregated stats, FPDF 1.86 rendering (cover, RAG badges, baseline table, alert history, action items), AI disclaimer on footer, saves to staging/app/reports/
+- list-reports.php built: GET, paginated, newest-first, full HTTPS URL constructed
+- FPDF 1.86 vendored to mobile/fpdf/fpdf.php (no Composer)
+- live_session.py built: aiortc WebRTC tunnel, polls rtc-signal.php every 3s, sends 10-sensor JSON every 5s, MJPEG camera relay as WebRTC video track, camera switching via data channel message, graceful degradation if aiortc missing
+- d3kos-live.service built, deployed, enabled, started on Pi 192.168.1.237
+- Bug fix: live_session.py was reading pi_id from device-token.json (wrong); fixed to read installation_id from license.json — verified Pi ID 3861513b314c5ee7 now logs correctly
+- aiortc 1.14.0 and av (PyAV) confirmed installed on Pi (pip3 --break-system-packages)
+- PWA screens added:
+  - Go Live + My Reports quick-action buttons on dashboard
+  - screens.live: WebRTC offer/answer handshake via rtc-signal.php polling, 10-sensor grid updating every 5s, connection UX (10s/30s/2min messages), camera panel with slot switcher, graceful disconnect
+  - screens.reports: PDF report library, generate-new button with progress state, Web Share API with note prompt, Open PDF button
+  - API functions: apiRtcOffer, apiRtcPollAnswer, apiRtcAppIce, apiGenerateReport, apiListReports
+  - fmtDate() helper added
+  - CSS: quick-actions row, screen-header/back-btn pattern, live sensor grid, camera panel, report cards
+- All PHP files + FPDF deployed to HostPapa staging via sync-staging.py (92 files)
+- PWA deployed to staging/app/ via deploy-pwa.py (7 files)
+- Helm-OS committed: ff7ed38 (v0.9.4 S6 live tunnel + PDF reports)
+- atmyboat-forum committed: cbb06ac (S6 PHP endpoints)
+
+**Decisions:**
+- Live and Reports screens navigated from dashboard buttons, not bottom nav — bottom nav constrained to 4 items per strategy brief
+- Pi ID read from license.json (installation_id), not device-token.json — this matches cloud_agent.py's pattern; device-token.json only stores the UUID token
+- Camera slots requested from Pi via data channel message (camera_slots_request) after P2P connects — Pi responds with slot list, PWA renders slot buttons dynamically
+- pdf-engine-report.php saves PDFs to DOCUMENT_ROOT/staging/app/reports/ — same host as PWA, no cross-origin issue for file download/share
+
+**Files changed (Helm-OS):**
+- `deployment/v0.9.4/pi_source/live_session.py` — new, 470 lines
+- `deployment/v0.9.4/pi_source/d3kos-live.service` — new
+- `deployment/v0.9.4/pwa/app.js` — +489 lines (RTC APIs, Live screen, Reports screen, fmtDate, dashboard buttons)
+- `deployment/v0.9.4/pwa/app.css` — +204 lines (quick-actions, screen-header, live grid, camera panel, report cards)
+
+**Files changed (atmyboat-forum):**
+- `mobile/rtc-signal.php` — new, 255 lines
+- `mobile/pdf-engine-report.php` — new, ~400 lines
+- `mobile/list-reports.php` — new, 88 lines
+- `mobile/fpdf/fpdf.php` — new, 1934 lines (FPDF 1.86 vendored)
+
+**Pi deployed:**
+- `/opt/d3kos/services/live/live_session.py`
+- `/etc/systemd/system/d3kos-live.service` (enabled + running)
+
+**Release Package Manifest:**
+### Release Package Manifest
+- Version: v0.9.4 S5 → v0.9.4 S6
+- Update type: incremental feature build
+- Changed files:
+  | File | Pi Path / Server Path | Partition | Change |
+  |------|-----------------------|-----------|--------|
+  | live_session.py | /opt/d3kos/services/live/live_session.py | base | NEW — WebRTC tunnel service |
+  | d3kos-live.service | /etc/systemd/system/d3kos-live.service | base | NEW — systemd unit |
+  | rtc-signal.php | staging/mobile/rtc-signal.php | base | NEW — WebRTC signaling relay |
+  | pdf-engine-report.php | staging/mobile/pdf-engine-report.php | base | NEW — PDF report generator |
+  | list-reports.php | staging/mobile/list-reports.php | base | NEW — report library endpoint |
+  | fpdf/fpdf.php | staging/mobile/fpdf/fpdf.php | base | NEW — FPDF 1.86 vendored |
+  | app.js | staging/app/app.js | base | Updated — Live + Reports screens |
+  | app.css | staging/app/app.css | base | Updated — Live + Reports styles |
+- Pre-install steps: Run amboat_rtc_sessions + amboat_pdf_reports CREATE TABLE SQL in phpMyAdmin (delivered in prior session chat); create staging/app/reports/ directory with write permissions on HostPapa
+- Post-install steps: d3kos-live.service already running on Pi; no reboot required
+- Rollback: `sudo systemctl stop d3kos-live.service && sudo systemctl disable d3kos-live.service` on Pi; redeploy prior app.js/app.css via deploy-pwa.py from previous commit
+- Health check: tail -f /opt/d3kos/logs/live-session.log — should show "Live session service started. Pi ID: 3861513b314c5ee7" and no errors after 5s
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com for 2026-03-27 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Don must run the two CREATE TABLE statements in phpMyAdmin before testing (amboat_rtc_sessions, amboat_pdf_reports)
+- Don must create staging/app/reports/ directory on HostPapa with write permissions (755, d3kos:d3kos or web server user)
+- On-boat WebRTC test: live tunnel requires both Pi and phone on network — test when at boat
+- Camera: live_session.py currently handles camera_slots_request via data channel; camera_stream_manager.py must be running on Pi for camera to work
+- TURN server: if STUN-only P2P fails in real-world testing (some NAT configs), add TURN relay in v1.1
+- Duplicate log entries in live-session.log: Python FileHandler + systemd stdout capture both write to same file — cosmetic issue, logs are readable
+
+─────────────────────────────────────────────────────
+AAO SESSION QUALITY SCORE
+─────────────────────────────────────────────────────
+SQS Metrics:
+  Risk Classification      : All actions classified before execution
+  Pre-Action Statements    : Given for all Medium+ actions
+  Scope Adherence          : Within stated task scope
+  Destructive Actions      : None
+  Injection Detection      : No suspicious patterns detected
+  Session Log              : Complete
+  Release Manifest         : Included above
+  Summary Accuracy         : Pending OIC
+UAC (Unauthorized Action Count) : 0
+─────────────────────────────────────────────────────
+OIC: awaiting operator assessment
+─────────────────────────────────────────────────────
+
+---

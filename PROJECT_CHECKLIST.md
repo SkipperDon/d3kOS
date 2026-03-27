@@ -363,10 +363,10 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | PWA icon — SVG source | `[x]` **DONE 2026-03-26 S2C** — icon.svg has AtMyBoat logo base64-embedded on navy background. Deployed to `staging/app/icons/icon.svg`. |
 | PWA icon — PNG files (192px + 512px) | `[x]` **DONE 2026-03-27** — icon-192.png + icon-512.png generated via Chrome DevTools canvas script and uploaded to `staging/app/icons/` via cPanel. |
 | Delete d3kos-app GitHub repo | `[x]` **DONE 2026-03-27** — github.com/SkipperDon/d3kos-app deleted by operator. |
-| WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
-| Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
+| WebRTC/STUN live tunnel (Pi ↔ phone) | `[x]` **DONE 2026-03-27 S6** — live_session.py (aiortc, polls every 3s, sensor JSON every 5s, camera relay), d3kos-live.service (enabled+running on Pi). PWA screens.live: 10-sensor grid, camera panel, connection UX messages. rtc-signal.php signaling relay on HostPapa. |
+| Core PWA features (Find My Boat, boat health dashboard) | `[x]` **DONE 2026-03-26 S2** |
 | Fix My Pi (diagnostic + restore, $29.99/incident) | `[x]` **DONE 2026-03-26 S2** — fix_my_pi.py deployed. Pi-side diagnostics + service restarts + disk + config + network checks. PWA Stripe flow = S4. |
-| PDF Reports via mPDF + Gemini 2.5 Flash (T2/T3 only) | `[ ]` |
+| PDF Reports via Gemini + FPDF (all tiers — no cap) | `[x]` **DONE 2026-03-27 S6** — pdf-engine-report.php (Gemini 2.0 Flash, aggregated stats, FPDF 1.86, AI disclaimer), list-reports.php, fpdf/ vendored. PWA screens.reports: library, generate, Web Share API. |
 | OS Lockdown (apt-mark hold + pre-upgrade hook) | `[x]` **DONE 2026-03-26 S2** — os_lockdown.py, delivered via setup_lockdown cloud_agent command (DEP7 option b). |
 
 ### 8.2 — App ↔ Website API Integration (app-side JavaScript)
@@ -379,7 +379,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | AW3 | Fix My Pi — trigger diagnostic | `POST fix-my-pi-billing.php` → Stripe → `POST command-queue.php` | Charges $29.99, writes `fix_my_pi` command for the active Pi | `[x]` **DONE 2026-03-27 S4** — fix-my-pi-app.php (app_token auth): T0 blocked, T1 Stripe checkout + post-payment poll, T2 allowance check, T3 direct queue. PWA screens.fixmypi: disclaimer→progress→result. Stripe webhook updated for pi_installation_id. |
 | AW4 | Send command to Pi | `POST command-queue.php` | App writes command for the active Pi (restart_service, ota_update, reboot) | `[x]` **DONE 2026-03-26 S3** — app-command.php POST. Verifies Pi paired to user. Returns command_id. |
 | AW5 | Poll command result | `GET command-queue.php?id=<id>` | App checks if Pi has completed the command; shows status | `[x]` **DONE 2026-03-26 S3** — app-command.php GET `?command_id=`. OTA button polls every 10s, 20min timeout. |
-| AW6 | Request PDF report | `POST pdf-report.php` | App triggers report for the active Pi; returns download URL | `[ ]` T2/T3 only |
+| AW6 | Request PDF report | `POST pdf-engine-report.php` | App triggers Gemini-powered PDF engine health report; returns download URL, stores in library | `[x]` **DONE 2026-03-27 S6** — all tiers, no cap. PWA: generate button, library list, Web Share API. |
 | AW7 | Read boat health dashboard data | `GET dashboard-data.php` | `[x]` **DONE 2026-03-26 S2** — endpoint built + deployed to staging. PWA app.js calls it. |
 | AW8 | Find My Boat | `GET dashboard-data.php` position fields | `[x]` **DONE 2026-03-26 S2** — dashboard-data.php returns position. PWA shows on Google Maps link. |
 | AW9 | User authentication | Bearer app_token UUID via user-login.php + auth.php | `[x]` **DONE 2026-03-26 S2** — token stored in localStorage. |
@@ -416,6 +416,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | DEP2 | Pi upgrade script (ota_upgrade.py) | `[x]` **DONE 2026-03-26 S2** — download, SHA-256 verify, backup, install, rollback. SHA-256 field in version-registry.php must be populated before first OTA. |
 | DEP3 | **Fix My Pi file manifest** — generate a SHA-256 manifest of every file in a clean d3kOS installation. Host on HostPapa. Fix My Pi compares Pi files against it. Must be regenerated for every new d3kOS release. | `[ ]` Required for Fix My Pi integrity check |
 | DEP4 | **SQL-before-PHP deploy gate** — add hard gate to v0.9.4.1 deploy checklist: run S6 MySQL ALTER TABLE statements via phpMyAdmin BEFORE deploying any new PHP files. If PHP deploys first and ALTERs haven't run, multi-boat writes will fail silently. | `[ ]` Sequencing risk |
+| DEP8 | **S6 schema: run in phpMyAdmin** — CREATE TABLE `amboat_rtc_sessions` + `amboat_pdf_reports` (SQL delivered in S6 chat). PHP files already deployed, will 500 until tables exist. | `[ ]` **OPERATOR ACTION REQUIRED** |
+| DEP9 | **Create `staging/app/reports/` directory on HostPapa** — pdf-engine-report.php saves PDFs there. Needs to exist with write permissions (755). Use cPanel File Manager → staging/app/ → New Folder. | `[ ]` **OPERATOR ACTION REQUIRED** |
 | DEP5 | **T3 multi-Pi OTA** — add "Update all vessels" to app UX. Queues one `ota_update` command per paired Pi. App shows per-Pi progress bars simultaneously. | `[ ]` T3 users can't update all boats at once without this |
 | DEP6 | **PWA version enforcement** — app calls `version-registry.php` on launch, compares to running service worker version. Shows "Update available — tap to refresh" banner if stale. Prevents users running old app against new Pi firmware. | `[x]` **DONE 2026-03-26 S3** — versionLessThan() helper + LATEST_D3KOS constant. Green banner on dashboard if vessel Pi firmware is behind. No extra API call — uses d3kos_version from dashboard-data response. Update LATEST_D3KOS constant each release. |
 | DEP7 | OS Lockdown delivery path | `[x]` **DONE 2026-03-26 S2** — Option b: setup_lockdown command via command queue. |
