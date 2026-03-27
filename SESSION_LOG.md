@@ -7863,3 +7863,120 @@ Trend: improving — four consecutive sessions at 97+.
 No Pi deploy this session — no Release Package Manifest required.
 
 ---
+
+## Session 2026-03-27 S5 — v0.9.4 Engine Detail Screen, Alerts List, Boatlog List + Oil Pressure Gap Fix + Battery Voltage Full Stack
+
+**Goal:** Build S5 PWA screens (engine detail with 24h sparklines, full alerts list, full boatlog list). Fix oil pressure invisible-to-app gap. Add battery voltage support through full stack.
+
+**Completed:**
+
+- **Oil pressure gap fixed (critical):** `oil_pressure_kpa` was being stored in `amboat_engine_snapshots` on every Pi sync but never SELECTed in `dashboard-data.php` or `engine-history.php`. Added to both SELECT statements and returned to app as `oil_pressure`. Added display in dashboard engine card and engine detail screen with color thresholds (< 138 kPa = danger red, < 207 kPa = warn amber).
+
+- **Battery voltage — full stack (all layers):**
+  - `export_categories.py` (Pi): `collect_engine()` extended to fetch `electrical/batteries/0/voltage` from Signal K. Returns `battery_voltage_v`. Backed up on Pi as `export_categories.py.bak-s5battery`.
+  - `export_worker.py` (Pi): `_build_ingress_payload()` extended to forward `battery_voltage_v` as `engine.battery_voltage`. Backed up on Pi as `export_worker.py.bak-s5battery`.
+  - `setup/mobile-schema.sql`: ALTER TABLE migration added — `battery_voltage_v DECIMAL(5,2)` column on `amboat_engine_snapshots`. Don ran in phpMyAdmin (confirmed "empty result set" = DDL success).
+  - `data-ingress.php`: INSERT extended to write `battery_voltage_v`. bind_param updated `'isidddd'` → `'isiddddd'`.
+  - `dashboard-data.php`: SELECT extended to return `battery_voltage_v` as `battery_voltage`.
+  - `engine-history.php`: SELECT extended to return `battery_voltage_v`.
+  - `app.js`: Dashboard engine card shows battery voltage stat (conditional, hidden if null). Engine detail screen shows battery sparkline (conditional). Thresholds: < 11.8V = danger, < 12.2V = warn.
+
+- **New PHP endpoints (3):**
+  - `mobile/engine-history.php` — GET, Bearer app_token auth, `?pi=<uuid>`, returns last 24h engine snapshots ordered ASC for sparkline charts (up to 144 rows, 1/10min).
+  - `mobile/alerts-list.php` — GET, Bearer app_token auth, paginated (default 50, max 100), `?pi=&limit=&offset=`, returns full alert list with total count.
+  - `mobile/boatlog-list.php` — GET, Bearer app_token auth, paginated (default 30, max 100), `?pi=&limit=&offset=`, returns full boatlog list with total count.
+
+- **PWA engine detail screen (`screens.engine`):** Current values card + 24h sparkline charts (SVG inline, no external library). Charts: RPM (#00b4d8), Coolant °C (#f59e0b), Oil Pressure kPa (#ef4444, conditional), Battery V (#22c55e, conditional), Fuel % (#60a5fa). Engine hours delta row. Chart series filtered with `skip: !hasOil` / `skip: !hasBat` — silently absent if no data.
+
+- **PWA alerts screen rebuilt (`screens.alerts`):** Live-fetch from alerts-list.php. Color-coded type badges (ALERT_COLORS map: anchor_drag, high_temp, low_fuel, etc.). Total count in header. Falls back to cached dashboard data while loading.
+
+- **PWA boatlog screen rebuilt (`screens.boatlog`):** Live-fetch from boatlog-list.php. Type badges (BOATLOG_TYPE_COLORS). Tap-to-expand for entries > 80 chars. Total count in header.
+
+- **CSS added:** `.alert-item-full`, `.alert-item-top`, `.alert-type-badge`, `.log-item-full`, `.log-item-top`, `.log-type-badge`, `.sparkline-section`, `.sparkline-header`, `.sparkline-label`, `.sparkline-last`, `.sparkline-svg`, `.sparkline-range`, `.list-footnote`.
+
+- **sparkline() helper:** Builds inline SVG polyline from data array. opts: {width, height, color}. Normalizes values to SVG coordinate space. No external dependency.
+
+- **NMEA2000 battery voltage investigation:** Confirmed only `Pangoo` device (src 64, mfr 1998) is visible on CAN bus — sending PGN 127488 (Engine Parameters Rapid Update). No Garmin chartplotter visible on bus. Garmin likely powered off at time of check. Uncertainty: Garmin may send PGN 127508 (Battery Status) when powered on — cannot confirm until tested at the boat.
+
+- **On-boat checklist item added (PROJECT_CHECKLIST.md item 16):** Verify Garmin sends PGN 127508 when powered on. SSH command embedded for Don.
+
+- **Methodology audit (remediation #5, #6):** No automated tests for S5 PHP endpoints or PWA screens — flagged as known gap. Added smoke test checklist item to PROJECT_CHECKLIST.md.
+
+**Decisions:**
+
+- `sparkline()` built inline in vanilla JS — no external charting library. Rationale: keeps PWA bundle small, no CDN dependency, full control over marine UI theming.
+- Battery voltage display conditional — silently absent if Pi doesn't send it. Rationale: not all Pi installs will have NMEA2000 battery status available (depends on device on bus).
+- DB migration delivered as raw SQL for phpMyAdmin — not a PHP migration script. Rationale: PHP migration script failed because `config.php` has WordPress ABSPATH guard that exits when run outside WP context. Direct SQL is simpler and safer on shared hosting.
+- `forEach` destructuring updated to `.filter(s => !s.skip).forEach(...)` — avoids JS error when `skip` property added to chart series objects.
+
+**Errors encountered and resolved:**
+
+1. **HTTP 500 on migration PHP script:** `run-migration-s5.php` called `require_once config.php`; config.php has `if (!defined('ABSPATH')) exit;`. Script ran outside WP context and silently exited → 500. Fix: deleted script, gave Don raw SQL for phpMyAdmin directly.
+2. **forEach destructuring mismatch:** Old `forEach(({ label, values, color, unit })` did not handle new `skip` field. Fixed by filtering first.
+
+**Not completed / deferred:**
+
+- AW4 — send command UI (app-command.php built in S3; UI not yet built)
+- AW3 — Fix My Pi in-app flow (Stripe + tier branching)
+- MB4 — boat switcher in header
+- TS3/TS4 — tier gating and upgrade prompts in app
+- DEP3 — Fix My Pi file manifest for integrity check
+- DEP5 — T3 multi-Pi OTA
+- P7 — T0→T1 upgrade path on pairing
+- S6 — WebRTC/STUN live tunnel (not started)
+- Automated tests for S5 endpoints/screens (known gap — no test infrastructure)
+
+**Known gaps / uncertainties:**
+
+- Battery voltage from Garmin via PGN 127508 — not confirmed. Needs on-boat test with Garmin powered on (PROJECT_CHECKLIST item 16).
+- No automated tests for any v0.9.4 code — all S-series sessions. Manual smoke test is the only verification path.
+- `staging/app/icons/icon-192.png` and `icon-512.png` — Don still needs to generate and upload (from previous session, not done yet).
+
+**Operator actions required:**
+
+- Generate `icon-192.png` and `icon-512.png` (Chrome DevTools canvas script from S2C) and upload to `staging/app/icons/`.
+- At the boat: run NMEA2000 PGN check with Garmin powered on (PROJECT_CHECKLIST item 16).
+- Check Claude API cost: console.anthropic.com → Usage → 2026-03-27.
+
+**Files changed this session:**
+
+| File | Repo | Change |
+|------|------|--------|
+| `mobile/engine-history.php` | atmyboat-forum | **NEW** — 24h engine snapshot history for sparklines |
+| `mobile/alerts-list.php` | atmyboat-forum | **NEW** — paginated full alert list |
+| `mobile/boatlog-list.php` | atmyboat-forum | **NEW** — paginated full boatlog list |
+| `mobile/dashboard-data.php` | atmyboat-forum | **UPDATED** — added oil_pressure_kpa + battery_voltage_v to SELECT |
+| `mobile/data-ingress.php` | atmyboat-forum | **UPDATED** — INSERT extended for battery_voltage_v |
+| `setup/mobile-schema.sql` | atmyboat-forum | **UPDATED** — ALTER TABLE adds battery_voltage_v column |
+| `deployment/v0.9.4/pwa/app.js` | Helm-OS | **UPDATED** — engine/alerts/boatlog screens, sparkline helper, oil+battery display, API functions |
+| `deployment/v0.9.4/pwa/app.css` | Helm-OS | **UPDATED** — sparkline + alert + boatlog screen styles |
+| `Helm-OS/PROJECT_CHECKLIST.md` | Helm-OS | **UPDATED** — item 16 (NMEA2000 battery check), test gap item |
+| `/opt/d3kos/services/export/export_categories.py` | Pi (live) | **UPDATED** — battery voltage Signal K fetch in collect_engine() |
+| `/opt/d3kos/services/export/export_worker.py` | Pi (live) | **UPDATED** — forwards battery_voltage_v to data-ingress payload |
+
+**Commits:**
+- atmyboat-forum: `5a51640` (3 new PHP endpoints), `57938bf` (oil pressure fix), `ac2eccd` (battery voltage backend)
+- Helm-OS: `aa4bd0e` (S5 PWA screens), `f9250a2` (oil pressure PWA), `e1cddfc` (battery voltage PWA)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | console.anthropic.com → Usage → 2026-03-27 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+No Release Package Manifest required — no new d3kOS Pi filesystem structure deployed (only Python patches to existing services).
+
+QUALITY METRICS — 2026-03-27 S5
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 2 (migration HTTP 500 → phpMyAdmin redirect; forEach → filter fix)
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+OIC: awaiting operator assessment
+─────────────────────────────────────────────────────
+
+5-SESSION ROLLING AVERAGE (S5, S3, S2D, S2C, S2): pending OIC
+
+---
