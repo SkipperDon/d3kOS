@@ -357,11 +357,11 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | Pre-build: Remove Tailscale from Pi | `[x]` Done 2026-03-19 |
 | Command queue / OTA / Fix My Pi broker (HostPapa PHP+MySQL) | `[x]` **DONE — Built in v0.9.3 S5** (register-device.php, pair-device.php, command-queue.php, fix-my-pi-billing.php, pdf-report.php + 7-table schema) |
 | **v0.9.4 S1 — Pi cloud infrastructure** | `[x]` **DONE 2026-03-26** — export_worker.py (ingress format + auth), export_categories.py (13 categories), cloud_agent.py (command consumer), cloud-config.json, device-token.json, d3kos-cloud-agent.service. End-to-end test passed. |
-| **Security: Rotate AMBOAT_API_KEY** | `[!]` Key exposed in session chat. Update cloud-config.json on Pi + mobile/config.php on staging. Don's decision on timing. |
+| **Security: Rotate AMBOAT_API_KEY** | `[x]` **DONE 2026-03-27** — New key written to Pi cloud-config.json, service restarted. Don updated mobile/config.php on HostPapa staging. |
 | Foundation (PWA shell on GitHub Pages) | `[x]` **DONE 2026-03-26 S2** — manifest.json, sw.js, index.html, app.css, app.js, 6 screens. Deployed to `atmyboat.com/staging/app/`. |
 | PWA icon — SVG source | `[x]` **DONE 2026-03-26 S2C** — icon.svg has AtMyBoat logo base64-embedded on navy background. Deployed to `staging/app/icons/icon.svg`. |
-| PWA icon — PNG files (192px + 512px) | `[!]` **Operator action** — Generate via Chrome DevTools console script (provided in session), upload icon-192.png + icon-512.png to `staging/app/icons/` via cPanel. |
-| Delete d3kos-app GitHub repo | `[!]` **Operator action** — github.com/SkipperDon/d3kos-app → Settings → Danger Zone → Delete. (Token lacked delete_repo scope.) |
+| PWA icon — PNG files (192px + 512px) | `[x]` **DONE 2026-03-27** — icon-192.png + icon-512.png generated via Chrome DevTools canvas script and uploaded to `staging/app/icons/` via cPanel. |
+| Delete d3kos-app GitHub repo | `[x]` **DONE 2026-03-27** — github.com/SkipperDon/d3kos-app deleted by operator. |
 | WebRTC/STUN live tunnel (Pi ↔ phone) | `[ ]` |
 | Core PWA features (Find My Boat, boat health dashboard) | `[ ]` |
 | Fix My Pi (diagnostic + restore, $29.99/incident) | `[x]` **DONE 2026-03-26 S2** — fix_my_pi.py deployed. Pi-side diagnostics + service restarts + disk + config + network checks. PWA Stripe flow = S4. |
@@ -411,7 +411,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 | # | Item | Status |
 |---|------|--------|
-| DEP1 | **OTA download source** — confirm GitHub Releases as the Pi's download source. Decide release package format (tar.gz). Document the public download URL pattern. | `[ ]` Decision needed |
+| DEP1 | **OTA download source** — archive.org confirmed. Services zip (not full disk image). URL: `https://archive.org/download/d-3k-os-v-0.9.2/d3kos-v0.9.2.2-services.zip` | `[x]` **DONE 2026-03-27** — zip built (0.44MB), SHA-256 set in version-registry.php. Don uploads zip to archive.org item `d-3k-os-v-0.9.2`. |
 | DEP2 | Pi upgrade script (ota_upgrade.py) | `[x]` **DONE 2026-03-26 S2** — download, SHA-256 verify, backup, install, rollback. SHA-256 field in version-registry.php must be populated before first OTA. |
 | DEP3 | **Fix My Pi file manifest** — generate a SHA-256 manifest of every file in a clean d3kOS installation. Host on HostPapa. Fix My Pi compares Pi files against it. Must be regenerated for every new d3kOS release. | `[ ]` Required for Fix My Pi integrity check |
 | DEP4 | **SQL-before-PHP deploy gate** — add hard gate to v0.9.4.1 deploy checklist: run S6 MySQL ALTER TABLE statements via phpMyAdmin BEFORE deploying any new PHP files. If PHP deploys first and ALTERs haven't run, multi-boat writes will fail silently. | `[ ]` Sequencing risk |
