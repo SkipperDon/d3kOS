@@ -98,8 +98,10 @@ def load_config():
     try:
         with open(CONFIG_FILE) as f:
             cfg = json.load(f)
-        config['api_key']  = cfg.get('amboat_api_key', '')
-        config['base_url'] = cfg.get('amboat_base_url', '').rstrip('/')
+        config['api_key']       = cfg.get('amboat_api_key', '')
+        config['base_url']      = cfg.get('amboat_base_url', '').rstrip('/')
+        config['turn_username'] = cfg.get('turn_username', '')
+        config['turn_credential'] = cfg.get('turn_credential', '')
     except Exception as e:
         log.error(f"Cannot read cloud-config.json: {e}")
         return None
@@ -459,8 +461,21 @@ async def handle_offer(config: dict, offer_data: dict):
     signal_url = f"{config['base_url']}/wp-content/themes/twentytwenty-child/mobile/rtc-signal.php"
     log.info(f"Handling offer for session {session_id}")
 
-    # ICE configuration using free public STUN servers
+    # ICE configuration — STUN for direct P2P, TURN relay for cellular/CGNAT
     ice_servers = [RTCIceServer(urls=s) for s in STUN_SERVERS]
+    if config.get('turn_username') and config.get('turn_credential'):
+        ice_servers.append(RTCIceServer(
+            urls=[
+                'turn:atmyboat.metered.live:80',
+                'turn:atmyboat.metered.live:443',
+                'turns:atmyboat.metered.live:443',
+            ],
+            username=config['turn_username'],
+            credential=config['turn_credential'],
+        ))
+        log.info("TURN relay configured (Metered.ca)")
+    else:
+        log.warning("No TURN credentials in cloud-config.json — cellular connections may fail")
     pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_servers))
 
     # Add a dummy video track BEFORE the answer is created.

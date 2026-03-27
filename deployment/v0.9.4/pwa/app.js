@@ -143,6 +143,10 @@ async function apiBoatlogList(piId, limit = 30, offset = 0) {
 // ── RTC Signaling API ────────────────────────────────────────────────────────
 
 // Post a WebRTC offer to the signaling server. Returns { session_id }.
+async function apiTurnCredentials() {
+  return apiFetch('turn-credentials.php');
+}
+
 async function apiRtcOffer(piId, sdp, iceCandidates) {
   return apiFetch('rtc-signal.php?action=offer', {
     method: 'POST',
@@ -1004,7 +1008,15 @@ function applyLiveSensors(data) {
 }
 
 async function startLiveSession(piId) {
-  const pc = new RTCPeerConnection({ iceServers: RTC_STUN });
+  // Fetch TURN credentials from server — kept server-side so the API key is never in client code.
+  // Falls back to STUN-only if the endpoint fails (LAN will still work).
+  let iceServers = RTC_STUN;
+  try {
+    const turnData = await apiTurnCredentials();
+    if (turnData && turnData.ice_servers) iceServers = turnData.ice_servers;
+  } catch { /* non-fatal — STUN fallback */ }
+
+  const pc = new RTCPeerConnection({ iceServers });
   _livePC = pc;
 
   // Data channel for sensor readings
