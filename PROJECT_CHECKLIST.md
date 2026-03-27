@@ -137,6 +137,7 @@ On-boat verification still pending:
 | 3 | GPS outdoor verification | Don (Pi at dock) | `[!]` Don disputes 2026-03-19 diagnosis (V=no fix indoors). Test: check Signal K position outdoors, confirm lat/lon non-zero. Do after UAT. |
 | 4 | Camera on-boat tests (24hr stability, performance, storage) | Don (on boat with cameras) | `[!]` On-boat dependency. DHCP reservations DONE 2026-03-23C (MAC→IP infinite lease, all 4 cameras). Remaining: 24hr stability test, performance, storage management. |
 | 16 | **Battery voltage — verify Garmin sends PGN 127508** | Don (on boat, Garmin powered on) | `[!]` On-boat. With engine on and Garmin chartplotter running, SSH to Pi and run: `curl -s 'http://localhost:8099/signalk/v1/api/vessels/self/electrical' \| python3 -m json.tool` — if battery data appears, voltage flows to the app automatically. Currently only Pangoo device (src 64) visible on NMEA2000 — Garmin not seen (likely off at bench). No code changes needed once confirmed. |
+| 22 | **Pi boot splash screen — branded d3kOS splash** | Claude | `[ ]` Replace default Raspberry Pi rainbow splash with branded boot screen. Show: AtMyBoat logo, d3kOS version (read from version file), copyright line (© AtMyBoat.com). Implement via plymouth theme or framebuffer splash image. Must survive OS updates without reverting. |
 | 5 | SQS calculation block — add to CLAUDE.md session-close | Claude | `[x]` **COMPLETE** — Already in `~/.claude/commands/session-close.md`. Has been running correctly every session. Item was stale. |
 | 6 | RAG re-ingest after each Pi deployment | Claude (recurring) | `[x]` **COMPLETE 2026-03-23.** 3 SCP-deployed docs (AVNAV_OCHARTS_INSTALL, AVNAV_PLUGINS, OPENPLOTTER_REFERENCE) ingested — 41 chunks total. Normal uploads auto-ingest via upload_api.py. This was a one-time exception. |
 | 7 | Remove git worktrees (v0.9.2, v0.9.2.1, v0.9.3) from disk | Claude | `[x]` **COMPLETE 2026-03-23.** build-v0.9.2.1 merged (prompt→message fix, AvNav client rewrite, voyage logger sort fix). All 3 worktrees removed. Commit a3cb12c. |
@@ -326,10 +327,36 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 **Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
 - [x] **COMPLETE 2026-03-26** — Don ran WAVE on all pages and confirmed all red items cleared. Known exception: WordPress frame WP bar (not our code, ignored). Footer still broken but deferred by operator.
 
+### Phase 3B — Pre-Launch Security & Testing (REQUIRED before Phase 4)
+
+#### Gemini AI Security Hardening
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| GS1 | System prompt hardening | Restrict Gemini to marine topics only (d3kOS, boat maintenance, AtMyBoat.com features). Explicit refusal instructions for off-topic, political, commercial, or harmful requests. | `[ ]` |
+| GS2 | Prompt injection defence | Detect and block injection patterns in user input before sending to Gemini API: "ignore previous instructions", "you are now", "disregard", "override", "new instructions:", "system:". Log attempts. Return polite refusal. | `[ ]` |
+| GS3 | Output filtering | Server-side scan of Gemini response before returning to browser. Block: code execution instructions, binary/hex payloads, external URLs not on allowlist, anything that looks like an exploit or attack vector. | `[ ]` |
+| GS4 | Rate limiting | Per-user (by IP + session) request budget: max 20 requests/session, max 50/day. Hard server-side block — not just JS. Prevents API abuse and cost overrun. | `[ ]` |
+| GS5 | Input sanitization | Strip or escape HTML, script tags, null bytes, and control characters from user input before it touches the Gemini API or gets stored in any log. | `[ ]` |
+| GS6 | Security test — adversarial prompts | Manually test 10+ attack prompts: jailbreaks, role-play overrides, indirect injections, topic bypass attempts, binary payload attempts. All must return refusal, none must succeed. Document test results. | `[ ]` |
+
+#### Stripe End-to-End Testing (staging)
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| ST1 | T2 subscription flow | Stripe test mode: complete checkout for $9.99/mo. Confirm: `checkout.session.completed` webhook fires → user tier updated to T2 in `wpax_usermeta` → Pi tier sync on next export. | `[ ]` |
+| ST2 | T3 annual flow | Same for $99.99/yr. Confirm tier = T3 in DB. | `[ ]` |
+| ST3 | Payment failure + grace period | Simulate `invoice.payment_failed` webhook. Confirm: email sent, tier NOT immediately downgraded, grace period active. | `[ ]` |
+| ST4 | Subscription cancellation | Simulate `customer.subscription.deleted`. Confirm: tier reverts to T1, access gates update, email sent. | `[ ]` |
+| ST5 | Fix My Pi $29.99 flow | T1 user triggers Fix My Pi in PWA. Confirm: Stripe charge → webhook → `fix_my_pi` command queued → Pi picks up → result returned → charge shown in billing history. | `[ ]` |
+| ST6 | Fix My Pi auto-refund | Simulate 30-min timeout (no Pi result). Confirm: automatic Stripe refund issued, `amboat_billing.refunded = 1`, refund email sent to user. | `[ ]` |
+| ST7 | Switch to live Stripe keys | After test mode confirmed: swap test keys for live keys in `inc/atmyboat-config.php` on staging. Run one live T2 test charge then immediately refund. Confirm live webhook fires. | `[ ]` |
+
 ### Phase 4 — Staging → Live
 **Owner: Don's hands only — DEFERRED by operator decision 2026-03-26**
 **Trigger: After v0.9.4 and v0.9.4.1 are complete. No live push before then.**
 - [x] UpdraftPlus full backup of live site — done 2026-03-26
+- [ ] Architecture flow diagram complete (see Part 7A below)
+- [ ] Gemini AI security hardening complete (Phase 3B above — all GS items)
+- [ ] Stripe E2E testing complete (Phase 3B above — all ST items)
 - [ ] Proper live deploy plan — to be scoped when v0.9.4.1 is complete
 - [ ] Post-push smoke test (all pages, AI widget, Stripe Fix My Pi)
 - [ ] GitHub repo set to Private
@@ -343,6 +370,32 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 ### Abandoned v0.9.3 Concept
 **Status: ABANDONED** — An earlier v0.9.3 concept (Next.js 15 + Supabase + Stripe + Vercel) was superseded by the current WordPress + HostPapa approach. The original spec is archived at `deployment/v0.9.3/old instructions/PROJECT_CHECKLIST.md.bak`. Do not action any items from that spec.
+
+---
+
+## PART 7A — Pre-Deployment: Architecture Diagram & Credential Audit
+**Status: NOT STARTED — REQUIRED before any live deployment**
+**Why this exists:** Three platforms (website, d3kOS Pi, PWA) connect through ~12 credentials and 6 external services. Before going live, Don needs a single document that maps every credential, every service-to-service connection, and every data flow. This is the reference used to verify nothing is missing and nothing is hardcoded.
+
+### 7A.1 — Architecture Flow Diagram
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| AD1 | Service map — all platforms and ports | Document every running service: Pi ports (3000, 8084, 8093, 8095, 8099, 8103, 8107, 8111...), HostPapa PHP endpoints, Metered.ca TURN, Stripe, Gemini API, Signal K. One diagram. | `[ ]` |
+| AD2 | Data flow diagram | Pi → HostPapa (export_worker.py → data-ingress.php) → PWA (dashboard-data.php) → user. Node-RED → community endpoints. Alert → alert_watcher → export → HostPapa → PWA push. | `[ ]` |
+| AD3 | WebRTC path diagram | PWA → turn-credentials.php → ICE gather → STUN (Google/Cloudflare) → TURN (a.relay.metered.ca) → Pi live_session.py → data channel open. Show CGNAT traversal. | `[ ]` |
+| AD4 | Payment flow diagram | User → Stripe Checkout → webhook (HostPapa) → tier updated in DB → Pi cloud_agent sync → license.json updated. Fix My Pi: PWA → app-command.php → Stripe charge → command queue → Pi fix_my_pi.py → result → auto-refund if timeout. | `[ ]` |
+| AD5 | Credential map | Every credential listed: what it is, which service owns it, which services consume it, where it is stored (Pi config file, HostPapa PHP file, Stripe dashboard, etc.). No actual values — just the map. | `[ ]` |
+
+### 7A.2 — Pre-Launch Credential Audit
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| CA1 | Verify all credentials are in secure locations | No hardcoded keys in any PHP, Python, or JS file committed to git. All keys in: `inc/atmyboat-config.php` (HostPapa, gitignored), `cloud-config.json` (Pi, gitignored), `.env` (local dev, gitignored). | `[ ]` |
+| CA2 | Credential rotation before live push | AMBOAT_API_KEY, Gemini API key, FTP password, Stripe webhook secrets — all rotated to fresh values before live. Old values (used during development) must not survive to production. | `[ ]` |
+| CA3 | Verify `.gitignore` coverage | Confirm every secrets file is covered: `atmyboat-config.php`, `cloud-config.json`, `cloud-credentials.json`, `.env`, `api-keys.json`. Run `git status` — none of these should appear. | `[ ]` |
+| CA4 | Document credential vault | Don's credential document updated with final production values for all: WordPress admin, HostPapa cPanel, FTP, Stripe (live keys + webhook secrets), Gemini API key, AMBOAT_API_KEY, Metered.ca TURN credentials, Pi SSH key location. | `[ ]` Don's task |
+| CA5 | Pre-commit hook active on atmyboat-forum repo | Verify `.git/hooks/pre-commit` blocks API key patterns in forum repo (same as Helm-OS). If absent: add it before any live-key commits are possible. | `[ ]` |
 
 ---
 
@@ -428,6 +481,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | DEP9 | **Create `staging/app/reports/` directory on HostPapa** — pdf-engine-report.php saves PDFs there. Needs to exist with write permissions (755). Use cPanel File Manager → staging/app/ → New Folder. | `[x]` **DONE 2026-03-27** — directory created by operator |
 | DEP10 | **TURN server** — relay for WebRTC when STUN P2P fails (carrier-grade NAT). | `[x]` **DONE 2026-03-27 S6c** — Metered.ca TURN (a.relay.metered.ca:3478). Pi: aioice timeout patch 5s→12s, live_session.py uses correct relay hostname. App: turn-credentials.php returns correct ICE servers. Relay confirmed: `178.156.179.144` (Metered.ca). Cellular test passed. |
 | DEP5 | **T3 multi-Pi OTA** — add "Update all vessels" to app UX. Queues one `ota_update` command per paired Pi. App shows per-Pi progress bars simultaneously. | `[ ]` T3 users can't update all boats at once without this |
+| DEP11 | **Brand asset audit — logo consistency across all surfaces** | Verify the same canonical AtMyBoat logo is used on: (1) PWA manifest icons (192px + 512px), (2) PWA splash/header, (3) d3kOS Pi dashboard header, (4) AtMyBoat.com WordPress child theme `images/amboat-logo.png`, (5) Pi boot splash screen (item 22 in Part 6). Single source file. No surface uses an older or different variant. | `[ ]` |
+| DEP12 | **Pi boot splash — branded d3kOS screen** | Implement at Pi level: AtMyBoat logo + d3kOS version + © AtMyBoat.com. See Part 6 item 22. | `[ ]` |
 | DEP6 | **PWA version enforcement** — app calls `version-registry.php` on launch, compares to running service worker version. Shows "Update available — tap to refresh" banner if stale. Prevents users running old app against new Pi firmware. | `[x]` **DONE 2026-03-26 S3** — versionLessThan() helper + LATEST_D3KOS constant. Green banner on dashboard if vessel Pi firmware is behind. No extra API call — uses d3kos_version from dashboard-data response. Update LATEST_D3KOS constant each release. |
 | DEP7 | OS Lockdown delivery path | `[x]` **DONE 2026-03-26 S2** — Option b: setup_lockdown command via command queue. |
 
