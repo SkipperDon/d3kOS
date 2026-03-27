@@ -123,6 +123,21 @@ async function apiFmpPollLatest(piId) {
   return apiFetch(`fix-my-pi-app.php?action=latest_fmp&pi_id=${encodeURIComponent(piId)}`);
 }
 
+// Fetch last 24 h of engine snapshots for trend sparklines.
+async function apiEngineHistory(piId) {
+  return apiFetch(`engine-history.php?pi=${encodeURIComponent(piId)}`);
+}
+
+// Fetch full alert list for a Pi (newest-first).
+async function apiAlertsList(piId, limit = 50, offset = 0) {
+  return apiFetch(`alerts-list.php?pi=${encodeURIComponent(piId)}&limit=${limit}&offset=${offset}`);
+}
+
+// Fetch full boatlog entry list for a Pi (newest-first).
+async function apiBoatlogList(piId, limit = 30, offset = 0) {
+  return apiFetch(`boatlog-list.php?pi=${encodeURIComponent(piId)}&limit=${limit}&offset=${offset}`);
+}
+
 // Confirm QR pairing from the app.
 // pi_id is the UUID from the Pi's QR code (atmyboat.com/pair-device/?pi_id=<UUID>)
 async function apiPairDevice(piId, vesselName, vesselType) {
@@ -184,6 +199,42 @@ function fmtVal(v, unit = '', decimals = 1) {
 
 function spinner() {
   return el('div', { class: 'spinner', 'aria-label': 'Loading', role: 'status' });
+}
+
+// Build a simple SVG sparkline from an array of numbers (nulls skipped).
+// opts: { width, height, color, label }
+function sparkline(values, opts = {}) {
+  const { width = 280, height = 44, color = '#00b4d8' } = opts;
+  const pts = values.filter(v => v !== null && v !== undefined && !isNaN(v));
+  if (pts.length < 2) return null;
+
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const range = max - min || 1;
+  const pad = 3;
+
+  const points = pts.map((v, i) => {
+    const x = pad + (i / (pts.length - 1)) * (width - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (height - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', String(height));
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('class', 'sparkline-svg');
+
+  const pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  pl.setAttribute('points', points);
+  pl.setAttribute('fill', 'none');
+  pl.setAttribute('stroke', color);
+  pl.setAttribute('stroke-width', '2');
+  pl.setAttribute('stroke-linejoin', 'round');
+  pl.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(pl);
+  return svg;
 }
 
 // Compare 'v0.9.2.2' style version strings. Returns true if a < b.
@@ -470,6 +521,12 @@ screens.dashboard = function renderDashboard() {
         el('div', { class: 'stat-value' }, fmtVal(eng.engine_hours, 'h')),
       ),
     ));
+    const engDetailBtn = el('button', {
+      class: 'btn btn-ghost',
+      style: 'margin-top: 12px; width: 100%;',
+    }, 'View 24h History');
+    engDetailBtn.addEventListener('click', () => navigate('engine'));
+    engCard.appendChild(engDetailBtn);
     container.appendChild(engCard);
   }
 
@@ -584,76 +641,322 @@ async function refreshDashboard() {
 }
 
 // ── Alerts Screen ─────────────────────────────────────────────────────────────
+// Alert type → color mapping for badges
+const ALERT_COLORS = {
+  engine_temp:    'var(--red)',
+  engine_rpm:     'var(--amber)',
+  fuel_low:       'var(--amber)',
+  disk_full:      'var(--amber)',
+  service_down:   'var(--red)',
+  network:        'var(--accent)',
+  config:         'var(--amber)',
+  ota:            'var(--accent)',
+};
+
 screens.alerts = function renderAlerts() {
   const container = getEl('screen');
-  container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, 'Active Alerts'));
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
 
-  const data = state.dashboard;
-  if (!data) {
+  function renderList(total, alerts) {
+    container.innerHTML = '';
+    const headerText = total > 0 ? `Alerts (${total})` : 'Alerts';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, headerText));
+
+    if (alerts.length === 0) {
+      container.appendChild(
+        el('div', { class: 'empty-state' },
+          el('p', {}, '✓ No alerts'),
+        )
+      );
+      return;
+    }
+
+    const card = el('div', { class: 'card', style: 'padding: 0; overflow: hidden;' });
+    alerts.forEach(a => {
+      const typeColor = ALERT_COLORS[a.alert_type] || 'var(--text-muted)';
+      const typeBadge = el('div', { class: 'alert-type-badge' }, a.alert_type || 'alert');
+      typeBadge.style.color       = typeColor;
+      typeBadge.style.borderColor = typeColor;
+      card.appendChild(
+        el('div', { class: 'alert-item alert-item-full' },
+          el('div', { class: 'alert-item-top' },
+            typeBadge,
+            el('div', { class: 'alert-time' }, fmtTime(a.triggered_at)),
+          ),
+          el('div', { class: 'alert-msg' }, a.message || ''),
+        )
+      );
+    });
+    container.appendChild(card);
+
+    if (total > alerts.length) {
+      container.appendChild(
+        el('p', { class: 'list-footnote' },
+          `Showing ${alerts.length} of ${total} alerts.`)
+      );
+    }
+  }
+
+  // Show cached data immediately while fetching
+  const cached = state.dashboard && state.dashboard.alerts;
+  if (cached) {
+    renderList(cached.count, cached.latest || []);
+  } else {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, 'Alerts'));
     container.appendChild(spinner());
-    return;
   }
 
-  const alerts = (data.alerts && data.alerts.latest) || [];
+  if (!piId) return;
 
-  if (alerts.length === 0) {
-    container.appendChild(
-      el('div', { class: 'empty-state' },
-        el('p', {}, '✓ No active alerts'),
-      )
-    );
-    return;
-  }
-
-  const card = el('div', { class: 'card', style: 'padding: 0; overflow: hidden;' });
-  alerts.forEach(a => {
-    card.appendChild(
-      el('div', { class: 'alert-item' },
-        el('div', { class: 'alert-type' }, a.alert_type || 'alert'),
-        el('div', { class: 'alert-msg'  }, a.message || ''),
-        el('div', { class: 'alert-time' }, fmtTime(a.triggered_at)),
-      )
-    );
-  });
-  container.appendChild(card);
+  apiAlertsList(piId).then(data => {
+    renderList(data.total, data.alerts || []);
+    updateAlertBadge(data.total);
+  }).catch(() => { /* keep cached view on error */ });
 };
 
 // ── Boatlog Screen ────────────────────────────────────────────────────────────
+const BOATLOG_TYPE_COLORS = {
+  note:     'var(--accent)',
+  voice:    'var(--green)',
+  engine:   'var(--amber)',
+  position: 'var(--accent)',
+  weather:  '#a78bfa',
+  alert:    'var(--red)',
+};
+
 screens.boatlog = function renderBoatlog() {
   const container = getEl('screen');
-  container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, 'Boat Log'));
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
 
-  const data = state.dashboard;
-  if (!data) {
-    container.appendChild(spinner());
-    return;
+  // Track which entries are expanded
+  const expanded = new Set();
+
+  function renderList(total, entries) {
+    container.innerHTML = '';
+    const headerText = total > 0 ? `Boat Log (${total})` : 'Boat Log';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, headerText));
+
+    if (entries.length === 0) {
+      container.appendChild(
+        el('div', { class: 'empty-state' },
+          el('p', {}, 'No boatlog entries yet.'),
+        )
+      );
+      return;
+    }
+
+    const card = el('div', { class: 'card', style: 'padding: 0; overflow: hidden;' });
+    entries.forEach((e, idx) => {
+      const typeColor = BOATLOG_TYPE_COLORS[e.entry_type] || 'var(--text-muted)';
+      const typeBadge = el('div', { class: 'log-type-badge' }, e.entry_type || 'log');
+      typeBadge.style.color       = typeColor;
+      typeBadge.style.borderColor = typeColor;
+
+      const content = e.content || '';
+      const isLong  = content.length > 80;
+      const preview = isLong ? content.slice(0, 80) + '…' : content;
+      const isOpen  = expanded.has(idx);
+
+      const contentEl = el('div', { class: 'log-content' }, isOpen ? content : preview);
+
+      const row = el('div', { class: 'log-item log-item-full' },
+        el('div', { class: 'log-item-top' },
+          typeBadge,
+          el('div', { class: 'log-time' }, fmtTime(e.entry_timestamp)),
+        ),
+        contentEl,
+      );
+
+      if (isLong) {
+        row.style.cursor = 'pointer';
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
+        row.addEventListener('click', () => {
+          if (expanded.has(idx)) {
+            expanded.delete(idx);
+            contentEl.textContent = preview;
+          } else {
+            expanded.add(idx);
+            contentEl.textContent = content;
+          }
+        });
+        row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') row.click(); });
+      }
+
+      card.appendChild(row);
+    });
+    container.appendChild(card);
+
+    if (total > entries.length) {
+      container.appendChild(
+        el('p', { class: 'list-footnote' },
+          `Showing ${entries.length} of ${total} entries.`)
+      );
+    }
   }
 
-  const entry = data.boatlog && data.boatlog.latest_entry;
-  if (!entry) {
+  // Show cached latest entry while fetching
+  const cached = state.dashboard && state.dashboard.boatlog && state.dashboard.boatlog.latest_entry;
+  if (cached) {
+    renderList(1, [cached]);
+  } else {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, 'Boat Log'));
+    container.appendChild(spinner());
+  }
+
+  if (!piId) return;
+
+  apiBoatlogList(piId).then(data => {
+    renderList(data.total, data.entries || []);
+  }).catch(() => { /* keep cached view on error */ });
+};
+
+// ── Engine Screen ─────────────────────────────────────────────────────────────
+// Accessed via "View 24h History" button on dashboard engine card.
+screens.engine = function renderEngine() {
+  const container = getEl('screen');
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
+
+  container.innerHTML = '';
+  container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:8px' }, 'Engine'));
+
+  const backBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'margin-bottom:16px;',
+  }, '← Dashboard');
+  backBtn.addEventListener('click', () => navigate('dashboard'));
+  container.appendChild(backBtn);
+
+  if (!piId) {
     container.appendChild(
-      el('div', { class: 'empty-state' },
-        el('p', {}, 'No boatlog entries yet.'),
-      )
+      el('div', { class: 'empty-state' }, el('p', {}, 'No vessel selected.'))
     );
     return;
   }
 
-  const card = el('div', { class: 'card', style: 'padding: 0; overflow: hidden;' });
-  card.appendChild(
-    el('div', { class: 'log-item' },
-      el('div', { class: 'log-type' }, entry.entry_type || 'log'),
-      el('div', { class: 'log-content' }, entry.content || ''),
-      el('div', { class: 'log-time' }, fmtTime(entry.entry_timestamp)),
-    )
-  );
-  container.appendChild(card);
+  // Current values from dashboard cache
+  const eng = state.dashboard && state.dashboard.engine;
+  if (eng) {
+    const rpmClass  = eng.rpm > 4000 ? 'danger' : eng.rpm > 2500 ? 'warn' : '';
+    const tempClass = eng.coolant_temp > 95 ? 'danger' : eng.coolant_temp > 85 ? 'warn' : '';
+    const fuelClass = eng.fuel_level < 15 ? 'danger' : eng.fuel_level < 30 ? 'warn' : '';
+    const curCard = el('div', { class: 'card' });
+    curCard.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:8px;font-size:0.9rem;' }, 'Current'));
+    curCard.appendChild(el('div', { class: 'stat-grid' },
+      el('div', { class: 'stat-item' },
+        el('div', { class: 'stat-label' }, 'RPM'),
+        el('div', { class: `stat-value ${rpmClass}` }, fmtVal(eng.rpm, '', 0)),
+      ),
+      el('div', { class: 'stat-item' },
+        el('div', { class: 'stat-label' }, 'Coolant'),
+        el('div', { class: `stat-value ${tempClass}` }, fmtVal(eng.coolant_temp, '°C')),
+      ),
+      el('div', { class: 'stat-item' },
+        el('div', { class: 'stat-label' }, 'Fuel'),
+        el('div', { class: `stat-value ${fuelClass}` }, fmtVal(eng.fuel_level, '%', 0)),
+      ),
+      el('div', { class: 'stat-item' },
+        el('div', { class: 'stat-label' }, 'Engine Hours'),
+        el('div', { class: 'stat-value' }, fmtVal(eng.engine_hours, 'h')),
+      ),
+    ));
+    if (eng.snapshot_at) {
+      curCard.appendChild(el('div', {
+        style: 'font-size:0.82rem;color:var(--text-muted);margin-top:8px;',
+      }, 'Sampled: ' + fmtTime(eng.snapshot_at)));
+    }
+    container.appendChild(curCard);
+  }
 
-  container.appendChild(
-    el('p', { style: 'font-size: 0.82rem; color: var(--text-muted); margin-top: 8px;' },
-      'Full boatlog history is available at atmyboat.com/dashboard'
-    )
-  );
+  // Sparkline placeholder — shown while history loads
+  const chartCard = el('div', { class: 'card' });
+  chartCard.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:12px;font-size:0.9rem;' }, '24h Trend'));
+  const chartsWrap = el('div', {});
+  chartsWrap.appendChild(spinner());
+  chartCard.appendChild(chartsWrap);
+  container.appendChild(chartCard);
+
+  apiEngineHistory(piId).then(data => {
+    const snaps = data.snapshots || [];
+    chartsWrap.innerHTML = '';
+
+    if (snaps.length < 2) {
+      chartsWrap.appendChild(
+        el('p', { style: 'font-size:0.9rem;color:var(--text-muted);' },
+          'Not enough data yet. Engine history builds up over time.')
+      );
+      return;
+    }
+
+    const rpms    = snaps.map(s => s.rpm);
+    const temps   = snaps.map(s => s.coolant_temp);
+    const fuels   = snaps.map(s => s.fuel_level_pct);
+    const hours   = snaps.map(s => s.engine_hours_h);
+    const tFirst  = fmtTime(snaps[0].snapshot_at);
+    const tLast   = fmtTime(snaps[snaps.length - 1].snapshot_at);
+    const timeRange = el('div', {
+      style: 'font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;',
+    }, `${tFirst} → ${tLast}`);
+    chartsWrap.appendChild(timeRange);
+
+    [
+      { label: 'RPM',          values: rpms,  color: '#00b4d8', unit: '' },
+      { label: 'Coolant (°C)', values: temps, color: '#f59e0b', unit: '°C' },
+      { label: 'Fuel (%)',     values: fuels, color: '#22c55e', unit: '%' },
+    ].forEach(({ label, values, color, unit }) => {
+      const pts = values.filter(v => v !== null && !isNaN(v));
+      if (pts.length < 2) return;
+
+      const minV = Math.min(...pts);
+      const maxV = Math.max(...pts);
+      const lastV = pts[pts.length - 1];
+
+      const section = el('div', { class: 'sparkline-section' });
+      section.appendChild(
+        el('div', { class: 'sparkline-header' },
+          el('span', { class: 'sparkline-label' }, label),
+          el('span', { class: 'sparkline-last', style: `color:${color}` },
+            lastV.toFixed(unit === '' ? 0 : 1) + (unit ? '\u00a0' + unit : '')),
+        )
+      );
+      const svg = sparkline(values, { color });
+      if (svg) section.appendChild(svg);
+      section.appendChild(
+        el('div', { class: 'sparkline-range' },
+          el('span', {}, minV.toFixed(unit === '' ? 0 : 1) + (unit ? '\u00a0' + unit : '')),
+          el('span', {}, maxV.toFixed(unit === '' ? 0 : 1) + (unit ? '\u00a0' + unit : '')),
+        )
+      );
+      chartsWrap.appendChild(section);
+    });
+
+    // Engine hours trend (displayed as a stat row, not a sparkline)
+    const hourPts = hours.filter(v => v !== null && !isNaN(v));
+    if (hourPts.length >= 2) {
+      const delta = hourPts[hourPts.length - 1] - hourPts[0];
+      if (delta > 0) {
+        chartsWrap.appendChild(
+          el('div', { class: 'sparkline-section' },
+            el('div', { class: 'sparkline-header' },
+              el('span', { class: 'sparkline-label' }, 'Engine Hours'),
+              el('span', { class: 'sparkline-last' },
+                hourPts[hourPts.length - 1].toFixed(1) + '\u00a0h'),
+            ),
+            el('div', { style: 'font-size:0.82rem;color:var(--text-muted);margin-top:2px;' },
+              `+${delta.toFixed(2)} h this period`),
+          )
+        );
+      }
+    }
+  }).catch(() => {
+    chartsWrap.innerHTML = '';
+    chartsWrap.appendChild(
+      el('p', { style: 'font-size:0.9rem;color:var(--text-muted);' },
+        'Could not load history. Check your connection.')
+    );
+  });
 };
 
 // ── Settings Screen ───────────────────────────────────────────────────────────
