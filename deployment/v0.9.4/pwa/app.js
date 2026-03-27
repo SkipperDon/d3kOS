@@ -1019,6 +1019,11 @@ async function startLiveSession(piId) {
   const pc = new RTCPeerConnection({ iceServers });
   _livePC = pc;
 
+  // Declare video receive intent BEFORE createOffer so the browser includes a
+  // video m-line in the SDP. Without this the Pi has no video section to bind
+  // DummyVideoTrack to and crashes with "None is not in list".
+  pc.addTransceiver('video', { direction: 'recvonly' });
+
   // Data channel for sensor readings
   const dc = pc.createDataChannel('sensors');
   dc.binaryType = 'arraybuffer'; // Safari sends Blob by default; force ArrayBuffer for binary transfers
