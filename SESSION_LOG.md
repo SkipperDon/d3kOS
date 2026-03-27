@@ -2,6 +2,76 @@
 
 ---
 
+## Session — 2026-03-27 S6c — v0.9.4: TURN relay, camera live feed, service alert storm
+
+**Goal:** Fix WebRTC cellular connectivity (TURN relay), diagnose 131 stream service alerts, fix camera live feed over WebRTC.
+
+**Completed:**
+
+**TURN relay (cellular WebRTC):**
+- Diagnosed root cause: aioice `get_component_candidates()` has a hardcoded 5-second timeout. TURN relay allocation (DNS + UDP + ALLOCATE + 401-retry-with-auth) takes 5.11s on first call — silently cancelled at 5.0s.
+- Diagnosed second root cause: `atmyboat.metered.live` is Metered.ca's Azure-hosted API domain (resolves to `13.107.253.35` Microsoft Azure), NOT the TURN relay server. No UDP traffic responded on any port.
+- Correct relay server confirmed: `a.relay.metered.ca:3478` — resolves to `5.161.216.139` (Hetzner), TURN allocation succeeds in 5.1s.
+- Fix applied to `live_session.py`:
+  - Monkey-patched aioice `get_component_candidates` default timeout 5s → 12s (applied at module import time before RTCPeerConnection is created)
+  - Changed TURN URL from `atmyboat.metered.live` to `a.relay.metered.ca:3478`
+  - Extended ICE gathering wait from 8s → 15s
+- Fix applied to `turn-credentials.php`: updated TURN URLs from `atmyboat.metered.live` to `a.relay.metered.ca`
+- Simulation test confirmed: 1 relay candidate gathered (`178.156.179.144:port`) in 5.2s total
+- Operator confirmed: cellular WebRTC connection successful
+
+**Camera stream service alert storm (131 alerts):**
+- Root cause: `d3kos-camera-stream.service` `ExecStartPre` calls `/tier/feature/camera` — route did not exist in `tier_service.py`. Service crash-looped every ~3s, `alert_watcher.py` generated an alert each restart.
+- Fix: Added `camera: True` to T1/T2/T3 feature matrices (T0: False) in `tier_service.py`
+- Fix: Added `/tier/feature/<name>` route returning `{"feature": "...", "enabled": bool}`
+- Result: Camera stream service now `active (running)`, alert storm stopped
+
+**Camera live feed (green screen → working):**
+- Root cause 1: `get_camera_url()` returned `/camera/stream/hw/<id>` but only `/camera/frame/hw/<id>` (single JPEG) existed in `camera_stream_manager.py`. `MediaPlayer` received 404, fell back to blank YUV frame → green screen.
+- Fix: Added `/camera/stream/hw/<hardware_id>` MJPEG endpoint to `camera_stream_manager.py` — serves cached frames from `hw_state` dict as `multipart/x-mixed-replace` at ~10fps. Added `Response` to Flask imports.
+- Verified: `av.open('http://localhost:8084/camera/stream/hw/...')` → `640×360 yuvj420p` ✓
+- Root cause 2: `asyncio.ensure_future(video_sender.replaceTrack(camera_track))` — `replaceTrack()` is synchronous in aiortc 1.x (returns None, not a coroutine). `ensure_future(None)` raises `TypeError`, crashing the data channel handler and closing the WebRTC session on every camera tap.
+- Fix: Removed `ensure_future()` wrapper — call `video_sender.replaceTrack(camera_track)` directly. Same fix for `camera_stop`.
+- Operator confirmed: camera live feed working end-to-end over WebRTC
+
+**Decisions:**
+- TURN relay built in v0.9.4 (previously marked DEP10 deferred to v1.1) — operator explicitly tested and confirmed working over cellular CGNAT. Checklist updated.
+- `a.relay.metered.ca:3478` is the authoritative Metered.ca TURN relay hostname. `atmyboat.metered.live` is project API domain only — never use it as a TURN server URL.
+- aioice timeout patch applied in `live_session.py` at import time — non-destructive, falls back gracefully if aioice API changes.
+- MJPEG stream endpoint in `camera_stream_manager.py` serves Pi-cached frames, not RTSP directly — correct architecture (camera manager owns RTSP, live_session consumes HTTP).
+
+**Ollama:** 0 calls — all fixes were direct code diagnosis and edits.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-27 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Release Package Manifest:**
+- Version: v0.9.4 (no version bump — bug fixes within sprint)
+- Update type: hotfix
+- Changed files:
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `live_session.py` | `/opt/d3kos/services/live/live_session.py` | aioice timeout patch, correct TURN URL, ICE gather wait 8s→15s, replaceTrack sync fix |
+| `tier_service.py` | `/opt/d3kos/services/tier/tier_service.py` | Added `camera` feature flag + `/tier/feature/<name>` route |
+| `camera_stream_manager.py` | `/opt/d3kos/services/marine-vision/camera_stream_manager.py` | Added MJPEG stream endpoint `/camera/stream/hw/<id>` |
+| `turn-credentials.php` | `staging/.../mobile/turn-credentials.php` | TURN URL corrected to `a.relay.metered.ca` |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-live d3kos-tier d3kos-camera-stream` — all done this session
+- Rollback: `git checkout HEAD~1` for each file; or restore from `.aao-backups/`
+- Health check: App connects from cellular → confirms TURN relay candidates in log; tap camera slot → live feed appears
+
+**Pending:**
+- 131 stale alerts in app from the camera stream crash loop — operator should clear alert history from app or wait for them to age out
+- On-boat camera test (24hr stability) still needed
+- Camera feed over cellular (TURN) not yet tested — only LAN camera tested after fix
+
+---
+
 ## Session — 2026-03-24D — v0.9.3 planning: page audit, connectivity gaps, content plan
 
 **Goal:** Audit all v0.9.3 pages, identify missing fundamental pages, document the WiFi/Ethernet/NMEA 2000 connectivity story, create Session 6 content plan for operator review before building.

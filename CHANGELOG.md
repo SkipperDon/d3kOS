@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.4-S6c] - 2026-03-27
+
+### Fixed
+- **TURN relay (cellular WebRTC)** — aioice `get_component_candidates` has a hardcoded 5s timeout; TURN relay allocation takes 5.11s and was silently cancelled. Patched timeout to 12s. TURN server URL corrected from `atmyboat.metered.live` (Azure API/web domain) to `a.relay.metered.ca:3478` (actual Metered.ca relay infrastructure). Cellular WebRTC confirmed working over CGNAT.
+- **Camera stream service alert storm** — `d3kos-camera-stream.service` ExecStartPre called `/tier/feature/camera`; route did not exist. Service crash-looped every ~3s generating 131 alerts. Fixed by adding `camera` feature flag to tier matrix (T1+) and adding `/tier/feature/<name>` route to tier_service.py.
+- **Camera live feed green screen** — `get_camera_url()` returned `/camera/stream/hw/<id>` but `camera_stream_manager.py` only had `/camera/frame/hw/<id>` (single JPEG). MediaPlayer received 404, fell back to blank YUV frame. Fixed by adding proper MJPEG stream endpoint to camera_stream_manager.py.
+- **Camera tap crashed WebRTC session** — `asyncio.ensure_future(video_sender.replaceTrack(...))` raised `TypeError` because `replaceTrack()` is synchronous in aiortc 1.x (returns None). Fixed by calling replaceTrack() directly.
+
+---
+
 ## [0.9.2.2] - 2026-03-23
 
 ### Summary

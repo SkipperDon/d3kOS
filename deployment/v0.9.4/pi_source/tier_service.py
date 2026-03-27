@@ -3,7 +3,8 @@
 d3kOS Tier Service
 Port 8093 — reads license.json, returns tier + feature flags
 
-GET /tier/status → { tier, installation_id, features, version }
+GET /tier/status              → { tier, installation_id, features, version }
+GET /tier/feature/<name>      → { feature, enabled }
 GET /health
 
 Author: d3kOS Team
@@ -40,6 +41,7 @@ FEATURE_MATRIX = {
         'multiple_phones':  False,
         'fleet_management': False,
         'cloud_sync':       False,
+        'camera':           False,
     },
     1: {
         'mobile_app':       True,
@@ -55,6 +57,7 @@ FEATURE_MATRIX = {
         'multiple_phones':  False,
         'fleet_management': False,
         'cloud_sync':       True,
+        'camera':           True,
     },
     2: {
         'mobile_app':       True,
@@ -70,6 +73,7 @@ FEATURE_MATRIX = {
         'multiple_phones':  True,
         'fleet_management': False,
         'cloud_sync':       True,
+        'camera':           True,
     },
     3: {
         'mobile_app':       True,
@@ -85,6 +89,7 @@ FEATURE_MATRIX = {
         'multiple_phones':  True,
         'fleet_management': True,
         'cloud_sync':       True,
+        'camera':           True,
     },
 }
 
@@ -121,6 +126,21 @@ def tier_status():
         'testing_mode':    license_data.get('testing_mode', False),
         'features':        features,
     })
+
+
+@app.route('/tier/feature/<name>', methods=['GET'])
+def tier_feature(name):
+    license_data = load_license()
+    tier = 0
+    if license_data:
+        tier = int(license_data.get('tier', 0))
+    features = FEATURE_MATRIX.get(tier, FEATURE_MATRIX[0])
+    if name not in features:
+        return jsonify({'feature': name, 'enabled': False, 'error': 'unknown feature'}), 404
+    value = features[name]
+    # Non-boolean values (e.g. 'paid', '3_per_month') are truthy — treat as enabled
+    enabled = bool(value) if not isinstance(value, bool) else value
+    return jsonify({'feature': name, 'enabled': enabled})
 
 
 @app.route('/health', methods=['GET'])

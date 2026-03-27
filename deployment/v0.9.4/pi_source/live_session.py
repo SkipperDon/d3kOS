@@ -41,6 +41,20 @@ except ImportError:
     AIORTC_OK = False
     logging.warning("aiortc not installed — live tunnel unavailable. Run: pip3 install aiortc")
 
+# ── aioice TURN timeout patch ──────────────────────────────────────────────────
+# aioice's default ICE gathering timeout is 5 seconds. TURN relay allocation
+# (DNS + UDP handshake + ALLOCATE + 401-retry-with-auth) takes ~5.1s on the
+# first call, causing relay candidates to be silently dropped at 5.0s.
+# Patch: extend the default gather timeout to 12 seconds.
+try:
+    import aioice.ice as _aioice_ice
+    _orig_gcc = _aioice_ice.Connection.get_component_candidates
+    async def _patched_gcc(self, component, addresses, timeout=12):
+        return await _orig_gcc(self, component=component, addresses=addresses, timeout=timeout)
+    _aioice_ice.Connection.get_component_candidates = _patched_gcc
+except Exception:
+    pass  # non-fatal — TURN may still work if allocation completes within 5s
+
 # ── Config ────────────────────────────────────────────────────────────────────
 LOG_FILE    = '/opt/d3kos/logs/live-session.log'
 CONFIG_FILE  = '/opt/d3kos/config/cloud-config.json'
@@ -464,16 +478,18 @@ async def handle_offer(config: dict, offer_data: dict):
     # ICE configuration — STUN for direct P2P, TURN relay for cellular/CGNAT
     ice_servers = [RTCIceServer(urls=s) for s in STUN_SERVERS]
     if config.get('turn_username') and config.get('turn_credential'):
+        # a.relay.metered.ca is the actual TURN relay infrastructure.
+        # atmyboat.metered.live is the project API domain (Azure) — not a relay server.
+        # aioice uses only the first TURN URL, so put UDP:3478 first.
         ice_servers.append(RTCIceServer(
             urls=[
-                'turn:atmyboat.metered.live:80',
-                'turn:atmyboat.metered.live:443',
-                'turns:atmyboat.metered.live:443',
+                'turn:a.relay.metered.ca:3478',
+                'turns:a.relay.metered.ca:443',
             ],
             username=config['turn_username'],
             credential=config['turn_credential'],
         ))
-        log.info("TURN relay configured (Metered.ca)")
+        log.info("TURN relay configured (a.relay.metered.ca:3478)")
     else:
         log.warning("No TURN credentials in cloud-config.json — cellular connections may fail")
     pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_servers))
@@ -525,7 +541,7 @@ async def handle_offer(config: dict, offer_data: dict):
                     camera_track = MJPEGCameraTrack(stream_url)
                     # replaceTrack swaps the track on the already-negotiated sender —
                     # no renegotiation needed. Browser ontrack already fired at connect.
-                    asyncio.ensure_future(video_sender.replaceTrack(camera_track))
+                    video_sender.replaceTrack(camera_track)
                     log.info(f"Camera track replaced for slot {slot_id}: {stream_url}")
                     channel.send(json.dumps({'type': 'camera_ok', 'slot': slot_id}))
                 else:
@@ -537,7 +553,7 @@ async def handle_offer(config: dict, offer_data: dict):
                     camera_track = None
                 # Replace back with silent dummy so the video sender stays valid
                 if AIORTC_OK and video_sender:
-                    asyncio.ensure_future(video_sender.replaceTrack(DummyVideoTrack()))
+                    video_sender.replaceTrack(DummyVideoTrack())
                 channel.send(json.dumps({'type': 'camera_stopped'}))
 
             elif msg_type == 'camera_slots_request':
@@ -732,18 +748,24 @@ async def handle_offer(config: dict, offer_data: dict):
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
-    # Wait for ICE gathering to complete (up to 8 seconds)
-    deadline = asyncio.get_event_loop().time() + 8
+    # Wait for ICE gathering to complete (up to 15 seconds).
+    # TURN relay allocation (DNS + TCP + ALLOCATE handshake) can take up to 10s.
+    deadline = asyncio.get_event_loop().time() + 15
     while pc.iceGatheringState != 'complete':
         if asyncio.get_event_loop().time() > deadline:
-            log.warning(f"ICE gathering not complete after 8s (state: {pc.iceGatheringState})")
+            log.warning(f"ICE gathering not complete after 15s (state: {pc.iceGatheringState})")
             break
         await asyncio.sleep(0.1)
 
-    # Log Pi's ICE candidates for diagnostics
+    # Log ALL Pi ICE candidates for diagnostics — relay candidates confirm TURN is working
     sdp_lines = pc.localDescription.sdp.split('\r\n')
     cand_lines = [l for l in sdp_lines if l.startswith('a=candidate')]
-    log.info(f"Pi ICE candidates ({len(cand_lines)}): {cand_lines[:4]}")
+    relay_lines = [l for l in cand_lines if 'typ relay' in l]
+    log.info(f"Pi ICE candidates ({len(cand_lines)} total, {len(relay_lines)} relay):")
+    for cl in cand_lines:
+        log.info(f"  {cl}")
+    if not relay_lines:
+        log.warning("No TURN relay candidates — cellular connections will fail if CGNAT is present")
 
     our_candidates = []  # candidates are embedded in the SDP — not sent separately
 
@@ -831,7 +853,7 @@ async def handle_offer_safe(config, offer_data, active_sessions, sid):
         await handle_offer(config, offer_data)
     except Exception as e:
         log.error(f"Session {sid} error: {e}")
-        log.debug(traceback.format_exc())
+        log.error(traceback.format_exc())  # temporary — diagnose "None is not in list"
     finally:
         active_sessions.discard(sid)
 
