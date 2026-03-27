@@ -138,6 +138,48 @@ async function apiBoatlogList(piId, limit = 30, offset = 0) {
   return apiFetch(`boatlog-list.php?pi=${encodeURIComponent(piId)}&limit=${limit}&offset=${offset}`);
 }
 
+// ── RTC Signaling API ────────────────────────────────────────────────────────
+
+// Post a WebRTC offer to the signaling server. Returns { session_id }.
+async function apiRtcOffer(piId, sdp, iceCandidates) {
+  return apiFetch('rtc-signal.php?action=offer', {
+    method: 'POST',
+    body: JSON.stringify({ pi_id: piId, sdp, ice_candidates: iceCandidates }),
+  });
+}
+
+// Poll for the Pi's answer. Returns { ready, sdp, ice_candidates } or { ready: false }.
+async function apiRtcPollAnswer(sessionId) {
+  return apiFetch(`rtc-signal.php?action=poll_answer&session_id=${encodeURIComponent(sessionId)}`);
+}
+
+// Send additional ICE candidates from the app to the signaling server (trickle ICE).
+async function apiRtcAppIce(sessionId, iceCandidates) {
+  return apiFetch('rtc-signal.php?action=app_ice', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId, ice_candidates: iceCandidates }),
+  });
+}
+
+// ── PDF Report API ────────────────────────────────────────────────────────────
+
+// Request a new PDF engine health report for the given Pi.
+// Returns { report_id, url, file_size_kb, period_start, period_end, snapshot_count, created_at }
+async function apiGenerateReport(piId) {
+  return apiFetch('pdf-engine-report.php', {
+    method: 'POST',
+    body: JSON.stringify({ pi_installation_id: piId }),
+  });
+}
+
+// Fetch the user's report library (newest-first). Returns { total, reports: [...] }
+async function apiListReports(piId, limit = 20, offset = 0) {
+  const qs = piId
+    ? `?pi=${encodeURIComponent(piId)}&limit=${limit}&offset=${offset}`
+    : `?limit=${limit}&offset=${offset}`;
+  return apiFetch(`list-reports.php${qs}`);
+}
+
 // Confirm QR pairing from the app.
 // pi_id is the UUID from the Pi's QR code (atmyboat.com/pair-device/?pi_id=<UUID>)
 async function apiPairDevice(piId, vesselName, vesselType) {
@@ -189,6 +231,14 @@ function fmtTime(iso) {
     const d = new Date(iso);
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
            d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  } catch { return iso; }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   } catch { return iso; }
 }
 
@@ -651,6 +701,19 @@ screens.dashboard = function renderDashboard() {
     container.appendChild(blCard);
   }
 
+  // Quick-action row: Go Live + My Reports
+  const qa = el('div', { class: 'quick-actions' });
+
+  const liveBtn = el('button', { class: 'btn btn-live', onClick: () => navigate('live') });
+  liveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a14 14 0 0 0 0 17M20.5 3.5a14 14 0 0 1 0 17"/></svg> Go Live';
+  qa.appendChild(liveBtn);
+
+  const reportsBtn = el('button', { class: 'btn btn-reports', onClick: () => navigate('reports') });
+  reportsBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> My Reports';
+  qa.appendChild(reportsBtn);
+
+  container.appendChild(qa);
+
   // Refresh button
   container.appendChild(
     el('button', { class: 'btn btn-ghost', onClick: async () => {
@@ -683,6 +746,432 @@ async function refreshDashboard() {
     }
   }
 }
+
+// ── Live Screen ───────────────────────────────────────────────────────────────
+
+const RTC_STUN = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+];
+
+// Active peer connection — stored so we can close it when leaving the screen.
+let _livePC = null;
+
+screens.live = function renderLive() {
+  const container = getEl('screen');
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
+
+  // Back button row
+  const header = el('div', { class: 'screen-header' });
+  const backBtn = el('button', { class: 'back-btn', 'aria-label': 'Back to dashboard',
+    onClick: () => {
+      if (_livePC) { _livePC.close(); _livePC = null; }
+      navigate('dashboard');
+    }
+  }, '← Back');
+  header.appendChild(backBtn);
+  header.appendChild(el('span', { class: 'screen-title' }, 'Live Feed'));
+  container.appendChild(header);
+
+  // Status bar
+  const statusBar = el('div', { class: 'live-status-bar', id: 'live-status', role: 'status' });
+  statusBar.textContent = 'Connecting…';
+  container.appendChild(statusBar);
+
+  // Sensor grid
+  const grid = el('div', { class: 'live-sensors-grid', id: 'live-grid' });
+  [
+    ['RPM',         '—', 'live-rpm'],
+    ['Coolant',     '—', 'live-coolant'],
+    ['Oil Pres.',   '—', 'live-oil'],
+    ['Fuel',        '—', 'live-fuel'],
+    ['Engine Hrs',  '—', 'live-hours'],
+    ['Battery',     '—', 'live-batt'],
+    ['SOG',         '—', 'live-sog'],
+    ['COG',         '—', 'live-cog'],
+    ['Heading',     '—', 'live-hdg'],
+    ['Position',    '—', 'live-pos'],
+  ].forEach(([label, val, id]) => {
+    const cell = el('div', { class: 'live-cell' });
+    cell.appendChild(el('div', { class: 'live-cell-label' }, label));
+    cell.appendChild(el('div', { class: 'live-cell-val', id }, val));
+    grid.appendChild(cell);
+  });
+  container.appendChild(grid);
+
+  // Camera panel (hidden until camera is active)
+  const camPanel = el('div', { class: 'live-camera-panel', id: 'live-cam-panel', hidden: true });
+  const videoEl = el('video', { id: 'live-video', autoplay: 'true', playsinline: 'true', muted: 'true' });
+  camPanel.appendChild(videoEl);
+  const camClose = el('button', { class: 'cam-close-btn', 'aria-label': 'Close camera',
+    onClick: () => {
+      if (_livePC && _livePC._dataChannel && _livePC._dataChannel.readyState === 'open') {
+        _livePC._dataChannel.send(JSON.stringify({ type: 'camera_stop' }));
+      }
+      camPanel.hidden = true;
+      videoEl.srcObject = null;
+    }
+  }, '✕');
+  camPanel.appendChild(camClose);
+  container.appendChild(camPanel);
+
+  // Camera slot buttons (populated once connected)
+  const camRow = el('div', { class: 'live-cam-row', id: 'live-cam-row', hidden: true });
+  camRow.appendChild(el('span', { class: 'live-cam-label' }, 'Camera:'));
+  container.appendChild(camRow);
+
+  if (!piId) {
+    setLiveStatus('No vessel selected. Return to Dashboard.', 'error');
+    return;
+  }
+
+  if (!window.RTCPeerConnection) {
+    setLiveStatus('WebRTC not supported on this browser.', 'error');
+    return;
+  }
+
+  // Close any existing session
+  if (_livePC) { _livePC.close(); _livePC = null; }
+
+  startLiveSession(piId).catch(err => {
+    setLiveStatus(`Connection failed: ${err.message}`, 'error');
+  });
+};
+
+function setLiveStatus(text, cls = '') {
+  const bar = document.getElementById('live-status');
+  if (!bar) return;
+  bar.textContent = text;
+  bar.className = 'live-status-bar' + (cls ? ' ' + cls : '');
+}
+
+function updateLiveCell(id, val) {
+  const el_ = document.getElementById(id);
+  if (el_) el_.textContent = val;
+}
+
+function applyLiveSensors(data) {
+  const d = data.sensors || data;
+  if (d.rpm != null)           updateLiveCell('live-rpm',     Math.round(d.rpm) + ' RPM');
+  if (d.coolant_temp != null)  updateLiveCell('live-coolant', d.coolant_temp.toFixed(1) + ' °C');
+  if (d.oil_pressure != null)  updateLiveCell('live-oil',     Math.round(d.oil_pressure) + ' kPa');
+  if (d.fuel_level != null)    updateLiveCell('live-fuel',    d.fuel_level.toFixed(1) + ' %');
+  if (d.engine_hours != null)  updateLiveCell('live-hours',   d.engine_hours.toFixed(1) + ' h');
+  if (d.battery_v != null)     updateLiveCell('live-batt',    d.battery_v.toFixed(2) + ' V');
+  if (d.sog != null)           updateLiveCell('live-sog',     d.sog.toFixed(1) + ' kn');
+  if (d.cog != null)           updateLiveCell('live-cog',     Math.round(d.cog) + '°');
+  if (d.heading != null)       updateLiveCell('live-hdg',     Math.round(d.heading) + '°');
+  if (d.lat != null && d.lon != null) {
+    updateLiveCell('live-pos', d.lat.toFixed(4) + ', ' + d.lon.toFixed(4));
+  }
+}
+
+async function startLiveSession(piId) {
+  const pc = new RTCPeerConnection({ iceServers: RTC_STUN });
+  _livePC = pc;
+
+  // Data channel for sensor readings
+  const dc = pc.createDataChannel('sensors');
+  pc._dataChannel = dc;
+
+  // Camera track handler
+  pc.ontrack = (evt) => {
+    const panel = document.getElementById('live-cam-panel');
+    const video = document.getElementById('live-video');
+    if (panel && video && evt.streams && evt.streams[0]) {
+      video.srcObject = evt.streams[0];
+      panel.hidden = false;
+    }
+  };
+
+  // Collect ICE candidates for trickle
+  const iceCandidates = [];
+  let sessionId = null;
+
+  pc.onicecandidate = (evt) => {
+    if (evt.candidate) {
+      iceCandidates.push(evt.candidate.toJSON());
+      // Send trickle ICE to server if we already have a session
+      if (sessionId) {
+        apiRtcAppIce(sessionId, [evt.candidate.toJSON()]).catch(() => {});
+      }
+    }
+  };
+
+  // Create offer
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  // Wait up to 2s for initial ICE gathering
+  await new Promise(resolve => {
+    if (pc.iceGatheringState === 'complete') { resolve(); return; }
+    const check = () => { if (pc.iceGatheringState === 'complete') resolve(); };
+    pc.addEventListener('icegatheringstatechange', check);
+    setTimeout(resolve, 2000);
+  });
+
+  // Send offer to signaling server
+  setLiveStatus('Signaling Pi…');
+  let offerResp;
+  try {
+    offerResp = await apiRtcOffer(piId, pc.localDescription.sdp, iceCandidates);
+  } catch (e) {
+    setLiveStatus('Signaling failed: ' + e.message, 'error');
+    return;
+  }
+  sessionId = offerResp.session_id;
+
+  // Connection time tracking for UX messages
+  const connStart = Date.now();
+  let warnedSlow = false;
+
+  // Poll for Pi's answer
+  setLiveStatus('Waiting for boat…');
+  let answer = null;
+  for (let i = 0; i < 60; i++) {
+    const elapsed = Date.now() - connStart;
+    if (!warnedSlow && elapsed > 10000) {
+      setLiveStatus('Still connecting — is the boat online?');
+      warnedSlow = true;
+    }
+    if (elapsed > 30000 && !warnedSlow) {
+      setLiveStatus('Connection taking longer than usual…');
+    }
+    if (elapsed > 120000) {
+      setLiveStatus('Unable to connect. Check boat is online and try again.', 'error');
+      pc.close();
+      return;
+    }
+    try {
+      const resp = await apiRtcPollAnswer(sessionId);
+      if (resp.ready) { answer = resp; break; }
+    } catch { /* keep polling */ }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+
+  if (!answer) {
+    setLiveStatus('No response from boat. Try again.', 'error');
+    pc.close();
+    return;
+  }
+
+  // Apply Pi's answer
+  await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer.sdp }));
+  if (answer.ice_candidates) {
+    for (const c of answer.ice_candidates) {
+      await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+    }
+  }
+
+  setLiveStatus('Establishing P2P connection…');
+
+  // Wait for data channel to open
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Data channel timed out')), 30000);
+    dc.onopen = () => { clearTimeout(timeout); resolve(); };
+    dc.onerror = (e) => { clearTimeout(timeout); reject(e); };
+  });
+
+  setLiveStatus('● Live — updating every 5s', 'connected');
+
+  // Show camera slot buttons
+  try {
+    // Request camera slots from Pi via data channel
+    dc.send(JSON.stringify({ type: 'camera_slots_request' }));
+  } catch {}
+
+  // Receive sensor data and camera slot list
+  dc.onmessage = (evt) => {
+    try {
+      const msg = JSON.parse(evt.data);
+      if (msg.type === 'sensors') {
+        applyLiveSensors(msg);
+      } else if (msg.type === 'camera_slots') {
+        renderCameraSlotButtons(msg.slots, dc);
+      }
+    } catch {}
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      setLiveStatus('Connection lost.', 'error');
+    }
+  };
+}
+
+function renderCameraSlotButtons(slots, dc) {
+  const row = document.getElementById('live-cam-row');
+  if (!row || !slots || slots.length === 0) return;
+  // Clear existing slot buttons
+  while (row.children.length > 1) row.removeChild(row.lastChild);
+  slots.forEach(slot => {
+    const btn = el('button', { class: 'btn btn-cam-slot',
+      onClick: () => {
+        if (dc && dc.readyState === 'open') {
+          dc.send(JSON.stringify({ type: 'camera_request', slot: String(slot.slot_id) }));
+        }
+      }
+    }, slot.label || `Camera ${slot.slot_id}`);
+    row.appendChild(btn);
+  });
+  row.hidden = false;
+}
+
+
+// ── Reports Screen ────────────────────────────────────────────────────────────
+
+screens.reports = function renderReports() {
+  const container = getEl('screen');
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
+
+  // Header + back
+  const header = el('div', { class: 'screen-header' });
+  header.appendChild(el('button', { class: 'back-btn', 'aria-label': 'Back to dashboard',
+    onClick: () => navigate('dashboard')
+  }, '← Back'));
+  header.appendChild(el('span', { class: 'screen-title' }, 'Engine Reports'));
+  container.appendChild(header);
+
+  // Generate button
+  const genBtn = el('button', { class: 'btn btn-reports', id: 'gen-report-btn',
+    onClick: () => generateReport(piId, container, genBtn)
+  });
+  genBtn.innerHTML = '+ Generate New Report';
+  container.appendChild(genBtn);
+
+  // Report list area
+  const listArea = el('div', { id: 'reports-list' });
+  listArea.appendChild(spinner());
+  container.appendChild(listArea);
+
+  loadReports(piId, listArea);
+};
+
+async function loadReports(piId, listArea) {
+  try {
+    const data = await apiListReports(piId);
+    renderReportList(data.reports || [], data.total || 0, listArea);
+  } catch (err) {
+    listArea.innerHTML = '';
+    listArea.appendChild(
+      el('div', { class: 'error-banner visible', role: 'alert' }, 'Failed to load reports: ' + err.message)
+    );
+  }
+}
+
+function renderReportList(reports, total, listArea) {
+  listArea.innerHTML = '';
+  if (reports.length === 0) {
+    listArea.appendChild(
+      el('div', { class: 'empty-state' },
+        el('p', {}, 'No reports yet.'),
+        el('p', {}, 'Generate your first engine health report above.'),
+      )
+    );
+    return;
+  }
+
+  listArea.appendChild(el('div', { class: 'reports-total' }, `${total} report${total !== 1 ? 's' : ''}`));
+
+  reports.forEach(r => {
+    const card = el('div', { class: 'report-card' });
+
+    const name = r.vessel_name || 'My Vessel';
+    const period = r.period_start && r.period_end
+      ? `${r.period_start} → ${r.period_end}`
+      : 'All available data';
+    const size   = r.file_size_kb ? ` · ${r.file_size_kb} KB` : '';
+    const snaps  = r.snapshot_count ? ` · ${r.snapshot_count} readings` : '';
+
+    card.appendChild(el('div', { class: 'report-name' }, name));
+    card.appendChild(el('div', { class: 'report-meta' }, `Generated ${fmtDate(r.created_at)}`));
+    card.appendChild(el('div', { class: 'report-meta' }, period + snaps + size));
+
+    const btnRow = el('div', { class: 'report-btn-row' });
+
+    // Open button
+    const openBtn = el('button', { class: 'btn btn-ghost', style: 'font-size:0.9rem',
+      onClick: () => window.open(r.url, '_blank')
+    }, 'Open PDF');
+    btnRow.appendChild(openBtn);
+
+    // Share button (Web Share API)
+    if (navigator.share) {
+      const shareBtn = el('button', { class: 'btn btn-ghost', style: 'font-size:0.9rem',
+        onClick: () => shareReport(r)
+      }, 'Share');
+      btnRow.appendChild(shareBtn);
+    }
+
+    card.appendChild(btnRow);
+    listArea.appendChild(card);
+  });
+}
+
+async function shareReport(report) {
+  const note = window.prompt('Add a note for the recipient (optional):', '');
+  if (note === null) return; // cancelled
+
+  try {
+    // Fetch the PDF as a blob so we can share the file natively
+    const resp = await fetch(report.url);
+    const blob = await resp.blob();
+    const file = new File([blob], `engine-report-${report.report_id}.pdf`, { type: 'application/pdf' });
+
+    const shareData = {
+      title: `Engine Health Report — ${report.vessel_name || 'My Vessel'}`,
+      text: note || `Engine health report generated ${fmtDate(report.created_at)} by d3kOS via AtMyBoat.com`,
+      files: [file],
+    };
+
+    if (navigator.canShare && navigator.canShare(shareData)) {
+      await navigator.share(shareData);
+    } else {
+      // Fallback: share URL only (no file)
+      await navigator.share({
+        title: shareData.title,
+        text: shareData.text,
+        url: report.url,
+      });
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      alert('Share failed: ' + err.message);
+    }
+  }
+}
+
+async function generateReport(piId, container, genBtn) {
+  if (!piId) {
+    alert('No vessel selected. Return to Dashboard and select a vessel.');
+    return;
+  }
+  genBtn.disabled = true;
+  genBtn.textContent = 'Generating…';
+  const listArea = document.getElementById('reports-list');
+  if (listArea) {
+    listArea.innerHTML = '';
+    listArea.appendChild(spinner());
+  }
+  try {
+    const report = await apiGenerateReport(piId);
+    genBtn.textContent = '+ Generate New Report';
+    genBtn.disabled = false;
+    // Reload the full list so the new report appears at top
+    if (listArea) loadReports(piId, listArea);
+  } catch (err) {
+    genBtn.textContent = '+ Generate New Report';
+    genBtn.disabled = false;
+    if (listArea) {
+      listArea.innerHTML = '';
+      listArea.appendChild(
+        el('div', { class: 'error-banner visible', role: 'alert' }, 'Report failed: ' + err.message)
+      );
+    }
+  }
+}
+
 
 // ── Alerts Screen ─────────────────────────────────────────────────────────────
 // Alert type → color mapping for badges

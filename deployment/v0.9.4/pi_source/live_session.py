@@ -1,0 +1,475 @@
+"""
+live_session.py — d3kOS WebRTC live tunnel service (v0.9.4 S6)
+
+Polls rtc-signal.php every 3 seconds for a pending WebRTC offer from the app.
+When an offer is found:
+  1. Creates a WebRTC answer via aiortc
+  2. Posts answer + ICE candidates back to signal endpoint
+  3. Waits for P2P data channel to open
+  4. Sends live sensor readings (JSON) every 5 seconds
+  5. Handles camera stream requests via data channel messages
+
+Camera switching via data channel message:
+  App sends: { "type": "camera_request", "slot": "<slot_id>" }
+  Pi starts streaming that camera as the video track.
+  App sends: { "type": "camera_stop" } to close camera.
+
+Runs as d3kos-live.service (always on, waits for offers).
+"""
+
+import asyncio
+import json
+import logging
+import os
+import sys
+import time
+import traceback
+from pathlib import Path
+
+import requests
+
+# ── aiortc imports ─────────────────────────────────────────────────────────────
+try:
+    from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceServer, RTCConfiguration
+    from aiortc.contrib.media import MediaPlayer
+    AIORTC_OK = True
+except ImportError:
+    AIORTC_OK = False
+    logging.warning("aiortc not installed — live tunnel unavailable. Run: pip3 install aiortc")
+
+# ── Config ────────────────────────────────────────────────────────────────────
+LOG_FILE    = '/opt/d3kos/logs/live-session.log'
+CONFIG_FILE  = '/opt/d3kos/config/cloud-config.json'
+DEVICE_FILE  = '/opt/d3kos/config/device-token.json'
+LICENSE_FILE = '/opt/d3kos/config/license.json'
+SIGNAL_POLL = 3       # seconds between offer polls
+DATA_PUSH   = 5       # seconds between sensor readings on data channel
+STUN_SERVERS = [
+    'stun:stun.l.google.com:19302',
+    'stun:stun1.l.google.com:19302',
+    'stun:stun.cloudflare.com:3478',
+]
+
+# ── Signal K sensor endpoints ─────────────────────────────────────────────────
+SK_BASE = 'http://localhost:8099/signalk/v1/api/vessels/self'
+SENSOR_PATHS = {
+    'rpm':          f'{SK_BASE}/propulsion/port/revolutions',
+    'coolant_temp': f'{SK_BASE}/propulsion/port/coolantTemperature',
+    'oil_pressure': f'{SK_BASE}/propulsion/port/oilPressure',
+    'fuel_level':   f'{SK_BASE}/tanks/fuel/0/currentLevel',
+    'engine_hours': f'{SK_BASE}/propulsion/port/runTime',
+    'battery_v':    f'{SK_BASE}/electrical/batteries/0/voltage',
+    'sog':          f'{SK_BASE}/navigation/speedOverGround',
+    'cog':          f'{SK_BASE}/navigation/courseOverGroundTrue',
+    'lat':          f'{SK_BASE}/navigation/position',
+    'heading':      f'{SK_BASE}/navigation/headingTrue',
+}
+
+# Camera stream base URL (served by camera_stream_manager.py on port 8084)
+CAMERA_BASE = 'http://localhost:8084'
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+os.makedirs('/opt/d3kos/logs', exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [live] %(levelname)s %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler(sys.stdout),
+    ]
+)
+log = logging.getLogger('live_session')
+
+
+def load_config():
+    """Load API key, base URL, and device token from config files."""
+    config = {}
+    try:
+        with open(CONFIG_FILE) as f:
+            cfg = json.load(f)
+        config['api_key']  = cfg.get('amboat_api_key', '')
+        config['base_url'] = cfg.get('amboat_base_url', '').rstrip('/')
+    except Exception as e:
+        log.error(f"Cannot read cloud-config.json: {e}")
+        return None
+    try:
+        with open(DEVICE_FILE) as f:
+            dev = json.load(f)
+        config['device_token'] = dev.get('device_token', '')
+    except Exception as e:
+        log.error(f"Cannot read device-token.json: {e}")
+        return None
+    try:
+        with open(LICENSE_FILE) as f:
+            lic = json.load(f)
+        config['pi_id'] = lic.get('installation_id', '')
+    except Exception as e:
+        log.error(f"Cannot read license.json: {e}")
+        return None
+    return config
+
+
+def pi_headers(config):
+    return {
+        'Authorization': f"Bearer {config['api_key']}",
+        'X-Device-Token': config['device_token'],
+        'Content-Type': 'application/json',
+    }
+
+
+def fetch_sensors():
+    """Pull current sensor readings from Signal K. Returns dict."""
+    readings = {
+        'ts':           int(time.time()),
+        'rpm':          None,
+        'coolant_temp': None,
+        'oil_pressure': None,
+        'fuel_level':   None,
+        'engine_hours': None,
+        'battery_v':    None,
+        'sog':          None,
+        'cog':          None,
+        'lat':          None,
+        'lng':          None,
+        'heading':      None,
+    }
+    try:
+        r = requests.get(SENSOR_PATHS['rpm'], timeout=2)
+        if r.status_code == 200:
+            rps = r.json().get('value')
+            if rps is not None:
+                readings['rpm'] = int(round(float(rps) * 60))   # rps → rpm
+
+        r = requests.get(SENSOR_PATHS['coolant_temp'], timeout=2)
+        if r.status_code == 200:
+            k = r.json().get('value')
+            if k is not None:
+                readings['coolant_temp'] = round(float(k) - 273.15, 1)   # K → °C
+
+        r = requests.get(SENSOR_PATHS['oil_pressure'], timeout=2)
+        if r.status_code == 200:
+            pa = r.json().get('value')
+            if pa is not None:
+                readings['oil_pressure'] = round(float(pa) / 1000, 1)   # Pa → kPa
+
+        r = requests.get(SENSOR_PATHS['fuel_level'], timeout=2)
+        if r.status_code == 200:
+            ratio = r.json().get('value')
+            if ratio is not None:
+                readings['fuel_level'] = round(float(ratio) * 100, 1)   # 0-1 → %
+
+        r = requests.get(SENSOR_PATHS['engine_hours'], timeout=2)
+        if r.status_code == 200:
+            s = r.json().get('value')
+            if s is not None:
+                readings['engine_hours'] = round(float(s) / 3600, 2)    # s → h
+
+        r = requests.get(SENSOR_PATHS['battery_v'], timeout=2)
+        if r.status_code == 200:
+            bv = r.json().get('value')
+            if bv is not None:
+                readings['battery_v'] = round(float(bv), 2)
+
+        r = requests.get(SENSOR_PATHS['sog'], timeout=2)
+        if r.status_code == 200:
+            ms = r.json().get('value')
+            if ms is not None:
+                readings['sog'] = round(float(ms) * 1.94384, 1)   # m/s → knots
+
+        r = requests.get(SENSOR_PATHS['cog'], timeout=2)
+        if r.status_code == 200:
+            rad = r.json().get('value')
+            if rad is not None:
+                import math
+                readings['cog'] = round(math.degrees(float(rad)) % 360, 1)
+
+        r = requests.get(SENSOR_PATHS['lat'], timeout=2)
+        if r.status_code == 200:
+            pos = r.json().get('value', {})
+            if isinstance(pos, dict):
+                readings['lat'] = pos.get('latitude')
+                readings['lng'] = pos.get('longitude')
+
+        r = requests.get(SENSOR_PATHS['heading'], timeout=2)
+        if r.status_code == 200:
+            rad = r.json().get('value')
+            if rad is not None:
+                import math
+                readings['heading'] = round(math.degrees(float(rad)) % 360, 1)
+
+    except Exception as e:
+        log.debug(f"Sensor fetch error: {e}")
+
+    return readings
+
+
+def get_camera_url(slot_id: str) -> str | None:
+    """Return the MJPEG stream URL for a given camera slot, or None."""
+    try:
+        r = requests.get(f'{CAMERA_BASE}/camera/slots', timeout=3)
+        if r.status_code == 200:
+            slots = r.json()
+            for slot in slots:
+                if str(slot.get('slot_id')) == str(slot_id):
+                    hw_id = slot.get('hardware_id')
+                    if hw_id:
+                        return f'{CAMERA_BASE}/camera/stream/hw/{hw_id}'
+    except Exception as e:
+        log.debug(f"Camera slot lookup failed: {e}")
+    return None
+
+
+# ── VideoStreamTrack for camera relay ────────────────────────────────────────
+if AIORTC_OK:
+    import av
+    from aiortc import VideoStreamTrack
+
+    class MJPEGCameraTrack(VideoStreamTrack):
+        """Reads frames from a local MJPEG stream and relays as WebRTC video."""
+
+        kind = 'video'
+
+        def __init__(self, stream_url: str):
+            super().__init__()
+            self._url    = stream_url
+            self._player = None
+            self._track  = None
+            self._setup()
+
+        def _setup(self):
+            try:
+                self._player = MediaPlayer(self._url, options={'rtsp_transport': 'tcp'})
+                self._track  = self._player.video
+            except Exception as e:
+                log.error(f"Camera player setup failed: {e}")
+
+        async def recv(self):
+            if self._track:
+                try:
+                    return await self._track.recv()
+                except Exception:
+                    pass
+            # Fallback: send a blank frame if camera unavailable
+            import fractions
+            frame = av.VideoFrame(width=640, height=480, format='yuv420p')
+            pts, time_base = await self.next_timestamp()
+            frame.pts       = pts
+            frame.time_base = time_base
+            return frame
+
+
+# ── Main WebRTC session handler ───────────────────────────────────────────────
+async def handle_offer(config: dict, offer_data: dict):
+    """
+    Given an offer from rtc-signal.php, create an answer, open a data channel,
+    and start sending live sensor data every 5 seconds.
+    """
+    session_id = offer_data['session_id']
+    signal_url = f"{config['base_url']}/mobile/rtc-signal.php"
+    log.info(f"Handling offer for session {session_id}")
+
+    # ICE configuration using free public STUN servers
+    ice_servers = [RTCIceServer(urls=s) for s in STUN_SERVERS]
+    pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_servers))
+
+    # Track connection state for cleanup
+    connected   = asyncio.Event()
+    closed      = asyncio.Event()
+    camera_track = None
+
+    @pc.on('connectionstatechange')
+    async def on_state_change():
+        log.info(f"Connection state: {pc.connectionState}")
+        if pc.connectionState == 'connected':
+            connected.set()
+        elif pc.connectionState in ('failed', 'closed', 'disconnected'):
+            closed.set()
+
+    @pc.on('datachannel')
+    def on_datachannel(channel):
+        log.info(f"Data channel opened: {channel.label}")
+
+        @channel.on('message')
+        def on_message(msg):
+            nonlocal camera_track
+            try:
+                data = json.loads(msg)
+                msg_type = data.get('type', '')
+
+                if msg_type == 'camera_request':
+                    slot_id    = str(data.get('slot', ''))
+                    stream_url = get_camera_url(slot_id)
+                    if stream_url and AIORTC_OK:
+                        camera_track = MJPEGCameraTrack(stream_url)
+                        pc.addTrack(camera_track)
+                        log.info(f"Camera track added for slot {slot_id}: {stream_url}")
+                        channel.send(json.dumps({'type': 'camera_ok', 'slot': slot_id}))
+                    else:
+                        log.warning(f"Camera slot {slot_id} not found or aiortc unavailable")
+                        channel.send(json.dumps({'type': 'camera_error', 'reason': 'slot not found'}))
+
+                elif msg_type == 'camera_stop':
+                    if camera_track:
+                        camera_track.stop()
+                        camera_track = None
+                    channel.send(json.dumps({'type': 'camera_stopped'}))
+
+                elif msg_type == 'ping':
+                    channel.send(json.dumps({'type': 'pong', 'ts': int(time.time())}))
+
+            except json.JSONDecodeError:
+                pass
+
+        # Start pushing sensor data every 5 seconds
+        async def push_sensors():
+            while not closed.is_set():
+                try:
+                    sensors = fetch_sensors()
+                    sensors['type'] = 'sensors'
+                    channel.send(json.dumps(sensors))
+                except Exception as e:
+                    log.debug(f"Sensor push error: {e}")
+                await asyncio.sleep(DATA_PUSH)
+
+        asyncio.ensure_future(push_sensors())
+
+    # Set remote description from app's offer
+    remote_sdp  = RTCSessionDescription(sdp=offer_data['sdp'], type='offer')
+    await pc.setRemoteDescription(remote_sdp)
+
+    # Add app's ICE candidates
+    for candidate in offer_data.get('ice_candidates', []):
+        try:
+            from aiortc.sdp import candidate_from_sdp
+            await pc.addIceCandidate(candidate_from_sdp(candidate))
+        except Exception:
+            pass   # Non-fatal — ICE trickling handles the rest
+
+    # Create answer
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    # Gather our ICE candidates (give it up to 3 seconds)
+    await asyncio.sleep(3)
+
+    # Post answer back to signal endpoint
+    our_candidates = []
+    for t in pc.getTransceivers():
+        pass  # candidates gathered automatically by aiortc
+
+    payload = {
+        'session_id':     session_id,
+        'sdp':            pc.localDescription.sdp,
+        'ice_candidates': our_candidates,
+    }
+    try:
+        r = requests.post(
+            f'{signal_url}?action=answer',
+            json=payload,
+            headers=pi_headers(config),
+            timeout=8,
+        )
+        log.info(f"Answer posted: HTTP {r.status_code}")
+    except Exception as e:
+        log.error(f"Failed to post answer: {e}")
+        await pc.close()
+        return
+
+    # Wait for connection or timeout (2 minutes)
+    try:
+        await asyncio.wait_for(connected.wait(), timeout=120)
+        log.info(f"Session {session_id}: P2P connected")
+    except asyncio.TimeoutError:
+        log.warning(f"Session {session_id}: connection timed out")
+        await pc.close()
+        return
+
+    # Keep alive until disconnected or 4 hours max
+    try:
+        await asyncio.wait_for(closed.wait(), timeout=14400)
+    except asyncio.TimeoutError:
+        log.info(f"Session {session_id}: max session duration reached")
+
+    if camera_track:
+        camera_track.stop()
+    await pc.close()
+    log.info(f"Session {session_id}: closed")
+
+
+# ── Poll loop ─────────────────────────────────────────────────────────────────
+async def poll_loop(config: dict):
+    """Continuously poll for new WebRTC offers from the app."""
+    signal_url  = f"{config['base_url']}/mobile/rtc-signal.php"
+    pi_id       = config['pi_id']
+    active_sessions: set = set()
+    headers     = pi_headers(config)
+
+    log.info(f"Live session service started. Pi ID: {pi_id}")
+    log.info(f"Signal endpoint: {signal_url}")
+
+    while True:
+        try:
+            r = requests.get(
+                f'{signal_url}?action=poll_offer&pi_id={pi_id}',
+                headers=headers,
+                timeout=6,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                if data.get('success') and data.get('data', {}).get('ready'):
+                    offer_data = data['data']
+                    sid        = offer_data.get('session_id')
+                    if sid and sid not in active_sessions:
+                        active_sessions.add(sid)
+                        log.info(f"New offer received: session {sid}")
+                        # Handle in background so we keep polling
+                        asyncio.ensure_future(
+                            handle_offer_safe(config, offer_data, active_sessions, sid)
+                        )
+        except requests.exceptions.RequestException as e:
+            log.debug(f"Poll error: {e}")
+        except Exception as e:
+            log.error(f"Unexpected poll error: {e}")
+            log.debug(traceback.format_exc())
+
+        await asyncio.sleep(SIGNAL_POLL)
+
+
+async def handle_offer_safe(config, offer_data, active_sessions, sid):
+    """Wrapper to ensure active_sessions is cleaned up after session ends."""
+    try:
+        await handle_offer(config, offer_data)
+    except Exception as e:
+        log.error(f"Session {sid} error: {e}")
+        log.debug(traceback.format_exc())
+    finally:
+        active_sessions.discard(sid)
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+def main():
+    if not AIORTC_OK:
+        log.error("aiortc is required for the live tunnel. Install it with: pip3 install aiortc")
+        log.error("Sensor data will be pushed via the existing 30-minute sync until aiortc is installed.")
+        # Don't exit — the service stays up so systemd doesn't restart-loop.
+        # When aiortc is installed, restart this service.
+        while True:
+            time.sleep(60)
+
+    config = load_config()
+    if not config:
+        log.error("Cannot load config — exiting.")
+        sys.exit(1)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(poll_loop(config))
+    except KeyboardInterrupt:
+        log.info("Stopped by operator.")
+    finally:
+        loop.close()
+
+
+if __name__ == '__main__':
+    main()

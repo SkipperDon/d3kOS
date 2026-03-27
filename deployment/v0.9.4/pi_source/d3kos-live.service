@@ -1,0 +1,19 @@
+[Unit]
+Description=d3kOS Live Session Service — WebRTC tunnel for mobile app
+Documentation=https://atmyboat.com
+After=network-online.target d3kos-cloud-agent.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/live
+ExecStart=/usr/bin/python3 /opt/d3kos/services/live/live_session.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/opt/d3kos/logs/live-session.log
+StandardError=append:/opt/d3kos/logs/live-session.log
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
