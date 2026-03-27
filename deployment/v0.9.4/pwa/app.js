@@ -1008,6 +1008,7 @@ async function startLiveSession(piId) {
 
   // Data channel for sensor readings
   const dc = pc.createDataChannel('sensors');
+  dc.binaryType = 'arraybuffer'; // Safari sends Blob by default; force ArrayBuffer for binary transfers
   pc._dataChannel = dc;
 
   // Camera track handler
