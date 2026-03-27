@@ -107,15 +107,10 @@ def load_config():
         with open(DEVICE_FILE) as f:
             dev = json.load(f)
         config['device_token'] = dev.get('device_token', '')
+        # pi_id for rtc-signal.php must match d3kos_pairings.pi_id — which is device_token
+        config['pi_id'] = config['device_token']
     except Exception as e:
         log.error(f"Cannot read device-token.json: {e}")
-        return None
-    try:
-        with open(LICENSE_FILE) as f:
-            lic = json.load(f)
-        config['pi_id'] = lic.get('installation_id', '')
-    except Exception as e:
-        log.error(f"Cannot read license.json: {e}")
         return None
     return config
 
@@ -444,7 +439,7 @@ async def handle_offer(config: dict, offer_data: dict):
     and start sending live sensor data every 5 seconds.
     """
     session_id = offer_data['session_id']
-    signal_url = f"{config['base_url']}/mobile/rtc-signal.php"
+    signal_url = f"{config['base_url']}/wp-content/themes/twentytwenty-child/mobile/rtc-signal.php"
     log.info(f"Handling offer for session {session_id}")
 
     # ICE configuration using free public STUN servers
@@ -659,28 +654,52 @@ async def handle_offer(config: dict, offer_data: dict):
         asyncio.ensure_future(push_sensors())
 
     # Set remote description from app's offer
-    remote_sdp  = RTCSessionDescription(sdp=offer_data['sdp'], type='offer')
-    await pc.setRemoteDescription(remote_sdp)
+    offer_sdp_str = offer_data.get('sdp', '')
+    sdp_head = offer_sdp_str[:500].replace('\r\n', '|').replace('\n', '|')
+    log.info(f"Offer SDP first 500 chars: {sdp_head}")
+    remote_sdp  = RTCSessionDescription(sdp=offer_sdp_str, type='offer')
+    try:
+        await pc.setRemoteDescription(remote_sdp)
+    except Exception as e:
+        log.error(f"setRemoteDescription failed: {e}")
+        return
 
-    # Add app's ICE candidates
-    for candidate in offer_data.get('ice_candidates', []):
+    # Add app's ICE candidates.
+    # Browser sends JSON: {"candidate": "candidate:xxx ...", "sdpMid": "0", ...}
+    # candidate_from_sdp() expects the SDP string WITHOUT the "candidate:" prefix.
+    app_cands = offer_data.get('ice_candidates', [])
+    log.info(f"App sent {len(app_cands)} ICE candidates")
+    for cand_obj in app_cands:
         try:
             from aiortc.sdp import candidate_from_sdp
-            await pc.addIceCandidate(candidate_from_sdp(candidate))
-        except Exception:
-            pass   # Non-fatal — ICE trickling handles the rest
+            if isinstance(cand_obj, dict):
+                raw = cand_obj.get('candidate', '')
+            else:
+                raw = str(cand_obj)
+            sdp_str = raw.replace('candidate:', '', 1).strip()
+            if sdp_str:
+                await pc.addIceCandidate(candidate_from_sdp(sdp_str))
+        except Exception as e:
+            log.debug(f"ICE candidate add error: {e} — raw: {raw!r}")
 
     # Create answer
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
-    # Gather our ICE candidates (give it up to 3 seconds)
-    await asyncio.sleep(3)
+    # Wait for ICE gathering to complete (up to 8 seconds)
+    deadline = asyncio.get_event_loop().time() + 8
+    while pc.iceGatheringState != 'complete':
+        if asyncio.get_event_loop().time() > deadline:
+            log.warning(f"ICE gathering not complete after 8s (state: {pc.iceGatheringState})")
+            break
+        await asyncio.sleep(0.1)
 
-    # Post answer back to signal endpoint
-    our_candidates = []
-    for t in pc.getTransceivers():
-        pass  # candidates gathered automatically by aiortc
+    # Log Pi's ICE candidates for diagnostics
+    sdp_lines = pc.localDescription.sdp.split('\r\n')
+    cand_lines = [l for l in sdp_lines if l.startswith('a=candidate')]
+    log.info(f"Pi ICE candidates ({len(cand_lines)}): {cand_lines[:4]}")
+
+    our_candidates = []  # candidates are embedded in the SDP — not sent separately
 
     payload = {
         'session_id':     session_id,
@@ -724,7 +743,7 @@ async def handle_offer(config: dict, offer_data: dict):
 # ── Poll loop ─────────────────────────────────────────────────────────────────
 async def poll_loop(config: dict):
     """Continuously poll for new WebRTC offers from the app."""
-    signal_url  = f"{config['base_url']}/mobile/rtc-signal.php"
+    signal_url  = f"{config['base_url']}/wp-content/themes/twentytwenty-child/mobile/rtc-signal.php"
     pi_id       = config['pi_id']
     active_sessions: set = set()
     headers     = pi_headers(config)
