@@ -107,6 +107,22 @@ async function apiPollCommand(commandId) {
   return apiFetch(`app-command.php?command_id=${encodeURIComponent(commandId)}`);
 }
 
+// Request Fix My Pi for the given Pi.
+// T1 → returns { tier:'T1', checkout_url }
+// T2 → returns { tier:'T2', command_id, fmp_remaining }
+// T3 → returns { tier:'T3', command_id, fmp_remaining:'unlimited' }
+async function apiFmpRequest(piId, issue = '') {
+  return apiFetch('fix-my-pi-app.php?action=request', {
+    method: 'POST',
+    body: JSON.stringify({ pi_installation_id: piId, issue }),
+  });
+}
+
+// Poll for the latest fix_my_pi command for this Pi (used by T1 post-payment flow).
+async function apiFmpPollLatest(piId) {
+  return apiFetch(`fix-my-pi-app.php?action=latest_fmp&pi_id=${encodeURIComponent(piId)}`);
+}
+
 // Confirm QR pairing from the app.
 // pi_id is the UUID from the Pi's QR code (atmyboat.com/pair-device/?pi_id=<UUID>)
 async function apiPairDevice(piId, vesselName, vesselType) {
@@ -767,6 +783,33 @@ screens.settings = function renderSettings() {
   otaCard.appendChild(otaResult);
   container.appendChild(otaCard);
 
+  // Fix My Pi
+  const fmpCard = el('div', { class: 'card' });
+  fmpCard.appendChild(el('div', { class: 'card-title' }, 'Fix My Pi'));
+
+  const fmpUsed = state.dashboard?.fmp_used_month ?? null;
+  const fmpDesc = state.tier === 'T0'
+    ? 'Not available on T0. Upgrade your plan to access Fix My Pi.'
+    : state.tier === 'T1'
+      ? 'Run a full diagnostic and repair on your Pi. $29.99 per incident. Automatic refund if unsuccessful.'
+      : state.tier === 'T2'
+        ? `Run a full diagnostic and repair. ${fmpUsed !== null ? (3 - fmpUsed) + ' of 3 free checks remaining this month.' : '3 free checks per month.'}`
+        : 'Run a full diagnostic and repair. Unlimited (T3).';
+
+  fmpCard.appendChild(el('div', {
+    style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;',
+  }, fmpDesc));
+
+  if (state.tier !== 'T0') {
+    const fmpBtn = el('button', { class: 'btn btn-ghost' },
+      state.tier === 'T1' ? 'Pay $29.99 — Start Fix' :
+      state.tier === 'T2' ? 'Use Free Check' : 'Start Diagnostics'
+    );
+    fmpBtn.addEventListener('click', () => navigate('fixmypi'));
+    fmpCard.appendChild(fmpBtn);
+  }
+  container.appendChild(fmpCard);
+
   // Pair New Vessel (T3 multi-boat or any user without a vessel)
   const showPairBtn = (state.tier === 'T3') || (state.vessels.length === 0);
   if (showPairBtn) {
@@ -980,6 +1023,319 @@ screens.pair = function renderPair() {
   showScanning();
 };
 
+// ── Fix My Pi Screen ──────────────────────────────────────────────────────────
+// Three phases: disclaimer → progress → result
+screens.fixmypi = function renderFixMyPi() {
+  const container = getEl('screen');
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
+
+  if (!piId) {
+    container.appendChild(
+      el('div', { class: 'empty-state' },
+        el('p', {}, 'No vessel selected. Return to Settings and select a vessel first.'),
+        el('button', { class: 'btn btn-ghost', style: 'margin-top:12px;',
+            onClick: () => navigate('settings') }, 'Back to Settings'),
+      )
+    );
+    return;
+  }
+
+  // ── Phase 1: Disclaimer ─────────────────────────────────────────────────────
+  function showDisclaimer() {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom: 8px;' }, 'Fix My Pi'));
+
+    const tier = state.tier || 'T1';
+
+    // Tier-specific header
+    let costLine = '';
+    if (tier === 'T0') {
+      container.appendChild(
+        el('div', { class: 'empty-state' },
+          el('p', {}, 'Fix My Pi is not available on T0.'),
+          el('p', { style: 'font-size:0.9rem;color:var(--text-muted)' },
+            'Upgrade your plan at atmyboat.com/upgrade.'),
+          el('button', { class: 'btn btn-ghost', style: 'margin-top:12px;',
+              onClick: () => navigate('settings') }, 'Back'),
+        )
+      );
+      return;
+    }
+    if (tier === 'T1') costLine = '$29.99 — automatic refund if unsuccessful.';
+    if (tier === 'T2') costLine = 'Uses 1 of your 3 monthly free checks.';
+    if (tier === 'T3') costLine = 'Unlimited (T3 Admiral).';
+
+    const disclaimerCard = el('div', { class: 'card' },
+      el('div', { class: 'fmp-disclaimer-title' }, 'What Fix My Pi does'),
+      el('ul', { class: 'fmp-disclaimer-list' },
+        el('li', {}, 'Checks all d3kOS services — restarts any that have crashed'),
+        el('li', {}, 'Checks disk space — trims oversized logs if needed'),
+        el('li', {}, 'Verifies all required config files exist and are valid'),
+        el('li', {}, 'Tests outbound network connectivity to AtMyBoat.com'),
+      ),
+      el('div', { class: 'fmp-disclaimer-title', style: 'margin-top:12px;' }, 'What it does not do'),
+      el('ul', { class: 'fmp-disclaimer-list' },
+        el('li', {}, 'Does not upgrade d3kOS software (use OTA Upgrade for that)'),
+        el('li', {}, 'Does not recover from hardware failure or SD card corruption'),
+        el('li', {}, 'No guarantee that all issues can be resolved remotely'),
+      ),
+      el('div', { class: 'fmp-cost-line' }, costLine),
+    );
+    container.appendChild(disclaimerCard);
+
+    const errEl = el('div', { class: 'error-banner', role: 'alert' });
+    container.appendChild(errEl);
+
+    const startBtn = el('button', { class: 'btn btn-primary', style: 'margin-top:8px;' },
+      tier === 'T1' ? 'Pay $29.99 and Start' :
+      tier === 'T2' ? 'Use Free Check' : 'Start Diagnostics'
+    );
+    const backBtn = el('button', {
+      class: 'btn btn-ghost', style: 'margin-top:8px;',
+      onClick: () => navigate('settings'),
+    }, 'Cancel');
+    container.appendChild(startBtn);
+    container.appendChild(backBtn);
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled    = true;
+      startBtn.textContent = 'Starting…';
+      errEl.classList.remove('visible');
+      try {
+        const data = await apiFmpRequest(piId);
+        if (data.tier === 'T1') {
+          // Open Stripe checkout in new tab, then show payment-wait phase
+          window.open(data.checkout_url, '_blank', 'noopener');
+          showPaymentWait();
+        } else {
+          // T2/T3 — command queued immediately
+          showProgress(data.command_id, data.tier, data.fmp_remaining);
+        }
+      } catch (err) {
+        errEl.textContent = err.message || 'Failed to start. Please try again.';
+        errEl.classList.add('visible');
+        startBtn.disabled    = false;
+        startBtn.textContent = tier === 'T1' ? 'Pay $29.99 and Start' :
+                               tier === 'T2' ? 'Use Free Check' : 'Start Diagnostics';
+      }
+    });
+  }
+
+  // ── Phase 2a: T1 — waiting for Stripe payment confirmation ─────────────────
+  function showPaymentWait() {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom: 8px;' }, 'Fix My Pi'));
+    container.appendChild(el('div', { class: 'card' },
+      el('div', { style: 'text-align:center;padding:16px 0;' },
+        spinner(),
+        el('div', { style: 'margin-top:12px;font-size:0.9rem;color:var(--text-muted);' },
+          'Waiting for payment confirmation…'),
+        el('div', { style: 'margin-top:8px;font-size:0.85rem;color:var(--text-muted);' },
+          'Complete checkout in the browser tab that opened.'),
+      )
+    ));
+
+    const cancelBtn = el('button', {
+      class: 'btn btn-ghost', style: 'margin-top:8px;',
+      onClick: () => showDisclaimer(),
+    }, 'Cancel');
+    container.appendChild(cancelBtn);
+
+    // Poll latest_fmp every 5s — once command appears, switch to progress phase
+    let elapsed = 0;
+    const MAX_WAIT = 15 * 60 * 1000; // 15 min (Stripe session timeout)
+    const pollId = setInterval(async () => {
+      elapsed += 5000;
+      try {
+        const data = await apiFmpPollLatest(piId);
+        if (data.found) {
+          clearInterval(pollId);
+          if (data.status === 'completed' || data.status === 'failed') {
+            showResult(data.result, data.status);
+          } else {
+            showProgress(data.command_id, 'T1', null);
+          }
+        }
+      } catch { /* poll failure is non-fatal — keep trying */ }
+      if (elapsed >= MAX_WAIT) {
+        clearInterval(pollId);
+        container.innerHTML = '';
+        container.appendChild(
+          el('div', { class: 'error-banner visible', role: 'alert' },
+            'Payment not confirmed after 15 minutes. If you completed payment, check atmyboat.com/dashboard for status.')
+        );
+        container.appendChild(el('button', {
+          class: 'btn btn-ghost', style: 'margin-top:8px;',
+          onClick: () => navigate('settings'),
+        }, 'Back to Settings'));
+      }
+    }, 5000);
+  }
+
+  // ── Phase 2b: Command queued — polling for Pi to execute and report back ────
+  function showProgress(commandId, tier, fmpRemaining) {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom: 8px;' }, 'Fix My Pi'));
+
+    const statusEl = el('div', { style: 'font-size:0.9rem;color:var(--text-muted);margin-top:8px;' },
+      'Diagnostic queued — waiting for Pi to connect…');
+    const subEl = el('div', { style: 'font-size:0.85rem;color:var(--text-muted);margin-top:4px;' },
+      'Pi polls for commands every 30 seconds.');
+
+    if (fmpRemaining !== null && fmpRemaining !== undefined) {
+      const remEl = el('div', {
+        style: 'font-size:0.85rem;color:var(--text-muted);margin-top:4px;',
+      }, tier === 'T2'
+          ? `${fmpRemaining} free check${fmpRemaining === 1 ? '' : 's'} remaining this month.`
+          : 'Unlimited checks (T3).');
+      container.appendChild(
+        el('div', { class: 'card' },
+          el('div', { style: 'text-align:center;padding:16px 0;' }, spinner()),
+          statusEl, subEl, remEl,
+        )
+      );
+    } else {
+      container.appendChild(
+        el('div', { class: 'card' },
+          el('div', { style: 'text-align:center;padding:16px 0;' }, spinner()),
+          statusEl, subEl,
+        )
+      );
+    }
+
+    // Poll command status every 10s, timeout after 10 min
+    let elapsed = 0;
+    const MAX_WAIT = 10 * 60 * 1000;
+    const pollId = setInterval(async () => {
+      elapsed += 10000;
+      try {
+        const data = await apiPollCommand(commandId);
+        if (data.status === 'completed' || data.status === 'failed') {
+          clearInterval(pollId);
+          showResult(data.result, data.status);
+        } else if (elapsed >= MAX_WAIT) {
+          clearInterval(pollId);
+          statusEl.textContent = 'Pi did not respond within 10 minutes. Check that your Pi is powered on and connected.';
+          statusEl.style.color = 'var(--red)';
+          subEl.style.display  = 'none';
+          container.appendChild(el('button', {
+            class: 'btn btn-ghost', style: 'margin-top:8px;',
+            onClick: () => navigate('settings'),
+          }, 'Back to Settings'));
+        } else {
+          statusEl.textContent = `Running diagnostics… (${Math.round(elapsed / 60000)}m elapsed)`;
+        }
+      } catch { /* poll failure is non-fatal */ }
+    }, 10000);
+  }
+
+  // ── Phase 3: Result display ─────────────────────────────────────────────────
+  function showResult(result, cmdStatus) {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom: 8px;' }, 'Fix My Pi — Report'));
+
+    if (!result) {
+      container.appendChild(
+        el('div', { class: 'error-banner visible', role: 'alert' },
+          cmdStatus === 'failed'
+            ? 'Diagnostic failed. No report returned. If you paid, a refund will be issued automatically.'
+            : 'No report data received.')
+      );
+      container.appendChild(el('button', {
+        class: 'btn btn-ghost', style: 'margin-top:12px;',
+        onClick: () => navigate('settings'),
+      }, 'Back to Settings'));
+      return;
+    }
+
+    const overall = result.ok;
+    const summaryCard = el('div', { class: 'card' });
+    const statusBadge = el('div', {
+      class: 'fmp-result-badge ' + (overall ? 'ok' : 'fail'),
+    }, overall ? '✓ All clear' : '✗ Issues found');
+    summaryCard.appendChild(statusBadge);
+
+    if (result.timestamp) {
+      summaryCard.appendChild(el('div', {
+        style: 'font-size:0.82rem;color:var(--text-muted);margin-top:6px;',
+      }, 'Completed: ' + fmtTime(result.timestamp)));
+    }
+    container.appendChild(summaryCard);
+
+    // Checks table
+    if (result.checks && result.checks.length > 0) {
+      const checksCard = el('div', { class: 'card' });
+      checksCard.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:8px;' }, 'Checks'));
+      result.checks.forEach(c => {
+        const label = c.service || c.check || c.config || 'check';
+        const shortLabel = label.replace('/opt/d3kos/config/', '').replace('d3kos-', '');
+        let detail = '';
+        if (c.state)     detail = c.state;
+        if (c.free_mb)   detail = `${c.free_mb}MB free (${c.used_pct}% used)`;
+        if (c.http_status) detail = `HTTP ${c.http_status}`;
+        if (c.reason)    detail = c.reason;
+        if (!c.ok && c.recovered) detail += ' → recovered';
+
+        checksCard.appendChild(
+          el('div', { class: 'fmp-check-row' },
+            el('span', { class: 'fmp-check-icon ' + (c.ok || c.recovered ? 'ok' : 'fail') },
+              c.ok ? '✓' : c.recovered ? '↺' : '✗'),
+            el('div', { class: 'fmp-check-info' },
+              el('div', { class: 'fmp-check-name' }, shortLabel),
+              detail ? el('div', { class: 'fmp-check-detail' }, detail) : null,
+            ),
+          )
+        );
+      });
+      container.appendChild(checksCard);
+    }
+
+    // Actions taken
+    if (result.actions_taken && result.actions_taken.length > 0) {
+      const actCard = el('div', { class: 'card' });
+      actCard.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:8px;' }, 'Actions Taken'));
+      result.actions_taken.forEach(a => {
+        actCard.appendChild(el('div', { class: 'fmp-action-item' }, a));
+      });
+      container.appendChild(actCard);
+    }
+
+    // Errors
+    if (result.errors && result.errors.length > 0) {
+      const errCard = el('div', { class: 'card' });
+      errCard.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:8px;' }, 'Errors'));
+      result.errors.forEach(e => {
+        errCard.appendChild(el('div', { class: 'fmp-error-item' }, e));
+      });
+      container.appendChild(errCard);
+    }
+
+    // T1 refund notice on failure
+    if (!overall && state.tier === 'T1') {
+      container.appendChild(
+        el('div', { class: 'card', style: 'border-color:var(--amber);' },
+          el('div', { style: 'font-size:0.9rem;color:var(--amber);' },
+            'A refund will be issued automatically to your payment method within 5–10 business days. '
+            + 'Contact skipperdon@atmyboat.com if you have questions.'),
+        )
+      );
+    }
+
+    container.appendChild(el('button', {
+      class: 'btn btn-ghost', style: 'margin-top:8px;',
+      onClick: () => navigate('settings'),
+    }, 'Back to Settings'));
+  }
+
+  // Entry point: check for post-payment return
+  if (state._fmpPostPayment === piId) {
+    state._fmpPostPayment = null;
+    showPaymentWait();
+  } else {
+    showDisclaimer();
+  }
+};
+
 // ── App shell toggle ──────────────────────────────────────────────────────────
 function showLoginUI() {
   getEl('app-header').style.display  = 'none';
@@ -1019,6 +1375,16 @@ async function loadVessels() {
       }
     }
 
+    // If returning from Stripe T1 FMP payment, route to FMP screen
+    if (state._fmpPostPayment) {
+      const fmpPiId = state._fmpPostPayment;
+      const fmpVessel = state.vessels.find(v => v.pi_installation_id === fmpPiId);
+      if (fmpVessel) { state.vessel = fmpVessel; saveSession(); }
+      showAppUI();
+      navigate('fixmypi');
+      return;
+    }
+
     // Show vessel selector if T3 + multiple vessels
     if (state.tier === 'T3' && state.vessels.length > 1 && !state.vessel) {
       showAppUI();
@@ -1052,6 +1418,13 @@ function init() {
 
   // Load persisted session
   loadSession();
+
+  // Handle Stripe FMP return (T1 payment success) — must run after loadSession
+  const _fmpParams = new URLSearchParams(window.location.search);
+  if (_fmpParams.get('fmp') === 'paid' && _fmpParams.get('pi') && state.token) {
+    state._fmpPostPayment = _fmpParams.get('pi');
+    history.replaceState({}, '', window.location.pathname);
+  }
 
   if (state.token) {
     showAppUI();
