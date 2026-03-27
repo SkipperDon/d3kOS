@@ -189,15 +189,35 @@ FILES STORED:
   capture_bow_20260327_120541.jpg        0.2 MB   2026-03-27 12:05
   captures/catch_20260327_091233.jpg     0.1 MB   2026-03-27 09:12
 
-TO REMOVE FILES VIA SCP (from Windows):
-  Install WinSCP from https://winscp.net (free)
+TO REMOVE FILES VIA SCP — WINDOWS:
+  Install WinSCP from https://winscp.net (free, GUI)
   Host: [Pi IP address]  Port: 22  Username: d3kos
   Navigate to: /home/d3kos/camera-recordings/
   Select files and press Delete.
 
-TO REMOVE FILES VIA COMMAND LINE:
-  ssh d3kos@[Pi IP]
-  rm /home/d3kos/camera-recordings/<filename>
+  Or copy to your PC first, then delete:
+    Open WinSCP → drag files to your Windows desktop → then delete on Pi side.
+
+TO REMOVE FILES VIA SCP — MAC:
+  Open Terminal (Finder → Applications → Utilities → Terminal)
+  Copy a file to your Mac desktop:
+    scp d3kos@[Pi IP]:/home/d3kos/camera-recordings/filename.mp4 ~/Desktop/
+  Delete a file from the Pi:
+    ssh d3kos@[Pi IP] "rm /home/d3kos/camera-recordings/filename.mp4"
+  Delete all files at once:
+    ssh d3kos@[Pi IP] "rm /home/d3kos/camera-recordings/*.mp4 /home/d3kos/camera-recordings/*.jpg"
+
+TO REMOVE FILES VIA SCP — LINUX:
+  Open a terminal.
+  Copy a file to your home directory:
+    scp d3kos@[Pi IP]:/home/d3kos/camera-recordings/filename.mp4 ~/
+  Delete a file from the Pi:
+    ssh d3kos@[Pi IP] "rm /home/d3kos/camera-recordings/filename.mp4"
+  Delete all files at once:
+    ssh d3kos@[Pi IP] "rm /home/d3kos/camera-recordings/*.mp4 /home/d3kos/camera-recordings/*.jpg"
+
+NOTE: Replace [Pi IP address] with the IP shown in d3kOS Settings.
+      Default SSH credentials — Username: d3kos  (no password by default on your Pi).
 
 Files are automatically removed after successful transfer to the mobile app.
 If a file remains here it was not yet transferred or transfer failed.

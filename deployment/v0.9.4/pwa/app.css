@@ -947,3 +947,201 @@ html, body {
   margin-top: 12px;
   flex-wrap: wrap;
 }
+
+/* ── Quick-actions 3-column override ────────────────────────────────────────── */
+.quick-actions.three-col {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.btn-media {
+  background: #1e1040;
+  color: #a78bfa;
+  border: 1px solid #a78bfa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  padding: 12px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-media:hover, .btn-media:focus {
+  background: #251550;
+  outline: 2px solid #a78bfa;
+}
+
+/* ── S6 — Live screen capture / record / media controls ─────────────────────── */
+.storage-warning {
+  background: rgba(239,68,68,0.12);
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  color: #fca5a5;
+  margin-bottom: 10px;
+}
+
+.live-notification {
+  font-size: 0.88rem;
+  color: var(--green);
+  min-height: 22px;
+  margin-bottom: 6px;
+  transition: opacity 0.6s;
+}
+
+.live-controls-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-capture {
+  background: #0f2040;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  flex: 1;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-capture:hover, .btn-capture:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-capture:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-record {
+  background: rgba(239,68,68,0.1);
+  color: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  flex: 1;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-record.recording {
+  background: var(--red);
+  color: #fff;
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+.btn-record:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-media-lib {
+  background: #1a2840;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  flex: 1;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-media-lib:hover, .btn-media-lib:focus { background: #243551; }
+.btn-media-lib:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── S6 — Media screen ───────────────────────────────────────────────────────── */
+.media-storage-bar {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #0f2040;
+  border-radius: 6px;
+}
+.media-storage-bar.warn   { color: var(--amber); border-left: 3px solid var(--amber); }
+.media-storage-bar.danger { color: var(--red);   border-left: 3px solid var(--red);   }
+
+.media-transfer-all {
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.media-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.media-item:last-child { border-bottom: none; }
+
+.media-thumb {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background: #0f2040;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.media-info {
+  flex: 1;
+  min-width: 0;
+}
+.media-filename {
+  font-size: 0.88rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.media-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.media-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-media-action {
+  background: #1e293b;
+  color: var(--text);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 36px;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-media-action:hover, .btn-media-action:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-media-action.danger { color: var(--red); border-color: var(--red); }
+.btn-media-action.danger:hover, .btn-media-action.danger:focus {
+  background: rgba(239,68,68,0.1);
+}

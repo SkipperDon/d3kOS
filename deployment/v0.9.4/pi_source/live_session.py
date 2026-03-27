@@ -18,12 +18,16 @@ Runs as d3kos-live.service (always on, waits for offers).
 """
 
 import asyncio
+import glob
+import hashlib
 import json
 import logging
 import os
+import shutil
 import sys
 import time
 import traceback
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -66,7 +70,14 @@ SENSOR_PATHS = {
 }
 
 # Camera stream base URL (served by camera_stream_manager.py on port 8084)
-CAMERA_BASE = 'http://localhost:8084'
+CAMERA_BASE      = 'http://localhost:8084'
+
+# Media storage
+RECORDING_PATH   = '/home/d3kos/camera-recordings'
+MEDIA_README     = os.path.join(RECORDING_PATH, 'MEDIA_README.txt')
+TRANSFER_CHUNK   = 16_384          # 16 KB per chunk over data channel
+DISK_WARN_PCT    = 90              # warn when disk >= this percent used
+DISK_CHECK_SECS  = 1800            # check every 30 minutes
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 os.makedirs('/opt/d3kos/logs', exist_ok=True)
@@ -219,6 +230,174 @@ def get_camera_url(slot_id: str) -> str | None:
     return None
 
 
+# ── Media helpers ─────────────────────────────────────────────────────────────
+
+def check_disk_usage() -> dict:
+    """Return {'percent_used': float, 'free_gb': float} for the root filesystem."""
+    try:
+        usage = shutil.disk_usage('/')
+        pct   = round(usage.used / usage.total * 100, 1)
+        free  = round(usage.free / 1_073_741_824, 2)
+        return {'percent_used': pct, 'free_gb': free}
+    except Exception:
+        return {'percent_used': 0.0, 'free_gb': 0.0}
+
+
+def list_media_files() -> list:
+    """Return list of media files in RECORDING_PATH (and captures/ subdir)."""
+    files = []
+    if not os.path.exists(RECORDING_PATH):
+        return files
+    for fn in sorted(os.listdir(RECORDING_PATH), reverse=True):
+        if fn in ('MEDIA_README.txt',):
+            continue
+        fp = os.path.join(RECORDING_PATH, fn)
+        if os.path.isfile(fp) and (fn.endswith('.mp4') or fn.endswith('.jpg')):
+            mtime = datetime.fromtimestamp(os.path.getmtime(fp)).strftime('%Y-%m-%d %H:%M')
+            files.append({
+                'filename':   fn,
+                'media_type': 'video' if fn.endswith('.mp4') else 'photo',
+                'size_bytes': os.path.getsize(fp),
+                'modified_at': mtime,
+            })
+    # Fish detection captures in captures/ subdir
+    cap_dir = os.path.join(RECORDING_PATH, 'captures')
+    if os.path.isdir(cap_dir):
+        for fn in sorted(os.listdir(cap_dir), reverse=True):
+            fp = os.path.join(cap_dir, fn)
+            if os.path.isfile(fp) and fn.endswith('.jpg'):
+                mtime = datetime.fromtimestamp(os.path.getmtime(fp)).strftime('%Y-%m-%d %H:%M')
+                files.append({
+                    'filename':   f'captures/{fn}',
+                    'media_type': 'fish_capture',
+                    'size_bytes': os.path.getsize(fp),
+                    'modified_at': mtime,
+                })
+    return files
+
+
+async def send_file_chunks(channel, filepath: str, filename: str):
+    """Send a file over the WebRTC data channel as binary chunks.
+    Protocol: file_start JSON → binary chunks → file_end JSON.
+    Caller sends transfer_complete ack; Pi then deletes the file.
+    """
+    try:
+        size_bytes = os.path.getsize(filepath)
+        with open(filepath, 'rb') as f:
+            raw = f.read()
+        md5 = hashlib.md5(raw).hexdigest()
+        chunk_count = (len(raw) + TRANSFER_CHUNK - 1) // TRANSFER_CHUNK
+        mime = 'video/mp4' if filename.endswith('.mp4') else 'image/jpeg'
+
+        channel.send(json.dumps({
+            'type':        'file_start',
+            'filename':    filename,
+            'media_type':  'video' if mime == 'video/mp4' else 'photo',
+            'mime':        mime,
+            'size_bytes':  size_bytes,
+            'chunk_count': chunk_count,
+        }))
+        log.info(f"Sending {filename} ({size_bytes} bytes, {chunk_count} chunks)")
+
+        for i in range(0, len(raw), TRANSFER_CHUNK):
+            channel.send(raw[i:i + TRANSFER_CHUNK])
+            await asyncio.sleep(0.01)   # yield to event loop; ~1.6 MB/s max
+
+        channel.send(json.dumps({
+            'type':     'file_end',
+            'filename': filename,
+            'checksum': f'md5:{md5}',
+        }))
+        log.info(f"Transfer of {filename} complete")
+
+    except Exception as e:
+        log.error(f"File transfer error for {filename}: {e}")
+        channel.send(json.dumps({'type': 'transfer_error', 'filename': filename, 'reason': str(e)}))
+
+
+def delete_media_file(filename: str) -> bool:
+    """Delete a media file from RECORDING_PATH or captures/ subdir. Update readme."""
+    try:
+        if filename.startswith('captures/'):
+            fp = os.path.join(RECORDING_PATH, filename)
+        else:
+            fp = os.path.join(RECORDING_PATH, filename)
+        if os.path.isfile(fp):
+            os.remove(fp)
+            log.info(f"Deleted media file: {filename}")
+            update_media_readme()
+            return True
+        log.warning(f"delete_media_file: not found: {filename}")
+        return False
+    except Exception as e:
+        log.error(f"Error deleting {filename}: {e}")
+        return False
+
+
+def update_media_readme():
+    """Regenerate MEDIA_README.txt with current file list and SCP instructions."""
+    try:
+        os.makedirs(RECORDING_PATH, exist_ok=True)
+        files     = list_media_files()
+        total_mb  = sum(f['size_bytes'] for f in files) / 1_048_576
+        disk      = check_disk_usage()
+        now       = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        lines = [
+            f"d3kOS Media Storage — {RECORDING_PATH}",
+            f"Last updated: {now}",
+            f"Total files: {len(files)}  |  Total size: {total_mb:.1f} MB  |  Disk usage: {disk['percent_used']}%",
+            "",
+            "FILES STORED:",
+        ]
+        if files:
+            for f in files:
+                size_mb = f['size_bytes'] / 1_048_576
+                lines.append(f"  {f['filename']:<50s} {size_mb:6.1f} MB   {f['modified_at']}")
+        else:
+            lines.append("  (none)")
+
+        lines += [
+            "",
+            "TO REMOVE FILES VIA SCP — WINDOWS:",
+            "  Install WinSCP from https://winscp.net (free, GUI)",
+            "  Host: [Pi IP address]  Port: 22  Username: d3kos",
+            f"  Navigate to: {RECORDING_PATH}",
+            "  Select files and press Delete.",
+            "  Or drag files to your Windows desktop first, then delete on Pi side.",
+            "",
+            "TO REMOVE FILES VIA SCP — MAC:",
+            "  Open Terminal (Finder → Applications → Utilities → Terminal)",
+            "  Copy a file to your Mac desktop:",
+            "    scp d3kos@[Pi IP]:/home/d3kos/camera-recordings/filename.mp4 ~/Desktop/",
+            "  Delete a file from the Pi:",
+            "    ssh d3kos@[Pi IP] \"rm /home/d3kos/camera-recordings/filename.mp4\"",
+            "  Delete all files at once:",
+            "    ssh d3kos@[Pi IP] \"rm /home/d3kos/camera-recordings/*.mp4 /home/d3kos/camera-recordings/*.jpg\"",
+            "",
+            "TO REMOVE FILES VIA SCP — LINUX:",
+            "  Open a terminal.",
+            "  Copy a file to your home directory:",
+            "    scp d3kos@[Pi IP]:/home/d3kos/camera-recordings/filename.mp4 ~/",
+            "  Delete a file from the Pi:",
+            "    ssh d3kos@[Pi IP] \"rm /home/d3kos/camera-recordings/filename.mp4\"",
+            "  Delete all files at once:",
+            "    ssh d3kos@[Pi IP] \"rm /home/d3kos/camera-recordings/*.mp4 /home/d3kos/camera-recordings/*.jpg\"",
+            "",
+            "NOTE: Replace [Pi IP address] with the IP shown in d3kOS Settings.",
+            "      Default SSH credentials — Username: d3kos",
+            "",
+            "Files are automatically removed after successful transfer to the mobile app.",
+            "If a file remains here it was not yet transferred or transfer failed.",
+        ]
+
+        with open(MEDIA_README, 'w') as fh:
+            fh.write('\n'.join(lines) + '\n')
+
+    except Exception as e:
+        log.error(f"Failed to update MEDIA_README.txt: {e}")
+
+
 # ── VideoStreamTrack for camera relay ────────────────────────────────────────
 if AIORTC_OK:
     import av
@@ -289,39 +468,164 @@ async def handle_offer(config: dict, offer_data: dict):
     def on_datachannel(channel):
         log.info(f"Data channel opened: {channel.label}")
 
+        # Track active recording filename so record_stop knows what to send
+        session_state = {'recording_file': None}
+
         @channel.on('message')
         def on_message(msg):
             nonlocal camera_track
             try:
                 data = json.loads(msg)
-                msg_type = data.get('type', '')
+            except (json.JSONDecodeError, TypeError):
+                return   # binary messages (acks) ignored here
 
-                if msg_type == 'camera_request':
-                    slot_id    = str(data.get('slot', ''))
-                    stream_url = get_camera_url(slot_id)
-                    if stream_url and AIORTC_OK:
-                        camera_track = MJPEGCameraTrack(stream_url)
-                        pc.addTrack(camera_track)
-                        log.info(f"Camera track added for slot {slot_id}: {stream_url}")
-                        channel.send(json.dumps({'type': 'camera_ok', 'slot': slot_id}))
+            msg_type = data.get('type', '')
+
+            # ── Camera streaming ──────────────────────────────────────────────
+            if msg_type == 'camera_request':
+                slot_id    = str(data.get('slot', ''))
+                stream_url = get_camera_url(slot_id)
+                if stream_url and AIORTC_OK:
+                    camera_track = MJPEGCameraTrack(stream_url)
+                    pc.addTrack(camera_track)
+                    log.info(f"Camera track added for slot {slot_id}: {stream_url}")
+                    channel.send(json.dumps({'type': 'camera_ok', 'slot': slot_id}))
+                else:
+                    channel.send(json.dumps({'type': 'camera_error', 'reason': 'slot not found'}))
+
+            elif msg_type == 'camera_stop':
+                if camera_track:
+                    camera_track.stop()
+                    camera_track = None
+                channel.send(json.dumps({'type': 'camera_stopped'}))
+
+            elif msg_type == 'camera_slots_request':
+                try:
+                    r = requests.get(f'{CAMERA_BASE}/camera/slots', timeout=3)
+                    slots = r.json() if r.status_code == 200 else []
+                except Exception:
+                    slots = []
+                channel.send(json.dumps({'type': 'camera_slots', 'slots': slots}))
+
+            # ── Photo capture ─────────────────────────────────────────────────
+            elif msg_type == 'capture_request':
+                asyncio.ensure_future(_do_capture(channel))
+
+            # ── Video recording ───────────────────────────────────────────────
+            elif msg_type == 'record_start':
+                try:
+                    r = requests.post(f'{CAMERA_BASE}/camera/record/start', timeout=5)
+                    if r.status_code == 200:
+                        info = r.json()
+                        session_state['recording_file'] = info.get('filename', '')
+                        channel.send(json.dumps({
+                            'type': 'record_started',
+                            'filename': session_state['recording_file'],
+                        }))
                     else:
-                        log.warning(f"Camera slot {slot_id} not found or aiortc unavailable")
-                        channel.send(json.dumps({'type': 'camera_error', 'reason': 'slot not found'}))
+                        channel.send(json.dumps({'type': 'record_error', 'reason': f'HTTP {r.status_code}'}))
+                except Exception as e:
+                    channel.send(json.dumps({'type': 'record_error', 'reason': str(e)}))
 
-                elif msg_type == 'camera_stop':
-                    if camera_track:
-                        camera_track.stop()
-                        camera_track = None
-                    channel.send(json.dumps({'type': 'camera_stopped'}))
+            elif msg_type == 'record_stop':
+                asyncio.ensure_future(_do_record_stop(channel, session_state))
 
-                elif msg_type == 'ping':
-                    channel.send(json.dumps({'type': 'pong', 'ts': int(time.time())}))
+            # ── File transfer ─────────────────────────────────────────────────
+            elif msg_type == 'transfer_request':
+                filename = data.get('filename', '')
+                if filename:
+                    asyncio.ensure_future(_do_transfer(channel, filename))
 
-            except json.JSONDecodeError:
-                pass
+            elif msg_type == 'transfer_complete':
+                filename = data.get('filename', '')
+                if filename:
+                    ok = delete_media_file(filename)
+                    log.info(f"Post-transfer delete {'OK' if ok else 'FAILED'}: {filename}")
+
+            elif msg_type == 'delete_request':
+                filename = data.get('filename', '')
+                if filename:
+                    ok = delete_media_file(filename)
+                    channel.send(json.dumps({'type': 'delete_ack', 'filename': filename, 'ok': ok}))
+
+            # ── Media library ─────────────────────────────────────────────────
+            elif msg_type == 'media_list_request':
+                files = list_media_files()
+                disk  = check_disk_usage()
+                channel.send(json.dumps({
+                    'type':         'media_list',
+                    'files':        files,
+                    'disk_percent': disk['percent_used'],
+                    'free_gb':      disk['free_gb'],
+                }))
+
+            elif msg_type == 'ping':
+                channel.send(json.dumps({'type': 'pong', 'ts': int(time.time())}))
+
+        # ── Async helpers spawned from on_message ─────────────────────────────
+
+        async def _do_capture(channel):
+            try:
+                r = requests.post(f'{CAMERA_BASE}/camera/capture', timeout=10)
+                if r.status_code == 200:
+                    info     = r.json()
+                    filepath = info['path']
+                    filename = info['filename']
+                    size_b   = int(info.get('size_mb', 0) * 1_048_576)
+                    channel.send(json.dumps({
+                        'type': 'capture_done', 'filename': filename, 'size_bytes': size_b
+                    }))
+                    update_media_readme()
+                    await send_file_chunks(channel, filepath, filename)
+                else:
+                    channel.send(json.dumps({'type': 'capture_error', 'reason': f'HTTP {r.status_code}'}))
+            except Exception as e:
+                channel.send(json.dumps({'type': 'capture_error', 'reason': str(e)}))
+
+        async def _do_record_stop(channel, session_state):
+            try:
+                r = requests.post(f'{CAMERA_BASE}/camera/record/stop', timeout=5)
+                if r.status_code == 200:
+                    filename = session_state.get('recording_file', '')
+                    if not filename:
+                        # Fallback: find most recent mp4
+                        mp4s = sorted(
+                            glob.glob(os.path.join(RECORDING_PATH, '*.mp4')),
+                            key=os.path.getmtime, reverse=True,
+                        )
+                        filename = os.path.basename(mp4s[0]) if mp4s else ''
+                    if filename:
+                        filepath   = os.path.join(RECORDING_PATH, filename)
+                        size_bytes = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
+                        channel.send(json.dumps({
+                            'type': 'record_stopped', 'filename': filename, 'size_bytes': size_bytes
+                        }))
+                        update_media_readme()
+                        await send_file_chunks(channel, filepath, filename)
+                    else:
+                        channel.send(json.dumps({'type': 'record_error', 'reason': 'Recording file not found'}))
+                    session_state['recording_file'] = None
+                else:
+                    channel.send(json.dumps({'type': 'record_error', 'reason': f'HTTP {r.status_code}'}))
+            except Exception as e:
+                channel.send(json.dumps({'type': 'record_error', 'reason': str(e)}))
+
+        async def _do_transfer(channel, filename):
+            if filename.startswith('captures/'):
+                filepath = os.path.join(RECORDING_PATH, filename)
+            else:
+                filepath = os.path.join(RECORDING_PATH, filename)
+            if os.path.isfile(filepath):
+                await send_file_chunks(channel, filepath, filename)
+            else:
+                channel.send(json.dumps({'type': 'transfer_error', 'filename': filename, 'reason': 'File not found'}))
+
+        # ── Sensor push loop ──────────────────────────────────────────────────
 
         # Start pushing sensor data every 5 seconds
         async def push_sensors():
+            storage_warned   = False
+            last_disk_check  = 0.0
             while not closed.is_set():
                 try:
                     sensors = fetch_sensors()
@@ -329,6 +633,27 @@ async def handle_offer(config: dict, offer_data: dict):
                     channel.send(json.dumps(sensors))
                 except Exception as e:
                     log.debug(f"Sensor push error: {e}")
+
+                # Periodic disk usage check (every DISK_CHECK_SECS)
+                now = time.time()
+                if now - last_disk_check >= DISK_CHECK_SECS:
+                    last_disk_check = now
+                    disk = check_disk_usage()
+                    if disk['percent_used'] >= DISK_WARN_PCT:
+                        if not storage_warned:
+                            log.warning(f"Disk usage at {disk['percent_used']}% — sending storage warning")
+                            storage_warned = True
+                        try:
+                            channel.send(json.dumps({
+                                'type':         'storage_warning',
+                                'percent_used': disk['percent_used'],
+                                'free_gb':      disk['free_gb'],
+                            }))
+                        except Exception:
+                            pass
+                    else:
+                        storage_warned = False   # reset once below threshold
+
                 await asyncio.sleep(DATA_PUSH)
 
         asyncio.ensure_future(push_sensors())

@@ -25,6 +25,8 @@ const state = {
   boatlog:     null,
   alertCount:  0,
   currentScreen: 'dashboard',
+  mediaList:   [],
+  mediaStorage: null,
 };
 
 // ── Persistence ───────────────────────────────────────────────────────────────
@@ -701,16 +703,20 @@ screens.dashboard = function renderDashboard() {
     container.appendChild(blCard);
   }
 
-  // Quick-action row: Go Live + My Reports
-  const qa = el('div', { class: 'quick-actions' });
+  // Quick-action row: Go Live + My Reports + Media
+  const qa = el('div', { class: 'quick-actions three-col' });
 
   const liveBtn = el('button', { class: 'btn btn-live', onClick: () => navigate('live') });
-  liveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a14 14 0 0 0 0 17M20.5 3.5a14 14 0 0 1 0 17"/></svg> Go Live';
+  liveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a14 14 0 0 0 0 17M20.5 3.5a14 14 0 0 1 0 17"/></svg> Live';
   qa.appendChild(liveBtn);
 
   const reportsBtn = el('button', { class: 'btn btn-reports', onClick: () => navigate('reports') });
-  reportsBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> My Reports';
+  reportsBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Reports';
   qa.appendChild(reportsBtn);
+
+  const mediaBtn = el('button', { class: 'btn btn-media', onClick: () => navigate('live') });
+  mediaBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Media';
+  qa.appendChild(mediaBtn);
 
   container.appendChild(qa);
 
@@ -757,6 +763,82 @@ const RTC_STUN = [
 
 // Active peer connection — stored so we can close it when leaving the screen.
 let _livePC = null;
+
+// Binary file transfer state — one file at a time, Pi → app via WebRTC data channel.
+let _currentTransfer = null; // { filename, chunks[], md5, mediaType }
+let _liveRecording   = false; // true while Pi is recording video
+
+function handleFileStart(msg) {
+  _currentTransfer = { filename: msg.filename, chunks: [], md5: msg.md5, mediaType: msg.media_type };
+}
+
+function handleBinaryChunk(buffer) {
+  if (_currentTransfer) _currentTransfer.chunks.push(buffer);
+}
+
+function handleFileEnd(msg, dc) {
+  if (!_currentTransfer || _currentTransfer.filename !== msg.filename) return;
+  const xfer = _currentTransfer;
+  _currentTransfer = null;
+
+  // Concatenate all chunks into a single ArrayBuffer
+  const total    = xfer.chunks.reduce((n, c) => n + c.byteLength, 0);
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of xfer.chunks) {
+    combined.set(new Uint8Array(chunk), offset);
+    offset += chunk.byteLength;
+  }
+
+  saveMediaToDevice(combined.buffer, xfer.filename);
+
+  // ACK so Pi deletes the original file
+  if (dc && dc.readyState === 'open') {
+    dc.send(JSON.stringify({ type: 'transfer_complete', filename: xfer.filename }));
+  }
+  showLiveNotification(`✓ Saved to device: ${xfer.filename}`);
+}
+
+function saveMediaToDevice(buffer, filename) {
+  const mimeType = filename.endsWith('.mp4') ? 'video/mp4' : 'image/jpeg';
+  const blob     = new Blob([buffer], { type: mimeType });
+  const url      = URL.createObjectURL(blob);
+  const a        = document.createElement('a');
+  a.href         = url;
+  a.download     = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+}
+
+function showLiveNotification(text) {
+  const notif = document.getElementById('live-notif');
+  if (!notif) return;
+  notif.textContent = text;
+  notif.style.opacity = '1';
+  clearTimeout(notif._hideTimer);
+  notif._hideTimer = setTimeout(() => { notif.style.opacity = '0'; }, 4000);
+}
+
+function showStorageWarning(pct, freeGb) {
+  const el_ = document.getElementById('live-storage-warn');
+  if (!el_) return;
+  el_.textContent = `⚠ Disk ${pct}% full — only ${freeGb.toFixed(1)} GB free. Transfer or delete files.`;
+  el_.style.display = 'block';
+}
+
+function updateRecordState(isRecording) {
+  _liveRecording = isRecording;
+  const btn = document.getElementById('live-record-btn');
+  if (!btn) return;
+  if (isRecording) {
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('recording');
+  } else {
+    btn.textContent = '🔴 Record';
+    btn.classList.remove('recording');
+  }
+}
 
 screens.live = function renderLive() {
   const container = getEl('screen');
@@ -820,6 +902,59 @@ screens.live = function renderLive() {
   const camRow = el('div', { class: 'live-cam-row', id: 'live-cam-row', hidden: true });
   camRow.appendChild(el('span', { class: 'live-cam-label' }, 'Camera:'));
   container.appendChild(camRow);
+
+  // Storage warning (shown by Pi push if disk >= 90%)
+  const storageWarnEl = el('div', {
+    class: 'storage-warning', id: 'live-storage-warn',
+    role: 'alert', style: 'display:none',
+  });
+  container.appendChild(storageWarnEl);
+
+  // Live notification line (capture/record feedback)
+  const notifEl = el('div', { class: 'live-notification', id: 'live-notif', 'aria-live': 'polite' });
+  container.appendChild(notifEl);
+
+  // Capture / Record / Media Library controls — enabled once data channel opens
+  const ctrlRow = el('div', { class: 'live-controls-row', id: 'live-ctrl-row' });
+
+  const captureBtn = el('button', { class: 'btn-capture', id: 'live-capture-btn' }, '📷 Photo');
+  captureBtn.disabled = true;
+  captureBtn.addEventListener('click', () => {
+    const dc_ = _livePC && _livePC._dataChannel;
+    if (dc_ && dc_.readyState === 'open') {
+      dc_.send(JSON.stringify({ type: 'capture_request' }));
+      showLiveNotification('📷 Capturing photo…');
+    }
+  });
+
+  const recordBtn = el('button', { class: 'btn-record', id: 'live-record-btn' }, '🔴 Record');
+  recordBtn.disabled = true;
+  recordBtn.addEventListener('click', () => {
+    const dc_ = _livePC && _livePC._dataChannel;
+    if (!dc_ || dc_.readyState !== 'open') return;
+    if (_liveRecording) {
+      dc_.send(JSON.stringify({ type: 'record_stop' }));
+      showLiveNotification('⏹ Stopping recording…');
+    } else {
+      dc_.send(JSON.stringify({ type: 'record_start' }));
+      showLiveNotification('🔴 Recording started…');
+    }
+  });
+
+  const mediaLibBtn = el('button', { class: 'btn-media-lib', id: 'live-media-btn' }, '📁 Media');
+  mediaLibBtn.disabled = true;
+  mediaLibBtn.addEventListener('click', () => {
+    const dc_ = _livePC && _livePC._dataChannel;
+    if (dc_ && dc_.readyState === 'open') {
+      dc_.send(JSON.stringify({ type: 'media_list_request' }));
+    }
+    navigate('media');
+  });
+
+  ctrlRow.appendChild(captureBtn);
+  ctrlRow.appendChild(recordBtn);
+  ctrlRow.appendChild(mediaLibBtn);
+  container.appendChild(ctrlRow);
 
   if (!piId) {
     setLiveStatus('No vessel selected. Return to Dashboard.', 'error');
@@ -975,20 +1110,62 @@ async function startLiveSession(piId) {
 
   setLiveStatus('● Live — updating every 5s', 'connected');
 
-  // Show camera slot buttons
-  try {
-    // Request camera slots from Pi via data channel
-    dc.send(JSON.stringify({ type: 'camera_slots_request' }));
-  } catch {}
+  // Enable capture / record / media controls now that data channel is open
+  ['live-capture-btn', 'live-record-btn', 'live-media-btn'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.disabled = false;
+  });
 
-  // Receive sensor data and camera slot list
+  // Request camera slots from Pi
+  try { dc.send(JSON.stringify({ type: 'camera_slots_request' })); } catch {}
+
+  // Receive all data channel messages — sensors, camera slots, media, binary chunks
   dc.onmessage = (evt) => {
+    // Binary ArrayBuffer — file chunk from Pi
+    if (evt.data instanceof ArrayBuffer) {
+      handleBinaryChunk(evt.data);
+      return;
+    }
     try {
       const msg = JSON.parse(evt.data);
-      if (msg.type === 'sensors') {
-        applyLiveSensors(msg);
-      } else if (msg.type === 'camera_slots') {
-        renderCameraSlotButtons(msg.slots, dc);
+      switch (msg.type) {
+        case 'sensors':
+          applyLiveSensors(msg);
+          break;
+        case 'camera_slots':
+          renderCameraSlotButtons(msg.slots, dc);
+          break;
+        case 'file_start':
+          handleFileStart(msg);
+          break;
+        case 'file_end':
+          handleFileEnd(msg, dc);
+          break;
+        case 'storage_warning':
+          showStorageWarning(msg.percent_used, msg.free_gb);
+          break;
+        case 'capture_result':
+          showLiveNotification(
+            msg.success ? `📷 Photo saved: ${msg.filename}` : `Capture failed: ${msg.error || 'unknown error'}`
+          );
+          break;
+        case 'record_started':
+          updateRecordState(true);
+          break;
+        case 'record_stopped':
+          updateRecordState(false);
+          showLiveNotification(`🎬 Video saved: ${msg.filename}`);
+          break;
+        case 'media_list':
+          state.mediaList    = msg.files   || [];
+          state.mediaStorage = msg.storage || null;
+          if (state.currentScreen === 'media') screens.media();
+          break;
+        case 'delete_ack':
+          showLiveNotification(`🗑 Deleted: ${msg.filename}`);
+          state.mediaList = (state.mediaList || []).filter(f => f.filename !== msg.filename);
+          if (state.currentScreen === 'media') screens.media();
+          break;
       }
     } catch {}
   };
@@ -1171,6 +1348,126 @@ async function generateReport(piId, container, genBtn) {
     }
   }
 }
+
+
+// ── Media Screen ──────────────────────────────────────────────────────────────
+// Accessed via "Media Library" button on the live screen (requires active data channel).
+
+screens.media = function renderMedia() {
+  const container = getEl('screen');
+  container.innerHTML = '';
+
+  // Header
+  const header = el('div', { class: 'screen-header' });
+  header.appendChild(el('button', { class: 'back-btn', 'aria-label': 'Back to live screen',
+    onClick: () => navigate('live')
+  }, '← Back'));
+  header.appendChild(el('span', { class: 'screen-title' }, 'Media Library'));
+  container.appendChild(header);
+
+  // Storage indicator
+  const sto = state.mediaStorage;
+  if (sto) {
+    const cls = sto.percent_used >= 90 ? 'danger' : sto.percent_used >= 75 ? 'warn' : '';
+    const stoEl = el('div', { class: `media-storage-bar ${cls}`, id: 'media-storage-warn' },
+      `Pi storage: ${sto.percent_used}% used · ${sto.free_gb.toFixed(1)} GB free`
+    );
+    container.appendChild(stoEl);
+  }
+
+  // No live connection guard
+  const dc_ = _livePC && _livePC._dataChannel;
+  if (!dc_ || dc_.readyState !== 'open') {
+    container.appendChild(
+      el('div', { class: 'empty-state' },
+        el('p', {}, '📡 No live connection.'),
+        el('p', {}, 'Go live first — then tap Media Library to browse files on the Pi.'),
+      )
+    );
+    return;
+  }
+
+  const files = state.mediaList || [];
+
+  if (files.length === 0) {
+    // Show spinner while waiting for list to arrive (media_list_request already sent)
+    const wrap = el('div', {});
+    wrap.appendChild(spinner());
+    wrap.appendChild(el('p', {
+      style: 'text-align:center;font-size:0.9rem;color:var(--text-muted);margin-top:8px;',
+    }, 'Loading media from Pi…'));
+    container.appendChild(wrap);
+    return;
+  }
+
+  // Transfer All button
+  const transferAllBtn = el('button', {
+    class: 'btn btn-ghost media-transfer-all',
+    onClick: () => {
+      if (!dc_ || dc_.readyState !== 'open') return;
+      files.forEach(f => {
+        dc_.send(JSON.stringify({ type: 'transfer_request', filename: f.filename }));
+      });
+      showLiveNotification(`📥 Transferring ${files.length} file(s)…`);
+    }
+  }, `📥 Transfer All (${files.length})`);
+  container.appendChild(transferAllBtn);
+
+  // File list
+  const listCard = el('div', { class: 'card', style: 'padding: 0 16px; overflow: hidden;' });
+
+  files.forEach(f => {
+    const isVideo  = f.media_type === 'video' || f.filename.endsWith('.mp4');
+    const thumb    = isVideo ? '🎬' : '📷';
+    const sizeKb   = f.size_bytes ? (f.size_bytes / 1024).toFixed(0) + ' KB' : '';
+    const modTime  = f.modified_at ? fmtTime(f.modified_at) : '';
+
+    const item = el('div', { class: 'media-item' });
+    item.appendChild(el('div', { class: 'media-thumb' }, thumb));
+
+    const info = el('div', { class: 'media-info' });
+    info.appendChild(el('div', { class: 'media-filename' }, f.filename));
+    info.appendChild(el('div', { class: 'media-meta' }, [sizeKb, modTime].filter(Boolean).join(' · ')));
+    item.appendChild(info);
+
+    const actions = el('div', { class: 'media-actions' });
+
+    // Transfer button
+    const xferBtn = el('button', { class: 'btn-media-action',
+      onClick: () => {
+        if (dc_ && dc_.readyState === 'open') {
+          dc_.send(JSON.stringify({ type: 'transfer_request', filename: f.filename }));
+          showLiveNotification(`📥 Transferring: ${f.filename}`);
+        }
+      }
+    }, '↓ Get');
+    actions.appendChild(xferBtn);
+
+    // Delete button
+    const delBtn = el('button', { class: 'btn-media-action danger',
+      onClick: () => {
+        if (!confirm(`Delete ${f.filename} from the Pi?`)) return;
+        if (dc_ && dc_.readyState === 'open') {
+          dc_.send(JSON.stringify({ type: 'delete_request', filename: f.filename }));
+          showLiveNotification(`🗑 Deleting: ${f.filename}`);
+        }
+      }
+    }, '✕ Del');
+    actions.appendChild(delBtn);
+
+    item.appendChild(actions);
+    listCard.appendChild(item);
+  });
+
+  container.appendChild(listCard);
+
+  // SCP note link
+  container.appendChild(
+    el('p', { class: 'list-footnote', style: 'margin-top:12px;' },
+      'To bulk-copy files via SCP, see MEDIA_README.txt on the Pi at /home/d3kos/camera-recordings/'
+    )
+  );
+};
 
 
 // ── Alerts Screen ─────────────────────────────────────────────────────────────
