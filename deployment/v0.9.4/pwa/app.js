@@ -1103,12 +1103,16 @@ async function startLiveSession(piId) {
 
   setLiveStatus('Establishing P2P connection…');
 
-  // Wait for data channel to open
-  await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Data channel timed out')), 30000);
-    dc.onopen = () => { clearTimeout(timeout); resolve(); };
-    dc.onerror = (e) => { clearTimeout(timeout); reject(e); };
-  });
+  // Wait for data channel to open.
+  // Race guard: on fast LAN connections the channel can open before onopen is assigned —
+  // check readyState first so we don't wait 30s for an event that already fired.
+  if (dc.readyState !== 'open') {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Data channel timed out')), 30000);
+      dc.onopen  = () => { clearTimeout(timeout); resolve(); };
+      dc.onerror = (e) => { clearTimeout(timeout); reject(e); };
+    });
+  }
 
   setLiveStatus('● Live — updating every 5s', 'connected');
 

@@ -398,6 +398,23 @@ if AIORTC_OK:
     import av
     from aiortc import VideoStreamTrack
 
+    class DummyVideoTrack(VideoStreamTrack):
+        """
+        Silent black-frame video track.
+        Added to the RTCPeerConnection before the answer is created so the
+        browser fires ontrack at connection time and shows the camera panel.
+        Replaced with MJPEGCameraTrack via replaceTrack() when the user taps
+        a camera slot.
+        """
+        kind = 'video'
+
+        async def recv(self):
+            pts, time_base = await self.next_timestamp()
+            frame = av.VideoFrame(width=640, height=480, format='yuv420p')
+            frame.pts       = pts
+            frame.time_base = time_base
+            return frame
+
     class MJPEGCameraTrack(VideoStreamTrack):
         """Reads frames from a local MJPEG stream and relays as WebRTC video."""
 
@@ -446,9 +463,15 @@ async def handle_offer(config: dict, offer_data: dict):
     ice_servers = [RTCIceServer(urls=s) for s in STUN_SERVERS]
     pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_servers))
 
+    # Add a dummy video track BEFORE the answer is created.
+    # This ensures the browser fires ontrack at connection time, making the
+    # camera panel visible. The real camera is swapped in via replaceTrack()
+    # when the user taps a slot — no renegotiation required.
+    video_sender = pc.addTrack(DummyVideoTrack()) if AIORTC_OK else None
+
     # Track connection state for cleanup
-    connected   = asyncio.Event()
-    closed      = asyncio.Event()
+    connected    = asyncio.Event()
+    closed       = asyncio.Event()
     camera_track = None
 
     @pc.on('connectionstatechange')
@@ -480,10 +503,15 @@ async def handle_offer(config: dict, offer_data: dict):
             if msg_type == 'camera_request':
                 slot_id    = str(data.get('slot', ''))
                 stream_url = get_camera_url(slot_id)
-                if stream_url and AIORTC_OK:
+                if stream_url and AIORTC_OK and video_sender:
+                    # Stop previous camera track if one is active
+                    if camera_track:
+                        camera_track.stop()
                     camera_track = MJPEGCameraTrack(stream_url)
-                    pc.addTrack(camera_track)
-                    log.info(f"Camera track added for slot {slot_id}: {stream_url}")
+                    # replaceTrack swaps the track on the already-negotiated sender —
+                    # no renegotiation needed. Browser ontrack already fired at connect.
+                    asyncio.ensure_future(video_sender.replaceTrack(camera_track))
+                    log.info(f"Camera track replaced for slot {slot_id}: {stream_url}")
                     channel.send(json.dumps({'type': 'camera_ok', 'slot': slot_id}))
                 else:
                     channel.send(json.dumps({'type': 'camera_error', 'reason': 'slot not found'}))
@@ -492,6 +520,9 @@ async def handle_offer(config: dict, offer_data: dict):
                 if camera_track:
                     camera_track.stop()
                     camera_track = None
+                # Replace back with silent dummy so the video sender stays valid
+                if AIORTC_OK and video_sender:
+                    asyncio.ensure_future(video_sender.replaceTrack(DummyVideoTrack()))
                 channel.send(json.dumps({'type': 'camera_stopped'}))
 
             elif msg_type == 'camera_slots_request':
