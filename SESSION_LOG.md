@@ -8305,3 +8305,94 @@ OIC: awaiting operator assessment
 ─────────────────────────────────────────────────────
 
 ---
+
+## Session — 2026-03-27 (S6b-UserTest) — v0.9.4 user test: fix pi_installation_id mismatch and reporting bugs
+
+**Goal:** Fix all issues found in first full user test: alerts empty, boatlog gone, vessel offline, d3kOS version missing, Reports error, media to gallery, dc.binaryType.
+
+**Completed:**
+- Identified root cause of 5 separate issues: `data-ingress.php` stored `pi_installation_id` from `$body['installation_id']` (license.json hex `3861513b314c5ee7`) but all app queries use device_token UUID (`701e5754-...`) from `d3kos_pairings.pi_id` — every query returned empty
+- Fixed `data-ingress.php` line 47: changed to `$auth['device_token']` as canonical `pi_installation_id` — fixes alerts, boatlog, engine snapshots, vessel online status, d3kOS version (all stored under correct key)
+- Fixed `dashboard-data.php` alert COUNT: was unfiltered `WHERE user_id = ?` (counted all 19 alerts regardless of Pi). Now filters by `pi_installation_id` so count matches list
+- Fixed `list-reports.php`: added guard against `prepare()` returning false when `amboat_pdf_reports` table doesn't exist — was causing PHP fatal error outputting HTML instead of JSON → app showed "invalid response from server". Now returns `{total:0, reports:[]}` gracefully
+- Fixed `app.js` line 1010: added `dc.binaryType = 'arraybuffer'` after `createDataChannel` — Safari sends binary as Blob by default; without this iOS binary file transfers fail silently
+- Deployed all 4 files to HostPapa staging via FTPS
+- Explained media-to-Gallery limitation to operator: iOS browser cannot save directly to Camera Roll — this is an Apple restriction requiring a native app, not a PWA bug
+
+**Decisions:**
+- Canonical Pi identity for all HostPapa-facing data (alerts, boatlog, engine snapshots, d3kos_pairings.last_seen_at, amboat_devices.pi_id) = `$auth['device_token']` (UUID from `amboat_devices` auth lookup) — NOT the license.json hex value the Pi sends in the body
+- `list-reports.php` returns empty list rather than error when table missing — allows T1 users to see Reports screen without crashing
+- Media download behavior (Files app, not Gallery) is by design for PWA — native app distribution is v1.1+
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-27 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+### Release Package Manifest
+- Version: v0.9.4 S6b → S6b-UserTest
+- Update type: hotfix (multiple bug fixes from user test)
+- Changed files:
+  | File | Path | Partition | Change |
+  |------|------|-----------|--------|
+  | data-ingress.php | staging/mobile/ (HostPapa) | base | Use device_token as canonical pi_installation_id |
+  | dashboard-data.php | staging/mobile/ (HostPapa) | base | Add pi_id filter to alert COUNT query |
+  | list-reports.php | staging/mobile/ (HostPapa) | base | Guard against missing amboat_pdf_reports table |
+  | app.js | staging/app/ (HostPapa) | base | dc.binaryType = arraybuffer for iOS Safari |
+- Pre-install steps: none (FTPS deploy, no DB changes required)
+- Post-install steps: Pi must re-export (restart d3kos-cloud-agent or wait 30 min) to populate tables with correct device_token UUID
+- Rollback: FTPS redeploy prior versions from Helm-OS git history (commit before 84a2438)
+- Health check: After Pi re-exports — check alerts-list.php returns count > 0, boatlog-list.php returns entries, list-vessels.php shows `online: true` and `d3kos_version` populated
+
+**Operator actions required:**
+- phpMyAdmin: run 3 cleanup queries to remove stale data stored under wrong pi_installation_id:
+  ```sql
+  DELETE FROM amboat_alerts WHERE pi_installation_id = '3861513b314c5ee7';
+  DELETE FROM amboat_engine_snapshots WHERE pi_installation_id = '3861513b314c5ee7';
+  DELETE FROM amboat_boatlog WHERE pi_installation_id = '3861513b314c5ee7';
+  ```
+- Pi: `sudo systemctl restart d3kos-cloud-agent` to trigger fresh export immediately
+- phpMyAdmin: verify `amboat_pdf_reports` table exists — if not, create it (SQL from S6 chat) to enable full Reports functionality
+
+**Commits:**
+- atmyboat-forum `84a2438` — data-ingress + dashboard-data fixes
+- atmyboat-forum `752c12c` — list-reports missing table guard
+- Helm-OS `efb337d` — app.js dc.binaryType fix
+
+**Pending:**
+- Stale DB data cleanup (3 DELETE statements above — operator action in phpMyAdmin)
+- Pi re-export trigger (operator: restart d3kos-cloud-agent)
+- amboat_pdf_reports table creation if missing (operator: phpMyAdmin)
+- On-boat cellular test: WebRTC confirmed working on LAN, cellular/remote test required before v0.9.4 ships
+- Camera slot selection outcome unclear ("not sure" per Don) — needs follow-up test
+
+ACCOMPLISHED THIS SESSION:
+- Root cause of 5 user-test failures identified: single wrong pi_installation_id key in data-ingress.php
+- All 4 code fixes implemented and deployed to HostPapa
+- dc.binaryType iOS fix applied and deployed
+- Reports "invalid response" resolved (missing table now handled gracefully)
+- Media-to-Gallery limitation documented and explained
+
+NOT COMPLETED / DEFERRED:
+- DB stale data cleanup: requires phpMyAdmin access (operator task)
+- Pi re-export: requires Pi side action (operator task)
+- amboat_pdf_reports table: may not exist, operator needs to check/create
+- Camera slot selection: not confirmed working — needs user test
+- TURN server: deferred to v1.1 (no change)
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Uncertainty flag: cannot confirm vessel online status or d3kOS version will show until Pi re-exports and DB is cleaned up
+- Uncertainty flag: amboat_pdf_reports table may still not exist on staging — if so Reports still won't generate (only list is fixed)
+- Uncertainty flag: camera slot selection on live screen — user said "not sure," outcome unknown
+
+OPERATOR ACTIONS REQUIRED:
+- phpMyAdmin: 3 DELETE statements (see above)
+- Pi: restart d3kos-cloud-agent service
+- phpMyAdmin: verify/create amboat_pdf_reports table
+- App: retest after Pi re-exports — confirm alerts, boatlog, vessel online, d3kOS version all correct
+
+---
