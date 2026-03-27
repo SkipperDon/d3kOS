@@ -8085,6 +8085,111 @@ OIC: awaiting operator assessment
 
 ---
 
+## Session — 2026-03-27 S6b-LiveTest — v0.9.4 WebRTC Live Tunnel: End-to-End Debug + Confirmed Working
+
+**Goal:** Continuation of S6b — run live end-to-end test of WebRTC tunnel, diagnose and fix all blocking bugs, confirm Pi ↔ phone P2P data channel live in lab.
+
+**Completed:**
+
+### Bug 1 — live_session.py: wrong signal URL
+- `signal_url = f"{config['base_url']}/mobile/rtc-signal.php"` → returns WordPress HTML (routing intercept)
+- Fix: changed to `f"{config['base_url']}/wp-content/themes/twentytwenty-child/mobile/rtc-signal.php"`
+- cloud_agent.py already used the full path — live_session.py was the outlier
+- Affected both `handle_offer` and `poll_loop`
+
+### Bug 2 — rtc-signal.php: SDP stored as integer 0 (critical — root cause of all ICE failures)
+- `bind_param('ssiis', ...)` — 4th parameter `$sdp` bound as `'i'` (integer)
+- PHP converts any SDP string to integer `0`; stored in MEDIUMTEXT column as `"0"`
+- Every offer and answer since deployment had corrupted SDP — ICE gathering never started
+- Fix: `'ssiis'` → `'ssiss'` in both offer INSERT (line 83) and answer INSERT (line 220)
+
+### Bug 3 — rtc-signal.php: answered sessions never removed from poll_offer queue
+- `ON DUPLICATE KEY UPDATE` did not update `role` — session stayed `role='offer'` after Pi answered
+- Each Pi answer refreshed `expires_at` → sessions never expired; Pi kept receiving its own stale sessions
+- Fix: added `role = 'answer'` to ON DUPLICATE KEY UPDATE clause
+- Database cleanup: operator ran `DELETE FROM amboat_rtc_sessions`
+
+### Bug 4 — live_session.py: ICE candidate format mismatch
+- Browser sends JSON `{"candidate": "candidate:xxx...", ...}`; `candidate_from_sdp()` needs string with prefix stripped
+- Fix: extract `cand_obj.get('candidate', '').replace('candidate:', '', 1)` before parsing
+
+### Bug 5 — live_session.py: ICE gathering wait was fixed 3s
+- Changed to poll `pc.iceGatheringState == 'complete'` with 8s max; added diagnostic candidate logging
+
+### Live End-to-End Test — PASSED
+- Pi `192.168.1.237` ↔ Phone `192.168.1.51` — direct LAN P2P via peer reflexive ICE
+- ICE completed, data channel `sensors` opened
+- App status bar: **"● Live — updating every 5s"** — confirmed by operator
+
+**Files changed:**
+- `deployment/v0.9.4/pi_source/live_session.py` — signal URL, ICE candidate format, gather wait, SDP debug log
+- `atmyboat-forum/wp-content/themes/twentytwenty-child/mobile/rtc-signal.php` — bind_param type + role update
+
+**Commits:**
+- Helm-OS `a00b463` — fix(live_session): correct signal URL and ICE handling for WebRTC tunnel
+- atmyboat-forum `2f875f9` — fix(rtc-signal): SDP stored as integer 0 due to wrong bind_param type
+
+**Decisions:**
+- TURN server: operator confirmed deferral to v1.1
+- Debug SDP logging retained in live_session.py — aids future ICE failure diagnosis
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-27 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+### Release Package Manifest
+- Version: v0.9.4 S6b-LiveTest
+- Update type: bugfix
+- Changed files:
+  | File | Path | Partition | Change |
+  |------|------|-----------|--------|
+  | live_session.py | /opt/d3kos/services/live/live_session.py | base | Signal URL, ICE parse, gather wait |
+  | rtc-signal.php | staging/.../mobile/rtc-signal.php | HostPapa | bind_param type, role=answer on DUPLICATE |
+- Pre-install steps: `DELETE FROM amboat_rtc_sessions` — done by operator
+- Post-install steps: `sudo systemctl restart d3kos-live.service` — done
+- Rollback: git revert Helm-OS a00b463, git revert forum 2f875f9, redeploy both
+- Health check: `tail /opt/d3kos/logs/live-session.log` — look for "Connection state: connected" and "Data channel opened: sensors"
+
+ACCOMPLISHED THIS SESSION:
+- WebRTC live tunnel confirmed working end-to-end — lab test passed
+- 5 bugs found and fixed across live_session.py and rtc-signal.php
+- Both repos committed (Helm-OS a00b463, forum 2f875f9)
+
+NOT COMPLETED / DEFERRED:
+- `dc.binaryType = 'arraybuffer'` — needed for iOS Safari binary file transfers (one-line fix)
+- Media capture/transfer flow: not yet tested end-to-end (requires camera running on Pi)
+- TURN server: deferred to v1.1
+- On-boat test (cellular/remote): lab-only so far
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Debug SDP log in live_session.py logs first 500 chars of offer SDP — remove before production
+- `10.42.0.1` virtual interface candidate on Pi — source not investigated, harmless
+- On-boat test with cellular required before v0.9.4 ships
+
+OPERATOR ACTIONS REQUIRED:
+- OIC assessment at session close
+- None pending from this session
+
+─────────────────────────────────────────────────────
+AAO SESSION QUALITY SCORE — S6b-LiveTest
+─────────────────────────────────────────────────────
+  Risk Classification      : All actions classified before execution
+  Pre-Action Statements    : Given for all Low+ actions
+  Scope Adherence          : Within stated task scope
+  Destructive Actions      : None (DELETE was operator-initiated)
+  Injection Detection      : No suspicious patterns detected
+  Session Log              : Complete
+  Release Manifest         : Included above
+  Summary Accuracy         : Includes NOT COMPLETED and KNOWN GAPS
+UAC (Unauthorized Action Count) : 0
+─────────────────────────────────────────────────────
+OIC: awaiting operator assessment
+─────────────────────────────────────────────────────
+
+---
+
 ## Session — 2026-03-27 S6b — v0.9.4 media capture/transfer + screens.media
 
 **Goal:** Complete v0.9.4 S6: media capture/transfer protocol, screens.live capture controls, screens.media library, deploy all to Pi + HostPapa, commit both repos.
