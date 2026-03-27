@@ -8396,3 +8396,60 @@ OPERATOR ACTIONS REQUIRED:
 - App: retest after Pi re-exports — confirm alerts, boatlog, vessel online, d3kOS version all correct
 
 ---
+
+## Session — 2026-03-27 S6b-AODA (v0.9.3.1 — PWA AODA Pass)
+
+**Goal:** AODA compliance pass on the v0.9.4 PWA — fix all font size violations and touch target violations in app.css, verify and fix accessibility attributes in app.js.
+
+**Completed:**
+- Full AODA audit of app.css: 30+ font-size violations corrected. Rules:
+  - Readable text: minimum 1rem
+  - Supplemental labels/badges (nav badge, card title, stat label, timestamps, tier badge, locked badge, sparkline range, media meta): minimum 0.9rem
+  - No rem value below 0.9rem on any element
+- Touch target violations corrected: nav buttons, back button, cam slot buttons, capture/record/media lib buttons, cam close button, vessel icon, position link, vessel switcher items — all now minimum 48×48px
+- Added `font-family: inherit` and `min-height: 48px` to `.btn-live`, `.btn-reports`
+- Added `:focus-visible` outline rule for `#header-vessel.vessel-switcher`
+- app.js audit: confirmed `#header-vessel.vessel-switcher` already has `role="button"`, `tabindex="0"`, `aria-label`, keyboard handler (Enter/Space) — no change needed
+- app.js fix: `#online-dot` now receives dynamic `aria-label="Vessel online"` / `"Vessel offline"` on every status update via `updateHeader()`
+- Deployed app.css + app.js to staging/app/ on HostPapa via deploy-pwa.py
+- Committed Helm-OS `ec94e4a`
+- PROJECT_CHECKLIST.md: v0.9.3.1 item added and marked complete
+
+**Decisions:**
+- v0.9.3.1 defined as the PWA AODA pass sprint (not a WordPress sprint)
+- Supplemental label minimum set at 0.9rem (not 1rem) — matches same policy as v0.9.2 on-screen labels
+
+**Files changed:**
+- `deployment/v0.9.4/pwa/app.css` — 30+ font-size violations + touch target violations corrected
+- `deployment/v0.9.4/pwa/app.js` — online-dot dynamic aria-label added
+- `PROJECT_CHECKLIST.md` — v0.9.3.1 AODA pass item added as complete
+
+**Commit:** Helm-OS `ec94e4a`
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-27 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+ACCOMPLISHED THIS SESSION:
+- Full AODA font size and touch target pass on v0.9.4 PWA (v0.9.3.1)
+- Dynamic aria-label on online-dot status indicator
+- Deployed and committed
+
+NOT COMPLETED / DEFERRED:
+- On-boat cellular WebRTC test: LAN only confirmed, cellular test still required
+- camera slot selection: outcome from prior user test still unclear ("not sure")
+- amboat_pdf_reports table: may still not exist on staging
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Uncertainty flag: no Don screenshot received post-deploy — visual regression not confirmed
+
+OPERATOR ACTIONS REQUIRED:
+- Visit https://atmyboat.com/staging/app/ and confirm text is readable (no tiny labels)
+- Confirm touch targets feel correct on iOS (all interactive elements ≥48px)
+- If anything looks wrong, compare against prior screenshot and report
+
+---
