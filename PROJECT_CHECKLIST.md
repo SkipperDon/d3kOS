@@ -392,7 +392,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | MB1 | Fetch paired vessels list | `GET list-vessels.php` | `[x]` **DONE 2026-03-26 S2** — endpoint built + deployed. |
 | MB2 | Boat selector screen | Cards per vessel, online indicator, tap to select | `[x]` **DONE 2026-03-26 S2** — built in PWA app.js select-vessel screen. |
 | MB3 | Active boat state | pi_installation_id in localStorage | `[x]` **DONE 2026-03-26 S2** — state.vessel + localStorage in PWA. |
-| MB4 | Boat switcher in app nav | Persistent control in header/nav showing current vessel name. Tap → returns to boat selector screen. | `[ ]` |
+| MB4 | Boat switcher in app nav | Persistent control in header/nav showing current vessel name. Tap → returns to boat selector screen. | `[x]` **DONE 2026-03-27** — header-vessel span becomes tappable with › indicator + keyboard support when >1 vessel. Single-vessel accounts: no change. |
 | MB5 | Primary boat default | On app open with >1 vessel: auto-select the `is_primary` vessel. User can change primary in app settings. | `[x]` **DONE 2026-03-26 S3** — loadVessels() prefers is_primary vessel, falls back to vessels[0]. |
 | MB6 | Single-boat shortcut | If account has exactly 1 paired Pi: skip boat selector entirely, go straight to dashboard. | `[x]` **DONE 2026-03-26 S2** — already in app.js (vessels.length === 1 auto-selects). Item was stale. |
 | MB7 | Vessel name displayed on QR pairing | During QR scan flow: prompt "Name this vessel" + vessel type dropdown before completing pairing | `[x]` **DONE 2026-03-26 S3** — Phase 2 of screens.pair: vessel name input + type select before POST. |
@@ -404,8 +404,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 |---|------|--------|
 | TS1 | Build tier service Python script on Pi (port 8093) | `[x]` **DONE 2026-03-26 S2** |
 | TS2 | Register as systemd service (d3kos-tier.service) — starts on boot, restarts on crash | `[x]` **DONE 2026-03-26 S2** |
-| TS3 | Upgrade prompt in app — locked features show "Upgrade to [tier] to unlock" with link to `/upgrade` page on atmyboat.com | `[ ]` |
-| TS4 | Chart Room locked sections — PDF Reports, Analytics, Fleet Map shown as locked cards with upgrade CTA for users below required tier | `[ ]` |
+| TS3 | Upgrade prompt in app — locked features show "Upgrade to [tier] to unlock" with link to `/upgrade` page on atmyboat.com | `[x]` **DONE 2026-03-27** — Settings screen shows locked feature cards (PDF Reports T2+, SMS Alerts T2+, Multiple Phones T2+, Fleet Management T3) with upgrade CTA linking to atmyboat.com/upgrade. |
+| TS4 | Chart Room locked sections — PDF Reports, Analytics, Fleet Map shown as locked cards with upgrade CTA for users below required tier | `[x]` **DONE 2026-03-27** — Implemented as locked-features-section in PWA settings. T1 sees 4 locked cards. T2 sees Fleet Management only. T3 sees nothing. |
 
 ### 8.5 — Deployment Solutions (all required before v0.9.4 ships)
 
