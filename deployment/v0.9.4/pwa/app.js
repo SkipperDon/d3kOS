@@ -135,6 +135,12 @@ async function apiAlertsList(piId, limit = 50, offset = 0) {
   return apiFetch(`alerts-list.php?pi=${encodeURIComponent(piId)}&limit=${limit}&offset=${offset}`);
 }
 
+// Clear all alerts for a Pi, or specific IDs.
+async function apiClearAlerts(piId, ids = null) {
+  const body = ids ? { pi: piId, ids } : { pi: piId };
+  return apiFetch('clear-alerts.php', { method: 'POST', body: JSON.stringify(body) });
+}
+
 // Fetch full boatlog entry list for a Pi (newest-first).
 async function apiBoatlogList(piId, limit = 30, offset = 0) {
   return apiFetch(`boatlog-list.php?pi=${encodeURIComponent(piId)}&limit=${limit}&offset=${offset}`);
@@ -1512,40 +1518,109 @@ screens.alerts = function renderAlerts() {
 
   function renderList(total, alerts) {
     container.innerHTML = '';
-    const headerText = total > 0 ? `Alerts (${total})` : 'Alerts';
-    container.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:16px' }, headerText));
+
+    // ── Header row: title + Clear All button ──────────────────────────────
+    const headerRow = el('div', {
+      style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px'
+    },
+      el('div', { class: 'card-title', style: 'margin:0' },
+        total > 0 ? `Alerts (${total})` : 'Alerts'
+      )
+    );
+
+    if (total > 0 && piId) {
+      const clearBtn = el('button', {
+        style: [
+          'background:transparent',
+          'border:1px solid var(--red)',
+          'color:var(--red)',
+          'border-radius:20px',
+          'padding:6px 16px',
+          'font-size:14px',
+          'font-weight:600',
+          'cursor:pointer',
+          'touch-action:manipulation',
+          'min-height:40px',
+          'white-space:nowrap',
+        ].join(';'),
+      }, '🗑 Clear All');
+
+      clearBtn.addEventListener('click', () => {
+        clearBtn.disabled = true;
+        clearBtn.textContent = 'Clearing…';
+        apiClearAlerts(piId)
+          .then(() => { renderList(0, []); updateAlertBadge(0); })
+          .catch(() => { clearBtn.disabled = false; clearBtn.textContent = '🗑 Clear All'; });
+      });
+      headerRow.appendChild(clearBtn);
+    }
+    container.appendChild(headerRow);
 
     if (alerts.length === 0) {
       container.appendChild(
-        el('div', { class: 'empty-state' },
-          el('p', {}, '✓ No alerts'),
-        )
+        el('div', { class: 'empty-state' }, el('p', {}, '✓ No alerts'))
       );
       return;
     }
 
-    const card = el('div', { class: 'card', style: 'padding: 0; overflow: hidden;' });
+    // ── Alert rows ────────────────────────────────────────────────────────
+    const card = el('div', { class: 'card', style: 'padding:0;overflow:hidden' });
     alerts.forEach(a => {
       const typeColor = ALERT_COLORS[a.alert_type] || 'var(--text-muted)';
       const typeBadge = el('div', { class: 'alert-type-badge' }, a.alert_type || 'alert');
       typeBadge.style.color       = typeColor;
       typeBadge.style.borderColor = typeColor;
-      card.appendChild(
-        el('div', { class: 'alert-item alert-item-full' },
-          el('div', { class: 'alert-item-top' },
-            typeBadge,
-            el('div', { class: 'alert-time' }, fmtTime(a.triggered_at)),
-          ),
-          el('div', { class: 'alert-msg' }, a.message || ''),
-        )
+
+      // Dismiss (✕) button per row
+      const dismissBtn = el('button', {
+        'aria-label': 'Dismiss alert',
+        style: [
+          'background:transparent',
+          'border:none',
+          'color:var(--text-muted)',
+          'font-size:18px',
+          'cursor:pointer',
+          'padding:4px 8px',
+          'min-height:40px',
+          'line-height:1',
+          'touch-action:manipulation',
+          'flex-shrink:0',
+        ].join(';'),
+      }, '✕');
+
+      const row = el('div', { class: 'alert-item alert-item-full' },
+        el('div', { class: 'alert-item-top' },
+          typeBadge,
+          el('div', { class: 'alert-time' }, fmtTime(a.triggered_at)),
+          dismissBtn,
+        ),
+        el('div', { class: 'alert-msg' }, a.message || ''),
       );
+
+      dismissBtn.addEventListener('click', () => {
+        dismissBtn.disabled = true;
+        apiClearAlerts(piId, [a.id]).then(() => {
+          row.style.transition = 'opacity 0.2s';
+          row.style.opacity = '0';
+          setTimeout(() => {
+            row.remove();
+            total = Math.max(0, total - 1);
+            updateAlertBadge(total);
+            // Update header count
+            const title = container.querySelector('.card-title');
+            if (title) title.textContent = total > 0 ? `Alerts (${total})` : 'Alerts';
+            if (total === 0) renderList(0, []);
+          }, 200);
+        }).catch(() => { dismissBtn.disabled = false; });
+      });
+
+      card.appendChild(row);
     });
     container.appendChild(card);
 
     if (total > alerts.length) {
       container.appendChild(
-        el('p', { class: 'list-footnote' },
-          `Showing ${alerts.length} of ${total} alerts.`)
+        el('p', { class: 'list-footnote' }, `Showing ${alerts.length} of ${total} alerts.`)
       );
     }
   }

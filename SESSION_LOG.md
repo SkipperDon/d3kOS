@@ -2,6 +2,49 @@
 
 ---
 
+## Session — 2026-03-28 S8 — Pi diagnostics, AODA pass, Settings nav, alert clear UI
+
+**Goal:** Diagnose Pi services after heatsink install reboot; AODA compliance pass on all Pi pages; section index bar on Settings & Help; fix pill colours; remove status bar icons; fix tier-api port conflict; add alert clear/dismiss to PWA.
+
+**Completed:**
+
+- **Pi diagnostics:** Ran full service status check after heatsink reboot. Found 2 port 8093 conflicts: `d3kos-tier.service` (tier_service.py — current) and `d3kos-tier-api.service` (old duplicate). Disabled and masked d3kos-tier-api permanently. All 40+ services checked. d3kos-voice.service was stuck in StartLimitBurst — reset and restarted successfully.
+- **tier_service.py — voice_assistant feature added:** ExecStartPre check `/tier/feature/voice_assistant` was returning "unknown feature" → voice service crashed. Added `voice_assistant: False` (T0) / `True` (T1/T2/T3) to FEATURE_MATRIX. Deployed to Pi via SCP + restart.
+- **fsck on /dev/sda1 (USB boot drive):** Unmounted sda1, ran `fsck.fat -a`, cleared dirty bit. Boot sector difference noted (mostly harmless, not auto-fixed). Remounted via sudo mount after udisks mount failed over SSH.
+- **AODA compliance pass — all Pi web pages:**
+  - 20 static HTML pages in `/var/www/html/`: skip-to-content links added, id="main-content" on <main>, 26 font-size violations fixed (13–17px → 18px) across ai-assistant.html, boatlog.html, history.html, language-menu.html, marine-vision.html, manuals.html, onboarding.html. aria-labels on dashboard.html nav buttons.
+  - 12 Flask templates in `/opt/d3kos/services/dashboard/templates/`: skip-to-content added to all, font fixes in marine-vision.html (5) and settings.html (2), min-height:48px on settings.html buttons.
+  - `/var/www/html/d3kos-touch.css`: AODA global rules appended (focus-visible indicator, skip-to-content styles, min-height 48px, font floor).
+  - `/opt/d3kos/services/dashboard/static/css/d3kos.css`: Same AODA rules appended.
+- **Section index bar — Settings & Help (Flask settings.html):** 17 pill buttons in sticky `<nav class="sec-index">` bar between status bar and scroll area. IntersectionObserver highlights active section as user scrolls. `scrollToSec()` calls `window.setActive()` immediately on tap (fixed IIFE scope issue). Scrolls `.settings-page-body` fixed container correctly.
+- **Section index bar — static settings.html:** 10 pill buttons with native anchor links + scroll-behavior smooth. h2 headings given id attributes.
+- **Pill colour fix:** Active pill → `background: rgba(0,204,0,0.2); color: #00CC00; border: 2px solid #00CC00`. Default pills → `color: #ffffff; border: 1px solid rgba(255,255,255,0.25)`. Both day and night mode readable.
+- **Removed status bar indicators:** Deleted `<div class="indicators">` block (🌐🗺🤖📡🧠 icons beside clock) from Flask settings.html.
+- **clear-alerts.php (NEW — HostPapa):** POST endpoint with Bearer app_token auth. Body `{pi: uuid}` → deletes all alerts for that Pi. Body `{pi: uuid, ids: [1,2]}` → deletes specific alerts by ID. Ownership enforced: user_id + pi_installation_id check. Returns `{cleared: N}`.
+- **app.js — alerts screen rewrite:** Added `apiClearAlerts()` function. Alerts screen now has: "🗑 Clear All" button in header (red border, transparent bg), per-row ✕ dismiss button with 0.2s fade-out animation, alert badge count updates after clear.
+- **Deployment:** `app.js` → `staging/app/` via deploy-pwa.py. `clear-alerts.php` → `staging/wp-content/themes/twentytwenty-child/mobile/` via Python FTPS.
+
+**Decisions:**
+- `d3kos-tier-api.service` permanently disabled — it was a dead duplicate of tier_service.py. Port 8093 now exclusively owned by d3kos-tier.service.
+- Alert clear is a hard DELETE (not a soft status flag) — alerts cleared in HostPapa DB are gone permanently. Intentional: old resolved alerts have no value.
+- Status bar indicators (🌐🗺🤖📡🧠) removed permanently — Don confirmed not needed.
+
+**Ollama:** 0 calls this session — all edits were direct.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-03-28 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending / Operator actions required:**
+- **Don:** Run phpMyAdmin DELETE on HostPapa to clear 212 stale tier-api alerts: `DELETE FROM amboat_alerts WHERE pi_installation_id = '701e5754-e2ce-4fa3-97a6-f2c7c7e020c6' AND message LIKE '%tier-api%';`
+- **Don:** Test "🗑 Clear All" and per-row ✕ dismiss in the app Alerts screen (staging)
+- **Don:** Confirm Pi boot is clean after all service restarts (no crash loops)
+
+---
+
 ## Session — 2026-03-27 S7 — Roadmap planning: v0.9.5–v0.9.9 defined, pre-launch requirements captured
 
 **Goal:** Answer "what is v0.9.5", research original version definitions, add v0.9.5–v0.9.9 to checklist, capture pre-launch requirements from operator.
