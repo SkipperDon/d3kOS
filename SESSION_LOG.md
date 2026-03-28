@@ -38,10 +38,83 @@
 | Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
 | Session total | | TBD |
 
+- **sw.js cache fix:** Bumped `CACHE_NAME` from `d3kos-pwa-v1` → `d3kos-pwa-v2`. Redeployed via deploy-pwa.py. Forces all phones to download fresh app.js on next page load. Don confirmed app updated successfully after Chrome site data clear.
+
+**Decisions (continued):**
+- Service worker cache name must be bumped on every deploy that changes app.js — otherwise phones load stale cached version. Established: bump `CACHE_NAME` in sw.js as part of every app.js release.
+
+### Release Package Manifest
+- Version: v0.9.4 (S8 — incremental within sprint)
+- Update type: incremental (Pi AODA + service fixes) + hotfix (tier-api port conflict)
+- Changed files:
+
+| File | Location | Change |
+|------|----------|--------|
+| `tier_service.py` | `/opt/d3kos/services/tier/tier_service.py` | Added `voice_assistant` to FEATURE_MATRIX (T0=False, T1/T2/T3=True) |
+| `d3kos-touch.css` | `/var/www/html/d3kos-touch.css` | AODA rules appended: skip-to-content, focus-visible, 48px min-height, font floor, section index pill styles |
+| `d3kos.css` | `/opt/d3kos/services/dashboard/static/css/d3kos.css` | Same AODA rules appended |
+| 20× static HTML | `/var/www/html/*.html` | Skip-to-content links, id="main-content", font-size violations fixed, aria-labels |
+| 12× Flask templates | `/opt/d3kos/services/dashboard/templates/*.html` | Skip-to-content links, font-size violations fixed, 48px touch targets |
+| `settings.html` (Flask) | `/opt/d3kos/services/dashboard/templates/settings.html` | 17-pill section index bar, indicators block removed, window.setActive scope fix |
+| `settings.html` (static) | `/var/www/html/settings.html` | 10-pill section index bar, h2 id attributes |
+| `app.js` | `staging/app/app.js` (HostPapa) | apiClearAlerts(), alerts screen Clear All + per-row dismiss |
+| `sw.js` | `staging/app/sw.js` (HostPapa) | CACHE_NAME v1 → v2 (forces cache refresh) |
+| `clear-alerts.php` | `staging/.../mobile/clear-alerts.php` (HostPapa, NEW) | DELETE endpoint for app alert management |
+
+- Pi systemd changes: `d3kos-tier-api.service` disabled and masked permanently
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-tier d3kos-voice` — done this session
+- Rollback: `git revert` for Pi files; restore `clear-alerts.php` removal on HostPapa; revert `CACHE_NAME` to v1 in sw.js
+- Health check: Settings & Help → section pills scroll to correct section; App Alerts screen → Clear All button visible; app.js loads fresh (not from cache)
+
 **Pending / Operator actions required:**
 - **Don:** Run phpMyAdmin DELETE on HostPapa to clear 212 stale tier-api alerts: `DELETE FROM amboat_alerts WHERE pi_installation_id = '701e5754-e2ce-4fa3-97a6-f2c7c7e020c6' AND message LIKE '%tier-api%';`
-- **Don:** Test "🗑 Clear All" and per-row ✕ dismiss in the app Alerts screen (staging)
 - **Don:** Confirm Pi boot is clean after all service restarts (no crash loops)
+
+ACCOMPLISHED THIS SESSION:
+- Pi diagnostics: tier-api port conflict resolved, voice service StartLimitBurst cleared
+- fsck: USB boot drive dirty bit cleared
+- AODA: 32 pages (20 static + 12 Flask) — skip-to-content, font fixes, touch targets
+- Section index bars: Flask settings (17 pills) + static settings (10 pills)
+- Pill colours: white default, green active (day + night readable)
+- Status bar indicators removed from settings.html
+- clear-alerts.php built and deployed
+- app.js alerts screen: Clear All + per-row dismiss with fade
+- sw.js cache bump (v1→v2) — resolved phone cache issue
+- SESSION_LOG, PROJECT_CHECKLIST, MEMORY.md all updated
+- Commits: Helm-OS fd2e3b0, atmyboat-forum 31e170a
+
+NOT COMPLETED / DEFERRED:
+- phpMyAdmin DELETE of 212 stale tier-api alerts — Don's action
+- On-boat camera over cellular (TURN + camera combined) — not yet tested
+- Pi boot splash screen — DEP12, not started
+- Brand asset consistency audit — DEP11, not started
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Pi service stability not confirmed with a clean reboot post-S8 edits
+- Boot sector difference on sda1 noted as "mostly harmless" — not repaired; monitor if boot issues recur
+
+OPERATOR ACTIONS REQUIRED:
+- phpMyAdmin: `DELETE FROM amboat_alerts WHERE pi_installation_id = '701e5754-e2ce-4fa3-97a6-f2c7c7e020c6' AND message LIKE '%tier-api%';`
+- Check console.anthropic.com → Usage → 2026-03-28 for Claude API cost
+- OIC assessment: review session summary and assign OIC score
+
+QUALITY METRICS — 2026-03-28 S8
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+5-SESSION ROLLING AVERAGE (S8, S5, S3, S2D, S2C): 100 + 97 + 100 + 100 + 100 = 99.4/100
+Lowest metric across 5 sessions: REC — S5 had 2 recovery events (migration HTTP 500 redirect, forEach→filter fix)
+Trend: stable at 99.4 — no declining pattern
+─────────────────────────────────────────────────────
+OIC: awaiting operator assessment
+─────────────────────────────────────────────────────
 
 ---
 
