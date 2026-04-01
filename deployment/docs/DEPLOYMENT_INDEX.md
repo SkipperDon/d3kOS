@@ -595,3 +595,14 @@ No new files deployed this session. Checklist and governance updates only:
 | Pi: Ollama systemd service | **[DISABLED — 2026-04-01 S12]** `sudo systemctl disable ollama.service`. Binary and phi3.5 model remain installed. Will not auto-start on reboot. |
 | Helm-OS: `deployment/v0.9.4/pi-fixes/fix_gemini_proxy.py` | **[NEW — 2026-04-01 S12]** Reusable Python script. Backs up and patches gemini_proxy.py + gemini.env on Pi. Removes all Ollama code. Use if Pi is ever re-imaged and old service files restored. |
 | Helm-OS: `deployment/v0.9.4/pi-fixes/fix_nodered_flows.py` | **[NEW — 2026-04-01 S12]** Reusable Python script. Reads flows.json, removes 4 dead tabs by label, writes cleaned version. Keeps System tab only. |
+
+
+## Session 2026-04-01 S12b Updates — Memory backup + skills commands restored
+
+| File | Description |
+|------|-------------|
+| Backup: `.aao-backups/20260401_192758_S12/.claude/projects/-home-boatiq/memory/` | **[BACKUP — 2026-04-01 S12b]** Full snapshot of all 16 Claude memory files taken before MEMORY.md reorganisation. Files: MEMORY.md.bak + 15 topic files (.bak). Restore by copying .bak files back to `/home/boatiq/.claude/projects/-home-boatiq/memory/` and removing the .bak extension. |
+| `~/.claude/skills/session-start/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /session-start shortcut in Claude Code slash command list. |
+| `~/.claude/skills/session-close/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /session-close shortcut in Claude Code slash command list. |
+| `~/.claude/skills/methodology-check/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /methodology-check shortcut in Claude Code slash command list. |
+| `~/.claude/skills/bug-fix/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /bug-fix shortcut in Claude Code slash command list. |

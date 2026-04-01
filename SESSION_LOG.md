@@ -2,6 +2,50 @@
 
 ---
 
+## Session 2026-04-01 S10 — PWA Back Chevrons + PDF Report Bug Discovery
+
+**Goal:** Add back chevrons to PWA sub-screens (DEP18, deferred from S9); investigate why PDF report generation was failing (T6 bug).
+
+**Completed:**
+- **DEP18 — Back chevrons:** Added `backButton(ariaLabel, onClick)` helper function to app.js. Deployed `←` chevron button in the header of 4 sub-screens: Live (back to dashboard), Reports (back to dashboard), Media (back to live screen), Fix My Pi (back to dashboard). Phone back button no longer exits the PWA — tapping `←` navigates within the app.
+- **T6 bug diagnosis:** Server-side PDF generation (pdf-engine-report-v2.php) was returning HTTP 200 from WSL but the phone was not calling it — the v6 service worker had failed to install because its STATIC_ASSETS list included the jsPDF CDN URL, causing `cache.addAll()` to abort. Phone silently kept running old v5 SW. Additionally: OPcache on HostPapa was serving stale bytecode even after the v2 filename was deployed to some workers. T6 marked `[!]` blocked in checklist — requires architecture change (move PDF generation client-side).
+- Bumped sw.js CACHE_NAME from v4 → v5. Updated app.js to call pdf-engine-report-v2.php.
+
+**Decisions:**
+- PDF generation must move off HostPapa server to the phone — FPDF has too many shared-hosting blockers (font files, OPcache, bind_param bugs). Client-side jsPDF is the replacement. This decision was handed to S11.
+
+**Files changed:**
+
+| File | Location | Change |
+|------|----------|--------|
+| `app.js` | `staging/app/` (HostPapa + repo) | backButton() helper + 4 sub-screen back chevrons; apiGenerateReport → pdf-engine-report-v2.php |
+| `sw.js` | `staging/app/` (HostPapa + repo) | CACHE_NAME v4 → v5 |
+
+**Commit:** `ee01765` — S10 T6: mark bug in checklist, bump sw cache, update app endpoint
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+ACCOMPLISHED THIS SESSION:
+- DEP18 back chevrons: complete — 4 sub-screens now have in-app back navigation
+- T6 root cause identified: jsPDF CDN in SW STATIC_ASSETS + OPcache stale bytecode
+
+NOT COMPLETED / DEFERRED:
+- T6 PDF report end-to-end: blocked — handed to S11 with architecture change decision
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Session close was not written at the time — this entry was reconstructed in a later session from git commit evidence (ee01765, Apr 1 14:23).
+
+OPERATOR ACTIONS REQUIRED:
+- None — back chevrons deployed, S11 handles PDF.
+
+---
+
 ## Session 2026-04-01 S12 — Pi Stability: Ollama death loop + Node-RED dead tabs removed
 
 **Goal:** Diagnose Pi reboot cause; fix system overload; permanently remove broken components so they don't restart on reboot.
