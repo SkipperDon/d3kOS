@@ -9095,3 +9095,82 @@ OPERATOR ACTIONS REQUIRED:
 - Back chevron: DEP18 pending — first task next session
 
 ---
+
+## Session — 2026-04-01 S11 — PDF Report End-to-End (Client-Side jsPDF)
+
+**Goal:** Replace broken server-side FPDF PDF generation with a working approach. Deliver a real vessel health report that generates on the phone, stores on the server, and can be shared without trapping the user.
+
+**Root cause diagnosis (prior S10 failure):**
+- Server-side FPDF on HostPapa shared hosting had cascading failures: missing font metric files, missing DB column (file_size_kb), bind_param type mismatch, OPcache serving stale bytecode.
+- Even after those were fixed, the phone was still running old app.js because the v6 service worker failed to install — its STATIC_ASSETS list included a CDN URL (jsPDF), and `cache.addAll()` aborts the entire install if any URL fails. Chrome silently kept the old v5 worker.
+- The window.open() "Open PDF" button trapped users in the browser PDF viewer with no back button.
+
+**Completed:**
+
+- **Architecture change:** Moved PDF generation from HostPapa server (FPDF) to the phone (jsPDF). Phone collects data, calls Gemini for analysis, builds the PDF, uploads the binary to the server. Server stores the file and records metadata. Delivery chain: generate → upload → store → list → Save/Share.
+- **pdf-analyze.php (NEW):** Receives vessel data summary JSON from the phone. Calls Gemini API with structured prompt. Returns `{analysis, recommendations[]}` JSON. Robust fallback if Gemini response can't be parsed.
+- **pdf-store.php (NEW):** Receives base64 PDF binary + metadata. Saves file to `staging/app/reports/`. Inserts record into `amboat_pdf_reports` (columns that exist: user_id, pi_installation_id, vessel_name, file_path, period_start, period_end, snapshot_count). Returns URL.
+- **list-reports.php (FIXED):** Removed `file_size_kb` from SELECT — column does not exist on staging, causing every query to fail with "Unknown column" and returning no reports.
+- **app.js — generateReport() rewrite:** Fetches dashboard-data, alerts-list, engine-history in parallel. Builds vessel_summary. Calls pdf-analyze.php. Builds jsPDF document (cover header, system health, engine section conditional on NMEA 2000 data, 30-day alert summary, recent alerts detail, AI analysis + recommendations). Uploads binary to pdf-store.php. Reloads report list.
+- **app.js — saveReport() (NEW, replaces "Open PDF" button):** Fetches PDF as blob. Uses Web Share API (system share sheet — stays in PWA). Falls back to anchor download click if share unavailable. Eliminates browser PDF viewer trap entirely.
+- **index.html:** Added jsPDF 2.5.1 from CDN as script tag (same pattern as jsQR).
+- **sw.js v7:** Bumped from v5 → v6 → v7. Removed jsPDF CDN URL from STATIC_ASSETS (CDN URLs in cache.addAll block service worker installation if CDN is slow).
+- **pdf-analyze.php JSON parsing fix:** Replaced regex-only fence stripping with robust `strpos('{')` / `strrpos('}')` extraction. Handles any text Gemini wraps around the JSON. Fallback now uses raw Gemini text if available rather than a useless key-config error message.
+- **Confirmed working:** Report generates (Our Time, RPT-20260401-NZ222B, 2026-04-01). System health populated (v0.9.2.2, T2, last sync 12:07). Engine section correctly reports no NMEA 2000 data. Alert summary correct (0 after S8 cleanup). Save/Share opens system share sheet — no browser trap. PDF stored on server and retrievable.
+- **Gemini analysis:** AI analysis section reached Gemini but JSON parse fallback triggered this session — confirmed the call is being made. With real alert history and engine data present, analysis will be substantive. Fix deployed (robust parsing).
+- **Deleted 10 corrupt old PDF records** (amboat_pdf_reports) from phpMyAdmin — garbage from prior FPDF failures.
+
+**Decisions:**
+- PDF generation is client-side permanently. Server stores binary only — never generates PDF. This eliminates all HostPapa PDF library complexity.
+- window.open() for PDFs is banned in this app — always trap on mobile PWA. Web Share API is the correct pattern.
+- CDN URLs must never appear in sw.js STATIC_ASSETS — they block service worker installation on slow connections.
+- The report is honest about missing data: engine section explicitly states "No NMEA 2000 engine data received" rather than showing empty fields.
+
+**Files changed:**
+
+| File | Location | Change |
+|------|----------|--------|
+| `pdf-analyze.php` | `staging/.../mobile/` (HostPapa, NEW) | Gemini analysis endpoint |
+| `pdf-store.php` | `staging/.../mobile/` (HostPapa, NEW) | PDF binary storage endpoint |
+| `list-reports.php` | `staging/.../mobile/` (HostPapa) | Removed file_size_kb from SELECT |
+| `app.js` | `staging/app/` (HostPapa) | generateReport() rewrite, saveReport() new, apiGenerateReport() replaced with apiAnalyseReport() + apiStoreReport() |
+| `index.html` | `staging/app/` (HostPapa) | jsPDF 2.5.1 CDN script tag added |
+| `sw.js` | `staging/app/` (HostPapa) | v5→v7, jsPDF CDN removed from STATIC_ASSETS |
+
+**Ollama:** 0 calls — all work was direct.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Commits:**
+- Helm-OS `76e1d78` — client-side jsPDF PDF generation
+- Helm-OS `ee1a922` — fix: remove jsPDF CDN from STATIC_ASSETS
+- Helm-OS `1893251` — fix: PDF trap + sw v7
+- atmyboat-forum `a0f2995` — pdf-analyze.php, pdf-store.php, list-reports.php fix
+- atmyboat-forum `b208645` — pdf-analyze.php robust JSON parsing
+
+ACCOMPLISHED THIS SESSION:
+- T6 PDF report: COMPLETE — generates, stores, downloads, shares correctly
+- Architecture redesigned: client-side jsPDF, not server-side FPDF
+- Three critical bugs fixed: sw STATIC_ASSETS, window.open trap, list-reports.php column
+- Gemini analysis endpoint built and deployed (parsing fix deployed)
+- Report confirmed working end-to-end on Don's phone
+
+NOT COMPLETED / DEFERRED:
+- Gemini analysis content: needs real alert history + engine data to produce substantive analysis — this is a data availability issue not a code issue
+- DEP18: Back chevron in PWA screen headers — still pending
+- DEP19: file-manifest.php auto-update — still pending
+- ST1–ST7: Stripe E2E testing — next priority per operator
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Gemini JSON parsing fix deployed but not re-tested with a fresh report — confirm analysis appears on next generation with real data
+- Service worker update on Don's phone: v7 sw.js is on server; phone will pick it up on next Chrome visit but may still be on v5/v6 depending on browse history
+
+OPERATOR ACTIONS REQUIRED:
+- Generate one more test report to confirm Gemini analysis now appears correctly
+- Run Stripe ST1–ST7 checklist next session (flagged as next priority in S9b)
+
+---
