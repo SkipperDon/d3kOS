@@ -8996,3 +8996,102 @@ OPERATOR ACTIONS REQUIRED:
 - file-manifest.php hashes must be regenerated whenever any of the 11 listed Pi files are changed
 
 ---
+
+### S9b Addendum — Watchdog Option B (cloud-routed alerts)
+
+After operator question: "would all customers get these notifications or should this be part of a setup wizard?" — correct answer identified: cloud-routed via HostPapa, no SMTP on Pi.
+
+**Changes from original S9 watchdog design:**
+- `d3kos_watchdog.py` rewritten: removed all smtplib/email code. On persistent failure now calls `post_alert_to_cloud()` — HTTP POST to `watchdog-alert.php` using existing `cloud-config.json` + `device-token.json` credentials.
+- `watchdog-config.json` on Pi simplified to `{cooldown_minutes, notify_on_auto_restart}` — no email fields.
+- `watchdog-alert.php` built on HostPapa: Pi auth → look up user_id → look up email from wp_users → wp_mail() → insert watchdog_failure into amboat_alerts.
+- Result: every customer automatically gets alerts to their registered email. Zero setup. No App Password complexity.
+
+**Additional files deployed S9b:**
+- Pi: updated `d3kos_watchdog.py` (Option B build)
+- Pi: updated `watchdog-config.json` (no email section)
+- HostPapa: `watchdog-alert.php` (NEW)
+
+**Commits:**
+- Helm-OS `8f7784c` — S9 main commit
+- Helm-OS `7181590` — S9b watchdog Option B
+- atmyboat-forum `5c26328` — S9 PHP files
+- atmyboat-forum `8496223` — S9b watchdog-alert.php
+
+QUALITY METRICS — 2026-04-01 S9+S9b
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+SCR detail: All actions were either explicitly requested or direct responses to operator
+questions. Back chevron deferred by operator ("break" call — not abandoned without notice).
+
+5-SESSION ROLLING AVERAGE (S9, S9b, S8b, S8, S5):
+─────────────────────────────────────────────────────
+Scores: 100 + 100 + 100 + 100 + 97 = 99.4/100
+Primary improvement target: S5 SGCR (one scope-adjacent action — resolved)
+Trend: STABLE — 4 perfect sessions in a row
+─────────────────────────────────────────────────────
+
+### Updated Release Package Manifest (final — S9 + S9b)
+- Version: v0.9.4 S8b → S9/S9b
+- Update type: feature (Fix My Pi E2E, DEP3, DEP5, cloud watchdog, admin tools)
+- Key Pi changes:
+  | File | Pi Path | Change |
+  |------|---------|--------|
+  | d3kos_watchdog.py | /opt/d3kos/services/watchdog/ | NEW — Option B cloud-routed |
+  | watchdog-config.json | /opt/d3kos/config/ | NEW — no email fields |
+  | cloud_agent.py | /opt/d3kos/services/cloud-agent/ | sys.path + 3-param diagnostics |
+  | fix_my_pi.py | /opt/d3kos/services/cloud-agent/ | check_file_integrity() |
+  | export_worker.py | /opt/d3kos/services/export/ | INTERNAL_ALERT_TYPES filter |
+  | issue_detector.py | /opt/d3kos/services/self-healing/ | removed tier-api |
+  | d3kos-watchdog (sudoers) | /etc/sudoers.d/ | 10-service NOPASSWD rules |
+  | crontab | d3kos user | */5 watchdog cron added |
+- Key HostPapa changes:
+  | File | Change |
+  |------|--------|
+  | mobile/file-manifest.php | NEW — DEP3 SHA-256 manifest |
+  | mobile/watchdog-alert.php | NEW — cloud alert receiver, wp_mail() |
+  | page-admin-tools.php | NEW — tier/FMP admin page |
+  | mobile/fix-my-pi-app.php | T1 Stripe test bypass |
+  | app/sw.js | CACHE_NAME v3 |
+  | app/app.js | fmtTime fix + DEP5 + T1 FMP handling |
+- Operator actions required: none (watchdog self-configures from existing credentials)
+- Health check: `python3 /opt/d3kos/services/watchdog/d3kos_watchdog.py` — exits clean, log shows no failures
+- No git push executed this session ✓
+
+ACCOMPLISHED THIS SESSION:
+- Fix My Pi T2 verified end-to-end on Don's phone — MILESTONE ACHIEVED
+- DEP3 (file integrity manifest) complete — verified detecting real mismatches
+- DEP5 (T3 multi-Pi OTA "Update All Vessels") complete
+- Admin tools page complete and confirmed working by Don
+- 720-alert flood eliminated (export_worker INTERNAL_ALERT_TYPES filter)
+- Timestamp timezone bug fixed (fmtTime 'Z' suffix)
+- Stripe test bypass for T1 fixed
+- Pi watchdog cron job live — 10 services, auto-restart, cloud-routed email alert
+- watchdog-alert.php on HostPapa — wp_mail() to registered account holder
+- All session docs committed (4 commits across 2 repos)
+
+NOT COMPLETED / DEFERRED:
+- Back chevron in PWA screen header (DEP18) — operator called break before this task
+- T6 PDF report integration test — requires browser login with T2 account
+- Stripe ST1–ST7 test checklist — operator flagged Stripe next on agenda
+- file-manifest.php auto-update (DEP19) — manual regeneration still required
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Uncertainty flag: watchdog-alert.php wp_mail() delivery not end-to-end tested — HostPapa WP mail config assumed working (same config used by other WP mail flows)
+- Uncertainty flag: file-manifest.php `generated` timestamp is manually maintained
+- Uncertainty flag: d3kos_pairings table has vessel_name column assumed — if absent, email subject falls back to "your vessel" gracefully
+
+OPERATOR ACTIONS REQUIRED:
+- T6 test: login staging app as T2 user → request PDF engine report → confirm download link
+- Stripe: review ST1–ST7 checklist next session — operator mentioned this next
+- Back chevron: DEP18 pending — first task next session
+
+---

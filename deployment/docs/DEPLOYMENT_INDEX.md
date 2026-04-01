@@ -541,3 +541,34 @@ No new files deployed this session. Checklist and governance updates only:
 |------|-------------|
 | `PROJECT_CHECKLIST.md` | **[UPDATED — 2026-03-27 S7]** Added Parts 8B–8F (v0.9.5–v0.9.9 roadmap sections). Added Part 7A (pre-deployment architecture diagram + credential audit). Added Phase 3B (Gemini AI security hardening GS1–GS6, Stripe E2E testing ST1–ST7). Added Part 6 item 22 (Pi boot splash). Added DEP11–DEP12 (brand asset consistency). Updated Part 10 roadmap table. |
 | `SESSION_LOG.md` | **[UPDATED — 2026-03-27 S7]** Session S7 entry appended — roadmap research, version planning decisions. |
+
+## Session 2026-03-28 S8 + S8b Updates — Pi AODA, Settings index bar, AvNav persistence, tier-api mask
+
+| File | Description |
+|------|-------------|
+| Pi: `d3kos-touch.css` + Flask `d3kos.css` | **[UPDATED — 2026-03-28 S8]** Full WCAG 2.0 AA pass on all 20 static HTML pages and 12 Flask templates. 26 font-size violations fixed (floor 18px / 0.9rem). Skip-to-content links, id="main-content", focus-visible indicators, 48px touch targets on all interactive elements. |
+| Pi: `settings.html` (Flask template) | **[UPDATED — 2026-03-28 S8]** 17-pill section index bar added (sticky, IntersectionObserver highlights active section). Status bar indicators (`<div class="indicators">`) removed. |
+| Pi: `index.html` (Flask template) | **[UPDATED — 2026-03-28 S8b]** `allow="autoplay"` added to AvNav iframe — fixes sound dialog on every load. |
+| Pi: `/var/lib/avnav/user/viewer/user.js` | **[UPDATED — 2026-03-28 S8b]** startNavPage + lastChart localStorage management — AvNav now opens directly to last viewed OSM chart instead of chart-selection dialog. |
+| Pi: `/etc/systemd/system/d3kos-tier-api.service` | **[UPDATED — 2026-03-28 S8b]** Real file deleted; /dev/null symlink created (permanent mask). Eliminates port 8093 conflict with d3kos-tier.service. |
+| HostPapa: `staging/app/sw.js` | **[UPDATED — 2026-03-28 S8b]** CACHE_NAME `d3kos-pwa-v1` → `v2`. Forced all client phones to fetch updated assets. |
+
+## Session 2026-04-01 S9 + S9b Updates — Fix My Pi E2E verified, DEP3, DEP5, watchdog, admin tools
+
+| File | Description |
+|------|-------------|
+| HostPapa: `staging/.../mobile/file-manifest.php` | **[NEW — 2026-04-01 S9]** DEP3 complete. SHA-256 + size manifest for 11 core Pi service files. Pi-facing auth (amboat_auth_pi_request). Hashes regenerated to match current Pi state. Fix My Pi downloads this and compares against actual files — verified working: correctly detected 2 mismatches on Don's phone. Must be regenerated after every Pi service file change. |
+| HostPapa: `staging/.../page-admin-tools.php` | **[NEW — 2026-04-01 S9]** WordPress admin-only tools page. Features: user/tier table, set-tier dropdown (T0–T3), reset FMP counter, clear alerts, manual command queue, pending queue display. WP nonce protection. Staging-only banner. Confirmed working by operator. |
+| HostPapa: `staging/.../mobile/watchdog-alert.php` | **[NEW — 2026-04-01 S9b]** Receives POST from Pi watchdog when a service fails and won't restart. Looks up account holder email via user_id from d3kos_pairings. Sends wp_mail() with vessel name + service details. Also inserts watchdog_failure into amboat_alerts. No SMTP on Pi required. |
+| HostPapa: `staging/.../mobile/fix-my-pi-app.php` | **[UPDATED — 2026-04-01 S9]** T1 tier: detects placeholder Stripe keys and queues command directly (test_mode:true) for testing without live Stripe credentials. Real Stripe flow unchanged. |
+| HostPapa: `staging/app/sw.js` | **[UPDATED — 2026-04-01 S9]** CACHE_NAME `d3kos-pwa-v2` → `v3`. Forced cache refresh after app.js changes. |
+| HostPapa: `staging/app/app.js` | **[UPDATED — 2026-04-01 S9]** Three changes: (1) fmtTime() appends 'Z' to bare datetime strings — fixes timestamps showing server time instead of phone local time. (2) DEP5: "Update All Vessels" block (T3 only, 2+ vessels, per-Pi progress). (3) T1 Fix My Pi: opens Stripe checkout_url in new tab when present, falls through to progress screen in test mode. |
+| Pi: `/opt/d3kos/services/watchdog/d3kos_watchdog.py` | **[NEW — 2026-04-01 S9b]** Cron watchdog (*/5 min). Checks 10 critical services. Auto-restart on failure (sudo systemctl restart). On persistent failure: POSTs to watchdog-alert.php on HostPapa — no SMTP on Pi. 30-min alert cooldown per service. Reads credentials from cloud-config.json + device-token.json. |
+| Pi: `/opt/d3kos/config/watchdog-config.json` | **[NEW — 2026-04-01 S9b]** Minimal config: cooldown_minutes + notify_on_auto_restart. No email credentials needed. |
+| Pi: `/etc/sudoers.d/d3kos-watchdog` | **[NEW — 2026-04-01 S9]** NOPASSWD restart rules for all 10 watchdog-managed services. |
+| Pi: `/opt/d3kos/services/cloud-agent/cloud_agent.py` | **[UPDATED — 2026-04-01 S9]** sys.path fix (cloud-agent dir at position 0, services at 1). run_diagnostics() now called with 3 params: base_url, api_key, device_token. |
+| Pi: `/opt/d3kos/services/cloud-agent/fix_my_pi.py` | **[UPDATED — 2026-04-01 S9]** DEP3: check_file_integrity() added. Downloads file-manifest.php from HostPapa, compares SHA-256 of each file on Pi. Reports mismatches in diagnostic result. run_diagnostics() signature updated to accept base_url, api_key, device_token. |
+| Pi: `/opt/d3kos/services/export/export_worker.py` | **[UPDATED — 2026-04-01 S9]** INTERNAL_ALERT_TYPES filter added: service_down, service_restart, high_memory, high_cpu categories suppressed from HostPapa export. Eliminates spurious alert flood (720 alerts in this session). |
+| Pi: `/opt/d3kos/services/self-healing/issue_detector.py` | **[UPDATED — 2026-04-01 S9]** Removed `d3kos-tier-api` from critical_services list — service is permanently masked, was generating continuous false alerts. |
+| Helm-OS repo: `deployment/v0.9.4/pi/watchdog/` | **[NEW — 2026-04-01 S9b]** New directory: d3kos_watchdog.py + watchdog-config.template.json. Source-of-record for Pi watchdog cron. |
+
