@@ -240,7 +240,10 @@ function el(tag, attrs = {}, ...children) {
 function fmtTime(iso) {
   if (!iso) return '—';
   try {
-    const d = new Date(iso);
+    // Server returns bare datetime strings with no timezone (HostPapa runs UTC).
+    // Append Z so JS parses as UTC and toLocaleTimeString converts to phone's local time.
+    const s = iso.trim().includes('T') || iso.trim().endsWith('Z') ? iso : iso.trim().replace(' ', 'T') + 'Z';
+    const d = new Date(s);
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
            d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   } catch { return iso; }
@@ -2515,12 +2518,12 @@ screens.fixmypi = function renderFixMyPi() {
       errEl.classList.remove('visible');
       try {
         const data = await apiFmpRequest(piId);
-        if (data.tier === 'T1') {
-          // Open Stripe checkout in new tab, then show payment-wait phase
+        if (data.tier === 'T1' && data.checkout_url) {
+          // Stripe configured — open checkout, then show payment-wait phase
           window.open(data.checkout_url, '_blank', 'noopener');
           showPaymentWait();
         } else {
-          // T2/T3 — command queued immediately
+          // T2/T3, or T1 test mode (Stripe not yet configured)
           showProgress(data.command_id, data.tier, data.fmp_remaining);
         }
       } catch (err) {

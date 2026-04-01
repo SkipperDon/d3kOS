@@ -1,0 +1,11 @@
+{
+  "pi_id": "AtMyBoat-Pi-1",
+  "email": {
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587,
+    "smtp_user": "YOUR_GMAIL_ADDRESS@gmail.com",
+    "smtp_pass": "YOUR_GMAIL_APP_PASSWORD",
+    "to": "YOUR_NOTIFICATION_EMAIL@example.com",
+    "notify_on_restart": false
+  }
+}

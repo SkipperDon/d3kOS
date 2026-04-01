@@ -8832,3 +8832,167 @@ OPERATOR ACTIONS REQUIRED:
 - Test Alerts clear UI in app
 
 ---
+
+## Session 2026-04-01 — S9 (Fix My Pi End-to-End Verified + Watchdog)
+
+**Goal:** Complete DEP3 (file integrity manifest), DEP5 (T3 multi-Pi OTA), run integration tests, fix app issues, build admin tools page, verify Fix My Pi T2 round-trip, build Pi watchdog cron.
+
+**Completed:**
+
+### MILESTONE — Fix My Pi T2 Confirmed Working End-to-End
+The single biggest feature in v0.9.4. Full round-trip verified by Don on phone:
+- PWA Fix My Pi button → fix-my-pi-app.php → `amboat_command_queue` insert
+- cloud_agent.py polls (30s) → picks up `fix_my_pi` command
+- `run_diagnostics()` runs: services, disk, config, network, **SHA-256 file integrity**
+- File integrity check found two real mismatches (cloud_agent.py + export_worker.py — both modified this session)
+- Result returned to HostPapa → app shows diagnostic report with specific errors
+- Don read: "ERRORS: File integrity mismatch: /opt/d3kos/services/cloud-agent/cloud_agent.py ... File integrity mismatch: /opt/d3kos/services/export/export_worker.py"
+- This confirms the system is working correctly — it detected what we changed
+
+**DEP3 — Fix My Pi File Integrity Manifest (COMPLETE)**
+- `file-manifest.php` built and deployed to HostPapa staging
+- 11 core Pi service files with SHA-256 hashes + sizes
+- Pi-facing auth (amboat_auth_pi_request)
+- `check_file_integrity()` added to fix_my_pi.py
+- Hashes regenerated twice this session as files were updated
+- Final hashes: cloud_agent.py `62786987afa0...` (16616 bytes), export_worker.py `ff88eb21fddf...` (12136 bytes)
+- Deployed at session end — manifest now matches Pi state
+
+**DEP5 — T3 Multi-Pi OTA "Update All Vessels" (COMPLETE)**
+- Added to app.js: T3-only block after OTA card, requires 2+ vessels
+- Shows per-Pi progress bars simultaneously
+- Queues one `ota_update` command per paired Pi
+
+**Admin Tools Page (COMPLETE)**
+- `page-admin-tools.php` — WordPress admin role required, staging-only banner
+- User/tier table with set-tier dropdown (T0–T3), reset FMP counter, clear alerts
+- Manual command queue, pending queue display
+- WP nonce protection
+- Don confirmed: "this work perfectly"
+
+**Integration Tests T1–T5 (COMPLETE)**
+- T1–T5 passed programmatically via curl/PHP CLI
+- T6 (PDF report) still requires browser login — pending
+
+**Alert flood fix — 720 spurious alerts (COMPLETE)**
+- Root cause: export_worker.py was sending `service_down` alerts to HostPapa every 30-min cycle
+- Fix: `INTERNAL_ALERT_TYPES` filter added — suppresses service_down, service_restart, high_memory, high_cpu
+- issue_detector.py: removed `d3kos-tier-api` from critical_services list
+- Gave Don phpMyAdmin DELETE query to purge existing stale rows
+
+**Timestamp timezone fix (COMPLETE)**
+- Bare datetime strings from PHP treated as local time by JS Date constructor
+- `fmtTime()` in app.js now appends 'Z' to bare ISO strings → correct UTC interpretation → phone local time display
+
+**Stripe bypass for testing (COMPLETE)**
+- fix-my-pi-app.php: T1 tier now detects placeholder Stripe keys (`YOUR_`) and queues command directly (test_mode: true)
+- Correct Stripe flow preserved when real keys are configured
+
+**Pi Watchdog Cron Job (COMPLETE)**
+- `d3kos_watchdog.py` deployed to `/opt/d3kos/services/watchdog/`
+- Monitors 10 critical services: cloud-agent, tier, export-manager, alert-watcher, live, dashboard, camera-stream, ai-api, health, issue-detector
+- On failure: `sudo systemctl restart <service>`, waits 8s, checks again
+- On persistent failure: sends email alert via smtplib (Gmail SMTP, starttls)
+- 30-minute email cooldown per service (no spam)
+- State file: `/opt/d3kos/data/watchdog-state.json`
+- Log: `/opt/d3kos/logs/watchdog.log`
+- Cron: `*/5 * * * *` (runs clean — all services healthy on first run)
+- Sudoers: `/etc/sudoers.d/d3kos-watchdog` (NOPASSWD for all 10 services)
+- **Email credentials not yet configured** — Don must fill in `watchdog-config.json`
+
+**Back chevron — pending (see below)**
+
+**Files changed (Pi):**
+- `/opt/d3kos/services/watchdog/d3kos_watchdog.py` — NEW: watchdog script
+- `/opt/d3kos/config/watchdog-config.json` — NEW: config (email placeholder)
+- `/opt/d3kos/data/watchdog-state.json` — NEW: state file (auto-created)
+- `/opt/d3kos/services/cloud-agent/cloud_agent.py` — sys.path fix, run_diagnostics 3-param call
+- `/opt/d3kos/services/cloud-agent/fix_my_pi.py` — check_file_integrity() added, run_diagnostics signature updated
+- `/opt/d3kos/services/export/export_worker.py` — INTERNAL_ALERT_TYPES filter
+- `/opt/d3kos/services/self-healing/issue_detector.py` — removed d3kos-tier-api from critical_services
+- `/etc/sudoers.d/d3kos-watchdog` — NOPASSWD restart rules for 10 services
+- crontab — `*/5 * * * *` watchdog cron added
+
+**Files changed (HostPapa — deployed via FTPS):**
+- `staging/wp-content/themes/twentytwenty-child/mobile/file-manifest.php` — NEW, then updated 3× this session
+- `staging/wp-content/themes/twentytwenty-child/page-admin-tools.php` — NEW: admin tools page
+- `staging/app/sw.js` — CACHE_NAME d3kos-pwa-v2 → v3 (forced phone cache refresh)
+
+**Files changed (Helm-OS repo — local, not yet committed):**
+- `deployment/v0.9.4/pwa/app.js` — fmtTime() fix, DEP5 Update All Vessels block, T1 FMP checkout handling
+- `deployment/v0.9.4/pwa/sw.js` — CACHE_NAME v2 → v3
+- `deployment/v0.9.4/pi/watchdog/d3kos_watchdog.py` — NEW
+- `deployment/v0.9.4/pi/watchdog/watchdog-config.template.json` — NEW
+- `atmyboat-forum/wp-content/themes/twentytwenty-child/mobile/file-manifest.php` — NEW
+- `atmyboat-forum/wp-content/themes/twentytwenty-child/page-admin-tools.php` — NEW
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+QUALITY METRICS — 2026-04-01 S9
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+
+### Release Package Manifest
+- Version: v0.9.4 S8b → S9
+- Update type: feature (Fix My Pi E2E verified, watchdog, DEP3, DEP5, admin tools)
+- Changed files:
+  | File | Path | Partition | Change |
+  |------|------|-----------|--------|
+  | d3kos_watchdog.py | /opt/d3kos/services/watchdog/ | base | NEW — service watchdog cron script |
+  | watchdog-config.json | /opt/d3kos/config/ | runtime | NEW — email config (placeholder) |
+  | cloud_agent.py | /opt/d3kos/services/cloud-agent/ | base | sys.path fix + 3-param run_diagnostics call |
+  | fix_my_pi.py | /opt/d3kos/services/cloud-agent/ | base | check_file_integrity() added |
+  | export_worker.py | /opt/d3kos/services/export/ | base | INTERNAL_ALERT_TYPES filter |
+  | issue_detector.py | /opt/d3kos/services/self-healing/ | base | removed d3kos-tier-api from critical_services |
+  | d3kos-watchdog (sudoers) | /etc/sudoers.d/ | base | NOPASSWD restart rules for 10 services |
+  | file-manifest.php | staging/.../mobile/ | base | NEW — SHA-256 manifest for 11 Pi files |
+  | page-admin-tools.php | staging/.../themes/... | base | NEW — admin tier/FMP management page |
+  | sw.js | staging/app/ | base | CACHE_NAME v2 → v3 |
+  | app.js | staging/app/ | base | fmtTime fix, DEP5 block, T1 FMP handling |
+- Pre-install steps: none
+- Post-install steps: crontab already updated (watchdog fires every 5 min)
+- Rollback: watchdog — `crontab -e` remove watchdog line; sudoers — `sudo rm /etc/sudoers.d/d3kos-watchdog`
+- Health check: `python3 /opt/d3kos/services/watchdog/d3kos_watchdog.py` exits clean; all 10 services show active
+
+ACCOMPLISHED THIS SESSION:
+- Fix My Pi T2 verified end-to-end on Don's phone — MILESTONE
+- DEP3 (file integrity manifest) complete and verified — correctly detected 2 real mismatches
+- DEP5 (T3 multi-Pi OTA) complete
+- Admin tools page complete and confirmed working by Don
+- 720-alert flood fixed (export_worker INTERNAL_ALERT_TYPES filter)
+- Timestamp timezone bug fixed (fmtTime appends 'Z')
+- Stripe bypass for test mode fixed (T1 test_mode path)
+- Pi watchdog cron job deployed — 10 services, auto-restart, email alert, 30-min cooldown
+- PWA cache busted (CACHE_NAME v3) — phones forced to update
+
+NOT COMPLETED / DEFERRED:
+- Back chevron on app screen header — interrupted by watchdog cron task
+- T6 PDF report integration test — requires browser login with T2 account
+- Stripe ST1–ST7 test checklist — before go-live
+- Watchdog email credentials: Don must configure watchdog-config.json on Pi
+- Production manifest: file-manifest.php generated field should be auto-updated on deploy (currently manual)
+- Trusted restore source: manifest has hashes but no downloadable file copies for auto-restore (design decision pending)
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Uncertainty flag: file-manifest.php `generated` timestamp is manually set — no automation ensures it matches actual Pi service deploy dates
+- Uncertainty flag: watchdog email not tested (credentials are placeholder) — logic verified by code review only
+- Uncertainty flag: cron `*/5 * * * *` on Pi — assumed crond is running; not explicitly verified
+
+OPERATOR ACTIONS REQUIRED:
+- Configure email in `/opt/d3kos/config/watchdog-config.json` on Pi (Gmail App Password required — see instructions below)
+- Verify cron is running: `crontab -l` on Pi should show watchdog entry
+- T6 test: login to staging app as T2 user, request PDF engine report, confirm download link
+- file-manifest.php hashes must be regenerated whenever any of the 11 listed Pi files are changed
+
+---
