@@ -681,6 +681,42 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 ---
 
+## PART 8G — v0.9.9.1 Admin CRM Tool (Private — VM-based)
+**Status: PLANNED — spec complete, build not started**
+**Version target:** v0.9.9.1 (after security audit, before public launch)
+**Spec:** `deployment/features/admin-crm/SPEC.md`
+**Build checklist:** `deployment/features/admin-crm/BUILD_CHECKLIST.md`
+
+**What it is:** Private Flask web app on Ubuntu VM (VirtualBox, workstation).
+Complete customer view: tier + billing + Pi health + support emails + AI draft assist.
+Completely independent of WordPress — direct MySQL + IMAP connections.
+
+**Pre-build operator actions (do before any coding):**
+- [ ] **OP1** — cPanel → Remote MySQL → whitelist workstation IP
+- [ ] **OP2** — Note `skipperdon@atmyboat.com` IMAP/SMTP password
+- [ ] **OP3** — Note Gemini API key (from d3kOS config)
+- [ ] **OP4** — Note HostPapa MySQL host, DB name, user, password (cPanel → MySQL Databases)
+
+**Build phases:**
+| Phase | Feature | Status |
+|-------|---------|--------|
+| P1 | Foundation — Flask skeleton, login, DB connection | `[ ]` Not started |
+| P2 | Customer View — list, search, profile page | `[ ]` Not started |
+| P3 | Pi Diagnostics — SSH health, alerts, commands, engine | `[ ]` Not started |
+| P4 | Email Inbox — IMAP read, account linking, SMTP reply | `[ ]` Not started |
+| P5 | AI Draft Assist — Gemini Flash, context builder | `[ ]` Not started |
+| P6 | Tier Management + Audit Log — amboat_admin_log | `[ ]` Not started |
+| P7 | Database Explorer — table browser, CSV export | `[ ]` Not started |
+| P8 | PWA Support Button — structured email from app | `[ ]` Not started |
+
+**Minimum viable:** P1 + P2 + P6 — foundation + customers + tier management
+**Complete picture:** All 8 phases
+
+**AI:** Gemini Flash free tier (zero cost, already configured)
+**Migration path:** VirtualBox VM → cloud VM (Hetzner ~$4/month) — same code, config change only
+
+---
+
 ## PART 9 — v1.1 Multi-Language Platform
 **Status: LAYER 0 COMPLETE — Layers 1–5 not started**
 **Full spec:** `doc/MULTILANGUAGE_PLATFORM_SPEC.md` | `deployment/v1.1/`
