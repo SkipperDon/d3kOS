@@ -2,6 +2,79 @@
 
 ---
 
+## Session 2026-04-01 S12 — Pi Stability: Ollama death loop + Node-RED dead tabs removed
+
+**Goal:** Diagnose Pi reboot cause; fix system overload; permanently remove broken components so they don't restart on reboot.
+
+**Completed:**
+- Investigated Pi reboot — prior boot journal was volatile (no `/var/log/journal/<machine-id>/` subdir). Fixed journald persistence by creating the directory with correct ownership (root:systemd-journal, chmod 2755). Future reboots will be logged.
+- Identified three root causes of system overload (load 9.4+ on 4-core Pi):
+  1. Node-RED Watch node error loop (Community Knowledge Log — Watch node had no `files` property → constant error on every tick)
+  2. Ollama death loop — gemini_proxy.py fell back to local Pi Ollama when Gemini failed; phi3.5:latest (3.8GB) loaded, couldn't complete in 120s timeout, ai_bridge retried → infinite CPU/RAM spiral
+  3. Node-RED Cloud Telemetry Push tab — 63% CPU, pointing to non-existent `api/telemetry/push.php` endpoint (dead since endpoint was never built on HostPapa)
+- Fixed gemini_proxy.py: removed `query_ollama()`, `check_ollama()`, `OLLAMA_URL`, `OLLAMA_MODEL` constants, Route 2 Ollama fallback block. When Gemini unavailable → 503 directly. No LLM fallback on Pi.
+- Fixed gemini.env: removed `OLLAMA_URL` and `OLLAMA_MODEL` lines entirely.
+- Disabled Ollama systemd service on Pi (`sudo systemctl disable ollama.service`). Binary + model remain installed but will never auto-start. Per operator: "leave ollama in place for now."
+- Deleted 4 dead Node-RED tabs from flows.json (permanently removed, not just disabled): d3kOS Cloud Telemetry Push, Community Engine Benchmark, Community Boat Map, Community Knowledge Log. 26 nodes removed. Only System tab remains.
+- Restarted d3kos-gemini.service, nodered.service, d3kos-ai-bridge.service. All active.
+- Load confirmed stable: 1.89 at 9 min uptime (was 9.4+).
+- Confirmed fish RAG on Pi: `/opt/d3kos/datasets/fish-rag/` corpus + ChromaDB v1.5.1 + LangChain v1.2.10 installed. No active service querying it.
+- Created deployment fix scripts: `deployment/v0.9.4/pi-fixes/fix_gemini_proxy.py`, `fix_nodered_flows.py` (reusable if Pi is re-imaged).
+- Methodology check (operator-called): flagged for assuming NZ jurisdiction without declaring it as an assumption — violation of AAO Section 20.2.
+
+**Decisions:**
+- gemini_proxy.py permanently has no Ollama fallback. Pi 4 cannot run LLMs. If Gemini is unavailable, the AI proxy returns 503 — this is correct behaviour.
+- Ollama service disabled but binary kept. Operator's choice. If re-enabled in future, gemini_proxy.py will not call it — the fallback code is gone.
+- Node-RED community tabs deleted permanently. Cloud data sync is handled by cloud_agent.py/export_worker.py → data-ingress.php (S1/S2 build), not Node-RED.
+- Voice assistant fishing regulation queries: concern raised about AI giving ambiguous/outdated regulation answers. No code change made this session — operator said "too much at the moment."
+
+**Pi files changed (direct SSH):**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `gemini_proxy.py` | `/opt/d3kos/services/gemini-nav/` | Removed Ollama fallback entirely. Gemini-only. |
+| `gemini.env` | `/opt/d3kos/services/gemini-nav/config/` | Removed OLLAMA_URL and OLLAMA_MODEL lines. |
+| `flows.json` | `/home/d3kos/.node-red/` | Deleted 4 dead tabs + 22 nodes. System tab only. |
+| Ollama service | systemd | Stopped and disabled. Will not auto-start on reboot. |
+
+**Repo files added:**
+
+| File | Path | Purpose |
+|------|------|---------|
+| `fix_gemini_proxy.py` | `deployment/v0.9.4/pi-fixes/` | Reusable fix script for gemini_proxy Ollama removal |
+| `fix_nodered_flows.py` | `deployment/v0.9.4/pi-fixes/` | Reusable script: delete dead NR tabs, keep System only |
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Voice assistant fishing regulation query handling — raised but deferred
+- fish-rag corpus on Pi: no active service uses it — assess in future session whether to wire to voice assistant or Helm Assistant
+
+ACCOMPLISHED THIS SESSION:
+- Pi overload root cause found and permanently fixed (Ollama death loop + Node-RED dead tabs)
+- journald persistence enabled — future reboots will leave logs
+- All 3 overload contributors eliminated
+- System load confirmed stable at 1.89
+
+NOT COMPLETED / DEFERRED:
+- Voice assistant regulation query ambiguity — raised, operator deferred
+- Fish RAG corpus assessment — present on Pi, unused, deferred
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Reboot cause: circumstantially hardware watchdog due to load 9.4+, but cannot confirm — prior boot log was volatile. Now that journald persists, next reboot will be diagnosable.
+- Fish RAG: unclear whether any service was designed to query it or if it was installed speculatively.
+
+OPERATOR ACTIONS REQUIRED:
+- None — all fixes applied and verified.
+
+---
+
 ## Session — 2026-03-28 S8b — AvNav fix, tier-api permanent mask, autoplay
 
 **Goal:** Post-session-close follow-up: fix Pi rebooting caused by tier-api crash loop re-emerging, fix AvNav no-map-on-boot.

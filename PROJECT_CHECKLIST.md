@@ -734,6 +734,20 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 ---
 
+## PART 11 — Pi System Stability Fixes (S12 — 2026-04-01)
+
+| Item | Status | Detail |
+|------|--------|--------|
+| journald persistence enabled | `[x]` **COMPLETE 2026-04-01 S12** | Created `/var/log/journal/<machine-id>/` with correct ownership. Future reboots will be logged. |
+| Ollama death loop — gemini_proxy.py | `[x]` **COMPLETE 2026-04-01 S12** | Root cause: `OLLAMA_URL=http://127.0.0.1:11434` in gemini.env caused Gemini-fail → load phi3.5 (3.8GB) → timeout → retry loop. Fix: removed entire Ollama fallback from gemini_proxy.py and both env vars from gemini.env. |
+| Ollama service disabled on Pi | `[x]` **COMPLETE 2026-04-01 S12** | `sudo systemctl disable ollama.service`. Binary + phi3.5 model kept on disk. Will not auto-start on reboot. |
+| Node-RED dead tabs removed | `[x]` **COMPLETE 2026-04-01 S12** | Deleted 4 tabs permanently: d3kOS Cloud Telemetry Push (dead endpoint), Community Engine Benchmark, Community Boat Map, Community Knowledge Log (Watch node error loop). 26 nodes removed. System tab only remains. |
+| Pi load confirmed stable | `[x]` **COMPLETE 2026-04-01 S12** | Load 1.89 at 9 min uptime after fixes. Previous crisis load: 9.4+. |
+| Fish RAG assessment | `[ ]` | ChromaDB + LangChain + fish-rag corpus confirmed present on Pi. No active service queries it. Assess: wire to voice assistant or Helm Assistant? Deferred. |
+| Voice assistant fishing regulation queries | `[ ]` | Concern raised: AI gives ambiguous/outdated regulation answers. Options: refuse + redirect to official source, or add regulation-specific RAG corpus. Deferred by operator. |
+
+---
+
 ## PART 10 — Version Roadmap Summary
 
 | Version | Description | Status |
