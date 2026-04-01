@@ -1315,31 +1315,65 @@ function renderReportList(reports, total, listArea) {
 
     const btnRow = el('div', { class: 'report-btn-row' });
 
-    // Open button
-    const openBtn = el('button', { class: 'btn btn-ghost', style: 'font-size:0.9rem',
-      onClick: () => window.open(r.url, '_blank')
-    }, 'Open PDF');
-    btnRow.appendChild(openBtn);
-
-    // Share button (Web Share API)
-    if (navigator.share) {
-      const shareBtn = el('button', { class: 'btn btn-ghost', style: 'font-size:0.9rem',
-        onClick: () => shareReport(r)
-      }, 'Share');
-      btnRow.appendChild(shareBtn);
-    }
+    // Primary action: Save / Share — stays inside the PWA, no browser trap
+    const saveBtn = el('button', { class: 'btn btn-reports', style: 'font-size:0.9rem',
+      onClick: () => saveReport(r)
+    }, 'Save / Share');
+    btnRow.appendChild(saveBtn);
 
     card.appendChild(btnRow);
     listArea.appendChild(card);
   });
 }
 
-async function shareReport(report) {
-  const note = window.prompt('Add a note for the recipient (optional):', '');
-  if (note === null) return; // cancelled
+async function saveReport(report) {
+  const fileName = `vessel-report-${report.vessel_name ? report.vessel_name.replace(/\s+/g,'-') : report.report_id}-${(report.created_at||'').slice(0,10)}.pdf`;
 
   try {
-    // Fetch the PDF as a blob so we can share the file natively
+    // Fetch the PDF binary
+    const resp = await fetch(report.url);
+    if (!resp.ok) throw new Error('Could not download report.');
+    const blob = await resp.blob();
+
+    // Try Web Share API first (keeps user in PWA — no browser trap)
+    if (navigator.share) {
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      const shareData = {
+        title: `Vessel Health Report — ${report.vessel_name || 'My Vessel'}`,
+        text: `Generated ${(report.created_at || '').slice(0, 10)} by d3kOS via AtMyBoat.com`,
+        files: [file],
+      };
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        return;
+      }
+      // Fallback: share URL only
+      await navigator.share({ title: shareData.title, text: shareData.text, url: report.url });
+      return;
+    }
+
+    // Fallback for browsers without Web Share: trigger download via anchor click
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(objUrl); }, 1000);
+
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      alert('Could not save report: ' + err.message);
+    }
+  }
+}
+
+// shareReport kept for internal use but no longer called from buttons
+async function shareReport(report) {
+  const note = window.prompt('Add a note for the recipient (optional):', '');
+  if (note === null) return;
+
+  try {
     const resp = await fetch(report.url);
     const blob = await resp.blob();
     const file = new File([blob], `engine-report-${report.report_id}.pdf`, { type: 'application/pdf' });
