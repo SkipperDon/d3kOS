@@ -2041,6 +2041,89 @@ screens.settings = function renderSettings() {
   otaCard.appendChild(otaDesc);
   otaCard.appendChild(otaBtn);
   otaCard.appendChild(otaResult);
+
+  // T3 multi-Pi: "Update All Vessels" — queues ota_upgrade for every paired Pi
+  if (state.tier === 'T3' && state.vessels && state.vessels.length > 1) {
+    const allOtaSep = el('div', { style: 'border-top: 1px solid var(--border); margin: 16px 0;' });
+    const allOtaLabel = el('div', {
+      style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;',
+    }, `Update all ${state.vessels.length} paired vessels at once.`);
+    const allOtaBtn = el('button', { class: 'btn btn-ghost' }, 'Update All Vessels');
+    const allOtaRows = el('div', { style: 'margin-top: 12px;' });
+
+    allOtaBtn.addEventListener('click', async () => {
+      allOtaBtn.disabled = true;
+      allOtaBtn.textContent = 'Queuing…';
+      allOtaRows.innerHTML = '';
+
+      // Queue ota_upgrade for each vessel and track per-Pi status
+      const jobs = await Promise.all(state.vessels.map(async (v) => {
+        const row = el('div', { style: 'display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border);' });
+        const nameEl   = el('span', { style: 'font-size: 0.85rem;' }, v.vessel_name || v.pi_installation_id);
+        const statusEl = el('span', { style: 'font-size: 0.85rem; color: var(--text-muted);' }, 'Queuing…');
+        row.appendChild(nameEl);
+        row.appendChild(statusEl);
+        allOtaRows.appendChild(row);
+
+        try {
+          const { command_id } = await apiSendCommand(v.pi_installation_id, 'ota_upgrade', {});
+          statusEl.textContent = 'Queued';
+          return { command_id, statusEl, vessel: v };
+        } catch (err) {
+          statusEl.textContent = '✗ Failed to queue';
+          statusEl.style.color = 'var(--red)';
+          return null;
+        }
+      }));
+
+      allOtaBtn.textContent = 'Upgrading All…';
+
+      // Poll each queued job — stop when completed/failed/timed-out
+      const MAX_WAIT = 20 * 60 * 1000;
+      jobs.filter(Boolean).forEach(({ command_id, statusEl }) => {
+        let elapsed = 0;
+        statusEl.textContent = 'Waiting for Pi…';
+        const pollId = setInterval(async () => {
+          elapsed += 10000;
+          try {
+            const s = await apiPollCommand(command_id);
+            if (s.status === 'completed') {
+              clearInterval(pollId);
+              statusEl.textContent = '✓ Done';
+              statusEl.style.color = 'var(--green)';
+            } else if (s.status === 'failed') {
+              clearInterval(pollId);
+              statusEl.textContent = '✗ ' + (s.result?.error || 'Failed');
+              statusEl.style.color = 'var(--red)';
+            } else if (elapsed >= MAX_WAIT) {
+              clearInterval(pollId);
+              statusEl.textContent = 'Timed out';
+              statusEl.style.color = 'var(--red)';
+            } else {
+              statusEl.textContent = `${Math.round(elapsed / 60000)}m…`;
+            }
+          } catch { /* poll failure non-fatal */ }
+        }, 10000);
+      });
+
+      // Re-enable button when all jobs have a terminal state
+      const checkAllDone = setInterval(() => {
+        const texts = Array.from(allOtaRows.querySelectorAll('span:last-child')).map(s => s.textContent);
+        const allDone = texts.every(t => t.startsWith('✓') || t.startsWith('✗') || t === 'Timed out');
+        if (allDone) {
+          clearInterval(checkAllDone);
+          allOtaBtn.disabled = false;
+          allOtaBtn.textContent = 'Update All Vessels';
+        }
+      }, 5000);
+    });
+
+    otaCard.appendChild(allOtaSep);
+    otaCard.appendChild(allOtaLabel);
+    otaCard.appendChild(allOtaBtn);
+    otaCard.appendChild(allOtaRows);
+  }
+
   container.appendChild(otaCard);
 
   // Fix My Pi

@@ -4,7 +4,7 @@
  * Version bumped here forces cache refresh on deploy.
  */
 
-const CACHE_NAME = 'd3kos-pwa-v2';
+const CACHE_NAME = 'd3kos-pwa-v3';
 
 const STATIC_ASSETS = [
   '/',
