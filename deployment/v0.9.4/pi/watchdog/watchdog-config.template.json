@@ -1,11 +1,5 @@
 {
-  "pi_id": "AtMyBoat-Pi-1",
-  "email": {
-    "smtp_host": "smtp.gmail.com",
-    "smtp_port": 587,
-    "smtp_user": "YOUR_GMAIL_ADDRESS@gmail.com",
-    "smtp_pass": "YOUR_GMAIL_APP_PASSWORD",
-    "to": "YOUR_NOTIFICATION_EMAIL@example.com",
-    "notify_on_restart": false
-  }
+  "_comment": "d3kOS Watchdog config. Credentials are read from cloud-config.json + device-token.json automatically. No email setup required — alerts route through HostPapa to the registered account holder.",
+  "cooldown_minutes": 30,
+  "notify_on_auto_restart": false
 }
