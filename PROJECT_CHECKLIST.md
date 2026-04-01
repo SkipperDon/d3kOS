@@ -564,7 +564,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | T3 | Community data flow: enable boat_map in Settings → next Node-RED tick → position appears on /community map | Dot appears within 30 minutes of enabling | `[ ]` |
 | T4 | Alert trigger: simulate anchor drag → immediate export fires (not wait for timer) → alert in DB | Alert in `amboat_alerts` within 2 minutes | `[ ]` |
 | T5 | Find My Boat: Pi syncs position → Chart Room shows marker at correct location | Position on map within 35 minutes of sync | `[ ]` |
-| T6 | PDF report: T2 user requests engine report → Gemini called → PDF generated → download link returned | PDF available within 30 seconds | `[ ]` |
+| T6 | PDF report: T2 user requests engine report → Gemini called → PDF generated → download link returned | PDF available within 30 seconds | `[!]` **BUG — 2026-04-01 S10.** Server-side confirmed working (HTTP 200, real PDF via WSL). App on phone returned "no pi found for this account" throughout session. Root cause: OPcache on shared hosting serving stale bytecode for `pdf-engine-report.php`. Fix deployed: new endpoint `pdf-engine-report-v2.php` (new filename bypasses OPcache), app.js updated to call v2, sw.js CACHE_NAME bumped to v5. Phone SW activation timing uncertain — may need forced reload. Verify next session: phone DevTools → Network → confirm request hits v2 endpoint. |
 
 ---
 

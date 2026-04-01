@@ -178,7 +178,7 @@ async function apiRtcAppIce(sessionId, iceCandidates) {
 // Request a new PDF engine health report for the given Pi.
 // Returns { report_id, url, file_size_kb, period_start, period_end, snapshot_count, created_at }
 async function apiGenerateReport(piId) {
-  return apiFetch('pdf-engine-report.php', {
+  return apiFetch('pdf-engine-report-v2.php', {
     method: 'POST',
     body: JSON.stringify({ pi_installation_id: piId }),
   });
@@ -222,6 +222,12 @@ function updateNavActive(screenId) {
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 function getEl(id) { return document.getElementById(id); }
+
+function backButton(ariaLabel, onClick) {
+  const btn = el('button', { class: 'back-btn', 'aria-label': ariaLabel, onClick });
+  btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg> Back';
+  return btn;
+}
 
 function el(tag, attrs = {}, ...children) {
   const elem = document.createElement(tag);
@@ -860,12 +866,10 @@ screens.live = function renderLive() {
 
   // Back button row
   const header = el('div', { class: 'screen-header' });
-  const backBtn = el('button', { class: 'back-btn', 'aria-label': 'Back to dashboard',
-    onClick: () => {
+  const backBtn = backButton('Back to dashboard', () => {
       if (_livePC) { _livePC.close(); _livePC = null; }
       navigate('dashboard');
-    }
-  }, '← Back');
+    });
   header.appendChild(backBtn);
   header.appendChild(el('span', { class: 'screen-title' }, 'Live Feed'));
   container.appendChild(header);
@@ -1236,9 +1240,7 @@ screens.reports = function renderReports() {
 
   // Header + back
   const header = el('div', { class: 'screen-header' });
-  header.appendChild(el('button', { class: 'back-btn', 'aria-label': 'Back to dashboard',
-    onClick: () => navigate('dashboard')
-  }, '← Back'));
+  header.appendChild(backButton('Back to dashboard', () => navigate('dashboard')));
   header.appendChild(el('span', { class: 'screen-title' }, 'Engine Reports'));
   container.appendChild(header);
 
@@ -1391,9 +1393,7 @@ screens.media = function renderMedia() {
 
   // Header
   const header = el('div', { class: 'screen-header' });
-  header.appendChild(el('button', { class: 'back-btn', 'aria-label': 'Back to live screen',
-    onClick: () => navigate('live')
-  }, '← Back'));
+  header.appendChild(backButton('Back to live screen', () => navigate('live')));
   header.appendChild(el('span', { class: 'screen-title' }, 'Media Library'));
   container.appendChild(header);
 
