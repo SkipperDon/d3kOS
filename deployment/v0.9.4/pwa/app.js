@@ -175,12 +175,26 @@ async function apiRtcAppIce(sessionId, iceCandidates) {
 
 // ── PDF Report API ────────────────────────────────────────────────────────────
 
-// Request a new PDF engine health report for the given Pi.
-// Returns { report_id, url, file_size_kb, period_start, period_end, snapshot_count, created_at }
-async function apiGenerateReport(piId) {
-  return apiFetch('pdf-engine-report-v2.php', {
+// Ask Gemini to analyse vessel data. Returns { analysis, recommendations }.
+async function apiAnalyseReport(vesselSummary) {
+  return apiFetch('pdf-analyze.php', {
     method: 'POST',
-    body: JSON.stringify({ pi_installation_id: piId }),
+    body: JSON.stringify({ vessel_summary: vesselSummary }),
+  });
+}
+
+// Store a finished PDF on HostPapa. Returns { report_id, url, vessel_name, created_at }.
+async function apiStoreReport(piId, vesselName, pdfBase64, periodStart, periodEnd, snapshotCount) {
+  return apiFetch('pdf-store.php', {
+    method: 'POST',
+    body: JSON.stringify({
+      pi_id: piId,
+      vessel_name: vesselName,
+      pdf_b64: pdfBase64,
+      period_start: periodStart,
+      period_end: periodEnd,
+      snapshot_count: snapshotCount,
+    }),
   });
 }
 
@@ -1358,19 +1372,297 @@ async function generateReport(piId, container, genBtn) {
     alert('No vessel selected. Return to Dashboard and select a vessel.');
     return;
   }
-  genBtn.disabled = true;
-  genBtn.textContent = 'Generating…';
-  const listArea = document.getElementById('reports-list');
-  if (listArea) {
-    listArea.innerHTML = '';
-    listArea.appendChild(spinner());
+
+  if (!window.jspdf) {
+    alert('PDF library not loaded. Please check your connection and reload the app.');
+    return;
   }
+
+  const listArea = document.getElementById('reports-list');
+  const setStatus = (msg) => { genBtn.textContent = msg; };
+
+  genBtn.disabled = true;
+  setStatus('Collecting data…');
+  if (listArea) { listArea.innerHTML = ''; listArea.appendChild(spinner()); }
+
   try {
-    const report = await apiGenerateReport(piId);
+    // ── 1. Collect data in parallel ──────────────────────────────────────────
+    const today       = new Date();
+    const thirtyAgo   = new Date(today); thirtyAgo.setDate(today.getDate() - 30);
+    const fmtD        = d => d.toISOString().slice(0, 10);
+    const periodEnd   = fmtD(today);
+    const periodStart = fmtD(thirtyAgo);
+
+    const vesselName  = (state.vessel && state.vessel.vessel_name) || 'My Vessel';
+
+    const [dashData, alertsData, histData] = await Promise.allSettled([
+      apiDashboard(piId),
+      apiAlertsList(piId, 50, 0),
+      apiEngineHistory(piId),
+    ]);
+
+    const dash    = dashData.status    === 'fulfilled' ? dashData.value    : null;
+    const alerts  = alertsData.status  === 'fulfilled' ? alertsData.value  : { total: 0, alerts: [] };
+    const history = histData.status    === 'fulfilled' ? histData.value    : [];
+
+    // ── 2. Compute engine stats from history ─────────────────────────────────
+    const engRows = Array.isArray(history) ? history.filter(r => r.rpm !== null && r.rpm > 0) : [];
+    const engineAvailable = engRows.length > 0;
+    const avg = (arr, key) => {
+      const vals = arr.map(r => parseFloat(r[key])).filter(v => !isNaN(v));
+      return vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
+    };
+
+    // ── 3. Build alert breakdown ──────────────────────────────────────────────
+    const alertList   = alerts.alerts || [];
+    const alertTotal  = alerts.total || 0;
+    const bySeverity  = { critical: 0, warning: 0, info: 0 };
+    const typeCount   = {};
+    alertList.forEach(a => {
+      const sev = (a.severity || 'info').toLowerCase();
+      bySeverity[sev] = (bySeverity[sev] || 0) + 1;
+      const t = a.type || a.message || 'unknown';
+      typeCount[t] = (typeCount[t] || 0) + 1;
+    });
+    const topTypes = Object.entries(typeCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+
+    // ── 4. Call Gemini for analysis ───────────────────────────────────────────
+    setStatus('Analysing…');
+    const vesselSummary = {
+      vessel_name:        vesselName,
+      d3kos_version:      dash ? dash.d3kos_version : 'unknown',
+      uptime:             dash && dash.system ? dash.system.uptime || 'unknown' : 'unknown',
+      storage_pct:        dash && dash.system ? dash.system.disk_used_pct : null,
+      cpu_temp_c:         dash && dash.system ? dash.system.cpu_temp : null,
+      alert_total:        alertTotal,
+      alert_critical:     bySeverity.critical,
+      alert_warning:      bySeverity.warning,
+      alert_types:        topTypes,
+      recent_alerts:      alertList.slice(0, 5).map(a => ({
+        severity: a.severity, message: a.message, created_at: a.created_at
+      })),
+      engine_available:   engineAvailable,
+      engine_rpm_avg:     engineAvailable ? avg(engRows, 'rpm') : null,
+      engine_oil_avg:     engineAvailable ? avg(engRows, 'oil_pressure_kpa') : null,
+      engine_coolant_avg: engineAvailable ? avg(engRows, 'coolant_temp_c') : null,
+      engine_battery_avg: engineAvailable ? avg(engRows, 'battery_voltage_v') : null,
+    };
+
+    let aiResult;
+    try {
+      aiResult = await apiAnalyseReport(vesselSummary);
+    } catch (_) {
+      aiResult = {
+        analysis: 'AI analysis could not be completed at this time. All vessel data shown is accurate.',
+        recommendations: [{ issue: 'AI unavailable', action: 'Retry generating the report when internet connection is stable.' }],
+      };
+    }
+
+    // ── 5. Build PDF with jsPDF ───────────────────────────────────────────────
+    setStatus('Building PDF…');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const ML = 15;            // left margin
+    const MR = 15;            // right margin
+    const PW = 210 - ML - MR; // printable width (180mm)
+    const PH = 297;
+    let y = 0;
+
+    const navy = [10, 22, 40];
+    const white = [255, 255, 255];
+    const dark  = [30, 41, 59];
+    const muted = [100, 116, 139];
+    const red   = [220, 38, 38];
+    const amber = [217, 119, 6];
+    const green = [22, 163, 74];
+
+    // Report ID derived from current timestamp
+    const reportTag = 'RPT-' + periodEnd.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+
+    // ── Cover header ──────────────────────────────────────────────────────────
+    doc.setFillColor(...navy);
+    doc.rect(0, 0, 210, 34, 'F');
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(17);
+    doc.text('VESSEL HEALTH REPORT', ML, 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.text(`${vesselName}  ·  Generated: ${periodEnd}  ·  Report ID: ${reportTag}`, ML, 21);
+    doc.text(`Period: ${periodStart} to ${periodEnd}  ·  d3kOS AI First Mate via AtMyBoat.com`, ML, 28);
+
+    y = 42;
+
+    // ── Helper: section bar ───────────────────────────────────────────────────
+    const sectionBar = (title) => {
+      if (y > PH - 30) { doc.addPage(); y = 18; }
+      doc.setFillColor(...navy);
+      doc.rect(ML, y, PW, 7, 'F');
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text(title, ML + 3, y + 5);
+      doc.setTextColor(...dark);
+      y += 10;
+    };
+
+    // ── Helper: label/value row ───────────────────────────────────────────────
+    const row = (label, value, colorArr) => {
+      if (y > PH - 18) { doc.addPage(); y = 18; }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...muted);
+      doc.text(label, ML + 3, y);
+      doc.setTextColor(...(colorArr || dark));
+      doc.text(String(value ?? '—'), ML + 70, y);
+      y += 5.5;
+    };
+
+    // ── Helper: paragraph ─────────────────────────────────────────────────────
+    const para = (text, indent) => {
+      const lines = doc.splitTextToSize(text, PW - 8);
+      lines.forEach(line => {
+        if (y > PH - 18) { doc.addPage(); y = 18; }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...dark);
+        doc.text(line, ML + (indent || 3), y);
+        y += 5;
+      });
+      y += 2;
+    };
+
+    // ── SYSTEM HEALTH ─────────────────────────────────────────────────────────
+    sectionBar('SYSTEM HEALTH');
+    if (dash) {
+      const sys = dash.system || {};
+      const cpuC = sys.cpu_temp > 75 ? red : sys.cpu_temp > 60 ? amber : green;
+      const dskC = sys.disk_used_pct > 90 ? red : sys.disk_used_pct > 75 ? amber : green;
+      row('d3kOS Version',  dash.d3kos_version || '—');
+      row('Tier',           dash.tier || 'T1');
+      row('Last Sync',      dash.synced_at ? dash.synced_at.replace('T', ' ').slice(0, 16) : '—');
+      if (sys.cpu_temp != null) row('CPU Temperature', sys.cpu_temp + ' °C', cpuC);
+      if (sys.disk_used_pct != null) row('Storage Used', sys.disk_used_pct + '%', dskC);
+      if (sys.uptime) row('Uptime', sys.uptime);
+    } else {
+      para('System health data not available for this report period.');
+    }
+    y += 3;
+
+    // ── ENGINE DATA ───────────────────────────────────────────────────────────
+    sectionBar('ENGINE DATA');
+    if (engineAvailable) {
+      const rpmAvg  = avg(engRows, 'rpm');
+      const oilAvg  = avg(engRows, 'oil_pressure_kpa');
+      const ctAvg   = avg(engRows, 'coolant_temp_c');
+      const batAvg  = avg(engRows, 'battery_voltage_v');
+      const oilC    = oilAvg < 138 ? red : oilAvg < 207 ? amber : green;
+      const batC    = batAvg < 11.8 ? red : batAvg < 12.2 ? amber : green;
+      row('Readings (24h)',  engRows.length);
+      if (rpmAvg)  row('Average RPM',          rpmAvg + ' RPM');
+      if (oilAvg)  row('Avg Oil Pressure',      oilAvg + ' kPa', oilC);
+      if (ctAvg)   row('Avg Coolant Temp',       ctAvg + ' °C');
+      if (batAvg)  row('Avg Battery Voltage',    batAvg + ' V', batC);
+    } else {
+      para('No NMEA 2000 engine data was received during this report period.');
+      para('To enable engine monitoring: verify Signal K is running on the Pi and can see your NMEA 2000 bus.');
+    }
+    y += 3;
+
+    // ── ALERT SUMMARY ─────────────────────────────────────────────────────────
+    sectionBar('ALERT SUMMARY — LAST 30 DAYS');
+    row('Total Alerts', alertTotal);
+    row('Critical', bySeverity.critical, bySeverity.critical > 0 ? red : green);
+    row('Warning',  bySeverity.warning,  bySeverity.warning > 0 ? amber : green);
+    row('Info',     bySeverity.info);
+    if (topTypes.length) {
+      y += 2;
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...muted);
+      doc.text('Most frequent:', ML + 3, y);
+      y += 5;
+      topTypes.forEach(t => {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...dark);
+        doc.setFontSize(8.5);
+        const cnt = typeCount[t];
+        if (y > PH - 18) { doc.addPage(); y = 18; }
+        doc.text(`• ${t} (${cnt})`, ML + 6, y);
+        y += 4.5;
+      });
+    }
+    y += 3;
+
+    // ── Recent alerts detail ──────────────────────────────────────────────────
+    if (alertList.length > 0) {
+      sectionBar('RECENT ALERTS');
+      alertList.slice(0, 8).forEach(a => {
+        const sev  = (a.severity || 'info').toLowerCase();
+        const sevC = sev === 'critical' ? red : sev === 'warning' ? amber : dark;
+        if (y > PH - 18) { doc.addPage(); y = 18; }
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...sevC);
+        doc.text(`[${(a.severity || 'info').toUpperCase()}]`, ML + 3, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...dark);
+        const msgLines = doc.splitTextToSize(a.message || '', PW - 40);
+        doc.text(msgLines[0] || '', ML + 24, y);
+        doc.setTextColor(...muted);
+        doc.text((a.created_at || '').slice(0, 16), ML + PW - 36, y);
+        y += 5;
+      });
+      y += 3;
+    }
+
+    // ── AI ANALYSIS ───────────────────────────────────────────────────────────
+    sectionBar('AI ANALYSIS & RECOMMENDATIONS');
+    para(aiResult.analysis || '');
+    y += 2;
+
+    (aiResult.recommendations || []).forEach((rec, i) => {
+      if (y > PH - 24) { doc.addPage(); y = 18; }
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...navy);
+      doc.text(`${i + 1}. ${rec.issue || ''}`, ML + 3, y);
+      y += 5;
+      const actLines = doc.splitTextToSize(rec.action || '', PW - 12);
+      actLines.forEach(line => {
+        if (y > PH - 18) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...dark);
+        doc.setFontSize(8.5);
+        doc.text(line, ML + 6, y);
+        y += 4.5;
+      });
+      y += 2;
+    });
+
+    // ── Footer on each page ───────────────────────────────────────────────────
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setDrawColor(226, 232, 240);
+      doc.line(ML, 285, 210 - MR, 285);
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text(`Report ID: ${reportTag}  ·  ${vesselName}  ·  Generated ${periodEnd}  ·  d3kOS AI First Mate  ·  AtMyBoat.com`, ML, 290);
+      doc.text(`Page ${p} of ${totalPages}`, 210 - MR, 290, { align: 'right' });
+    }
+
+    // ── 6. Upload to HostPapa ─────────────────────────────────────────────────
+    setStatus('Saving to server…');
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    const stored = await apiStoreReport(piId, vesselName, pdfBase64, periodStart, periodEnd, engRows.length);
+
+    // ── 7. Reload list ────────────────────────────────────────────────────────
     genBtn.textContent = '+ Generate New Report';
     genBtn.disabled = false;
-    // Reload the full list so the new report appears at top
     if (listArea) loadReports(piId, listArea);
+
   } catch (err) {
     genBtn.textContent = '+ Generate New Report';
     genBtn.disabled = false;
