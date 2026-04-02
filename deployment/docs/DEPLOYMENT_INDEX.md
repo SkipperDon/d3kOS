@@ -606,3 +606,12 @@ No new files deployed this session. Checklist and governance updates only:
 | `~/.claude/skills/session-close/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /session-close shortcut in Claude Code slash command list. |
 | `~/.claude/skills/methodology-check/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /methodology-check shortcut in Claude Code slash command list. |
 | `~/.claude/skills/bug-fix/SKILL.md` | **[NEW — 2026-04-01 S12b]** Migrated from ~/.claude/commands/ to skills format. Restores /bug-fix shortcut in Claude Code slash command list. |
+
+
+## Session 2026-04-01 S13 Updates — Gemini AI Security Hardening (GS1–GS5) + OWASP Documentation
+
+| File | Description |
+|------|-------------|
+| HostPapa: `staging/.../inc/ai-assistant.php` | **[UPDATED — 2026-04-01 S13]** Full security hardening. GS1: system prompt hardened with explicit refusal rules for role-play overrides, instruction bypass, topic redirect. GS2 (direct): `detect_injection()` — 28 patterns blocked before Gemini call, logged as security event. GS2 (indirect): forum context screened for same 28 patterns before entering Gemini prompt — contaminated threads skipped. GS3: `filter_output()` — 11 regex patterns block code execution/hex payloads; URL allowlist (18 trusted marine domains) strips unlisted URLs. GS4: `check_rate_limit()` / `increment_rate_limit()` — 20 req/hour + 50 req/day per hashed IP via WP transients. GS5: `sanitize_input()` — Unicode zero-width char removal, transliterator homoglyph normalization, null bytes, HTML strip, 500-char cap. Context cap: forum context capped at 2000 chars to prevent token stuffing. |
+| HostPapa: `staging/.../logs/.htaccess` | **[NEW — 2026-04-01 S13]** `Deny from all` — blocks public browser access to ai-usage.log. |
+| Helm-OS: `deployment/docs/SECURITY_OWASP_LLM.md` | **[NEW — 2026-04-01 S13]** OWASP LLM Top 10 assessment for the AtMyBoat.com AI assistant. Covers LLM01–LLM10 with status (mitigated / N/A / accepted), implementation details, residual risks, and GS6 adversarial test cases. Includes credential rotation checklist for Phase 4 live push. |
