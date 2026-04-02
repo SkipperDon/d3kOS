@@ -9443,3 +9443,74 @@ OPERATOR ACTIONS REQUIRED:
 - Run Stripe ST1–ST7 checklist next session (flagged as next priority in S9b)
 
 ---
+
+## Session 2026-04-02 S15 — Pre-Phase-4 Prep Sprint: CA, AD, DEP, GS6, Boot Splash
+
+**Goal:** Complete all pre-Phase-4 preparation items: GS6 adversarial testing, credential audit (CA1–CA5), architecture diagrams (AD1–AD5), brand audit (DEP11), Pi boot splash (DEP12), file-manifest auto-update (DEP19), PWA icons, dashboard logo swap.
+
+**Completed:**
+- GS6 adversarial testing: 15 test cases run manually on staging AI widget. All 13 attack tests refused correctly. Tests 14–15 (normal marine questions) returned proper answers. GS6 COMPLETE.
+- Gemini model updated: gemini-2.0-flash → gemini-2.5-flash. New Google Cloud project with billing; gemini-2.0-flash returns 404 on new accounts (limit:0). gemini-2.5-flash confirmed working ("winner winner chicken dinner").
+- check-gemini-diag.php deleted from staging (confirmed by operator).
+- PWA icons (DEP icon task): icon-192.png + icon-512.png generated via Node.js + sharp. 15% padding safe zone, navy #0a1628 background, AmBoat logo centred. Deployed to `deployment/v0.9.4/pwa/icons/`.
+- Dashboard logo swap (DEP11 partial): d3kOS Pi dashboard header changed from text "d3kOS" to amboat-logo.png image. `index.html` template + `d3kos.css` + logo image added to `deployment/d3kOS/dashboard/static/images/`.
+- CA1–CA5: Credential audit complete. Pre-commit hooks verified/added on both repos. `.gitignore` patterns added for diagnostic files. Full `CREDENTIAL_ROTATION_CHECKLIST.md` created in `deployment/v0.9.3/`. Helm-OS hook false-positive fixed (stripe pattern too broad → regex with key chars).
+- AD1–AD5: All 5 architecture diagrams created in `deployment/docs/`: ARCH_SERVICE_MAP.md, ARCH_DATA_FLOW.md, ARCH_WEBRTC_PATH.md, ARCH_PAYMENT_FLOW.md, ARCH_CREDENTIAL_MAP.md.
+- DEP19: `deployment/scripts/generate_manifest.py` created. Maps 11 Pi service files → local repo paths, computes SHA-256, regenerates file-manifest.php automatically. Run after every Pi service deploy. Manifest regenerated to current hashes (2026-04-02T18:30:40Z).
+- DEP12: Pi boot splash deployed. Plymouth theme (`d3kos.plymouth` + `d3kos.script` + `amboat-logo.png`) created in `deployment/features/boot-splash/theme/`. `deploy-boot-splash.sh` script built and executed. Plymouth installed on Pi, theme registered, initramfs rebuilt, cmdline.txt patched with `quiet splash`. Ready to see on next reboot.
+
+**Decisions:**
+- All versions v0.9.5–v0.9.9 must ship before v1.0. No deferrals. Risk of skipping is too high (operator correction to prior recommendation).
+- Pi identity for all HostPapa services = device_token UUID (not installation_id hex from license.json). WordPress password change does NOT break Fix My Pi — Pi uses separate AMBOAT_API_KEY + device_token.
+- gemini-2.5-flash is the correct model for new Google Cloud accounts. gemini-2.0-flash returns 404 on accounts created after model sunset (not a quota issue — a model availability issue).
+- generate_manifest.py is the authoritative tool for regenerating file-manifest.php. Do not edit file-manifest.php manually.
+
+**Ollama:** 0 calls — all work was direct.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-02 | TBD |
+| Ollama | removed from workstation 2026-04-01 | $0.00 |
+
+**Commits:** 59a7d44 (boot splash + arch diagrams + credential audit), e58f2e9 (generate_manifest.py + PWA icons + dashboard logo)
+
+**Pending:**
+- Pi reboot to see boot splash (Don confirmed no need to reboot yet)
+- Phase 4 live push (Don clicks Push to Live in cPanel — not yet ready)
+- N1–N4: Node-RED flows with real URLs (blocked on Phase 4)
+- T1–T5: Integration test suite (blocked on Phase 4)
+- Admin Console P1–P8: not started
+- v0.9.5–v0.9.9: not started
+- CA4: Don's task — update personal credential document with production values
+- /session-close skill broken: returns "Unknown skill" — investigate
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- GS6 adversarial testing COMPLETE (15/15 test cases passed)
+- Gemini model crisis resolved: 404 on new account diagnosed + fixed (gemini-2.5-flash)
+- PWA icons (192px + 512px) generated with proper maskable safe zone
+- Dashboard header: text → branded AtMyBoat logo image
+- CA1–CA5: Full credential audit + pre-commit hooks on both repos + rotation checklist
+- AD1–AD5: All 5 architecture diagrams built
+- DEP19: generate_manifest.py — file-manifest.php now auto-generated
+- DEP12: Boot splash deployed to Pi — ready for next reboot
+
+NOT COMPLETED / DEFERRED:
+- Pi reboot to see splash (deferred by operator — not urgent)
+- Phase 4 live push (deferred — not yet ready)
+- Admin Console (P1–P8): not started this session
+- v0.9.5–v0.9.9: not started this session
+- CA4: Don's task (credential vault update)
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Boot splash not visually confirmed — will display on next Pi reboot only
+- gemini-2.5-flash confirmed working on staging; Pi gemini_proxy.py still references gemini-2.0-flash in gemini.env — may need updating if Pi uses a new API key on the new Google Cloud project
+- /session-close skill returns "Unknown skill" — cause not investigated this session
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for Claude API cost for 2026-04-02
+- CA4: Update personal credential vault with production values
+- Reboot Pi at a convenient time to visually verify boot splash
+- Confirm Phase 4 push readiness when all pre-Phase-4 items are satisfactory
