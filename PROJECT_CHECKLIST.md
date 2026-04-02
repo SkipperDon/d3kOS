@@ -332,12 +332,12 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 #### Gemini AI Security Hardening
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| GS1 | System prompt hardening | Restrict Gemini to marine topics only (d3kOS, boat maintenance, AtMyBoat.com features). Explicit refusal instructions for off-topic, political, commercial, or harmful requests. | `[ ]` |
-| GS2 | Prompt injection defence | Detect and block injection patterns in user input before sending to Gemini API: "ignore previous instructions", "you are now", "disregard", "override", "new instructions:", "system:". Log attempts. Return polite refusal. | `[ ]` |
-| GS3 | Output filtering | Server-side scan of Gemini response before returning to browser. Block: code execution instructions, binary/hex payloads, external URLs not on allowlist, anything that looks like an exploit or attack vector. | `[ ]` |
-| GS4 | Rate limiting | Per-user (by IP + session) request budget: max 20 requests/session, max 50/day. Hard server-side block — not just JS. Prevents API abuse and cost overrun. | `[ ]` |
-| GS5 | Input sanitization | Strip or escape HTML, script tags, null bytes, and control characters from user input before it touches the Gemini API or gets stored in any log. | `[ ]` |
-| GS6 | Security test — adversarial prompts | Manually test 10+ attack prompts: jailbreaks, role-play overrides, indirect injections, topic bypass attempts, binary payload attempts. All must return refusal, none must succeed. Document test results. | `[ ]` |
+| GS1 | System prompt hardening | Restrict Gemini to marine topics only (d3kOS, boat maintenance, AtMyBoat.com features). Explicit refusal instructions for off-topic, political, commercial, or harmful requests. | `[x]` **COMPLETE 2026-04-01** — strict refusal rules in system_instruction(). Off-topic → "I can only help with marine and boating questions." Role-play/override attempts → same refusal. |
+| GS2 | Prompt injection defence | Detect and block injection patterns in user input before sending to Gemini API: "ignore previous instructions", "you are now", "disregard", "override", "new instructions:", "system:". Log attempts. Return polite refusal. | `[x]` **COMPLETE 2026-04-01** — detect_injection(): 28 patterns. Blocked before Gemini call. Logged as SECURITY event (no content stored). |
+| GS3 | Output filtering | Server-side scan of Gemini response before returning to browser. Block: code execution instructions, binary/hex payloads, external URLs not on allowlist, anything that looks like an exploit or attack vector. | `[x]` **COMPLETE 2026-04-01** — filter_output(): 11 regex patterns block code/hex. URL allowlist (18 trusted marine domains) — unlisted URLs replaced with [link removed]. |
+| GS4 | Rate limiting | Per-user (by IP + session) request budget: max 20 requests/session, max 50/day. Hard server-side block — not just JS. Prevents API abuse and cost overrun. | `[x]` **COMPLETE 2026-04-01** — WP transients, hashed IP. 20 req/hour + 50 req/day. Counter only increments on successful response. |
+| GS5 | Input sanitization | Strip or escape HTML, script tags, null bytes, and control characters from user input before it touches the Gemini API or gets stored in any log. | `[x]` **COMPLETE 2026-04-01** — sanitize_input(): null bytes + control chars stripped, HTML stripped, whitespace normalised, 500-char cap. |
+| GS6 | Security test — adversarial prompts | Manually test 10+ attack prompts: jailbreaks, role-play overrides, indirect injections, topic bypass attempts, binary payload attempts. All must return refusal, none must succeed. Document test results. | `[ ]` **NEXT** — test cases listed below. Don to run on staging. |
 
 #### Stripe End-to-End Testing (staging)
 | # | Item | Detail | Status |
