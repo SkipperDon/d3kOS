@@ -2,6 +2,36 @@
 
 ---
 
+## Session 2026-04-01 S13b — Stripe E2E Testing Complete (reconstructed)
+
+**Goal:** Complete all 7 Stripe payment test scenarios (ST1–ST7).
+
+**Completed:**
+- ST1: T2 subscription checkout ($9.99/mo) — confirmed working
+- ST2: T3 annual checkout ($99.99/yr) — confirmed working
+- ST3: Payment failure + grace period — confirmed working
+- ST4: Subscription cancellation → tier reverts to T1 — confirmed working
+- ST5: Fix My Pi $29.99 T1 charge → webhook → command queued — confirmed working
+- ST6: Fix My Pi auto-refund on 30-min timeout — confirmed working
+- ST7: Live Stripe keys tested — confirmed working
+
+All 7 ST items confirmed by operator (Don) on 2026-04-01.
+Note: session log reconstructed — original session close was not written.
+
+ACCOMPLISHED THIS SESSION:
+- All Stripe payment flows tested end-to-end and confirmed working
+
+NOT COMPLETED / DEFERRED:
+- None
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Session reconstructed from operator confirmation. Specific test details not recorded.
+
+OPERATOR ACTIONS REQUIRED:
+- None.
+
+---
+
 ## Session 2026-04-01 S10 — PWA Back Chevrons + PDF Report Bug Discovery
 
 **Goal:** Add back chevrons to PWA sub-screens (DEP18, deferred from S9); investigate why PDF report generation was failing (T6 bug).

@@ -342,13 +342,13 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 #### Stripe End-to-End Testing (staging)
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| ST1 | T2 subscription flow | Stripe test mode: complete checkout for $9.99/mo. Confirm: `checkout.session.completed` webhook fires → user tier updated to T2 in `wpax_usermeta` → Pi tier sync on next export. | `[ ]` |
-| ST2 | T3 annual flow | Same for $99.99/yr. Confirm tier = T3 in DB. | `[ ]` |
-| ST3 | Payment failure + grace period | Simulate `invoice.payment_failed` webhook. Confirm: email sent, tier NOT immediately downgraded, grace period active. | `[ ]` |
-| ST4 | Subscription cancellation | Simulate `customer.subscription.deleted`. Confirm: tier reverts to T1, access gates update, email sent. | `[ ]` |
-| ST5 | Fix My Pi $29.99 flow | T1 user triggers Fix My Pi in PWA. Confirm: Stripe charge → webhook → `fix_my_pi` command queued → Pi picks up → result returned → charge shown in billing history. | `[ ]` |
-| ST6 | Fix My Pi auto-refund | Simulate 30-min timeout (no Pi result). Confirm: automatic Stripe refund issued, `amboat_billing.refunded = 1`, refund email sent to user. | `[ ]` |
-| ST7 | Switch to live Stripe keys | After test mode confirmed: swap test keys for live keys in `inc/atmyboat-config.php` on staging. Run one live T2 test charge then immediately refund. Confirm live webhook fires. | `[ ]` |
+| ST1 | T2 subscription flow | Stripe test mode: complete checkout for $9.99/mo. Confirm: `checkout.session.completed` webhook fires → user tier updated to T2 in `wpax_usermeta` → Pi tier sync on next export. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
+| ST2 | T3 annual flow | Same for $99.99/yr. Confirm tier = T3 in DB. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
+| ST3 | Payment failure + grace period | Simulate `invoice.payment_failed` webhook. Confirm: email sent, tier NOT immediately downgraded, grace period active. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
+| ST4 | Subscription cancellation | Simulate `customer.subscription.deleted`. Confirm: tier reverts to T1, access gates update, email sent. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
+| ST5 | Fix My Pi $29.99 flow | T1 user triggers Fix My Pi in PWA. Confirm: Stripe charge → webhook → `fix_my_pi` command queued → Pi picks up → result returned → charge shown in billing history. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
+| ST6 | Fix My Pi auto-refund | Simulate 30-min timeout (no Pi result). Confirm: automatic Stripe refund issued, `amboat_billing.refunded = 1`, refund email sent to user. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
+| ST7 | Switch to live Stripe keys | After test mode confirmed: swap test keys for live keys in `inc/atmyboat-config.php` on staging. Run one live T2 test charge then immediately refund. Confirm live webhook fires. | `[x]` **COMPLETE 2026-04-01 — confirmed by Don** |
 
 ### Phase 4 — Staging → Live
 **Owner: Don's hands only — DEFERRED by operator decision 2026-03-26**
@@ -356,7 +356,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 - [x] UpdraftPlus full backup of live site — done 2026-03-26
 - [ ] Architecture flow diagram complete (see Part 7A below)
 - [ ] Gemini AI security hardening complete (Phase 3B above — all GS items)
-- [ ] Stripe E2E testing complete (Phase 3B above — all ST items)
+- [x] Stripe E2E testing complete (Phase 3B above — all ST items) — confirmed 2026-04-01
 - [ ] Proper live deploy plan — to be scoped when v0.9.4.1 is complete
 - [ ] Post-push smoke test (all pages, AI widget, Stripe Fix My Pi)
 - [ ] GitHub repo set to Private
