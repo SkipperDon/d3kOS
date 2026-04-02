@@ -2,6 +2,64 @@
 
 ---
 
+## Session 2026-04-01 S15 — Gemini Quota Root Cause + Resolution
+
+**Goal:** Resolve AI widget showing "AI service unavailable" on staging after midnight UTC quota reset.
+
+**Completed:**
+- Root cause identified: Pi (`...iGIA`) and website share the same Google Cloud project (`gen-lang-client-0459941519`) — both drain the same 1500/day free tier pool. Today's exhaustion was made worse by running the diagnostic script ~15 times during debugging.
+- New project tested (Gemini Project -atmyboat): returns `limit: 0` because new Google Cloud projects require billing configured to unlock free tier quota. Not viable without a credit card.
+- Resolution: website reverts to original project, key `...MhR0` (created Mar 13, never previously assigned to anything). Pi continues using `...iGIA`. Both on same project quota but 1500/day is sufficient for normal operation.
+- Model confirmed correct: `gemini-2.0-flash` stays in `atmyboat-config.php`.
+- Widget will be working after quota resets at 8 AM UTC (4 AM EDT).
+
+**Decisions:**
+- No separate Google Cloud project for website — requires billing setup. Accepted risk: shared quota pool.
+- In normal daily use (not diagnostic testing), 1500/day across Pi + website is adequate. Revisit only if real quota exhaustion occurs in production.
+- `check-gemini-diag.php` remains on staging — still needed for GS6 testing after quota resets.
+
+**Files changed:** None — config change was on server only (not in repo, gitignored by design).
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+ACCOMPLISHED THIS SESSION:
+- Gemini quota root cause identified: Pi + website sharing same project pool
+- Resolution deployed: website now on key `...MhR0`, Pi on `...iGIA`, same project
+- New project billing requirement documented — free tier requires billing on new Cloud projects
+
+NOT COMPLETED / DEFERRED:
+- GS6 adversarial testing: still pending — quota must reset first (8 AM UTC). Run 15 test cases from `deployment/docs/SECURITY_OWASP_LLM.md`.
+- Delete `check-gemini-diag.php`: after GS6 testing completes.
+
+KNOWN GAPS OR UNCERTAINTIES:
+- `/session-close` skill returning "Unknown skill" — skills migration from S12b may have an issue. Investigate next session.
+- Exact Google quota reset time: stated as 8 AM UTC (midnight Pacific) — unconfirmed. May vary.
+
+OPERATOR ACTIONS REQUIRED:
+- After 8 AM UTC: verify AI widget works on staging `/help` page.
+- Then run GS6 adversarial test cases.
+- Then delete `check-gemini-diag.php` via cPanel.
+
+QUALITY METRICS — 2026-04-01 S15
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 75%
+SGCR (Stop Gate Compliance Rate)   : 0%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 1
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 59.5/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: SGCR=0% — after context compaction, resumed session by closing it instead of asking Don what he wanted. UAC=1 same event.
+
+---
+
 ## Session 2026-04-01 S14 — Gemini Security Hardening (GS1–GS5) + Accessibility Page + Gemini Quota Diagnosis
 
 **Goal:** Build OWASP LLM Top 10 security hardening for the AtMyBoat.com AI assistant; add AODA/OWASP compliance section to /accessibility page; diagnose broken AI widget on staging.
