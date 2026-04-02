@@ -1,0 +1,71 @@
+// d3kOS Plymouth boot splash
+// Shows AtMyBoat logo centred on navy background with version + copyright
+
+// ── Background ───────────────────────────────────────────────────────────────
+background.r = 0.039;   // #0a1628 → R:10  G:22  B:40
+background.g = 0.086;
+background.b = 0.157;
+
+Window.SetBackgroundTopColor(background.r, background.g, background.b);
+Window.SetBackgroundBottomColor(background.r, background.g, background.b);
+
+// ── Logo ─────────────────────────────────────────────────────────────────────
+logo.image = Image("amboat-logo.png");
+
+// Scale logo to 20% of screen width, maintain aspect ratio
+logo.scale = Window.GetWidth() * 0.20 / logo.image.GetWidth();
+logo.image = logo.image.Scale(
+    logo.image.GetWidth()  * logo.scale,
+    logo.image.GetHeight() * logo.scale
+);
+
+logo.x = Window.GetWidth()  / 2 - logo.image.GetWidth()  / 2;
+logo.y = Window.GetHeight() / 2 - logo.image.GetHeight() / 2 - 40;
+
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(logo.x);
+logo.sprite.SetY(logo.y);
+logo.sprite.SetZ(10);
+
+// ── Version text ─────────────────────────────────────────────────────────────
+title.image = Image.Text("d3kOS v0.9.4", 1.0, 1.0, 1.0, 1.0, "Sans 18");
+title.x = Window.GetWidth() / 2 - title.image.GetWidth() / 2;
+title.y = logo.y + logo.image.GetHeight() + 20;
+
+title.sprite = Sprite(title.image);
+title.sprite.SetX(title.x);
+title.sprite.SetY(title.y);
+title.sprite.SetZ(10);
+
+// ── Copyright ────────────────────────────────────────────────────────────────
+copy.image = Image.Text("© AtMyBoat.com", 0.6, 0.6, 0.6, 1.0, "Sans 13");
+copy.x = Window.GetWidth() / 2 - copy.image.GetWidth() / 2;
+copy.y = title.y + title.image.GetHeight() + 8;
+
+copy.sprite = Sprite(copy.image);
+copy.sprite.SetX(copy.x);
+copy.sprite.SetY(copy.y);
+copy.sprite.SetZ(10);
+
+// ── Progress bar ─────────────────────────────────────────────────────────────
+progress_bar.image = Image.Text("", 1, 1, 1, 1, "Sans 1");
+
+fun progress_callback(duration, progress) {
+    bar_width  = (Window.GetWidth() * 0.40 * progress);
+    bar_height = 4;
+    bar_x      = Window.GetWidth() / 2 - (Window.GetWidth() * 0.20);
+    bar_y      = Window.GetHeight() - 60;
+
+    bar.image = Image(bar_width > 1 ? bar_width : 1, bar_height);
+    bar.image.ReplaceColor(0, 0, 0, 0, 0.0, 0.67, 1.0, 1.0);  // AtMyBoat blue
+
+    if (bar.sprite)
+        bar.sprite = NULL;
+
+    bar.sprite = Sprite(bar.image);
+    bar.sprite.SetX(bar_x);
+    bar.sprite.SetY(bar_y);
+    bar.sprite.SetZ(10);
+}
+
+Plymouth.SetBootProgressFunction(progress_callback);

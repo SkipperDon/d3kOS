@@ -177,9 +177,7 @@ html, body {
   position: relative; z-index: 300;
 }
 .sb-brand {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px; letter-spacing: .15em;
-  color: #fff; flex-shrink: 0;
+  height: 28px; width: auto; flex-shrink: 0;
 }
 .sb-sep { width: 1px; height: 22px; background: rgba(255,255,255,.18); flex-shrink: 0; }
 .sb-vessel {
