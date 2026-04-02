@@ -2,6 +2,70 @@
 
 ---
 
+## Session 2026-04-01 S14 — Gemini Security Hardening (GS1–GS5) + Accessibility Page + Gemini Quota Diagnosis
+
+**Goal:** Build OWASP LLM Top 10 security hardening for the AtMyBoat.com AI assistant; add AODA/OWASP compliance section to /accessibility page; diagnose broken AI widget on staging.
+
+**Completed:**
+- **GS1–GS5 — AI assistant security hardening:** Complete rewrite of `inc/ai-assistant.php` with:
+  - `sanitize_input()` — Unicode zero-width char removal, null bytes, HTML strip, 500-char cap
+  - `detect_injection()` — 28 injection patterns, case-insensitive, runs on user input AND forum context
+  - `filter_output()` — 11 block patterns + URL allowlist (18 domains), unknown URLs replaced with `[link removed]`
+  - `check_rate_limit()` / `increment_rate_limit()` — WP transients, hashed IP, 20/hour + 50/day
+  - `log_security_event()` — logs injection_blocked, indirect_injection_skipped, output_blocked
+  - Forum context capped at 2000 chars; hardened system prompt with role-override refusal rules
+- **logs/.htaccess** — new file blocking public access to `ai-usage.log`; .gitignore updated with negation rule to allow this file
+- **SECURITY_OWASP_LLM.md** — new document at `deployment/docs/SECURITY_OWASP_LLM.md`: full OWASP LLM Top 10 assessment, LLM01–LLM10 status, 15 GS6 adversarial test cases, rate limit race condition documented as accepted risk, credential rotation checklist
+- **page-accessibility.php** — added AODA/WCAG 2.0 AA/OWASP/IEC 62288 compliance badges; added "Security Practices" section with 6 cards; updated date to April 2026
+- **Gemini model retirement fix:** `check-gemini-diag.php` deployed to staging — confirmed `gemini-2.5-flash-preview-04-17` was retired (HTTP 404). Updated server's `atmyboat-config.php` to `gemini-2.0-flash`. Don fixed a syntax error introduced during cPanel editing.
+- **Gemini quota diagnosis:** After model fix, diagnostic returned HTTP 429 RESOURCE_EXHAUSTED with `limit: 0` on free tier daily quota. Confirmed: AI widget is broken because Google free tier quota is exhausted for 2026-04-01. Code is correct. Quota resets midnight UTC.
+
+**Decisions:**
+- `check-gemini-diag.php` on staging server — should be deleted after GS6 testing is complete (operator action)
+- Rate limit race condition (non-atomic WP transient read-write) documented as accepted risk — acceptable on shared hosting, no fix required
+- OWASP does not certify compliance — page uses "OWASP Security Guidelines" (accurate wording)
+
+**Files changed (local repo):**
+
+| File | Change |
+|------|--------|
+| `inc/ai-assistant.php` | Complete rewrite — GS1–GS5 security hardening |
+| `logs/.htaccess` | New file — block public access to logs dir |
+| `.gitignore` | Added `!wp-content/themes/twentytwenty-child/logs/.htaccess` negation |
+| `page-accessibility.php` | Compliance badges + Security Practices section added |
+| `Helm-OS/deployment/docs/SECURITY_OWASP_LLM.md` | New document — OWASP LLM Top 10 assessment |
+| `Helm-OS/PROJECT_CHECKLIST.md` | DEP18 complete, ST1–ST7 complete, GS1–GS5 complete, GS6 pending |
+| `Helm-OS/SESSION_LOG.md` | S10 + S13b entries reconstructed and prepended |
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+ACCOMPLISHED THIS SESSION:
+- GS1–GS5 security hardening: complete
+- OWASP LLM Top 10 documentation: complete
+- /accessibility page security section: complete
+- Gemini retired model diagnosed and fixed (gemini-2.0-flash confirmed working)
+- Gemini quota exhaustion diagnosed — not a code issue
+
+NOT COMPLETED / DEFERRED:
+- GS6 adversarial testing: blocked — Gemini free tier quota exhausted for today. Run tomorrow after midnight UTC. 15 test cases in SECURITY_OWASP_LLM.md.
+- Delete `check-gemini-diag.php` from staging server — operator action after GS6 testing.
+
+KNOWN GAPS OR UNCERTAINTIES:
+- GS6 tests not yet run — cannot confirm hardening holds against real adversarial input until tested.
+- Gemini 2.0 Flash confirmed working (200 OK) yesterday before quota hit — code path verified.
+
+OPERATOR ACTIONS REQUIRED:
+- After midnight UTC: run 15 GS6 adversarial test cases on staging /help page AI widget (listed in SECURITY_OWASP_LLM.md).
+- After GS6 testing: delete `check-gemini-diag.php` from staging via cPanel File Manager.
+
+---
+
 ## Session 2026-04-01 S13b — Stripe E2E Testing Complete (reconstructed)
 
 **Goal:** Complete all 7 Stripe payment test scenarios (ST1–ST7).

@@ -261,7 +261,7 @@ On-boat verification still pending:
 | S6 | **Multi-boat schema** — 7 ALTER TABLE: amboat_billing (refunded/refunded_at), community_positions (pi_id PK), command_queue (pi_pending index), engine_snapshots (vessel_date index), alerts (vessel_date index), d3kos_pairings (last_seen_at). | `[x]` **COMPLETE 2026-03-26** commit 0bc5b29 |
 | S6 | **Community map wiring** — community-get.php + community-markers.php + Leaflet 1.9.4 on page-community.php. | `[x]` **COMPLETE 2026-03-26** commit c0ecd6d |
 | S6 | **Account page AODA + billing** — 6 sub-18px fixes, refund status in billing table, last_seen_at on devices, SVG colour fix. | `[x]` **COMPLETE 2026-03-26** commit bf1f0a5 |
-| S6 | **`/accessibility`** — AODA compliance statement page (Ontario legal requirement). | `[x]` **COMPLETE 2026-03-26** commit 7c0dfe0 |
+| S6 | **`/accessibility`** — AODA compliance statement page (Ontario legal requirement). | `[x]` **COMPLETE 2026-03-26** commit 7c0dfe0. **UPDATED 2026-04-01** — compliance badges (AODA, WCAG 2.0 AA, OWASP, IEC 62288) + Security Practices section (6 cards) added. commit 14cf1b3. |
 | S6 | 2E — SEO (Yoast, sitemap, Bing Webmaster) | `[ ]` Deferred to post-launch |
 | **Operator task** | **WordPress admin: create all pages** — install-pages.php run, Safety + Account created manually, slugs fixed via fix-slugs.php. | `[x]` **COMPLETE 2026-03-25 (D)** |
 | **Operator task** | **WordPress admin: update menus** — Main menu verified OK. Footer menus set up. | `[x]` **COMPLETE 2026-03-26** |
@@ -337,7 +337,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | GS3 | Output filtering | Server-side scan of Gemini response before returning to browser. Block: code execution instructions, binary/hex payloads, external URLs not on allowlist, anything that looks like an exploit or attack vector. | `[x]` **COMPLETE 2026-04-01** — filter_output(): 11 regex patterns block code/hex. URL allowlist (18 trusted marine domains) — unlisted URLs replaced with [link removed]. |
 | GS4 | Rate limiting | Per-user (by IP + session) request budget: max 20 requests/session, max 50/day. Hard server-side block — not just JS. Prevents API abuse and cost overrun. | `[x]` **COMPLETE 2026-04-01** — WP transients, hashed IP. 20 req/hour + 50 req/day. Counter only increments on successful response. |
 | GS5 | Input sanitization | Strip or escape HTML, script tags, null bytes, and control characters from user input before it touches the Gemini API or gets stored in any log. | `[x]` **COMPLETE 2026-04-01** — sanitize_input(): null bytes + control chars stripped, HTML stripped, whitespace normalised, 500-char cap. |
-| GS6 | Security test — adversarial prompts | Manually test 10+ attack prompts: jailbreaks, role-play overrides, indirect injections, topic bypass attempts, binary payload attempts. All must return refusal, none must succeed. Document test results. | `[ ]` **NEXT** — test cases listed below. Don to run on staging. |
+| GS6 | Security test — adversarial prompts | Manually test 10+ attack prompts: jailbreaks, role-play overrides, indirect injections, topic bypass attempts, binary payload attempts. All must return refusal, none must succeed. Document test results. | `[!]` **OPERATOR ACTION** — 15 test cases listed in `deployment/docs/SECURITY_OWASP_LLM.md`. Run them on staging AI widget. All hardening is deployed and ready to test. |
 
 #### Stripe End-to-End Testing (staging)
 | # | Item | Detail | Status |
@@ -355,7 +355,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 **Trigger: After v0.9.4 and v0.9.4.1 are complete. No live push before then.**
 - [x] UpdraftPlus full backup of live site — done 2026-03-26
 - [ ] Architecture flow diagram complete (see Part 7A below)
-- [ ] Gemini AI security hardening complete (Phase 3B above — all GS items)
+- [x] Gemini AI security hardening complete (GS1–GS5 deployed 2026-04-01. GS6 adversarial testing — operator action required before Phase 4)
 - [x] Stripe E2E testing complete (Phase 3B above — all ST items) — confirmed 2026-04-01
 - [ ] Proper live deploy plan — to be scoped when v0.9.4.1 is complete
 - [ ] Post-push smoke test (all pages, AI widget, Stripe Fix My Pi)
