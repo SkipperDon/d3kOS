@@ -9514,3 +9514,50 @@ OPERATOR ACTIONS REQUIRED:
 - CA4: Update personal credential vault with production values
 - Reboot Pi at a convenient time to visually verify boot splash
 - Confirm Phase 4 push readiness when all pre-Phase-4 items are satisfactory
+
+## Session 2026-04-02 S16 — Branding fix, VM setup attempt, session close
+
+**Goal:** Standardise "Skipper Don" branding across site, begin Admin Console VM setup.
+
+**Completed:**
+- Pi boot splash visually confirmed — Skipper Don rebooted Pi, splash displayed correctly. DEP12 fully done.
+- "Skipper Don" branding: replaced all 25 instances of standalone "Don" with "Skipper Don" across 10 files in atmyboat-forum. Commit 9d97165.
+- CA4 complete — Skipper Don updated personal credential vault.
+- OP1–OP4 complete — Remote MySQL whitelisted, email/DB/Gemini credentials noted.
+- VirtualBox Admin Console setup started: old VM deleted, Ubuntu 22.04 LTS ISO downloaded, new VM creation begun. Blocked on Ubuntu installer display issue (black screen). Fix 2 worked briefly, Fix 3 attempted, installer still unstable. Deferred to next session.
+
+**Decisions:**
+- Admin Console VM: Host-Only adapter on Adapter 2 + NAT on Adapter 1. VM specs: 4GB RAM, 2 CPU, 40GB disk. Ubuntu 22.04 LTS.
+- Old VirtualBox VM deleted — fresh install is the right approach.
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-02 | TBD |
+| Ollama | removed 2026-04-01 | $0.00 |
+
+**Pending:**
+- Resume Ubuntu VM install next session — resolve black screen / display issue
+- Once VM running: build Admin Console P1 (Foundation)
+- All v0.9.5–v0.9.9 not started
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- Boot splash confirmed working by Skipper Don
+- All 25 "Don" → "Skipper Don" branding fixes deployed (10 files)
+- CA4 + OP1–OP4 complete — Admin Console pre-reqs done
+
+NOT COMPLETED / DEFERRED:
+- Ubuntu VM install: black screen issue — deferred to next session
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Ubuntu installer display issue not fully diagnosed — Fix 3 attempted, outcome unclear
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for today's Claude API cost
+- Resume VM install next session
+
+---
