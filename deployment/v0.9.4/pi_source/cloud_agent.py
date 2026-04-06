@@ -10,6 +10,7 @@ Commands handled:
   fix_my_pi       - Run diagnostics + service restarts, report results back.
   ota_upgrade     - Download, verify, install latest release, restart services.
   setup_lockdown  - Apply apt-mark hold on critical packages to prevent OS upgrades breaking d3kOS.
+  pair_confirmed  - Pi paired via app. Upgrade tier in license.json, trigger immediate export.
 
 Config:  /opt/d3kos/config/cloud-config.json  (amboat_api_key, amboat_base_url)
 Token:   /opt/d3kos/config/device-token.json  (created on first run if absent)
@@ -293,6 +294,39 @@ def handle_setup_lockdown(cmd_id, base_url, api_key, device_token):
         logger.error(f"setup_lockdown exception: {e}")
 
 
+def handle_pair_confirmed(cmd_id, payload, base_url, api_key, device_token):
+    """T0 → T1: Pi has been paired via the app. Upgrade tier in license.json
+    and trigger an immediate export so HostPapa gets first-sync data."""
+    try:
+        tier_str = str(payload.get('tier', 'T1')).upper()
+
+        lic_path = Path('/opt/d3kos/config/license.json')
+        if lic_path.exists():
+            lic = json.loads(lic_path.read_text())
+            old_tier = lic.get('tier', 'T0')
+            lic['tier'] = tier_str
+            lic_path.write_text(json.dumps(lic, indent=2))
+            logger.info(f'pair_confirmed: tier {old_tier} -> {tier_str}')
+        else:
+            old_tier = None
+            logger.warning('pair_confirmed: license.json not found, skipping tier update')
+
+        # Trigger immediate export (best-effort — pair_confirmed succeeds even if export fails)
+        try:
+            requests.post('http://localhost:8094/export/generate', timeout=60)
+            logger.info('pair_confirmed: triggered post-pair export')
+        except Exception as e_exp:
+            logger.warning(f'pair_confirmed: export trigger failed (non-fatal): {e_exp}')
+
+        result = {'old_tier': old_tier, 'new_tier': tier_str}
+        ack_command(base_url, api_key, device_token, cmd_id, 'completed', result)
+        logger.info(f'pair_confirmed: completed for cmd_id={cmd_id}')
+
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f'pair_confirmed exception: {e}')
+
+
 def dispatch(cmd, base_url, api_key, device_token):
     """Dispatch a single command to its handler."""
     cmd_id   = cmd.get('id')
@@ -318,6 +352,9 @@ def dispatch(cmd, base_url, api_key, device_token):
 
     elif command == 'setup_lockdown':
         handle_setup_lockdown(cmd_id, base_url, api_key, device_token)
+
+    elif command == 'pair_confirmed':
+        handle_pair_confirmed(cmd_id, payload, base_url, api_key, device_token)
 
     else:
         ack_command(base_url, api_key, device_token, cmd_id, 'failed',
