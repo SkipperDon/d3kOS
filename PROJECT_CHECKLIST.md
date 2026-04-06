@@ -745,9 +745,10 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | Pi load confirmed stable | `[x]` **COMPLETE 2026-04-01 S12** | Load 1.89 at 9 min uptime after fixes. Previous crisis load: 9.4+. |
 | Fish RAG assessment | `[x]` **COMPLETE 2026-04-06 S17** | fish_rag_llm.py deployed. query_handler.py wired. On-demand Ollama synthesis active via gemma3:1b when Gemini offline. |
 | Voice assistant fishing regulation queries | `[~]` | fish-rag corpus at /opt/d3kos/datasets/fish-rag/ NOT yet ingested into d3kos_documents ChromaDB. Ingest needed for regulation queries to return useful answers. |
-| On-demand Ollama — ingest fish-rag corpus into ChromaDB | `[ ]` | Run pdf_processor.py add on all PDFs in /opt/d3kos/datasets/fish-rag/species_pdfs/ and visual_guides/ to make fishing regulation queries work. Ollama must be running first. |
-| On-demand Ollama — inference speed | `[ ]` | ~200s per query (3000-token context). Consider reducing k=6→k=3 in query_handler.py synthesize call to halve context and speed. Don's call on quality vs. speed tradeoff. |
-| LangChain deprecation in pdf_processor.py | `[ ]` | OllamaEmbeddings + Chroma deprecated in LangChain 0.3.1, removed in 1.0. Must migrate before LangChain upgrade. Low priority. |
+| On-demand Ollama — ingest fish-rag corpus into ChromaDB | `[x]` **COMPLETE 2026-04-06 S17** | 21 species PDFs already indexed. 3 visual guides newly added (54 chunks). Total: 1,313 docs. NOTE: dataset is fish ID guide only, not bag limits/size limits. |
+| On-demand Ollama — inference speed | `[x]` **COMPLETE 2026-04-06 S17** | k=6→k=3 applied. Inference time ~114s (from ~200s). |
+| LangChain deprecation in pdf_processor.py | `[x]` **COMPLETE 2026-04-06 S17** | Migrated to langchain-ollama + langchain-chroma. Deprecated .persist() removed. No warnings. |
+| Ontario fishing regulations — actual bag limits/size limits | `[ ]` | Dataset only has fish ID guide (length ranges, habitat). To answer "what is the bag limit for walleye?" need to ingest actual Ontario govt Fishing Regulations Summary PDF. Don to source and upload via Settings → Documents. |
 
 ---
 
