@@ -743,8 +743,11 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | Ollama service disabled on Pi | `[x]` **COMPLETE 2026-04-01 S12** | `sudo systemctl disable ollama.service`. Binary + phi3.5 model kept on disk. Will not auto-start on reboot. |
 | Node-RED dead tabs removed | `[x]` **COMPLETE 2026-04-01 S12** | Deleted 4 tabs permanently: d3kOS Cloud Telemetry Push (dead endpoint), Community Engine Benchmark, Community Boat Map, Community Knowledge Log (Watch node error loop). 26 nodes removed. System tab only remains. |
 | Pi load confirmed stable | `[x]` **COMPLETE 2026-04-01 S12** | Load 1.89 at 9 min uptime after fixes. Previous crisis load: 9.4+. |
-| Fish RAG assessment | `[ ]` | ChromaDB + LangChain + fish-rag corpus confirmed present on Pi. No active service queries it. Assess: wire to voice assistant or Helm Assistant? Deferred. |
-| Voice assistant fishing regulation queries | `[ ]` | Concern raised: AI gives ambiguous/outdated regulation answers. Options: refuse + redirect to official source, or add regulation-specific RAG corpus. Deferred by operator. |
+| Fish RAG assessment | `[x]` **COMPLETE 2026-04-06 S17** | fish_rag_llm.py deployed. query_handler.py wired. On-demand Ollama synthesis active via gemma3:1b when Gemini offline. |
+| Voice assistant fishing regulation queries | `[~]` | fish-rag corpus at /opt/d3kos/datasets/fish-rag/ NOT yet ingested into d3kos_documents ChromaDB. Ingest needed for regulation queries to return useful answers. |
+| On-demand Ollama — ingest fish-rag corpus into ChromaDB | `[ ]` | Run pdf_processor.py add on all PDFs in /opt/d3kos/datasets/fish-rag/species_pdfs/ and visual_guides/ to make fishing regulation queries work. Ollama must be running first. |
+| On-demand Ollama — inference speed | `[ ]` | ~200s per query (3000-token context). Consider reducing k=6→k=3 in query_handler.py synthesize call to halve context and speed. Don's call on quality vs. speed tradeoff. |
+| LangChain deprecation in pdf_processor.py | `[ ]` | OllamaEmbeddings + Chroma deprecated in LangChain 0.3.1, removed in 1.0. Must migrate before LangChain upgrade. Low priority. |
 
 ---
 
