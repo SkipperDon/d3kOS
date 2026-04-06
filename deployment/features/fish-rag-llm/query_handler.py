@@ -304,7 +304,7 @@ class AIQueryHandler:
                 import sys as _sys
                 _sys.path.insert(0, '/opt/d3kos/services/ai')
                 from fish_rag_llm import synthesize as _llm_synthesize
-                raw_chunks = self.pdf_processor.search(question, k=6) if self.pdf_processor else []
+                raw_chunks = self.pdf_processor.search(question, k=3) if self.pdf_processor else []
                 llm_answer = _llm_synthesize(question, raw_chunks)
             except Exception:
                 pass
