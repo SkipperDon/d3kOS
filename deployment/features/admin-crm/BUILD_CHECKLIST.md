@@ -151,11 +151,10 @@
 
 ## Pre-Build Operator Actions (Do before Phase 1 coding starts)
 
-- [ ] **OP1** — cPanel → Remote MySQL → add workstation IP to allowed list
-- [ ] **OP2** — Note `skipperdon@atmyboat.com` IMAP/SMTP password (webmail login)
-- [ ] **OP3** — Note Gemini API key (already in d3kOS cloud-config or Pi config)
-- [ ] **OP4** — Note HostPapa MySQL hostname, DB name, DB user, DB password
-      (cPanel → MySQL Databases)
+- [x] **OP1** — Remote MySQL blocked by HostPapa. PHP proxy (Option B) adopted instead. 2026-04-03
+- [x] **OP2** — IMAP/SMTP confirmed: mail.atmyboat.com, 993 SSL, 465 SSL. 2026-04-03
+- [x] **OP3** — Gemini API key confirmed available in atmyboat-config.php. 2026-04-03
+- [x] **OP4** — Staging: atmyb197_wp302 / atmyboat2026. Production: atmyb197_wp59874 / [redacted] 2026-04-03
 
 ---
 
@@ -163,15 +162,15 @@
 
 | Phase | Status | Session | Notes |
 |-------|--------|---------|-------|
-| Pre-build (OP1–OP4) | `[ ]` Not started | — | Operator actions required first |
-| Phase 1 — Foundation | `[ ]` Not started | — | |
-| Phase 2 — Customer View | `[ ]` Not started | — | |
-| Phase 3 — Pi Diagnostics | `[ ]` Not started | — | |
-| Phase 4 — Email Inbox | `[ ]` Not started | — | |
-| Phase 5 — AI Draft Assist | `[ ]` Not started | — | |
-| Phase 6 — Tier + Audit Log | `[ ]` Not started | — | |
-| Phase 7 — DB Explorer | `[ ]` Not started | — | |
-| Phase 8 — PWA Support Button | `[ ]` Not started | — | |
+| Pre-build (OP1–OP4) | `[x]` Complete | S16 2026-04-03 | OP1 remote MySQL attempted — blocked. Adopted PHP proxy (Option B) instead. OP2–OP4 confirmed. |
+| Phase 1 — Foundation | `[x]` Complete | S16 2026-04-03 | Flask, login, bcrypt, session, lockout, config, db (PHP proxy), dashboard |
+| Phase 2 — Customer View | `[x]` Complete | S16 2026-04-03 | Customer list + profile. Schema fixes applied. Branding logo deployed. |
+| Phase 3 — Pi Diagnostics | `[x]` Complete | S16 2026-04-03 | Alerts + commands via PHP proxy. Live SSH deferred — VM→Pi network not confirmed. |
+| Phase 4 — Email Inbox | `[x]` Complete | S16 2026-04-03 | IMAP fetch, thread view, reply, mark handled, auto-link to customer, 2min cache |
+| Phase 5 — AI Draft Assist | `[x]` Complete | S16 2026-04-03 | Gemini Flash — draft button in thread view when customer is linked |
+| Phase 6 — Tier + Audit Log | `[x]` Complete | S16 2026-04-03 | amboat_admin_log table created by Don in phpMyAdmin. Tier change + FMP reset logged. |
+| Phase 7 — DB Explorer | `[x]` Complete | S16 2026-04-03 | 8 whitelisted tables, filter/search, CSV export |
+| Phase 8 — PWA Support Button | `[x]` Complete | S16 2026-04-03 | Settings → Contact Support → support-request.php. Rate limit 3/24h. Email to skipperdon@. |
 
 **Minimum viable tool:** Phase 1 + Phase 2 + Phase 6 (foundation + customers + tier management)
 **Complete picture:** All 8 phases

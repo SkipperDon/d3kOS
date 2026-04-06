@@ -2565,6 +2565,17 @@ screens.settings = function renderSettings() {
     container.appendChild(upgradeSection);
   }
 
+  // Contact Support
+  const supportCard = el('div', { class: 'card' });
+  supportCard.appendChild(el('div', { class: 'card-title' }, 'Support'));
+  supportCard.appendChild(el('div', {
+    style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;',
+  }, 'Send a message to Skipper Don. We respond within 1 business day.'));
+  const supportBtn = el('button', { class: 'btn btn-ghost' }, 'Contact Support');
+  supportBtn.addEventListener('click', () => navigate('support'));
+  supportCard.appendChild(supportBtn);
+  container.appendChild(supportCard);
+
   // Sign out
   container.appendChild(
     el('button', {
@@ -2576,6 +2587,97 @@ screens.settings = function renderSettings() {
       },
     }, 'Sign Out')
   );
+};
+
+// ── Support Screen ────────────────────────────────────────────────────────────
+screens.support = function renderSupport() {
+  const container = getEl('screen');
+
+  // Header with back chevron
+  const header = el('div', { class: 'screen-header' });
+  const backBtn = el('button', {
+    class: 'back-btn',
+    'aria-label': 'Back to Settings',
+  }, '‹');
+  backBtn.addEventListener('click', () => navigate('settings'));
+  header.appendChild(backBtn);
+  header.appendChild(el('span', { class: 'screen-title' }, 'Contact Support'));
+  container.appendChild(header);
+
+  const card = el('div', { class: 'card' });
+
+  // Sent confirmation state
+  const sentMsg = el('div', {
+    class: 'support-sent',
+    style: 'display: none;',
+  });
+  sentMsg.appendChild(el('div', { class: 'support-sent-icon' }, '✓'));
+  sentMsg.appendChild(el('p', { style: 'font-size: 1rem; font-weight: 600; margin-bottom: 8px;' },
+    'Message sent'));
+  sentMsg.appendChild(el('p', { style: 'font-size: 0.9rem; color: var(--text-muted);' },
+    `We'll respond to ${state.username || 'you'} within 1 business day.`));
+  const backToSettings = el('button', {
+    class: 'btn btn-ghost',
+    style: 'margin-top: 16px;',
+  }, 'Back to Settings');
+  backToSettings.addEventListener('click', () => navigate('settings'));
+  sentMsg.appendChild(backToSettings);
+
+  // Form
+  const form = el('div', { class: 'support-form' });
+  form.appendChild(el('p', {
+    style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;',
+  }, 'Describe your issue and we\'ll get back to you. Your vessel and account info will be included automatically.'));
+
+  const textarea = el('textarea', {
+    class: 'support-textarea',
+    placeholder: 'Describe your issue…',
+    maxlength: '500',
+    rows: '6',
+    'aria-label': 'Support message',
+  });
+  form.appendChild(textarea);
+
+  const charCount = el('div', { class: 'support-char-count' }, '0 / 500');
+  textarea.addEventListener('input', () => {
+    charCount.textContent = `${textarea.value.length} / 500`;
+  });
+  form.appendChild(charCount);
+
+  const errorMsg = el('div', { class: 'support-error', style: 'display: none;' });
+  form.appendChild(errorMsg);
+
+  const sendBtn = el('button', { class: 'btn btn-primary', style: 'margin-top: 12px; width: 100%;' }, 'Send Message');
+  sendBtn.addEventListener('click', async () => {
+    const msg = textarea.value.trim();
+    if (!msg || msg.length < 10) {
+      errorMsg.textContent = 'Please enter at least 10 characters.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    errorMsg.style.display = 'none';
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+
+    try {
+      await apiFetch('support-request.php', {
+        method: 'POST',
+        body: JSON.stringify({ message: msg }),
+      });
+      form.style.display = 'none';
+      sentMsg.style.display = 'block';
+    } catch (err) {
+      errorMsg.textContent = err.message || 'Failed to send. Please try again.';
+      errorMsg.style.display = 'block';
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send Message';
+    }
+  });
+  form.appendChild(sendBtn);
+
+  card.appendChild(sentMsg);
+  card.appendChild(form);
+  container.appendChild(card);
 };
 
 // ── Pair Screen ───────────────────────────────────────────────────────────────

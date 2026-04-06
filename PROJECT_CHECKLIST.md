@@ -691,23 +691,23 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 Complete customer view: tier + billing + Pi health + support emails + AI draft assist.
 Completely independent of WordPress — direct MySQL + IMAP connections.
 
-**Pre-build operator actions (do before any coding):**
-- [ ] **OP1** — cPanel → Remote MySQL → whitelist workstation IP
-- [ ] **OP2** — Note `skipperdon@atmyboat.com` IMAP/SMTP password
-- [ ] **OP3** — Note Gemini API key (from d3kOS config)
-- [ ] **OP4** — Note HostPapa MySQL host, DB name, user, password (cPanel → MySQL Databases)
+**Pre-build operator actions (completed 2026-04-03 S16):**
+- [x] **OP1** — Remote MySQL blocked by HostPapa. PHP proxy (Option B) adopted permanently.
+- [x] **OP2** — IMAP/SMTP: mail.atmyboat.com, 993 SSL, 465 SSL. Password reset to 8tm1b08t.$Sk1pp3r.
+- [x] **OP3** — Gemini API key confirmed in config.json on VM.
+- [x] **OP4** — Staging DB: atmyb197_wp302 / atmyboat2026. Production: atmyb197_wp59874.
 
 **Build phases:**
 | Phase | Feature | Status |
 |-------|---------|--------|
-| P1 | Foundation — Flask skeleton, login, DB connection | `[ ]` Not started |
-| P2 | Customer View — list, search, profile page | `[ ]` Not started |
-| P3 | Pi Diagnostics — SSH health, alerts, commands, engine | `[ ]` Not started |
-| P4 | Email Inbox — IMAP read, account linking, SMTP reply | `[ ]` Not started |
-| P5 | AI Draft Assist — Gemini Flash, context builder | `[ ]` Not started |
-| P6 | Tier Management + Audit Log — amboat_admin_log | `[ ]` Not started |
-| P7 | Database Explorer — table browser, CSV export | `[ ]` Not started |
-| P8 | PWA Support Button — structured email from app | `[ ]` Not started |
+| P1 | Foundation — Flask skeleton, login, DB connection | `[x]` **COMPLETE 2026-04-03 S16** — Flask, bcrypt login, 8h session, 5-attempt lockout, config.py, db.py (PHP proxy), dashboard |
+| P2 | Customer View — list, search, profile page | `[x]` **COMPLETE 2026-04-03 S16** — Paginated customer list, search, profile with Pi cards, billing, FMP history. Schema fixes applied. |
+| P3 | Pi Diagnostics — SSH health, alerts, commands, engine | `[x]` **COMPLETE 2026-04-03 S16** — Alerts + commands via PHP proxy. Live SSH health check deferred (VM→Pi network not confirmed). |
+| P4 | Email Inbox — IMAP read, account linking, SMTP reply | `[x]` **COMPLETE 2026-04-03 S16** — IMAP fetch (2min cache), thread view, SMTP reply, mark handled, account auto-link. |
+| P5 | AI Draft Assist — Gemini Flash, context builder | `[x]` **COMPLETE 2026-04-03 S16** — Gemini 2.5 Flash, context builder, draft button in thread view. |
+| P6 | Tier Management + Audit Log — amboat_admin_log | `[x]` **COMPLETE 2026-04-03 S16** — Tier change + FMP reset + amboat_admin_log audit trail. Table created by Don via phpMyAdmin. |
+| P7 | Database Explorer — table browser, CSV export | `[x]` **COMPLETE 2026-04-03 S16** — 8 whitelisted tables, column filter, CSV export. PDO mixed-param bug fixed. |
+| P8 | PWA Support Button — structured email from app | `[x]` **COMPLETE 2026-04-03 S16** — Settings → Contact Support → support-request.php. Rate limit 3/24h. Email confirmed received at skipperdon@atmyboat.com. |
 
 **Minimum viable:** P1 + P2 + P6 — foundation + customers + tier management
 **Complete picture:** All 8 phases
