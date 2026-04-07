@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{% if fleet %}Fleet {{ fleet.fleet.fleet_code if fleet.fleet else fleet_id }}{% else %}Fleets{% endif %}{% endblock %}
+{% block content %}
+
+{% if fleet %}
+{# ── FLEET DETAIL VIEW ─────────────────────────────────────────────────────── #}
+<div class="page-header">
+  <a href="{{ url_for('fleets') }}" class="btn-secondary back-link">← All Fleets</a>
+  <h2>
+    {% if fleet.fleet %}
+    {{ fleet.fleet.name or fleet.fleet.fleet_code }}
+    <span class="fleet-code-badge">{{ fleet.fleet.fleet_code }}</span>
+    {% else %}
+    Fleet #{{ fleet.fleet_id }}
+    {% endif %}
+  </h2>
+  {% if fleet.fleet and fleet.fleet.suspended %}
+  <span class="suspended-badge">SUSPENDED</span>
+  {% endif %}
+</div>
+
+{% if error %}
+<div class="error-banner">{{ error }}</div>
+{% endif %}
+
+{% if fleet.fleet %}
+<div class="info-grid">
+  <div class="info-cell"><span class="info-label">Type</span><span class="info-val">{{ fleet.fleet.fleet_type or '—' }}</span></div>
+  <div class="info-cell"><span class="info-label">Members</span><span class="info-val">{{ fleet.members|length if fleet.members else 0 }}</span></div>
+  <div class="info-cell"><span class="info-label">Created</span><span class="info-val">{{ fleet.fleet.created_at[:10] if fleet.fleet.created_at else '—' }}</span></div>
+  <div class="info-cell"><span class="info-label">Suspended</span><span class="info-val">{{ 'Yes' if fleet.fleet.suspended else 'No' }}</span></div>
+</div>
+
+{% if fleet.members %}
+<h3 style="margin:24px 0 12px">Members</h3>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Device Token</th>
+        <th>Role</th>
+        <th>Joined</th>
+        <th>Last Position</th>
+        <th>SOG / COG</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in fleet.members %}
+      {% set pos = m.last_position %}
+      <tr>
+        <td class="mono">{{ m.device_token[:12] }}…</td>
+        <td><span class="role-badge role-{{ m.role }}">{{ m.role }}</span></td>
+        <td>{{ m.joined_at[:10] if m.joined_at else '—' }}</td>
+        <td>{{ pos.ts[:16] if pos and pos.ts else 'Never' }}</td>
+        <td>{{ (pos.sog ~ ' kn / ' ~ pos.cog ~ '°') if pos else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state"><p>No members yet.</p></div>
+{% endif %}
+
+{% if not fleet.fleet.suspended %}
+<div class="danger-zone">
+  <h3>Suspend Fleet</h3>
+  <p>Suspending disables all fleet data push and PWA access for this fleet.</p>
+  <form method="POST" action="{{ url_for('fleet_suspend', fleet_id=fleet.fleet.fleet_id) }}">
+    <div class="form-row">
+      <input type="text" name="reason" placeholder="Reason (required, min 5 chars)" required minlength="5" class="form-input">
+      <button type="submit" class="btn-danger">Suspend Fleet</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{% endif %}{# end fleet.fleet #}
+
+{% else %}
+{# ── FLEET LIST VIEW ──────────────────────────────────────────────────────── #}
+<div class="page-header">
+  <h2>Fleets</h2>
+  <span class="total-badge">{{ total }} total</span>
+</div>
+
+{% if error %}
+<div class="error-banner">{{ error }}</div>
+{% endif %}
+
+{% if fleets %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Members</th>
+        <th>Last Activity</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fleets %}
+      <tr>
+        <td class="mono">{{ f.fleet_code }}</td>
+        <td>{{ f.name or '—' }}</td>
+        <td>{{ f.fleet_type or '—' }}</td>
+        <td>{{ f.member_count or 0 }}</td>
+        <td>{{ f.last_activity[:10] if f.last_activity else 'Never' }}</td>
+        <td>
+          {% if f.suspended %}
+          <span class="suspended-badge">Suspended</span>
+          {% else %}
+          <span class="active-badge">Active</span>
+          {% endif %}
+        </td>
+        <td><a href="{{ url_for('fleet_detail', fleet_id=f.fleet_id) }}" class="btn-link">View →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="{{ url_for('fleets', page=page-1) }}" class="btn-secondary">← Prev</a>
+  {% endif %}
+  <span class="page-info">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+  <a href="{{ url_for('fleets', page=page+1) }}" class="btn-secondary">Next →</a>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <p>{% if error %}Error loading fleets — see above{% else %}No fleets found{% endif %}</p>
+</div>
+{% endif %}
+
+{% endif %}{# end list/detail switch #}
+
+{% endblock %}

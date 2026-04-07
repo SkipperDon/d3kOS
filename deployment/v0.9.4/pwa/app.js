@@ -3221,10 +3221,10 @@ function loadFleetSession() {
   state.fleetId = fid ? parseInt(fid, 10) : null;
 }
 
-// Show/hide fleet nav button based on tier
+// Show fleet nav button for all tiers — T1/T2 see locked upgrade card, T3 sees full screen
 function updateFleetNavVisibility() {
   const btn = document.getElementById('fleet-nav-btn');
-  if (btn) btn.style.display = (state.tier === 'T3') ? '' : 'none';
+  if (btn) btn.style.display = '';
 }
 
 // ── Fleet setup screen (join or create) ──────────────────────────────────────
@@ -3458,35 +3458,45 @@ function renderFleetMap(fleetData, analytics) {
   header.appendChild(refreshBtn);
   container.appendChild(header);
 
-  // Toggle buttons: Map / List
-  const toggleBar = el('div', { class: 'fleet-toggle-bar', role: 'tablist' });
-  const mapTabBtn  = el('button', { class: 'fleet-tab active', role: 'tab', 'aria-selected': 'true',  id: 'tab-map'  }, 'Map');
-  const listTabBtn = el('button', { class: 'fleet-tab',        role: 'tab', 'aria-selected': 'false', id: 'tab-list' }, 'Vessel List');
+  // Toggle buttons: Map / List / Analytics
+  const toggleBar     = el('div', { class: 'fleet-toggle-bar', role: 'tablist' });
+  const mapTabBtn     = el('button', { class: 'fleet-tab active', role: 'tab', 'aria-selected': 'true',  id: 'tab-map'       }, 'Map');
+  const listTabBtn    = el('button', { class: 'fleet-tab',        role: 'tab', 'aria-selected': 'false', id: 'tab-list'      }, 'Vessels');
+  const analyticsTabBtn = el('button', { class: 'fleet-tab',      role: 'tab', 'aria-selected': 'false', id: 'tab-analytics' }, 'Analytics');
   toggleBar.appendChild(mapTabBtn);
   toggleBar.appendChild(listTabBtn);
+  toggleBar.appendChild(analyticsTabBtn);
   container.appendChild(toggleBar);
 
   // Content panels
-  const mapPanel  = el('div', { id: 'fleet-map-panel',  role: 'tabpanel', 'aria-labelledby': 'tab-map'  });
-  const listPanel = el('div', { id: 'fleet-list-panel', role: 'tabpanel', 'aria-labelledby': 'tab-list', style: 'display:none;' });
+  const mapPanel       = el('div', { id: 'fleet-map-panel',       role: 'tabpanel', 'aria-labelledby': 'tab-map'       });
+  const listPanel      = el('div', { id: 'fleet-list-panel',      role: 'tabpanel', 'aria-labelledby': 'tab-list',      style: 'display:none;' });
+  const analyticsPanel = el('div', { id: 'fleet-analytics-panel', role: 'tabpanel', 'aria-labelledby': 'tab-analytics', style: 'display:none;' });
   container.appendChild(mapPanel);
   container.appendChild(listPanel);
+  container.appendChild(analyticsPanel);
 
-  // Tab switching
-  mapTabBtn.addEventListener('click', () => {
-    mapTabBtn.classList.add('active');    mapTabBtn.setAttribute('aria-selected', 'true');
-    listTabBtn.classList.remove('active'); listTabBtn.setAttribute('aria-selected', 'false');
-    mapPanel.style.display  = '';
-    listPanel.style.display = 'none';
-    // Re-init map if needed (Leaflet loses size after display:none)
-    if (window._fleetLeafletMap) window._fleetLeafletMap.invalidateSize();
-  });
-  listTabBtn.addEventListener('click', () => {
-    listTabBtn.classList.add('active');   listTabBtn.setAttribute('aria-selected', 'true');
-    mapTabBtn.classList.remove('active'); mapTabBtn.setAttribute('aria-selected', 'false');
-    listPanel.style.display = '';
-    mapPanel.style.display  = 'none';
-  });
+  function setActiveTab(active) {
+    [mapTabBtn, listTabBtn, analyticsTabBtn].forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+    });
+    [mapPanel, listPanel, analyticsPanel].forEach(p => { p.style.display = 'none'; });
+    active.btn.classList.add('active');
+    active.btn.setAttribute('aria-selected', 'true');
+    active.panel.style.display = '';
+    if (active.onShow) active.onShow();
+  }
+
+  mapTabBtn.addEventListener('click', () => setActiveTab({
+    btn: mapTabBtn, panel: mapPanel,
+    onShow: () => { if (window._fleetLeafletMap) window._fleetLeafletMap.invalidateSize(); },
+  }));
+  listTabBtn.addEventListener('click', () => setActiveTab({ btn: listTabBtn, panel: listPanel }));
+  analyticsTabBtn.addEventListener('click', () => setActiveTab({
+    btn: analyticsTabBtn, panel: analyticsPanel,
+    onShow: () => _initAnalyticsChart(),
+  }));
 
   // ── MAP PANEL ──────────────────────────────────────────────────────────────
   const mapDiv = el('div', { id: 'leaflet-map', style: 'width:100%;height:340px;border-radius:8px;overflow:hidden;' });
@@ -3649,24 +3659,240 @@ function renderFleetMap(fleetData, analytics) {
     navigate('fleet');
   });
   listPanel.appendChild(leaveBtn);
+
+  // ── ANALYTICS PANEL ────────────────────────────────────────────────────────
+  _renderAnalyticsPanel(analyticsPanel, analytics, fleetData);
+}
+
+// ── Fleet analytics panel ─────────────────────────────────────────────────────
+function _renderAnalyticsPanel(container, analytics, fleetData) {
+  const vessels = analytics ? (analytics.vessels || []) : [];
+  const summary = analytics ? analytics.fleet_summary : null;
+
+  // ── Fleet summary cards ──
+  if (summary) {
+    const summaryRow = el('div', { class: 'fleet-analytics-summary' });
+    [
+      ['Active 24h',    String(summary.vessels_active_24h ?? '—')],
+      ['Total Hours',   summary.total_engine_hours != null ? summary.total_engine_hours.toFixed(0) + 'h' : '—'],
+      ['Fleet Avg RPM', summary.fleet_avg_rpm      != null ? String(Math.round(summary.fleet_avg_rpm))   : '—'],
+    ].forEach(([label, value]) => {
+      const card = el('div', { class: 'fleet-analytics-stat' });
+      card.appendChild(el('div', { class: 'fleet-analytics-stat-value' }, value));
+      card.appendChild(el('div', { class: 'fleet-analytics-stat-label' }, label));
+      summaryRow.appendChild(card);
+    });
+    container.appendChild(summaryRow);
+  }
+
+  // ── Best / Worst vessel ──
+  const withHours = vessels.filter(v => v.engine_hours_total != null);
+  if (withHours.length >= 2) {
+    const sorted   = [...withHours].sort((a, b) => b.engine_hours_total - a.engine_hours_total);
+    const most     = sorted[0];
+    const least    = sorted[sorted.length - 1];
+    const bwCard   = el('div', { class: 'card fleet-analytics-bw' });
+    bwCard.appendChild(el('div', { class: 'card-title', style: 'font-size:0.95rem;margin-bottom:8px;' }, 'Engine Hours — Fleet Range'));
+    const bwRow = el('div', { style: 'display:flex;gap:12px;' });
+    [
+      ['Most hrs', most.device_token.slice(-8),   most.engine_hours_total.toFixed(0) + 'h',  'var(--amber)'],
+      ['Least hrs', least.device_token.slice(-8), least.engine_hours_total.toFixed(0) + 'h', 'var(--accent)'],
+    ].forEach(([lbl, name, val, color]) => {
+      const cell = el('div', { style: 'flex:1;text-align:center;' });
+      cell.appendChild(el('div', { style: `font-size:1.4rem;font-weight:700;color:${color};font-family:'JetBrains Mono',monospace;` }, val));
+      cell.appendChild(el('div', { style: 'font-size:0.85rem;color:var(--text-muted);' }, name));
+      cell.appendChild(el('div', { style: 'font-size:0.75rem;color:var(--text-muted);margin-top:2px;' }, lbl));
+      bwRow.appendChild(cell);
+    });
+    bwCard.appendChild(bwRow);
+    container.appendChild(bwCard);
+  }
+
+  // ── Engine hours bar chart ──
+  const chartCard = el('div', { class: 'card' });
+  chartCard.appendChild(el('div', { class: 'card-title', style: 'font-size:0.95rem;margin-bottom:12px;' }, 'Engine Hours per Vessel (7-day)'));
+  const canvasWrap = el('div', { style: 'position:relative;height:200px;' });
+  const canvas     = el('canvas', { id: 'fleet-eng-chart', 'aria-label': 'Engine hours bar chart' });
+  canvasWrap.appendChild(canvas);
+  chartCard.appendChild(canvasWrap);
+
+  if (vessels.length === 0) {
+    chartCard.appendChild(el('p', { style: 'font-size:0.95rem;color:var(--text-muted);padding:8px 0;' }, 'No vessel data available yet.'));
+  }
+  container.appendChild(chartCard);
+
+  // Store data for lazy chart init (called when tab becomes visible)
+  container._chartData = {
+    labels: vessels.map(v => v.device_token.slice(-8)),
+    hours7d: vessels.map(v => v.engine_hours_7d ?? 0),
+  };
+
+  // ── Per-vessel stats table ──
+  if (vessels.length > 0) {
+    const tableCard = el('div', { class: 'card' });
+    tableCard.appendChild(el('div', { class: 'card-title', style: 'font-size:0.95rem;margin-bottom:10px;' }, 'Vessel Stats (24h average)'));
+
+    vessels.forEach(v => {
+      const row = el('div', { class: 'fleet-analytics-row' });
+      const roleTag = v.role === 'owner'
+        ? el('span', { class: 'fleet-role-badge', style: 'font-size:0.7rem;padding:1px 6px;' }, 'owner')
+        : null;
+
+      const nameCell = el('div', { class: 'fleet-analytics-vessel-name' });
+      nameCell.appendChild(document.createTextNode(v.device_token.slice(-8) + ' '));
+      if (roleTag) nameCell.appendChild(roleTag);
+      row.appendChild(nameCell);
+
+      const statsCell = el('div', { class: 'fleet-analytics-vessel-stats' });
+      [
+        ['RPM',      v.avg_rpm_24h     != null ? Math.round(v.avg_rpm_24h)        : '—'],
+        ['Cool',     v.avg_coolant_24h != null ? v.avg_coolant_24h.toFixed(0) + '°C' : '—'],
+        ['Oil',      v.avg_oil_24h     != null ? v.avg_oil_24h.toFixed(0) + ' kPa'  : '—'],
+        ['Hrs 7d',   v.engine_hours_7d != null ? v.engine_hours_7d.toFixed(1) + 'h'  : '—'],
+      ].forEach(([label, value]) => {
+        const stat = el('div', { class: 'fleet-analytics-mini-stat' });
+        stat.appendChild(el('span', { class: 'fleet-analytics-mini-val' }, String(value)));
+        stat.appendChild(el('span', { class: 'fleet-analytics-mini-lbl' }, label));
+        statsCell.appendChild(stat);
+      });
+      row.appendChild(statsCell);
+      tableCard.appendChild(row);
+    });
+    container.appendChild(tableCard);
+  }
+
+  // ── CSV export ──
+  const csvBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'width:100%;margin-top:4px;',
+    'aria-label': 'Download fleet analytics as CSV',
+  }, 'Download CSV');
+  csvBtn.addEventListener('click', () => _exportFleetCSV(analytics, fleetData));
+  container.appendChild(csvBtn);
+}
+
+// Lazy chart init — called when analytics tab becomes visible
+function _initAnalyticsChart() {
+  const container = document.getElementById('fleet-analytics-panel');
+  if (!container || !container._chartData) return;
+  const canvas = document.getElementById('fleet-eng-chart');
+  if (!canvas) return;
+  if (canvas._chartInstance) { canvas._chartInstance.destroy(); }
+
+  const { labels, hours7d } = container._chartData;
+  if (!labels.length || typeof Chart === 'undefined') return;
+
+  canvas._chartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Engine hours (7d)',
+        data: hours7d,
+        backgroundColor: 'rgba(0, 180, 216, 0.7)',
+        borderColor:     'rgba(0, 180, 216, 1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.y.toFixed(1)}h`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#94a3b8', font: { family: "'Nunito', sans-serif", size: 12 } },
+          grid:  { color: 'rgba(255,255,255,0.05)' },
+        },
+        y: {
+          ticks: {
+            color: '#94a3b8',
+            font: { family: "'JetBrains Mono', monospace", size: 11 },
+            callback: v => v + 'h',
+          },
+          grid: { color: 'rgba(255,255,255,0.07)' },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+// CSV export — generates and triggers download client-side
+function _exportFleetCSV(analytics, fleetData) {
+  if (!analytics) return;
+  const now     = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  const fname   = `fleet-${fleetData.fleet_name || 'export'}-${now}.csv`.replace(/[^a-z0-9.\-_]/gi, '_');
+  const rows    = [
+    ['Fleet', fleetData.fleet_name || '', 'Generated', now, 'Fleet ID', analytics.fleet_id || ''],
+    [],
+    ['Vessel (last 8)', 'Role', 'Engine Hrs Total', 'Engine Hrs 7d', 'Avg RPM 24h', 'Avg Coolant 24h (°C)', 'Avg Oil 24h (kPa)', 'Last Seen', 'Age (min)'],
+  ];
+
+  (analytics.vessels || []).forEach(v => {
+    rows.push([
+      v.device_token.slice(-8),
+      v.role,
+      v.engine_hours_total ?? '',
+      v.engine_hours_7d    ?? '',
+      v.avg_rpm_24h        != null ? Math.round(v.avg_rpm_24h) : '',
+      v.avg_coolant_24h    ?? '',
+      v.avg_oil_24h        ?? '',
+      v.last_seen          ?? '',
+      v.age_minutes        ?? '',
+    ]);
+  });
+
+  const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 screens.fleet = function renderFleet() {
   const container = getEl('screen');
 
-  // T3 gate — should not be reachable since nav button is hidden, but guard anyway
+  // T3 gate — nav button is hidden for T1/T2 but guard here too
   if (state.tier !== 'T3') {
-    const card = el('div', { class: 'card' });
-    card.appendChild(el('div', { class: 'card-title' }, 'Fleet Management'));
-    card.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);' },
-      'Fleet management is available on Tier 3. Upgrade at atmyboat.com/upgrade.'
+    const header = el('div', { class: 'screen-header' });
+    header.appendChild(el('span', { class: 'screen-title' }, 'Fleet Management'));
+    container.appendChild(header);
+
+    const card = el('div', { class: 'card', style: 'text-align:center;padding:32px 24px;' });
+
+    // Lock icon
+    card.appendChild(el('div', { style: 'font-size:2.8rem;margin-bottom:16px;line-height:1;', 'aria-hidden': 'true' }, '🔒'));
+
+    card.appendChild(el('div', { class: 'card-title', style: 'margin-bottom:12px;' }, 'Fleet Management'));
+    card.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);line-height:1.7;margin-bottom:8px;' },
+      'Monitor multiple vessels on a live map, track engine health across your fleet, and share your fleet code with other operators.'
     ));
-    card.appendChild(el('a', {
+    card.appendChild(el('p', { style: 'font-size:0.95rem;color:var(--text-muted);margin-bottom:24px;' },
+      `Available on Tier 3. You are currently on ${state.tier || 'Tier 1'}.`
+    ));
+
+    const upgradeBtn = el('a', {
       href: API_BASE.replace('/wp-content/themes/twentytwenty-child/mobile', '/upgrade'),
       target: '_blank',
       rel: 'noopener noreferrer',
-      class: 'btn btn-ghost locked-upgrade-btn',
-    }, 'Upgrade to T3 →'));
+      class: 'btn btn-primary locked-upgrade-btn',
+      style: 'display:inline-block;width:100%;box-sizing:border-box;',
+    }, 'Upgrade to Tier 3 →');
+    card.appendChild(upgradeBtn);
+
     container.appendChild(card);
     return;
   }

@@ -135,18 +135,19 @@ Expected: ALL 15 TESTS PASSED
 
 ### Tier gate
 - [ ] All fleet endpoints return `{"error": "T3 required"}` for T0/T1/T2
-- [ ] PWA fleet tab: T1/T2 see locked upgrade card (CTA → atmyboat.com/upgrade)
+- [x] PWA fleet tab: T1/T2 see locked upgrade card (CTA → atmyboat.com/upgrade) ✓ S23
 - [ ] T3 activation tested with test account on staging
 
 ### Admin console fleet view (admin CRM — new tab)
-- [ ] Fleet list: all fleets, member count, last activity
-- [ ] Per-fleet: member device tokens, position history, alert summary
-- [ ] Fleet suspension (disable fleet if account delinquent)
+- [x] Fleet list: all fleets, member count, last activity ✓ S24 — /fleets route + fleet.html list view
+- [x] Per-fleet: member device tokens, last position (lat/lon/sog/cog/ts), role, joined_at ✓ S24 — /fleet/<id> detail view
+- [x] Fleet suspension (disable fleet if account delinquent) ✓ S24 — /fleet/<id>/suspend + suspend form. amboat_fleets.suspended column added.
+- [x] Fleet nav link in admin sidebar ✓ S24 — base.html updated
 
 ### Phase 4 test criteria
 - [ ] T1 account sees locked card, not fleet data
 - [ ] T3 account sees full fleet screen
-- [ ] Admin can view all fleet records
+- [x] Admin can view all fleet records ✓ S24 — http://192.168.236.5:5000/fleets verified with real data (2 fleets, 1 member with live position)
 
 ---
 

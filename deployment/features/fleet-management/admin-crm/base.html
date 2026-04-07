@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}d3kOS Admin{% endblock %} — AtMyBoat.com</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <img src="{{ url_for('static', filename='amboat-logo.png') }}" alt="AtMyBoat" class="sidebar-logo-img">
+        <div class="logo-text">
+          <span class="logo-brand">AtMyBoat</span>
+          <span class="logo-sub">Admin Console</span>
+        </div>
+      </div>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+        <li><a href="{{ url_for('customers') }}" {% if request.endpoint == 'customers' %}class="active"{% endif %}>Customers</a></li>
+        <li><a href="{{ url_for('diagnostics') }}" {% if request.endpoint == 'diagnostics' %}class="active"{% endif %}>Pi Diagnostics</a></li>
+        <li><a href="{{ url_for('inbox') }}" {% if request.endpoint == 'inbox' %}class="active"{% endif %}>Email Inbox</a></li>
+        <li><a href="{{ url_for('tiers') }}" {% if request.endpoint == 'tiers' %}class="active"{% endif %}>Tier Management</a></li>
+        <li><a href="{{ url_for('fleets') }}" {% if request.endpoint in ('fleets', 'fleet_detail', 'fleet_suspend') %}class="active"{% endif %}>Fleets</a></li>
+        <li><a href="{{ url_for('db_explorer') }}" {% if request.endpoint == 'db_explorer' %}class="active"{% endif %}>DB Explorer</a></li>
+        <li><a href="{{ url_for('audit') }}" {% if request.endpoint == 'audit' %}class="active"{% endif %}>Audit Log</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-link">Log out</a>
+      </div>
+    </nav>
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

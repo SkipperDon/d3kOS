@@ -710,3 +710,11 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/v0.9.4/pi_source/cloud_agent.py` | **[UPDATED — S23]** Added handle_fleet_assign() — writes /opt/d3kos/config/fleet.json + restarts d3kos-fleet-push.service. Added handle_fleet_unassign() — removes fleet.json + stops service. Both wired into dispatch(). |
 | Pi: `/opt/d3kos/services/cloud-agent/cloud_agent.py` | **[DEPLOYED — S23]** fleet_assign + fleet_unassign handlers live. Service restarted active. |
 | Pi: `/etc/sudoers.d/d3kos` | **[UPDATED — S23]** Added NOPASSWD for systemctl restart + stop d3kos-fleet-push.service. |
+| VM: `/home/d3kos-admin/app.py` | **[UPDATED — S24]** Added 3 fleet routes: GET /fleets (paginated list), GET /fleet/<id> (detail + members), POST /fleet/<id>/suspend (suspend with reason). |
+| VM: `/home/d3kos-admin/templates/fleet.html` | **[NEW — S24]** Dual-mode fleet template: list view (fleet table) + detail view (info grid, member table with last position, suspend form). |
+| VM: `/home/d3kos-admin/templates/base.html` | **[UPDATED — S24]** Added "Fleets" nav link, active-state for fleet/fleet_detail/fleet_suspend endpoints. |
+| VM: `/home/d3kos-admin/static/style.css` | **[UPDATED — S24]** Appended fleet CSS: .fleet-code-badge, .suspended-badge, .active-badge, .role-badge (owner/member/view), .info-grid, .danger-zone, .btn-danger, .mono. |
+| HostPapa staging DB: `amboat_fleets.suspended` | **[MIGRATION — S24]** Added TINYINT(1) NOT NULL DEFAULT 0 column. Done via fleet-migrate.php (deployed, run, deleted). Enables fleet suspension in admin CRM. |
+| `deployment/features/fleet-management/admin-crm/fleet.html` | **[NEW — S24]** Repo copy of admin CRM fleet.html template. |
+| `deployment/features/fleet-management/admin-crm/app_fleet_routes.py` | **[NEW — S24]** Repo copy of app.py with fleet routes. |
+| `deployment/features/fleet-management/admin-crm/base.html` | **[NEW — S24]** Repo copy of base.html with Fleet nav link. |

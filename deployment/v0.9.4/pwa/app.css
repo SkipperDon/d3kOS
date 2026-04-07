@@ -1323,3 +1323,76 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* ── Fleet Analytics panel ───────────────────────────────────────────────── */
+.fleet-analytics-summary {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0 4px;
+}
+.fleet-analytics-stat {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.fleet-analytics-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+}
+.fleet-analytics-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.fleet-analytics-bw {
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+/* Per-vessel stats table rows */
+.fleet-analytics-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.fleet-analytics-row:last-child { border-bottom: none; }
+.fleet-analytics-vessel-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-width: 80px;
+  padding-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.fleet-analytics-vessel-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.fleet-analytics-mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 52px;
+}
+.fleet-analytics-mini-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+}
+.fleet-analytics-mini-lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
