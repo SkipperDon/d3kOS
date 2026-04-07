@@ -412,9 +412,8 @@ html, body {
   margin-bottom: 32px;
 }
 
-.login-logo svg {
-  width: 64px;
-  height: 64px;
+.login-logo img {
+  border-radius: 16px;
 }
 
 .login-logo h2 {

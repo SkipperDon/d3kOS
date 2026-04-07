@@ -479,29 +479,14 @@ screens.login = function renderLogin() {
 };
 
 function svgAnchor() {
-  // AtMyBoat brand mark — boat silhouette with gold hull on navy circle
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 64 64');
-  svg.setAttribute('width', '64');
-  svg.setAttribute('height', '64');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.innerHTML = `
-    <circle cx="32" cy="32" r="30" fill="#0f2040" stroke="#f59e0b" stroke-width="2"/>
-    <!-- Cabin / wheelhouse -->
-    <rect x="22" y="22" width="14" height="10" rx="2" fill="#f59e0b"/>
-    <!-- Mast -->
-    <line x1="29" y1="14" x2="29" y2="22" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
-    <!-- Hull -->
-    <path d="M10 32 L14 32 L16 42 L48 42 L50 32 L54 32" stroke="#f59e0b" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <!-- Keel -->
-    <path d="M16 42 Q32 48 48 42" stroke="#f59e0b" stroke-width="2.5"
-          stroke-linecap="round" fill="none"/>
-    <!-- Waterline -->
-    <line x1="8" y1="46" x2="56" y2="46" stroke="#00b4d8" stroke-width="1.5"
-          stroke-linecap="round" stroke-dasharray="4 3" opacity="0.6"/>
-  `;
-  return svg;
+  // Use the existing app icon (same as home screen / browser tab)
+  const img = document.createElement('img');
+  img.src    = 'icons/icon-192.png';
+  img.width  = 72;
+  img.height = 72;
+  img.alt    = 'AtMyBoat';
+  img.style.cssText = 'border-radius:16px;display:block;margin:0 auto;';
+  return img;
 }
 
 // ── Vessel Selector ───────────────────────────────────────────────────────────
