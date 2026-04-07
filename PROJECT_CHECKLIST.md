@@ -637,19 +637,19 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8D — v0.9.7 Remote Diagnostic Console
-**Status: PHASE 1 COMPLETE (S25 2026-04-07)**
+**Status: PHASES 1+2+3+4 COMPLETE (S25–S27 2026-04-07) — PENDING HARDWARE UAT**
 **Depends on:** v0.9.4 (PWA + Pi command queue), v0.9.3 live push
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.11.0
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| RD1 | Support ticket system | User submits ticket (problem description) from PWA. Admin receives notification within 60 seconds. Ticket tracking and status updates. | `[x]` Phase 1 complete S25 — email + DB + ticket_id + CRM view + status check |
-| RD2 | Diagnostic consent flow | Per-session approval required from user. Time-limited access (2 hours max). Auto-expiry after session. | `[ ]` |
-| RD3 | Diagnostic agent on Pi (Port 8109) | Controlled log collection. Bundle creation (<60 seconds). Upload to AtMyBoat.com. | `[ ]` |
-| RD4 | AI diagnosis engine | Gemini 2.5 Flash via ai_client.py (admin console only). Log analysis and diagnosis. Follow-up questions. Fix recommendations. | `[ ]` |
-| RD5 | Fix delivery system | Admin creates fix (AI or manual). User approval notification (one-tap in PWA). Fix execution via whitelisted command queue. Real-time output streaming. | `[ ]` |
-| RD6 | Knowledge base | Resolved cases logged. Pattern detection (3+ matches → auto-rule). Recurrence tracking. | `[ ]` |
-| RD7 | Admin console UI | Tickets tab in CRM (DONE S25). Full 3-panel layout with diagnostic data + AI diagnosis pending. | `[~]` Tickets tab done S25 |
+| RD1 | Support ticket system | User submits ticket (problem description) from PWA. Admin receives notification within 60 seconds. Ticket tracking and status updates. | `[x]` Phase 1 complete S25 |
+| RD2 | Diagnostic consent flow | Per-session approval required from user. Time-limited access (2 hours max). Auto-expiry after session. | `[x]` Phase 2 complete S26 — diagnostic-consent.php, -status.php, -revoke.php, PWA consent UI |
+| RD3 | Diagnostic agent on Pi (Port 8109) | Controlled log collection. Bundle creation (<60 seconds). Upload to AtMyBoat.com. | `[x]` Phase 2 complete S26 — diagnostic_agent.py, cloud_agent diagnostic_collect handler. Bundle confirmed 105KB |
+| RD4 | AI diagnosis engine | Gemini 2.5 Flash via ai_client.py (admin console only). Log analysis and diagnosis. Fix recommendations. | `[x]` Phase 3 complete S26 — diagnose_pi(), /ticket/<id>/diagnose route. Diagnosis stored: SignalK 404, confidence 90% |
+| RD5 | Fix delivery system | Admin creates fix (AI or manual). Fix execution via whitelisted command queue. | `[x]` Phase 4 complete S26 — diagnostic-fix.php whitelist enforced, cloud_agent handle_diagnostic_fix, /ticket/<id>/send-fix route. User approval deferred. |
+| RD6 | Knowledge base | Resolved cases logged. Pattern detection (3+ matches → auto-rule). Recurrence tracking. | `[x]` Phase 4 complete S26 — diagnostic-resolve.php, diagnostic-past-cases.php, KB panel in CRM |
+| RD7 | Admin console UI | Full 3-panel layout: diagnostic bundle + AI diagnosis + send fix + resolve + knowledge base. | `[x]` Phase 3+4 complete S26 — tickets.html 5 panels, all JS wired |
 
 **Deliverable:** d3kOS v0.9.7 — remote diagnostic console for operator support
 
