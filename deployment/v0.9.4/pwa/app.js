@@ -2595,7 +2595,8 @@ screens.settings = function renderSettings() {
     try {
       const data = await apiFetch('ticket-list.php');
       ticketsList.innerHTML = '';
-      if (!data.tickets || data.tickets.length === 0) {
+      const tickets = data.tickets || [];
+      if (tickets.length === 0) {
         ticketsList.appendChild(el('div', {
           style: 'font-size: 0.9rem; color: var(--text-muted); padding: 6px 0;',
         }, 'No tickets yet.'));
@@ -2603,7 +2604,7 @@ screens.settings = function renderSettings() {
       }
       const statusLabel = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' };
       const statusColor = { open: '#f59e0b', in_progress: '#3b82f6', resolved: '#22c55e' };
-      data.tickets.forEach(t => {
+      tickets.forEach(t => {
         const row = el('div', {
           style: 'display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;',
           role: 'button',

@@ -79,4 +79,4 @@ $stmt->close();
 
 $db->close();
 
-echo json_encode(['success' => true, 'tickets' => $tickets]);
+echo json_encode(['success' => true, 'data' => ['tickets' => $tickets]]);
