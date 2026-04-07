@@ -677,3 +677,13 @@ No new files deployed this session. Checklist and governance updates only:
 | Pi: `/opt/d3kos/services/watchdog/d3kos_watchdog.py` | **[DEPLOYED — S20]** As above. |
 | Pi: `/opt/d3kos/services/ai-bridge/config/ai-bridge.env` | **[UPDATED — S20]** TTS_ENGINE: espeak-ng → piper. Pi-only (config file, not in repo). |
 | Pi: `systemd d3kos-ai-bridge.service` | **[ENABLED — S20]** `systemctl enable` run. Service now starts on every boot. Previously disabled — never registered since service was built March 19. |
+
+## Session 2026-04-07 S21 — v0.9.5 Post-Release Fixes: Piper Voice + Persistent Mute + DB Cleanup
+
+| File | Description |
+|------|-------------|
+| Helm-OS: `deployment/v0.9.4/pi_source/ai-bridge-tts.py` | **[UPDATED — S21]** `_piper()`: removed 20-second `communicate()` timeout — Piper was timing out under Pi load and falling back to espeak-ng (male voice). Added piper process + aplay process to `_active_procs` for kill-on-mute. Matches voice-assistant-hybrid.py behavior. |
+| Pi: `/opt/d3kos/services/ai-bridge/utils/tts.py` | **[DEPLOYED — S21]** As above. |
+| Helm-OS: `deployment/v0.9.4/pi_source/ai_bridge.py` | **[UPDATED — S21]** Added `MUTE_STATE_FILE = '/opt/d3kos/config/tts-mute.json'`. `helm_mute()` endpoint now writes mute state to file on every toggle. `_start_background_services()` reads saved state on startup. HELM mute now survives service restarts. |
+| Pi: `/opt/d3kos/services/ai-bridge/ai_bridge.py` | **[DEPLOYED — S21]** As above. |
+| Pi: `/opt/d3kos/data/predictive/engine_history.db` | **[DATA CLEANUP — S21]** Deleted 2,000 rows WHERE source='test'. 131 production (signalk) rows remain. Clears repeating alert condition caused by TDD test data still in production DB. |

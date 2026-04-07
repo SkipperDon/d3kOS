@@ -180,12 +180,30 @@ def _piper(text: str) -> bool:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        p.communicate(input=text.encode(), timeout=20)
-        result = subprocess.run(
+        with _procs_lock:
+            _active_procs.append(p)
+        try:
+            p.communicate(input=text.encode())   # no timeout — match voice-assistant-hybrid.py
+        finally:
+            with _procs_lock:
+                if p in _active_procs:
+                    _active_procs.remove(p)
+        if p.returncode != 0 or _muted:
+            return False
+        aplay = subprocess.Popen(
             ['aplay', '-q', '-D', AUDIO_DEVICE, wav_file],
-            timeout=20, capture_output=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-        return result.returncode == 0
+        with _procs_lock:
+            _active_procs.append(aplay)
+        try:
+            aplay.wait()
+        finally:
+            with _procs_lock:
+                if aplay in _active_procs:
+                    _active_procs.remove(aplay)
+        return aplay.returncode == 0
     except Exception as exc:
         log.warning('Piper TTS failed: %s — falling back to espeak-ng', exc)
         return _espeak(text)
