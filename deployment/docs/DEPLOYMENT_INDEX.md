@@ -661,3 +661,19 @@ No new files deployed this session. Checklist and governance updates only:
 | Helm-OS: `deployment/v0.9.4/pi_source/tier_service.py` | **[UPDATED — 2026-04-06 S19]** Added `_parse_tier()` helper. Handles both `"T0"` string and `0` integer formats from license.json. Two `int()` call sites at lines ~137 and ~154 replaced with `_parse_tier()`. Fixes ValueError crash that caused tier to display as "3". Synced from Pi. |
 | HostPapa: `mobile/admin-api.php` | **[UPDATED — 2026-04-06 S19]** `update_tier` action: replaced INSERT ON DUPLICATE KEY UPDATE with SELECT→UPDATE/INSERT + DELETE-duplicates pattern. Prevents silent duplicate `atmyboat_tier` rows in `wpax_usermeta`. Root cause of "tier showing 3" confirmed as S16 Admin CRM P6 testing inserting duplicate rows on 2026-04-03. Don ran cleanup SQL to remove duplicates. |
 | HostPapa MySQL: `amboat_pdf_reports.report_id` | **[HOTFIX — 2026-04-06 S19]** Column type changed INT → BIGINT UNSIGNED via `ALTER TABLE amboat_pdf_reports MODIFY report_id BIGINT UNSIGNED AUTO_INCREMENT`. Root cause: column reached INT32_MAX (2,147,483,647) — PHP fatal error on INSERT → no response body → PWA reported "Invalid response from server". PDF generation now working (returns "no engine data" — expected until Pi is on water). |
+
+
+## Session 2026-04-07 S20 — v0.9.5 Predictive Alert Integration + AI Bridge Fix
+
+| File | Description |
+|------|-------------|
+| Helm-OS: `deployment/v0.9.4/pi_source/predictive_maintenance.py` | **[UPDATED — S20]** Added `_notify_ai_bridge()` — POSTs WATCH/ALERT to AI bridge `/webhook/alert` for TTS + SSE ticker. Direct Piper kept as fallback. ALERT=critical, WATCH=warning severity. |
+| Pi: `/opt/d3kos/services/predictive/predictive_maintenance.py` | **[DEPLOYED — S20]** As above. Service restarted. |
+| Helm-OS: `deployment/v0.9.4/pi_source/ai-bridge.js` | **[ADDED — S20]** Repo copy. Added `custom_alert` SSE handler calling `_setAlertTicker()` (instruments.js function) to update dashboard status bar ticker with ⚠ prefix on predictive alerts. |
+| Pi: `/opt/d3kos/services/dashboard/static/js/ai-bridge.js` | **[UPDATED — S20]** As above. |
+| Helm-OS: `deployment/v0.9.4/pi_source/engine-monitor.html` | **[ADDED — S20]** Repo copy. Added Predictive Health section (section 2) between Engine and Tank Levels — 4 eng-cell cards (Overall, Coolant, Oil Press, RPM Trend). WATCH→adv CSS, ALERT→crit CSS. Polls /predictive/status every 60s. |
+| Pi: `/opt/d3kos/services/dashboard/templates/engine-monitor.html` | **[UPDATED — S20]** As above. |
+| Helm-OS: `deployment/v0.9.4/pi_source/d3kos_watchdog.py` | **[UPDATED — S20]** Added d3kos-ai-bridge to CRITICAL_SERVICES with auto_restart=True. |
+| Pi: `/opt/d3kos/services/watchdog/d3kos_watchdog.py` | **[DEPLOYED — S20]** As above. |
+| Pi: `/opt/d3kos/services/ai-bridge/config/ai-bridge.env` | **[UPDATED — S20]** TTS_ENGINE: espeak-ng → piper. Pi-only (config file, not in repo). |
+| Pi: `systemd d3kos-ai-bridge.service` | **[ENABLED — S20]** `systemctl enable` run. Service now starts on every boot. Previously disabled — never registered since service was built March 19. |

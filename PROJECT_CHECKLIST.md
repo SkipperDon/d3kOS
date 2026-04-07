@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 1.3 | **Last Updated:** 2026-03-24 (Session B: v0.9.3 Phase 2B root cause confirmed)
+**Version:** 1.4 | **Last Updated:** 2026-04-07 S20 — v0.9.5 predictive maintenance phases 1–3 complete
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -569,18 +569,18 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 ---
 
 ## PART 8B — v0.9.5 Predictive Maintenance
-**Status: IN PROGRESS — S20 2026-04-07**
+**Status: IN PROGRESS — S20 2026-04-07 — Phases 1–3 COMPLETE**
 **Dependency updated:** Does NOT require v0.9.4.1. Engine historian stores locally on Pi. Cloud sync of predictions is bonus, not required.
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.10.0
 
 ### Build Phases
 | Phase | Scope | Status |
 |-------|-------|--------|
-| Phase 1 | Engine historian service + SQLite schema + test data generator | `[~]` In progress S20 |
-| Phase 2 | Statistical baseline (2σ) + anomaly detector + alert integration | `[ ]` |
-| Phase 3 | Dashboard widget + voice alert (T2+) + boatlog auto-entry | `[ ]` |
-| Phase 4 | ML model inference infrastructure (training deferred to on-water data) | `[ ]` |
-| Phase 5 | Advanced: fuel optimization, maintenance scheduling, geofence (T3) | `[ ]` |
+| Phase 1 | Engine historian service + SQLite schema + test data generator | `[x]` DONE S19/S20 |
+| Phase 2 | Statistical baseline (2σ) + anomaly detector + alert integration | `[x]` DONE S19/S20 |
+| Phase 3 | Dashboard widget + voice alert (T2+) + boatlog auto-entry | `[x]` DONE S20 |
+| Phase 4 | ML model inference infrastructure (training deferred to on-water data) | `[ ]` Deferred — needs on-water data |
+| Phase 5 | Advanced: fuel optimization, maintenance scheduling, geofence (T3) | `[ ]` Deferred — T3 feature |
 
 ### Test Data Validation (operator-approved approach 2026-04-07)
 Before any on-water testing, validate with synthetic known data:
@@ -591,14 +591,14 @@ Before any on-water testing, validate with synthetic known data:
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| PM1 | Predictive maintenance service (Port 8106) | New Flask service on Pi. Reads engine snapshot history from local SQLite. Calculates normal operating ranges. | `[~]` In progress S20 |
-| PM2 | 30-day baseline data collection | Collect RPM, coolant temp, oil pressure, battery voltage — sufficient history before anomaly detection can fire | `[~]` Unblocked — test data approach approved. On-water data deferred. |
-| PM3 | Statistical anomaly detection | Trend analysis (7-day, 30-day slopes). Alert when reading deviates >2σ from baseline. | `[ ]` |
-| PM4 | ML models — 5 targets | Overheating predictor (LSTM autoencoder), oil pressure failure (time-series), battery failure (voltage trend), SD card failure (I/O error pattern), GPS failure (satellite loss trend) | `[ ]` |
-| PM5 | Alert system integration | Integrate with existing alert_watcher. Voice alerts (Tier 2+). Push notification (Tier 2+). | `[ ]` |
-| PM6 | Dashboard widget | Predictive alert card on d3kOS dashboard. Shows: current risk level, days until predicted failure, recommended action. | `[ ]` |
-| PM7 | Additional automation | Weather-triggered storm warnings. Fuel optimization (RPM efficiency analysis). Maintenance scheduling (engine hours tracking). Geofence alerts (Tier 3). | `[ ]` |
-| PM8 | Boatlog integration | Auto-generate boatlog entries when predictive alert fires (e.g. "Coolant temp trend — check coolant level") | `[ ]` |
+| PM1 | Predictive maintenance service (Port 8106) | Flask service, SQLite engine historian, historian thread + detector thread, 5-min detection cycle | `[x]` DONE S19 |
+| PM2 | 30-day baseline data collection | Test data approach: generate_test_data.py (2000 rows, 3 anomalies). On-water data will replace. TDD 6/6 passed S19. | `[x]` DONE S19 |
+| PM3 | Statistical anomaly detection | 2σ z-score + HARD_LIMITS (coolant >100°C ALERT, oil <150 kPa ALERT). WATCH/ALERT/OK per field. | `[x]` DONE S19 |
+| PM4 | ML models — 5 targets | Overheating predictor (LSTM autoencoder), oil pressure failure, battery failure, SD card failure, GPS failure | `[ ]` Deferred — needs on-water training data |
+| PM5 | Alert system integration | AI bridge webhook → TTS (Piper) + SSE ticker. Direct Piper fallback. Boatlog auto-entry. | `[x]` DONE S20 |
+| PM6 | Dashboard widget | Engine Monitor page: Predictive Health section (4 eng-cell cards). Ticker via AI bridge SSE. No new UI on main dashboard. | `[x]` DONE S20 |
+| PM7 | Additional automation | Weather-triggered storm warnings. Fuel optimization. Maintenance scheduling. Geofence alerts (T3). | `[ ]` Deferred — T3/Phase 5 |
+| PM8 | Boatlog integration | Auto-entry on WATCH/ALERT via write_boatlog() with 1hr cooldown dedup | `[x]` DONE S19 |
 
 **Deliverable:** d3kOS v0.9.5 — predictive maintenance with 24h advance failure warnings
 
