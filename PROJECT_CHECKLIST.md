@@ -614,7 +614,7 @@ Before any on-water testing, validate with synthetic known data:
 | Phase | Scope | Status |
 |-------|-------|--------|
 | Phase 1 | Pi data push + HostPapa fleet endpoints (absorbs v0.9.4.1) | `[x]` **COMPLETE — 17/17 tests + live push confirmed 2026-04-07 S21c** |
-| Phase 2 | PWA fleet screen — map + health cards | `[x]` **COMPLETE S22** — Leaflet map + vessel list + join/create flow deployed |
+| Phase 2 | PWA fleet screen — map + health cards | `[x]` **COMPLETE S22/S23** — Leaflet map + vessel list + join/create + status/leave + Pi fleet_assign command |
 | Phase 3 | Analytics — engine hours, fuel, alert history per vessel | `[ ]` Not started |
 | Phase 4 | Tier 3 gate + admin console fleet view | `[ ]` Not started |
 
@@ -626,7 +626,9 @@ Before any on-water testing, validate with synthetic known data:
 | FM2 | Fleet map | fleet-map.php: last-known position per vessel, age_minutes, role. Leaflet.js PWA screen TBD | `[~]` Backend done (15-vessel e2e ✓), PWA screen not started |
 | FM3 | Fleet analytics | fleet-analytics.php: engine_hours, avg RPM/coolant/oil (24h), fleet summary. Chart.js screen TBD | `[~]` Backend done (3429h e2e ✓), PWA screen not started |
 | FM4 | HostPapa PHP endpoints | fleet-create/join/ingest/map/analytics.php + fleet-setup.php — all deployed to staging | `[x]` **DONE S21b — ALL 17 TESTS PASSED** |
-| FM5 | PWA fleet screen | Fleet tab (T3), Leaflet map (colored markers), vessel list (health cards), join/create flow | `[x]` **DONE S22** — deployed to staging |
+| FM4b | fleet-status.php + fleet-leave.php | fleet-status: GET membership; fleet-leave: owner deletes/member removes self | `[x]` **DONE S23** — deployed to staging, confirmed working |
+| FM5 | PWA fleet screen | Fleet tab (T3), Leaflet map (colored markers), vessel list (health cards), join/create/status/leave flow | `[x]` **DONE S22/S23** — all flows confirmed by Don |
+| FM5b | Pi fleet_assign command | fleet_assign/fleet_unassign handlers in cloud_agent.py; enqueued by fleet PHP; Pi writes fleet.json automatically | `[x]` **DONE S23** — deployed to Pi, sudoers updated |
 | FM6 | Tier 3 activation gate | Backend T3 gate verified (401 on bad token). PWA locked card not started | `[~]` Backend done, PWA locked card not started |
 
 **Deliverable:** d3kOS v0.9.6 — fleet management for Tier 3 operators (charter, fishing guide, marina)

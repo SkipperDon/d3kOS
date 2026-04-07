@@ -10177,3 +10177,139 @@ OPERATOR ACTIONS REQUIRED:
 - Confirm Phase 3 (analytics Chart.js screen) or pause fleet and work elsewhere
 
 ---
+
+## Session 2026-04-07 S22b — Post-Phase-2 Hotfixes (Leaflet SRI + Logo + Tier Normalization)
+
+**Goal:** Fix three issues raised by Don after Phase 2 deploy.
+
+**Completed:**
+- **Leaflet.js SRI hash** — integrity attribute had wrong hash. Error message provided the
+  correct computed hash (`20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=`). Updated index.html.
+- **Login logo** — `svgAnchor()` was drawing a cross/anchor since original build (predates
+  this session). Replaced with gold boat silhouette: cabin + mast + hull + keel on navy
+  circle, gold `#f59e0b`, cyan `#00b4d8` waterline. Matches AtMyBoat brand colours.
+- **Tier normalization** — admin console stores tier as integer "3" not "T3". PWA checked
+  `state.tier === 'T3'` which failed, hiding the fleet nav tab. Added `normalizeTier()`
+  function: converts "3"→"T3", "2"→"T2" etc. Applied at login response and loadSession().
+  Fixes fleet tab visibility and all other tier comparisons throughout app.
+- **Fleet nav icon** — changed from anchor (wrong brand) to boat silhouette SVG matching
+  other nav icon stroke style.
+
+**Methodology gaps noted at /methodology-check:**
+- Minor re-deploy iterations skipped explicit risk classification (Low risk, accepted)
+- No automated tests for Phase 2 PWA screen (accepted gap — requires real T3 device)
+- Changes not yet confirmed working by Don (pending mobile test)
+
+**Commits:** e07be98 (Leaflet hash + boat nav icon), 338b7c0 (tier normalization + brand logo)
+
+**Pending:**
+- Don to confirm on mobile: gold boat logo on login, 5 nav items, Fleet tab visible
+- Phase 3 (analytics screen) blocked until Phase 2 confirmed
+
+QUALITY METRICS — 2026-04-07 S22b
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 85% (3 minor re-deploy iterations skipped pre-statement)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 95/100
+─────────────────────────────────────────────────────
+
+ACCOMPLISHED THIS SESSION:
+- Leaflet SRI hash corrected
+- Brand boat logo on login screen
+- Tier normalization ("3" → "T3") — fixes fleet tab for all users
+
+NOT COMPLETED / DEFERRED:
+- Visual confirmation from Don on mobile (pending)
+- Phase 3 analytics screen (not started)
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Boat SVG logo not confirmed by Don — visual approval pending
+- Tier fix correct for integer "3" but not tested with real login on Don's phone yet
+
+OPERATOR ACTIONS REQUIRED:
+- Confirm mobile: gold boat logo visible on login, 5 nav items after sign-in
+- OIC assessment before session formally closed
+
+---
+
+## Session 2026-04-07 S23 — v0.9.6 Fleet Management: apiFetch Fix + Fleet Status/Leave + fleet_assign Command
+
+**Goal:** Fix fleet join/create errors ("Network error"), add fleet membership visibility, add leave/delete fleet UI, wire Pi fleet assignment through command queue.
+
+**Completed:**
+- Fixed `renderFleetSetup()` join handler — was checking `res.success`/`res.data.fleet_id` but `apiFetch` returns unwrapped `data.data` and throws on error. Rewrote to `const data = await apiFleetJoin()` with try/catch using `err.message`
+- Fixed `renderFleetSetup()` create handler — same pattern fix, `data.fleet_id`/`data.fleet_code` directly
+- Fixed fleet map loading — `Promise.all` + `.success/.data` → `Promise.allSettled` + `.status`/`.value`
+- Bumped SW cache v9 → v10 to force browser refresh
+- Built `fleet-status.php` — GET, app_token auth, returns device's current fleet membership (fleet_id, fleet_code, fleet_name, fleet_type, role, member_count) or null
+- Built `fleet-leave.php` — POST, app_token auth. Owner: deletes fleet + all data. Member: removes self from fleet_members
+- Rewrote `renderFleetSetup()` to call `fleet-status.php` on load — if already in fleet, shows membership card with fleet code + View/Delete buttons instead of blindly showing join/create form
+- Added `_renderFleetMembershipCard()` — shows fleet name, role, member count, code in gold, "View Fleet Map →", and delete/leave button with two-tap confirm
+- Fixed "Leave Fleet" label ambiguity — members now see "Remove Me From Fleet" with explicit confirmation text; owners see "Delete Fleet"
+- Added `fleet_assign` command handler to `cloud_agent.py` — writes `/opt/d3kos/config/fleet.json` and restarts `d3kos-fleet-push.service`
+- Added `fleet_unassign` command handler to `cloud_agent.py` — removes fleet.json and stops fleet push service
+- Updated `fleet-create.php` to enqueue `fleet_assign` command after successful create
+- Updated `fleet-join.php` to enqueue `fleet_assign` command after successful join
+- Updated `fleet-leave.php` to enqueue `fleet_unassign` command after leave/delete
+- Added `fleet-status.php` and `fleet-leave.php` to `deploy-fleet-php.py` file list
+- Added `d3kos-fleet-push.service` restart + stop to Pi `/etc/sudoers.d/d3kos`
+- Deployed all files to HostPapa staging + Pi
+- All confirmed working by Don: fleet status check, delete fleet, create fleet end-to-end
+
+**Decisions:**
+- Command queue pattern (not WebRTC) chosen for fleet_assign: more reliable, works even when Pi is offline at time of join — Pi picks up on next 30s poll
+- fleet_assign/fleet_unassign inserted directly from fleet PHP files (not a separate endpoint) — they already have user_id from auth and fleet context, 3-line inserts
+- Two-tap confirm for delete/leave: first tap warns, second executes — prevents accidental fleet deletion
+- `fleet_unassign` stops the push service rather than just clearing fleet.json — ensures no stale pushes to a fleet the device is no longer in
+
+**Files changed this session:**
+- `deployment/v0.9.4/pwa/app.js` — apiFetch pattern fix, renderFleetSetup rewrite, membership card, fleet API helpers
+- `deployment/v0.9.4/pwa/sw.js` — cache v9 → v10
+- `deployment/features/fleet-management/php/fleet-create.php` — enqueue fleet_assign after create
+- `deployment/features/fleet-management/php/fleet-join.php` — enqueue fleet_assign after join
+- `deployment/features/fleet-management/php/fleet-leave.php` — new file (leave/delete fleet)
+- `deployment/features/fleet-management/php/fleet-status.php` — new file (membership check)
+- `deployment/features/fleet-management/scripts/deploy-fleet-php.py` — added fleet-status + fleet-leave
+- `deployment/v0.9.4/pi_source/cloud_agent.py` — fleet_assign + fleet_unassign handlers
+- Pi `/opt/d3kos/services/cloud-agent/cloud_agent.py` — deployed live
+- Pi `/etc/sudoers.d/d3kos` — added fleet-push restart + stop
+
+**Ollama:** 0 calls — all edits direct.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Phase 3: Analytics screen (Chart.js engine hours bar chart, alert history, fleet summary, CSV export)
+- Phase 4: Tier gate PWA locked card + admin console fleet view
+- Two-device join test (requires second real T3 paired device on staging)
+- T6 BUG: PDF phone test still pending (INT32_MAX fix S19 — verify on phone with SW cleared)
+- handle_tier_change integer bug in cloud_agent.py (writes int not "T0"/"T1")
+- fleet-setup.php to be deleted from HostPapa after staging testing complete
+
+---
+
+QUALITY METRICS — 2026-04-07
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS — Session was a continuation from context compaction; /session-start not invoked, memory loaded via system-reminder only.
+
+5-SESSION AVERAGE SQS (S21→S23): (100+100+100+95+90)/5 = 97/100
+PRIMARY IMPROVEMENT TARGET: MLS — run /session-start at top of every fresh session, including post-compaction continuations.
+TREND: Slightly declining (100→100→100→95→90) — MLS discipline needed.
+
+---

@@ -701,5 +701,12 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/features/fleet-management/php/fleet-analytics.php` | **[NEW — S21]** GET — per-vessel engine hours, avg RPM/coolant/oil, fleet summary. T3 gate. |
 | `deployment/features/fleet-management/pi_source/fleet_push_service.py` | **[NEW — S21]** Pi Fleet Push Service (Port 8107). 1-min push loop, idles when inactive. Reads fleet.json + license.json + device-token.json. GPS via SignalK :8099, engine via :8106. |
 | `deployment/features/fleet-management/pi_source/d3kos-fleet-push.service` | **[NEW — S21]** systemd unit for fleet_push_service.py. User=d3kos, EnvironmentFile=fleet-push.env. Pending Pi deploy. |
-| `deployment/features/fleet-management/scripts/deploy-fleet-php.py` | **[NEW — S21]** FTPS deploy script for 6 fleet PHP files to HostPapa staging. Reads .env credentials. |
+| `deployment/features/fleet-management/scripts/deploy-fleet-php.py` | **[UPDATED — S23]** FTPS deploy script — now includes fleet-status.php + fleet-leave.php (8 files total). |
 | `deployment/features/fleet-management/scripts/test_fleet_e2e.py` | **[NEW — S21]** End-to-end test: fleet-map (15 positions, Toronto area), fleet-analytics (engine hours, RPM), tier gate (401). ALL 17 TESTS PASSED 2026-04-07. |
+| `deployment/features/fleet-management/php/fleet-status.php` | **[NEW — S23]** GET — returns device's current fleet membership (fleet_id, fleet_code, name, type, role, member_count) or null. app_token Bearer auth. |
+| `deployment/features/fleet-management/php/fleet-leave.php` | **[NEW — S23]** POST — owner deletes fleet+all data; member removes self. Enqueues fleet_unassign to Pi command queue. app_token Bearer auth. |
+| `deployment/features/fleet-management/php/fleet-create.php` | **[UPDATED — S23]** Now enqueues fleet_assign command to amboat_command_queue after successful create. |
+| `deployment/features/fleet-management/php/fleet-join.php` | **[UPDATED — S23]** Now enqueues fleet_assign command to amboat_command_queue after successful join. |
+| `deployment/v0.9.4/pi_source/cloud_agent.py` | **[UPDATED — S23]** Added handle_fleet_assign() — writes /opt/d3kos/config/fleet.json + restarts d3kos-fleet-push.service. Added handle_fleet_unassign() — removes fleet.json + stops service. Both wired into dispatch(). |
+| Pi: `/opt/d3kos/services/cloud-agent/cloud_agent.py` | **[DEPLOYED — S23]** fleet_assign + fleet_unassign handlers live. Service restarted active. |
+| Pi: `/etc/sudoers.d/d3kos` | **[UPDATED — S23]** Added NOPASSWD for systemctl restart + stop d3kos-fleet-push.service. |

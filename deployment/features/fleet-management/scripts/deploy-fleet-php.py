@@ -53,6 +53,8 @@ PHP_FILES = [
     'fleet-ingest.php',
     'fleet-map.php',
     'fleet-analytics.php',
+    'fleet-status.php',
+    'fleet-leave.php',
 ]
 
 def connect_ftp():

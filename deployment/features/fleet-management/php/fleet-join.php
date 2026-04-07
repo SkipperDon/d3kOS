@@ -94,6 +94,9 @@ $stmt = $db->prepare(
 $stmt->bind_param('iss', $fleet_id, $device_token, $role);
 $stmt->execute();
 
+// Enqueue fleet_assign command so the Pi picks up fleet.json within 30s
+amboat_enqueue_fleet_assign($db, $user_id, $fleet_id, $fleet_code, 'member');
+
 amboat_send_success([
     'fleet_id'     => $fleet_id,
     'fleet_name'   => $fleet['name'],
@@ -107,4 +110,16 @@ function amboat_get_user_tier(int $user_id): int {
     if ($raw === null) return 0;
     if (is_string($raw) && preg_match('/^T(\d)$/', $raw, $m)) return (int)$m[1];
     return (int)$raw;
+}
+
+function amboat_enqueue_fleet_assign($db, int $user_id, int $fleet_id, string $fleet_code, string $role): void {
+    $payload = json_encode(['fleet_id' => $fleet_id, 'fleet_code' => $fleet_code, 'role' => $role]);
+    $cmd     = 'fleet_assign';
+    $status  = 'pending';
+    $stmt    = $db->prepare(
+        "INSERT INTO amboat_command_queue (user_id, command, payload, status, created_at)
+         VALUES (?, ?, ?, ?, NOW())"
+    );
+    $stmt->bind_param('isss', $user_id, $cmd, $payload, $status);
+    $stmt->execute();
 }

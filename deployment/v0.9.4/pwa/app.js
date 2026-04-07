@@ -3203,6 +3203,13 @@ function apiFleetJoin(fleetCode) {
     body: JSON.stringify({ fleet_code: fleetCode.toUpperCase() }),
   });
 }
+function apiFleetStatus()            { return apiFetch('fleet-status.php'); }
+function apiFleetLeave(fleetId) {
+  return apiFetch('fleet-leave.php', {
+    method: 'POST',
+    body: JSON.stringify({ fleet_id: fleetId }),
+  });
+}
 
 // Fleet state persisted in localStorage
 function saveFleetSession() {
@@ -3228,9 +3235,101 @@ function renderFleetSetup() {
   header.appendChild(el('span', { class: 'screen-title' }, 'Fleet Management'));
   container.appendChild(header);
 
-  const intro = el('div', { class: 'card' });
-  intro.appendChild(el('div', { class: 'card-title' }, 'Join or Create a Fleet'));
-  intro.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);margin-bottom:16px;line-height:1.6;' },
+  // Show spinner while checking existing membership
+  const statusCard = el('div', { class: 'card' });
+  statusCard.appendChild(spinner());
+  container.appendChild(statusCard);
+
+  // Check if this device is already in a fleet (e.g. localStorage cleared after joining)
+  apiFleetStatus().then(status => {
+    statusCard.innerHTML = '';
+
+    if (status) {
+      // Already in a fleet — show membership card with view + leave/delete
+      _renderFleetMembershipCard(statusCard, status);
+      return;
+    }
+
+    // Not in a fleet — show join/create form
+    _renderFleetJoinCreate(statusCard);
+
+  }).catch(() => {
+    // Status check failed — still show join/create (let the actions surface the real error)
+    statusCard.innerHTML = '';
+    _renderFleetJoinCreate(statusCard);
+  });
+}
+
+// ── Existing membership card ──────────────────────────────────────────────────
+function _renderFleetMembershipCard(card, status) {
+  const isOwner = status.role === 'owner';
+  const roleLabel = isOwner ? 'Fleet Owner' : 'Member';
+
+  card.appendChild(el('div', { class: 'card-title' }, status.fleet_name));
+  card.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);margin-bottom:4px;' },
+    `Role: ${roleLabel}  ·  ${status.member_count} vessel${status.member_count !== 1 ? 's' : ''}`
+  ));
+  card.appendChild(el('p', { style: 'font-size:1.2rem;font-weight:700;letter-spacing:0.12em;color:var(--accent);margin-bottom:16px;' },
+    `Code: ${status.fleet_code}`
+  ));
+
+  const viewBtn = el('button', { class: 'btn btn-primary', style: 'width:100%;margin-bottom:8px;' }, 'View Fleet Map →');
+  viewBtn.addEventListener('click', () => {
+    state.fleetId = status.fleet_id;
+    saveFleetSession();
+    state.fleetData     = null;
+    state.fleetAnalytics = null;
+    navigate('fleet');
+  });
+  card.appendChild(viewBtn);
+
+  const actionLabel = isOwner ? 'Delete Fleet' : 'Remove Me From Fleet';
+  const leaveBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'width:100%;color:var(--red);border-color:var(--red);',
+  }, actionLabel);
+  const leaveMsg = el('div', { style: 'margin-top:8px;font-size:0.95rem;display:none;' });
+
+  let confirmPending = false;
+  leaveBtn.addEventListener('click', async () => {
+    if (!confirmPending) {
+      // First tap: ask for confirmation
+      confirmPending = true;
+      leaveBtn.textContent = isOwner
+        ? '⚠ Tap again to DELETE fleet and all data'
+        : '⚠ Tap again to confirm — removes your vessel from this fleet';
+      leaveBtn.style.background = 'var(--red)';
+      leaveBtn.style.color = '#fff';
+      return;
+    }
+    leaveBtn.disabled    = true;
+    leaveBtn.textContent = isOwner ? 'Deleting…' : 'Leaving…';
+    leaveMsg.style.display = 'none';
+    try {
+      await apiFleetLeave(status.fleet_id);
+      state.fleetId        = null;
+      state.fleetData      = null;
+      state.fleetAnalytics = null;
+      saveFleetSession();
+      navigate('fleet');
+    } catch (err) {
+      leaveMsg.textContent   = err.message || `Could not ${isOwner ? 'delete fleet' : 'remove vessel from fleet'}.`;
+      leaveMsg.style.color   = 'var(--red)';
+      leaveMsg.style.display = 'block';
+      leaveBtn.disabled    = false;
+      leaveBtn.textContent = actionLabel;
+      confirmPending = false;
+    }
+  });
+
+  card.appendChild(leaveBtn);
+  card.appendChild(leaveMsg);
+}
+
+// ── Join / Create form ────────────────────────────────────────────────────────
+function _renderFleetJoinCreate(card) {
+  card.appendChild(el('div', { class: 'card-title' }, 'Join or Create a Fleet'));
+  card.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);margin-bottom:16px;line-height:1.6;' },
     'A fleet lets you monitor multiple vessels from one screen. Enter a 6-character fleet code to join an existing fleet, or create a new one.'
   ));
 
@@ -3259,20 +3358,12 @@ function renderFleetSetup() {
     joinBtn.textContent = 'Joining…';
     joinMsg.style.display = 'none';
     try {
-      const res = await apiFleetJoin(code);
-      if (res.success) {
-        state.fleetId = res.data.fleet_id;
-        saveFleetSession();
-        navigate('fleet');
-      } else {
-        joinMsg.textContent   = res.error || 'Could not join fleet.';
-        joinMsg.style.color   = 'var(--red)';
-        joinMsg.style.display = 'block';
-        joinBtn.disabled    = false;
-        joinBtn.textContent = 'Join Fleet';
-      }
-    } catch {
-      joinMsg.textContent   = 'Network error. Check connection.';
+      const data = await apiFleetJoin(code);
+      state.fleetId = data.fleet_id;
+      saveFleetSession();
+      navigate('fleet');
+    } catch (err) {
+      joinMsg.textContent   = err.message || 'Could not join fleet.';
       joinMsg.style.color   = 'var(--red)';
       joinMsg.style.display = 'block';
       joinBtn.disabled    = false;
@@ -3280,13 +3371,13 @@ function renderFleetSetup() {
     }
   });
 
-  intro.appendChild(joinTitle);
-  intro.appendChild(codeInput);
-  intro.appendChild(joinBtn);
-  intro.appendChild(joinMsg);
+  card.appendChild(joinTitle);
+  card.appendChild(codeInput);
+  card.appendChild(joinBtn);
+  card.appendChild(joinMsg);
 
   // ── Divider ──
-  intro.appendChild(el('hr', { style: 'margin:20px 0;border-color:var(--border);' }));
+  card.appendChild(el('hr', { style: 'margin:20px 0;border-color:var(--border);' }));
 
   // ── Create section ──
   const createTitle = el('div', { style: 'font-weight:700;font-size:1rem;margin-bottom:8px;' }, 'Create a New Fleet');
@@ -3320,26 +3411,17 @@ function renderFleetSetup() {
     createBtn.textContent = 'Creating…';
     createMsg.style.display = 'none';
     try {
-      const res = await apiFleetCreate(name, typeSelect.value);
-      if (res.success) {
-        state.fleetId = res.data.fleet_id;
-        saveFleetSession();
-        // Show the fleet code prominently before navigating
-        createMsg.innerHTML   = `Fleet created! Share code <strong style="font-size:1.3em;letter-spacing:0.1em;color:var(--accent)">${res.data.fleet_code}</strong> with other vessels to join.`;
-        createMsg.style.color = 'var(--text)';
-        createMsg.style.display = 'block';
-        createBtn.textContent = 'View Fleet →';
-        createBtn.disabled    = false;
-        createBtn.onclick     = () => navigate('fleet');
-      } else {
-        createMsg.textContent   = res.error || 'Could not create fleet.';
-        createMsg.style.color   = 'var(--red)';
-        createMsg.style.display = 'block';
-        createBtn.disabled    = false;
-        createBtn.textContent = 'Create Fleet';
-      }
-    } catch {
-      createMsg.textContent   = 'Network error. Check connection.';
+      const data = await apiFleetCreate(name, typeSelect.value);
+      state.fleetId = data.fleet_id;
+      saveFleetSession();
+      createMsg.innerHTML   = `Fleet created! Share code <strong style="font-size:1.3em;letter-spacing:0.1em;color:var(--accent)">${data.fleet_code}</strong> with other vessels to join.`;
+      createMsg.style.color = 'var(--text)';
+      createMsg.style.display = 'block';
+      createBtn.textContent = 'View Fleet →';
+      createBtn.disabled    = false;
+      createBtn.onclick     = () => navigate('fleet');
+    } catch (err) {
+      createMsg.textContent   = err.message || 'Could not create fleet.';
       createMsg.style.color   = 'var(--red)';
       createMsg.style.display = 'block';
       createBtn.disabled    = false;
@@ -3347,12 +3429,11 @@ function renderFleetSetup() {
     }
   });
 
-  intro.appendChild(createTitle);
-  intro.appendChild(nameInput);
-  intro.appendChild(typeSelect);
-  intro.appendChild(createBtn);
-  intro.appendChild(createMsg);
-  container.appendChild(intro);
+  card.appendChild(createTitle);
+  card.appendChild(nameInput);
+  card.appendChild(typeSelect);
+  card.appendChild(createBtn);
+  card.appendChild(createMsg);
 }
 
 // ── Fleet map + vessel list (main fleet view) ─────────────────────────────────
@@ -3599,19 +3680,19 @@ screens.fleet = function renderFleet() {
   // Fleet joined — load data
   if (!state.fleetData) {
     container.appendChild(spinner());
-    Promise.all([
+    Promise.allSettled([
       apiFleetMap(state.fleetId),
       apiFleetAnalytics(state.fleetId),
-    ]).then(([mapRes, analyticsRes]) => {
-      if (!mapRes.success) {
-        // Fleet not found (deleted or left) — reset
+    ]).then(([mapResult, analyticsResult]) => {
+      if (mapResult.status === 'rejected') {
+        // Fleet not found (deleted, left, or network error) — reset
         state.fleetId = null;
         saveFleetSession();
         navigate('fleet');
         return;
       }
-      state.fleetData      = mapRes.data;
-      state.fleetAnalytics = analyticsRes.success ? analyticsRes.data : null;
+      state.fleetData      = mapResult.value;
+      state.fleetAnalytics = analyticsResult.status === 'fulfilled' ? analyticsResult.value : null;
       navigate('fleet');
     }).catch(() => {
       container.innerHTML = '';

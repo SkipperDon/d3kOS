@@ -100,11 +100,18 @@ Expected: ALL 15 TESTS PASSED
 - [x] **Fleet Map view**: Leaflet.js 1.9.4, colored dot markers (green≤10m/amber≤60m/red>60m), popup with age/SOG/COG ✓ S22
 - [x] **Vessel list view**: per-vessel health card — status dot, role badge, sog/cog/engine hrs/RPM ✓ S22
 - [x] Fleet join/create flow: fleet_code input + create with name/type ✓ S22
+- [x] Fleet status check on load — auto-detects existing membership, shows membership card ✓ S23
+- [x] Fleet leave/delete — owner: deletes fleet+data; member: removes self; 2-tap confirm ✓ S23
+- [x] apiFetch pattern fix — join/create/map handlers rewritten to use try/catch + err.message ✓ S23
+- [x] Pi fleet_assign command — cloud_agent.py writes fleet.json + restarts fleet-push on join/create ✓ S23
+- [x] Pi fleet_unassign command — cloud_agent.py removes fleet.json + stops fleet-push on leave/delete ✓ S23
 - [ ] Privacy toggle per-vessel (500m randomization opt-in) — deferred
 
 ### Phase 2 test criteria
 - [x] Map loads, markers appear for fleet members (Leaflet.js, dark theme) ✓ deployed S22
 - [x] Vessel cards show sog/cog/engine hours/RPM from fleet-analytics ✓ S22
+- [x] Fleet membership detected on load — existing fleet shown without needing to re-join ✓ S23
+- [x] Delete fleet → clears phone localStorage → Pi clears fleet.json → push service stops ✓ S23 confirmed by Don
 - [ ] Create fleet → get fleet_code → second device joins → both appear on map — requires 2 real T3 devices
 
 ---

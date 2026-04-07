@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.6] - 2026-04-07 (In Progress)
+
+### Summary
+
+**v0.9.6 — Fleet Management (Tier 3)**
+
+d3kOS v0.9.6 delivers fleet management for Tier 3 operators. Multiple vessels push GPS position and engine snapshots to HostPapa every 60 seconds. The PWA fleet screen shows all vessels on a Leaflet.js map with real-time age indicators and per-vessel health cards. Fleet join/create/leave is fully self-service from the PWA — no manual configuration required. The Pi receives its fleet assignment automatically via the cloud command queue within 30 seconds of the operator joining.
+
+**Status:** Phase 1 + Phase 2 complete. Phase 3 (analytics) + Phase 4 (admin view) in progress.
+
+### Added (S21–S23)
+
+- **Fleet data pipeline** — `d3kos-fleet-push.service` (Port 8108) pushes GPS + engine snapshots every 60s when engine on or GPS fix active. Idles completely otherwise. T3 gate.
+
+- **Fleet HostPapa endpoints** — `fleet-create.php`, `fleet-join.php`, `fleet-ingest.php`, `fleet-map.php`, `fleet-analytics.php`, `fleet-status.php`, `fleet-leave.php`. MySQL: `amboat_fleets`, `amboat_fleet_members`, `amboat_fleet_positions`, `amboat_fleet_engine_snapshots`. 17/17 e2e tests passed.
+
+- **PWA Fleet screen** — Tier 3 tab: Leaflet.js map (green/amber/red age markers), vessel list health cards (SOG/COG/RPM/engine hours/status dot), join/create/status/leave flows. Fleet code displayed prominently for sharing.
+
+- **Fleet membership auto-detection** — Fleet tab checks `fleet-status.php` on load. If already in a fleet (even after clearing localStorage), shows membership card with fleet code + View Fleet → button. No manual re-entry required.
+
+- **Fleet leave/delete** — Owners delete entire fleet and all data. Members remove themselves. Two-tap confirmation prevents accidental deletion. Pi receives `fleet_unassign` command automatically.
+
+- **Pi fleet_assign command** — `cloud_agent.py` handles `fleet_assign`: writes `/opt/d3kos/config/fleet.json` + restarts `d3kos-fleet-push.service`. Enqueued automatically by `fleet-create.php` and `fleet-join.php`. Pi picks up within 30s. No SSH required.
+
+- **Pi fleet_unassign command** — `cloud_agent.py` handles `fleet_unassign`: removes `fleet.json` + stops `d3kos-fleet-push.service`. Enqueued automatically by `fleet-leave.php`.
+
+### Deferred to Phase 3/4
+- Analytics screen (engine hours bar chart, alert history, CSV export)
+- Admin console fleet view
+- Privacy toggle (500m position randomization per vessel)
+- Two-device join test (requires second paired T3 device)
+
+---
+
 ## [0.9.5] - 2026-04-07
 
 ### Summary

@@ -11,6 +11,8 @@ Commands handled:
   ota_upgrade     - Download, verify, install latest release, restart services.
   setup_lockdown  - Apply apt-mark hold on critical packages to prevent OS upgrades breaking d3kOS.
   pair_confirmed  - Pi paired via app. Upgrade tier in license.json, trigger immediate export.
+  fleet_assign    - Write /opt/d3kos/config/fleet.json, restart d3kos-fleet-push.service.
+  fleet_unassign  - Remove /opt/d3kos/config/fleet.json, stop d3kos-fleet-push.service.
 
 Config:  /opt/d3kos/config/cloud-config.json  (amboat_api_key, amboat_base_url)
 Token:   /opt/d3kos/config/device-token.json  (created on first run if absent)
@@ -327,6 +329,67 @@ def handle_pair_confirmed(cmd_id, payload, base_url, api_key, device_token):
         logger.error(f'pair_confirmed exception: {e}')
 
 
+FLEET_CONFIG = Path('/opt/d3kos/config/fleet.json')
+
+
+def handle_fleet_assign(cmd_id, payload, base_url, api_key, device_token):
+    """Write fleet.json and (re)start fleet push service."""
+    import subprocess
+    try:
+        fleet_id   = payload.get('fleet_id')
+        fleet_code = payload.get('fleet_code', '')
+        role       = payload.get('role', 'member')
+
+        if not fleet_id:
+            raise ValueError("payload missing 'fleet_id'")
+
+        fleet_data = {
+            'fleet_id':   int(fleet_id),
+            'fleet_code': str(fleet_code).upper(),
+            'role':       str(role),
+        }
+        FLEET_CONFIG.write_text(json.dumps(fleet_data, indent=2))
+        logger.info(f'fleet_assign: wrote fleet.json fleet_id={fleet_id} role={role}')
+
+        # Restart fleet push service so it picks up the new config immediately
+        subprocess.run(
+            ['sudo', 'systemctl', 'restart', 'd3kos-fleet-push.service'],
+            timeout=15, check=False
+        )
+        logger.info('fleet_assign: restarted d3kos-fleet-push.service')
+
+        ack_command(base_url, api_key, device_token, cmd_id, 'completed',
+                    {'fleet_id': int(fleet_id), 'fleet_code': fleet_code, 'role': role})
+
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f'fleet_assign exception: {e}')
+
+
+def handle_fleet_unassign(cmd_id, base_url, api_key, device_token):
+    """Remove fleet.json and stop fleet push service."""
+    import subprocess
+    try:
+        if FLEET_CONFIG.exists():
+            FLEET_CONFIG.unlink()
+            logger.info('fleet_unassign: removed fleet.json')
+        else:
+            logger.info('fleet_unassign: fleet.json already absent')
+
+        # Stop push service — it will idle when fleet.json is absent
+        subprocess.run(
+            ['sudo', 'systemctl', 'stop', 'd3kos-fleet-push.service'],
+            timeout=15, check=False
+        )
+        logger.info('fleet_unassign: stopped d3kos-fleet-push.service')
+
+        ack_command(base_url, api_key, device_token, cmd_id, 'completed', {'action': 'unassigned'})
+
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f'fleet_unassign exception: {e}')
+
+
 def dispatch(cmd, base_url, api_key, device_token):
     """Dispatch a single command to its handler."""
     cmd_id   = cmd.get('id')
@@ -355,6 +418,12 @@ def dispatch(cmd, base_url, api_key, device_token):
 
     elif command == 'pair_confirmed':
         handle_pair_confirmed(cmd_id, payload, base_url, api_key, device_token)
+
+    elif command == 'fleet_assign':
+        handle_fleet_assign(cmd_id, payload, base_url, api_key, device_token)
+
+    elif command == 'fleet_unassign':
+        handle_fleet_unassign(cmd_id, base_url, api_key, device_token)
 
     else:
         ack_command(base_url, api_key, device_token, cmd_id, 'failed',
