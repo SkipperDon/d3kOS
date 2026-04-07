@@ -1,5 +1,5 @@
 # v0.9.6 Fleet Management — Build Checklist
-**Version:** 1.3 | **Created:** 2026-04-07 S21 | **Updated:** 2026-04-07 S27 | **Status:** PHASES 1+2+3 COMPLETE — Phase 4 in progress
+**Version:** 1.4 | **Created:** 2026-04-07 S21 | **Updated:** 2026-04-07 S27c | **Status:** PHASES 1+2+3 COMPLETE — Phase 4 tier gate verified (staging)
 
 ---
 
@@ -136,9 +136,9 @@ Expected: ALL 15 TESTS PASSED
 ## Phase 4 — Tier 3 Gate + Admin View
 
 ### Tier gate
-- [ ] All fleet endpoints return `{"error": "T3 required"}` for T0/T1/T2
+- [x] All fleet endpoints return `{"error": "T3 required"}` for T0/T1/T2 ✓ S27c — verified fleet-analytics.php, fleet-create.php, fleet-join.php all 403 on T1 UUID token
 - [x] PWA fleet tab: T1/T2 see locked upgrade card (CTA → atmyboat.com/upgrade) ✓ S23
-- [ ] T3 activation tested with test account on staging
+- [x] T3 activation tested with test account on staging ✓ S27c — real T3 token (user_id=1) confirmed 200 on all endpoints
 
 ### Admin console fleet view (admin CRM — new tab)
 - [x] Fleet list: all fleets, member count, last activity ✓ S24 — /fleets route + fleet.html list view
@@ -147,8 +147,8 @@ Expected: ALL 15 TESTS PASSED
 - [x] Fleet nav link in admin sidebar ✓ S24 — base.html updated
 
 ### Phase 4 test criteria
-- [ ] T1 account sees locked card, not fleet data
-- [ ] T3 account sees full fleet screen
+- [x] T1 account sees locked card, not fleet data ✓ S27c — 403 on all PHP endpoints; locked card in PWA (S23)
+- [x] T3 account sees full fleet screen ✓ S27c — 200 on all fleet endpoints with real T3 token
 - [x] Admin can view all fleet records ✓ S24 — http://192.168.236.5:5000/fleets verified with real data (2 fleets, 1 member with live position)
 
 ---
