@@ -2619,13 +2619,49 @@ screens.support = function renderSupport() {
     style: 'display: none;',
   });
   sentMsg.appendChild(el('div', { class: 'support-sent-icon' }, '✓'));
-  sentMsg.appendChild(el('p', { style: 'font-size: 1rem; font-weight: 600; margin-bottom: 8px;' },
-    'Message sent'));
-  sentMsg.appendChild(el('p', { style: 'font-size: 0.9rem; color: var(--text-muted);' },
-    `We'll respond to ${state.username || 'you'} within 1 business day.`));
+  const sentTitle = el('p', { style: 'font-size: 1rem; font-weight: 600; margin-bottom: 8px;' },
+    'Message sent');
+  sentMsg.appendChild(sentTitle);
+  const sentSub = el('p', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;' },
+    `We'll respond to ${state.username || 'you'} within 1 business day.`);
+  sentMsg.appendChild(sentSub);
+
+  const ticketRow = el('div', {
+    style: 'display: none; background: var(--surface-2, rgba(255,255,255,0.05)); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9rem;',
+  });
+  sentMsg.appendChild(ticketRow);
+
+  const checkStatusBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'display: none; margin-bottom: 8px; width: 100%;',
+  }, 'Check Ticket Status');
+  checkStatusBtn.addEventListener('click', async () => {
+    const tid = parseInt(localStorage.getItem('support_ticket_id') || '0', 10);
+    if (!tid) return;
+    checkStatusBtn.disabled = true;
+    checkStatusBtn.textContent = 'Checking…';
+    try {
+      const res = await apiFetch(`ticket-status.php?ticket_id=${tid}`);
+      const labels = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' };
+      ticketRow.innerHTML = '';
+      ticketRow.appendChild(el('span', {}, `Ticket #${res.ticket_id} — `));
+      ticketRow.appendChild(el('strong', {}, labels[res.status] || res.status));
+      if (res.admin_note) {
+        ticketRow.appendChild(el('p', { style: 'margin-top: 6px; color: var(--text-muted);' }, res.admin_note));
+      }
+      ticketRow.style.display = 'block';
+      checkStatusBtn.disabled = false;
+      checkStatusBtn.textContent = 'Refresh Status';
+    } catch (err) {
+      checkStatusBtn.disabled = false;
+      checkStatusBtn.textContent = 'Check Ticket Status';
+    }
+  });
+  sentMsg.appendChild(checkStatusBtn);
+
   const backToSettings = el('button', {
     class: 'btn btn-ghost',
-    style: 'margin-top: 16px;',
+    style: 'width: 100%;',
   }, 'Back to Settings');
   backToSettings.addEventListener('click', () => navigate('settings'));
   sentMsg.appendChild(backToSettings);
@@ -2667,10 +2703,17 @@ screens.support = function renderSupport() {
     sendBtn.textContent = 'Sending…';
 
     try {
-      await apiFetch('support-request.php', {
+      const result = await apiFetch('support-request.php', {
         method: 'POST',
         body: JSON.stringify({ message: msg }),
       });
+      if (result.ticket_id) {
+        localStorage.setItem('support_ticket_id', String(result.ticket_id));
+        sentTitle.textContent = `Message sent — Ticket #${result.ticket_id}`;
+        ticketRow.textContent = `Reference: #${result.ticket_id}`;
+        ticketRow.style.display = 'block';
+        checkStatusBtn.style.display = 'block';
+      }
       form.style.display = 'none';
       sentMsg.style.display = 'block';
     } catch (err) {

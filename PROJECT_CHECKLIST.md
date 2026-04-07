@@ -637,19 +637,19 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8D — v0.9.7 Remote Diagnostic Console
-**Status: NOT STARTED**
+**Status: PHASE 1 COMPLETE (S25 2026-04-07)**
 **Depends on:** v0.9.4 (PWA + Pi command queue), v0.9.3 live push
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.11.0
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| RD1 | Support ticket system | User submits ticket (problem description) from PWA. Admin receives notification within 60 seconds. Ticket tracking and status updates. | `[ ]` |
+| RD1 | Support ticket system | User submits ticket (problem description) from PWA. Admin receives notification within 60 seconds. Ticket tracking and status updates. | `[x]` Phase 1 complete S25 — email + DB + ticket_id + CRM view + status check |
 | RD2 | Diagnostic consent flow | Per-session approval required from user. Time-limited access (2 hours max). Auto-expiry after session. | `[ ]` |
-| RD3 | Diagnostic agent on Pi (Port 8103) | Controlled log collection. Bundle creation (<60 seconds). Upload to AtMyBoat.com. | `[ ]` |
-| RD4 | AI diagnosis engine | Claude API integration (admin console only). Log analysis and diagnosis. Follow-up questions. Fix recommendations. | `[ ]` |
+| RD3 | Diagnostic agent on Pi (Port 8109) | Controlled log collection. Bundle creation (<60 seconds). Upload to AtMyBoat.com. | `[ ]` |
+| RD4 | AI diagnosis engine | Gemini 2.5 Flash via ai_client.py (admin console only). Log analysis and diagnosis. Follow-up questions. Fix recommendations. | `[ ]` |
 | RD5 | Fix delivery system | Admin creates fix (AI or manual). User approval notification (one-tap in PWA). Fix execution via whitelisted command queue. Real-time output streaming. | `[ ]` |
 | RD6 | Knowledge base | Resolved cases logged. Pattern detection (3+ matches → auto-rule). Recurrence tracking. | `[ ]` |
-| RD7 | Admin console UI | `admin.atmyboat.com`. 3-panel layout: ticket list, diagnostic data, AI diagnosis. Real-time. | `[ ]` |
+| RD7 | Admin console UI | Tickets tab in CRM (DONE S25). Full 3-panel layout with diagnostic data + AI diagnosis pending. | `[~]` Tickets tab done S25 |
 
 **Deliverable:** d3kOS v0.9.7 — remote diagnostic console for operator support
 

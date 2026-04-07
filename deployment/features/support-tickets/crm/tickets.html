@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{% if ticket %}Ticket #{{ ticket.ticket_id }}{% else %}Support Tickets{% endif %} — AtMyBoat Admin{% endblock %}
+
+{% block content %}
+<style>
+  .ticket-meta { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 20px; font-size: 15px; color: #475569; }
+  .ticket-meta strong { color: #1e293b; }
+  .ticket-body { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; white-space: pre-wrap; font-size: 16px; color: #1e293b; line-height: 1.7; margin-bottom: 20px; }
+  .ticket-section h3 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 8px; }
+  .ticket-update-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-top: 24px; }
+  .ticket-update-box h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 16px; }
+  .field-row { margin-bottom: 14px; }
+  .field-row label { display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
+  .pill-open       { background: #fef9c3; color: #854d0e; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .pill-in_progress{ background: #dbeafe; color: #1d4ed8; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .pill-resolved   { background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+  .tab { padding: 6px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; text-decoration: none; color: #475569; background: #f1f5f9; }
+  .tab.active, .tab:hover { background: #0f172a; color: #fff; }
+  .select-input { width: 200px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: #fff; color: #1e293b; }
+  .textarea-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: #fff; color: #1e293b; resize: vertical; font-family: inherit; line-height: 1.6; }
+  .btn-save { background: #0f172a; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-save:hover { background: #1e293b; }
+</style>
+
+{% if ticket %}
+{# ── Ticket Detail ───────────────────────────────────────────────────────── #}
+<div class="page-header" style="margin-bottom: 20px;">
+  <a href="{{ url_for('tickets') }}" class="btn-secondary">← All Tickets</a>
+  <h2 style="margin: 0; font-size: 22px; color: #1e293b;">Ticket #{{ ticket.ticket_id }}</h2>
+  <span class="pill-{{ ticket.status }}">{{ ticket.status | replace('_', ' ') | title }}</span>
+</div>
+
+<div class="ticket-meta">
+  <div><strong>Customer:</strong> {{ ticket.display_name or '—' }}</div>
+  <div><strong>Email:</strong> {{ ticket.user_email or '—' }}</div>
+  <div><strong>Tier:</strong> {{ ticket.tier or 'T0' }}</div>
+  <div><strong>Device:</strong> <span style="font-family: monospace; font-size: 13px;">{{ (ticket.device_token or '—')[:12] }}…</span></div>
+  <div><strong>Opened:</strong> {{ ticket.created_at }}</div>
+  <div><strong>Updated:</strong> {{ ticket.updated_at }}</div>
+</div>
+
+<div class="ticket-section" style="margin-bottom: 16px;">
+  <h3>Subject</h3>
+  <div class="ticket-body" style="padding: 10px 16px; font-size: 15px;">{{ ticket.subject }}</div>
+</div>
+
+<div class="ticket-section">
+  <h3>Message</h3>
+  <div class="ticket-body">{{ ticket.body }}</div>
+</div>
+
+{% if ticket.admin_note %}
+<div class="ticket-section">
+  <h3>Admin Note</h3>
+  <div class="ticket-body" style="border-color: #bbf7d0;">{{ ticket.admin_note }}</div>
+</div>
+{% endif %}
+
+<div class="ticket-update-box">
+  <h3>Update Ticket</h3>
+  <form method="POST" action="{{ url_for('ticket_update', ticket_id=ticket.ticket_id) }}">
+    <div class="field-row">
+      <label for="status">Status</label>
+      <select name="status" id="status" class="select-input">
+        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <label for="admin_note">Admin Note <span style="font-weight: 400; color: #94a3b8;">(shown to customer when resolved)</span></label>
+      <textarea name="admin_note" id="admin_note" rows="4" class="textarea-input">{{ ticket.admin_note or '' }}</textarea>
+    </div>
+    <button type="submit" class="btn-save">Save Changes</button>
+  </form>
+</div>
+
+{% else %}
+{# ── Ticket List ─────────────────────────────────────────────────────────── #}
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2 style="margin: 0; font-size: 22px; color: #1e293b;">Support Tickets</h2>
+  {% if open_count %}<span class="badge">{{ open_count }} open</span>{% endif %}
+</div>
+
+<div class="tabs">
+  <a href="{{ url_for('tickets') }}" class="tab {% if not current_status %}active{% endif %}">All</a>
+  <a href="{{ url_for('tickets') }}?status=open" class="tab {% if current_status == 'open' %}active{% endif %}">Open</a>
+  <a href="{{ url_for('tickets') }}?status=in_progress" class="tab {% if current_status == 'in_progress' %}active{% endif %}">In Progress</a>
+  <a href="{{ url_for('tickets') }}?status=resolved" class="tab {% if current_status == 'resolved' %}active{% endif %}">Resolved</a>
+</div>
+
+{% if tickets %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Customer</th>
+        <th>Subject</th>
+        <th>Status</th>
+        <th>Opened</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tickets %}
+      <tr>
+        <td style="font-weight: 600; color: #0f172a;">{{ t.ticket_id }}</td>
+        <td>
+          {{ t.display_name or '—' }}<br>
+          <span style="font-size: 13px; color: #64748b;">{{ t.user_email or '' }}</span>
+        </td>
+        <td style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ t.subject }}</td>
+        <td><span class="pill-{{ t.status }}">{{ t.status | replace('_', ' ') | title }}</span></td>
+        <td style="white-space: nowrap; font-size: 14px; color: #64748b;">{{ t.created_at[:16] if t.created_at else '—' }}</td>
+        <td><a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="btn-secondary" style="padding: 4px 12px; font-size: 13px;">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pages > 1 %}
+<div style="display: flex; gap: 8px; margin-top: 16px; align-items: center;">
+  {% if page > 1 %}<a href="?{% if current_status %}status={{ current_status }}&{% endif %}page={{ page - 1 }}" class="btn-secondary">← Prev</a>{% endif %}
+  <span style="font-size: 14px; color: #64748b;">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a href="?{% if current_status %}status={{ current_status }}&{% endif %}page={{ page + 1 }}" class="btn-secondary">Next →</a>{% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">No tickets{% if current_status %} with status "{{ current_status | replace('_', ' ') }}"{% endif %}.</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

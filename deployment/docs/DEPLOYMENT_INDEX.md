@@ -718,3 +718,20 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/features/fleet-management/admin-crm/fleet.html` | **[NEW — S24]** Repo copy of admin CRM fleet.html template. |
 | `deployment/features/fleet-management/admin-crm/app_fleet_routes.py` | **[NEW — S24]** Repo copy of app.py with fleet routes. |
 | `deployment/features/fleet-management/admin-crm/base.html` | **[NEW — S24]** Repo copy of base.html with Fleet nav link. |
+
+## v0.9.7 Phase 1 — Support Ticket System (S25 2026-04-07)
+
+| File | Description |
+|------|-------------|
+| `deployment/features/support-tickets/php/support-request.php` | **[NEW — S25]** Upgraded support request endpoint. Adds amboat_support_tickets DB insert via $wpdb, returns ticket_id. Error suppression prevents WP notices corrupting JSON. Replaces Apr-3 one-way email version. |
+| `deployment/features/support-tickets/php/ticket-status.php` | **[NEW — S25]** GET ?ticket_id=N — returns ticket status + admin_note (resolved only) for authenticated user's own ticket. config.php + direct mysqli auth. |
+| `deployment/features/support-tickets/php/admin-api-tickets.php` | **[NEW — S25]** Admin ticket API. PDO, Bearer auth (same ADMIN_API_KEY as admin-api.php). Actions: get_tickets (paginated + status filter), get_ticket (full detail), update_ticket (status + admin_note). |
+| `deployment/features/support-tickets/crm/tickets.html` | **[NEW — S25]** Admin CRM tickets template. List view: status tabs (All/Open/In Progress/Resolved), pagination, data-table. Detail view: subject/body/admin_note display, update form. Light theme with inline styles. |
+| `deployment/features/support-tickets/crm/app_patched.py` | **[NEW — S25]** Deployed to VM as /home/d3kos-admin/app.py. Adds proxy_call_tickets() + /tickets, /ticket/<id>, /ticket/<id>/update Flask routes. |
+| `deployment/features/support-tickets/scripts/deploy-support-tickets.py` | **[NEW — S25]** FTP + VM deployment script for all support ticket files. |
+| `deployment/features/support-tickets/BUILD_CHECKLIST.md` | **[NEW — S25]** Phase 1 build tracking. Phase 1 complete. Phase 2 deferred. |
+| `deployment/v0.9.4/pwa/app.js` | **[UPDATED — S25]** Support screen: captures ticket_id on send success, shows "Message sent — Ticket #N", adds Check Status button, stores ticket_id in localStorage. apiFetch result now captured (was discarded). |
+| VM: `/home/d3kos-admin/app.py` | **[REPLACED — S25]** Added proxy_call_tickets() helper + 3 ticket routes. Full file replaced (not patched) after patch-vm-app.py regex approach failed. |
+| VM: `/home/d3kos-admin/templates/tickets.html` | **[NEW — S25]** Support tickets CRM template. Deployed via pscp.exe + plink sudo cp. |
+| VM: `/home/d3kos-admin/templates/base.html` | **[UPDATED — S25]** Tickets nav link added after Fleets. Inserted via plink python3 one-liner. |
+| HostPapa staging DB: `amboat_support_tickets` | **[MIGRATION — S25]** Created via support-migrate.php (deployed, run, deleted). Columns: ticket_id AUTO_INCREMENT, user_id, device_token, subject, body, status ENUM(open/in_progress/resolved), admin_note, created_at, updated_at. |
