@@ -65,8 +65,8 @@ PWA (phone)
 - [x] `fleet-setup.php?action=create_tables` succeeds on staging ✓ 2026-04-07 S21
 - [x] `fleet-setup.php?action=seed_test` inserts TEST01 fleet + 15 vessels + 60 min data ✓ 2026-04-07 S21
 - [x] `test_fleet_e2e.py` — ALL 17 TESTS PASSED ✓ 2026-04-07 S21 (fleet-map: 15 positions, analytics: 3429h, tier gate: 401)
-- [ ] Pi fleet_push_service.py deployed and `d3kos-fleet-push.service` active
-- [ ] Live push confirmed: Pi position appears in fleet-map.php within 1 min
+- [x] Pi fleet_push_service.py deployed and `d3kos-fleet-push.service` active ✓ Port 8108 (8107 taken by preferences-api)
+- [x] Live push confirmed: Pi position appears in fleet-map.php within 1 min ✓ 2026-04-07 — lat=43.686938, lon=-79.520978, age=1min
 
 ### Deployment Instructions (Phase 1)
 

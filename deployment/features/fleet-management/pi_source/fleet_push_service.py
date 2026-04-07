@@ -42,7 +42,7 @@ AMBOAT_API_KEY    = os.environ.get('AMBOAT_API_KEY', '')
 SIGNALK_URL       = os.environ.get('SIGNALK_URL',   'http://localhost:8099')
 PREDICTIVE_URL    = os.environ.get('PREDICTIVE_STATUS_URL', 'http://localhost:8106/predictive/status')
 PUSH_INTERVAL_S   = int(os.environ.get('PUSH_INTERVAL_S', 60))
-PORT              = int(os.environ.get('FLEET_PUSH_PORT', 8107))
+PORT              = int(os.environ.get('FLEET_PUSH_PORT', 8108))
 
 FLEET_CONFIG      = Path('/opt/d3kos/config/fleet.json')
 LICENSE_CONFIG    = Path('/opt/d3kos/config/license.json')

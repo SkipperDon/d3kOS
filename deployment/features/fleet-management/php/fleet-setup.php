@@ -248,6 +248,32 @@ if ($action === 'get_test_token') {
     exit;
 }
 
+// ── ADD TEST MEMBER ───────────────────────────────────────────────────────────
+// Directly inserts a device_token as member of TEST01, bypassing the 15-vessel cap.
+// For staging-only use: adding real Pi device to test fleet.
+// Usage: ?action=add_test_member&setup_key=SECRET&device_token=UUID&fleet_id=N
+if ($action === 'add_test_member') {
+    $device_token = $_GET['device_token'] ?? '';
+    $fleet_id     = (int)($_GET['fleet_id'] ?? 1);
+    if (empty($device_token) || !preg_match('/^[0-9a-f-]{36}$/i', $device_token)) {
+        echo json_encode(['success' => false, 'error' => 'device_token (UUID) required.']);
+        exit;
+    }
+    $stmt = $db->prepare(
+        "INSERT IGNORE INTO amboat_fleet_members (fleet_id, device_token, role) VALUES (?, ?, 'member')"
+    );
+    $stmt->bind_param('is', $fleet_id, $device_token);
+    $stmt->execute();
+    echo json_encode([
+        'success'      => true,
+        'fleet_id'     => $fleet_id,
+        'device_token' => $device_token,
+        'rows_affected' => $stmt->affected_rows,
+        'note'         => 'Device added as fleet member (cap bypassed for test). Run verify to confirm.',
+    ]);
+    exit;
+}
+
 // ── CREATE TEST T3 USER ───────────────────────────────────────────────────────
 // Inserts synthetic user_id=999999 with a known app_token + T3 tier into wpax_usermeta.
 // Safe to re-run (INSERT IGNORE). Cleaned up by cleanup_test action.
