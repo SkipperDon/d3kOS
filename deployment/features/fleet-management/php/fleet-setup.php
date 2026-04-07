@@ -211,8 +211,69 @@ if ($action === 'cleanup_test') {
     $db->query("DELETE FROM amboat_fleets WHERE fleet_code = 'TEST01'");
     // Cascade deletes members, positions, and engine snapshots via FK
     $affected = $db->affected_rows;
-    echo json_encode(['success' => true, 'fleets_deleted' => $affected, 'note' => 'Test data removed. FK cascade cleared members/positions/engine rows.']);
+    // Also remove synthetic test user from wpax_usermeta
+    $prefix = defined('WP_DB_PREFIX') ? WP_DB_PREFIX : 'wpax_';
+    $db->query("DELETE FROM {$prefix}usermeta WHERE user_id = 999999 AND meta_key IN ('atmyboat_tier', 'atmyboat_app_token')");
+    $meta_deleted = $db->affected_rows;
+    echo json_encode(['success' => true, 'fleets_deleted' => $affected, 'test_meta_deleted' => $meta_deleted, 'note' => 'Test data removed. FK cascade cleared members/positions/engine rows. Synthetic user 999999 removed.']);
     exit;
 }
 
-echo json_encode(['success' => false, 'error' => "Unknown action: $action. Use create_tables|seed_test|verify|cleanup_test"]);
+// ── GET TEST TOKEN ────────────────────────────────────────────────────────────
+// Returns app_token + user_id for first T3 user. Staging/test use only.
+if ($action === 'get_test_token') {
+    $prefix = defined('WP_DB_PREFIX') ? WP_DB_PREFIX : 'wpax_';
+    // Find first user with tier = 3 or T3
+    $stmt = $db->prepare(
+        "SELECT u.user_id, u.meta_value AS tier_raw,
+                t.meta_value AS app_token
+         FROM {$prefix}usermeta u
+         JOIN {$prefix}usermeta t ON t.user_id = u.user_id AND t.meta_key = 'atmyboat_app_token'
+         WHERE u.meta_key = 'atmyboat_tier'
+           AND (u.meta_value = '3' OR u.meta_value = 'T3')
+         LIMIT 1"
+    );
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    if (!$row || empty($row['app_token'])) {
+        echo json_encode(['success' => false, 'error' => 'No T3 user with app_token found on staging. Pair a device first or promote a test account to T3.']);
+        exit;
+    }
+    echo json_encode([
+        'success'   => true,
+        'user_id'   => (int)$row['user_id'],
+        'app_token' => $row['app_token'],
+        'note'      => 'Use this app_token as Authorization: Bearer header for fleet-map.php and fleet-analytics.php tests.',
+    ]);
+    exit;
+}
+
+// ── CREATE TEST T3 USER ───────────────────────────────────────────────────────
+// Inserts synthetic user_id=999999 with a known app_token + T3 tier into wpax_usermeta.
+// Safe to re-run (INSERT IGNORE). Cleaned up by cleanup_test action.
+if ($action === 'create_test_user') {
+    $prefix = defined('WP_DB_PREFIX') ? WP_DB_PREFIX : 'wpax_';
+    $test_user_id  = 999999;
+    $test_app_token = 'e2e00000-f133-7000-b3b3-000000000003';  // UUID format, T3 test
+
+    // Insert tier row
+    $db->query("INSERT IGNORE INTO {$prefix}usermeta (user_id, meta_key, meta_value)
+                VALUES ({$test_user_id}, 'atmyboat_tier', '3')");
+    // Insert app_token row
+    $db->query("INSERT IGNORE INTO {$prefix}usermeta (user_id, meta_key, meta_value)
+                VALUES ({$test_user_id}, 'atmyboat_app_token', '{$test_app_token}')");
+
+    echo json_encode([
+        'success'   => true,
+        'user_id'   => $test_user_id,
+        'app_token' => $test_app_token,
+        'note'      => 'Synthetic T3 test user created. Use app_token as Authorization: Bearer header. Run cleanup_test to remove.',
+    ]);
+    exit;
+}
+
+// Also clean up the synthetic test user in cleanup_test
+// (cleanup_test deletes the fleet; this variant also wipes wpax_usermeta rows for user 999999)
+// Handled inline in cleanup_test above — but if action was not caught there, fall through here.
+
+echo json_encode(['success' => false, 'error' => "Unknown action: $action. Use create_tables|seed_test|verify|get_test_token|create_test_user|cleanup_test"]);

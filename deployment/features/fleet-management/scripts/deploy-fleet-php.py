@@ -39,7 +39,7 @@ for line in _ENV_FILE.read_text().splitlines():
 FTP_HOST   = env.get('FTP_HOST', 'ftp.atmyboat.com')
 FTP_USER   = env.get('FTP_USER', '')
 FTP_PASS   = env.get('FTP_PASS', '')
-REMOTE_DIR = '/staging/mobile'
+REMOTE_DIR = '/staging/wp-content/themes/twentytwenty-child/mobile'
 
 if not FTP_USER or not FTP_PASS:
     print('ERROR: FTP_USER or FTP_PASS missing in .env')

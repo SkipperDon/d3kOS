@@ -45,12 +45,12 @@ def post(path, body):
 
 
 def main():
+    global BASE, HEADERS_APP
     parser = argparse.ArgumentParser()
     parser.add_argument('--base-url', default=BASE)
     parser.add_argument('--app-token', required=True, help='T3 test account app_token')
     args = parser.parse_args()
 
-    global BASE, HEADERS_APP
     BASE = args.base_url.rstrip('/')
     HEADERS_APP = {
         'Authorization': f'Bearer {args.app_token}',
