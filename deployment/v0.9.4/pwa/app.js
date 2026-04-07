@@ -2659,9 +2659,176 @@ screens.support = function renderSupport() {
   });
   sentMsg.appendChild(checkStatusBtn);
 
+  // ── Diagnostic consent panel (shown when ticket_id exists) ───────────────
+  const diagPanel = el('div', {
+    style: 'display: none; border-top: 1px solid var(--border, rgba(255,255,255,0.1)); margin-top: 16px; padding-top: 16px;',
+  });
+
+  const diagTitle = el('p', {
+    style: 'font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;',
+  }, 'Remote Diagnostic Support');
+
+  const diagDesc = el('p', {
+    style: 'font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;',
+  }, 'Allow our support team to remotely collect diagnostic data from your vessel for this ticket.');
+
+  const diagStatus = el('div', {
+    style: 'display: none; font-size: 0.85rem; margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; background: var(--surface-2, rgba(255,255,255,0.05));',
+  });
+
+  const requestDiagBtn = el('button', {
+    class: 'btn btn-primary',
+    style: 'width: 100%; margin-bottom: 8px;',
+  }, 'Request Diagnostic Support');
+
+  const revokeBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'display: none; width: 100%; margin-bottom: 8px;',
+  }, 'Revoke Diagnostic Access');
+
+  let diagPollTimer = null;
+
+  function startDiagPoll(tid) {
+    if (diagPollTimer) return;
+    diagPollTimer = setInterval(async () => {
+      try {
+        const s = await apiFetch(`diagnostic-status.php?ticket_id=${tid}`);
+        updateDiagUI(s, tid);
+        if (s.bundle_ready || s.consent_status === 'expired' || s.consent_status === 'revoked' || s.consent_status === 'none') {
+          clearInterval(diagPollTimer);
+          diagPollTimer = null;
+        }
+      } catch (_) {}
+    }, 30000);
+  }
+
+  function stopDiagPoll() {
+    if (diagPollTimer) { clearInterval(diagPollTimer); diagPollTimer = null; }
+  }
+
+  function updateDiagUI(s, tid) {
+    const status = s.consent_status || 'none';
+    diagStatus.style.display = 'block';
+
+    if (s.bundle_ready) {
+      const kb = s.bundle_size_bytes ? Math.round(s.bundle_size_bytes / 1024) : '?';
+      diagStatus.textContent = `Bundle received (${kb} KB) — support team is reviewing.`;
+      diagStatus.style.background = 'rgba(34,197,94,0.15)';
+      requestDiagBtn.style.display = 'none';
+      revokeBtn.style.display = 'none';
+    } else if (status === 'active') {
+      const exp = s.expires_at ? new Date(s.expires_at.replace(' ', 'T') + 'Z').toLocaleTimeString() : '';
+      diagStatus.textContent = `Diagnostic access granted — Pi is collecting data${exp ? ' (expires ' + exp + ')' : ''}.`;
+      diagStatus.style.background = 'rgba(59,130,246,0.15)';
+      requestDiagBtn.style.display = 'none';
+      revokeBtn.style.display = 'block';
+    } else if (status === 'revoked') {
+      diagStatus.textContent = 'Diagnostic access revoked.';
+      diagStatus.style.background = 'var(--surface-2, rgba(255,255,255,0.05))';
+      requestDiagBtn.style.display = 'block';
+      revokeBtn.style.display = 'none';
+    } else if (status === 'expired') {
+      diagStatus.textContent = 'Diagnostic session expired. You may request another.';
+      diagStatus.style.background = 'var(--surface-2, rgba(255,255,255,0.05))';
+      requestDiagBtn.style.display = 'block';
+      revokeBtn.style.display = 'none';
+    } else {
+      requestDiagBtn.style.display = 'block';
+      revokeBtn.style.display = 'none';
+    }
+  }
+
+  // Show consent dialog
+  requestDiagBtn.addEventListener('click', () => {
+    const tid = parseInt(localStorage.getItem('support_ticket_id') || '0', 10);
+    if (!tid) return;
+
+    // Build inline consent dialog
+    const overlay = el('div', {
+      style: 'position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px;',
+    });
+    const dialog = el('div', {
+      style: 'background: var(--surface-1, #1e1e2e); border-radius: 12px; padding: 24px; max-width: 380px; width: 100%;',
+    });
+    dialog.appendChild(el('h3', { style: 'font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;' }, 'Allow Diagnostic Collection?'));
+    dialog.appendChild(el('p', { style: 'font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;' },
+      'The following will be sent to AtMyBoat support for this ticket only:'));
+    const list = el('ul', { style: 'font-size: 0.85rem; color: var(--text-muted); margin: 0 0 16px 18px; line-height: 1.8;' });
+    ['System logs (last 24 hours)', 'Service status (d3kOS services)', 'Process list, disk & memory usage',
+      'Config files (API keys removed)'].forEach(item => {
+      list.appendChild(el('li', {}, item));
+    });
+    dialog.appendChild(list);
+    dialog.appendChild(el('p', { style: 'font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;' },
+      'Access expires in 2 hours. You can revoke it at any time.'));
+
+    const btnRow = el('div', { style: 'display: flex; gap: 10px;' });
+
+    const approveBtn = el('button', { class: 'btn btn-primary', style: 'flex: 1;' }, 'Approve');
+    approveBtn.addEventListener('click', async () => {
+      approveBtn.disabled = true;
+      approveBtn.textContent = 'Sending…';
+      try {
+        const res = await apiFetch('diagnostic-consent.php', {
+          method: 'POST',
+          body: JSON.stringify({ ticket_id: tid }),
+        });
+        overlay.remove();
+        diagStatus.style.display = 'block';
+        diagStatus.textContent = 'Diagnostic access granted — Pi is collecting data.';
+        diagStatus.style.background = 'rgba(59,130,246,0.15)';
+        requestDiagBtn.style.display = 'none';
+        revokeBtn.style.display = 'block';
+        startDiagPoll(tid);
+      } catch (err) {
+        approveBtn.disabled = false;
+        approveBtn.textContent = 'Approve';
+        dialog.appendChild(el('p', { style: 'color: #f87171; font-size: 0.85rem; margin-top: 8px;' },
+          err.message || 'Failed — please try again.'));
+      }
+    });
+
+    const declineBtn = el('button', { class: 'btn btn-ghost', style: 'flex: 1;' }, 'Decline');
+    declineBtn.addEventListener('click', () => overlay.remove());
+
+    btnRow.appendChild(approveBtn);
+    btnRow.appendChild(declineBtn);
+    dialog.appendChild(btnRow);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+  });
+
+  // Revoke consent
+  revokeBtn.addEventListener('click', async () => {
+    const tid = parseInt(localStorage.getItem('support_ticket_id') || '0', 10);
+    if (!tid) return;
+    revokeBtn.disabled = true;
+    revokeBtn.textContent = 'Revoking…';
+    try {
+      await apiFetch('diagnostic-revoke.php', {
+        method: 'POST',
+        body: JSON.stringify({ ticket_id: tid }),
+      });
+      stopDiagPoll();
+      diagStatus.textContent = 'Diagnostic access revoked.';
+      diagStatus.style.background = 'var(--surface-2, rgba(255,255,255,0.05))';
+      revokeBtn.style.display = 'none';
+      requestDiagBtn.style.display = 'block';
+    } catch (_) {}
+    revokeBtn.disabled = false;
+    revokeBtn.textContent = 'Revoke Diagnostic Access';
+  });
+
+  diagPanel.appendChild(diagTitle);
+  diagPanel.appendChild(diagDesc);
+  diagPanel.appendChild(diagStatus);
+  diagPanel.appendChild(requestDiagBtn);
+  diagPanel.appendChild(revokeBtn);
+  sentMsg.appendChild(diagPanel);
+
   const backToSettings = el('button', {
     class: 'btn btn-ghost',
-    style: 'width: 100%;',
+    style: 'width: 100%; margin-top: 8px;',
   }, 'Back to Settings');
   backToSettings.addEventListener('click', () => navigate('settings'));
   sentMsg.appendChild(backToSettings);
@@ -2713,6 +2880,7 @@ screens.support = function renderSupport() {
         ticketRow.textContent = `Reference: #${result.ticket_id}`;
         ticketRow.style.display = 'block';
         checkStatusBtn.style.display = 'block';
+        diagPanel.style.display = 'block';
       }
       form.style.display = 'none';
       sentMsg.style.display = 'block';
@@ -2724,6 +2892,22 @@ screens.support = function renderSupport() {
     }
   });
   form.appendChild(sendBtn);
+
+  // ── Restore state if ticket_id already in localStorage ───────────────────
+  const existingTid = parseInt(localStorage.getItem('support_ticket_id') || '0', 10);
+  if (existingTid) {
+    sentTitle.textContent = `Ticket #${existingTid}`;
+    ticketRow.textContent = `Reference: #${existingTid}`;
+    ticketRow.style.display = 'block';
+    checkStatusBtn.style.display = 'block';
+    diagPanel.style.display = 'block';
+    form.style.display = 'none';
+    sentMsg.style.display = 'block';
+    // Fetch current diagnostic status
+    apiFetch(`diagnostic-status.php?ticket_id=${existingTid}`)
+      .then(s => updateDiagUI(s, existingTid))
+      .catch(() => {});
+  }
 
   card.appendChild(sentMsg);
   card.appendChild(form);

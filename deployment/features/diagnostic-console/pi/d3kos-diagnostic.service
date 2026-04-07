@@ -1,0 +1,22 @@
+[Unit]
+Description=d3kOS Remote Diagnostic Collection Agent
+After=network.target
+Documentation=https://atmyboat.com/staging
+
+[Service]
+Type=oneshot
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/diagnostic
+ExecStart=/usr/bin/python3 /opt/d3kos/services/diagnostic/diagnostic_agent.py --ticket-id %I
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=d3kos-diagnostic
+TimeoutStartSec=120
+RemainAfterExit=no
+
+# Allow service to write to /tmp and /opt/d3kos/logs
+PrivateTmp=no
+ReadWritePaths=/opt/d3kos/logs /tmp
+
+[Install]
+WantedBy=multi-user.target

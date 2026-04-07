@@ -13,7 +13,7 @@ from flask import (Flask, render_template, request, redirect,
 from config import config
 from db import test_connection, proxy_call
 from email_client import fetch_inbox, fetch_message, send_reply, invalidate_cache
-from ai_client import draft_reply
+from ai_client import draft_reply, diagnose_pi
 import local_db
 
 app = Flask(__name__)
@@ -35,8 +35,13 @@ ALLOWED_TABLES = [
 
 # Tickets proxy — same auth as proxy_call but targets admin-api-tickets.php
 import requests as _requests
-_tickets_url     = config["proxy_url"].replace("admin-api.php", "admin-api-tickets.php")
-_tickets_headers = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+_tickets_url       = config["proxy_url"].replace("admin-api.php", "admin-api-tickets.php")
+_tickets_headers   = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+_diag_bundle_url   = config["proxy_url"].replace("admin-api.php", "diagnostic-bundle.php")
+_diag_fix_url      = config["proxy_url"].replace("admin-api.php", "diagnostic-fix.php")
+_diag_resolve_url  = config["proxy_url"].replace("admin-api.php", "diagnostic-resolve.php")
+_diag_past_url     = config["proxy_url"].replace("admin-api.php", "diagnostic-past-cases.php")
+_diag_headers_get  = {"Authorization": f"Bearer {config['proxy_api_key']}"}
 
 def proxy_call_tickets(action: str, **kwargs) -> dict:
     payload = {"action": action, **kwargs}
@@ -618,6 +623,118 @@ def ticket_update(ticket_id):
                        status     = request.form.get("status", ""),
                        admin_note = request.form.get("admin_note", ""))
     return redirect(url_for("ticket_detail", ticket_id=ticket_id))
+
+
+# ── v0.9.7 Phase 3 — Diagnostic Bundle + AI Diagnosis ────────────────────────
+
+@app.route("/ticket/<int:ticket_id>/bundle-status")
+@login_required
+def ticket_bundle_status(ticket_id):
+    """Return bundle metadata (no blob) for the ticket detail diagnostic panel."""
+    try:
+        resp = _requests.get(_diag_bundle_url,
+                             params={"ticket_id": ticket_id},
+                             headers=_diag_headers_get, timeout=15)
+        data = resp.json()
+        if data.get("success"):
+            d = data["data"]
+            return jsonify({
+                "has_bundle":        True,
+                "bundle_id":         d["bundle_id"],
+                "bundle_size_bytes": d["bundle_size_bytes"],
+                "created_at":        d["created_at"],
+                "ai_diagnosis":      d.get("ai_diagnosis"),
+            })
+        return jsonify({"has_bundle": False})
+    except Exception as e:
+        return jsonify({"has_bundle": False, "error": str(e)})
+
+
+@app.route("/ticket/<int:ticket_id>/diagnose", methods=["POST"])
+@login_required
+def ticket_diagnose(ticket_id):
+    """Download bundle, run Gemini diagnosis, store result, return JSON."""
+    try:
+        resp = _requests.get(_diag_bundle_url,
+                             params={"ticket_id": ticket_id},
+                             headers=_diag_headers_get, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        if not data.get("success"):
+            return jsonify({"success": False, "error": data.get("error", "Bundle fetch failed")}), 400
+
+        bundle_b64 = data["data"]["bundle_b64"]
+        diagnosis, err = diagnose_pi(config["gemini_api_key"], bundle_b64)
+        if err:
+            return jsonify({"success": False, "error": f"AI error: {err}"}), 500
+
+        import json as _json_mod
+        proxy_call_tickets("save_diagnosis",
+                           ticket_id=ticket_id,
+                           ai_diagnosis=_json_mod.dumps(diagnosis))
+        return jsonify({"success": True, "diagnosis": diagnosis})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ── v0.9.7 Phase 4 — Fix Delivery + Case Resolution + Knowledge Base ─────────
+
+@app.route("/ticket/<int:ticket_id>/send-fix", methods=["POST"])
+@login_required
+def ticket_send_fix(ticket_id):
+    """Enqueue a whitelisted fix command for the Pi via diagnostic-fix.php."""
+    body = request.get_json() or {}
+    try:
+        resp = _requests.post(
+            _diag_fix_url,
+            json={
+                "ticket_id":  ticket_id,
+                "fix_type":   body.get("fix_type", ""),
+                "fix_target": body.get("fix_target", ""),
+                "fix_value":  body.get("fix_value"),
+            },
+            headers=_tickets_headers, timeout=15,
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/ticket/<int:ticket_id>/resolve", methods=["POST"])
+@login_required
+def ticket_resolve(ticket_id):
+    """Log resolved case + run pattern detection via diagnostic-resolve.php."""
+    body = request.get_json() or {}
+    try:
+        resp = _requests.post(
+            _diag_resolve_url,
+            json={
+                "ticket_id":             ticket_id,
+                "problem_category":      body.get("problem_category", ""),
+                "root_cause":            body.get("root_cause", ""),
+                "fix_applied":           body.get("fix_applied", ""),
+                "outcome":               body.get("outcome", "resolved"),
+                "time_to_resolution_min": body.get("time_to_resolution_min"),
+            },
+            headers=_tickets_headers, timeout=15,
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/ticket/<int:ticket_id>/past-cases")
+@login_required
+def ticket_past_cases(ticket_id):
+    """Fetch similar resolved cases + auto-rule for this ticket."""
+    try:
+        resp = _requests.get(_diag_past_url,
+                             params={"ticket_id": ticket_id},
+                             headers=_diag_headers_get, timeout=15)
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"success": False, "cases": [], "rule": None, "error": str(e)}), 500
 
 
 if __name__ == "__main__":

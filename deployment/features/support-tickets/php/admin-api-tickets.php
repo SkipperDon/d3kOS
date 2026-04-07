@@ -10,6 +10,7 @@
  *   get_tickets    — paginated list, optional status filter
  *   get_ticket     — single ticket detail
  *   update_ticket  — set status + admin_note
+ *   save_diagnosis — store AI diagnosis text in amboat_diagnostic_bundles
  */
 
 require_once __DIR__ . '/config.php';
@@ -177,6 +178,29 @@ switch ($action) {
         $updated_at = $stmt2->fetchColumn();
 
         echo json_encode(['success' => true, 'updated_at' => $updated_at]);
+        break;
+    }
+
+    // ── save_diagnosis ────────────────────────────────────────────────────────
+    // Body: { action, ticket_id, ai_diagnosis }
+    // Updates amboat_diagnostic_bundles.ai_diagnosis for the latest bundle on this ticket.
+    case 'save_diagnosis': {
+        $ticket_id    = (int)($body['ticket_id'] ?? 0);
+        $ai_diagnosis = $body['ai_diagnosis'] ?? '';
+
+        if ($ticket_id < 1 || !$ai_diagnosis) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'ticket_id and ai_diagnosis required']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare(
+            "UPDATE amboat_diagnostic_bundles SET ai_diagnosis = ?
+             WHERE ticket_id = ? ORDER BY bundle_id DESC LIMIT 1"
+        );
+        $stmt->execute([$ai_diagnosis, $ticket_id]);
+
+        echo json_encode(['success' => true, 'updated' => $stmt->rowCount() > 0]);
         break;
     }
 

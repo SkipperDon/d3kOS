@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-d3kOS Cloud Command Agent (v0.9.4 S2)
+d3kOS Cloud Command Agent (v0.9.4 S2 / v0.9.7)
 Polls AtMyBoat.com command queue every 30s, executes commands, writes results back.
 
 Commands handled:
-  ping            - Respond with current version + timestamp. Confirms agent is alive.
-  export_now      - Trigger immediate export via export-manager POST to :8094.
-  tier_change     - Read new tier from payload, update license.json.
-  fix_my_pi       - Run diagnostics + service restarts, report results back.
-  ota_upgrade     - Download, verify, install latest release, restart services.
-  setup_lockdown  - Apply apt-mark hold on critical packages to prevent OS upgrades breaking d3kOS.
-  pair_confirmed  - Pi paired via app. Upgrade tier in license.json, trigger immediate export.
-  fleet_assign    - Write /opt/d3kos/config/fleet.json, restart d3kos-fleet-push.service.
-  fleet_unassign  - Remove /opt/d3kos/config/fleet.json, stop d3kos-fleet-push.service.
+  ping               - Respond with current version + timestamp. Confirms agent is alive.
+  export_now         - Trigger immediate export via export-manager POST to :8094.
+  tier_change        - Read new tier from payload, update license.json.
+  fix_my_pi          - Run diagnostics + service restarts, report results back.
+  ota_upgrade        - Download, verify, install latest release, restart services.
+  setup_lockdown     - Apply apt-mark hold on critical packages to prevent OS upgrades breaking d3kOS.
+  pair_confirmed     - Pi paired via app. Upgrade tier in license.json, trigger immediate export.
+  fleet_assign       - Write /opt/d3kos/config/fleet.json, restart d3kos-fleet-push.service.
+  fleet_unassign     - Remove /opt/d3kos/config/fleet.json, stop d3kos-fleet-push.service.
+  diagnostic_collect - Collect system logs + config, bundle, upload to HostPapa for ticket.
 
 Config:  /opt/d3kos/config/cloud-config.json  (amboat_api_key, amboat_base_url)
 Token:   /opt/d3kos/config/device-token.json  (created on first run if absent)
@@ -366,6 +367,129 @@ def handle_fleet_assign(cmd_id, payload, base_url, api_key, device_token):
         logger.error(f'fleet_assign exception: {e}')
 
 
+DIAGNOSTIC_FIX_WHITELIST = {
+    'restart_service':    ['d3kos-voice','d3kos-ai-bridge','d3kos-fleet-push','signalk',
+                           'nodered','d3kos-cloud-link','d3kos-predictive','d3kos-gemini-proxy',
+                           'd3kos-cloud-agent'],
+    'clear_cache':        ['signalk_cache','ai_cache','temp_files'],
+    'rotate_logs':        ['d3kos','nginx'],
+    'update_config':      ['gps_timeout','ai_model_id','log_retention_days'],
+    'recalibrate_sensor': ['gps','temperature','pressure','fuel'],
+    'restart_signalk':    [],
+    'restart_pi':         [],
+}
+
+
+def handle_diagnostic_fix(cmd_id, payload, base_url, api_key, device_token):
+    """Execute a whitelisted diagnostic fix command."""
+    import subprocess
+    fix_type   = payload.get('fix_type', '')
+    fix_target = payload.get('fix_target', '')
+
+    if fix_type not in DIAGNOSTIC_FIX_WHITELIST:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed',
+                    {'error': f'fix_type {fix_type!r} not whitelisted'})
+        return
+
+    allowed = DIAGNOSTIC_FIX_WHITELIST[fix_type]
+    if allowed and fix_target not in allowed:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed',
+                    {'error': f'fix_target {fix_target!r} not allowed for {fix_type}'})
+        return
+
+    try:
+        output = ''
+
+        if fix_type == 'restart_service':
+            r = subprocess.run(['sudo', 'systemctl', 'restart', fix_target],
+                               capture_output=True, text=True, timeout=30)
+            output = (r.stdout + r.stderr).strip() or f'{fix_target} restarted'
+
+        elif fix_type == 'restart_signalk':
+            r = subprocess.run(['sudo', 'systemctl', 'restart', 'signalk'],
+                               capture_output=True, text=True, timeout=30)
+            output = (r.stdout + r.stderr).strip() or 'signalk restarted'
+
+        elif fix_type == 'restart_pi':
+            ack_command(base_url, api_key, device_token, cmd_id, 'completed',
+                        {'output': 'Rebooting Pi now...'})
+            subprocess.run(['sudo', 'reboot'], timeout=10)
+            return
+
+        elif fix_type == 'clear_cache':
+            cache_map = {
+                'signalk_cache': '/tmp/signalk-*',
+                'ai_cache':      '/tmp/ai-cache-*',
+                'temp_files':    '/tmp/d3kos-*',
+            }
+            pattern = cache_map.get(fix_target, '')
+            if pattern:
+                r = subprocess.run(['bash', '-c', f'rm -rf {pattern}'],
+                                   capture_output=True, text=True, timeout=15)
+                output = f'{fix_target} cleared'
+            else:
+                output = f'Unknown cache target: {fix_target}'
+
+        elif fix_type == 'rotate_logs':
+            service_pattern = 'd3kos-*' if fix_target == 'd3kos' else fix_target
+            r = subprocess.run(['sudo', 'journalctl', '--rotate'],
+                               capture_output=True, text=True, timeout=15)
+            r2 = subprocess.run(['sudo', 'journalctl', '--vacuum-time=7d'],
+                                capture_output=True, text=True, timeout=15)
+            output = f'Logs rotated for {fix_target}'
+
+        elif fix_type == 'update_config':
+            fix_value = payload.get('fix_value')
+            if fix_value is None:
+                ack_command(base_url, api_key, device_token, cmd_id, 'failed',
+                            {'error': 'fix_value required for update_config'})
+                return
+            config_path = Path('/opt/d3kos/config/cloud-config.json')
+            cfg = json.loads(config_path.read_text())
+            cfg[fix_target] = fix_value
+            config_path.write_text(json.dumps(cfg, indent=2))
+            output = f'Config updated: {fix_target}={fix_value}'
+
+        elif fix_type == 'recalibrate_sensor':
+            output = f'Sensor recalibration for {fix_target} — not yet implemented on this Pi'
+
+        ack_command(base_url, api_key, device_token, cmd_id, 'completed',
+                    {'fix_type': fix_type, 'fix_target': fix_target, 'output': output})
+        logger.info(f'diagnostic_fix: {fix_type}/{fix_target} completed')
+
+    except Exception as e:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': str(e)})
+        logger.error(f'diagnostic_fix exception: {e}')
+
+
+def handle_diagnostic_collect(cmd_id, payload, base_url, api_key, device_token):
+    """Launch diagnostic_agent.py to collect logs, bundle, and upload for a ticket."""
+    import subprocess
+    ticket_id = payload.get('ticket_id')
+    if not ticket_id:
+        ack_command(base_url, api_key, device_token, cmd_id, 'failed',
+                    {'error': 'ticket_id missing from payload'})
+        logger.error('diagnostic_collect: ticket_id missing')
+        return
+
+    # ACK immediately — collection takes up to 60s; agent uploads asynchronously
+    ack_command(base_url, api_key, device_token, cmd_id, 'completed',
+                {'status': 'collecting', 'ticket_id': int(ticket_id)})
+    logger.info(f'diagnostic_collect: launching agent for ticket_id={ticket_id}')
+
+    try:
+        agent_path = '/opt/d3kos/services/diagnostic/diagnostic_agent.py'
+        subprocess.Popen(
+            ['/usr/bin/python3', agent_path, '--ticket-id', str(ticket_id)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        logger.info(f'diagnostic_collect: agent launched for ticket_id={ticket_id}')
+    except Exception as e:
+        logger.error(f'diagnostic_collect: failed to launch agent: {e}')
+
+
 def handle_fleet_unassign(cmd_id, base_url, api_key, device_token):
     """Remove fleet.json and stop fleet push service."""
     import subprocess
@@ -424,6 +548,12 @@ def dispatch(cmd, base_url, api_key, device_token):
 
     elif command == 'fleet_unassign':
         handle_fleet_unassign(cmd_id, base_url, api_key, device_token)
+
+    elif command == 'diagnostic_collect':
+        handle_diagnostic_collect(cmd_id, payload, base_url, api_key, device_token)
+
+    elif command == 'diagnostic_fix':
+        handle_diagnostic_fix(cmd_id, payload, base_url, api_key, device_token)
 
     else:
         ack_command(base_url, api_key, device_token, cmd_id, 'failed',
