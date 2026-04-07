@@ -77,6 +77,16 @@
         Boatlog
       </button>
 
+      <!-- Fleet tab — visible to T3 only (toggled by app.js updateFleetNavVisibility) -->
+      <button class="nav-btn" id="fleet-nav-btn" data-screen="fleet" aria-label="Fleet" style="display:none">
+        <!-- Anchor icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="5" r="2"/>
+          <path d="M12 7v14M5 11l7-4 7 4M5 20c0-2 3-4 7-4s7 2 7 4"/>
+        </svg>
+        Fleet
+      </button>
+
       <button class="nav-btn" data-screen="settings" aria-label="Settings">
         <!-- Gear icon -->
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -96,6 +106,11 @@
   <!-- jsPDF: client-side PDF generation for vessel health reports. -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
           crossorigin="anonymous"></script>
+  <!-- Leaflet.js: fleet map (T3 only). CSS before app.css so our overrides win. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/sp38=" crossorigin="anonymous"></script>
   <script src="app.js"></script>
 </body>
 </html>

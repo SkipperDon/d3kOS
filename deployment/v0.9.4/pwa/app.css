@@ -1203,3 +1203,124 @@ html, body {
   margin-bottom: 12px;
 }
 .support-form {}
+
+/* ── Fleet Screen (v0.9.6) ─────────────────────────────────────────────────── */
+
+/* Shared input style for standalone inputs (not wrapped in .field) */
+.input-field {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  line-height: 1.4;
+  min-height: 48px;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.input-field::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+/* Fleet map view toggle bar */
+.fleet-toggle-bar {
+  display: flex;
+  gap: 0;
+  margin: 8px 0 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.fleet-tab {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+  transition: background 0.15s, color 0.15s;
+}
+.fleet-tab.active {
+  background: var(--accent);
+  color: #0a1628;
+}
+
+/* Fleet summary strip below map */
+.fleet-summary-strip {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 8px;
+  background: var(--bg-card);
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 12px;
+}
+.fleet-stat-item { text-align: center; }
+.fleet-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+  font-family: 'JetBrains Mono', monospace;
+}
+.fleet-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Leaflet map dark overrides */
+.leaflet-container {
+  background: #0a1628 !important;
+  font-family: Nunito, sans-serif;
+}
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card, #0c1a30);
+  color: var(--text, #e2e8f0);
+  border: 1px solid var(--border, #1e3a5f);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.leaflet-popup-tip { background: var(--bg-card, #0c1a30); }
+.leaflet-popup-content { font-size: 14px; margin: 10px 14px; }
+
+/* Vessel list cards */
+.fleet-vessel-card { padding: 14px 16px; margin-bottom: 8px; }
+.fleet-vessel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.fleet-vessel-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.fleet-vessel-name {
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  flex: 1;
+}
+.fleet-role-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 180, 216, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(0, 180, 216, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

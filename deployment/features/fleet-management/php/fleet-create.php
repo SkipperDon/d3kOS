@@ -33,9 +33,14 @@ $auth         = amboat_auth_app_request();
 $user_id      = $auth['user_id'];
 $device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
 
+// If no X-Device-Token header (PWA flow), look up from wpax_usermeta
+if (empty($device_token)) {
+    $device_token = amboat_get_user_meta($user_id, 'atmyboat_device_token') ?? '';
+}
+
 if (empty($device_token) ||
     !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $device_token)) {
-    amboat_send_error('X-Device-Token header required.', 400);
+    amboat_send_error('X-Device-Token required (or device not paired to this account).', 400);
 }
 
 // T3 gate

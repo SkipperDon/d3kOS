@@ -27,6 +27,9 @@ const state = {
   currentScreen: 'dashboard',
   mediaList:   [],
   mediaStorage: null,
+  fleetId:      null,   // current fleet_id (persisted in localStorage)
+  fleetData:    null,   // last fleet-map.php response data
+  fleetAnalytics: null, // last fleet-analytics.php response data
 };
 
 // ── Persistence ───────────────────────────────────────────────────────────────
@@ -47,6 +50,7 @@ function loadSession() {
   state.tier        = localStorage.getItem('amboat_tier')     || 'T1';
   const v = localStorage.getItem('amboat_vessel');
   if (v) { try { state.vessel = JSON.parse(v); } catch { state.vessel = null; } }
+  loadFleetSession();
 }
 
 function clearSession() {
@@ -3179,6 +3183,445 @@ screens.fixmypi = function renderFixMyPi() {
   }
 };
 
+// ── Fleet Screen (T3 only) ────────────────────────────────────────────────────
+
+// Fleet API helpers
+function apiFleetMap(fleetId)       { return apiFetch(`fleet-map.php?fleet_id=${fleetId}`); }
+function apiFleetAnalytics(fleetId) { return apiFetch(`fleet-analytics.php?fleet_id=${fleetId}`); }
+function apiFleetCreate(name, fleetType) {
+  return apiFetch('fleet-create.php', {
+    method: 'POST',
+    body: JSON.stringify({ name, fleet_type: fleetType }),
+  });
+}
+function apiFleetJoin(fleetCode) {
+  return apiFetch('fleet-join.php', {
+    method: 'POST',
+    body: JSON.stringify({ fleet_code: fleetCode.toUpperCase() }),
+  });
+}
+
+// Fleet state persisted in localStorage
+function saveFleetSession() {
+  if (state.fleetId) localStorage.setItem('amboat_fleet_id', String(state.fleetId));
+  else               localStorage.removeItem('amboat_fleet_id');
+}
+function loadFleetSession() {
+  const fid = localStorage.getItem('amboat_fleet_id');
+  state.fleetId = fid ? parseInt(fid, 10) : null;
+}
+
+// Show/hide fleet nav button based on tier
+function updateFleetNavVisibility() {
+  const btn = document.getElementById('fleet-nav-btn');
+  if (btn) btn.style.display = (state.tier === 'T3') ? '' : 'none';
+}
+
+// ── Fleet setup screen (join or create) ──────────────────────────────────────
+function renderFleetSetup() {
+  const container = getEl('screen');
+
+  const header = el('div', { class: 'screen-header' });
+  header.appendChild(el('span', { class: 'screen-title' }, 'Fleet Management'));
+  container.appendChild(header);
+
+  const intro = el('div', { class: 'card' });
+  intro.appendChild(el('div', { class: 'card-title' }, 'Join or Create a Fleet'));
+  intro.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);margin-bottom:16px;line-height:1.6;' },
+    'A fleet lets you monitor multiple vessels from one screen. Enter a 6-character fleet code to join an existing fleet, or create a new one.'
+  ));
+
+  // ── Join section ──
+  const joinTitle = el('div', { style: 'font-weight:700;font-size:1rem;margin-bottom:8px;' }, 'Join a Fleet');
+  const codeInput = el('input', {
+    type: 'text',
+    maxlength: '6',
+    placeholder: 'Fleet code (e.g. ABC123)',
+    class: 'input-field',
+    style: 'text-transform:uppercase;letter-spacing:0.1em;font-size:1.1rem;',
+    'aria-label': 'Fleet code',
+  });
+  const joinBtn = el('button', { class: 'btn btn-primary', style: 'margin-top:8px;width:100%;' }, 'Join Fleet');
+  const joinMsg = el('div', { style: 'margin-top:8px;font-size:0.95rem;display:none;' });
+
+  joinBtn.addEventListener('click', async () => {
+    const code = codeInput.value.trim().toUpperCase();
+    if (code.length !== 6) {
+      joinMsg.textContent   = 'Enter a 6-character fleet code.';
+      joinMsg.style.color   = 'var(--red)';
+      joinMsg.style.display = 'block';
+      return;
+    }
+    joinBtn.disabled    = true;
+    joinBtn.textContent = 'Joining…';
+    joinMsg.style.display = 'none';
+    try {
+      const res = await apiFleetJoin(code);
+      if (res.success) {
+        state.fleetId = res.data.fleet_id;
+        saveFleetSession();
+        navigate('fleet');
+      } else {
+        joinMsg.textContent   = res.error || 'Could not join fleet.';
+        joinMsg.style.color   = 'var(--red)';
+        joinMsg.style.display = 'block';
+        joinBtn.disabled    = false;
+        joinBtn.textContent = 'Join Fleet';
+      }
+    } catch {
+      joinMsg.textContent   = 'Network error. Check connection.';
+      joinMsg.style.color   = 'var(--red)';
+      joinMsg.style.display = 'block';
+      joinBtn.disabled    = false;
+      joinBtn.textContent = 'Join Fleet';
+    }
+  });
+
+  intro.appendChild(joinTitle);
+  intro.appendChild(codeInput);
+  intro.appendChild(joinBtn);
+  intro.appendChild(joinMsg);
+
+  // ── Divider ──
+  intro.appendChild(el('hr', { style: 'margin:20px 0;border-color:var(--border);' }));
+
+  // ── Create section ──
+  const createTitle = el('div', { style: 'font-weight:700;font-size:1rem;margin-bottom:8px;' }, 'Create a New Fleet');
+  const nameInput = el('input', {
+    type: 'text',
+    maxlength: '100',
+    placeholder: 'Fleet name (e.g. My Charter Fleet)',
+    class: 'input-field',
+    'aria-label': 'Fleet name',
+  });
+  const typeSelect = el('select', {
+    class: 'input-field',
+    style: 'margin-top:8px;',
+    'aria-label': 'Fleet type',
+  });
+  [['charter', 'Charter'], ['fishing', 'Fishing'], ['marina', 'Marina'], ['other', 'Other']].forEach(([v, l]) => {
+    typeSelect.appendChild(el('option', { value: v }, l));
+  });
+  const createBtn = el('button', { class: 'btn btn-ghost', style: 'margin-top:8px;width:100%;' }, 'Create Fleet');
+  const createMsg = el('div', { style: 'margin-top:8px;font-size:0.95rem;display:none;' });
+
+  createBtn.addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    if (!name) {
+      createMsg.textContent   = 'Fleet name is required.';
+      createMsg.style.color   = 'var(--red)';
+      createMsg.style.display = 'block';
+      return;
+    }
+    createBtn.disabled    = true;
+    createBtn.textContent = 'Creating…';
+    createMsg.style.display = 'none';
+    try {
+      const res = await apiFleetCreate(name, typeSelect.value);
+      if (res.success) {
+        state.fleetId = res.data.fleet_id;
+        saveFleetSession();
+        // Show the fleet code prominently before navigating
+        createMsg.innerHTML   = `Fleet created! Share code <strong style="font-size:1.3em;letter-spacing:0.1em;color:var(--accent)">${res.data.fleet_code}</strong> with other vessels to join.`;
+        createMsg.style.color = 'var(--text)';
+        createMsg.style.display = 'block';
+        createBtn.textContent = 'View Fleet →';
+        createBtn.disabled    = false;
+        createBtn.onclick     = () => navigate('fleet');
+      } else {
+        createMsg.textContent   = res.error || 'Could not create fleet.';
+        createMsg.style.color   = 'var(--red)';
+        createMsg.style.display = 'block';
+        createBtn.disabled    = false;
+        createBtn.textContent = 'Create Fleet';
+      }
+    } catch {
+      createMsg.textContent   = 'Network error. Check connection.';
+      createMsg.style.color   = 'var(--red)';
+      createMsg.style.display = 'block';
+      createBtn.disabled    = false;
+      createBtn.textContent = 'Create Fleet';
+    }
+  });
+
+  intro.appendChild(createTitle);
+  intro.appendChild(nameInput);
+  intro.appendChild(typeSelect);
+  intro.appendChild(createBtn);
+  intro.appendChild(createMsg);
+  container.appendChild(intro);
+}
+
+// ── Fleet map + vessel list (main fleet view) ─────────────────────────────────
+function renderFleetMap(fleetData, analytics) {
+  const container = getEl('screen');
+  const vessels   = fleetData.vessels || [];
+  const summary   = analytics ? analytics.fleet_summary : null;
+
+  // Header row: fleet name + refresh button
+  const header = el('div', { class: 'screen-header' });
+  header.appendChild(el('span', { class: 'screen-title' }, fleetData.fleet_name || 'Fleet'));
+  const refreshBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'padding:6px 12px;font-size:0.9rem;',
+    'aria-label': 'Refresh fleet data',
+  }, 'Refresh');
+  refreshBtn.addEventListener('click', () => {
+    state.fleetData     = null;
+    state.fleetAnalytics = null;
+    navigate('fleet');
+  });
+  header.appendChild(refreshBtn);
+  container.appendChild(header);
+
+  // Toggle buttons: Map / List
+  const toggleBar = el('div', { class: 'fleet-toggle-bar', role: 'tablist' });
+  const mapTabBtn  = el('button', { class: 'fleet-tab active', role: 'tab', 'aria-selected': 'true',  id: 'tab-map'  }, 'Map');
+  const listTabBtn = el('button', { class: 'fleet-tab',        role: 'tab', 'aria-selected': 'false', id: 'tab-list' }, 'Vessel List');
+  toggleBar.appendChild(mapTabBtn);
+  toggleBar.appendChild(listTabBtn);
+  container.appendChild(toggleBar);
+
+  // Content panels
+  const mapPanel  = el('div', { id: 'fleet-map-panel',  role: 'tabpanel', 'aria-labelledby': 'tab-map'  });
+  const listPanel = el('div', { id: 'fleet-list-panel', role: 'tabpanel', 'aria-labelledby': 'tab-list', style: 'display:none;' });
+  container.appendChild(mapPanel);
+  container.appendChild(listPanel);
+
+  // Tab switching
+  mapTabBtn.addEventListener('click', () => {
+    mapTabBtn.classList.add('active');    mapTabBtn.setAttribute('aria-selected', 'true');
+    listTabBtn.classList.remove('active'); listTabBtn.setAttribute('aria-selected', 'false');
+    mapPanel.style.display  = '';
+    listPanel.style.display = 'none';
+    // Re-init map if needed (Leaflet loses size after display:none)
+    if (window._fleetLeafletMap) window._fleetLeafletMap.invalidateSize();
+  });
+  listTabBtn.addEventListener('click', () => {
+    listTabBtn.classList.add('active');   listTabBtn.setAttribute('aria-selected', 'true');
+    mapTabBtn.classList.remove('active'); mapTabBtn.setAttribute('aria-selected', 'false');
+    listPanel.style.display = '';
+    mapPanel.style.display  = 'none';
+  });
+
+  // ── MAP PANEL ──────────────────────────────────────────────────────────────
+  const mapDiv = el('div', { id: 'leaflet-map', style: 'width:100%;height:340px;border-radius:8px;overflow:hidden;' });
+  mapPanel.appendChild(mapDiv);
+
+  // Fleet summary strip below map
+  if (summary) {
+    const strip = el('div', { class: 'fleet-summary-strip' });
+    [
+      ['Active 24h',    summary.vessels_active_24h ?? '—'],
+      ['Engine Hours',  summary.total_engine_hours  != null ? summary.total_engine_hours.toFixed(0) + 'h' : '—'],
+      ['Avg RPM',       summary.fleet_avg_rpm        != null ? Math.round(summary.fleet_avg_rpm)           : '—'],
+    ].forEach(([label, value]) => {
+      const item = el('div', { class: 'fleet-stat-item' });
+      item.appendChild(el('div', { class: 'fleet-stat-value' }, String(value)));
+      item.appendChild(el('div', { class: 'fleet-stat-label' }, label));
+      strip.appendChild(item);
+    });
+    mapPanel.appendChild(strip);
+  }
+
+  // Init Leaflet map (after DOM insertion, requestAnimationFrame to ensure size)
+  requestAnimationFrame(() => {
+    if (typeof L === 'undefined') {
+      mapDiv.innerHTML = '<p style="padding:16px;color:var(--text-muted);font-size:0.95rem;">Map unavailable — Leaflet did not load. Check internet connection.</p>';
+      return;
+    }
+
+    // Compute centroid of all vessels with GPS
+    const withGPS = vessels.filter(v => v.lat != null && v.lon != null);
+    const centerLat = withGPS.length ? withGPS.reduce((s, v) => s + v.lat, 0) / withGPS.length : 43.65;
+    const centerLon = withGPS.length ? withGPS.reduce((s, v) => s + v.lon, 0) / withGPS.length : -79.38;
+
+    // Destroy old map instance if any (navigating back to fleet)
+    if (window._fleetLeafletMap) {
+      try { window._fleetLeafletMap.remove(); } catch { /* ignore */ }
+      window._fleetLeafletMap = null;
+    }
+
+    const map = L.map('leaflet-map', { zoomControl: true, attributionControl: false });
+    window._fleetLeafletMap = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap',
+    }).addTo(map);
+
+    map.setView([centerLat, centerLon], withGPS.length > 1 ? 12 : 14);
+
+    // Status color by age
+    function markerColor(ageMin) {
+      if (ageMin == null)  return '#6b7280';  // grey — no data
+      if (ageMin <= 10)    return '#22c55e';  // green
+      if (ageMin <= 60)    return '#f59e0b';  // amber
+      return '#ef4444';                        // red
+    }
+
+    withGPS.forEach(v => {
+      const color = markerColor(v.age_minutes);
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.8);box-shadow:0 0 6px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+        popupAnchor: [0, -10],
+      });
+
+      const shortTok = v.device_token ? v.device_token.slice(-8) : 'unknown';
+      const ageStr   = v.age_minutes != null ? `${v.age_minutes}m ago` : 'unknown';
+      const sogStr   = v.sog != null ? `${v.sog} kn` : '—';
+      const cogStr   = v.cog != null ? `${Math.round(v.cog)}°` : '—';
+      const roleStr  = v.role === 'owner' ? ' (owner)' : '';
+
+      const popup = `
+        <div style="font-family:Nunito,sans-serif;font-size:14px;min-width:140px;">
+          <strong>${shortTok}${roleStr}</strong><br>
+          <span style="color:#6b7280;">Last seen: ${ageStr}</span><br>
+          SOG ${sogStr} &nbsp; COG ${cogStr}
+        </div>`;
+
+      L.marker([v.lat, v.lon], { icon }).addTo(map).bindPopup(popup);
+    });
+
+    // Fit all markers if multiple
+    if (withGPS.length > 1) {
+      try {
+        const bounds = L.latLngBounds(withGPS.map(v => [v.lat, v.lon]));
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+      } catch { /* ignore bounds errors */ }
+    }
+  });
+
+  // ── LIST PANEL ─────────────────────────────────────────────────────────────
+  // Per-vessel analytics lookup map
+  const analyticsMap = {};
+  if (analytics && analytics.vessels) {
+    analytics.vessels.forEach(av => { analyticsMap[av.device_token] = av; });
+  }
+
+  vessels.forEach(v => {
+    const av        = analyticsMap[v.device_token];
+    const ageMin    = v.age_minutes;
+    const shortTok  = v.device_token ? v.device_token.slice(-8) : 'unknown';
+    const isOwner   = v.role === 'owner';
+
+    // Status dot color
+    let dotColor = '#6b7280';
+    if (ageMin != null) {
+      if (ageMin <= 10) dotColor = '#22c55e';
+      else if (ageMin <= 60) dotColor = '#f59e0b';
+      else dotColor = '#ef4444';
+    }
+
+    const card = el('div', { class: 'card fleet-vessel-card' });
+
+    // Title row: token + role badge + status dot
+    const titleRow = el('div', { class: 'fleet-vessel-title-row' });
+    const dot = el('span', { class: 'fleet-vessel-dot', style: `background:${dotColor};`, 'aria-hidden': 'true' });
+    const namePart = el('span', { class: 'fleet-vessel-name' }, shortTok);
+    titleRow.appendChild(dot);
+    titleRow.appendChild(namePart);
+    if (isOwner) {
+      titleRow.appendChild(el('span', { class: 'fleet-role-badge' }, 'owner'));
+    }
+    card.appendChild(titleRow);
+
+    // Stat rows
+    const stats = [
+      ['Last seen',     ageMin != null ? `${ageMin} min ago` : '—'],
+      ['SOG',           v.sog  != null ? `${v.sog} kn`       : '—'],
+      ['COG',           v.cog  != null ? `${Math.round(v.cog)}°` : '—'],
+    ];
+    if (av) {
+      stats.push(['Engine hrs', av.engine_hours_7d != null ? av.engine_hours_7d.toFixed(1) + 'h (7d)' : '—']);
+      stats.push(['Avg RPM',    av.avg_rpm_24h     != null ? Math.round(av.avg_rpm_24h)                : '—']);
+    }
+    stats.forEach(([label, value]) => {
+      card.appendChild(
+        el('div', { class: 'stat-item' },
+          el('div', { class: 'stat-label' }, label),
+          el('div', { class: 'stat-value' }, String(value)),
+        )
+      );
+    });
+
+    listPanel.appendChild(card);
+  });
+
+  // "Leave fleet" link at bottom
+  const leaveBtn = el('button', {
+    class: 'btn btn-ghost',
+    style: 'margin-top:8px;width:100%;color:var(--red);border-color:var(--red);',
+  }, 'Leave Fleet');
+  leaveBtn.addEventListener('click', () => {
+    if (!confirm('Leave this fleet? Your vessel will no longer appear on the fleet map.')) return;
+    state.fleetId = null;
+    state.fleetData = null;
+    state.fleetAnalytics = null;
+    saveFleetSession();
+    navigate('fleet');
+  });
+  listPanel.appendChild(leaveBtn);
+}
+
+screens.fleet = function renderFleet() {
+  const container = getEl('screen');
+
+  // T3 gate — should not be reachable since nav button is hidden, but guard anyway
+  if (state.tier !== 'T3') {
+    const card = el('div', { class: 'card' });
+    card.appendChild(el('div', { class: 'card-title' }, 'Fleet Management'));
+    card.appendChild(el('p', { style: 'font-size:1rem;color:var(--text-muted);' },
+      'Fleet management is available on Tier 3. Upgrade at atmyboat.com/upgrade.'
+    ));
+    card.appendChild(el('a', {
+      href: API_BASE.replace('/wp-content/themes/twentytwenty-child/mobile', '/upgrade'),
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      class: 'btn btn-ghost locked-upgrade-btn',
+    }, 'Upgrade to T3 →'));
+    container.appendChild(card);
+    return;
+  }
+
+  // No fleet joined yet
+  if (!state.fleetId) {
+    renderFleetSetup();
+    return;
+  }
+
+  // Fleet joined — load data
+  if (!state.fleetData) {
+    container.appendChild(spinner());
+    Promise.all([
+      apiFleetMap(state.fleetId),
+      apiFleetAnalytics(state.fleetId),
+    ]).then(([mapRes, analyticsRes]) => {
+      if (!mapRes.success) {
+        // Fleet not found (deleted or left) — reset
+        state.fleetId = null;
+        saveFleetSession();
+        navigate('fleet');
+        return;
+      }
+      state.fleetData      = mapRes.data;
+      state.fleetAnalytics = analyticsRes.success ? analyticsRes.data : null;
+      navigate('fleet');
+    }).catch(() => {
+      container.innerHTML = '';
+      container.appendChild(el('p', { style: 'padding:16px;color:var(--red);' },
+        'Failed to load fleet data. Check connection and try again.'
+      ));
+    });
+    return;
+  }
+
+  renderFleetMap(state.fleetData, state.fleetAnalytics);
+};
+
 // ── App shell toggle ──────────────────────────────────────────────────────────
 function showLoginUI() {
   getEl('app-header').style.display  = 'none';
@@ -3191,6 +3634,7 @@ function showLoginUI() {
 function showAppUI() {
   getEl('app-header').style.display  = '';
   getEl('bottom-nav').style.display  = '';
+  updateFleetNavVisibility();
 }
 
 // ── Vessel load on app start ──────────────────────────────────────────────────
