@@ -569,14 +569,30 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 ---
 
 ## PART 8B — v0.9.5 Predictive Maintenance
-**Status: NOT STARTED**
-**Depends on:** v0.9.4.1 (data pipeline active — 30-day baseline requires live Pi → HostPapa sync)
+**Status: IN PROGRESS — S20 2026-04-07**
+**Dependency updated:** Does NOT require v0.9.4.1. Engine historian stores locally on Pi. Cloud sync of predictions is bonus, not required.
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.10.0
+
+### Build Phases
+| Phase | Scope | Status |
+|-------|-------|--------|
+| Phase 1 | Engine historian service + SQLite schema + test data generator | `[~]` In progress S20 |
+| Phase 2 | Statistical baseline (2σ) + anomaly detector + alert integration | `[ ]` |
+| Phase 3 | Dashboard widget + voice alert (T2+) + boatlog auto-entry | `[ ]` |
+| Phase 4 | ML model inference infrastructure (training deferred to on-water data) | `[ ]` |
+| Phase 5 | Advanced: fuel optimization, maintenance scheduling, geofence (T3) | `[ ]` |
+
+### Test Data Validation (operator-approved approach 2026-04-07)
+Before any on-water testing, validate with synthetic known data:
+- 2,000 readings over 30 synthetic days (normal baseline)
+- Inject 3 anomalies at known timestamps: coolant spike Day 15, oil pressure drop Day 22, RPM variance Day 27
+- Pass criteria: each alert fires within 1 detection cycle; no false positives on normal data
+- Test data retained until on-water data replaces it
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| PM1 | Predictive maintenance service (Port 8106) | New Flask service on Pi. Reads engine snapshot history from local SQLite. Calculates normal operating ranges. | `[ ]` |
-| PM2 | 30-day baseline data collection | Collect RPM, coolant temp, oil pressure, battery voltage — sufficient history before anomaly detection can fire | `[ ]` Blocked on live data |
+| PM1 | Predictive maintenance service (Port 8106) | New Flask service on Pi. Reads engine snapshot history from local SQLite. Calculates normal operating ranges. | `[~]` In progress S20 |
+| PM2 | 30-day baseline data collection | Collect RPM, coolant temp, oil pressure, battery voltage — sufficient history before anomaly detection can fire | `[~]` Unblocked — test data approach approved. On-water data deferred. |
 | PM3 | Statistical anomaly detection | Trend analysis (7-day, 30-day slopes). Alert when reading deviates >2σ from baseline. | `[ ]` |
 | PM4 | ML models — 5 targets | Overheating predictor (LSTM autoencoder), oil pressure failure (time-series), battery failure (voltage trend), SD card failure (I/O error pattern), GPS failure (satellite loss trend) | `[ ]` |
 | PM5 | Alert system integration | Integrate with existing alert_watcher. Voice alerts (Tier 2+). Push notification (Tier 2+). | `[ ]` |
