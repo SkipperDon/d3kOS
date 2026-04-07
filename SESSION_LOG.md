@@ -9992,3 +9992,106 @@ OPERATOR ACTIONS REQUIRED:
 - Run cleanup_test before any real-device testing to clear synthetic user rows
 
 ---
+
+## Session 2026-04-07 S21c — v0.9.6 Phase 1: Pi Deploy + Live Push Verified
+
+**Goal:** Deploy fleet_push_service.py to Pi, enable systemd service, confirm live push.
+(Continuation of S21b after operator "ok proceed".)
+
+**Completed:**
+- Deployed fleet_push_service.py to Pi: `/opt/d3kos/services/fleet/fleet_push_service.py`
+- Deployed systemd unit: `/etc/systemd/system/d3kos-fleet-push.service`
+- Created fleet-push.env: `/opt/d3kos/services/fleet/config/fleet-push.env`
+  (FLEET_INGEST_URL with correct HostPapa path, AMBOAT_API_KEY from cloud-config.json,
+  PUSH_INTERVAL_S=60, FLEET_PUSH_PORT=8108)
+- Port collision: 8107 taken by d3kos-preferences-api.service → moved fleet push to 8108
+- Wrote /opt/d3kos/config/fleet.json → joins Pi to TEST01 fleet (fleet_id=1)
+- Promoted Pi license.json tier T2 → T3 (required for fleet feature access)
+- Added Pi device_token (701e5754-...) to TEST01 via add_test_member action (cap bypass)
+- Added d3kos-fleet-push to watchdog CRITICAL_SERVICES (auto_restart=True)
+- **LIVE PUSH CONFIRMED:**
+  - Service status: push_count=1, last_status=ok, last_push_ago_s=26
+  - Pi position in fleet-map.php: lat=43.686938, lon=-79.520978, age=1min, sog=0
+
+**Phase 1 ALL criteria met:**
+- [x] create_tables ✓
+- [x] seed_test (15 boats, 900 rows each) ✓
+- [x] 17/17 e2e tests passed ✓
+- [x] d3kos-fleet-push.service active on Pi ✓
+- [x] Live push confirmed within 1 min ✓
+
+**Decisions:**
+- Port 8108 used instead of 8107 (conflict with preferences-api). Default in source updated.
+- Pi tier upgraded to T3 — this Pi will need T3 for all fleet features. Permanent.
+- fleet.json written pointing to staging TEST01 fleet — will need updating when real fleet
+  created via PWA (Phase 2). This is staging-test state only.
+
+### Release Package Manifest
+- Version: v0.9.5 → v0.9.6 Phase 1
+- Update type: incremental
+- Changed files on Pi:
+  | File | Pi Path | Partition | Change |
+  |------|---------|-----------|--------|
+  | fleet_push_service.py | /opt/d3kos/services/fleet/ | base | NEW — Fleet push loop + Flask status endpoint |
+  | d3kos-fleet-push.service | /etc/systemd/system/ | base | NEW — systemd unit, port 8108, enabled on boot |
+  | fleet-push.env | /opt/d3kos/services/fleet/config/ | runtime | NEW — ingest URL, API key, interval, port |
+  | fleet.json | /opt/d3kos/config/ | runtime | NEW — TEST01 fleet membership (staging test) |
+  | license.json | /opt/d3kos/config/ | runtime | MODIFIED — tier T2→T3 |
+  | d3kos_watchdog.py | /opt/d3kos/services/watchdog/ | base | MODIFIED — fleet push added to CRITICAL_SERVICES |
+- Pre-install steps: none (new service, no migration)
+- Post-install steps: `systemctl daemon-reload && systemctl enable d3kos-fleet-push && systemctl start d3kos-fleet-push`
+- Rollback: `systemctl stop d3kos-fleet-push && systemctl disable d3kos-fleet-push && rm /opt/d3kos/config/fleet.json` — restore tier in license.json
+- Health check: `curl http://192.168.1.237:8108/fleet/status` → `{"last_status":"ok","push_count":≥1}`
+- Plain-language release notes: New fleet push service is active on the Pi. It runs on port 8108, checks tier and fleet membership, and pushes GPS position + engine snapshot to HostPapa every 60 seconds when the engine is on or GPS is active. At dock with no GPS fix and engine off it idles with no network activity. Confirmed: first push fired within 60s, position appeared on fleet-map.php. Watchdog monitors the service and will auto-restart if it crashes.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | not used | $0.00 |
+
+**Commits:** 839eeb1
+
+**Pending (Phase 2+):**
+- PWA fleet screen: Leaflet.js map, vessel health cards, fleet join/create flow
+- fleet.json on Pi needs updating when real fleet created via PWA
+- fleet-setup.php to be deleted from HostPapa after staging testing complete
+- cleanup_test should be run before real-device T3 testing (removes synthetic test user)
+- Phase 3: Chart.js analytics screen
+- Phase 4: Tier gate PWA locked card + admin console fleet view
+
+QUALITY METRICS — 2026-04-07 S21c
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+ACCOMPLISHED THIS SESSION:
+- d3kos-fleet-push.service active on Pi (port 8108)
+- Live push confirmed: Pi position on fleet-map.php within 1 min
+- v0.9.6 Phase 1 ALL 5 criteria met
+
+NOT COMPLETED / DEFERRED:
+- Phase 2 PWA fleet screen — not started
+- Phase 3 analytics screen — not started
+- Phase 4 Tier gate PWA + admin console — not started
+
+KNOWN GAPS OR UNCERTAINTIES:
+- fleet.json on Pi points to TEST01 (staging test fleet). When Phase 2 PWA is built and
+  Don creates a real fleet, fleet.json must be overwritten by the join flow.
+- Pi tier is now T3 (upgraded for fleet test). fleet-ingest.php will keep accepting Pi
+  pushes as long as this device_token remains in the TEST01 member list.
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for Claude API cost for 2026-04-07
+- Confirm Phase 2 PWA fleet screen is next priority, or pause fleet and work elsewhere
+- Run `?action=cleanup_test` on staging before real-device T3 testing
+
+---
