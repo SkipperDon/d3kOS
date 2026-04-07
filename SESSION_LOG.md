@@ -10095,3 +10095,85 @@ OPERATOR ACTIONS REQUIRED:
 - Run `?action=cleanup_test` on staging before real-device T3 testing
 
 ---
+
+## Session 2026-04-07 S22 — v0.9.6 Phase 2: PWA Fleet Screen
+
+**Goal:** Build PWA fleet screen — fleet nav tab, Leaflet.js map, vessel health list, join/create flow.
+
+**Completed:**
+- `index.html`: fleet nav tab added (anchor icon, id=fleet-nav-btn, hidden by default);
+  Leaflet.js 1.9.4 CDN links (CSS + JS with SRI integrity hashes)
+- `app.js`: fleet screen built (screens.fleet):
+  - T3 gate — locked upgrade card if tier < T3
+  - No fleet state — join/create flow (fleet_code input, fleet name/type for create)
+  - Fleet joined — Leaflet map + toggle to vessel list
+  - Leaflet map: dark theme tiles (OpenStreetMap), dot markers colored by age
+    (green ≤10min / amber ≤60min / red >60min), popup with last seen / SOG / COG
+  - Fleet summary strip: active 24h, total engine hours, avg RPM
+  - Vessel list: per-vessel card with status dot, role badge, sog/cog/engine hrs/RPM
+  - Leave fleet action clears fleetId from localStorage
+  - updateFleetNavVisibility() shows/hides tab based on tier — called from showAppUI()
+  - loadFleetSession() / saveFleetSession() persist fleet_id in localStorage
+  - SW cache bumped v8 → v9 (forces browser cache refresh)
+- `app.css`: .input-field, fleet toggle bar, fleet summary strip, vessel cards,
+  Leaflet dark theme popup overrides, fleet role badge — all 18px min text, 48px min touch targets
+- `fleet-create.php` / `fleet-join.php`: fall back to wpax_usermeta
+  atmyboat_device_token when X-Device-Token header absent (PWA flow)
+
+**Decisions:**
+- Privacy toggle (500m randomization opt-in) deferred — not a Phase 2 blocker
+- "Two-device fleet join" test deferred — requires two real T3 users on staging
+- Leaflet tile layer: OpenStreetMap (free, no API key required, works offline once cached)
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | not used | $0.00 |
+
+**Commits:** 629f6a5
+
+**Pending (Phase 3+):**
+- Phase 3: Chart.js analytics screen (engine hours bar chart, alert history, CSV export)
+- Phase 4: Tier gate PWA locked card in nav/settings + admin console fleet view
+- Two-device fleet join test (requires real T3 account on staging)
+- Privacy toggle (500m position randomization opt-in)
+
+QUALITY METRICS — 2026-04-07 S22
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+ACCOMPLISHED THIS SESSION:
+- Fleet nav tab visible to T3 users only
+- Leaflet.js map with colored vessel markers + popups
+- Vessel health list with engine hours + RPM from analytics
+- Fleet join/create flow
+- SW cache v9
+
+NOT COMPLETED / DEFERRED:
+- Privacy toggle deferred
+- Two-device test deferred (needs real T3 accounts)
+- Phase 3 analytics screen not started
+- Phase 4 admin view not started
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Fleet screen deployed but not tested on a real phone — visual verification needed
+- fleet-create device_token fallback works for users with paired Pi; users without paired
+  device see "device not paired" error which is correct behaviour
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for Claude API cost for 2026-04-07
+- Test fleet screen on staging: open https://atmyboat.com/staging/app/, sign in as T3 user,
+  confirm Fleet tab appears in bottom nav, map loads with markers
+- Confirm Phase 3 (analytics Chart.js screen) or pause fleet and work elsewhere
+
+---

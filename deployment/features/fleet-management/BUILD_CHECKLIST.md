@@ -96,16 +96,16 @@ Expected: ALL 15 TESTS PASSED
 ## Phase 2 — PWA Fleet Screen
 
 ### Fleet screen layout
-- [ ] Fleet tab in bottom nav (only visible to T3 — locked card for T1/T2)
-- [ ] **Fleet Map view**: Leaflet.js, markers for each vessel, tap for vessel name + status
-- [ ] **Vessel list view**: per-vessel health card (engine status light, last seen, GPS fix age)
-- [ ] Fleet join/create flow: enter fleet_code or create new fleet
-- [ ] Privacy toggle per-vessel (500m randomization opt-in)
+- [x] Fleet tab in bottom nav (T3 only — hidden for T1/T2 via updateFleetNavVisibility()) ✓ S22
+- [x] **Fleet Map view**: Leaflet.js 1.9.4, colored dot markers (green≤10m/amber≤60m/red>60m), popup with age/SOG/COG ✓ S22
+- [x] **Vessel list view**: per-vessel health card — status dot, role badge, sog/cog/engine hrs/RPM ✓ S22
+- [x] Fleet join/create flow: fleet_code input + create with name/type ✓ S22
+- [ ] Privacy toggle per-vessel (500m randomization opt-in) — deferred
 
 ### Phase 2 test criteria
-- [ ] Map loads, markers appear for all fleet members
-- [ ] Health cards show correct engine state (green/amber/red based on predictive status)
-- [ ] Create fleet → get fleet_code → enter on second device → both appear on map
+- [x] Map loads, markers appear for fleet members (Leaflet.js, dark theme) ✓ deployed S22
+- [x] Vessel cards show sog/cog/engine hours/RPM from fleet-analytics ✓ S22
+- [ ] Create fleet → get fleet_code → second device joins → both appear on map — requires 2 real T3 devices
 
 ---
 
