@@ -2583,6 +2583,58 @@ screens.settings = function renderSettings() {
   supportCard.appendChild(supportBtn);
   container.appendChild(supportCard);
 
+  // My Tickets
+  const ticketsCard = el('div', { class: 'card' });
+  ticketsCard.appendChild(el('div', { class: 'card-title' }, 'My Tickets'));
+  const ticketsList = el('div', { style: 'margin-top: 4px;' });
+  ticketsList.textContent = 'Loading…';
+  ticketsCard.appendChild(ticketsList);
+  container.appendChild(ticketsCard);
+
+  (async () => {
+    try {
+      const data = await apiFetch('ticket-list.php');
+      ticketsList.innerHTML = '';
+      if (!data.tickets || data.tickets.length === 0) {
+        ticketsList.appendChild(el('div', {
+          style: 'font-size: 0.9rem; color: var(--text-muted); padding: 6px 0;',
+        }, 'No tickets yet.'));
+        return;
+      }
+      const statusLabel = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' };
+      const statusColor = { open: '#f59e0b', in_progress: '#3b82f6', resolved: '#22c55e' };
+      data.tickets.forEach(t => {
+        const row = el('div', {
+          style: 'display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;',
+          role: 'button',
+          tabindex: '0',
+          'aria-label': `Ticket ${t.ticket_id}: ${t.subject}`,
+        });
+        const idSpan = el('span', {
+          style: 'font-size: 0.8rem; color: var(--text-muted); min-width: 48px;',
+        }, `#${t.ticket_id}`);
+        const subj = el('span', {
+          style: 'flex: 1; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;',
+        }, t.subject);
+        const badge = el('span', {
+          style: `font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: ${statusColor[t.status] || '#94a3b8'}22; color: ${statusColor[t.status] || '#64748b'}; white-space: nowrap;`,
+        }, statusLabel[t.status] || t.status);
+        row.appendChild(idSpan);
+        row.appendChild(subj);
+        row.appendChild(badge);
+        const openTicket = () => {
+          localStorage.setItem('support_ticket_id', String(t.ticket_id));
+          navigate('support');
+        };
+        row.addEventListener('click', openTicket);
+        row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openTicket(); });
+        ticketsList.appendChild(row);
+      });
+    } catch {
+      ticketsList.textContent = 'Could not load tickets.';
+    }
+  })();
+
   // Sign out
   container.appendChild(
     el('button', {

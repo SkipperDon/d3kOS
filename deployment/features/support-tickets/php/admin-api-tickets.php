@@ -1,7 +1,7 @@
 <?php
 /**
  * admin-api-tickets.php — AtMyBoat.com Admin CRM: Support Tickets API
- * v0.9.7 Phase 1: Ticket list, ticket detail, ticket update (status + admin_note).
+ * v0.9.7 Phase 2: Added customer email notification on update_ticket.
  *
  * Auth:   X-Admin-Key header (AMBOAT_ADMIN_API_KEY from config.php)
  * Method: POST, JSON body: { "action": "...", ... }
@@ -9,9 +9,14 @@
  * Actions:
  *   get_tickets    — paginated list, optional status filter
  *   get_ticket     — single ticket detail
- *   update_ticket  — set status + admin_note
+ *   update_ticket  — set status + admin_note; notify_customer=true sends email
  *   save_diagnosis — store AI diagnosis text in amboat_diagnostic_bundles
  */
+
+error_reporting(0);
+@ini_set('display_errors', 0);
+define('WP_USE_THEMES', false);
+require_once __DIR__ . '/../../../../wp-load.php';
 
 require_once __DIR__ . '/config.php';
 
@@ -177,7 +182,52 @@ switch ($action) {
         $stmt2->execute([$ticket_id]);
         $updated_at = $stmt2->fetchColumn();
 
-        echo json_encode(['success' => true, 'updated_at' => $updated_at]);
+        // ── Notify customer if requested ──────────────────────────────────────
+        $notified = false;
+        if (!empty($body['notify_customer'])) {
+            $stmt3 = $pdo->prepare(
+                "SELECT t.subject, t.status, t.admin_note,
+                        u.user_email, u.display_name
+                 FROM amboat_support_tickets t
+                 JOIN wpax_users u ON u.ID = t.user_id
+                 WHERE t.ticket_id = ?"
+            );
+            $stmt3->execute([$ticket_id]);
+            $row = $stmt3->fetch(PDO::FETCH_ASSOC);
+
+            if ($row && $row['user_email']) {
+                $status_labels = [
+                    'open'        => 'Open',
+                    'in_progress' => 'In Progress',
+                    'resolved'    => 'Resolved',
+                ];
+                $status_label = $status_labels[$row['status']] ?? $row['status'];
+                $name         = $row['display_name'] ?: 'Skipper';
+                $note         = $row['admin_note'] ? trim($row['admin_note']) : '';
+
+                $subj = "[AtMyBoat Support] Ticket #{$ticket_id} update — {$status_label}";
+
+                $msg  = "Hi {$name},\n\n";
+                $msg .= "Your support ticket #{$ticket_id} has been updated.\n\n";
+                $msg .= "Subject: {$row['subject']}\n";
+                $msg .= "Status:  {$status_label}\n";
+                if ($note) {
+                    $msg .= "\nMessage from support:\n\n{$note}\n";
+                }
+                $msg .= "\n" . str_repeat('─', 50) . "\n";
+                $msg .= "Log in to the AtMyBoat app to view your ticket and send a follow-up.\n";
+                $msg .= "atmyboat.com/staging/app/\n\n";
+                $msg .= "— The AtMyBoat Support Team\n";
+
+                $headers = [
+                    'From: AtMyBoat Support <noreply@atmyboat.com>',
+                    'Reply-To: skipperdon@atmyboat.com',
+                ];
+                $notified = wp_mail($row['user_email'], $subj, $msg, $headers);
+            }
+        }
+
+        echo json_encode(['success' => true, 'updated_at' => $updated_at, 'notified' => $notified]);
         break;
     }
 

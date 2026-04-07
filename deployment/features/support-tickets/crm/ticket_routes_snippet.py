@@ -1,5 +1,5 @@
 # ── Support Ticket Routes — insert before `if __name__ == '__main__':` in app.py ──
-# v0.9.7 Phase 1
+# v0.9.7 Phase 2: notify_customer flag passed through on update
 #
 # NOTE: These routes proxy to admin-api-tickets.php (separate from admin-api.php).
 # Add this helper near proxy_call() in app.py:
@@ -59,10 +59,12 @@ def ticket_detail(ticket_id):
 
 @app.route('/ticket/<int:ticket_id>/update', methods=['POST'])
 def ticket_update(ticket_id):
-    proxy_call_tickets({
-        'action':     'update_ticket',
-        'ticket_id':  ticket_id,
-        'status':     request.form.get('status', ''),
-        'admin_note': request.form.get('admin_note', ''),
-    })
+    payload = {
+        'action':          'update_ticket',
+        'ticket_id':       ticket_id,
+        'status':          request.form.get('status', ''),
+        'admin_note':      request.form.get('admin_note', ''),
+        'notify_customer': request.form.get('notify_customer') == '1',
+    }
+    proxy_call_tickets(payload)
     return redirect(url_for('ticket_detail', ticket_id=ticket_id))
