@@ -9562,30 +9562,253 @@ OPERATOR ACTIONS REQUIRED:
 
 ---
 
-## SESSION LOG GAP — S17 through S20 (2026-04-06 to 2026-04-07)
+## Session 2026-04-06 S17 — On-Demand Ollama RAG Synthesis: gemma3:1b Wired
+*(Reconstructed from git commits e5a6a5b, db6751e, d7d2fce, 790a7cc and MEMORY.md — SESSION_LOG was not written at session close)*
 
-SESSION_LOG.md was not updated during sessions S17–S20. Governance was maintained in
-PROJECT_CHECKLIST.md, DEPLOYMENT_INDEX.md, CHANGELOG.md, and MEMORY.md. Git commits
-record all file changes. Brief summary from MEMORY.md + git log:
+**Goal:** Wire on-demand Ollama RAG synthesis so fish/regulation queries get local LLM answers when Gemini is offline.
 
-- **S17 (2026-04-06):** On-demand Ollama RAG synthesis wired. fish_rag_llm.py at
-  /opt/d3kos/services/ai/. gemma3:1b chosen (phi3.5 OOM on 8GB Pi). k=6→k=3, ~114s
-  inference. Ontario Regulation 2026 (682 chunks) + MNR + emergency contacts indexed.
+**Completed:**
+- `fish_rag_llm.py` created at `/opt/d3kos/services/ai/`. Starts `ollama serve` on-demand (not a persistent service). Evicts `nomic-embed-text` before inference to free RAM (nomic-embed-text is needed for ChromaDB query embedding; gemma3:1b needs that memory for inference). Synthesizes answers from RAG chunks via gemma3:1b.
+- `query_handler.py` patched: starts Ollama before ChromaDB search (nomic-embed-text needs Ollama running for query embedding). Added local-LLM synthesis path in Gemini-offline fallback. Dynamic model name label.
+- gemma3:1b chosen over phi3.5 — phi3.5 (2.2GB) caused OOM during inference with full d3kOS stack (8GB Pi, ~5.3GB used). gemma3:1b (815MB) fits.
+- Models on Pi: gemma3:1b (active), nomic-embed-text (embed only), phi3.5 (on disk, not used). ollama.service stays disabled — on-demand only.
+- S17b: `query_handler.py` k=6→k=3 (reduces context to ~1500 tokens, inference ~114s vs ~200s). `pdf_processor.py` migrated from deprecated `OllamaEmbeddings`+`Chroma` to `langchain-ollama` and `langchain-chroma`; removed deprecated `.persist()` call. Fish-RAG corpus confirmed: 21 species PDFs + 3 visual guides indexed.
+- Full query_handler path tested end-to-end on Pi.
 
-- **S18 (2026-04-06):** P7 cloud_agent.py pair_confirmed handler — TDD 3/3 passed.
-  Writes string tier ("T1") to license.json. RAG corpus updated.
+**Decisions:**
+- gemma3:1b not phi3.5. OOM is deterministic — phi3.5 will always crash under full stack.
+- k=3 RAG context — acceptable quality trade-off for 2× speed improvement.
+- ollama.service stays disabled permanently — on-demand `_start_serve()` only.
+- LangChain deprecation (OllamaEmbeddings/Chroma) noted — will break at LangChain 1.0. Deferred.
 
-- **S19 (2026-04-06):** tier_service.py _parse_tier() added — fixes int("T0") crash.
-  HostPapa pdf-store.php report_id INT→BIGINT (T6 overflow fix). admin-api.php
-  update_tier SELECT→UPDATE/INSERT + duplicate-delete guard.
+**Ollama:** gemma3:1b inference test (on-demand, ~114s, k=3)
 
-- **S20 (2026-04-07):** AI bridge enabled on boot (was disabled since March 19).
-  predictive_maintenance.py _notify_ai_bridge() added. engine-monitor.html Predictive
-  Health section (4 cards). ai-bridge.js custom_alert SSE handler → _setAlertTicker().
-  d3kos_watchdog.py: ai-bridge added to CRITICAL_SERVICES. ai-bridge.env: espeak→piper.
-  ui/tts.py: Piper path fixed to use PIPER_BIN/PIPER_VOICE env vars. Dashboard predictive
-  band added and REVERTED after Don's correction (never add UI without discussion).
-  v0.9.5 declared complete.
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-06 | TBD |
+| Ollama (gemma3:1b) | on-demand Pi inference | $0.00 |
+
+**Commits:** e5a6a5b (RAG wired), db6751e (k=3 + deferred items), d7d2fce + 790a7cc (governance)
+
+**Pending:**
+- P7 cloud_agent.py pair_confirmed handler (S18)
+- RAG corpus: Ontario Regulation 2026 PDF not yet ingested (S18)
+- v0.9.5 predictive maintenance — not started
+
+QUALITY METRICS — 2026-04-06 S17
+─────────────────────────────────────────────────────
+NOTE: Metrics reconstructed — SESSION_LOG not written at session close.
+SCR/SGCR/REC/MLS/UAC cannot be audited from reconstruction alone.
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : not calculable (reconstructed entry)
+─────────────────────────────────────────────────────
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- On-demand Ollama RAG synthesis wired — gemma3:1b answering fish/regulation queries offline
+- k=3 context tuning — ~114s inference, acceptable latency
+- LangChain migration (deprecated APIs replaced)
+
+NOT COMPLETED / DEFERRED:
+- P7 pair_confirmed handler — S18
+- Ontario Regulation 2026 PDF ingestion — S18
+- LangChain 1.0 deprecation warning — deferred
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Inference latency (~114s) is slow for real-time use — noted, no fix yet
+- phi3.5 left on disk (consuming ~2.2GB) — may want to remove
+
+OPERATOR ACTIONS REQUIRED:
+- None recorded
+
+---
+
+## Session 2026-04-06 S18 — P7 pair_confirmed Handler + RAG PDF Ingestion
+*(Reconstructed from git commit 40bb933 and DEPLOYMENT_INDEX S18 entries — SESSION_LOG not written at session close)*
+
+**Goal:** Complete P7 cloud command (pair_confirmed handler in cloud_agent.py) and ingest Ontario Regulation 2026 + emergency contacts PDFs into RAG.
+
+**Completed:**
+- `cloud_agent.py` — `handle_pair_confirmed()` added. Writes string tier ("T1") to license.json (not integer). Triggers best-effort export via `requests.post`. Single clean `ack_command` at end — no double-ack. `pair_confirmed` wired into `dispatch()`.
+  - Bug fixed: prior version wrote integer tier (1) and double-acked via `handle_export_now()`. Both corrected.
+  - TDD: 3/3 assertions passed on Pi.
+- RAG ChromaDB ingested:
+  - `Ontario Regulation 2026.pdf` — 682 chunks, 137 pages. Actual bag limits, size limits, zone rules for Ontario freshwater fishing.
+  - `global_marine_emergency_contacts.pdf` — 6 chunks.
+  - MNR.pdf was already indexed.
+  - Total d3kos_documents collection: ~2,028 docs.
+  - `pdf-metadata.json` updated with 2 new entries.
+
+**Decisions:**
+- P7 complete. handle_pair_confirmed writes **string** tier "T1" — not integer. This is now the correct canonical format.
+- handle_tier_change NOT fixed this session — still writes integer tier. Open bug.
+
+**Ollama:** 0 calls — direct code edit.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-06 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Commits:** 40bb933
+
+**Pending:**
+- handle_tier_change integer bug — write "T0"/"T1" not 0/1 (OPEN)
+- v0.9.5 predictive maintenance — not started
+
+QUALITY METRICS — 2026-04-06 S18
+─────────────────────────────────────────────────────
+NOTE: Metrics reconstructed — SESSION_LOG not written at session close.
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : not calculable (reconstructed entry)
+─────────────────────────────────────────────────────
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- P7 COMPLETE — pair_confirmed handler TDD 3/3
+- Ontario Regulation 2026 (682 chunks) + emergency contacts (6 chunks) ingested
+
+NOT COMPLETED / DEFERRED:
+- handle_tier_change integer bug — open
+- v0.9.5 not started
+
+KNOWN GAPS OR UNCERTAINTIES:
+- handle_tier_change still writes integer — will cause license.json to have wrong format on tier change
+
+OPERATOR ACTIONS REQUIRED:
+- None recorded
+
+---
+
+## Session 2026-04-07 S19 — Hotfixes (tier display, PDF crash) + v0.9.5 Predictive Maintenance Phases 1 & 2
+*(Reconstructed from git commits af4d774, 236340f, 7f3e4fc, 3eedd88 and DEPLOYMENT_INDEX S19 entries — SESSION_LOG not written at session close)*
+
+**Goal:** Fix three urgent bugs (tier "3" display, PDF INT32_MAX crash, duplicate usermeta). Then build v0.9.5 Phases 1 & 2.
+
+**Completed — Hotfixes:**
+- `tier_service.py`: `_parse_tier()` helper added. Handles both `"T0"` string and `0` integer from license.json. Two `int()` call sites replaced. Fixes ValueError crash → tier shows as "3". Synced from Pi.
+- `admin-api.php` (HostPapa): `update_tier` action rewritten — SELECT→UPDATE/INSERT + DELETE-duplicates guard. Root cause of tier="3" was duplicate `atmyboat_tier` rows in `wpax_usermeta` created during S16 CRM P6 testing (2026-04-03). Don ran cleanup SQL to remove duplicates.
+- `pdf-store.php` (HostPapa MySQL): `amboat_pdf_reports.report_id` changed INT → BIGINT UNSIGNED via ALTER TABLE. Column had reached INT32_MAX (2,147,483,647) — PHP INSERT fatal → PWA "Invalid response from server". T6 fixed.
+
+**Completed — v0.9.5 Phase 1 (08:11–08:30):**
+- `predictive_maintenance.py` built (524 lines). Engine historian thread + detector thread. SQLite schema: `engine_snapshots` table. 5-minute detection cycle. HARD_LIMITS: coolant >100°C ALERT, oil <150 kPa ALERT. 2σ z-score for WATCH. `_risk_state` dict with lock.
+- `generate_test_data.py` — 2,000 rows (30 synthetic days) with 3 injected anomalies.
+- `test_predictive.py` — TDD test suite: 6/6 assertions passed. Phase 1 declared complete.
+- History route indentation fix + test module-ref fix applied.
+
+**Completed — v0.9.5 Phase 2 (08:42):**
+- `predictive_maintenance.py` extended: boatlog auto-entry on WATCH/ALERT, 1hr cooldown dedup via `_alert_times` dict. Direct Piper TTS call for ALERT-level.
+- `dashboard.html` — Phase 2 widget scaffolding added (repo copy of Flask template).
+
+**Decisions:**
+- `_alert_times` is in-memory — resets on restart. Production cooldown is 1hr and service should be stable. Test data + multiple restarts during dev caused repeat alerts. (Fixed S21.)
+- v0.9.5 Phase 3 (AI bridge integration) deferred to S20 — dashboard architecture review needed first.
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Commits:** af4d774 (hotfixes), 236340f (Phase 1), 7f3e4fc (fix), 3eedd88 (Phase 2)
+
+**Pending:**
+- v0.9.5 Phase 3: AI bridge integration, engine-monitor widget — S20
+- On-water test with real engine data
+- handle_tier_change integer bug still open
+
+QUALITY METRICS — 2026-04-07 S19
+─────────────────────────────────────────────────────
+NOTE: Metrics reconstructed — SESSION_LOG not written at session close.
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : not calculable (reconstructed entry)
+─────────────────────────────────────────────────────
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- Three hotfixes: tier display, PDF INT32_MAX (T6), duplicate usermeta
+- v0.9.5 Phases 1 & 2 COMPLETE — TDD 6/6 passed
+
+NOT COMPLETED / DEFERRED:
+- v0.9.5 Phase 3 (AI bridge) — S20
+- handle_tier_change integer bug — still open
+
+KNOWN GAPS OR UNCERTAINTIES:
+- _alert_times dedup resets on restart — known limitation, addressed S21
+
+OPERATOR ACTIONS REQUIRED:
+- None recorded
+
+---
+
+## Session 2026-04-07 S20 — v0.9.5 Phase 3: AI Bridge + Self-Healing + Dashboard Design Lesson
+*(Reconstructed from git commits b7bf396, 6715300, 3c69d44, 45b8217 and MEMORY.md — SESSION_LOG write was claimed in commit message but file was not actually updated)*
+
+**Goal:** Complete v0.9.5 Phase 3 — wire predictive alerts through AI bridge, enable self-healing, add engine-monitor readouts.
+
+**Completed:**
+- `d3kos-ai-bridge.service`: `systemctl enable` run. Service had been built March 19 but never registered for auto-start. Was offline every boot.
+- `d3kos_watchdog.py`: `d3kos-ai-bridge` added to CRITICAL_SERVICES with `auto_restart=True`. Service now self-heals.
+- `ai-bridge.env`: `TTS_ENGINE=espeak-ng` → `TTS_ENGINE=piper` + `PIPER_BIN` + `PIPER_VOICE` env vars added.
+- `predictive_maintenance.py`: `_notify_ai_bridge()` added — POSTs WATCH/ALERT to `/webhook/alert` on AI bridge (TTS + SSE ticker). Direct Piper kept as fallback.
+- `ai-bridge.js`: `custom_alert` SSE event handler added. Calls `_setAlertTicker()` (instruments.js function) to push ⚠ prefix alerts to dashboard status bar ticker.
+- `engine-monitor.html`: Predictive Health section added (section 2) — 4 eng-cell cards: Overall, Coolant, Oil Press, RPM Trend. WATCH→adv CSS, ALERT→crit CSS. Polls `/predictive/status` every 60s.
+- `tts.py`: `_piper()` path fixed — was using hardcoded `/usr/share/piper/voices/en_US-lessac-medium.onnx` and `--output_raw`. Fixed to use `PIPER_BIN`/`PIPER_VOICE` env vars and `--output_file` pattern.
+- CHANGELOG.md v0.9.5 entry written.
+- **Dashboard incident (lesson documented):** Predictive band added to main dashboard (`index.html`) without discussing with Don. Don flagged "thin green line" — immediate revert. Rule confirmed: never add UI to main dashboard without explicit operator approval.
+
+**Decisions:**
+- AI bridge SSE + ticker is the notification mechanism. No new UI elements on main dashboard.
+- Ticker owned by instruments.js `_setAlertTicker()`/`_clearAlertTicker()`. AI bridge SSE drives it — never update directly.
+- v0.9.5 declared complete (end-to-end test: 3/3 anomalies detected, webhooks fired, SSE confirmed).
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Commits:** b7bf396, 6715300, 3c69d44, 45b8217
+
+**Pending:**
+- Voice fix: Piper still falling back to espeak (timeout bug) — S21
+- Mute persistence — S21
+- Test data cleanup — S21
+- v0.9.6 Fleet Management — not started
+
+QUALITY METRICS — 2026-04-07 S20
+─────────────────────────────────────────────────────
+NOTE: SESSION_LOG write was not completed at session close (governance gap).
+UAC=1: main dashboard modified without operator discussion (index.html predictive band).
+       Immediately reverted on operator correction. Lesson saved to feedback_dashboard_design.md.
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : not calculable (reconstructed entry; UAC=1 noted)
+─────────────────────────────────────────────────────
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- v0.9.5 COMPLETE — AI bridge integration, self-healing, engine-monitor readouts
+- Dashboard design rule reinforced (never modify without discussion)
+
+NOT COMPLETED / DEFERRED:
+- TTS voice fix (Piper timeout) — addressed S21
+- SESSION_LOG governance — addressed S21
+
+KNOWN GAPS OR UNCERTAINTIES:
+- tts.py fix was partial — Piper still timed out under load (discovered and fixed S21)
+
+OPERATOR ACTIONS REQUIRED:
+- Confirm Amy's voice on predictive alerts (addressed S21 — confirmed by Don)
 
 ---
 
@@ -9667,9 +9890,9 @@ NOT COMPLETED / DEFERRED:
 - TTS architecture unification (voice service + AI bridge) — deferred to v0.9.6
 
 KNOWN GAPS OR UNCERTAINTIES:
-- Piper fix verified by journal (no fallback warnings) but not by audio heard by Don — confirm next alert
-- Mute persistence not yet tested across a real restart cycle
-- SESSION_LOG.md gap: S17–S20 entries were never written (governance gap from prior sessions)
+- Piper voice confirmed by Don — Amy's voice heard after fix. RESOLVED.
+- Mute persistence not yet tested across a real restart cycle.
+- SESSION_LOG.md S17–S20 gap: reconstructed and written this session close. RESOLVED.
 
 OPERATOR ACTIONS REQUIRED:
 - Check console.anthropic.com for Claude API cost for 2026-04-07
