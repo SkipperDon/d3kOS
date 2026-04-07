@@ -314,6 +314,20 @@ def speak_alert(message):
         logger.warning(f'speak_alert error: {e}')
 
 
+
+def _notify_ai_bridge(message: str, severity: str) -> bool:
+    """POST alert to AI bridge webhook — handles TTS + dashboard ticker.
+    Returns True if bridge accepted it, False if unavailable (caller falls back)."""
+    try:
+        r = requests.post(
+            'http://localhost:3002/webhook/alert',
+            json={'message': message, 'severity': severity},
+            timeout=3,
+        )
+        return r.status_code == 200
+    except Exception:
+        return False
+
 def _is_voice_alert_enabled():
     """Check tier gate for voice alerts (T1+ voice_assistant feature)."""
     try:
@@ -459,8 +473,11 @@ def detect_anomalies(db_path=None):
             if status in ('WATCH', 'ALERT') and _can_write_alert(f'boatlog_{field}'):
                 write_boatlog(risk['message'])
                 _alert_times[f'boatlog_{field}'] = time.monotonic()
-                if voice_enabled and status == 'ALERT':
-                    speak_alert(f'Predictive alert. {risk["message"]}')
+                # Notify via AI bridge (ticker + TTS); fall back to Piper if bridge offline
+                severity = 'critical' if status == 'ALERT' else 'warning'
+                if not _notify_ai_bridge(f'Predictive alert. {risk["message"]}', severity):
+                    if voice_enabled and status == 'ALERT':
+                        speak_alert(f'Predictive alert. {risk["message"]}')
 
         logger.info(
             f'Detection run: {len(check_rows)} check rows, {baseline_count} baseline rows. '
