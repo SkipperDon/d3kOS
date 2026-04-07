@@ -1,5 +1,5 @@
 # v0.9.6 Fleet Management — Build Checklist
-**Version:** 1.0 | **Created:** 2026-04-07 S21 | **Status:** PLANNING
+**Version:** 1.1 | **Created:** 2026-04-07 S21 | **Updated:** 2026-04-07 S21 — design questions resolved | **Status:** READY TO BUILD
 
 ---
 
@@ -17,7 +17,7 @@
 ```
 Pi (each vessel)
   └── fleet_push_service.py (Port 8107)
-        │  Every 5 min: GPS position + engine snapshot
+        │  Every 1 min (when engine on or GPS fix active): GPS position + engine snapshot
         │  Only when engine_on OR GPS fix active
         └─► POST fleet-ingest.php (HostPapa staging)
                 │  Auth: device_token + fleet_id
@@ -45,17 +45,18 @@ PWA (phone)
 ### HostPapa PHP endpoints
 - [ ] `fleet-create.php` — POST, app_token auth. Creates fleet record, returns fleet_code. One fleet per device max.
 - [ ] `fleet-join.php` — POST, app_token + fleet_code. Adds device as member. Returns fleet_id.
-- [ ] `fleet-ingest.php` — POST, app_token + fleet_id. Writes position + engine snapshot. Prunes old rows (24h position, 7d engine). Rate-limited: max 1 write per 4 min per device.
+- [ ] `fleet-ingest.php` — POST, app_token + fleet_id. Writes position + engine snapshot. Prunes old rows (24h position, 7d engine). Rate-limited: max 1 write per 50 seconds per device (allows 1-min Pi push with slack).
 - [ ] `fleet-map.php` — GET, app_token + fleet_id. Returns all member positions (last known). Applies 500m randomization for members with privacy=true.
 - [ ] `fleet-analytics.php` — GET, app_token + fleet_id. Returns per-vessel engine hours (sum), alert count (30d), last seen timestamp.
 
 ### Pi fleet_push_service.py (Port 8107)
 - [ ] New systemd service `d3kos-fleet-push.service`
 - [ ] Reads fleet_id from `/opt/d3kos/config/fleet.json` (written when owner joins fleet via PWA)
-- [ ] Every 5 min: POST to `fleet-ingest.php` with GPS + engine snapshot
-- [ ] Only runs when fleet_id is set (no fleet = service idles)
-- [ ] Respects Tier gate: T3 only. Checks tier from `license.json` before push.
-- [ ] TDD: test push fires, test rate-limit respected, test no-fleet idle
+- [ ] **1-minute push interval** when engine_on=True OR GPS fix active (operator confirmed 2026-04-07)
+- [ ] Idles (no push, no CPU) when engine off AND no GPS fix — prevents background drain at dock
+- [ ] Only runs when fleet_id is set (no fleet_id = service idles, no network calls)
+- [ ] Respects Tier gate: T3 only — reads tier from `license.json` before each push
+- [ ] TDD: test 1-min push fires, test idle when no fleet_id, test tier gate blocks T1/T2
 
 ### Phase 1 test criteria
 - [ ] Pi pushes position to staging DB
@@ -114,12 +115,14 @@ PWA (phone)
 
 ---
 
-## Open Design Questions (resolve before Phase 1 build)
+## Design Decisions — LOCKED (2026-04-07 S21)
 
-1. **Fleet invitation model:** fleet_code (6-char code entered in PWA) vs. QR code vs. push invite. Recommendation: fleet_code first — simplest, works offline.
-2. **Position update frequency:** 5 min OK for charter ops? Fishing guides may want 1 min when actively fishing. Make it configurable in fleet settings?
-3. **Engine data retention:** 7 days on HostPapa. Pi keeps full history locally. Correct?
-4. **Fleet size limit per tier:** Unlimited or cap (e.g., T3 = up to 10 vessels)? Recommendation: 10 vessel cap at launch, adjustable.
+All four questions resolved by operator before Phase 1 build:
+
+1. **Fleet invitation model:** `fleet_code` (6-char typed in PWA). Simple, works offline, no QR dependency. ✓
+2. **Position update frequency:** **1 minute** when engine on OR GPS fix active. Idles otherwise. ✓
+3. **Data retention on HostPapa:** Positions = 24h. Engine snapshots = 7 days. Pi keeps full history locally. ✓
+4. **Fleet size cap at T3:** **15 vessels** maximum per fleet at launch. Enforced in `fleet-join.php`. ✓
 
 ---
 
