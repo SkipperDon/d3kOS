@@ -24,8 +24,10 @@ Version: 0.9.5
 import logging
 import sqlite3
 import statistics
+import subprocess
 import threading
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -45,6 +47,12 @@ HIST_DB           = Path('/opt/d3kos/data/predictive/engine_history.db')
 ISSUES_DB         = Path('/opt/d3kos/data/self-healing/issues.db')
 LOG_FILE          = Path('/opt/d3kos/logs/predictive.log')
 TIER_URL          = 'http://localhost:8093/tier/feature/predictive_alerts'
+TIER_VOICE_URL    = 'http://localhost:8093/tier/feature/voice_assistant'
+BOATLOG_DB        = Path('/opt/d3kos/data/boatlog/boatlog.db')
+PIPER_BIN         = '/usr/local/bin/piper'
+PIPER_VOICE       = '/opt/d3kos/models/piper/en_US-amy-medium.onnx'
+SPEAK_WAV         = '/tmp/predictive-alert.wav'
+APLAY_DEVICE      = 'plughw:S330,0'
 SK_ENGINE_URL     = 'http://localhost:8099/signalk/v1/api/vessels/self/propulsion/port'
 SK_FUEL_URL       = 'http://localhost:8099/signalk/v1/api/vessels/self/tanks/fuel/0'
 
@@ -260,6 +268,61 @@ def write_issue(category, severity, description):
         logger.error(f'Failed to write issue: {e}')
 
 
+def write_boatlog(message):
+    """Write an auto predictive alert entry to boatlog.db."""
+    if not BOATLOG_DB.exists():
+        logger.debug('boatlog.db not found — skipping boatlog entry')
+        return
+    try:
+        with sqlite3.connect(str(BOATLOG_DB)) as conn:
+            conn.execute(
+                "INSERT INTO boatlog_entries "
+                "(entry_id, timestamp, entry_type, content, latitude, longitude, weather_conditions) "
+                "VALUES (?, ?, 'predictive_alert', ?, NULL, NULL, NULL)",
+                (str(uuid.uuid4()), datetime.now(timezone.utc).isoformat(), f'[Auto] {message}')
+            )
+            conn.commit()
+        logger.info(f'Boatlog entry written: {message}')
+    except Exception as e:
+        logger.error(f'Failed to write boatlog entry: {e}')
+
+
+def speak_alert(message):
+    """Speak the alert message via Piper TTS + aplay. Non-blocking, best-effort."""
+    try:
+        piper = Path(PIPER_BIN)
+        model = Path(PIPER_VOICE)
+        if not piper.exists() or not model.exists():
+            logger.debug('Piper TTS not available — skipping voice alert')
+            return
+        # Run in background thread so it doesn't block detection loop
+        def _speak():
+            try:
+                p = subprocess.Popen(
+                    [str(piper), '--model', str(model), '--output_file', SPEAK_WAV],
+                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+                p.communicate(input=message.encode(), timeout=15)
+                subprocess.run(
+                    ['aplay', '-q', '-D', APLAY_DEVICE, SPEAK_WAV],
+                    timeout=15, stderr=subprocess.DEVNULL
+                )
+            except Exception as e:
+                logger.warning(f'Voice alert playback failed: {e}')
+        threading.Thread(target=_speak, daemon=True, name='speak').start()
+    except Exception as e:
+        logger.warning(f'speak_alert error: {e}')
+
+
+def _is_voice_alert_enabled():
+    """Check tier gate for voice alerts (T1+ voice_assistant feature)."""
+    try:
+        r = requests.get(TIER_VOICE_URL, timeout=3)
+        return r.json().get('enabled', False)
+    except Exception:
+        return False
+
+
 def detect_anomalies(db_path=None):
     """
     Scan last CHECK_WINDOW_HOURS of engine-on readings for anomalies.
@@ -388,6 +451,16 @@ def detect_anomalies(db_path=None):
                 'alerts_enabled':  alerts_enabled,
                 'updated_at':      now_utc.isoformat(),
             }
+
+        # Boatlog + voice alert for any WATCH or ALERT field
+        voice_enabled = _is_voice_alert_enabled()
+        for field, risk in new_risk.items():
+            status = risk.get('status', 'OK')
+            if status in ('WATCH', 'ALERT') and _can_write_alert(f'boatlog_{field}'):
+                write_boatlog(risk['message'])
+                _alert_times[f'boatlog_{field}'] = time.monotonic()
+                if voice_enabled and status == 'ALERT':
+                    speak_alert(f'Predictive alert. {risk["message"]}')
 
         logger.info(
             f'Detection run: {len(check_rows)} check rows, {baseline_count} baseline rows. '
