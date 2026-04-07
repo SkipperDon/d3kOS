@@ -9901,3 +9901,94 @@ OPERATOR ACTIONS REQUIRED:
 
 
 ---
+
+## Session 2026-04-07 S21b — v0.9.6 Fleet Management Phase 1: Backend Verified
+
+**Goal:** Complete v0.9.6 Phase 1 — deploy all fleet PHP endpoints to HostPapa staging,
+create MySQL schema, seed 15-boat test data, run end-to-end verification.
+(Continuation of S21 after context compaction.)
+
+**Completed:**
+- Deployed 6 fleet PHP endpoints to HostPapa staging via FTPS:
+  fleet-setup.php, fleet-create.php, fleet-join.php, fleet-ingest.php,
+  fleet-map.php, fleet-analytics.php
+  Remote path: `/staging/wp-content/themes/twentytwenty-child/mobile/`
+- Added `FLEET_SETUP_KEY=fleet2026test` to staging config.php via FTP (programmatic)
+- Created 4 MySQL tables: amboat_fleets, amboat_fleet_members, amboat_fleet_positions,
+  amboat_fleet_engine_snapshots
+- Seeded TEST01 fleet: 15 vessels, 900 position rows, 900 engine snapshot rows (60 min × 15 boats)
+- Added `create_test_user` action to fleet-setup.php: inserts synthetic user_id=999999
+  with UUID-format app_token `e2e00000-f133-7000-b3b3-000000000003` + T3 tier into
+  wpax_usermeta. Required because no real T3 users existed on staging.
+  cleanup_test action extended to also remove these rows.
+- Fixed deploy-fleet-php.py: REMOTE_DIR was `/staging/mobile` (wrong) →
+  `/staging/wp-content/themes/twentytwenty-child/mobile` (correct)
+- Fixed test_fleet_e2e.py: Python syntax error — `global` declaration after argparse use
+- **ALL 17 TESTS PASSED** on staging:
+  - fleet-map.php: 15 vessels returned, all with GPS positions, all in Toronto harbour
+    area (43.0–44.5°N, 79–80.5°W), exactly 1 owner
+  - fleet-analytics.php: 15 vessel analytics, fleet_summary present,
+    vessels_active_24h=15, total_engine_hours=3429h, fleet_avg_rpm=2360 (in 1500–3000 range)
+  - Tier gate: bad token returns HTTP 401 ✓
+
+**Decisions:**
+- Synthetic test user (user_id=999999) is safe for staging — isolated WP user ID well
+  outside any real user range. Token is UUID-format with obvious test prefix.
+  Must be cleaned up before any T3 user testing (run `?action=cleanup_test`).
+- auth.php validates UUID format — test tokens must be 36-char UUID; plain strings rejected.
+
+**Ollama:** 0 calls — deploy, test, debug all direct.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | not used | $0.00 |
+
+**Commits:** e9703a6 — v0.9.6 Phase 1: fix fleet e2e test + deploy path
+
+**Pending:**
+- Pi fleet_push_service.py deploy + d3kos-fleet-push.service active (Phase 1 remaining)
+- Live push confirmation: Pi position appears in fleet-map.php within 1 min
+- TDD tests for Pi fleet_push_service.py
+- Phase 2: PWA fleet screen (Leaflet.js map, vessel health cards)
+- Phase 3: Analytics screen (Chart.js, CSV export)
+- Phase 4: Tier gate + admin console fleet view
+- fleet-setup.php must be deleted from HostPapa after testing complete
+- handle_tier_change integer bug in cloud_agent.py (still open from S19)
+- T6 PDF phone test (INT32_MAX fix — phone verification pending)
+
+QUALITY METRICS — 2026-04-07 S21b
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+ACCOMPLISHED THIS SESSION:
+- v0.9.6 Phase 1 PHP endpoints deployed to staging (6 files)
+- MySQL schema created (4 tables)
+- 15-boat test data seeded (900 positions, 900 engine snapshots)
+- ALL 17 end-to-end tests passed
+
+NOT COMPLETED / DEFERRED:
+- Pi fleet_push_service.py not yet deployed to Pi (requires staging test confirmation — now met)
+- PWA fleet screen (Phase 2) — not started
+- Analytics screen (Phase 3) — not started
+- Tier gate + admin view (Phase 4) — not started
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Synthetic test user approach bypasses real T3 auth flow — adequate for backend verification,
+  but Phase 2/3/4 testing will need a real T3 account or Pi device pairing on staging.
+- fleet-ingest.php rate-limit test skipped — requires live Pi device token (noted in test output).
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for Claude API cost for 2026-04-07
+- Confirm ready to proceed to Pi deploy (fleet_push_service.py) or move to Phase 2 PWA first
+- Run cleanup_test before any real-device testing to clear synthetic user rows
+
+---

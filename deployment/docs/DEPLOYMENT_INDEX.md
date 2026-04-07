@@ -688,8 +688,18 @@ No new files deployed this session. Checklist and governance updates only:
 | Pi: `/opt/d3kos/services/ai-bridge/ai_bridge.py` | **[DEPLOYED — S21]** As above. |
 | Pi: `/opt/d3kos/data/predictive/engine_history.db` | **[DATA CLEANUP — S21]** Deleted 2,000 rows WHERE source='test'. 131 production (signalk) rows remain. Clears repeating alert condition caused by TDD test data still in production DB. |
 
-## v0.9.6 Fleet Management — Planning (S21 2026-04-07)
+## v0.9.6 Fleet Management — Phase 1 Backend Complete (S21b 2026-04-07)
 
 | File | Description |
 |------|-------------|
-| `deployment/features/fleet-management/BUILD_CHECKLIST.md` | **[NEW — S21]** Full v0.9.6 build checklist. 4 phases: Pi data push (absorbs v0.9.4.1), PWA fleet screen, analytics, Tier 3 gate. Staging-first strategy. 4 open design questions documented. |
+| `deployment/features/fleet-management/BUILD_CHECKLIST.md` | **[NEW — S21]** Full v0.9.6 build checklist. Phase 1 backend complete S21b (17/17 tests passed). |
+| `deployment/features/fleet-management/php/fleet-setup.php` | **[NEW — S21]** One-shot staging setup: create_tables, seed_test (15 boats × 60 min), verify, create_test_user, cleanup_test. Protected by FLEET_SETUP_KEY. Delete after testing. |
+| `deployment/features/fleet-management/php/fleet-create.php` | **[NEW — S21]** POST — creates fleet, returns 6-char fleet_code. T3 gate. One fleet per device. |
+| `deployment/features/fleet-management/php/fleet-join.php` | **[NEW — S21]** POST — joins fleet by fleet_code. 15-vessel cap enforced. T3 gate. |
+| `deployment/features/fleet-management/php/fleet-ingest.php` | **[NEW — S21]** POST — Pi position + engine push. AMBOAT_API_KEY + X-Device-Token auth. 50s rate limit. Prunes 24h/7d. |
+| `deployment/features/fleet-management/php/fleet-map.php` | **[NEW — S21]** GET — last-known positions for all fleet vessels. app_token Bearer auth. T3 gate. |
+| `deployment/features/fleet-management/php/fleet-analytics.php` | **[NEW — S21]** GET — per-vessel engine hours, avg RPM/coolant/oil, fleet summary. T3 gate. |
+| `deployment/features/fleet-management/pi_source/fleet_push_service.py` | **[NEW — S21]** Pi Fleet Push Service (Port 8107). 1-min push loop, idles when inactive. Reads fleet.json + license.json + device-token.json. GPS via SignalK :8099, engine via :8106. |
+| `deployment/features/fleet-management/pi_source/d3kos-fleet-push.service` | **[NEW — S21]** systemd unit for fleet_push_service.py. User=d3kos, EnvironmentFile=fleet-push.env. Pending Pi deploy. |
+| `deployment/features/fleet-management/scripts/deploy-fleet-php.py` | **[NEW — S21]** FTPS deploy script for 6 fleet PHP files to HostPapa staging. Reads .env credentials. |
+| `deployment/features/fleet-management/scripts/test_fleet_e2e.py` | **[NEW — S21]** End-to-end test: fleet-map (15 positions, Toronto area), fleet-analytics (engine hours, RPM), tier gate (401). ALL 17 TESTS PASSED 2026-04-07. |

@@ -605,7 +605,7 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8C — v0.9.6 Fleet Management
-**Status: PLANNING — 2026-04-07 S21**
+**Status: PHASE 1 BACKEND COMPLETE — 2026-04-07 S21b**
 **Strategy:** Build and test entirely on staging. v0.9.4.1 multi-boat pipeline absorbed into Phase 1 (no separate version).
 **Depends on:** Nothing blocking — staging-first approach removes Phase 4 live push as a gate.
 **Reference:** `deployment/features/fleet-management/BUILD_CHECKLIST.md` (created S21)
@@ -613,7 +613,7 @@ Before any on-water testing, validate with synthetic known data:
 ### Phases
 | Phase | Scope | Status |
 |-------|-------|--------|
-| Phase 1 | Pi data push + HostPapa fleet endpoints (absorbs v0.9.4.1) | `[ ]` Not started |
+| Phase 1 | Pi data push + HostPapa fleet endpoints (absorbs v0.9.4.1) | `[x]` **BACKEND COMPLETE — 17/17 tests passed 2026-04-07 S21b** — Pi service written, pending deploy |
 | Phase 2 | PWA fleet screen — map + health cards | `[ ]` Not started |
 | Phase 3 | Analytics — engine hours, fuel, alert history per vessel | `[ ]` Not started |
 | Phase 4 | Tier 3 gate + admin console fleet view | `[ ]` Not started |
@@ -621,13 +621,13 @@ Before any on-water testing, validate with synthetic known data:
 ### Items
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| FM0 | Pi fleet data push service | New Pi service (Port 8107): pushes GPS position + engine snapshot to `fleet-ingest.php` on HostPapa every 5 min. Keyed by device_token. Only runs when engine_on=True or GPS fix active. | `[ ]` |
-| FM1 | Fleet creation + invitation system | Fleet types: charter, fishing, marina. Create fleet → get fleet_code. Other Pi owners enter fleet_code to join. Permission levels: owner, member, view. | `[ ]` |
-| FM2 | Fleet map | Live vessel positions on Leaflet.js in PWA. All fleet boats visible. Privacy: opt-in, 500m position randomization option. | `[ ]` |
-| FM3 | Fleet analytics | Engine hours aggregation across fleet. Alert history (30 days per vessel). Fleet-wide engine health summary. | `[ ]` |
-| FM4 | HostPapa PHP endpoints | `fleet-create.php`, `fleet-join.php`, `fleet-ingest.php`, `fleet-map.php`, `fleet-analytics.php` — all app_token + fleet_id auth. MySQL table: `amboat_fleet_vessels`. | `[ ]` |
-| FM5 | PWA fleet screen | Fleet switcher. Per-vessel health cards (engine status, last seen, GPS position). Map view. Analytics tab. | `[ ]` |
-| FM6 | Tier 3 activation gate | All fleet features gated to Tier 3. T1/T2 see locked upgrade card with CTA to atmyboat.com/upgrade. | `[ ]` |
+| FM0 | Pi fleet data push service | Port 8107, 1-min push when engine_on OR GPS fix, idles otherwise, T3 gate, reads fleet.json | `[~]` Written (S21), pending Pi deploy |
+| FM1 | Fleet creation + invitation system | fleet_code (6-char), charter/fishing/marina/other, roles: owner/member/view, 15-vessel cap | `[x]` **DONE S21b** — fleet-create.php, fleet-join.php deployed + tested |
+| FM2 | Fleet map | fleet-map.php: last-known position per vessel, age_minutes, role. Leaflet.js PWA screen TBD | `[~]` Backend done (15-vessel e2e ✓), PWA screen not started |
+| FM3 | Fleet analytics | fleet-analytics.php: engine_hours, avg RPM/coolant/oil (24h), fleet summary. Chart.js screen TBD | `[~]` Backend done (3429h e2e ✓), PWA screen not started |
+| FM4 | HostPapa PHP endpoints | fleet-create/join/ingest/map/analytics.php + fleet-setup.php — all deployed to staging | `[x]` **DONE S21b — ALL 17 TESTS PASSED** |
+| FM5 | PWA fleet screen | Fleet switcher, per-vessel health cards, map view, analytics tab | `[ ]` Not started |
+| FM6 | Tier 3 activation gate | Backend T3 gate verified (401 on bad token). PWA locked card not started | `[~]` Backend done, PWA locked card not started |
 
 **Deliverable:** d3kOS v0.9.6 — fleet management for Tier 3 operators (charter, fishing guide, marina)
 
