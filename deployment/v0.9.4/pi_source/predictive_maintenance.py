@@ -461,21 +461,21 @@ def _register_routes(application):
     def history():
         limit = min(int(flask_request.args.get('limit', 200)), 2000)
         source = flask_request.args.get('source')   # optional filter: 'signalk' or 'test'
-    try:
-        with sqlite3.connect(str(HIST_DB)) as conn:
-            conn.row_factory = sqlite3.Row
-            if source:
-                rows = conn.execute(
-                    "SELECT * FROM engine_snapshots WHERE source = ? ORDER BY ts DESC LIMIT ?",
-                    (source, limit)
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT * FROM engine_snapshots ORDER BY ts DESC LIMIT ?", (limit,)
-                ).fetchall()
-        return jsonify({'count': len(rows), 'readings': [dict(r) for r in rows]})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        try:
+            with sqlite3.connect(str(HIST_DB)) as conn:
+                conn.row_factory = sqlite3.Row
+                if source:
+                    rows = conn.execute(
+                        "SELECT * FROM engine_snapshots WHERE source = ? ORDER BY ts DESC LIMIT ?",
+                        (source, limit)
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        "SELECT * FROM engine_snapshots ORDER BY ts DESC LIMIT ?", (limit,)
+                    ).fetchall()
+            return jsonify({'count': len(rows), 'readings': [dict(r) for r in rows]})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     @application.route('/predictive/baseline', methods=['GET'])
     def baseline():

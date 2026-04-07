@@ -80,7 +80,6 @@ def clear_readings():
 
 def run_detection():
     pm.detect_anomalies(db_path=TEST_DB)
-    import threading
     with pm._risk_lock:
         return dict(pm._risk_state)
 
