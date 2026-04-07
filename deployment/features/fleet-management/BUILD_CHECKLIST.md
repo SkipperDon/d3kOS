@@ -1,0 +1,160 @@
+# v0.9.6 Fleet Management — Build Checklist
+**Version:** 1.0 | **Created:** 2026-04-07 S21 | **Status:** PLANNING
+
+---
+
+## Strategy
+
+- Build and test entirely on **HostPapa staging** (`atmyboat.com/staging/`) + **local Pi**
+- v0.9.4.1 multi-boat data pipeline **absorbed into Phase 1** — no separate version milestone
+- Phase 4 live push is NOT a prerequisite — staging-first removes that blocker
+- Tier 3 gate tested with test accounts on staging before any live push
+
+---
+
+## Architecture
+
+```
+Pi (each vessel)
+  └── fleet_push_service.py (Port 8107)
+        │  Every 5 min: GPS position + engine snapshot
+        │  Only when engine_on OR GPS fix active
+        └─► POST fleet-ingest.php (HostPapa staging)
+                │  Auth: device_token + fleet_id
+                └─► MySQL: amboat_fleet_vessels
+                           amboat_fleet_positions
+                           amboat_fleet_engine_snapshots
+
+PWA (phone)
+  └── Fleet screen
+        ├── fleet-map.php     → Leaflet.js positions
+        ├── fleet-analytics.php → engine hours, alerts
+        └── fleet-create.php / fleet-join.php → fleet admin
+```
+
+---
+
+## Phase 1 — Infrastructure: Pi Data Push + HostPapa Fleet Endpoints
+
+### MySQL Schema (run on staging DB)
+- [ ] `amboat_fleets` — fleet_id, fleet_code (6-char), name, type (charter/fishing/marina), owner_device_token, created_at
+- [ ] `amboat_fleet_members` — fleet_id, device_token, role (owner/member/view), joined_at
+- [ ] `amboat_fleet_positions` — fleet_id, device_token, lat, lon, cog, sog, ts — keep last 24h only
+- [ ] `amboat_fleet_engine_snapshots` — fleet_id, device_token, rpm, oil_pressure_kpa, coolant_temp_c, engine_hours, ts — keep last 7 days
+
+### HostPapa PHP endpoints
+- [ ] `fleet-create.php` — POST, app_token auth. Creates fleet record, returns fleet_code. One fleet per device max.
+- [ ] `fleet-join.php` — POST, app_token + fleet_code. Adds device as member. Returns fleet_id.
+- [ ] `fleet-ingest.php` — POST, app_token + fleet_id. Writes position + engine snapshot. Prunes old rows (24h position, 7d engine). Rate-limited: max 1 write per 4 min per device.
+- [ ] `fleet-map.php` — GET, app_token + fleet_id. Returns all member positions (last known). Applies 500m randomization for members with privacy=true.
+- [ ] `fleet-analytics.php` — GET, app_token + fleet_id. Returns per-vessel engine hours (sum), alert count (30d), last seen timestamp.
+
+### Pi fleet_push_service.py (Port 8107)
+- [ ] New systemd service `d3kos-fleet-push.service`
+- [ ] Reads fleet_id from `/opt/d3kos/config/fleet.json` (written when owner joins fleet via PWA)
+- [ ] Every 5 min: POST to `fleet-ingest.php` with GPS + engine snapshot
+- [ ] Only runs when fleet_id is set (no fleet = service idles)
+- [ ] Respects Tier gate: T3 only. Checks tier from `license.json` before push.
+- [ ] TDD: test push fires, test rate-limit respected, test no-fleet idle
+
+### Phase 1 test criteria
+- [ ] Pi pushes position to staging DB
+- [ ] Two test devices (two Pi registrations) both visible in `fleet-map.php` response
+- [ ] Engine snapshot appears in `fleet-analytics.php`
+
+---
+
+## Phase 2 — PWA Fleet Screen
+
+### Fleet screen layout
+- [ ] Fleet tab in bottom nav (only visible to T3 — locked card for T1/T2)
+- [ ] **Fleet Map view**: Leaflet.js, markers for each vessel, tap for vessel name + status
+- [ ] **Vessel list view**: per-vessel health card (engine status light, last seen, GPS fix age)
+- [ ] Fleet join/create flow: enter fleet_code or create new fleet
+- [ ] Privacy toggle per-vessel (500m randomization opt-in)
+
+### Phase 2 test criteria
+- [ ] Map loads, markers appear for all fleet members
+- [ ] Health cards show correct engine state (green/amber/red based on predictive status)
+- [ ] Create fleet → get fleet_code → enter on second device → both appear on map
+
+---
+
+## Phase 3 — Analytics
+
+### Analytics screen
+- [ ] Engine hours per vessel (bar chart — Chart.js, same lib already in PWA)
+- [ ] Alert history (WATCH + ALERT counts per vessel, last 30 days)
+- [ ] Fleet-wide engine health summary (best/worst vessel)
+- [ ] CSV export (fleet data download, T3 only)
+
+### Phase 3 test criteria
+- [ ] Analytics screen shows correct engine hours from DB
+- [ ] Alert counts match predictive_maintenance alert log
+- [ ] CSV export downloads correctly
+
+---
+
+## Phase 4 — Tier 3 Gate + Admin View
+
+### Tier gate
+- [ ] All fleet endpoints return `{"error": "T3 required"}` for T0/T1/T2
+- [ ] PWA fleet tab: T1/T2 see locked upgrade card (CTA → atmyboat.com/upgrade)
+- [ ] T3 activation tested with test account on staging
+
+### Admin console fleet view (admin CRM — new tab)
+- [ ] Fleet list: all fleets, member count, last activity
+- [ ] Per-fleet: member device tokens, position history, alert summary
+- [ ] Fleet suspension (disable fleet if account delinquent)
+
+### Phase 4 test criteria
+- [ ] T1 account sees locked card, not fleet data
+- [ ] T3 account sees full fleet screen
+- [ ] Admin can view all fleet records
+
+---
+
+## Open Design Questions (resolve before Phase 1 build)
+
+1. **Fleet invitation model:** fleet_code (6-char code entered in PWA) vs. QR code vs. push invite. Recommendation: fleet_code first — simplest, works offline.
+2. **Position update frequency:** 5 min OK for charter ops? Fishing guides may want 1 min when actively fishing. Make it configurable in fleet settings?
+3. **Engine data retention:** 7 days on HostPapa. Pi keeps full history locally. Correct?
+4. **Fleet size limit per tier:** Unlimited or cap (e.g., T3 = up to 10 vessels)? Recommendation: 10 vessel cap at launch, adjustable.
+
+---
+
+## Files This Feature Will Touch
+
+### New (Pi)
+- `/opt/d3kos/services/fleet/fleet_push_service.py`
+- `/opt/d3kos/config/fleet.json` (written by Pi when fleet joined)
+- `/etc/systemd/system/d3kos-fleet-push.service`
+
+### New (HostPapa staging)
+- `mobile/fleet-create.php`
+- `mobile/fleet-join.php`
+- `mobile/fleet-ingest.php`
+- `mobile/fleet-map.php`
+- `mobile/fleet-analytics.php`
+
+### Modified (PWA)
+- `app/screens/fleet.js` (new screen)
+- `app/sw.js` (cache v8 — add fleet endpoints)
+- `app/manifest.json` (no change expected)
+
+### Modified (Admin CRM)
+- `admin-crm/fleet-tab.html` (new tab)
+- `admin-crm/app.py` (new fleet routes)
+
+---
+
+## Definition of Done
+
+- [ ] All Phase 1–4 checklist items complete
+- [ ] TDD tests pass for Pi service
+- [ ] Two test accounts demonstrate fleet map live on staging
+- [ ] T3 gate verified (T1 locked, T3 open)
+- [ ] Admin fleet view working
+- [ ] SESSION_LOG.md updated
+- [ ] DEPLOYMENT_INDEX.md updated
+- [ ] CHANGELOG.md v0.9.6 entry written

@@ -605,20 +605,31 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8C — v0.9.6 Fleet Management
-**Status: NOT STARTED**
-**Depends on:** v0.9.4.1 (multi-boat data pipeline), v0.9.3 live push
-**Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.10.1
+**Status: PLANNING — 2026-04-07 S21**
+**Strategy:** Build and test entirely on staging. v0.9.4.1 multi-boat pipeline absorbed into Phase 1 (no separate version).
+**Depends on:** Nothing blocking — staging-first approach removes Phase 4 live push as a gate.
+**Reference:** `deployment/features/fleet-management/BUILD_CHECKLIST.md` (created S21)
 
+### Phases
+| Phase | Scope | Status |
+|-------|-------|--------|
+| Phase 1 | Pi data push + HostPapa fleet endpoints (absorbs v0.9.4.1) | `[ ]` Not started |
+| Phase 2 | PWA fleet screen — map + health cards | `[ ]` Not started |
+| Phase 3 | Analytics — engine hours, fuel, alert history per vessel | `[ ]` Not started |
+| Phase 4 | Tier 3 gate + admin console fleet view | `[ ]` Not started |
+
+### Items
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| FM1 | Fleet creation + invitation system | Fleet types: charter, fishing, marina. Invitation via installation ID. Permission levels: owner, manager, member, view. | `[ ]` |
-| FM2 | Fleet map | Live vessel positions on Leaflet.js. All fleet boats visible. Privacy controls: opt-in, 500m position randomization. | `[ ]` |
-| FM3 | Fleet analytics | Engine hours aggregation across fleet. Fuel consumption tracking. Alert history (30 days per vessel). Fleet-wide reporting. | `[ ]` |
-| FM4 | Fleet management API endpoints | HostPapa PHP: `fleet-create.php`, `fleet-invite.php`, `fleet-map.php`, `fleet-analytics.php` — all app_token auth | `[ ]` |
-| FM5 | App UX — fleet screen | Fleet switcher in PWA. Per-vessel health cards. Fleet map view. Analytics dashboard. | `[ ]` |
-| FM6 | Tier 3 activation gate | All fleet features gated to Tier 3 ($99.99/yr). T1/T2 users see locked upgrade card. | `[ ]` |
+| FM0 | Pi fleet data push service | New Pi service (Port 8107): pushes GPS position + engine snapshot to `fleet-ingest.php` on HostPapa every 5 min. Keyed by device_token. Only runs when engine_on=True or GPS fix active. | `[ ]` |
+| FM1 | Fleet creation + invitation system | Fleet types: charter, fishing, marina. Create fleet → get fleet_code. Other Pi owners enter fleet_code to join. Permission levels: owner, member, view. | `[ ]` |
+| FM2 | Fleet map | Live vessel positions on Leaflet.js in PWA. All fleet boats visible. Privacy: opt-in, 500m position randomization option. | `[ ]` |
+| FM3 | Fleet analytics | Engine hours aggregation across fleet. Alert history (30 days per vessel). Fleet-wide engine health summary. | `[ ]` |
+| FM4 | HostPapa PHP endpoints | `fleet-create.php`, `fleet-join.php`, `fleet-ingest.php`, `fleet-map.php`, `fleet-analytics.php` — all app_token + fleet_id auth. MySQL table: `amboat_fleet_vessels`. | `[ ]` |
+| FM5 | PWA fleet screen | Fleet switcher. Per-vessel health cards (engine status, last seen, GPS position). Map view. Analytics tab. | `[ ]` |
+| FM6 | Tier 3 activation gate | All fleet features gated to Tier 3. T1/T2 see locked upgrade card with CTA to atmyboat.com/upgrade. | `[ ]` |
 
-**Deliverable:** d3kOS v0.9.6 — fleet management for Tier 3 operators
+**Deliverable:** d3kOS v0.9.6 — fleet management for Tier 3 operators (charter, fishing guide, marina)
 
 ---
 

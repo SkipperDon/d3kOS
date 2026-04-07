@@ -687,3 +687,9 @@ No new files deployed this session. Checklist and governance updates only:
 | Helm-OS: `deployment/v0.9.4/pi_source/ai_bridge.py` | **[UPDATED — S21]** Added `MUTE_STATE_FILE = '/opt/d3kos/config/tts-mute.json'`. `helm_mute()` endpoint now writes mute state to file on every toggle. `_start_background_services()` reads saved state on startup. HELM mute now survives service restarts. |
 | Pi: `/opt/d3kos/services/ai-bridge/ai_bridge.py` | **[DEPLOYED — S21]** As above. |
 | Pi: `/opt/d3kos/data/predictive/engine_history.db` | **[DATA CLEANUP — S21]** Deleted 2,000 rows WHERE source='test'. 131 production (signalk) rows remain. Clears repeating alert condition caused by TDD test data still in production DB. |
+
+## v0.9.6 Fleet Management — Planning (S21 2026-04-07)
+
+| File | Description |
+|------|-------------|
+| `deployment/features/fleet-management/BUILD_CHECKLIST.md` | **[NEW — S21]** Full v0.9.6 build checklist. 4 phases: Pi data push (absorbs v0.9.4.1), PWA fleet screen, analytics, Tier 3 gate. Staging-first strategy. 4 open design questions documented. |
