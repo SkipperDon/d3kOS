@@ -3903,6 +3903,7 @@ function _renderAnalyticsPanel(container, analytics, fleetData) {
       ['Active 24h',    String(summary.vessels_active_24h ?? '—')],
       ['Total Hours',   summary.total_engine_hours != null ? summary.total_engine_hours.toFixed(0) + 'h' : '—'],
       ['Fleet Avg RPM', summary.fleet_avg_rpm      != null ? String(Math.round(summary.fleet_avg_rpm))   : '—'],
+      ['Alerts (30d)',  summary.fleet_alerts_30d   != null ? String(summary.fleet_alerts_30d)            : '—'],
     ].forEach(([label, value]) => {
       const card = el('div', { class: 'fleet-analytics-stat' });
       card.appendChild(el('div', { class: 'fleet-analytics-stat-value' }, value));
@@ -3976,6 +3977,7 @@ function _renderAnalyticsPanel(container, analytics, fleetData) {
         ['Cool',     v.avg_coolant_24h != null ? v.avg_coolant_24h.toFixed(0) + '°C' : '—'],
         ['Oil',      v.avg_oil_24h     != null ? v.avg_oil_24h.toFixed(0) + ' kPa'  : '—'],
         ['Hrs 7d',   v.engine_hours_7d != null ? v.engine_hours_7d.toFixed(1) + 'h'  : '—'],
+        ['Alerts',   v.alerts_30d      != null ? String(v.alerts_30d.total ?? 0)     : '—'],
       ].forEach(([label, value]) => {
         const stat = el('div', { class: 'fleet-analytics-mini-stat' });
         stat.appendChild(el('span', { class: 'fleet-analytics-mini-val' }, String(value)));
@@ -3986,6 +3988,42 @@ function _renderAnalyticsPanel(container, analytics, fleetData) {
       tableCard.appendChild(row);
     });
     container.appendChild(tableCard);
+  }
+
+  // ── Alert history (30d) breakdown ──
+  const alertVessels = vessels.filter(v => v.alerts_30d && v.alerts_30d.total > 0);
+  if (alertVessels.length > 0) {
+    const alertCard = el('div', { class: 'card' });
+    alertCard.appendChild(el('div', { class: 'card-title', style: 'font-size:0.95rem;margin-bottom:10px;' }, 'Alert History — Last 30 Days'));
+    alertVessels.forEach(v => {
+      const row = el('div', { class: 'fleet-analytics-row' });
+      const nameCell = el('div', { class: 'fleet-analytics-vessel-name' });
+      nameCell.appendChild(document.createTextNode(v.device_token.slice(-8)));
+      if (v.role === 'owner') {
+        const badge = el('span', { class: 'fleet-role-badge', style: 'font-size:0.7rem;padding:1px 6px;margin-left:4px;' }, 'owner');
+        nameCell.appendChild(badge);
+      }
+      row.appendChild(nameCell);
+      const statsCell = el('div', { class: 'fleet-analytics-vessel-stats' });
+      const types = Object.entries(v.alerts_30d).filter(([k]) => k !== 'total');
+      if (types.length === 0) {
+        const s = el('div', { class: 'fleet-analytics-mini-stat' });
+        s.appendChild(el('span', { class: 'fleet-analytics-mini-val' }, String(v.alerts_30d.total)));
+        s.appendChild(el('span', { class: 'fleet-analytics-mini-lbl' }, 'total'));
+        statsCell.appendChild(s);
+      } else {
+        types.forEach(([type, cnt]) => {
+          const label = type.replace('engine_', '').replace(/_/g, ' ');
+          const s = el('div', { class: 'fleet-analytics-mini-stat' });
+          s.appendChild(el('span', { class: 'fleet-analytics-mini-val', style: 'color:var(--amber);' }, String(cnt)));
+          s.appendChild(el('span', { class: 'fleet-analytics-mini-lbl' }, label));
+          statsCell.appendChild(s);
+        });
+      }
+      row.appendChild(statsCell);
+      alertCard.appendChild(row);
+    });
+    container.appendChild(alertCard);
   }
 
   // ── CSV export ──
@@ -4060,10 +4098,11 @@ function _exportFleetCSV(analytics, fleetData) {
   const rows    = [
     ['Fleet', fleetData.fleet_name || '', 'Generated', now, 'Fleet ID', analytics.fleet_id || ''],
     [],
-    ['Vessel (last 8)', 'Role', 'Engine Hrs Total', 'Engine Hrs 7d', 'Avg RPM 24h', 'Avg Coolant 24h (°C)', 'Avg Oil 24h (kPa)', 'Last Seen', 'Age (min)'],
+    ['Vessel (last 8)', 'Role', 'Engine Hrs Total', 'Engine Hrs 7d', 'Avg RPM 24h', 'Avg Coolant 24h (°C)', 'Avg Oil 24h (kPa)', 'Alerts 30d Total', 'Alerts: Overtemp', 'Alerts: Oil Pressure', 'Alerts: Roughness', 'Last Seen', 'Age (min)'],
   ];
 
   (analytics.vessels || []).forEach(v => {
+    const al = v.alerts_30d || {};
     rows.push([
       v.device_token.slice(-8),
       v.role,
@@ -4072,6 +4111,10 @@ function _exportFleetCSV(analytics, fleetData) {
       v.avg_rpm_24h        != null ? Math.round(v.avg_rpm_24h) : '',
       v.avg_coolant_24h    ?? '',
       v.avg_oil_24h        ?? '',
+      al.total             ?? 0,
+      al.engine_overtemp   ?? 0,
+      al.engine_oil_pressure ?? 0,
+      al.engine_roughness  ?? 0,
       v.last_seen          ?? '',
       v.age_minutes        ?? '',
     ]);

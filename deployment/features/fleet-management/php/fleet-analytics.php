@@ -93,11 +93,12 @@ $stmt->bind_param('i', $fleet_id);
 $stmt->execute();
 $members = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$vessels          = [];
-$total_eng_hours  = 0.0;
-$fleet_rpm_sum    = 0;
-$fleet_rpm_count  = 0;
-$vessels_active   = 0;
+$vessels             = [];
+$total_eng_hours     = 0.0;
+$fleet_rpm_sum       = 0;
+$fleet_rpm_count     = 0;
+$vessels_active      = 0;
+$fleet_alerts_total  = 0;
 
 foreach ($members as $member) {
     $dt = $member['device_token'];
@@ -148,16 +149,37 @@ foreach ($members as $member) {
     if ($avg_rpm_24h !== null)     { $fleet_rpm_sum += $avg_rpm_24h; $fleet_rpm_count++; }
     if ($age_minutes !== null && $age_minutes <= 1440) $vessels_active++;
 
+    // ── Alert history (last 30 days) ───────────────────────────────────────────
+    // amboat_alerts.pi_installation_id stores the device_token UUID
+    $stmt = $db->prepare(
+        "SELECT alert_type, COUNT(*) AS cnt
+         FROM amboat_alerts
+         WHERE pi_installation_id = ? AND triggered_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+         GROUP BY alert_type"
+    );
+    $stmt->bind_param('s', $dt);
+    $stmt->execute();
+    $alert_rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $alerts_30d = ['total' => 0];
+    foreach ($alert_rows as $ar) {
+        $alerts_30d[$ar['alert_type']] = (int)$ar['cnt'];
+        $alerts_30d['total']          += (int)$ar['cnt'];
+    }
+    $fleet_alerts_total += $alerts_30d['total'];
+
     $vessels[] = [
-        'device_token'      => $dt,
-        'role'              => $member['role'],
+        'device_token'       => $dt,
+        'role'               => $member['role'],
         'engine_hours_total' => $eng_hours_total,
-        'engine_hours_7d'   => $eng_hours_7d,
-        'avg_rpm_24h'       => $avg_rpm_24h,
-        'avg_coolant_24h'   => $avg_cool_24h,
-        'avg_oil_24h'       => $avg_oil_24h,
-        'last_seen'         => $last_seen ? date('Y-m-d\TH:i:s\Z', strtotime($last_seen)) : null,
-        'age_minutes'       => $age_minutes,
+        'engine_hours_7d'    => $eng_hours_7d,
+        'avg_rpm_24h'        => $avg_rpm_24h,
+        'avg_coolant_24h'    => $avg_cool_24h,
+        'avg_oil_24h'        => $avg_oil_24h,
+        'last_seen'          => $last_seen ? date('Y-m-d\TH:i:s\Z', strtotime($last_seen)) : null,
+        'age_minutes'        => $age_minutes,
+        'alerts_30d'         => $alerts_30d,
     ];
 }
 
@@ -171,6 +193,7 @@ amboat_send_success([
         'vessels_active_24h'  => $vessels_active,
         'total_engine_hours'  => round($total_eng_hours, 1),
         'fleet_avg_rpm'       => $fleet_rpm_count > 0 ? (int)round($fleet_rpm_sum / $fleet_rpm_count) : null,
+        'fleet_alerts_30d'    => $fleet_alerts_total,
     ],
 ]);
 
