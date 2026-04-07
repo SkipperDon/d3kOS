@@ -25,6 +25,20 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('tier-service')
 
+def _parse_tier(raw):
+    """Parse tier from license.json — handles int (0) and string ('T0') formats."""
+    if isinstance(raw, str) and raw.upper().startswith('T'):
+        try:
+            return int(raw[1:])
+        except (ValueError, IndexError):
+            return 0
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return 0
+
+
+
 # Feature matrix per tier — mirrors data-ingress.php feature_matrix
 FEATURE_MATRIX = {
     0: {
@@ -42,6 +56,7 @@ FEATURE_MATRIX = {
         'fleet_management': False,
         'cloud_sync':       False,
         'camera':           False,
+        'voice_assistant':   False,
     },
     1: {
         'mobile_app':       True,
@@ -58,6 +73,7 @@ FEATURE_MATRIX = {
         'fleet_management': False,
         'cloud_sync':       True,
         'camera':           True,
+        'voice_assistant':   True,
     },
     2: {
         'mobile_app':       True,
@@ -74,6 +90,7 @@ FEATURE_MATRIX = {
         'fleet_management': False,
         'cloud_sync':       True,
         'camera':           True,
+        'voice_assistant':   True,
     },
     3: {
         'mobile_app':       True,
@@ -90,6 +107,7 @@ FEATURE_MATRIX = {
         'fleet_management': True,
         'cloud_sync':       True,
         'camera':           True,
+        'voice_assistant':   True,
     },
 }
 
@@ -116,7 +134,7 @@ def tier_status():
             'error': 'license.json not found',
         }), 404
 
-    tier = int(license_data.get('tier', 0))
+    tier = _parse_tier(license_data.get('tier', 0))
     features = FEATURE_MATRIX.get(tier, FEATURE_MATRIX[0])
 
     return jsonify({
@@ -133,7 +151,7 @@ def tier_feature(name):
     license_data = load_license()
     tier = 0
     if license_data:
-        tier = int(license_data.get('tier', 0))
+        tier = _parse_tier(license_data.get('tier', 0))
     features = FEATURE_MATRIX.get(tier, FEATURE_MATRIX[0])
     if name not in features:
         return jsonify({'feature': name, 'enabled': False, 'error': 'unknown feature'}), 404

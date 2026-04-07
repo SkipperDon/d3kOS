@@ -752,6 +752,17 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 ---
 
+## PART 12 — S19 Hotfixes (2026-04-06)
+
+| Item | Status | Detail |
+|------|--------|--------|
+| tier_service.py — `_parse_tier()` helper | `[x]` **COMPLETE 2026-04-06 S19** | Root cause: `int("T0")` ValueError crash. tier_service uses integer FEATURE_MATRIX keys (0,1,2,3) but license.json stores string tiers ("T0","T1","T2"). Fix: added `_parse_tier()` helper that strips 'T' prefix. Two `int()` call sites replaced. Repo file synced from Pi. |
+| admin-api.php `update_tier` duplicate rows | `[x]` **COMPLETE 2026-04-06 S19** | Root cause: S16 Admin CRM P6 testing inserted duplicate `atmyboat_tier` rows in `wpax_usermeta` (no unique index). INSERT ON DUPLICATE KEY UPDATE silently created new rows each tier change. Fix: SELECT→UPDATE/INSERT pattern + DELETE duplicates cleanup query run by Don. Dashboard now shows correct tier. |
+| pdf-store.php INT32 overflow → no response | `[x]` **COMPLETE 2026-04-06 S19** | Root cause: `amboat_pdf_reports.report_id` was INT (max 2,147,483,647). Reached INT32_MAX — PHP fatal error on INSERT → no response body → PWA showed "Invalid response from server". Fix: `ALTER TABLE amboat_pdf_reports MODIFY report_id BIGINT UNSIGNED AUTO_INCREMENT`. Report now returns proper "no engine data" message. Note: "no engine data" is expected — Pi has no real engine sensors until on-water use. |
+| handle_tier_change integer bug (OPEN) | `[ ]` | `cloud_agent.py handle_tier_change()` still writes integer tier (e.g. 1) to license.json. Only `handle_pair_confirmed()` was fixed to write string "T1". When tier_change command arrives from HostPapa, tier_service will again show "3" for T3. Fix: apply same string tier write pattern. |
+
+---
+
 ## PART 10 — Version Roadmap Summary
 
 | Version | Description | Status |

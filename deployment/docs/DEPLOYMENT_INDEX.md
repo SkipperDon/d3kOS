@@ -652,3 +652,12 @@ No new files deployed this session. Checklist and governance updates only:
 | Pi: `/opt/d3kos/services/cloud-agent/cloud_agent.py` | **[DEPLOYED — 2026-04-06 S18]** Fixed handle_pair_confirmed deployed. Backup at `.bak.pre-p7`. Service d3kos-cloud-agent restarted, status=active. TDD: 3/3 assertions passed on Pi. |
 | Pi: `/opt/d3kos/data/vector-db/` | **[UPDATED — 2026-04-06 S18]** RAG ChromaDB updated. 688 new chunks added: Ontario Regulation 2026.pdf (682 chunks, 137 pages — actual size limits, bag limits, zone rules), global_marine_emergency_contacts.pdf (6 chunks). MNR.pdf was already indexed. Total d3kos_documents collection: ~2,028 docs. |
 | Pi: `/opt/d3kos/data/pdf-metadata.json` | **[UPDATED — 2026-04-06 S18]** 2 new entries: ontario_reg_2026.pdf and global_marine_emergency_contacts.pdf. |
+
+
+## Session 2026-04-06 S19 Updates — Hotfixes: tier display, PDF crash, duplicate usermeta
+
+| File | Description |
+|------|-------------|
+| Helm-OS: `deployment/v0.9.4/pi_source/tier_service.py` | **[UPDATED — 2026-04-06 S19]** Added `_parse_tier()` helper. Handles both `"T0"` string and `0` integer formats from license.json. Two `int()` call sites at lines ~137 and ~154 replaced with `_parse_tier()`. Fixes ValueError crash that caused tier to display as "3". Synced from Pi. |
+| HostPapa: `mobile/admin-api.php` | **[UPDATED — 2026-04-06 S19]** `update_tier` action: replaced INSERT ON DUPLICATE KEY UPDATE with SELECT→UPDATE/INSERT + DELETE-duplicates pattern. Prevents silent duplicate `atmyboat_tier` rows in `wpax_usermeta`. Root cause of "tier showing 3" confirmed as S16 Admin CRM P6 testing inserting duplicate rows on 2026-04-03. Don ran cleanup SQL to remove duplicates. |
+| HostPapa MySQL: `amboat_pdf_reports.report_id` | **[HOTFIX — 2026-04-06 S19]** Column type changed INT → BIGINT UNSIGNED via `ALTER TABLE amboat_pdf_reports MODIFY report_id BIGINT UNSIGNED AUTO_INCREMENT`. Root cause: column reached INT32_MAX (2,147,483,647) — PHP fatal error on INSERT → no response body → PWA reported "Invalid response from server". PDF generation now working (returns "no engine data" — expected until Pi is on water). |
