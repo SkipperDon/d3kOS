@@ -615,7 +615,7 @@ Before any on-water testing, validate with synthetic known data:
 |-------|-------|--------|
 | Phase 1 | Pi data push + HostPapa fleet endpoints (absorbs v0.9.4.1) | `[x]` **COMPLETE — 17/17 tests + live push confirmed 2026-04-07 S21c** |
 | Phase 2 | PWA fleet screen — map + health cards | `[x]` **COMPLETE S22/S23** — Leaflet map + vessel list + join/create + status/leave + Pi fleet_assign command |
-| Phase 3 | Analytics — engine hours, fuel, alert history per vessel | `[ ]` Not started |
+| Phase 3 | Analytics — engine hours, fuel, alert history per vessel | `[x]` **COMPLETE S27b** — fleet-analytics.php alerts_30d per vessel + fleet_alerts_30d summary; app.js alert breakdown + CSV export. Deployed + endpoint verified. |
 | Phase 4 | Tier 3 gate + admin console fleet view | `[~]` **IN PROGRESS S24** — Admin CRM fleet view complete. PWA T1/T2 locked card complete (S23). Two-device test pending. |
 
 ### Items
@@ -624,7 +624,7 @@ Before any on-water testing, validate with synthetic known data:
 | FM0 | Pi fleet data push service | Port 8108, 1-min push when engine_on OR GPS fix, idles otherwise, T3 gate, reads fleet.json | `[x]` **DONE S21c** — active on Pi, live push confirmed |
 | FM1 | Fleet creation + invitation system | fleet_code (6-char), charter/fishing/marina/other, roles: owner/member/view, 15-vessel cap | `[x]` **DONE S21b** — fleet-create.php, fleet-join.php deployed + tested |
 | FM2 | Fleet map | fleet-map.php: last-known position per vessel, age_minutes, role. Leaflet.js PWA screen TBD | `[~]` Backend done (15-vessel e2e ✓), PWA screen not started |
-| FM3 | Fleet analytics | fleet-analytics.php: engine_hours, avg RPM/coolant/oil (24h), fleet summary. Chart.js screen TBD | `[~]` Backend done (3429h e2e ✓), PWA screen not started |
+| FM3 | Fleet analytics | fleet-analytics.php: engine_hours, avg RPM/coolant/oil (24h), fleet summary + alerts_30d per vessel | `[x]` **DONE S27b** — backend + PWA analytics screen complete. Alert history per vessel deployed. Endpoint verified (vessel_count=15, alerts_30d present). |
 | FM4 | HostPapa PHP endpoints | fleet-create/join/ingest/map/analytics.php + fleet-setup.php — all deployed to staging | `[x]` **DONE S21b — ALL 17 TESTS PASSED** |
 | FM4b | fleet-status.php + fleet-leave.php | fleet-status: GET membership; fleet-leave: owner deletes/member removes self | `[x]` **DONE S23** — deployed to staging, confirmed working |
 | FM5 | PWA fleet screen | Fleet tab (T3), Leaflet map (colored markers), vessel list (health cards), join/create/status/leave flow | `[x]` **DONE S22/S23** — all flows confirmed by Don |

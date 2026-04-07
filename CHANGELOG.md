@@ -15,9 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 d3kOS v0.9.6 delivers fleet management for Tier 3 operators. Multiple vessels push GPS position and engine snapshots to HostPapa every 60 seconds. The PWA fleet screen shows all vessels on a Leaflet.js map with real-time age indicators and per-vessel health cards. Fleet join/create/leave is fully self-service from the PWA — no manual configuration required. The Pi receives its fleet assignment automatically via the cloud command queue within 30 seconds of the operator joining.
 
-**Status:** Phase 1 + Phase 2 complete. Phase 3 (analytics) + Phase 4 (admin view) in progress.
+**Status:** Phase 1 + Phase 2 + Phase 3 complete. Phase 4 (tier gate verification) in progress.
 
-### Added (S21–S23)
+### Added (S21–S27b)
 
 - **Fleet data pipeline** — `d3kos-fleet-push.service` (Port 8108) pushes GPS + engine snapshots every 60s when engine on or GPS fix active. Idles completely otherwise. T3 gate.
 
@@ -33,11 +33,14 @@ d3kOS v0.9.6 delivers fleet management for Tier 3 operators. Multiple vessels pu
 
 - **Pi fleet_unassign command** — `cloud_agent.py` handles `fleet_unassign`: removes `fleet.json` + stops `d3kos-fleet-push.service`. Enqueued automatically by `fleet-leave.php`.
 
-### Deferred to Phase 3/4
-- Analytics screen (engine hours bar chart, alert history, CSV export)
-- Admin console fleet view
-- Privacy toggle (500m position randomization per vessel)
+- **Fleet analytics screen** *(Phase 3 — S27b)* — Per-vessel engine hours bar chart (Chart.js), alert history breakdown (last 30 days from `amboat_alerts` — engine_roughness, engine_overtemp, engine_oil_pressure), fleet-wide summary card (active vessels, total hours, avg RPM, total alerts), CSV export with 4 alert columns. Backend `fleet-analytics.php` updated to return `alerts_30d` per vessel and `fleet_alerts_30d` in fleet_summary.
+
+- **Admin console fleet view** *(Phase 4 partial — S24)* — `/fleets` list (all fleets, member count, last activity) + `/fleet/<id>` detail (member device tokens, positions, roles) + fleet suspension (`amboat_fleets.suspended` column). Flask routes + fleet.html deployed to CRM VM.
+
+### Deferred to Phase 4 completion / future
+- T1/T2 tier gate verification with test accounts
 - Two-device join test (requires second paired T3 device)
+- Privacy toggle (500m position randomization per vessel)
 
 ---
 
