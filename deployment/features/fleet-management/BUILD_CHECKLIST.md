@@ -37,31 +37,59 @@ PWA (phone)
 ## Phase 1 — Infrastructure: Pi Data Push + HostPapa Fleet Endpoints
 
 ### MySQL Schema (run on staging DB)
-- [ ] `amboat_fleets` — fleet_id, fleet_code (6-char), name, type (charter/fishing/marina), owner_device_token, created_at
-- [ ] `amboat_fleet_members` — fleet_id, device_token, role (owner/member/view), joined_at
-- [ ] `amboat_fleet_positions` — fleet_id, device_token, lat, lon, cog, sog, ts — keep last 24h only
-- [ ] `amboat_fleet_engine_snapshots` — fleet_id, device_token, rpm, oil_pressure_kpa, coolant_temp_c, engine_hours, ts — keep last 7 days
+- [x] `amboat_fleets` — fleet_id, fleet_code (6-char), name, type (charter/fishing/marina), owner_device_token, created_at
+- [x] `amboat_fleet_members` — fleet_id, device_token, role (owner/member/view), joined_at
+- [x] `amboat_fleet_positions` — fleet_id, device_token, lat, lon, cog, sog, ts — keep last 24h only
+- [x] `amboat_fleet_engine_snapshots` — fleet_id, device_token, rpm, oil_pressure_kpa, coolant_temp_c, engine_hours, ts — keep last 7 days
+*Schema deployed via `fleet-setup.php?action=create_tables` — see deploy instructions below*
 
 ### HostPapa PHP endpoints
-- [ ] `fleet-create.php` — POST, app_token auth. Creates fleet record, returns fleet_code. One fleet per device max.
-- [ ] `fleet-join.php` — POST, app_token + fleet_code. Adds device as member. Returns fleet_id.
-- [ ] `fleet-ingest.php` — POST, app_token + fleet_id. Writes position + engine snapshot. Prunes old rows (24h position, 7d engine). Rate-limited: max 1 write per 50 seconds per device (allows 1-min Pi push with slack).
-- [ ] `fleet-map.php` — GET, app_token + fleet_id. Returns all member positions (last known). Applies 500m randomization for members with privacy=true.
-- [ ] `fleet-analytics.php` — GET, app_token + fleet_id. Returns per-vessel engine hours (sum), alert count (30d), last seen timestamp.
+- [x] `fleet-setup.php` — one-shot schema + test data seeder. Delete after testing.
+- [x] `fleet-create.php` — POST, app_token auth. Creates fleet record, returns fleet_code. One fleet per device max. T3 gate.
+- [x] `fleet-join.php` — POST, app_token + fleet_code. Adds device as member. 15-vessel cap enforced. T3 gate.
+- [x] `fleet-ingest.php` — POST, AMBOAT_API_KEY + X-Device-Token. Writes position + engine snapshot. Prunes old rows (24h position, 7d engine). Rate-limited: max 1 write per 50s per device.
+- [x] `fleet-map.php` — GET, app_token + fleet_id. Returns all member positions (last known). T3 gate.
+- [x] `fleet-analytics.php` — GET, app_token + fleet_id. Returns per-vessel engine hours, avg RPM/coolant/oil (24h), fleet summary. T3 gate.
 
 ### Pi fleet_push_service.py (Port 8107)
-- [ ] New systemd service `d3kos-fleet-push.service`
-- [ ] Reads fleet_id from `/opt/d3kos/config/fleet.json` (written when owner joins fleet via PWA)
-- [ ] **1-minute push interval** when engine_on=True OR GPS fix active (operator confirmed 2026-04-07)
-- [ ] Idles (no push, no CPU) when engine off AND no GPS fix — prevents background drain at dock
-- [ ] Only runs when fleet_id is set (no fleet_id = service idles, no network calls)
-- [ ] Respects Tier gate: T3 only — reads tier from `license.json` before each push
+- [x] New systemd service `d3kos-fleet-push.service` — written
+- [x] Reads fleet_id from `/opt/d3kos/config/fleet.json` (written when owner joins fleet via PWA)
+- [x] **1-minute push interval** when engine_on=True OR GPS fix active (operator confirmed 2026-04-07)
+- [x] Idles (no push, no CPU) when engine off AND no GPS fix — prevents background drain at dock
+- [x] Only runs when fleet_id is set (no fleet_id = service idles, no network calls)
+- [x] Respects Tier gate: T3 only — reads tier from `license.json` before each push
+- [ ] **DEPLOY TO PI** — not yet on Pi (pending staging test confirmation)
 - [ ] TDD: test 1-min push fires, test idle when no fleet_id, test tier gate blocks T1/T2
 
 ### Phase 1 test criteria
-- [ ] Pi pushes position to staging DB
-- [ ] Two test devices (two Pi registrations) both visible in `fleet-map.php` response
-- [ ] Engine snapshot appears in `fleet-analytics.php`
+- [ ] `fleet-setup.php?action=create_tables` succeeds on staging
+- [ ] `fleet-setup.php?action=seed_test` inserts TEST01 fleet + 15 vessels + 60 min data
+- [ ] `test_fleet_e2e.py` — all tests pass (fleet-map: 15 positions, fleet-analytics: fleet summary)
+- [ ] Pi fleet_push_service.py deployed and `d3kos-fleet-push.service` active
+- [ ] Live push confirmed: Pi position appears in fleet-map.php within 1 min
+
+### Deployment Instructions (Phase 1)
+
+**Step 1 — Add FLEET_SETUP_KEY to config.php on HostPapa:**
+Open HostPapa cPanel File Manager → `staging/mobile/config.php` → add:
+```php
+define('FLEET_SETUP_KEY', 'choose-a-secret-here');
+```
+
+**Step 2 — Deploy PHP files:**
+Run on WSL: `python3 deployment/features/fleet-management/scripts/deploy-fleet-php.py`
+
+**Step 3 — Create tables (browser):**
+Open: `https://atmyboat.com/staging/mobile/fleet-setup.php?action=create_tables&setup_key=YOUR_KEY`
+Expected: `{"success":true,"tables_created":["amboat_fleets","amboat_fleet_members","amboat_fleet_positions","amboat_fleet_engine_snapshots"]}`
+
+**Step 4 — Seed 15-boat test data (browser):**
+Open: `https://atmyboat.com/staging/mobile/fleet-setup.php?action=seed_test&setup_key=YOUR_KEY`
+Expected: `{"success":true,"members_added":15,"positions_added":900,"engine_added":900,...}`
+
+**Step 5 — Run end-to-end test:**
+Run on WSL: `python3 deployment/features/fleet-management/scripts/test_fleet_e2e.py --app-token YOUR_T3_APP_TOKEN`
+Expected: ALL 15 TESTS PASSED
 
 ---
 
