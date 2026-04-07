@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.5] - 2026-04-07
+
+### Summary
+
+**v0.9.5 — Predictive Maintenance**
+
+d3kOS v0.9.5 delivers proactive engine health monitoring. The system continuously analyzes engine history against a statistical baseline and alerts the operator before a failure occurs — not after. Alerts surface through the existing notification infrastructure: voice (Piper TTS), dashboard status bar ticker, and automatic boat log entries.
+
+**Status:** Complete — deployed and validated on Pi with synthetic test data. On-water validation documented separately for completion at the boat.
+
+### Added
+
+- **Engine historian service** (`d3kos-predictive.service`, Port 8106) — SQLite time-series database recording engine snapshots from SignalK every 60 seconds. Stores RPM, coolant temperature, oil pressure, boost pressure, fuel level, engine hours.
+
+- **Statistical anomaly detection** — 2σ z-score analysis against rolling 1,000-row baseline. Hard limits: coolant >100°C → ALERT critical, oil pressure <150 kPa → ALERT critical. Fields: `coolant_temp_c`, `oil_pressure_kpa`, `rpm`. Detection cycle every 5 minutes.
+
+- **Predictive alert notifications** — WATCH/ALERT fires through three channels simultaneously: voice (Piper TTS via AI bridge), dashboard ticker (AI bridge SSE → `_setAlertTicker()`), boat log auto-entry (1-hour dedup cooldown per field).
+
+- **Engine Monitor predictive readouts** — Predictive Health section on `/engine-monitor` page. Four status cards (Overall, Coolant, Oil Press, RPM Trend) using existing `adv`/`crit` CSS. No changes to main dashboard.
+
+- **AI bridge self-healing** — `d3kos-ai-bridge.service` enabled on boot, added to watchdog `CRITICAL_SERVICES` with `auto_restart=True`.
+
+- **AI bridge Piper TTS fixed** — `utils/tts.py` corrected to use `/usr/local/bin/piper` + `/opt/d3kos/models/piper/en_US-amy-medium.onnx` via `PIPER_BIN`/`PIPER_VOICE` env vars. Was using wrong hardcoded path and `--output_raw` method.
+
+- **Tier gates** — `predictive_alerts` T1+, `maintenance_schedule` T2+ added to tier_service.py feature matrix.
+
+- **Test data tooling** — `generate_test_data.py` (2,000 synthetic readings, 3 injected anomalies) and `test_predictive.py` (TDD 6/6 passing).
+
+### Deferred
+
+- Phase 4 ML models — needs on-water training data
+- Phase 5 advanced automation (fuel optimization, geofence) — Tier 3, future version
+
+---
+
 ## [0.9.4-S6c] - 2026-03-27
 
 ### Fixed
