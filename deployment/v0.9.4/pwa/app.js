@@ -8,6 +8,15 @@
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const API_BASE     = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile';
+
+// Normalize tier — DB may store "3" (integer) or "T3" (string). Always return "T0"…"T3".
+function normalizeTier(raw) {
+  if (!raw) return 'T1';
+  const s = String(raw).trim();
+  if (/^T[0-3]$/.test(s)) return s;        // already "T3"
+  if (/^[0-3]$/.test(s))  return 'T' + s;  // "3" → "T3"
+  return 'T1';
+}
 const APP_VERSION  = '0.9.4';      // PWA version
 const LATEST_D3KOS = 'v0.9.2.2';  // Latest known Pi firmware — update each d3kOS release
 
@@ -47,7 +56,7 @@ function loadSession() {
   state.token       = localStorage.getItem('amboat_token')    || null;
   state.userId      = localStorage.getItem('amboat_user_id')  || null;
   state.username    = localStorage.getItem('amboat_username') || null;
-  state.tier        = localStorage.getItem('amboat_tier')     || 'T1';
+  state.tier        = normalizeTier(localStorage.getItem('amboat_tier') || 'T1');
   const v = localStorage.getItem('amboat_vessel');
   if (v) { try { state.vessel = JSON.parse(v); } catch { state.vessel = null; } }
   loadFleetSession();
@@ -424,7 +433,7 @@ screens.login = function renderLogin() {
       state.userId      = data.user_id;
       state.username    = data.username;
       state.displayName = data.display_name;
-      state.tier        = data.tier;
+      state.tier        = normalizeTier(data.tier);
       saveSession();
       showAppUI();
       await loadVessels();
@@ -470,18 +479,27 @@ screens.login = function renderLogin() {
 };
 
 function svgAnchor() {
-  // Simple anchor/boat icon
+  // AtMyBoat brand mark — boat silhouette with gold hull on navy circle
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 64 64');
   svg.setAttribute('width', '64');
   svg.setAttribute('height', '64');
   svg.setAttribute('aria-hidden', 'true');
   svg.innerHTML = `
-    <circle cx="32" cy="32" r="30" fill="#0f2040" stroke="#00b4d8" stroke-width="2"/>
-    <path d="M32 14 L32 38 M24 32 L40 32" stroke="#00b4d8" stroke-width="2.5"
-          stroke-linecap="round"/>
-    <path d="M18 40 Q32 50 46 40" stroke="#00b4d8" stroke-width="2.5"
+    <circle cx="32" cy="32" r="30" fill="#0f2040" stroke="#f59e0b" stroke-width="2"/>
+    <!-- Cabin / wheelhouse -->
+    <rect x="22" y="22" width="14" height="10" rx="2" fill="#f59e0b"/>
+    <!-- Mast -->
+    <line x1="29" y1="14" x2="29" y2="22" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+    <!-- Hull -->
+    <path d="M10 32 L14 32 L16 42 L48 42 L50 32 L54 32" stroke="#f59e0b" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Keel -->
+    <path d="M16 42 Q32 48 48 42" stroke="#f59e0b" stroke-width="2.5"
           stroke-linecap="round" fill="none"/>
+    <!-- Waterline -->
+    <line x1="8" y1="46" x2="56" y2="46" stroke="#00b4d8" stroke-width="1.5"
+          stroke-linecap="round" stroke-dasharray="4 3" opacity="0.6"/>
   `;
   return svg;
 }
