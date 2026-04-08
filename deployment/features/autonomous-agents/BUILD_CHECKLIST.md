@@ -107,7 +107,17 @@
 
 ---
 
-## PHASE 5 — FI3 Config Packages + FI4 Recovery Mode (S32)
+## PHASE 5 — Version Heartbeat + Fleet Version GUI (S33 — next session)
+
+| # | Item | Status |
+|---|------|--------|
+| A | `version-heartbeat.php` — receives current_version + device_token from AA2 | `[ ]` |
+| B | `amboat_devices.current_version` + `version_updated_at` columns | `[ ]` |
+| C | `update_agent.py` — POST current version to HostPapa on every run | `[ ]` |
+| D | CRM `/fleet-versions` page — per-Pi version status, "behind" indicator, last check-in | `[ ]` |
+| E | Document: AUTONOMOUS_AGENTS_AND_FI.md — full feature doc for v0.9.8 system | `[ ]` |
+
+## PHASE 6 — FI4 Recovery Mode + Config Packages (S33/S34 — deferred)
 
 | # | Item | Status |
 |---|------|--------|

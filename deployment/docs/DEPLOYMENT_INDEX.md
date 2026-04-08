@@ -735,3 +735,49 @@ No new files deployed this session. Checklist and governance updates only:
 | VM: `/home/d3kos-admin/templates/tickets.html` | **[NEW — S25]** Support tickets CRM template. Deployed via pscp.exe + plink sudo cp. |
 | VM: `/home/d3kos-admin/templates/base.html` | **[UPDATED — S25]** Tickets nav link added after Fleets. Inserted via plink python3 one-liner. |
 | HostPapa staging DB: `amboat_support_tickets` | **[MIGRATION — S25]** Created via support-migrate.php (deployed, run, deleted). Columns: ticket_id AUTO_INCREMENT, user_id, device_token, subject, body, status ENUM(open/in_progress/resolved), admin_note, created_at, updated_at. |
+
+## v0.9.8 — Autonomous Agents AA1-AA6 (S28-S30 2026-04-07)
+
+| File | Description |
+|------|-------------|
+| `deployment/features/autonomous-agents/pi_source/agent_base.py` | **[NEW — S28]** AgentBase class, AgentResult dataclass, shared paths (STATE_DB, STATUS_JSON, LOG_PATH). report_failure() helper added S31. |
+| `deployment/features/autonomous-agents/pi_source/agent_scheduler.py` | **[NEW — S28]** 5-min poll loop. SQLite state (agent_runs + agent_history). Atomic JSON write via .tmp rename. Rotating log. 5 agents registered. |
+| `deployment/features/autonomous-agents/pi_source/agents/performance_agent.py` | **[NEW — S28]** AA3: CPU/mem/disk/thermal. Pi-tuned thresholds (cpu warn 90%/crit 95% for SwiftShader). /tmp cleanup at disk critical. Interval: 5 min. |
+| `deployment/features/autonomous-agents/pi_source/agents/update_agent.py` | **[NEW — S29, UPDATED — S31+S32]** AA2: version.php check, T1+ auto-apply + rollback. FI1 failure report on update fail. FI2 fix-confirmed on update success. Interval: 24h. |
+| `deployment/features/autonomous-agents/pi_source/agents/storage_agent.py` | **[NEW — S29]** AA4: log trimming >50MB, old backup cleanup (keep 3), predictive disk full warning. Interval: 24h. |
+| `deployment/features/autonomous-agents/pi_source/agents/health_agent.py` | **[NEW — S30]** AA5: health score 0-100, 12-service check, DB integrity deep scan every 7 days. Writes health-report.json. Interval: 24h. |
+| `deployment/features/autonomous-agents/pi_source/agents/backup_agent.py` | **[NEW — S30]** AA6: USB device detection (st_dev comparison), rsync incremental/full, T3 cloud sync stub. Interval: 24h. |
+| `deployment/features/autonomous-agents/pi_source/d3kos-agents.service` | **[NEW — S28]** systemd unit. User=d3kos. ExecStartPre sleep 20. Restart=always. |
+| `deployment/features/autonomous-agents/scripts/deploy-agents.py` | **[NEW — S28]** SSH/SCP deploy script for all agent files + service. |
+| Pi: `/opt/d3kos/services/agents/` | **[DEPLOYED — S28-S30]** All agent files live. d3kos-agents service active, health 96/100 green. |
+| `deployment/d3kOS/dashboard/app.py` | **[UPDATED — S28]** Added /agents/status, /health/report, /update/status routes. |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED — S28]** v20: .pi-health dot with ok/warn/crit states. |
+| `deployment/d3kOS/dashboard/templates/index.html` | **[UPDATED — S28]** Pi health dot in status bar. Update notice bar (amber, dismissible). Agent status polling JS (5 min). |
+| `deployment/v0.9.4/pi_source/engine-monitor.html` | **[UPDATED — S28]** Section 6 Autonomous Agents — fully dynamic agent cards via updateAgents(). |
+| `deployment/v0.9.4/pi_source/d3kos_watchdog.py` | **[UPDATED — S28+S31]** d3kos-agents + d3kos-failure-reporter added to CRITICAL_SERVICES. |
+
+## v0.9.8 — Failure Intelligence FI1/FI2/FI3 + Update Publisher (S31+S32 2026-04-07)
+
+| File | Description |
+|------|-------------|
+| `deployment/features/autonomous-agents/pi_source/failure_reporter.py` | **[NEW — S31]** FI1: Flask Port 8109. POST /report captures service/error_type/message. SHA-256 signature normalises message (strips numbers/paths/UUIDs) for cross-fleet clustering. SQLite local store. Background sync to FI2 every 5 min. GET /health + /recent. |
+| `deployment/features/autonomous-agents/pi_source/d3kos-failure-reporter.service` | **[NEW — S31]** systemd unit for FI1. User=d3kos. ExecStartPre sleep 25. Restart=always. No StandardOutput redirect (avoids root-owned log conflict). |
+| `deployment/features/autonomous-agents/php/failure-report.php` | **[NEW — S31]** FI2 receive endpoint. Inserts amboat_failure_reports, upserts amboat_issues (cluster by error_signature). Tables auto-created on first call. Bearer + X-Device-Token auth. |
+| `deployment/features/autonomous-agents/php/fix-confirmed.php` | **[NEW — S31]** FI2 fix confirmation. AA2 calls after successful update. Updates amboat_issue_resolutions + resolved_count. Auto-closes issue at ≥90% resolution + 48h silence. Bearer + X-Device-Token auth. |
+| `deployment/features/autonomous-agents/php/issue-api.php` | **[NEW — S31]** FI2 CRM API. GET list/get/stats, POST update. Full lifecycle: open→diagnosed→fix_validated→released→closed. Bearer auth (matches CRM proxy_api_key). |
+| `deployment/features/autonomous-agents/crm/failure_routes.py` | **[NEW — S31]** FI3 CRM route snippet. /failures list + /failure/<id> detail + /failure/<id>/update. Integrated into VM app.py S31. |
+| `deployment/features/autonomous-agents/crm/failures.html` | **[NEW — S31]** FI3 CRM template. Issue list with per-issue resolution progress bars. Detail: affected devices, resolutions, recent reports, lifecycle update form. |
+| `deployment/features/autonomous-agents/scripts/deploy-fi.py` | **[NEW — S31]** FTP deploy script for FI PHP files to HostPapa. |
+| `deployment/features/autonomous-agents/php/version.php` | **[REWRITTEN — S32]** DB-backed. Reads amboat_versions (auto-created). Falls back to empty blocks if DB unavailable. Replaces hardcoded JSON. |
+| `deployment/features/autonomous-agents/php/update-publish.php` | **[NEW — S32]** Update Publisher API. POST publish (deactivates old, inserts new), deactivate, reactivate. GET list, current. Bearer auth. |
+| `deployment/features/autonomous-agents/crm/update_routes.py` | **[NEW — S32]** CRM route snippet. /publish-update GET+POST. Integrated into VM app.py S32. |
+| `deployment/features/autonomous-agents/crm/publish_update.html` | **[NEW — S32]** Update Publisher CRM page. Active version cards (incremental + major), publish form, version history with pull/restore, workflow guide. |
+| `deployment/features/autonomous-agents/scripts/package-update.py` | **[NEW — S32]** Local packager. Maps repo-relative paths to Pi paths via REPO_TO_PI dict. Builds tar.gz with manifest.json. Generates SHA-256. Prints HostPapa upload URL + CRM-ready values. |
+| HostPapa staging: `updates/` directory | **[NEW — S32]** Created via FTP. Package hosting location: .../twentytwenty-child/updates/ |
+| HostPapa DB: `amboat_versions` | **[NEW — S32]** Auto-created by version.php/update-publish.php on first call. Columns: id, update_type, version, url, checksum, released, t1_upgrade, services_to_restart, release_notes, published_at, is_active. |
+| HostPapa DB: `amboat_issues` | **[NEW — S31]** Issue lifecycle table. Clustered by error_signature. Status ENUM. resolved_count tracks fleet adoption. |
+| HostPapa DB: `amboat_failure_reports` | **[NEW — S31]** Raw failure report log. Indexed by error_signature + device_token. |
+| HostPapa DB: `amboat_issue_resolutions` | **[NEW — S31]** Per-device fix confirmation records. UNIQUE(issue_id, device_token). |
+| VM: `/home/d3kos-admin/app.py` | **[UPDATED — S31+S32]** failure_routes + update_routes appended. /failures, /failure/<id>, /failure/<id>/update, /publish-update live. |
+| VM: `/home/d3kos-admin/templates/failures.html` | **[NEW — S31]** FI3 issue dashboard template. |
+| VM: `/home/d3kos-admin/templates/publish_update.html` | **[NEW — S32]** Update Publisher template. |

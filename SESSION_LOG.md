@@ -10440,3 +10440,145 @@ OPERATOR ACTIONS REQUIRED:
 - Check console.anthropic.com for actual Claude API cost
 
 ---
+
+---
+
+## Session 2026-04-07 S31+S32 — FI1/FI2/FI3 Issue Lifecycle + Update Publisher
+
+**Goal:** Build Failure Intelligence (FI1 Pi reporter, FI2 HostPapa DB, FI3 CRM dashboard) and Update Publisher (DB-backed version manifest, CRM publish screen, packaging tool).
+
+**Completed:**
+
+*S31 — Failure Intelligence:*
+- `failure_reporter.py` — FI1: Flask service Port 8109 (8106 was taken by predictive_maintenance). SQLite local store, SHA-256 error signature normalisation (strips numbers/paths/UUIDs so same logical error clusters across fleet), background sync thread to FI2 every 5 min. Deployed as `d3kos-failure-reporter.service`.
+- `agent_base.py` — added `report_failure(error_type, message)` helper. Any agent can call it; non-blocking, silent on FI1 unavailability.
+- `update_agent.py` — now calls `report_failure()` on update failure; calls new `_confirm_fix()` to POST `fix-confirmed.php` after successful update apply.
+- `failure-report.php` — FI2 receive endpoint. Inserts to `amboat_failure_reports`, auto-creates/upserts `amboat_issues` clustered by error_signature. Tables created on first call.
+- `fix-confirmed.php` — FI2 fix confirmation. Called by AA2 after successful update. Records device resolution, updates `resolved_count`. Auto-closes issue when ≥90% of affected devices confirm fix + 48h silence window.
+- `issue-api.php` — FI2 CRM API. GET list/get/stats, POST update. Bearer auth (matches CRM proxy pattern). Supports full lifecycle: open → diagnosed → fix_validated → released → closed.
+- `failure_routes.py` + `failures.html` — FI3 Admin CRM. `/failures` list with progress bars per issue, `/failure/<id>` detail with affected devices, resolution list, recent reports, lifecycle update form.
+- `deploy-fi.py` — FTP deploy script for HostPapa PHP files.
+- All deployed and verified: FI1 active (Pi:8109 health=ok), PHP on HostPapa, CRM /failures returns 200.
+
+*S32 — Update Publisher:*
+- `version.php` — rewritten DB-backed. Reads `amboat_versions` table (auto-created). Falls back to empty blocks if DB unavailable (Pi stays on current version — no noise). Replaces hardcoded JSON.
+- `update-publish.php` — CRM API: publish (deactivates old, inserts new), deactivate, reactivate. Full version history. Bearer auth.
+- `package-update.py` — local packaging tool. Takes changed file list, maps repo paths to Pi paths via REPO_TO_PI dict, builds tar.gz with manifest.json, generates SHA-256 checksum, prints CRM-ready values + upload instructions.
+- `update_routes.py` + `publish_update.html` — CRM `/publish-update` page. Shows active incremental + major versions, publish form (version, URL, checksum, services, release notes, t1_upgrade flag), version history table with pull/restore buttons. Workflow guide embedded.
+- `updates/` directory created on HostPapa for hosting packages.
+- All deployed: HostPapa PHP + CRM routes live (/publish-update returns 200).
+
+*Design decisions confirmed this session:*
+- "All Pi deployments are our testers" — issue lifecycle tracker captures full DevOps loop: detect → diagnose → fix → validate → release → confirm across fleet
+- Error signature normalises message before hashing so same logical error from different Pi units produces same 12-char hex signature
+- Per-Pi version heartbeat (version reporting on every AA2 run) identified as the right approach for fleet version visibility — NOT deriving it from issue resolutions. To be built next session.
+- Package hosting on HostPapa `updates/` folder — already paid, Pi-reachable, no additional accounts needed.
+
+**Decisions:**
+- Port 8109 for FI1 (8106 occupied by predictive_maintenance). Watchdog updated.
+- issue-api.php uses Bearer auth (not X-Admin-Key) — matches existing CRM proxy pattern, no new config key needed.
+- version.php falls back to empty blocks (not hardcoded baseline) — cleaner: if DB is down, Pi sees "no update available" not a stale version.
+- StandardOutput/StandardError removed from d3kos-failure-reporter.service — systemd was creating root-owned log file before d3kos user Python process could open it.
+
+**Files changed this session:**
+- `deployment/features/autonomous-agents/pi_source/failure_reporter.py` — NEW
+- `deployment/features/autonomous-agents/pi_source/d3kos-failure-reporter.service` — NEW
+- `deployment/features/autonomous-agents/pi_source/agent_base.py` — report_failure() helper, port ref 8109
+- `deployment/features/autonomous-agents/pi_source/agents/update_agent.py` — FI1 failure report + FI2 fix-confirmed calls
+- `deployment/features/autonomous-agents/php/failure-report.php` — NEW
+- `deployment/features/autonomous-agents/php/fix-confirmed.php` — NEW
+- `deployment/features/autonomous-agents/php/issue-api.php` — NEW
+- `deployment/features/autonomous-agents/php/version.php` — REWRITTEN (DB-backed)
+- `deployment/features/autonomous-agents/php/update-publish.php` — NEW
+- `deployment/features/autonomous-agents/crm/failure_routes.py` — NEW
+- `deployment/features/autonomous-agents/crm/failures.html` — NEW
+- `deployment/features/autonomous-agents/crm/update_routes.py` — NEW
+- `deployment/features/autonomous-agents/crm/publish_update.html` — NEW
+- `deployment/features/autonomous-agents/scripts/deploy-fi.py` — NEW
+- `deployment/features/autonomous-agents/scripts/package-update.py` — NEW
+- `deployment/features/autonomous-agents/BUILD_CHECKLIST.md` — Phase 4 marked complete + S31 deploy steps
+- `deployment/v0.9.4/pi_source/d3kos_watchdog.py` — d3kos-failure-reporter added to CRITICAL_SERVICES
+- Pi: failure_reporter.py, agent_base.py, update_agent.py, d3kos-failure-reporter.service deployed
+- VM: failures.html, publish_update.html deployed; failure_routes + update_routes inserted into app.py
+- HostPapa: failure-report.php, fix-confirmed.php, issue-api.php, version.php, update-publish.php deployed
+
+**Ollama:** 0 calls — all code written directly.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-07 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Version heartbeat: AA2 reports current_version to HostPapa on every run (not just on update). `version-heartbeat.php` + `amboat_devices.current_version` column + CRM fleet version view. Next session.
+- FI4 Recovery mode boot sequence (S32 original scope — deferred to S33)
+- FI3 original definition (personalized config packages) — now split: FI2/FI3 as built (issue lifecycle), config packages deferred
+- v0.9.6 two-device fleet test (requires second T3 paired device)
+- Phase 4 live push (CA2 rotation checklist → Don clicks Push to Live)
+
+---
+
+### Release Package Manifest — S31+S32
+
+- **Version:** v0.9.8 (no version bump — incremental feature additions within v0.9.8)
+- **Update type:** incremental
+- **Pi changes deployed this session:**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `failure_reporter.py` | `/opt/d3kos/services/agents/` | NEW — FI1 Flask service Port 8109 |
+| `d3kos-failure-reporter.service` | `/etc/systemd/system/` | NEW — systemd unit |
+| `agent_base.py` | `/opt/d3kos/services/agents/` | Added report_failure() helper |
+| `update_agent.py` | `/opt/d3kos/services/agents/agents/` | FI1 + FI2 integration |
+| `d3kos_watchdog.py` | `/opt/d3kos/services/watchdog/` | Added d3kos-failure-reporter to CRITICAL_SERVICES |
+
+- **HostPapa changes:** failure-report.php, fix-confirmed.php, issue-api.php, version.php (rewritten), update-publish.php — all to staging/mobile/. updates/ directory created.
+- **VM changes:** failures.html, publish_update.html to templates/. failure_routes + update_routes appended to app.py. admin-crm restarted.
+- **Pre-install steps:** none
+- **Post-install steps:** `sudo systemctl daemon-reload && sudo systemctl enable --now d3kos-failure-reporter` — done ✓
+- **Rollback:** restore agent_base.py + update_agent.py from git `9d6377a`. Stop d3kos-failure-reporter service.
+- **Health check:** `curl http://localhost:8109/health` → `{"ok":true}`. `systemctl is-active d3kos-failure-reporter` → active.
+- **Release notes:** Failure Intelligence layer deployed. All Pi services can now report failures to FI1 (Port 8109). Failures sync to HostPapa and cluster into issues by error signature. Issue lifecycle tracked in Admin CRM. Update publisher live — use CRM /publish-update to release future versions to fleet.
+
+---
+
+QUALITY METRICS — 2026-04-07 S31+S32
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS — post-compaction continuation; /session-start not formally invoked. Memory active via system-reminder context.
+
+5-SESSION AVERAGE SQS (S26→S31+S32): 90/100 (stable)
+PRIMARY IMPROVEMENT TARGET: MLS — invoke /session-start at top of every session including post-compaction continuations.
+TREND: Stable at 90. SCR and SGCR holding at 100%. MLS is the sole drag.
+
+ACCOMPLISHED THIS SESSION:
+- FI1 failure reporter service deployed and verified on Pi (Port 8109)
+- FI2 issue lifecycle tracking deployed to HostPapa (3 PHP endpoints + 2 MySQL tables auto-created)
+- FI3 Admin CRM issue dashboard live (/failures + /failure/<id>)
+- Update Publisher live: version.php DB-backed, CRM /publish-update page, package-update.py packager
+- Error signature normalisation ensures cross-fleet clustering by logical error, not literal message
+- Full DevOps loop designed and implemented: detect → diagnose → fix → validate → release → confirm
+
+NOT COMPLETED / DEFERRED:
+- Version heartbeat (AA2 reports current version on every run) — identified as correct approach, deferred to next session
+- FI4 recovery mode boot sequence — deferred
+- Original FI3 (personalised config packages) — split and partially deferred
+
+KNOWN GAPS OR UNCERTAINTIES:
+- FI2 sync from Pi to HostPapa not yet tested end-to-end (requires AMBOAT_API_KEY in cloud-config.json on Pi — not verified this session). FI1 local capture confirmed working.
+- issue-api.php auth relies on AMBOAT_API_KEY === proxy_api_key on CRM — assumed equal, not explicitly verified.
+- package-update.py REPO_TO_PI mapping covers main paths but not all repo locations. Add new mappings as needed.
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for actual Claude API cost (2026-04-07)
+- OIC assessment before session formally closed
+- Next session: version heartbeat build (AA2 reports current_version to HostPapa)
+

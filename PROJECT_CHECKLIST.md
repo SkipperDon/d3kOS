@@ -656,7 +656,7 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8E — v0.9.8 Autonomous Agents + Failure Intelligence
-**Status: S28 IN PROGRESS — AA1+AA3 source complete, deploy pending**
+**Status: S31+S32 COMPLETE (agents + FI1/FI2/FI3 + Update Publisher) — version heartbeat next**
 **Depends on:** v0.9.7 (action layer + whitelisted command queue)
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.12.0 + v0.13.0
 
@@ -664,21 +664,26 @@ Before any on-water testing, validate with synthetic known data:
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| AA1 | Agent framework | Base agent class, scheduler, communication bus, management API. Settings page: agent status, last run, history, manual trigger. | `[~]` S28 source written — deploy pending |
-| AA2 | Update agent | HostPapa version manifest + archive.org download. Backup/restore logic. Risk analysis. Auto-rollback on failure. Poll-based (24h interval). | `[ ]` S29 |
-| AA3 | Performance agent | CPU/memory/disk monitoring. Auto-remediation: clear /tmp at disk critical. Thermal + CPU/mem critical → log only (unsafe to auto-kill at sea). Poll: every 5 min. | `[~]` S28 source written — deploy pending |
-| AA4 | Storage agent | Cleanup automation (old logs, temp files). Predictive warnings (7 days before full). Runs: daily 4:00 AM. | `[ ]` |
-| AA5 | Health check agent | Daily health reports (all systems). Weekly deep scans (DB integrity, filesystem). Health score 0–100. Runs: daily 5:00 AM, deep scan Sunday 2:00 AM. | `[ ]` |
-| AA6 | Backup agent | Incremental backups daily. Full system images weekly. Cloud sync (Tier 3). Restoration testing. Runs: daily 6:00 AM. | `[ ]` |
+| AA1 | Agent framework | Base agent class, scheduler, SQLite state, atomic JSON, 5-min poll loop. | `[x]` S28 deployed + verified |
+| AA2 | Update agent | DB-backed version manifest, T1+ auto-apply with rollback, FI1/FI2 integration. | `[x]` S29+S31+S32 |
+| AA3 | Performance agent | CPU/mem/disk/thermal. Pi-tuned thresholds (SwiftShader). /tmp cleanup at disk crit. | `[x]` S28 deployed + verified |
+| AA4 | Storage agent | Log trimming, old backup cleanup, predictive disk warning (7-day). | `[x]` S29 |
+| AA5 | Health check agent | Health score 0-100, 12-service check, weekly DB integrity deep scan. | `[x]` S30 |
+| AA6 | Backup agent | USB incremental/full rsync, T3 cloud sync stub (config-package.php not yet built). | `[x]` S30 |
 
 ### 8E.2 — Failure Intelligence & Recovery
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| FI1 | Failure reporter service (Port 8106) | Internal API for all Pi services. 4-field failure capture: what was system doing, what went wrong, immediate consequence, what fixed it. 5KB max per record. Local SQLite, background sync to AtMyBoat.com. | `[ ]` |
-| FI2 | Anonymized failure DB at AtMyBoat.com | Receives anonymized records (hashed installation ID). Pattern analysis. Recurrence tracking (24h, 7d). Top failure patterns dashboard. | `[ ]` |
-| FI3 | Personalized config packages | Stored per installation at AtMyBoat.com. Engine specs, settings, boatlog. Updated on every cloud sync. Used for recovery. | `[ ]` |
-| FI4 | Recovery mode boot sequence | Fresh SD card detection. Auto-connect to mesh. Download personalized config. Restore settings + boatlog. Resume normal operation. | `[ ]` |
+| FI1 | Failure reporter (Port 8109) | Flask service, SQLite, error signature normalisation, background FI2 sync. Any service calls POST /report. | `[x]` S31 deployed Pi:8109 |
+| FI2 | Issue lifecycle DB at HostPapa | failure-report.php + fix-confirmed.php + issue-api.php. amboat_issues + amboat_failure_reports + amboat_issue_resolutions tables. | `[x]` S31 deployed |
+| FI2b | Update Publisher | version.php DB-backed (amboat_versions). update-publish.php CRM API. package-update.py local packager. CRM /publish-update page. | `[x]` S32 deployed |
+| FI2c | Version heartbeat | AA2 reports current_version to HostPapa on every run. amboat_devices.current_version. CRM fleet version view. | `[ ]` Next session |
+| FI3 | Admin CRM issue dashboard | /failures list + /failure/<id> detail. Lifecycle: open→diagnosed→fix_validated→released→closed. Progress bars. | `[x]` S31 deployed CRM |
+| FI4 | Recovery mode boot sequence | Fresh SD card detection. Download config packages. Restore settings + boatlog. | `[ ]` Deferred S33 |
+
+### 8E.3 — DevOps Release Workflow (new — confirmed S31+S32)
+Full lifecycle: bug detected (FI1) → clustered (FI2) → fixed on one Pi (validated) → packaged (`package-update.py`) → uploaded to HostPapa `updates/` → published via CRM `/publish-update` → all T1+ Pis auto-apply within 24h → fleet resolution tracked in FI3.
 
 **Deliverable:** d3kOS v0.9.8 — autonomous agents + failure intelligence
 
