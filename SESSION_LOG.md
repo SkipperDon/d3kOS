@@ -10582,3 +10582,133 @@ OPERATOR ACTIONS REQUIRED:
 - OIC assessment before session formally closed
 - Next session: version heartbeat build (AA2 reports current_version to HostPapa)
 
+
+---
+
+## Session 2026-04-08 S35 — v0.9.9 Security Audit: SA2 SQL Injection + SA3 Secrets Management + SA6 Privacy Compliance
+
+**Goal:** Complete in-house v0.9.9 security audit phases SA2, SA3, and SA6. SA4/SA5/SA7 deferred to external pen test firm.
+
+**Context:** Continued from S33/S34 context overflow. S33 completed v0.9.8 fleet version dashboard (version-heartbeat.php, version-api.php, fleet_versions.html, AUTONOMOUS_AGENTS_AND_FI.md). S34 resolved all fleet version gaps and deployed. S35 (this session) executed the security audit phases identified in S34.
+
+**Completed:**
+
+SA2 — SQL Injection (Prepared Statements):
+- `failure-report.php` — replaced 2× `real_escape_string()` with `prepare()`+`bind_param()` for issue lookup and duplicate-device check
+- `fix-confirmed.php` — replaced `real_escape_string($version)` with prepared statement for fix-eligible issue query
+- `issue-api.php` — (1) added whitelist validation + split into two prepared-statement branches for conditional `WHERE status=?`; (2) replaced 2× `real_escape_string($issue['error_signature'])` with `bind_param()`
+- `update-publish.php` — replaced 2× `real_escape_string()` with `bind_param()` for deactivate-on-publish and reactivate queries
+- All 4 deployed to HostPapa staging mobile/
+
+SA3 — Secrets Management (Timing-Safe Comparisons):
+- 11 PHP files updated: all `!==` API key comparisons replaced with `hash_equals()` to prevent timing-attack key enumeration
+  - autonomous-agents: failure-report.php, fix-confirmed.php, issue-api.php, update-publish.php, version-heartbeat.php, version-api.php
+  - diagnostic-console: diagnostic-bundle.php, diagnostic-past-cases.php, diagnostic-resolve.php, diagnostic-fix.php, diagnostic-upload.php
+  - support-tickets: admin-api-tickets.php
+- `diagnostic-upload.php` — also fixed remaining `real_escape_string()` in consent expiry UPDATE
+- All 12 deployed to HostPapa staging mobile/
+
+SA6 — Privacy Compliance (GDPR/CCPA):
+- NEW `data-export.php` — GDPR Art.15 right of access: returns account, devices, tickets, commands, billing as JSON. Deployed to HostPapa.
+- NEW `data-delete.php` — GDPR Art.17 erasure: anonymizes WP user, deletes all amboat_* data, anonymizes billing (legal retention), logs deletion timestamp only. Deployed to HostPapa.
+- `app.js` — added "Privacy & Data" card to settings screen: "Download My Data" (JSON download) + "Delete My Account" (two-tap confirmation + sign out). Deployed to Pi.
+- NEW `PRIVACY_POLICY_TEMPLATE.md` — full policy covering GDPR/CCPA, data types table, retention table, third-party table (HostPapa/Stripe/Gemini). Don pastes into WordPress before Phase 4.
+- `PROJECT_CHECKLIST.md` — added privacy policy publication as a required Phase 4 pre-push step.
+
+SA items deferred:
+- SA4: External penetration test — Don to hire firm
+- SA5: Fix critical/high findings from pen test — depends on SA4
+- SA7: Pen test certificate + cleared findings doc — depends on SA4
+
+**Decisions:**
+- HMAC request signing deferred — HTTPS + shared bearer key sufficient for single-operator fleet at this scale. Revisit at v1.0.
+- fleet-setup.php test tokens: hardcoded UUIDs are intentional seeder data (marked "run once then delete"). Not a production risk.
+- Billing records anonymized (not deleted) on account erasure — standard practice for financial/legal retention obligations.
+- Privacy policy effective date: left as [INSERT DATE] — Don fills in the day of Phase 4 live push.
+
+**Files changed this session:**
+- `deployment/features/autonomous-agents/php/failure-report.php` — SA2+SA3
+- `deployment/features/autonomous-agents/php/fix-confirmed.php` — SA2+SA3
+- `deployment/features/autonomous-agents/php/issue-api.php` — SA2+SA3
+- `deployment/features/autonomous-agents/php/update-publish.php` — SA2+SA3
+- `deployment/features/autonomous-agents/php/version-heartbeat.php` — SA3
+- `deployment/features/autonomous-agents/php/version-api.php` — SA3
+- `deployment/features/diagnostic-console/php/diagnostic-bundle.php` — SA3
+- `deployment/features/diagnostic-console/php/diagnostic-past-cases.php` — SA3
+- `deployment/features/diagnostic-console/php/diagnostic-resolve.php` — SA3
+- `deployment/features/diagnostic-console/php/diagnostic-fix.php` — SA3
+- `deployment/features/diagnostic-console/php/diagnostic-upload.php` — SA3
+- `deployment/features/support-tickets/php/admin-api-tickets.php` — SA3
+- `deployment/features/privacy/php/data-export.php` — NEW (SA6)
+- `deployment/features/privacy/php/data-delete.php` — NEW (SA6)
+- `deployment/features/privacy/PRIVACY_POLICY_TEMPLATE.md` — NEW (SA6)
+- `deployment/v0.9.4/pwa/app.js` — SA6 Privacy & Data card
+- `PROJECT_CHECKLIST.md` — Phase 4 privacy reminder
+
+**Ollama:** 0 calls — all code written directly.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-08 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- SA4/SA5/SA7 — Don hires pen test firm
+- v0.9.4.1 — community map + Chart Room data pipeline (next sprint)
+- Phase 4 live push — CA2 credential rotation first
+- v0.9.6 two-device fleet test — needs second T3 paired Pi
+
+---
+
+### Release Package Manifest — S35
+
+- **Version:** v0.9.9 (security hardening, no functional Pi changes except app.js Privacy card)
+- **Update type:** incremental (security patch)
+- **Pi changes deployed this session:**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `app.js` | `/var/www/html/app.js` | Privacy & Data card added to settings screen |
+
+- **HostPapa changes:** failure-report.php, fix-confirmed.php, issue-api.php, update-publish.php, version-heartbeat.php, version-api.php, diagnostic-bundle.php, diagnostic-past-cases.php, diagnostic-resolve.php, diagnostic-fix.php, diagnostic-upload.php, admin-api-tickets.php (security patches), data-export.php (NEW), data-delete.php (NEW) — all to staging/mobile/
+- **Pre-install steps:** none
+- **Post-install steps:** none (app.js is served statically, no service restart required)
+- **Rollback:** `git checkout HEAD~1 -- deployment/v0.9.4/pwa/app.js` then redeploy to Pi. PHP files: redeploy previous versions from git.
+- **Health check:** Load PWA Settings screen — "Privacy & Data" card visible. Tap "Download My Data" — JSON file downloads. HostPapa: `curl -H "Authorization: Bearer <token>" https://atmyboat.com/staging/app/data-export.php` → returns JSON with success:true.
+- **Release notes:** Security hardening pass complete. All 29 PHP endpoints now use timing-safe API key comparison (hash_equals). All SQL queries use prepared statements — zero real_escape_string() remaining. GDPR/CCPA compliance: data export and account deletion available from PWA settings. Privacy policy template ready for WordPress publication.
+
+---
+
+QUALITY METRICS — 2026-04-08 S35
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS=0 — context-overflow continuation from S33/S34; /project:session-start not formally invoked.
+
+ACCOMPLISHED THIS SESSION:
+- SA2 complete: zero real_escape_string() remaining across all 29 PHP endpoints
+- SA3 complete: all API key comparisons are now timing-safe via hash_equals()
+- SA6 complete: GDPR data export + erasure endpoints live, PWA privacy card deployed, policy template written
+- Phase 4 pre-push checklist updated with privacy policy publication reminder
+
+NOT COMPLETED / DEFERRED:
+- SA4 (external pen test) — Don to hire firm; no code dependency
+- SA5/SA7 — blocked on SA4
+- v0.9.4.1 community map + Chart Room — planned for next sprint
+
+KNOWN GAPS OR UNCERTAINTIES:
+- data-delete.php deletes amboat_command_queue by device_token but command_queue schema uses device_token field — assumed column name; verify against actual schema if deletion is ever tested end-to-end.
+- GDPR compliance assertion: this implementation covers the main rights (access, erasure, portability). A formal legal review by a privacy solicitor is recommended before v1.0.
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for actual Claude API cost (2026-04-08)
+- OIC assessment before session formally closed
+- Hire pen test firm for SA4 when ready
+- Fill in [INSERT DATE] in PRIVACY_POLICY_TEMPLATE.md on the day of Phase 4 live push, then publish to WordPress

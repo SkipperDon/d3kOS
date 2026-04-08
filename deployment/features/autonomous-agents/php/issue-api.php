@@ -26,7 +26,7 @@ require_once __DIR__ . '/config.php';
 // ── Auth — Bearer token (same key the CRM uses for all PHP proxies) ───────────
 
 $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || $m[1] !== AMBOAT_API_KEY) {
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -52,21 +52,53 @@ if ($method === 'GET' && $action === 'list') {
     $limit  = 25;
     $offset = ($page - 1) * $limit;
 
-    $where = $status ? "WHERE status = '" . $db->real_escape_string($status) . "'" : '';
+    $allowed_statuses = ['open', 'diagnosed', 'fix_validated', 'released', 'closed'];
+    if ($status && !in_array($status, $allowed_statuses, true)) {
+        $status = '';
+    }
 
-    $total = $db->query("SELECT COUNT(*) AS c FROM amboat_issues $where")->fetch_assoc()['c'];
-    $rows  = $db->query(
-        "SELECT id, error_signature, service, error_type, sample_message,
-                first_seen, last_seen, affected_count, resolved_count,
-                status, fixed_in_version, validation_device
-         FROM amboat_issues $where
-         ORDER BY
-           CASE status WHEN 'open' THEN 1 WHEN 'diagnosed' THEN 2
-           WHEN 'fix_validated' THEN 3 WHEN 'released' THEN 4
-           ELSE 5 END,
-           last_seen DESC
-         LIMIT $limit OFFSET $offset"
-    )->fetch_all(MYSQLI_ASSOC);
+    if ($status) {
+        $cs = $db->prepare('SELECT COUNT(*) AS c FROM amboat_issues WHERE status = ?');
+        $cs->bind_param('s', $status);
+        $cs->execute();
+        $total = (int)$cs->get_result()->fetch_assoc()['c'];
+        $cs->close();
+
+        $rs = $db->prepare(
+            "SELECT id, error_signature, service, error_type, sample_message,
+                    first_seen, last_seen, affected_count, resolved_count,
+                    status, fixed_in_version, validation_device
+             FROM amboat_issues WHERE status = ?
+             ORDER BY
+               CASE status WHEN 'open' THEN 1 WHEN 'diagnosed' THEN 2
+               WHEN 'fix_validated' THEN 3 WHEN 'released' THEN 4
+               ELSE 5 END,
+               last_seen DESC
+             LIMIT ? OFFSET ?"
+        );
+        $rs->bind_param('sii', $status, $limit, $offset);
+        $rs->execute();
+        $rows = $rs->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rs->close();
+    } else {
+        $total = (int)$db->query('SELECT COUNT(*) AS c FROM amboat_issues')->fetch_assoc()['c'];
+        $rs = $db->prepare(
+            "SELECT id, error_signature, service, error_type, sample_message,
+                    first_seen, last_seen, affected_count, resolved_count,
+                    status, fixed_in_version, validation_device
+             FROM amboat_issues
+             ORDER BY
+               CASE status WHEN 'open' THEN 1 WHEN 'diagnosed' THEN 2
+               WHEN 'fix_validated' THEN 3 WHEN 'released' THEN 4
+               ELSE 5 END,
+               last_seen DESC
+             LIMIT ? OFFSET ?"
+        );
+        $rs->bind_param('ii', $limit, $offset);
+        $rs->execute();
+        $rows = $rs->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rs->close();
+    }
 
     $db->close();
     echo json_encode([
@@ -102,14 +134,18 @@ if ($method === 'GET' && $action === 'get') {
     }
 
     // Affected devices — distinct devices that reported this signature
-    $affected = $db->query(
+    $stmt = $db->prepare(
         "SELECT DISTINCT device_token, MIN(reported_at) AS first_report, COUNT(*) AS report_count
          FROM amboat_failure_reports
-         WHERE error_signature = '" . $db->real_escape_string($issue['error_signature']) . "'
+         WHERE error_signature = ?
          GROUP BY device_token
          ORDER BY first_report DESC
          LIMIT 50"
-    )->fetch_all(MYSQLI_ASSOC);
+    );
+    $stmt->bind_param('s', $issue['error_signature']);
+    $stmt->execute();
+    $affected = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
     // Resolutions — devices that confirmed the fix
     $resolutions = $db->query(
@@ -121,13 +157,17 @@ if ($method === 'GET' && $action === 'get') {
     )->fetch_all(MYSQLI_ASSOC);
 
     // Recent failure reports
-    $reports = $db->query(
+    $stmt = $db->prepare(
         "SELECT device_token, service, error_type, message, reported_at
          FROM amboat_failure_reports
-         WHERE error_signature = '" . $db->real_escape_string($issue['error_signature']) . "'
+         WHERE error_signature = ?
          ORDER BY reported_at DESC
          LIMIT 20"
-    )->fetch_all(MYSQLI_ASSOC);
+    );
+    $stmt->bind_param('s', $issue['error_signature']);
+    $stmt->execute();
+    $reports = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
     $db->close();
     echo json_encode([

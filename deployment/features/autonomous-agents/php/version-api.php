@@ -22,7 +22,7 @@ require_once __DIR__ . '/config.php';
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth, $m) || $m[1] !== ADMIN_API_KEY) {
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth, $m) || !hash_equals(ADMIN_API_KEY, $m[1])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;

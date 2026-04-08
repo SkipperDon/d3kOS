@@ -2636,6 +2636,83 @@ screens.settings = function renderSettings() {
     }
   })();
 
+  // Privacy & Data
+  const privacyCard = el('div', { class: 'card' });
+  privacyCard.appendChild(el('div', { class: 'card-title' }, 'Privacy & Data'));
+  privacyCard.appendChild(el('div', {
+    style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;',
+  }, 'Download a copy of your data or permanently delete your account.'));
+
+  const exportBtn = el('button', { class: 'btn btn-ghost', style: 'margin-bottom: 8px;' }, 'Download My Data');
+  exportBtn.addEventListener('click', async () => {
+    exportBtn.disabled = true;
+    exportBtn.textContent = 'Preparing…';
+    try {
+      const token = localStorage.getItem('app_token') || '';
+      const res = await fetch('https://atmyboat.com/staging/app/data-export.php', {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const json = await res.text();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'atmyboat-data-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Could not export data. Please try again or contact support.');
+    } finally {
+      exportBtn.disabled = false;
+      exportBtn.textContent = 'Download My Data';
+    }
+  });
+  privacyCard.appendChild(exportBtn);
+
+  const deleteAccountBtn = el('button', {
+    class: 'btn btn-danger',
+    style: 'display: block;',
+  }, 'Delete My Account');
+  let deleteStep = 0;
+  deleteAccountBtn.addEventListener('click', async () => {
+    if (deleteStep === 0) {
+      deleteStep = 1;
+      deleteAccountBtn.textContent = 'Tap again to confirm permanent deletion';
+      deleteAccountBtn.style.opacity = '0.7';
+      setTimeout(() => {
+        if (deleteStep === 1) {
+          deleteStep = 0;
+          deleteAccountBtn.textContent = 'Delete My Account';
+          deleteAccountBtn.style.opacity = '';
+        }
+      }, 5000);
+      return;
+    }
+    deleteStep = 0;
+    deleteAccountBtn.disabled = true;
+    deleteAccountBtn.textContent = 'Deleting…';
+    try {
+      const token = localStorage.getItem('app_token') || '';
+      const res = await fetch('https://atmyboat.com/staging/app/data-delete.php', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Delete failed');
+      alert('Your account data has been deleted. You will now be signed out.');
+      clearSession();
+      showLoginUI();
+    } catch {
+      alert('Could not delete account. Please contact skipperdon@atmyboat.com.');
+      deleteAccountBtn.disabled = false;
+      deleteAccountBtn.textContent = 'Delete My Account';
+    }
+  });
+  privacyCard.appendChild(deleteAccountBtn);
+  container.appendChild(privacyCard);
+
   // Sign out
   container.appendChild(
     el('button', {

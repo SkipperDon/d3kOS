@@ -28,7 +28,7 @@ require_once __DIR__ . '/config.php';
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth, $m) || $m[1] !== AMBOAT_API_KEY) {
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -154,10 +154,10 @@ if ($method === 'POST') {
         }
 
         // Deactivate existing active versions of same type
-        $db->query(
-            "UPDATE amboat_versions SET is_active=0
-             WHERE update_type='" . $db->real_escape_string($update_type) . "' AND is_active=1"
-        );
+        $stmt = $db->prepare('UPDATE amboat_versions SET is_active=0 WHERE update_type=? AND is_active=1');
+        $stmt->bind_param('s', $update_type);
+        $stmt->execute();
+        $stmt->close();
 
         // Insert new version
         $stmt = $db->prepare(
@@ -219,8 +219,11 @@ if ($method === 'POST') {
             $db->close();
             exit;
         }
-        $type = $db->real_escape_string($row['update_type']);
-        $db->query("UPDATE amboat_versions SET is_active=0 WHERE update_type='$type' AND is_active=1");
+        $type = $row['update_type'];
+        $stmt = $db->prepare('UPDATE amboat_versions SET is_active=0 WHERE update_type=? AND is_active=1');
+        $stmt->bind_param('s', $type);
+        $stmt->execute();
+        $stmt->close();
         $db->query("UPDATE amboat_versions SET is_active=1 WHERE id=$id");
         $db->close();
         echo json_encode(['success' => true, 'message' => 'Version reactivated']);

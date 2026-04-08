@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if ($auth_header !== 'Bearer ' . ADMIN_API_KEY) {
+if (!hash_equals('Bearer ' . ADMIN_API_KEY, $auth_header)) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;

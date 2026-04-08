@@ -30,7 +30,7 @@ require_once __DIR__ . '/config.php';
 $auth_header  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 $device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
 
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || $m[1] !== AMBOAT_API_KEY) {
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;

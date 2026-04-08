@@ -56,12 +56,13 @@ if ($db->connect_error) {
 }
 
 // ── Expire stale consents then verify active consent exists ──────────────────
-$dt_safe = $db->real_escape_string($device_token);
-$db->query(
+$stmt = $db->prepare(
     "UPDATE amboat_diagnostic_consents SET status='expired'
-     WHERE ticket_id={$ticket_id} AND device_token='{$dt_safe}'
-     AND status='active' AND expires_at < NOW()"
+     WHERE ticket_id=? AND device_token=? AND status='active' AND expires_at < NOW()"
 );
+$stmt->bind_param('is', $ticket_id, $device_token);
+$stmt->execute();
+$stmt->close();
 
 $stmt = $db->prepare(
     "SELECT consent_id FROM amboat_diagnostic_consents

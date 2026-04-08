@@ -25,7 +25,7 @@ require_once __DIR__ . '/config.php';
 $auth_header  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 $device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
 
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || $m[1] !== AMBOAT_API_KEY) {
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -53,13 +53,17 @@ if ($db->connect_error) {
 }
 
 // Find issues that are released and fixed in this version (or earlier)
-$issues = $db->query(
+$stmt = $db->prepare(
     "SELECT id, affected_count, resolved_count, fixed_in_version
      FROM amboat_issues
      WHERE status IN ('released', 'fix_validated')
        AND fixed_in_version IS NOT NULL
-       AND fixed_in_version <= '" . $db->real_escape_string($version) . "'"
-)->fetch_all(MYSQLI_ASSOC);
+       AND fixed_in_version <= ?"
+);
+$stmt->bind_param('s', $version);
+$stmt->execute();
+$issues = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 
 $resolved = [];
 

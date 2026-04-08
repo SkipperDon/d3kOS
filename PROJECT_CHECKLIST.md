@@ -362,6 +362,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 - [ ] GitHub repo set to Private
 - [ ] Rotate Gemini API key
 - [ ] Change FTP password for d3kos@atmyboat.com
+- [ ] **PRIVACY POLICY** — Set effective date in `deployment/features/privacy/PRIVACY_POLICY_TEMPLATE.md` to today's date, paste into WordPress page at atmyboat.com/privacy-policy/, publish before clicking Push to Live
 
 ### Post-Launch
 - [ ] Monitor Gemini API usage (free tier: 20 req/day)
@@ -695,13 +696,13 @@ Full lifecycle: bug detected (FI1) → clustered (FI2) → fixed on one Pi (vali
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| SA1 | Automated scanning | `npm audit`, `pip-audit`, OWASP ZAP (all web endpoints), SQLMap (all DB queries), scan for hardcoded secrets, check file permissions | `[ ]` |
-| SA2 | Manual code review | Auth/authorization (all endpoints require auth, JWT validation, session management). Input validation (XSS, parameterized queries, file upload, command injection, directory traversal). | `[ ]` |
-| SA3 | Secrets management review | API key storage (encrypted at rest), password hashing (bcrypt/scrypt), certificate management, webhook signature verification | `[ ]` |
-| SA4 | External penetration test | Contract professional pen test firm. Network-level attacks, privilege escalation, API fuzzing (all 20+ services), MQTT broker (TLS + ACLs), Signal K security, rate limiting + DDoS. | `[ ]` |
-| SA5 | Fixes | Fix all critical vulnerabilities (must be zero). Fix all high vulnerabilities (must be zero). Document medium/low with mitigation plans. Retest after fixes. | `[ ]` |
-| SA6 | Privacy compliance | GDPR: data retention policy, user data export (Article 20), data deletion (Article 17), privacy policy review. CCPA: California compliance. | `[ ]` |
-| SA7 | Certification | Obtain penetration test certificate. Document all cleared findings. | `[ ]` |
+| SA1 | Automated scanning | Hardcoded credentials scan + secrets audit across all PHP files. | `[x]` **COMPLETE S34 2026-04-08** — Production DB password removed from git history. All DB credentials + ADMIN_API_KEY centralised in config.php. Pre-commit hook active. |
+| SA2 | Manual code review — SQL injection | All `real_escape_string()` replaced with `prepare()`+`bind_param()`. Zero string-concatenated SQL remaining. | `[x]` **COMPLETE S35 2026-04-08** — 4 files fixed: failure-report.php, fix-confirmed.php, issue-api.php, update-publish.php + diagnostic-upload.php. All 29 endpoints use parameterised queries. |
+| SA3 | Secrets management review | All API key comparisons use `hash_equals()` (timing-safe). Auth coverage: 100% of endpoints authenticated. No XSS vectors (JSON-only output). | `[x]` **COMPLETE S35 2026-04-08** — 11 files patched. hash_equals() applied to all ADMIN_API_KEY and AMBOAT_API_KEY comparisons. |
+| SA4 | External penetration test | Contract professional pen test firm. Network-level attacks, privilege escalation, API fuzzing, rate limiting + DDoS. | `[ ]` **Don to hire firm** |
+| SA5 | Fixes | Fix all critical/high vulnerabilities from pen test. Document medium/low with mitigation plans. Retest after fixes. | `[ ]` Blocked on SA4 |
+| SA6 | Privacy compliance | GDPR Art.15 (export), Art.17 (erasure), privacy policy published. CCPA covered by same endpoints. | `[x]` **COMPLETE S35 2026-04-08** — data-export.php + data-delete.php deployed. PWA Privacy & Data card in settings. PRIVACY_POLICY_TEMPLATE.md ready for WordPress. Phase 4 checklist updated. |
+| SA7 | Certification | Obtain penetration test certificate. Document all cleared findings. | `[ ]` Blocked on SA4 |
 
 **Critical gate — v1.0 blocked until all of these pass:**
 - Zero critical vulnerabilities

@@ -25,7 +25,7 @@ require_once __DIR__ . '/config.php';   // defines AMBOAT_API_KEY, DB constants
 $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 $device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
 
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || $m[1] !== AMBOAT_API_KEY) {
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -130,10 +130,11 @@ $stmt->close();
 //                   Do NOT re-open a closed issue — use a new row if signature recurs
 //                   after being closed.
 
-$issue_row = $db->query(
-    "SELECT id, affected_count FROM amboat_issues
-     WHERE error_signature = '" . $db->real_escape_string($sig) . "'"
-)->fetch_assoc();
+$stmt = $db->prepare('SELECT id, affected_count FROM amboat_issues WHERE error_signature = ?');
+$stmt->bind_param('s', $sig);
+$stmt->execute();
+$issue_row = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 
 if (!$issue_row) {
     // New issue
@@ -149,12 +150,14 @@ if (!$issue_row) {
 } else {
     $issue_id = $issue_row['id'];
     // Check if this device has reported this issue before
-    $already = $db->query(
-        "SELECT COUNT(*) AS c FROM amboat_failure_reports
-         WHERE error_signature = '" . $db->real_escape_string($sig) . "'
-           AND device_token = '" . $db->real_escape_string($device_token) . "'
-           AND id < LAST_INSERT_ID()"
-    )->fetch_assoc()['c'];
+    $stmt = $db->prepare(
+        'SELECT COUNT(*) AS c FROM amboat_failure_reports
+         WHERE error_signature = ? AND device_token = ? AND id < LAST_INSERT_ID()'
+    );
+    $stmt->bind_param('ss', $sig, $device_token);
+    $stmt->execute();
+    $already = $stmt->get_result()->fetch_assoc()['c'];
+    $stmt->close();
 
     // Increment affected_count only if first time this device reports this sig
     $inc = ($already == 0) ? ', affected_count = affected_count + 1' : '';
