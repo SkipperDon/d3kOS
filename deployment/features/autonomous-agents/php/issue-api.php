@@ -23,10 +23,10 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/config.php';
 
-// ── Auth (admin key) ──────────────────────────────────────────────────────────
+// ── Auth — Bearer token (same key the CRM uses for all PHP proxies) ───────────
 
-$admin_key = $_SERVER['HTTP_X_ADMIN_KEY'] ?? '';
-if ($admin_key !== ADMIN_API_KEY) {
+$auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || $m[1] !== AMBOAT_API_KEY) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;

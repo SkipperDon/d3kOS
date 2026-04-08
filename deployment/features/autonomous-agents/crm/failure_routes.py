@@ -5,15 +5,14 @@
 #
 # 1. Add helper near proxy_call() in app.py:
 #
-#   def proxy_call_issues(payload):
-#       """Proxy to issue-api.php — uses X-Admin-Key auth (same as admin-api.php)."""
+#   _issues_url     = config["proxy_url"].replace("admin-api.php", "issue-api.php")
+#   _issues_headers = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+#
+#   def proxy_call_issues(params):
+#       """GET to issue-api.php — Bearer auth (same key as all CRM proxies)."""
 #       try:
-#           r = requests.get(
-#               config["proxy_url"].replace("admin-api.php", "issue-api.php"),
-#               params=payload,
-#               headers={"X-Admin-Key": config["admin_api_key"]},
-#               timeout=10,
-#           )
+#           r = _requests.get(_issues_url, params=params,
+#                             headers=_issues_headers, timeout=10)
 #           r.raise_for_status()
 #           return r.json()
 #       except Exception as e:
@@ -23,12 +22,8 @@
 #   def proxy_post_issues(payload):
 #       """POST to issue-api.php."""
 #       try:
-#           r = requests.post(
-#               config["proxy_url"].replace("admin-api.php", "issue-api.php"),
-#               json=payload,
-#               headers={"X-Admin-Key": config["admin_api_key"]},
-#               timeout=10,
-#           )
+#           r = _requests.post(_issues_url, json=payload,
+#                              headers=_issues_headers, timeout=10)
 #           r.raise_for_status()
 #           return r.json()
 #       except Exception as e:
