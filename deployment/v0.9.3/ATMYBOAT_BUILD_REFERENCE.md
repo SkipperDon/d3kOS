@@ -1548,3 +1548,130 @@ Don drops in the actual images after deployment.
 ---
 
 *Part 17 added 2026-03-25. All items supersede conflicting content in Parts 1–16.*
+
+---
+
+## PART 18 — SESSION 38 DECISIONS (2026-04-08)
+**All items in this part supersede conflicting content in Parts 1–17.**
+**Source: Planning session with Donald Moskaluk, 2026-04-08 S38.**
+
+---
+
+### 18.1 — ANCHOR WATCH (OVERRIDES §16.9)
+
+**Platform:** d3kOS dedicated page (`anchor-watch.html`). NOT in the PWA.
+**Tier:** T0 — all users. T0 users have no mobile app; the on-screen alarm is the only delivery channel at T0.
+**Default radius:** 25 metres (not 50m). Rationale: 50m is dangerous at anchor — wind shift moves a vessel 50m into neighbouring boats.
+**UI:** Dedicated page in d3kOS navigation. Contains:
+- Set Anchor button (captures current GPS via Signal K automatically — no manual entry)
+- Radius slider (25m default, user-adjustable up or down)
+- Weigh Anchor button (deactivates watch)
+- Active state: Leaflet mini-map showing anchor drop point + current vessel position
+- Live distance text ("38m from anchor — within 25m radius")
+- Alarm overlay (flashing visual + TTS audio) when drag confirmed
+- DISMISS button — always visible when alarm is active
+**Alarm behaviour:** 3-poll confirm (45 seconds at 15s interval) before alarm fires. Repeat TTS every 60 seconds until dismissed. Backend (`anchor_watch.py`) already deployed.
+**Mobile notification (T1+):** When anchor drag fires, alert-dispatch.php also sends email notification (part of M15 pipeline).
+**Anchor drag vs Anchor watch:** Same system. "Anchor watch" = the monitoring mode. "Anchor drag" = the event when the vessel moves outside radius. One unified solution.
+**Research required before build:** Confirm whether d3kOS sets anchor position directly in Signal K (via PUT to SK REST API) or stores anchor position independently. Signal K has `navigation.anchor.*` paths — preference is to use SK natively so AvNav anchor alarm and d3kOS anchor watch share the same data.
+
+---
+
+### 18.2 — ALERT DELIVERY SYSTEM (OVERRIDES §16.8)
+
+**Twilio SMS: REMOVED.** SMS via Twilio was never approved by Don. No additional-cost solutions.
+**Delivery channels approved:**
+- Email via MailPoet (T1+) — primary external channel. Pi sends alert → `alert-dispatch.php` → MailPoet transactional email.
+- In-app notification when PWA is active — existing WebRTC/polling connection handles this.
+**Alert types (confirmed):** Engine oil low, coolant high, RPM spike, battery low, anchor drag (from anchor watch), Pi offline, Fix My Pi complete, OTA update available.
+**Alert type REMOVED:** Motion detection (M13 — never requested).
+**User controls (in PWA Settings):**
+- Toggle each alert type on/off independently
+- Quiet hours (start/end time — no notifications during set window)
+- Pi offline threshold (default 30 minutes, user-configurable)
+**Pi offline detection:** HostPapa PHP cron job (runs every 5 min) checks `last_sync` timestamp in usermeta. If older than threshold → sends alert email.
+**No SMS number field.** Twilio removed. No phone number storage needed.
+
+---
+
+### 18.3 — T3 FLEET MANAGEMENT WEB PORTAL (REPLACES M2 "FLEET MAP PWA SCREEN")
+
+**Original M2 scope:** PWA Leaflet map showing fleet vessel positions. SUPERSEDED.
+**New scope:** Full T3 Fleet Management Web Portal (web pages on atmyboat.com, not PWA).
+**What T3 operators need:**
+- Leaflet map with all fleet vessels shown by **boat name** (not anonymous markers)
+- Vessel health colour coding on map
+- Click vessel → full detail: engine data, performance metrics, captain log entries, PDF reports
+- Send customer service messages to captains
+- Fleet-level alert notification history
+- Engine operations summary across the fleet
+**Architecture:** HostPapa PHP pages (same pattern as Admin CRM). Backend (`fleet-map.php`, `fleet-analytics.php`) already built. New PHP pages read existing endpoints. Not a new infrastructure — an extension of what's built.
+**Access:** T3 only. Web browser, not PWA.
+
+---
+
+### 18.4 — AI ENGINE DIAGNOSTIC (CONFIRMS TIER, ADDS PDF SCOPE)
+
+**Tier:** T2 and T3 only. This has always been the tier — confirmed 2026-04-08.
+**Behaviour:** Fire immediately on engine cell tap. No confirmation step. All current Signal K engine readings sent to Gemini (not just the tapped metric — full context produces better diagnosis).
+**Response format:** Plain English, urgency rating, suggested fixes. See MASTER_SYSTEM_SPEC §6.4.4 for full response format.
+**PDF integration:** AI engine diagnostic response is included in the PDF boat report. Current PDF shows "no engine data" when Pi has no live engine sensors — this remains correct behaviour.
+
+---
+
+### 18.5 — WEBSITE BRANDING AND DESIGN CONSISTENCY (EXPANDS M17)
+
+**Original M17 scope:** bbPress forum theming only. EXPANDED.
+**Full scope:** All public pages must be consistent, professional, and AODA-compliant.
+**Standard:** The website must look like it was assembled by expert professionals. All pages follow the design system (Part 3 of this document — Fraunces/Nunito/JetBrains Mono, navy/amber/teal, dark marine aesthetic).
+**Approach:** M19 website claims audit runs first. Design consistency fixes applied in the same pass (do not audit then separately fix — audit and fix together).
+**AODA requirements on every page:**
+- Minimum 18px body text (20px preferred per BUILD_REFERENCE Part 3)
+- 4.5:1 contrast minimum on all text/background pairs
+- 48×48px minimum touch targets
+- Skip-to-content link first focusable element
+- Focus indicators visible
+
+---
+
+### 18.6 — USER MANUAL (PDF + RAG + HELP PAGE)
+
+**Format:** PDF (generated from `D3KOS_USER_MANUAL_v0992.md`).
+**Not a PHP page.** The manual is not a full website page — it is a downloadable PDF linked from the Help page.
+**Delivery:**
+1. Generate PDF from the markdown content
+2. Upload to GitHub (`SkipperDon/d3kOS` repo, `docs/` folder)
+3. Ingest PDF into Pi ChromaDB (RAG) so Helm AI answers questions from it
+4. Add download link on website Help page
+
+---
+
+### 18.7 — M16 WEBSITE AI — ROOT CAUSE AND FIX (APPLIED 2026-04-08 S38)
+
+**Root cause:** `staging/atmyboat-config.php` defined `ATMYBOAT_API_KEY` but `ai-assistant.php` expects `GEMINI_API_KEY`. Constants were mismatched — every Gemini API call silently used `null` as the key, returning 400 errors.
+**Fix applied:** Updated `staging/atmyboat-config.php` to add correct constants:
+```php
+define("GEMINI_API_KEY",    "YOUR_GEMINI_API_KEY_HERE");
+define("GEMINI_MODEL",      "gemini-2.5-flash-preview-04-17");
+define("GEMINI_MAX_TOKENS", 1000);
+```
+Legacy `ATMYBOAT_API_KEY` kept alongside for compatibility. Fix deployed to staging 2026-04-08.
+**Prevention:** Every session that touches `atmyboat-config.php` must verify constant names match what `ai-assistant.php` expects. The authoritative constant list is `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_MAX_TOKENS`.
+
+---
+
+### 18.8 — M13 MOTION DETECTION — REMOVED
+
+Motion detection (Marine Vision frame-differencing service) was never requested by Don and was not part of any design decision. Removed from all planning documents 2026-04-08 S38. Security camera apps already provide this — it is not a d3kOS requirement.
+
+---
+
+### 18.9 — i18n SCOPE DECISION
+
+**M5 (Whisper STT) and M6 (Piper multilingual TTS):** Deferred to v1.1. Not Phase 4 scope.
+**M7 (AI language injection):** Include in build. One-line change in `query_handler.py` system prompt — trivial cost, meaningful improvement.
+
+---
+
+*Part 18 added 2026-04-08 S38. All items supersede conflicting content in Parts 1–17.*
+*Cross-reference: PROJECT_CHECKLIST.md Part 9 — v0.9.9.2 Missed Items (updated same session).*

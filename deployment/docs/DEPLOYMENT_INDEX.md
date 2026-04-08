@@ -316,7 +316,7 @@ Continuous-operation diagnostic session. 6 anomalies found and resolved directly
 | `deployment/v0.9.2/docs/UNITS_FEATURE_README.md` | Metric/Imperial feature — what it does, how to test |
 | `deployment/v0.9.2-multicam/` | **[SUPERSEDED — 2026-03-11]** Pre-overhaul camera source — cameras.json, old camera_stream_manager.py, old marine-vision.html. Read-only history. Active source now at `deployment/features/camera-overhaul/pi_source/` |
 | `deployment/v0.9.3/` | AtMyBoat.com build references and spec |
-| `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` | WordPress + bbPress + HostPapa build master reference — v2.1 (Part 17 added 2026-03-25: typography fix, Fix My Pi architecture, T3 unlimited, contact email, content workflow) |
+| `deployment/v0.9.3/ATMYBOAT_BUILD_REFERENCE.md` | WordPress + bbPress + HostPapa build master reference — v2.2 (Part 18 added 2026-04-08 S38: all v0.9.9.2 build decisions — M1 anchor watch 25m, M2 fleet portal, M14 AI engine diagnostic, M15 alert delivery no SMS, M16 root cause fixed, M17 branding, M18 manual, M13 removed) |
 | `deployment/v0.9.3/ATMYBOAT_STANDING_INSTRUCTION.md` | Hard rules for all v0.9.3 AI sessions |
 | `deployment/v0.9.3/SESSION6_CONTENT_PLAN.md` | S6 content plan — APPROVED 2026-03-25 — 9 pages + connectivity sections, all Q&A decisions recorded |
 | `deployment/v1.1/README.md` | v1.1 multilanguage platform — 6-layer build order |
@@ -334,7 +334,9 @@ Continuous-operation diagnostic session. 6 anomalies found and resolved directly
 | `wp-content/themes/twentytwenty-child/setup/mobile-schema.sql` | DB schema. Updated: 7 ALTER TABLE statements for multi-boat support + refund columns. |
 | `wp-content/themes/twentytwenty-child/functions.php` | WordPress functions. Bug fix: T2 FMP monthly cron reset wrong meta key (fmp_month_count → fmp_used_month). |
 | `wp-content/themes/twentytwenty-child/style.css` | Master stylesheet. Updated: --text-faint CSS variable (5.36:1 AA), code/kbd/samp 18px override. |
-| `wp-content/themes/twentytwenty-child/page-community.php` | /community — Updated: full Leaflet 1.9.4 map wiring (fleet dots + hazard markers + auto-refresh + privacy blurring). |
+| `wp-content/themes/twentytwenty-child/page-community.php` | /community — Updated: full Leaflet 1.9.4 map wiring (fleet dots + hazard markers + auto-refresh + privacy blurring). S38: confirmed simplified layout complete (map → stats → discussions). |
+| `wp-content/themes/twentytwenty-child/page-hardware.php` | /hardware — S38 2026-04-08: photo strip col 1 fixed H2→H1 (H1-Pi-in-enclosure-mounted.jpg). Hero stays H2. |
+| `wp-content/themes/twentytwenty-child/atmyboat-config.php` | Staging config — S38 2026-04-08: M16 fix — added GEMINI_API_KEY, GEMINI_MODEL, GEMINI_MAX_TOKENS. ai-assistant.php now has correct constants. |
 
 ---
 

@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 1.9 | **Last Updated:** 2026-04-08 S37 — M19 added: website claims audit
+**Version:** 2.0 | **Last Updated:** 2026-04-08 S38 — Phase A complete: M7, M16, M18, M19, H2 fix
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -826,41 +826,60 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 ---
 
 ## PART 9 — v0.9.9.2 Missed Items
-**Status: NOT STARTED — 2026-04-08**
+**Status: IN PROGRESS — planning complete 2026-04-08 S38**
 **Definition:** Features that were fully specified and/or had backends built, but the front-end or user-facing implementation was never written. These are not deferred features — they were supposed to be built and were missed.
+**Planning decisions recorded:** `ATMYBOAT_BUILD_REFERENCE.md` Part 18 (2026-04-08 S38)
+
+### d3kOS — Missing Features
+
+| ID | Item | Details | Status |
+|----|------|---------|--------|
+| M1 | **Anchor Watch — d3kOS dedicated page** | Dedicated `anchor-watch.html` page on d3kOS (T0 — all tiers). NOT in PWA (T0 users have no mobile app). Set Anchor button captures current GPS → stores anchor position. Radius slider default **25m** (adjustable — 25m is the safety-correct default; 50m puts you into neighbouring boats at anchor). Active state: Leaflet mini-map showing boat vs anchor drop point + live distance text. TTS alarm + visual flashing overlay on drag detect (3-poll confirm, 45s). DISMISS button always visible when alarm active. Repeat alarm every 60s until dismissed. T1+ sends mobile push via alert delivery pipeline (M15). Backend (`anchor_watch.py` at AI bridge :3002) fully deployed. Research needed before build: how d3kOS sets anchor position in Signal K vs independent storage. Spec: `ATMYBOAT_BUILD_REFERENCE.md` §16.9 + Part 18. | `[ ]` |
+| M14 | **AI Engine Diagnostic — live data** | When engine cell tapped, `openDiag()` currently shows hardcoded demo content. Fix: pull live Signal K readings on tap → POST all engine readings to Gemini → populate panel with real diagnosis (plain English, urgency, suggested fixes — format per MASTER_SYSTEM_SPEC §6.4.4). **Tier: T2 and T3 only.** Fire immediately on tap — no confirmation. Response also integrated into PDF engine report. | `[ ]` |
 
 ### PWA — Missing Screens
 
 | ID | Item | Details | Status |
 |----|------|---------|--------|
-| M1 | **Anchor Watch screen** | Set Anchor button, radius slider (default 50m), active state showing live distance from anchor drop point, Weigh Anchor button. Pi backend (`anchor_watch.py`) and alert widget on Pi dashboard are already built. PWA control screen was never started. Spec: `ATMYBOAT_BUILD_REFERENCE.md` §16.9 | `[ ]` |
-| M2 | **Fleet Map PWA screen** | Leaflet map inside the PWA showing fleet vessel positions, colours by health, last-seen age. Backend (`fleet-map.php`) built and tested (15 vessels E2E). Pi fleet push service live. PWA screen never written. | `[ ]` |
-| M3 | **Command queue — app write** | PWA sends commands (`fix_my_pi`, `ota_update`, `restart_service`) to `command-queue.php`. Backend endpoint exists. PWA "Send Command" UI not built. | `[ ]` |
-| M4 | **Command queue — result poll** | PWA polls for command result and shows status to user. Backend exists. PWA polling + status display not built. | `[ ]` |
+| M3 | **Command queue — send OTA/restart commands** | PWA screen for T1+ to send `ota_update` and `restart_service` commands to Pi via `command-queue.php`. Fix My Pi already exists as a separate screen. This covers the remaining two commands. Backend endpoint exists. Location: Pi Controls section within existing Fix My Pi flow or new "Pi Management" tab. | `[ ]` |
+| M4 | **Command queue — result poll and status** | PWA polls for command result and shows status to user. Backend exists. Status display not built. | `[ ]` |
 
-### i18n — Layers 1–3 (Framework built, languages never wired)
+### T3 — Fleet Management Web Portal (NEW SCOPE — 2026-04-08)
 
 | ID | Item | Details | Status |
 |----|------|---------|--------|
-| M5 | **Layer 1 — Speech-to-text multilingual** | Whisper-small model (244MB, 99 languages) replacing Vosk post-wake word. New file: `whisper_transcribe.py`. Layer 0 framework deployed — this was the intended next step. | `[ ]` |
-| M6 | **Layer 2 — TTS multilingual (Piper)** | Per-language Piper voice models: fr/de/es/it/nl/pt/uk/ar. Espeak-ng fallback for others. Piper is deployed for English — non-English voices never loaded. | `[ ]` |
-| M7 | **Layer 3 — AI responses in user language** | Inject selected language into Gemini system prompt. Helm AI currently always responds in English regardless of UI language setting. One-line system prompt change + test. | `[ ]` |
+| M2 | **T3 Fleet Management Web Portal** | **SCOPE EXPANDED from "fleet map PWA screen" to full web-based fleet management portal.** T3 operators need a dedicated web screen (not just a PWA map). Requirements: (1) Leaflet map showing all fleet vessels with boat names (not anonymous dots), coloured by health score; (2) Click vessel → full vessel detail: engine data, performance metrics, captain log entries, PDF reports; (3) Send customer service messages to captains from the portal; (4) Fleet-level alert management and notification history; (5) Engine operations summary across fleet. Architecture: PHP web pages (HostPapa), extending the fleet backend already built. Similar UX pattern to Admin CRM. Backend (`fleet-map.php`, `fleet-analytics.php`) already built. | `[ ]` |
 
-### Integration Tests — Never Run
-
-| ID | Item | Expected Result | Status |
-|----|------|-----------------|--------|
-### Pi — Missing Features
+### Alert Delivery (REDESIGNED — 2026-04-08)
 
 | ID | Item | Details | Status |
 |----|------|---------|--------|
-| M13 | **Marine Vision motion detection** | Frame-differencing motion detection service watching all active camera streams. When boat is docked and motion detection enabled (toggle in Settings), any movement in a camera frame fires a Warning alert via the AI bridge. Requires: new `motion_detector.py` service, Settings toggle ("Docked — motion detection on"), integration with `failure_reporter.py` / AI bridge `/webhook/alert`. Camera streams and MJPEG infrastructure already built. `fish_detector.py` is object recognition — not motion detection. | `[ ]` |
-| M14 | **AI Engine Diagnostic — live data** | When a critical engine cell is tapped, `openDiag()` fires but shows hardcoded demo content (static `92°C` coolant scenario, pre-written Gemini text). Needs: pull live sensor values from Signal K WebSocket state on `openDiag()`, POST to Gemini with current readings, populate diagnostic panel dynamically with real values and real AI response. UI panel, threshold logic, and cell-tap wiring all exist — only the live data + API call is missing. | `[ ]` |
-| M15 | **Alert delivery pipeline — email, SMS, toggles, quiet hours** | The full user-facing alert delivery system was never built on either end. Pi on-screen alerts exist. Everything else is missing: (1) HostPapa `alert-dispatch.php` — receives alert from Pi, sends email via MailPoet (T1+) and SMS via Twilio (T2+); (2) Twilio integration on HostPapa — credentials in `atmyboat-config.php`, send function, phone number stored in usermeta; (3) Per-alert-type toggles in Settings (engine, anchor drag, RPM spike, battery, motion, Pi offline, Fix My Pi, OTA); (4) Quiet hours setting (start/end time, stored in usermeta); (5) "Pi went offline" detection — if Pi hasn't synced within configurable threshold (default 30 min), fire alert; (6) SMS number field in account Settings (T2+ only). Spec: `ATMYBOAT_BUILD_REFERENCE.md` §16.8. | `[ ]` |
-| M19 | **Website claims audit** | Every feature described on every public page must be verified as actually built and working end-to-end. Pages that describe unbuilt or partially-built features must be corrected to match reality before Phase 4 live push. Scope: all public-facing page templates, the user manual, and the safety/features pages specifically. No false claims on a live production site. | `[ ]` |
-| M17 | **Forum page — needs traditional forum layout** | Don expected a traditional threaded forum (categories → topics → replies) at `/forum/`. The bbPress plugin is installed and renders its default layout, but it does not match the site's dark marine theme and looks disconnected from the rest of the site. Needs: bbPress template overrides in the child theme (`bbpress/` folder) — style the forum index, topic list, single topic, and reply form to match the AmyBoat design system (dark bg, Fraunces/Nunito fonts, amber/teal accents, 18px minimum text). | `[ ]` |
-| M18 | **Community page redesign — simplified** | Community page (`/community/`) was cluttered with map, hall of fame, active challenges, and photo strip all on one page. Hall of fame and challenge sections removed (S37 — in progress). Remaining work: review simplified layout with Don, confirm map + recent discussions + forum link is the right scope. | `[~]` |
-| M16 | **Website AI not working** | The `[atmyboat_ai]` shortcode widget is rendered on Products, Help, and Contact pages via `ai-widget.php`. The backend (`ai-assistant.php`) contains a real Gemini curl call with full GS1–GS5 security hardening. Don reports none of the AI on the website is responding. Likely root cause: `GEMINI_API_KEY` not defined or still set to placeholder in `atmyboat-config.php` on HostPapa staging. Also covers: (1) PDF boat report generation (`pdf-report.php`) — Gemini call to generate the formatted PDF report text; (2) Fix My Pi AI analysis — Gemini interprets diagnostic data and returns repair steps. Diagnosis needed: confirm `atmyboat-config.php` is present, loaded, and contains valid `GEMINI_API_KEY`. Fix: configure key or restore correct config.php to staging. | `[ ]` |
+| M15 | **Alert delivery pipeline — email + in-app, toggles, quiet hours** | **Twilio SMS removed — never approved. No additional cost solutions only.** Delivery channels: (1) Email via MailPoet (T1+) — primary external channel; (2) In-app notification when PWA is active via existing WebRTC/poll connection. Alert types (from §16.8): engine oil, coolant, RPM spike, battery, anchor drag, Pi offline, Fix My Pi complete, OTA available. Alert types removed: SMS, Twilio, motion detection (M13 removed). User controls: toggle each alert type on/off in PWA Settings; quiet hours (start/end time); Pi offline threshold (default 30 min). Infrastructure: Pi detects alert → writes to HostPapa `alert-dispatch.php` → sends email via MailPoet → PWA picks up on next poll. | `[ ]` |
+
+### Website
+
+| ID | Item | Details | Status |
+|----|------|---------|--------|
+| M16 | **Website AI not working — FIXED 2026-04-08 S38** | Root cause confirmed: `atmyboat-config.php` on staging defined `ATMYBOAT_API_KEY` but `ai-assistant.php` expects `GEMINI_API_KEY`. Fix deployed: added `GEMINI_API_KEY`, `GEMINI_MODEL` (gemini-2.5-flash-preview-04-17), `GEMINI_MAX_TOKENS` (1000) to staging `atmyboat-config.php`. Legacy `ATMYBOAT_API_KEY` kept for compatibility. | `[x]` **COMPLETE 2026-04-08 S38** |
+| M17 | **Website — full branding and design consistency** | **SCOPE EXPANDED from "forum theming only" to full website design review.** All public pages must be consistent, professional, and AODA-compliant. Issues identified: inconsistent fonts, font scale problems, layout flow, colour inconsistency across pages. Scope: (1) bbPress forum theming (categories, thread list, single topic, reply form — dark marine design system); (2) All page templates: consistent header, nav, footer, typography, spacing; (3) Design flows that guide the reader through the content; (4) Every page meets AODA minimum: 18px+ body, 4.5:1 contrast, 48×48px touch targets. Approach: audit all pages first (M19), then fix in a single pass. | `[ ]` |
+| M18 | **Community page — finalize simplified layout** | Hall of fame and challenges removed (S37). Remaining: finalize map + stats + recent forum discussions + "Go to Forum" button. | `[x]` **COMPLETE 2026-04-08 S38** — Confirmed live on staging: map → stats → "Recent Discussions" layout. No further changes needed. |
+| M19 | **Website claims audit** | Claude reads all public-facing page templates, identifies features described but not built or not working, produces findings report with recommendations. Gate before Phase 4. | `[x]` **COMPLETE 2026-04-08 S38** — All 11 public pages audited. 3 hard blockers for Phase 4: (1) safety page claims Anchor Watch + AI Engine Diagnostic as current — both unbuilt; (2) pricing T3 claims Fleet GPS map — unbuilt; (3) download page claims "Full i18n" — Layer 0 only. Recommendation: add "Coming Soon" badges OR build M1/M14/M2 before live push. |
+| — | **page-manual.php + PDF + RAG** | User manual (D3KOS_USER_MANUAL_v0992.md) to be: (1) Generated as PDF; (2) Uploaded to GitHub; (3) Ingested into Pi RAG (ChromaDB) so Helm AI can answer questions from it; (4) Linked from Help page on website. NOT a full PHP page — just a link to the PDF download + RAG integration. | `[ ]` |
+| — | **Hardware page — H2 duplicate photo** | Strip col 1 shows H2 (same as hero). Should revert to H1 (Pi in enclosure). Small visual fix. | `[x]` **COMPLETE 2026-04-08 S38** — `page-hardware.php` photo strip col 1 changed from H2-Nmea-200-connection.jpg → H1-Pi-in-enclosure-mounted.jpg. Alt text updated. Deployed to HostPapa staging. |
+
+### i18n
+
+| ID | Item | Details | Status |
+|----|------|---------|--------|
+| M5 | **Layer 1 — Speech-to-text multilingual** | Whisper-small (99 languages). Significant Pi build. **DEFERRED to v1.1.** | `[–]` Deferred v1.1 |
+| M6 | **Layer 2 — TTS multilingual (Piper)** | Per-language Piper voice models. Significant Pi build. **DEFERRED to v1.1.** | `[–]` Deferred v1.1 |
+| M7 | **Layer 3 — AI responses in user language** | Inject selected UI language into Gemini system prompt. One-line change in `query_handler.py`. Trivial — include in build. | `[x]` **COMPLETE 2026-04-08 S38** — Language injection added to `gemini-proxy.py` (Port 8097) at system_prompt build. Reads `/opt/d3kos/config/user-preferences.json` → `language` field. If not 'en'/'english', appends "Respond in {language}." to system prompt. Deployed to Pi, d3kos-gemini-proxy restarted, service active. |
+
+### REMOVED FROM BUILD (never requested)
+
+| ID | Item | Reason |
+|----|------|--------|
+| M13 | ~~Marine Vision motion detection~~ | Never requested by Don. Removed 2026-04-08 S38. |
 
 ### Integration Tests — Never Run
 

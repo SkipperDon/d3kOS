@@ -10,6 +10,7 @@ import json
 import os
 import time
 import requests
+from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -78,6 +79,15 @@ def gemini_chat():
     system_prompt = D3KOS_SYSTEM_CONTEXT
     if context:
         system_prompt += f"\n\nCurrent boat status: {json.dumps(context)}"
+
+    # M7 — Language injection: respond in user's selected language if not English
+    try:
+        prefs = json.loads(Path('/opt/d3kos/config/user-preferences.json').read_text())
+        lang = prefs.get('language', 'English').strip()
+        if lang and lang.lower() not in ('english', 'en', ''):
+            system_prompt += f"\nRespond in {lang}."
+    except Exception:
+        pass
 
     # Build conversation contents
     contents = []
