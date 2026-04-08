@@ -1,7 +1,7 @@
 # Autonomous Agents Build Checklist
 **Feature:** v0.9.8 — Autonomous Agents + Failure Intelligence
 **Version:** 1.0
-**Status:** S28 IN PROGRESS
+**Status:** S33 COMPLETE (Phases 1–5). Phase 6 (FI4) deferred S34. Deploy steps P5-3 through P5-7 pending.
 
 ---
 
@@ -107,15 +107,26 @@
 
 ---
 
-## PHASE 5 — Version Heartbeat + Fleet Version GUI (S33 — next session)
+## PHASE 5 — Version Heartbeat + Fleet Version GUI (S33 — COMPLETE)
 
 | # | Item | Status |
 |---|------|--------|
-| A | `version-heartbeat.php` — receives current_version + device_token from AA2 | `[ ]` |
-| B | `amboat_devices.current_version` + `version_updated_at` columns | `[ ]` |
-| C | `update_agent.py` — POST current version to HostPapa on every run | `[ ]` |
-| D | CRM `/fleet-versions` page — per-Pi version status, "behind" indicator, last check-in | `[ ]` |
-| E | Document: AUTONOMOUS_AGENTS_AND_FI.md — full feature doc for v0.9.8 system | `[ ]` |
+| A | `version-heartbeat.php` — receives current_version + device_token from AA2 | `[x]` S33 |
+| B | `amboat_devices.current_version` + `version_updated_at` columns | `[x]` S33 (ALTER TABLE in version-heartbeat.php) |
+| C | `update_agent.py` — POST current version to HostPapa on every run | `[x]` S33 (_version_heartbeat() method added) |
+| D | CRM `/fleet-versions` page — per-Pi version status, "behind" indicator, last check-in | `[x]` S33 (fleet_versions.html + fleet_versions_routes.py) |
+| E | Document: AUTONOMOUS_AGENTS_AND_FI.md — full feature doc for v0.9.8 system | `[x]` S33 |
+
+### Phase 5 Deploy (pending)
+| # | Step | Status |
+|---|------|--------|
+| P5-1 | FTP `version-heartbeat.php` to HostPapa `mobile/` | `[x]` done during S33 |
+| P5-2 | FTP `version-api.php` to HostPapa `mobile/` | `[x]` done during S33 |
+| P5-3 | Deploy updated `update_agent.py` to Pi | `[ ]` pending |
+| P5-4 | Insert fleet_versions_routes.py + proxy_call_versions() into VM app.py | `[ ]` pending |
+| P5-5 | Copy fleet_versions.html to VM templates/ | `[ ]` pending |
+| P5-6 | Add nav links in base.html (Failures, Fleet Versions, Publish Update) | `[ ]` pending |
+| P5-7 | `sudo systemctl restart admin-crm` on VM | `[ ]` pending |
 
 ## PHASE 6 — FI4 Recovery Mode + Config Packages (S33/S34 — deferred)
 

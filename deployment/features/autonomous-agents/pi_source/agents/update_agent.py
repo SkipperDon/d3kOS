@@ -72,6 +72,11 @@ class UpdateAgent(AgentBase):
             log.info('Update check skipped — no internet: %s', e)
             return AgentResult('green', 'Update check: offline')
 
+        # ── Version heartbeat — report current version to HostPapa ────────
+        # Runs on every successful check regardless of whether an update exists.
+        # Powers the CRM fleet version dashboard.
+        self._version_heartbeat(current)
+
         inc = latest.get('incremental', {})
         maj = latest.get('major', {})
 
@@ -293,6 +298,35 @@ class UpdateAgent(AgentBase):
             NOTICE_FILE.unlink(missing_ok=True)
         except Exception:
             pass
+
+    # ── Version heartbeat ─────────────────────────────────────────────────────
+
+    def _version_heartbeat(self, version: str):
+        """
+        POST current version to HostPapa version-heartbeat.php.
+        Called on every successful AA2 run so the CRM fleet dashboard
+        always shows accurate per-Pi version state.
+        Non-fatal — heartbeat failure never blocks the update check.
+        """
+        try:
+            cfg          = json.loads(CLOUD_CONFIG.read_text()) if CLOUD_CONFIG.exists() else {}
+            api_key      = cfg.get('amboat_api_key', '')
+            device_token = cfg.get('device_token', '')
+            base_url     = cfg.get('amboat_base_url', '').rstrip('/')
+            if not api_key or not base_url:
+                return
+
+            url     = f'{base_url}/wp-content/themes/twentytwenty-child/mobile/version-heartbeat.php'
+            payload = json.dumps({'version': version}).encode()
+            req     = urllib.request.Request(url, data=payload, method='POST', headers={
+                'Authorization':  f'Bearer {api_key}',
+                'X-Device-Token': device_token,
+                'Content-Type':   'application/json',
+            })
+            urllib.request.urlopen(req, timeout=10)
+            log.debug('Version heartbeat sent: v%s', version)
+        except Exception as e:
+            log.debug('Version heartbeat failed (non-critical): %s', e)
 
     # ── FI2 fix confirmation ──────────────────────────────────────────────────
 

@@ -656,7 +656,7 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8E — v0.9.8 Autonomous Agents + Failure Intelligence
-**Status: S31+S32 COMPLETE (agents + FI1/FI2/FI3 + Update Publisher) — version heartbeat next**
+**Status: S33 COMPLETE — all phases done except FI4 (deferred)**
 **Depends on:** v0.9.7 (action layer + whitelisted command queue)
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.12.0 + v0.13.0
 
@@ -678,9 +678,9 @@ Before any on-water testing, validate with synthetic known data:
 | FI1 | Failure reporter (Port 8109) | Flask service, SQLite, error signature normalisation, background FI2 sync. Any service calls POST /report. | `[x]` S31 deployed Pi:8109 |
 | FI2 | Issue lifecycle DB at HostPapa | failure-report.php + fix-confirmed.php + issue-api.php. amboat_issues + amboat_failure_reports + amboat_issue_resolutions tables. | `[x]` S31 deployed |
 | FI2b | Update Publisher | version.php DB-backed (amboat_versions). update-publish.php CRM API. package-update.py local packager. CRM /publish-update page. | `[x]` S32 deployed |
-| FI2c | Version heartbeat | AA2 reports current_version to HostPapa on every run. amboat_devices.current_version. CRM fleet version view. | `[ ]` Next session |
+| FI2c | Version heartbeat | AA2 reports current_version to HostPapa on every run. amboat_devices.current_version. CRM fleet version view. | `[x]` S33 — version-heartbeat.php + version-api.php + fleet_versions.html |
 | FI3 | Admin CRM issue dashboard | /failures list + /failure/<id> detail. Lifecycle: open→diagnosed→fix_validated→released→closed. Progress bars. | `[x]` S31 deployed CRM |
-| FI4 | Recovery mode boot sequence | Fresh SD card detection. Download config packages. Restore settings + boatlog. | `[ ]` Deferred S33 |
+| FI4 | Recovery mode boot sequence | Fresh SD card detection. Download config packages. Restore settings + boatlog. | `[ ]` Deferred S34 |
 
 ### 8E.3 — DevOps Release Workflow (new — confirmed S31+S32)
 Full lifecycle: bug detected (FI1) → clustered (FI2) → fixed on one Pi (validated) → packaged (`package-update.py`) → uploaded to HostPapa `updates/` → published via CRM `/publish-update` → all T1+ Pis auto-apply within 24h → fleet resolution tracked in FI3.
