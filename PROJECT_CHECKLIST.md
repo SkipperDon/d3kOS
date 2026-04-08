@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 1.5 | **Last Updated:** 2026-04-07 S21 — v0.9.5 COMPLETE: Piper timeout fix, persistent mute, test DB cleared
+**Version:** 1.9 | **Last Updated:** 2026-04-08 S37 — M19 added: website claims audit
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -498,9 +498,9 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 ---
 
 ## PART 8A — v0.9.4.1 Pi ↔ Website ↔ App Integration
-**Status: NOT STARTED — All three systems built independently. This version wires them together.**
-**Definition:** v0.9.4.1 completes the full data pipeline: Pi exports reach the real website endpoint, Node-RED community flows activate, the command queue is read by the Pi, community API endpoints go live on the website, and the Chart Room + Find My Boat display live Pi data.
-**Depends on:** v0.9.3 staging → live push (Phase 4). All items below are blocked until website is live.
+**Status: CODE COMPLETE S36 2026-04-08 — Blocked on Phase 4 live push only.**
+**Definition:** v0.9.4.1 completes the full data pipeline: Pi exports reach the real website endpoint, community API endpoints live on staging, the Chart Room PDF section reads from the DB, and the community map Leaflet is fully wired.
+**Depends on:** Phase 4 live push for public availability. All code deployed to staging.
 
 ### 8A.1 — Pi Side: Connect Export Worker to Real Endpoint
 
@@ -515,25 +515,31 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | P6 | Pi reads tier from sync response, updates license.json | `[x]` **DONE 2026-03-26 S2** — export_worker.py _sync_tier_from_response() |
 | P7 | **T0 → T1 upgrade path** — when `pair-device.php` confirms pairing, response includes `"tier": "T1"`. Pi reads it and upgrades `license.json` from tier 0 to tier 1. Enables export and cloud sync for the first time. | `services/cloud-agent/cloud_agent.py` | `[x]` **COMPLETE 2026-04-06 S18** — `handle_pair_confirmed()` added to cloud_agent.py. Writes string tier (e.g. "T1") to license.json. Triggers immediate export (best-effort). TDD: 3/3 assertions passed on Pi. Service restarted and active. |
 
-### 8A.2 — Pi Side: Activate Node-RED Community Flows
+### 8A.2 — Pi Side: Node-RED Community Flows
+
+**S36 FINDING: Node-RED community flows do not exist.** Build plan stated "built but disabled" — investigation of flows.json confirmed only system/Signal K flows present (49 nodes, 1 tab). The community flows were never built.
+
+**These flows are NOT needed for the community map to work.** The existing export_worker.py → data-ingress.php pipeline already writes position data to wpax_usermeta. community-get.php reads from that. Fleet dots work via this path today.
+
+`community-position.php` (Pi-direct UPSERT endpoint) is deployed on staging for future use if real-time sub-30min position updates are desired.
 
 | # | Item | Status |
 |---|------|--------|
-| N1 | Update placeholder URL in 2 Node-RED "Post to Community DB" flow nodes → real `https://atmyboat.com/mobile/data-ingress.php` | `[ ]` |
-| N2 | Wire API key from `/opt/d3kos/config/cloud-credentials.json` into Node-RED HTTP Request nodes (not hardcoded) | `[ ]` |
-| N3 | Enable the 3 disabled Node-RED flows: telemetry/push, community/benchmark, community/position | `[ ]` |
-| N4 | End-to-end test: toggle community sharing ON → data flows to atmyboat.com → appears on community map | `[ ]` Blocked on v0.9.3 live |
+| N1 | Node-RED "Post to Community DB" URL wiring | `[–]` **SUPERSEDED** — flows don't exist; existing export pipeline covers this |
+| N2 | Wire API key into Node-RED HTTP nodes | `[–]` **SUPERSEDED** — same reason |
+| N3 | Enable 3 Node-RED flows | `[–]` **SUPERSEDED** — flows don't exist |
+| N4 | End-to-end test: community sharing ON → community map shows dot | `[ ]` Testable on staging now — enable map_sharing in usermeta, wait for next Pi sync |
 
 ### 8A.3 — Website Side: Community API Endpoints
 
 | # | Item | Endpoint | Status |
 |---|------|----------|--------|
-| W1 | Build `POST /api/community/markers` endpoint — receives anonymised hazard markers from Pi, stores in WP custom table | New PHP file | `[ ]` |
-| W2 | Build `GET /api/community/markers?bbox=` endpoint — returns markers within bounding box for community map display | New PHP file | `[ ]` |
-| W3 | Build `POST /api/telemetry/push` endpoint — receives engine benchmark telemetry from Node-RED flow | New PHP file | `[ ]` |
-| W4 | Build `POST /api/community/benchmark` endpoint — receives performance comparison data from Node-RED flow | New PHP file | `[ ]` |
-| W5 | Build `POST /api/community/position` endpoint — receives boat position update for community map dot | New PHP file | `[ ]` |
-| W6 | Community map 500m blur on read — `/api/community/markers` GET must round coordinates to 2 decimal places on output even if stored with higher precision | `[ ]` |
+| W1 | Build `POST /api/community/markers` endpoint — receives hazard markers, stores in amboat_community_markers | `[x]` **COMPLETE S36 2026-04-08** — `community-markers-write.php` deployed to staging. Dual auth (app_token or AMBOAT_API_KEY). Rate limited 20/device/24h. |
+| W2 | Build `GET /api/community/markers` endpoint — returns markers for community map | `[x]` **COMPLETE S36 2026-04-08** — `community-get.php` deployed. Returns positions + markers + fleet_count in one call. |
+| W3 | Build `POST /api/telemetry/push` endpoint — Node-RED telemetry | `[–]` **SUPERSEDED** — Node-RED flows don't exist. Deferred. |
+| W4 | Build `POST /api/community/benchmark` endpoint — Node-RED benchmark | `[–]` **SUPERSEDED** — Node-RED flows don't exist. Deferred. |
+| W5 | Build `POST /api/community/position` endpoint — Pi-direct position UPSERT | `[x]` **COMPLETE S36 2026-04-08** — `community-position.php` deployed to staging. Pi-facing auth. UPSERT one row per device_token. |
+| W6 | Community map coordinates privacy blur — 2 decimal places on output | `[x]` **COMPLETE S36 2026-04-08** — `community-get.php` uses ROUND(lat,2) and ROUND(lon,2) on all query output. |
 
 ### 8A.4 — Website Side: Display Synced Pi Data + Multi-Boat Endpoints
 
@@ -541,10 +547,10 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 | # | Item | Page / Endpoint | Status |
 |---|------|-----------------|--------|
-| D1 | Chart Room dashboard — display last sync time, d3kOS version, engine snapshot (RPM, coolant, fuel) from `amboat_engine_snapshots WHERE pi_installation_id = ?` | `/dashboard` (The Chart Room) | `[ ]` |
-| D2 | Find My Boat — display last known GPS + timestamp. T1+ only. "Pi offline" if >2h since last sync. Per-Pi (not per-user). | `/dashboard` | `[ ]` |
-| D3 | Alert history — last 20 alerts from `amboat_alerts WHERE pi_installation_id = ?` | `/dashboard` | `[ ]` |
-| D4 | PDF report download list — last 20 from `atmyboat_pdf_reports` user meta | `/dashboard` (T2/T3 only) | `[ ]` |
+| D1 | Chart Room — last sync time, d3kOS version, engine snapshot | `/dashboard` | `[x]` **Already existed** — page-dashboard.php reads usermeta (last_sync, last_rpm, coolant_temp, d3kos_version) written by data-ingress.php. Working. |
+| D2 | Find My Boat — last known GPS + timestamp, T1+ only | `/dashboard` | `[x]` **Already existed** — page-dashboard.php reads atmyboat_position_lat/lng from usermeta. Working. |
+| D3 | Alert history — last 20 alerts | `/dashboard` | `[x]` **Already existed** — page-dashboard.php reads atmyboat_fmp_history from usermeta. Working. |
+| D4 | PDF report download list — T2/T3 only | `/dashboard` (T2/T3 only) | `[x]` **WORKING AS DESIGNED** — reads `atmyboat_pdf_reports` usermeta, written by `mobile/pdf-report.php` (server-side Gemini reports). Appears empty until first report is generated — not a bug. S36 investigation confirmed original code was correct; attempted fix was reverted. |
 | D5 | Build `dashboard-data.php` — engine + position + alerts + sync time | `[x]` **DONE 2026-03-26 S2** — built + deployed to staging. |
 | D6 | Build `list-vessels.php` — all paired Pis for authenticated account | `[x]` **DONE 2026-03-26 S2** — built + deployed to staging. |
 
@@ -813,8 +819,58 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | v0.9.7 | Remote Diagnostic Console — support tickets, AI diagnosis, fix delivery | `[ ]` Planned |
 | v0.9.8 | Autonomous Agents + Failure Intelligence — self-healing Pi, recovery mode | `[ ]` Planned |
 | v0.9.9 | Security Audit & Penetration Testing — required gate before v1.0 | `[ ]` Planned |
-| v1.0 | Production launch — signalk-forward-watch AppStore, incremental OTA | `[ ]` Planned — blocked on v0.9.9 |
+| v0.9.9.2 | Missed items — features specified but never built across all platforms | `[ ]` Planned |
+| v1.0 | Production launch — signalk-forward-watch AppStore, incremental OTA | `[ ]` Planned — blocked on v0.9.9 + v0.9.9.2 |
 | v1.1 | CJK keyboard, self-hosted STUN coordination server, multi-language full | `[ ]` Future |
+
+---
+
+## PART 9 — v0.9.9.2 Missed Items
+**Status: NOT STARTED — 2026-04-08**
+**Definition:** Features that were fully specified and/or had backends built, but the front-end or user-facing implementation was never written. These are not deferred features — they were supposed to be built and were missed.
+
+### PWA — Missing Screens
+
+| ID | Item | Details | Status |
+|----|------|---------|--------|
+| M1 | **Anchor Watch screen** | Set Anchor button, radius slider (default 50m), active state showing live distance from anchor drop point, Weigh Anchor button. Pi backend (`anchor_watch.py`) and alert widget on Pi dashboard are already built. PWA control screen was never started. Spec: `ATMYBOAT_BUILD_REFERENCE.md` §16.9 | `[ ]` |
+| M2 | **Fleet Map PWA screen** | Leaflet map inside the PWA showing fleet vessel positions, colours by health, last-seen age. Backend (`fleet-map.php`) built and tested (15 vessels E2E). Pi fleet push service live. PWA screen never written. | `[ ]` |
+| M3 | **Command queue — app write** | PWA sends commands (`fix_my_pi`, `ota_update`, `restart_service`) to `command-queue.php`. Backend endpoint exists. PWA "Send Command" UI not built. | `[ ]` |
+| M4 | **Command queue — result poll** | PWA polls for command result and shows status to user. Backend exists. PWA polling + status display not built. | `[ ]` |
+
+### i18n — Layers 1–3 (Framework built, languages never wired)
+
+| ID | Item | Details | Status |
+|----|------|---------|--------|
+| M5 | **Layer 1 — Speech-to-text multilingual** | Whisper-small model (244MB, 99 languages) replacing Vosk post-wake word. New file: `whisper_transcribe.py`. Layer 0 framework deployed — this was the intended next step. | `[ ]` |
+| M6 | **Layer 2 — TTS multilingual (Piper)** | Per-language Piper voice models: fr/de/es/it/nl/pt/uk/ar. Espeak-ng fallback for others. Piper is deployed for English — non-English voices never loaded. | `[ ]` |
+| M7 | **Layer 3 — AI responses in user language** | Inject selected language into Gemini system prompt. Helm AI currently always responds in English regardless of UI language setting. One-line system prompt change + test. | `[ ]` |
+
+### Integration Tests — Never Run
+
+| ID | Item | Expected Result | Status |
+|----|------|-----------------|--------|
+### Pi — Missing Features
+
+| ID | Item | Details | Status |
+|----|------|---------|--------|
+| M13 | **Marine Vision motion detection** | Frame-differencing motion detection service watching all active camera streams. When boat is docked and motion detection enabled (toggle in Settings), any movement in a camera frame fires a Warning alert via the AI bridge. Requires: new `motion_detector.py` service, Settings toggle ("Docked — motion detection on"), integration with `failure_reporter.py` / AI bridge `/webhook/alert`. Camera streams and MJPEG infrastructure already built. `fish_detector.py` is object recognition — not motion detection. | `[ ]` |
+| M14 | **AI Engine Diagnostic — live data** | When a critical engine cell is tapped, `openDiag()` fires but shows hardcoded demo content (static `92°C` coolant scenario, pre-written Gemini text). Needs: pull live sensor values from Signal K WebSocket state on `openDiag()`, POST to Gemini with current readings, populate diagnostic panel dynamically with real values and real AI response. UI panel, threshold logic, and cell-tap wiring all exist — only the live data + API call is missing. | `[ ]` |
+| M15 | **Alert delivery pipeline — email, SMS, toggles, quiet hours** | The full user-facing alert delivery system was never built on either end. Pi on-screen alerts exist. Everything else is missing: (1) HostPapa `alert-dispatch.php` — receives alert from Pi, sends email via MailPoet (T1+) and SMS via Twilio (T2+); (2) Twilio integration on HostPapa — credentials in `atmyboat-config.php`, send function, phone number stored in usermeta; (3) Per-alert-type toggles in Settings (engine, anchor drag, RPM spike, battery, motion, Pi offline, Fix My Pi, OTA); (4) Quiet hours setting (start/end time, stored in usermeta); (5) "Pi went offline" detection — if Pi hasn't synced within configurable threshold (default 30 min), fire alert; (6) SMS number field in account Settings (T2+ only). Spec: `ATMYBOAT_BUILD_REFERENCE.md` §16.8. | `[ ]` |
+| M19 | **Website claims audit** | Every feature described on every public page must be verified as actually built and working end-to-end. Pages that describe unbuilt or partially-built features must be corrected to match reality before Phase 4 live push. Scope: all public-facing page templates, the user manual, and the safety/features pages specifically. No false claims on a live production site. | `[ ]` |
+| M17 | **Forum page — needs traditional forum layout** | Don expected a traditional threaded forum (categories → topics → replies) at `/forum/`. The bbPress plugin is installed and renders its default layout, but it does not match the site's dark marine theme and looks disconnected from the rest of the site. Needs: bbPress template overrides in the child theme (`bbpress/` folder) — style the forum index, topic list, single topic, and reply form to match the AmyBoat design system (dark bg, Fraunces/Nunito fonts, amber/teal accents, 18px minimum text). | `[ ]` |
+| M18 | **Community page redesign — simplified** | Community page (`/community/`) was cluttered with map, hall of fame, active challenges, and photo strip all on one page. Hall of fame and challenge sections removed (S37 — in progress). Remaining work: review simplified layout with Don, confirm map + recent discussions + forum link is the right scope. | `[~]` |
+| M16 | **Website AI not working** | The `[atmyboat_ai]` shortcode widget is rendered on Products, Help, and Contact pages via `ai-widget.php`. The backend (`ai-assistant.php`) contains a real Gemini curl call with full GS1–GS5 security hardening. Don reports none of the AI on the website is responding. Likely root cause: `GEMINI_API_KEY` not defined or still set to placeholder in `atmyboat-config.php` on HostPapa staging. Also covers: (1) PDF boat report generation (`pdf-report.php`) — Gemini call to generate the formatted PDF report text; (2) Fix My Pi AI analysis — Gemini interprets diagnostic data and returns repair steps. Diagnosis needed: confirm `atmyboat-config.php` is present, loaded, and contains valid `GEMINI_API_KEY`. Fix: configure key or restore correct config.php to staging. | `[ ]` |
+
+### Integration Tests — Never Run
+
+| ID | Item | Expected Result | Status |
+|----|------|-----------------|--------|
+| M8 | **T1: Pi → website sync** | POST to `data-ingress.php` with real device token → 200 OK, engine snapshot in DB, `last_sync` updated | `[ ]` |
+| M9 | **T2: Command round-trip** | App queues `restart_service` → Pi picks up on next sync → executes → result returned to app within 35 min | `[ ]` |
+| M10 | **T3: Community data flow** | Enable boat_map in Pi Settings → position appears on `/community` map within 30 min | `[ ]` |
+| M11 | **T4: Anchor drag alert** | Simulate anchor drag on Pi → immediate export fires → alert in `amboat_alerts` DB within 2 min | `[ ]` |
+| M12 | **T5: Find My Boat** | Pi syncs position → Chart Room shows correct map marker within 35 min | `[ ]` |
 
 ---
 
