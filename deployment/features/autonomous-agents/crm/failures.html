@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}{% if issue %}Issue #{{ issue.id }}{% else %}Failure Intelligence{% endif %} — AtMyBoat Admin{% endblock %}
+
+{% block content %}
+<style>
+  /* ── Status pills ─────────────────────────────────────────────────────── */
+  .pill-open         { background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .pill-diagnosed    { background: #fef9c3; color: #854d0e; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .pill-fix_validated{ background: #dbeafe; color: #1d4ed8; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .pill-released     { background: #e0e7ff; color: #4338ca; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+  .pill-closed       { background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+
+  /* ── Tabs ─────────────────────────────────────────────────────────────── */
+  .tabs      { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab       { padding: 6px 16px; border-radius: 6px; font-size: 14px; font-weight: 500;
+               text-decoration: none; color: #475569; background: #f1f5f9; }
+  .tab.active, .tab:hover { background: #0f172a; color: #fff; }
+  .tab-badge { background: #dc2626; color: #fff; border-radius: 10px; font-size: 11px;
+               font-weight: 700; padding: 1px 6px; margin-left: 4px; }
+
+  /* ── Progress bar ─────────────────────────────────────────────────────── */
+  .progress-wrap { height: 8px; background: #e2e8f0; border-radius: 4px; margin: 4px 0; }
+  .progress-bar  { height: 8px; border-radius: 4px; background: #22c55e; }
+
+  /* ── Issue list ───────────────────────────────────────────────────────── */
+  .issue-row td { padding: 12px 14px; vertical-align: middle; }
+  .sig-code  { font-family: monospace; font-size: 13px; color: #64748b; }
+  .svc-badge { background: #f1f5f9; color: #334155; border-radius: 4px;
+               padding: 2px 8px; font-size: 13px; font-weight: 500; }
+
+  /* ── Detail panels ────────────────────────────────────────────────────── */
+  .detail-meta   { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-bottom: 20px;
+                   font-size: 15px; color: #475569; }
+  .detail-meta strong { color: #1e293b; }
+  .info-panel    { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+                   padding: 20px; margin-bottom: 20px; }
+  .info-panel h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0 0 12px; }
+  .update-box    { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+                   padding: 20px; margin-top: 24px; }
+  .update-box h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 16px; }
+  .field-row     { margin-bottom: 14px; }
+  .field-row label { display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
+  .select-input  { width: 220px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+                   font-size: 15px; background: #fff; color: #1e293b; }
+  .text-input    { width: 240px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+                   font-size: 15px; background: #fff; color: #1e293b; font-family: monospace; }
+  .btn-save      { background: #0f172a; color: #fff; border: none; padding: 10px 24px;
+                   border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-save:hover { background: #1e293b; }
+</style>
+
+{% if issue %}
+{# ════════════════════════════════════════════════════════════════════════════ #}
+{# ── Issue Detail ─────────────────────────────────────────────────────────── #}
+{# ════════════════════════════════════════════════════════════════════════════ #}
+
+<div class="page-header" style="margin-bottom: 20px;">
+  <a href="{{ url_for('failures') }}" class="btn-secondary">← All Issues</a>
+  <h2 style="margin: 0; font-size: 22px; color: #1e293b;">Issue #{{ issue.id }}</h2>
+  <span class="pill-{{ issue.status }}">{{ issue.status | replace('_', ' ') | title }}</span>
+</div>
+
+<div class="detail-meta">
+  <div><strong>Service:</strong> <span class="svc-badge">{{ issue.service }}</span></div>
+  <div><strong>Error type:</strong> {{ issue.error_type }}</div>
+  <div><strong>Signature:</strong> <span class="sig-code">{{ issue.error_signature }}</span></div>
+  <div><strong>First seen:</strong> {{ issue.first_seen }}</div>
+  <div><strong>Last seen:</strong> {{ issue.last_seen }}</div>
+  {% if issue.fixed_in_version %}
+  <div><strong>Fixed in:</strong> <span style="font-family:monospace;">v{{ issue.fixed_in_version }}</span></div>
+  {% endif %}
+</div>
+
+{# — Fleet resolution progress ─────────────────────────────────────────────── #}
+{% set affected = issue.affected_count | int %}
+{% set resolved = issue.resolved_count | int %}
+{% set pct = ((resolved / [affected, 1] | max) * 100) | round | int %}
+<div class="info-panel">
+  <h3>Fleet Resolution</h3>
+  <div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
+    <div style="flex:1;">
+      <div class="progress-wrap"><div class="progress-bar" style="width:{{ pct }}%;"></div></div>
+    </div>
+    <div style="font-size:15px; font-weight:700; color:#1e293b; white-space:nowrap;">
+      {{ resolved }} / {{ affected }} devices ({{ pct }}%)
+    </div>
+  </div>
+  {% if issue.validation_device %}
+  <div style="font-size:14px; color:#475569;">
+    Validated on: <span class="sig-code">{{ issue.validation_device[:12] }}…</span>
+  </div>
+  {% endif %}
+</div>
+
+{# — Sample message ────────────────────────────────────────────────────────── #}
+<div class="info-panel">
+  <h3>Sample Error Message</h3>
+  <pre style="margin:0; font-size:14px; color:#1e293b; white-space:pre-wrap; word-break:break-all;">{{ issue.sample_message }}</pre>
+</div>
+
+{# — Affected devices ──────────────────────────────────────────────────────── #}
+{% if affected %}
+<div class="info-panel">
+  <h3>Affected Devices ({{ affected_devices | default(affected | list) | length }})</h3>
+  <table class="data-table" style="width:100%;">
+    <thead><tr>
+      <th>Device token</th><th>First report</th><th>Report count</th>
+    </tr></thead>
+    <tbody>
+    {% for d in affected %}
+    <tr>
+      <td class="sig-code">{{ d.device_token[:16] }}…</td>
+      <td>{{ d.first_report }}</td>
+      <td>{{ d.report_count }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# — Resolutions ───────────────────────────────────────────────────────────── #}
+{% if resolutions %}
+<div class="info-panel">
+  <h3>Fix Confirmed On ({{ resolutions | length }} devices)</h3>
+  <table class="data-table" style="width:100%;">
+    <thead><tr>
+      <th>Device token</th><th>Version applied</th><th>Confirmed at</th>
+    </tr></thead>
+    <tbody>
+    {% for r in resolutions %}
+    <tr>
+      <td class="sig-code">{{ r.device_token[:16] }}…</td>
+      <td style="font-family:monospace;">v{{ r.version_applied }}</td>
+      <td>{{ r.resolved_at }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# — Recent reports ────────────────────────────────────────────────────────── #}
+{% if reports %}
+<div class="info-panel">
+  <h3>Recent Reports (last 20)</h3>
+  <table class="data-table" style="width:100%;">
+    <thead><tr>
+      <th>Device</th><th>Message</th><th>Reported at</th>
+    </tr></thead>
+    <tbody>
+    {% for r in reports %}
+    <tr>
+      <td class="sig-code">{{ r.device_token[:12] }}…</td>
+      <td style="font-size:13px; color:#475569; max-width:400px; word-break:break-all;">{{ r.message[:120] }}</td>
+      <td style="white-space:nowrap;">{{ r.reported_at }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# — Lifecycle update form ──────────────────────────────────────────────────── #}
+<div class="update-box">
+  <h3>Update Lifecycle</h3>
+  <form method="POST" action="{{ url_for('failure_update', issue_id=issue.id) }}">
+    <div style="display:flex; flex-wrap:wrap; gap:20px;">
+      <div class="field-row">
+        <label>Status</label>
+        <select name="status" class="select-input">
+          {% for s in ['open','diagnosed','fix_validated','released','closed'] %}
+          <option value="{{ s }}" {% if issue.status == s %}selected{% endif %}>
+            {{ s | replace('_', ' ') | title }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Fixed in version</label>
+        <input type="text" name="fixed_in_version" class="text-input"
+               value="{{ issue.fixed_in_version or '' }}" placeholder="e.g. 0.9.8.1">
+      </div>
+      <div class="field-row">
+        <label>Validation device token</label>
+        <input type="text" name="validation_device" class="text-input"
+               value="{{ issue.validation_device or '' }}" placeholder="device UUID">
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <button type="submit" class="btn-save">Save Changes</button>
+    </div>
+  </form>
+</div>
+
+{% else %}
+{# ════════════════════════════════════════════════════════════════════════════ #}
+{# ── Issue List ───────────────────────────────────────────────────────────── #}
+{# ════════════════════════════════════════════════════════════════════════════ #}
+
+<div class="page-header" style="margin-bottom: 16px;">
+  <h2 style="margin: 0; font-size: 22px; color: #1e293b;">Failure Intelligence</h2>
+</div>
+
+{# — Status tabs with counts ────────────────────────────────────────────────── #}
+<div class="tabs">
+  <a class="tab {% if not current_status %}active{% endif %}"
+     href="{{ url_for('failures') }}">
+    All
+    {% set all_open = (stats.open | default(0)) | int %}
+    {% if all_open > 0 %}
+      <span class="tab-badge">{{ all_open }}</span>
+    {% endif %}
+  </a>
+  {% for s in ['open','diagnosed','fix_validated','released','closed'] %}
+  <a class="tab {% if current_status == s %}active{% endif %}"
+     href="{{ url_for('failures', status=s) }}">
+    {{ s | replace('_', ' ') | title }}
+    {% set cnt = (stats[s] | default(0)) | int %}
+    {% if cnt > 0 and s in ['open','diagnosed'] %}
+      <span class="tab-badge">{{ cnt }}</span>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Service</th>
+        <th>Error type</th>
+        <th>Message</th>
+        <th>Signature</th>
+        <th>Affected</th>
+        <th>Resolution</th>
+        <th>Status</th>
+        <th>Last seen</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% if issues %}
+      {% for iss in issues %}
+      {% set affected = iss.affected_count | int %}
+      {% set resolved = iss.resolved_count | int %}
+      {% set pct = ((resolved / [affected, 1] | max) * 100) | round | int %}
+      <tr class="issue-row">
+        <td><a href="{{ url_for('failure_detail', issue_id=iss.id) }}"
+               style="font-weight:600; color:#0f172a;">#{{ iss.id }}</a></td>
+        <td><span class="svc-badge">{{ iss.service }}</span></td>
+        <td style="font-size:13px; color:#475569;">{{ iss.error_type }}</td>
+        <td style="max-width:240px; font-size:13px; color:#334155; word-break:break-word;">
+          {{ iss.sample_message[:80] }}{% if iss.sample_message | length > 80 %}…{% endif %}
+        </td>
+        <td class="sig-code">{{ iss.error_signature }}</td>
+        <td style="text-align:center; font-weight:600;">{{ affected }}</td>
+        <td style="min-width:100px;">
+          <div class="progress-wrap">
+            <div class="progress-bar" style="width:{{ pct }}%;"></div>
+          </div>
+          <div style="font-size:12px; color:#64748b; text-align:right;">{{ resolved }}/{{ affected }}</div>
+        </td>
+        <td><span class="pill-{{ iss.status }}">{{ iss.status | replace('_', ' ') | title }}</span></td>
+        <td style="font-size:13px; color:#64748b; white-space:nowrap;">{{ iss.last_seen }}</td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="9" class="empty-state">No issues found.</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+</div>
+
+{# — Pagination ─────────────────────────────────────────────────────────────── #}
+{% if pages > 1 %}
+<div style="display:flex; gap:8px; margin-top:16px; justify-content:center;">
+  {% for p in range(1, pages + 1) %}
+  <a href="{{ url_for('failures', status=current_status, page=p) }}"
+     class="tab {% if p == page %}active{% endif %}" style="padding:6px 12px;">{{ p }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

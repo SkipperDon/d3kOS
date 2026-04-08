@@ -82,10 +82,28 @@
 
 | # | Item | Status |
 |---|------|--------|
-| A | `failure_reporter.py` — Flask :8106, SQLite, 4-field capture, background sync | `[ ]` |
-| B | `d3kos-failure-reporter.service` | `[ ]` |
-| C | HostPapa `failure-report.php` + `amboat_failure_reports` table | `[ ]` |
-| D | Admin CRM: failure patterns dashboard | `[ ]` |
+| A | `failure_reporter.py` — Flask :8106, SQLite, error signature, background sync | `[x]` S31 |
+| B | `d3kos-failure-reporter.service` | `[x]` S31 |
+| C | HostPapa `failure-report.php` + `fix-confirmed.php` + `issue-api.php` | `[x]` S31 |
+| D | Admin CRM: `failure_routes.py` + `failures.html` — issue lifecycle dashboard | `[x]` S31 |
+| E | `agent_base.py` `report_failure()` helper — any agent can report to FI1 | `[x]` S31 |
+| F | `update_agent.py` — calls FI1 on update fail, calls FI2 fix-confirmed on success | `[x]` S31 |
+
+### Deploy Steps (S31)
+| # | Step | Status |
+|---|------|--------|
+| F1 | Copy `failure_reporter.py` → `/opt/d3kos/services/agents/` | `[ ]` |
+| F2 | Copy updated `agent_base.py` → `/opt/d3kos/services/agents/` | `[ ]` |
+| F3 | Copy updated `update_agent.py` → `/opt/d3kos/services/agents/agents/` | `[ ]` |
+| F4 | Copy `d3kos-failure-reporter.service` → `/etc/systemd/system/` | `[ ]` |
+| F5 | `sudo systemctl daemon-reload` | `[ ]` |
+| F6 | `sudo systemctl enable --now d3kos-failure-reporter` | `[ ]` |
+| F7 | Verify: `curl http://localhost:8106/health` → `{"ok":true,...}` | `[ ]` |
+| F8 | Test: `curl -X POST http://localhost:8106/report -H "Content-Type: application/json" -d '{"service":"test","error_type":"test","message":"deployment test"}'` | `[ ]` |
+| F9 | `sudo systemctl restart d3kos-agents` (picks up updated agent_base + update_agent) | `[ ]` |
+| F10 | Upload `failure-report.php`, `fix-confirmed.php`, `issue-api.php` to HostPapa mobile/ | `[ ]` |
+| F11 | Add `failure_routes.py` content + `failures.html` to admin CRM on VM | `[ ]` |
+| F12 | Add `d3kos-failure-reporter` to watchdog CRITICAL_SERVICES | `[ ]` |
 
 ---
 

@@ -100,9 +100,12 @@ class UpdateAgent(AgentBase):
             if ok:
                 self._clear_notice()
                 self._notify_cloud(tier, f'd3kOS updated to v{update_ver}', update_type)
+                # FI2: confirm fix received — closes lifecycle issues resolved by this version
+                self._confirm_fix(update_ver)
                 return AgentResult('green', f'Updated to v{update_ver}')
             else:
                 self._write_notice(update_type, current, update_ver, update_info, failed=True)
+                self.report_failure('update_failed', f'Update to v{update_ver} failed: {msg}')
                 return AgentResult('red', f'Update failed: {msg}')
         else:
             # T0 or no URL yet — notify only
@@ -290,6 +293,37 @@ class UpdateAgent(AgentBase):
             NOTICE_FILE.unlink(missing_ok=True)
         except Exception:
             pass
+
+    # ── FI2 fix confirmation ──────────────────────────────────────────────────
+
+    def _confirm_fix(self, version: str):
+        """
+        POST to HostPapa fix-confirmed.php after a successful update.
+        FI2 uses this to close lifecycle issues that were resolved by this version.
+        Non-fatal — update is already applied even if this call fails.
+        """
+        try:
+            cfg          = json.loads(CLOUD_CONFIG.read_text()) if CLOUD_CONFIG.exists() else {}
+            api_key      = cfg.get('amboat_api_key', '')
+            device_token = cfg.get('device_token', '')
+            base_url     = cfg.get('amboat_base_url', '').rstrip('/')
+            if not api_key or not base_url:
+                return
+
+            url     = f'{base_url}/wp-content/themes/twentytwenty-child/mobile/fix-confirmed.php'
+            payload = json.dumps({
+                'device_token': device_token,
+                'version':      version,
+            }).encode()
+            req = urllib.request.Request(url, data=payload, method='POST', headers={
+                'Authorization':  f'Bearer {api_key}',
+                'X-Device-Token': device_token,
+                'Content-Type':   'application/json',
+            })
+            urllib.request.urlopen(req, timeout=10)
+            log.info('FI2 fix-confirmed: v%s reported', version)
+        except Exception as e:
+            log.debug('FI2 fix-confirmed failed (non-critical): %s', e)
 
     # ── Cloud notification (T1+ only) ─────────────────────────────────────────
 
