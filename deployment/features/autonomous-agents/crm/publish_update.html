@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Publish Update — AtMyBoat Admin{% endblock %}
+
+{% block content %}
+<style>
+  .current-card  { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+                   padding: 20px; margin-bottom: 20px; }
+  .current-card h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0 0 12px; }
+  .version-meta  { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 15px; color: #475569; }
+  .version-meta strong { color: #1e293b; }
+  .pill-active   { background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 12px;
+                   font-size: 13px; font-weight: 600; }
+  .pill-inactive { background: #f1f5f9; color: #64748b; padding: 2px 10px; border-radius: 12px;
+                   font-size: 13px; font-weight: 600; }
+  .publish-form  { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+                   padding: 24px; margin-bottom: 24px; }
+  .publish-form h3 { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 20px; }
+  .form-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field-row     { margin-bottom: 0; }
+  .field-row.full { grid-column: 1 / -1; }
+  .field-row label { display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
+  .field-hint    { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .text-input    { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+                   font-size: 15px; background: #fff; color: #1e293b; box-sizing: border-box; }
+  .mono-input    { font-family: monospace; }
+  .select-input  { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+                   font-size: 15px; background: #fff; color: #1e293b; }
+  .textarea-input { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+                    font-size: 15px; background: #fff; color: #1e293b; resize: vertical;
+                    font-family: inherit; line-height: 1.6; box-sizing: border-box; }
+  .btn-publish   { background: #16a34a; color: #fff; border: none; padding: 11px 28px;
+                   border-radius: 6px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .btn-publish:hover { background: #15803d; }
+  .btn-pull      { background: #dc2626; color: #fff; border: none; padding: 6px 16px;
+                   border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-restore   { background: #2563eb; color: #fff; border: none; padding: 6px 16px;
+                   border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .alert-success { background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 12px 16px;
+                   border-radius: 6px; margin-bottom: 20px; font-size: 15px; font-weight: 500; }
+  .alert-error   { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px 16px;
+                   border-radius: 6px; margin-bottom: 20px; font-size: 15px; font-weight: 500; }
+  .workflow-box  { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+                   padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: #1e40af; }
+  .workflow-box strong { display: block; font-size: 15px; margin-bottom: 8px; }
+  .workflow-box ol { margin: 0; padding-left: 20px; line-height: 2; }
+  code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+</style>
+
+<div class="page-header" style="margin-bottom: 20px;">
+  <h2 style="margin: 0; font-size: 22px; color: #1e293b;">Publish Update</h2>
+</div>
+
+{% if message %}
+<div class="alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert-error">{{ error }}</div>
+{% endif %}
+
+{# ── Workflow guide ────────────────────────────────────────────────────────── #}
+<div class="workflow-box">
+  <strong>Release workflow</strong>
+  <ol>
+    <li>Fix bug on one Pi · validate · confirm health score is green</li>
+    <li>Run: <code>python3 package-update.py --version X.X.X.X --files changed_file.py</code></li>
+    <li>Upload the generated <code>.tar.gz</code> to HostPapa <code>updates/</code> folder via FTP</li>
+    <li>Fill in the form below and click Publish</li>
+    <li>All T1+ Pis receive the fix within 24h · FI dashboard tracks fleet resolution</li>
+  </ol>
+</div>
+
+{# ── Current active versions ───────────────────────────────────────────────── #}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+
+  <div class="current-card">
+    <h3>Active Incremental</h3>
+    {% if current_inc %}
+    <div class="version-meta">
+      <div><strong>Version:</strong> <span style="font-family:monospace;">v{{ current_inc.version }}</span></div>
+      <div><strong>Released:</strong> {{ current_inc.released }}</div>
+      <div><strong>URL:</strong>
+        {% if current_inc.url %}
+          <a href="{{ current_inc.url }}" target="_blank" style="color:#2563eb;">link</a>
+        {% else %}
+          <span style="color:#94a3b8;">none</span>
+        {% endif %}
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <form method="POST" style="display:inline;">
+        <input type="hidden" name="action" value="deactivate">
+        <input type="hidden" name="id" value="{{ current_inc.id }}">
+        <button class="btn-pull" onclick="return confirm('Pull this version?')">Pull Version</button>
+      </form>
+    </div>
+    {% else %}
+    <div style="color:#94a3b8; font-size:15px;">No active incremental update.</div>
+    {% endif %}
+  </div>
+
+  <div class="current-card">
+    <h3>Active Major</h3>
+    {% if current_major %}
+    <div class="version-meta">
+      <div><strong>Version:</strong> <span style="font-family:monospace;">v{{ current_major.version }}</span></div>
+      <div><strong>T1+ auto-upgrade:</strong> {{ 'Yes' if current_major.t1_upgrade else 'No' }}</div>
+      <div><strong>Released:</strong> {{ current_major.released }}</div>
+    </div>
+    <div style="margin-top:12px;">
+      <form method="POST" style="display:inline;">
+        <input type="hidden" name="action" value="deactivate">
+        <input type="hidden" name="id" value="{{ current_major.id }}">
+        <button class="btn-pull" onclick="return confirm('Pull this version?')">Pull Version</button>
+      </form>
+    </div>
+    {% else %}
+    <div style="color:#94a3b8; font-size:15px;">No active major update.</div>
+    {% endif %}
+  </div>
+
+</div>
+
+{# ── Publish form ──────────────────────────────────────────────────────────── #}
+<div class="publish-form">
+  <h3>Publish New Version</h3>
+  <form method="POST">
+    <input type="hidden" name="action" value="publish">
+    <div class="form-grid">
+
+      <div class="field-row">
+        <label>Update type</label>
+        <select name="update_type" class="select-input">
+          <option value="incremental">Incremental (file patch)</option>
+          <option value="major">Major (full version bump)</option>
+        </select>
+      </div>
+
+      <div class="field-row">
+        <label>Version number</label>
+        <input type="text" name="version" class="text-input mono-input"
+               placeholder="e.g. 0.9.8.1" required>
+      </div>
+
+      <div class="field-row full">
+        <label>Download URL</label>
+        <input type="url" name="url" class="text-input mono-input"
+               placeholder="https://atmyboat.com/staging/.../updates/d3kos-0.9.8.1.tar.gz">
+        <div class="field-hint">HostPapa: staging/wp-content/themes/twentytwenty-child/updates/ · or archive.org URL</div>
+      </div>
+
+      <div class="field-row full">
+        <label>SHA-256 checksum</label>
+        <input type="text" name="checksum" class="text-input mono-input"
+               placeholder="sha256:abc123...">
+        <div class="field-hint">From <code>package-update.py</code> output or <code>sha256sum d3kos-X.X.X.tar.gz</code></div>
+      </div>
+
+      <div class="field-row">
+        <label>Release date</label>
+        <input type="date" name="released" class="text-input"
+               value="{{ today }}">
+      </div>
+
+      <div class="field-row">
+        <label>T1+ auto-upgrade (major only)</label>
+        <select name="t1_upgrade" class="select-input">
+          <option value="0">No — notify only</option>
+          <option value="1">Yes — T1+ Pis auto-apply</option>
+        </select>
+      </div>
+
+      <div class="field-row full">
+        <label>Services to restart after update</label>
+        <input type="text" name="services_to_restart" class="text-input mono-input"
+               placeholder="d3kos-agents, d3kos-dashboard">
+        <div class="field-hint">Comma-separated systemd service names</div>
+      </div>
+
+      <div class="field-row full">
+        <label>Release notes</label>
+        <textarea name="release_notes" class="textarea-input" rows="3"
+                  placeholder="One paragraph describing what was fixed or changed..."></textarea>
+      </div>
+
+    </div>
+    <div style="margin-top:20px;">
+      <button type="submit" class="btn-publish">Publish Version</button>
+    </div>
+  </form>
+</div>
+
+{# ── Version history ───────────────────────────────────────────────────────── #}
+{% if history %}
+<h3 style="font-size:17px; font-weight:700; color:#1e293b; margin:0 0 12px;">Version History</h3>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr>
+      <th>#</th><th>Type</th><th>Version</th><th>Released</th>
+      <th>URL</th><th>T1+</th><th>Status</th><th>Published</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for v in history %}
+    <tr>
+      <td style="color:#64748b; font-size:13px;">{{ v.id }}</td>
+      <td><span style="font-size:13px; font-weight:600; color:#334155;">{{ v.update_type }}</span></td>
+      <td style="font-family:monospace; font-weight:600;">v{{ v.version }}</td>
+      <td style="font-size:13px; color:#64748b;">{{ v.released or '—' }}</td>
+      <td style="font-size:13px;">
+        {% if v.url %}
+          <a href="{{ v.url }}" target="_blank" style="color:#2563eb;">link</a>
+        {% else %}
+          <span style="color:#94a3b8;">—</span>
+        {% endif %}
+      </td>
+      <td style="text-align:center;">{{ '✓' if v.t1_upgrade else '—' }}</td>
+      <td>
+        <span class="{{ 'pill-active' if v.is_active else 'pill-inactive' }}">
+          {{ 'Active' if v.is_active else 'Inactive' }}
+        </span>
+      </td>
+      <td style="font-size:13px; color:#64748b; white-space:nowrap;">
+        {{ v.published_at[:16] if v.published_at else '—' }}
+      </td>
+      <td>
+        {% if not v.is_active %}
+        <form method="POST" style="display:inline;">
+          <input type="hidden" name="action" value="reactivate">
+          <input type="hidden" name="id" value="{{ v.id }}">
+          <button class="btn-restore">Restore</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

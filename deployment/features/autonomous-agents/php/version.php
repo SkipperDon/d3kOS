@@ -1,44 +1,115 @@
 <?php
 /**
- * version.php — d3kOS Update Version Manifest
- * Public endpoint — no authentication required.
- * Called by AA2 UpdateAgent on every Pi (T0 and T1+).
+ * d3kOS Version Manifest Endpoint
+ * v0.9.8 — DB-backed (S32)
  *
- * Deploy to: staging/wp-content/themes/twentytwenty-child/mobile/version.php
+ * Public endpoint — no auth required. Called by AA2 UpdateAgent every 24h.
+ * Returns JSON with current incremental and major version info.
  *
- * To release an incremental update:
- *   1. Upload d3kos-X.X.X.tar.gz to archive.org
- *   2. Get the SHA-256 checksum: sha256sum d3kos-X.X.X.tar.gz
- *   3. Update 'incremental' block below with version, url, checksum, released
- *   4. Deploy this file to HostPapa
- *   All T1+ Pis will auto-apply within 24h. T0 Pis will see a notice.
+ * Reads from amboat_versions table (managed via CRM /publish-update).
+ * Falls back to empty blocks if DB unavailable (Pi stays on current version).
  *
- * To release a major version (T1+ auto-upgrade):
- *   1. Same process but update 'major' block
- *   2. Set t1_upgrade: true when T1+ Pis should receive it automatically
+ * Response format:
+ * {
+ *   "incremental": {
+ *     "version":             "0.9.8.1",
+ *     "url":                 "https://...",
+ *     "checksum":            "sha256:abc123...",
+ *     "released":            "2026-04-07",
+ *     "services_to_restart": ["d3kos-dashboard"],
+ *     "t1_upgrade":          false
+ *   },
+ *   "major": { ... }
+ * }
  *
- * Package format (tar.gz contents):
- *   manifest.json                        — file list + services to restart
- *   opt/d3kos/services/...               — changed files (mirrored path from /)
+ * To publish an update: use CRM /publish-update screen.
+ *
+ * Deploy: wp-content/themes/twentytwenty-child/mobile/version.php
  */
 
 error_reporting(0);
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');   // Pi can be on any network
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Access-Control-Allow-Origin: *');
 
-echo json_encode([
-    'incremental' => [
-        'version'   => '0.9.8',
-        'url'       => '',       // fill when first update package is uploaded to archive.org
-        'checksum'  => '',       // sha256:xxxxxxxx...
-        'released'  => '2026-04-08',
-        't1_upgrade' => false,
-    ],
-    'major' => [
-        'version'   => '0.9.8',
-        'url'       => '',       // fill when v1.0 package is ready
-        'checksum'  => '',
-        'released'  => '',
-        't1_upgrade' => false,   // set true when T1+ Pis should auto-receive major upgrade
-    ],
-], JSON_PRETTY_PRINT);
+require_once __DIR__ . '/config.php';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function empty_block(): array {
+    return [
+        'version'             => '',
+        'url'                 => '',
+        'checksum'            => '',
+        'released'            => '',
+        'services_to_restart' => [],
+        't1_upgrade'          => false,
+        'release_notes'       => '',
+    ];
+}
+
+function row_to_block(array $row): array {
+    $services = [];
+    if (!empty($row['services_to_restart'])) {
+        $decoded  = json_decode($row['services_to_restart'], true);
+        $services = is_array($decoded) ? $decoded : [];
+    }
+    return [
+        'version'             => $row['version'],
+        'url'                 => $row['url'] ?? '',
+        'checksum'            => $row['checksum'] ?? '',
+        'released'            => $row['released'] ?? '',
+        'services_to_restart' => $services,
+        't1_upgrade'          => (bool)($row['t1_upgrade'] ?? false),
+        'release_notes'       => $row['release_notes'] ?? '',
+    ];
+}
+
+// ── Fetch from DB ─────────────────────────────────────────────────────────────
+
+$incremental = empty_block();
+$major       = empty_block();
+
+try {
+    $db = new mysqli('127.0.0.1', DB_USER, DB_PASS, DB_NAME);
+
+    if (!$db->connect_error) {
+        // Create table on first run
+        $db->query("
+            CREATE TABLE IF NOT EXISTS amboat_versions (
+                id                  INT AUTO_INCREMENT PRIMARY KEY,
+                update_type         ENUM('incremental','major') NOT NULL,
+                version             VARCHAR(20)  NOT NULL,
+                url                 VARCHAR(500),
+                checksum            VARCHAR(120),
+                released            DATE,
+                t1_upgrade          TINYINT(1)   DEFAULT 0,
+                services_to_restart TEXT,
+                release_notes       TEXT,
+                published_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                is_active           TINYINT(1)   DEFAULT 1,
+                INDEX idx_type (update_type, is_active)
+            )
+        ");
+
+        $row = $db->query(
+            "SELECT * FROM amboat_versions
+             WHERE update_type='incremental' AND is_active=1
+             ORDER BY published_at DESC LIMIT 1"
+        )->fetch_assoc();
+        if ($row) $incremental = row_to_block($row);
+
+        $row = $db->query(
+            "SELECT * FROM amboat_versions
+             WHERE update_type='major' AND is_active=1
+             ORDER BY published_at DESC LIMIT 1"
+        )->fetch_assoc();
+        if ($row) $major = row_to_block($row);
+
+        $db->close();
+    }
+} catch (Exception $e) {
+    // DB unavailable — return empty (Pi stays on current version, no noise)
+}
+
+echo json_encode(['incremental' => $incremental, 'major' => $major], JSON_PRETTY_PRINT);
