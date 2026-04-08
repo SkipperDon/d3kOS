@@ -14,12 +14,14 @@ Port assignments (from d3kos-config.env):
 CRITICAL: Signal K WebSocket is ws://localhost:8099 — NOT ws://localhost:3000.
 """
 from flask import Flask, render_template, jsonify, request, redirect
+import json
 import requests
 import os
 import hashlib
 import shutil
 import socket
 import subprocess
+from pathlib import Path
 from dotenv import load_dotenv
 
 _cfg_dir = os.path.join(os.path.dirname(__file__), 'config')
@@ -234,6 +236,54 @@ def status():
         'signalk':   check_service(SIGNALK_PORT),  # localhost:8099
         'ollama':    check_ollama(),               # 192.168.1.36:11434
     })
+
+
+@app.route('/health/report')
+def health_report():
+    """
+    Full health report — written by AA5 HealthAgent every 24h.
+    Returns score, issues list, and per-check details.
+    """
+    path = Path('/opt/d3kos/data/health-report.json')
+    if path.exists():
+        try:
+            return jsonify(json.loads(path.read_text()))
+        except Exception:
+            pass
+    return jsonify({'score': None, 'status': 'unknown', 'issues': [],
+                    'updated': 'never'})
+
+
+@app.route('/update/status')
+def update_status():
+    """
+    Update notice — read by the Pi dashboard notice bar.
+    Written by AA2 UpdateAgent when a new version is detected.
+    Returns {'available': false} when no update pending.
+    """
+    path = Path('/opt/d3kos/data/update-notice.json')
+    if path.exists():
+        try:
+            return jsonify(json.loads(path.read_text()))
+        except Exception:
+            pass
+    return jsonify({'available': False})
+
+
+@app.route('/agents/status')
+def agents_status():
+    """
+    Agent health — read by the Pi dashboard status dot and engine-monitor page.
+    Written by d3kos-agents.service every 5 minutes.
+    Returns 'unknown' overall status if agent service is not running.
+    """
+    path = Path('/opt/d3kos/data/agents/agent_status.json')
+    if path.exists():
+        try:
+            return jsonify(json.loads(path.read_text()))
+        except Exception:
+            pass
+    return jsonify({'overall': 'unknown', 'updated': 'never', 'agents': {}})
 
 
 @app.route('/settings')

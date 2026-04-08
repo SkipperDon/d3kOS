@@ -656,7 +656,7 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8E — v0.9.8 Autonomous Agents + Failure Intelligence
-**Status: NOT STARTED**
+**Status: S28 IN PROGRESS — AA1+AA3 source complete, deploy pending**
 **Depends on:** v0.9.7 (action layer + whitelisted command queue)
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.12.0 + v0.13.0
 
@@ -664,9 +664,9 @@ Before any on-water testing, validate with synthetic known data:
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| AA1 | Agent framework | Base agent class, scheduler, communication bus, management API. Settings page: agent status, last run, history, manual trigger. | `[ ]` |
-| AA2 | Update agent | GitHub integration — check for d3kOS updates. Backup/restore logic. Risk analysis. Auto-rollback on failure. Runs: daily 3:00 AM. | `[ ]` |
-| AA3 | Performance agent | CPU/memory/disk monitoring. Auto-remediation: clear cache >90% disk, restart crashed services, thermal throttle management. Runs: every 15 min. | `[ ]` |
+| AA1 | Agent framework | Base agent class, scheduler, communication bus, management API. Settings page: agent status, last run, history, manual trigger. | `[~]` S28 source written — deploy pending |
+| AA2 | Update agent | HostPapa version manifest + archive.org download. Backup/restore logic. Risk analysis. Auto-rollback on failure. Poll-based (24h interval). | `[ ]` S29 |
+| AA3 | Performance agent | CPU/memory/disk monitoring. Auto-remediation: clear /tmp at disk critical. Thermal + CPU/mem critical → log only (unsafe to auto-kill at sea). Poll: every 5 min. | `[~]` S28 source written — deploy pending |
 | AA4 | Storage agent | Cleanup automation (old logs, temp files). Predictive warnings (7 days before full). Runs: daily 4:00 AM. | `[ ]` |
 | AA5 | Health check agent | Daily health reports (all systems). Weekly deep scans (DB integrity, filesystem). Health score 0–100. Runs: daily 5:00 AM, deep scan Sunday 2:00 AM. | `[ ]` |
 | AA6 | Backup agent | Incremental backups daily. Full system images weekly. Cloud sync (Tier 3). Restoration testing. Runs: daily 6:00 AM. | `[ ]` |

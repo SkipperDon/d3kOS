@@ -138,6 +138,7 @@
   transition: background .3s;
 }
 .net-dot.ok   { background: var(--g-txt); }
+.net-dot.warn { background: var(--adv-bdr); }
 .net-dot.err  { background: var(--crit-bdr); }
 .net-dot.pulse { animation: aiPulse 2s ease-in-out infinite; }
 .net-info { flex: 1; }
@@ -151,8 +152,9 @@
   font-size: 18px; color: var(--ink3);
   margin-top: 2px;
 }
-.net-status.ok  { color: var(--g-txt); }
-.net-status.err { color: var(--crit); }
+.net-status.ok   { color: var(--g-txt); }
+.net-status.warn { color: var(--adv); }
+.net-status.err  { color: var(--crit); }
 
 /* ── CONNECTION BANNER ── */
 #conn-banner {
@@ -357,6 +359,16 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ── 6 · AUTONOMOUS AGENTS (v0.9.8) ── -->
+  <div class="sec">
+    <div class="sec-header">&#129302; Autonomous Agents</div>
+    <div class="net-grid" id="agentGrid">
+      <!-- Cards rendered dynamically by updateAgents() — no static HTML needed -->
+    </div>
+    <div style="font-family:'Chakra Petch',sans-serif;font-size:18px;color:var(--ink3);
+                margin-top:10px;padding:0 4px;" id="agentUpdated"></div>
   </div>
 
 </div><!-- /inner -->
@@ -583,12 +595,62 @@ function updateNetwork() {
     .catch(() => {});
 }
 
+/* ── AUTONOMOUS AGENTS (v0.9.8) — fully dynamic, no HTML changes needed for new agents ── */
+function updateAgents() {
+  fetch('/agents/status')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var grid   = document.getElementById('agentGrid');
+      var agents = d.agents || {};
+      if (!grid) return;
+
+      Object.keys(agents).forEach(function (name) {
+        var a = agents[name];
+        var ok  = (a.status === 'green');
+        var err = (a.status === 'red');
+        var cls = ok ? 'ok' : (err ? 'err' : 'warn');
+
+        // Create card if it doesn't exist yet
+        var card = document.getElementById('agent-card-' + name);
+        if (!card) {
+          card = document.createElement('div');
+          card.className = 'net-card';
+          card.id = 'agent-card-' + name;
+          card.innerHTML =
+            '<div class="net-dot" id="agent-dot-' + name + '"></div>' +
+            '<div class="net-info">' +
+              '<div class="net-name">' + (a.label || name) + '</div>' +
+              '<div class="net-status" id="agent-msg-' + name + '">Loading\u2026</div>' +
+            '</div>';
+          grid.appendChild(card);
+        }
+
+        var dot = document.getElementById('agent-dot-' + name);
+        var msg = document.getElementById('agent-msg-' + name);
+        if (dot) dot.className = 'net-dot ' + cls;
+        if (msg) { msg.className = 'net-status ' + cls; msg.textContent = a.message || a.status; }
+      });
+
+      var upd = document.getElementById('agentUpdated');
+      if (upd && d.updated) upd.textContent = 'Last checked: ' + d.updated;
+    })
+    .catch(function () {
+      var grid = document.getElementById('agentGrid');
+      if (grid) grid.innerHTML =
+        '<div class="net-card"><div class="net-dot err"></div>' +
+        '<div class="net-info"><div class="net-name">Agent Service</div>' +
+        '<div class="net-status err">Offline \u2014 check d3kos-agents</div></div></div>';
+    });
+}
+
 /* ── INIT ── */
 openSK();
 updateSysinfo();
 updateNetwork();
+updateAgents();
 setInterval(updateSysinfo, 30000);
 setInterval(updateNetwork, 30000);
+setInterval(updateAgents, 300000);
 
 window.addEventListener('beforeunload', () => {
   clearTimeout(_reconnectTimer);

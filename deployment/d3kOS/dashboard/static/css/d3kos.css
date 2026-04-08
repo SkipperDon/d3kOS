@@ -207,6 +207,31 @@ html, body {
 @keyframes helmPill { 0%,100%{background:rgba(255,255,255,.18)}50%{background:rgba(255,255,255,.3)} }
 .hp-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.3); transition: all .2s; }
 .helm-pill.live .hp-dot { background: #fff; box-shadow: 0 0 6px #fff; }
+
+/* ── PI HEALTH INDICATOR (v0.9.8 AA3) ── */
+.pi-health {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px;
+  background: rgba(0,0,0,.3);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: .07em;
+  color: rgba(255,255,255,.7);
+  cursor: default; flex-shrink: 0;
+}
+.pi-health-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.3);
+  transition: background .4s, box-shadow .4s;
+}
+.pi-health.ok   .pi-health-dot { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.pi-health.warn .pi-health-dot { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; animation: phWarn 1.4s ease-in-out infinite; }
+.pi-health.crit .pi-health-dot { background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: phCrit .8s ease-in-out infinite; }
+.pi-health.ok   { color: rgba(255,255,255,.85); }
+.pi-health.warn { color: #f59e0b; }
+.pi-health.crit { color: #ef4444; }
+@keyframes phWarn { 0%,100%{opacity:1}50%{opacity:.45} }
+@keyframes phCrit { 0%,100%{opacity:1}50%{opacity:.3} }
+
 .dn {
   display: flex; background: rgba(0,0,0,.3);
   border-radius: 20px; padding: 3px;

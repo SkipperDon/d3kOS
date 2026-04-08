@@ -42,6 +42,7 @@ CRITICAL_SERVICES = [
     ('d3kos-health',         'System Health Monitor',                              True),
     ('d3kos-issue-detector', 'Issue Detector / Self-Healing',                      True),
     ('d3kos-ai-bridge',      'AI Bridge (route analysis / anchor watch)',       True),
+    ('d3kos-agents',         'Autonomous Agents (AA1-AA6)',                     True),
 ]
 
 # Don't alert same service twice within this window
