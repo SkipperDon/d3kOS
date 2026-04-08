@@ -730,7 +730,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 - [x] **OP1** — Remote MySQL blocked by HostPapa. PHP proxy (Option B) adopted permanently.
 - [x] **OP2** — IMAP/SMTP: mail.atmyboat.com, 993 SSL, 465 SSL. Password reset to 8tm1b08t.$Sk1pp3r.
 - [x] **OP3** — Gemini API key confirmed in config.json on VM.
-- [x] **OP4** — Staging DB: atmyb197_wp302 / atmyboat2026. Production: atmyb197_wp59874.
+- [x] **OP4** — Staging DB: atmyb197_wp302 / [redacted]. Production: atmyb197_wp59874 / [redacted].
 
 **Build phases:**
 | Phase | Feature | Status |

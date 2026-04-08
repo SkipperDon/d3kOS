@@ -21,9 +21,6 @@
 
 require_once __DIR__ . '/config.php';
 
-if (!defined('ADMIN_API_KEY')) {
-    define('ADMIN_API_KEY', 'amboat_admin_74899205409692603cb9c951c3c895ce27d92599');
-}
 
 header('Content-Type: application/json');
 

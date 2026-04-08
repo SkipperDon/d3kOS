@@ -18,8 +18,6 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/config.php';
 
-// CRM-facing key — same pattern as admin-api.php
-define('ADMIN_API_KEY', 'amboat_admin_74899205409692603cb9c951c3c895ce27d92599');
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 

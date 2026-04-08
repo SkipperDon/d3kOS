@@ -154,7 +154,7 @@
 - [x] **OP1** — Remote MySQL blocked by HostPapa. PHP proxy (Option B) adopted instead. 2026-04-03
 - [x] **OP2** — IMAP/SMTP confirmed: mail.atmyboat.com, 993 SSL, 465 SSL. 2026-04-03
 - [x] **OP3** — Gemini API key confirmed available in atmyboat-config.php. 2026-04-03
-- [x] **OP4** — Staging: atmyb197_wp302 / atmyboat2026. Production: atmyb197_wp59874 / [redacted] 2026-04-03
+- [x] **OP4** — Staging: atmyb197_wp302 / [redacted]. Production: atmyb197_wp59874 / [redacted]. 2026-04-03
 
 ---
 

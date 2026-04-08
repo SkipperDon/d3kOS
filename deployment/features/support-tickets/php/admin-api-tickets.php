@@ -20,10 +20,6 @@ require_once __DIR__ . '/../../../../wp-load.php';
 
 require_once __DIR__ . '/config.php';
 
-// Same key as admin-api.php
-if (!defined('ADMIN_API_KEY')) {
-    define('ADMIN_API_KEY', 'amboat_admin_74899205409692603cb9c951c3c895ce27d92599');
-}
 
 header('Content-Type: application/json');
 
@@ -41,8 +37,8 @@ $action = $body['action'] ?? '';
 
 try {
     $pdo = new PDO(
-        'mysql:host=127.0.0.1;dbname=atmyb197_wp302;charset=utf8mb4',
-        'atmyb197_wp302', 'atmyboat2026',
+        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+        DB_USER, DB_PASS,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 } catch (PDOException $e) {

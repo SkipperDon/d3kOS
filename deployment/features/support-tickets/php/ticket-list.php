@@ -13,6 +13,8 @@ error_reporting(0);
 
 header('Content-Type: application/json');
 
+require_once __DIR__ . '/config.php';
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -36,7 +38,7 @@ if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
 
 // ── DB ────────────────────────────────────────────────────────────────────────
 try {
-    $db = new mysqli('127.0.0.1', 'atmyb197_wp302', 'atmyboat2026', 'atmyb197_wp302');
+    $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
     if ($db->connect_error) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'DB connection failed']);
