@@ -656,7 +656,7 @@ Before any on-water testing, validate with synthetic known data:
 ---
 
 ## PART 8E — v0.9.8 Autonomous Agents + Failure Intelligence
-**Status: S33 COMPLETE — all phases done except FI4 (deferred)**
+**Status: S34 DEPLOYED + VERIFIED — fleet version dashboard live, Pi heartbeat confirmed working. FI4 deferred.**
 **Depends on:** v0.9.7 (action layer + whitelisted command queue)
 **Reference:** `doc/D3KOS_VERSION_ROADMAP_2026.md` § v0.12.0 + v0.13.0
 

@@ -159,38 +159,27 @@
 </div>
 {% else %}
 <div class="empty-state">
-  <p>No devices found. Devices appear here once they send their first version heartbeat (AA2 runs every 24h).</p>
+  <p>No devices are showing yet. Each paired Pi checks in automatically once per day and reports its software version. This table will populate on the next daily check-in cycle.</p>
 </div>
 {% endif %}
 
-{# ── Version distribution ──────────────────────────────────────────────────── #}
-{% if devices %}
-{% set versions_seen = {} %}
-{% for d in devices %}
-  {% if d.current_version and d.current_version != '—' %}
-    {% if d.current_version not in versions_seen %}
-      {% set _ = versions_seen.update({d.current_version: 0}) %}
-    {% endif %}
-    {% set _ = versions_seen.update({d.current_version: versions_seen[d.current_version] + 1}) %}
-  {% endif %}
-{% endfor %}
-
-{% if versions_seen %}
+{# ── Version distribution (pre-sorted by PHP ?action=distribution) ────────── #}
+{% if distribution %}
+{% set max_count = distribution | map(attribute='count') | map('int') | max %}
 <div class="dist-panel">
   <h3>Version Distribution</h3>
-  {% set max_count = versions_seen.values() | max %}
-  {% for ver, cnt in versions_seen | dictsort(by='value', reverse=true) %}
+  {% for row in distribution %}
+  {% set cnt = row.count | int %}
   <div class="dist-row">
-    <span class="dist-ver">v{{ ver }}</span>
+    <span class="dist-ver">v{{ row.current_version }}</span>
     <div class="dist-bar-wrap">
       <div class="dist-bar" style="width: {{ ((cnt / max_count) * 100) | round | int }}%;
-           background: {{ '#22c55e' if ver == latest_ver else '#f59e0b' }};"></div>
+           background: {{ '#22c55e' if row.current_version == latest_ver else '#f59e0b' }};"></div>
     </div>
     <span class="dist-count">{{ cnt }}</span>
   </div>
   {% endfor %}
 </div>
-{% endif %}
 {% endif %}
 
 <script>

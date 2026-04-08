@@ -781,10 +781,10 @@ No new files deployed this session. Checklist and governance updates only:
 | VM: `/home/d3kos-admin/app.py` | **[UPDATED — S31+S32]** failure_routes + update_routes appended. /failures, /failure/<id>, /failure/<id>/update, /publish-update live. |
 | VM: `/home/d3kos-admin/templates/failures.html` | **[NEW — S31]** FI3 issue dashboard template. |
 | VM: `/home/d3kos-admin/templates/publish_update.html` | **[NEW — S32]** Update Publisher template. |
-| `deployment/features/autonomous-agents/php/version-heartbeat.php` | **[NEW — S33]** Receives AA2 version heartbeat every 24h. Updates amboat_devices.current_version + version_updated_at + version_check_count. Returns latest_version + update_available flag. Bearer + X-Device-Token auth. |
-| `deployment/features/autonomous-agents/php/version-api.php` | **[NEW — S33]** CRM fleet version read API. GET fleet: per-device version status (up_to_date/behind/unknown/offline). GET distribution: version count breakdown. Bearer auth (AMBOAT_API_KEY). |
-| `deployment/features/autonomous-agents/crm/fleet_versions_routes.py` | **[NEW — S33]** CRM route snippet. /fleet-versions calls proxy_call_versions() + renders fleet_versions.html. |
-| `deployment/features/autonomous-agents/crm/fleet_versions.html` | **[NEW — S33]** CRM fleet version dashboard. Summary cards, per-device table with status pills, filter bar, version distribution chart. |
+| `deployment/features/autonomous-agents/php/version-heartbeat.php` | **[DEPLOYED S34]** UPSERT pattern (INSERT ... ON DUPLICATE KEY UPDATE). MySQL 5.7 safe. Receives AA2 heartbeat, inserts new devices, updates existing. Verified working — device_found:true. |
+| `deployment/features/autonomous-agents/php/version-api.php` | **[DEPLOYED S34]** ADMIN_API_KEY auth. CREATE TABLE IF NOT EXISTS amboat_versions. Safe fetch on all queries. Fleet + distribution actions live. |
+| `deployment/features/autonomous-agents/crm/fleet_versions_routes.py` | **[DEPLOYED S34]** Live in VM app.py. proxy_call_versions module-level helper. Calls fleet + distribution endpoints. |
+| `deployment/features/autonomous-agents/crm/fleet_versions.html` | **[DEPLOYED S34]** Live in VM templates/. Distribution via pre-sorted PHP list. Plain-English empty state. Verified showing Pi. |
 | `deployment/docs/AUTONOMOUS_AGENTS_AND_FI.md` | **[NEW — S33]** Full v0.9.8 feature document. Design philosophy, architecture, all components, port map, auth patterns, file index, deploy checklist, step-by-step release workflow. |
-| HostPapa DB: `amboat_devices.current_version` | **[NEW — S33]** Added by version-heartbeat.php ALTER TABLE IF NOT EXISTS. Also: version_updated_at DATETIME, version_check_count INT. |
-| VM: `/home/d3kos-admin/templates/fleet_versions.html` | **[DEPLOY PENDING — S33]** Fleet version dashboard template — needs insertion into app.py + base.html nav link. |
+| HostPapa DB: `amboat_devices.current_version` | **[LIVE S34]** MySQL 5.7-safe column add via information_schema check. UPSERT inserts new devices automatically. |
+| VM: `/home/d3kos-admin/templates/fleet_versions.html` | **[DEPLOYED S34]** Live. Route wired, nav links added, service restarted. Verified showing Skipper Don Pi v0.9.2.2. |

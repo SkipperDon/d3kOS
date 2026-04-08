@@ -27,11 +27,13 @@
 @app.route('/fleet-versions')
 @login_required
 def fleet_versions():
-    data = proxy_call_versions({'action': 'fleet'})
+    data  = proxy_call_versions({'action': 'fleet'})
+    dist  = proxy_call_versions({'action': 'distribution'})
     return render_template(
         'fleet_versions.html',
-        devices    = data.get('devices', []) if data else [],
-        summary    = data.get('summary', {}) if data else {},
-        latest_ver = data.get('latest_version', '') if data else '',
-        error      = None if data else 'Could not load fleet version data.',
+        devices      = data.get('devices', []) if data else [],
+        summary      = data.get('summary', {}) if data else {},
+        latest_ver   = data.get('latest_version', '') if data else '',
+        distribution = dist.get('distribution', []) if dist else [],
+        error        = None if data else 'Could not load fleet version data.',
     )

@@ -122,11 +122,17 @@
 |---|------|--------|
 | P5-1 | FTP `version-heartbeat.php` to HostPapa `mobile/` | `[x]` done during S33 |
 | P5-2 | FTP `version-api.php` to HostPapa `mobile/` | `[x]` done during S33 |
-| P5-3 | Deploy updated `update_agent.py` to Pi | `[ ]` pending |
-| P5-4 | Insert fleet_versions_routes.py + proxy_call_versions() into VM app.py | `[ ]` pending |
-| P5-5 | Copy fleet_versions.html to VM templates/ | `[ ]` pending |
-| P5-6 | Add nav links in base.html (Failures, Fleet Versions, Publish Update) | `[ ]` pending |
-| P5-7 | `sudo systemctl restart admin-crm` on VM | `[ ]` pending |
+| P5-3 | Deploy updated `update_agent.py` to Pi | `[x]` S34 — verified active |
+| P5-4 | Insert fleet_versions_routes.py + proxy_call_versions() into VM app.py | `[x]` S34 deployed |
+| P5-5 | Copy fleet_versions.html to VM templates/ | `[x]` S34 deployed |
+| P5-6 | Add nav links in base.html (Failures, Fleet Versions, Publish Update) | `[x]` S34 deployed |
+| P5-7 | `sudo systemctl restart admin-crm` on VM | `[x]` S34 — service active |
+
+### Additional fixes (S34)
+- version-heartbeat.php: UPDATE→UPSERT, MySQL 5.7 info_schema fix, mysqli_report fix
+- version-api.php: ADMIN_API_KEY auth, CREATE TABLE IF NOT EXISTS, safe fetch calls
+- Pi cloud-config.json: device_token added (was missing — caused heartbeat 400)
+- Verified: fleet dashboard shows Skipper Don Pi, v0.9.2.2, up_to_date
 
 ## PHASE 6 — FI4 Recovery Mode + Config Packages (S33/S34 — deferred)
 

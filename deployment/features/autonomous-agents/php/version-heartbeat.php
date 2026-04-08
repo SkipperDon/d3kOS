@@ -61,30 +61,45 @@ if ($db->connect_error) {
     exit;
 }
 
-// Add columns to amboat_devices if not present (safe — ALTER IGNORE on MySQL)
-$db->query("ALTER TABLE amboat_devices ADD COLUMN IF NOT EXISTS current_version VARCHAR(20)");
-$db->query("ALTER TABLE amboat_devices ADD COLUMN IF NOT EXISTS version_updated_at DATETIME");
-$db->query("ALTER TABLE amboat_devices ADD COLUMN IF NOT EXISTS version_check_count INT DEFAULT 0");
-
-// Update device row
-$stmt = $db->prepare(
-    'UPDATE amboat_devices
-     SET current_version = ?,
-         version_updated_at = NOW(),
-         version_check_count = COALESCE(version_check_count, 0) + 1
-     WHERE device_token = ?'
+// Add columns to amboat_devices if not present.
+// Uses information_schema instead of IF NOT EXISTS — safe on MySQL 5.7 and 8.x.
+$existing_cols = [];
+$col_res = $db->query(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'amboat_devices'"
 );
-$stmt->bind_param('ss', $version, $device_token);
+if ($col_res) {
+    while ($r = $col_res->fetch_assoc()) {
+        $existing_cols[] = $r['COLUMN_NAME'];
+    }
+}
+if (!in_array('current_version',    $existing_cols)) $db->query("ALTER TABLE amboat_devices ADD COLUMN current_version VARCHAR(20)");
+if (!in_array('version_updated_at', $existing_cols)) $db->query("ALTER TABLE amboat_devices ADD COLUMN version_updated_at DATETIME");
+if (!in_array('version_check_count',$existing_cols)) $db->query("ALTER TABLE amboat_devices ADD COLUMN version_check_count INT DEFAULT 0");
+
+// Upsert device row — insert if new, update if exists
+// device_token has UNIQUE constraint so INSERT ... ON DUPLICATE KEY UPDATE is safe
+$stmt = $db->prepare(
+    'INSERT INTO amboat_devices (device_token, current_version, version_updated_at, version_check_count)
+     VALUES (?, ?, NOW(), 1)
+     ON DUPLICATE KEY UPDATE
+         current_version     = VALUES(current_version),
+         version_updated_at  = NOW(),
+         version_check_count = COALESCE(version_check_count, 0) + 1'
+);
+$stmt->bind_param('ss', $device_token, $version);
 $stmt->execute();
-$updated = $db->affected_rows;
+$updated = $db->affected_rows;   // 1 = inserted, 2 = updated, 0 = no change
 $stmt->close();
 
 // Fetch latest active incremental version so Pi knows if it's current
-$latest_row = $db->query(
+mysqli_report(MYSQLI_REPORT_OFF);
+$latest_res = $db->query(
     "SELECT version FROM amboat_versions
      WHERE update_type='incremental' AND is_active=1
      ORDER BY published_at DESC LIMIT 1"
-)->fetch_assoc();
+);
+$latest_row = $latest_res ? $latest_res->fetch_assoc() : null;
 $latest_version  = $latest_row ? $latest_row['version'] : $version;
 $update_available = version_compare($latest_version, $version, '>');
 
