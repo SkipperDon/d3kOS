@@ -808,3 +808,16 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/features/v0941-plan/php/page-community.php` | **[NEW — S36]** Community page — Leaflet fully wired. Initialises OSM map, fetches community-get.php on load, plots fleet dots + typed hazard markers, auto-refreshes every 5 min, Add Marker flow for T1+ (crosshair mode, overlay form, POST to community-markers-write.php). Deployed to HostPapa staging theme root. |
 | HostPapa DB: `amboat_community_markers` | **[AUTO-CREATED]** Stores community hazard/anchorage/fuel markers. Auto-created by community-get.php and community-markers-write.php on first call. |
 | HostPapa DB: `amboat_community_positions` | **[AUTO-CREATED]** Pi-direct position table. One row per device_token. Auto-created by community-get.php and community-position.php on first call. |
+
+## v0.9.9.2 Phase B — M14 AI Engine Diagnostic + M3/M4 Restart Services (S39 2026-04-08)
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.4/pi_source/overlays.js` | **[NEW IN REPO — S39]** `openDiag()` rewritten as async Gemini call. Tier gate: `/config/tier` endpoint. Helper functions: `_diagCellLabel()`, `_diagReadingsSummary()`, `_diagBuildCards()`. T0/T1: upgrade prompt. T2/T3: live SK data → Gemini proxy port 8097 → panel populated. Pi: `/opt/d3kos/services/dashboard/static/js/overlays.js` |
+| `deployment/v0.9.4/pi_source/instruments.js` | **[NEW IN REPO — S39]** `window._d3kEngData` cache added. Each SK_HANDLER (coolant, oil, RPM, battery, fuel) updates cache. Cell onclick changed to `() => openDiag(id)`. Pi: `/opt/d3kos/services/dashboard/static/js/instruments.js` |
+| `deployment/v0.9.4/pi_source/index.html` | **[NEW IN REPO — S39]** `diagTitle`, `diagGrid`, `diagAiTxt` IDs added to diag panel elements. Pi: `/opt/d3kos/services/dashboard/templates/index.html` |
+| `deployment/v0.9.4/pi_source/app.py` | **[NEW IN REPO — S39]** `/config/tier` Flask endpoint — reads license.json, returns `{tier: 3, tier_str: "T3"}`. Pi: `/opt/d3kos/services/dashboard/app.py` |
+| `deployment/v0.9.4/pi_source/cloud_agent.py` | **[UPDATED — S39]** `handle_restart_services()` added — restarts d3kos-voice, d3kos-ai-bridge, d3kos-gemini-proxy, d3kos-predictive. `restart_service` dispatch case added. Pi: `/opt/d3kos/services/cloud_agent.py` |
+| `deployment/v0.9.4/pwa/app.js` | **[UPDATED — S39]** "Restart Pi" card added to `renderSettings()`. Sends `restart_service` via `apiSendCommand()`. Polls via `apiPollCommand()` every 5s, 2-min timeout. HostPapa: `/staging/app/app.js` |
+| HostPapa: `page-help.php` | **[UPDATED — S39]** "User Manual" quick-link card added (7th card, links to `/manual/`). Book SVG icon. `staging/wp-content/themes/twentytwenty-child/page-help.php` |
+| HostPapa: `page-manual.php` | **[DEPLOYED S38 — ADDED TO REPO S39]** User Manual page template. PDF download button (GitHub releases). 16-section ToC. "Ask Helm" RAG section. `staging/wp-content/themes/twentytwenty-child/page-manual.php` |
