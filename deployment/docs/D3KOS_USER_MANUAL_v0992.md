@@ -3,7 +3,7 @@
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.0.0 — April 8, 2026
+**Document version:** 2.1.0 — April 8, 2026
 
 ---
 
@@ -279,11 +279,14 @@ The More menu provides access to secondary features:
 
 | Item | Opens |
 |------|-------|
-| **Engine** | Engine Dashboard (full engine instrument panel) |
-| **AvNav** | Chart navigation (AvNav embedded) |
+| **AI Navigation** | Marine AI assistant |
+| **Engine Dashboard** | Full engine instrument panel |
+| **Helm Assistant** | Engine diagnostics & AI chat |
+| **Initial Setup** | Vessel configuration wizard |
+| **Upload Documents** | Add manuals & PDFs for Helm to reference |
+| **Manage Documents** | View & delete uploaded files |
 | **Settings** | System settings page |
-| **Documents** | Upload and manage vessel manuals and documents |
-| **Remote Access** | Remote monitoring status |
+| **Help / Manual** | This user guide — all 16 sections |
 
 ---
 
@@ -399,9 +402,13 @@ Colour coding follows the same system as the main dashboard (normal / advisory /
 
 ### AI Engine Diagnostic
 
-Tap the **AI DIAGNOSTIC** button (or tap any cell in alert state on the main dashboard) to send current engine readings to Helm for analysis. Helm will assess the data against your engine's specification (entered in the Setup Wizard) and provide a plain-language status report or recommended action.
+**Available on T2 and T3 only.** Tap any engine cell (coolant, oil pressure, RPM, voltage, fuel) or tap the **AI DIAGNOSTIC** button on the Engine Dashboard to open the diagnostic panel. Helm reads your live sensor readings, compares them against your engine's specification from the Setup Wizard, and provides a plain-language status report and recommended action.
 
-This is most useful when you see an unusual reading and want a second opinion before deciding whether to head in.
+The panel shows:
+- A card for each sensor reading with value and status colour
+- A Gemini AI assessment with specific recommendations for your engine model
+
+This is most useful when you see an unusual reading and want a second opinion before deciding whether to head in. T0 and T1 users see an upgrade prompt instead.
 
 ### Predictive Health Panel
 
@@ -569,6 +576,14 @@ The Chart Room is the reporting section of the app. It shows:
 - **PDF Reports** — AI-generated diagnostic reports (T2+). Reports are generated when significant engine events occur or on request.
 
 To view a PDF report: tap **Chart Room → Reports** → tap any report to open it. Reports can be shared or saved from within the app.
+
+### Restart Pi Services
+
+In the app, go to **Settings** → scroll to the **Restart Pi** card. Tap **Restart Services** to remotely restart core d3kOS services (voice assistant, AI bridge, Gemini proxy, engine monitor) without a full Pi reboot.
+
+- A status line shows the command being queued and the Pi's response
+- Takes approximately 30–60 seconds to complete
+- Available on all tiers (requires the Pi to be online)
 
 ---
 
@@ -937,7 +952,7 @@ Open the mobile app and tap **Health Score** to see which component is failing. 
 | Fish detection | Automatic when cameras active | No |
 | Forward Watch (collision avoidance) | Enabled via Settings → Cameras | No |
 | AI Helm | HELM button (voice or text) | Yes (Gemini API) |
-| Engine diagnostics | Engine cell tap or Engine Dashboard | Yes (Gemini API) |
+| Engine diagnostics (AI) | Engine cell tap or Engine Dashboard → AI Diagnostic (T2/T3) | Yes (Gemini API) |
 | Predictive maintenance | Automatic background analysis | No |
 | Boat log voice note | Boat Log → microphone | No |
 | Data export | Boat Log → Export | No |
@@ -946,9 +961,11 @@ Open the mobile app and tap **Health Score** to see which component is failing. 
 | Fix My Pi | App → Fix My Pi, or atmyboat.com | Yes |
 | OTA update | App or Settings → System → Check for Updates | Yes |
 | Fleet map | atmyboat.com → Community (T3) | Yes |
+| Restart Pi services | App → Settings → Restart Pi | Yes (via cloud) |
 | Settings | More → Settings | No |
+| Help / Manual | More → Help / Manual | No (served locally on Pi) |
 
 ---
 
-*d3kOS User Manual v0.9.9.2 — Document version 2.0.0 — April 8, 2026*
+*d3kOS User Manual v0.9.9.2 — Document version 2.1.0 — April 8, 2026*
 *AtMyBoat.com — Open-source marine intelligence*
