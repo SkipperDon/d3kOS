@@ -78,8 +78,7 @@ async function openDiag(triggeredCell) {
       body: JSON.stringify({ message: prompt })
     });
     const d = await r.json();
-    if (aiTxt) aiTxt.innerHTML = (d.response || 'No response from Gemini.').replace(/
-/g, '<br>');
+    if (aiTxt) aiTxt.innerHTML = (d.response || 'No response from Gemini.').replace(/\n/g, '<br>');
     if (title && d.response) title.textContent = triggered ? triggered + ' — AI Analysis' : 'Engine Analysis';
   } catch {
     if (aiTxt) aiTxt.innerHTML = '&#9888; Gemini is not available. Check internet connection or verify the Gemini proxy is running at port 8097.';
