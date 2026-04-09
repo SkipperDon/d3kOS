@@ -810,7 +810,7 @@ def main():
     print(f"Model: {result['model']}")
     print(f"Manual Used: {result.get('manual_used', False)}")
     print(f"Response Time: {result['response_time_ms']}ms ({result['response_time_ms']/1000:.1f}s)")
-    print(f"\nAnswer:\n{result['answer']}")
+    print(f"Answer: {result['answer']}")
 
 if __name__ == "__main__":
     main()
