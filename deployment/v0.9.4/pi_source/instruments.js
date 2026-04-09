@@ -30,14 +30,7 @@ function _setCellState(id, state) {
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.remove('adv', 'alrt', 'crit');
-  if (state) {
-    el.classList.add(state);
-    el.onclick = () => openDiag(id);
-    el.style.cursor = 'pointer';
-  } else {
-    el.onclick = null;
-    el.style.cursor = '';
-  }
+  if (state) el.classList.add(state);
   updateAlertDots();
 }
 
@@ -536,6 +529,11 @@ function _init() {
   _pollWaypoint();
   setInterval(_pollWaypoint, WP_POLL_MS);
   _connectRouteSSE();
+  // Engine cells are always tappable for AI diagnostic (regardless of alarm state)
+  ['cellCoolant','cellOil','cellBat','cellFuel','cellRPM'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.onclick = function(){ openDiag(id); }; el.style.cursor = 'pointer'; }
+  });
 }
 
 if (document.readyState === 'loading') {
