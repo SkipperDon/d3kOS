@@ -396,8 +396,11 @@ Provide concise, accurate answers based on this boat's specific configuration an
                 return None  # Send to Gemini
 
         # SECOND: Procedure/how-to questions — send to RAG
+        # Note: bare 'which' removed — too broad, blocks 'which way am I heading'.
+        # Replaced with specific forms. 'which way' is handled in heading patterns.
         procedure_keywords = [
-            'procedure', 'how to', 'what type', 'which', 'what kind', 'how do i', 'steps', 'instructions',
+            'procedure', 'how to', 'what type', 'which type', 'which kind',
+            'what kind', 'how do i', 'steps', 'instructions',
             'change', 'replace', 'install', 'maintenance', 'service',
             'repair', 'fix', 'troubleshoot', 'winterize', 'drain'
         ]
@@ -405,31 +408,82 @@ Provide concise, accurate answers based on this boat's specific configuration an
             if keyword in q_lower:
                 return None  # Force RAG search for procedures
 
-        # THIRD: Simple status queries — tightened to avoid false positives
+        # THIRD: Sensor status queries
+        # Single-word and natural-speech patterns included to handle:
+        #   (a) Vosk small-model transcription drift (may not produce exact multi-word phrases)
+        #   (b) Natural speech variations — e.g. "what is range of coolant", "engine state"
+        # Diagnostic/procedure guards above ensure these broad patterns don't fire for
+        # complex questions (e.g. 'why is coolant high' caught by diagnostic_intents first).
         simple_patterns = {
-            'rpm': ['what is the rpm', 'current rpm', 'engine rpm', 'rpm is', 'rpm reading',
-                    'revolution', 'how fast is the engine'],
-            'oil': ['oil pressure', 'oil psi', 'lubrication pressure'],
-            'temperature': ['coolant temperature', 'engine temperature', 'coolant temp', 'engine temp',
-                            'how hot is the engine', 'how hot is the coolant', 'what is the temperature'],
-            'fuel': ['fuel level', 'fuel remaining', 'fuel left', 'how much fuel', 'how much gas',
-                     'fuel percentage', 'tank level'],
-            'battery': ['battery level', 'battery voltage', 'battery charge', 'battery status',
-                        'what is the voltage', 'current voltage', 'system voltage'],
-            'speed': ['what is my speed', 'current speed', 'how fast am i', 'speed over ground',
-                      'boat speed', 'sog', 'speed in knots', 'knots right now'],
-            'heading': ['what is my heading', 'current heading', 'what direction am i', 'which way am i',
-                        'bearing to', 'course over ground'],
-            'boost': ['boost pressure', 'turbo pressure', 'manifold pressure', 'boost level'],
-            'hours': ['engine hours', 'how many hours', 'operating hours', 'run time', 'runtime',
-                      'how long has the engine'],
-            'location': ['where am i', 'my location', 'my position', 'current position',
-                         'coordinates', 'latitude', 'longitude', 'gps position'],
-            'time': ['what time is it', 'current time', 'time is it', 'what is the date', 'current date'],
-            'help': ['what can you do', 'help me', 'your capabilities', 'list commands', 'how to use you'],
-            'status': ['system status', 'all systems', 'overall status', 'boat status', 'engine status',
-                       'how is everything', 'status report', 'give me an overview'],
-            'reboot': ['reboot', 'restart', 'power cycle', 'shut down', 'shutdown']
+            'rpm': [
+                'rpm', 'revolution', 'engine speed', 'engine revolutions',
+                'what is the rpm', 'current rpm', 'engine rpm', 'rpm is', 'rpm reading',
+                'how fast is the engine', 'check rpm', 'the rpm',
+            ],
+            'oil': [
+                'oil pressure', 'oil', 'lubrication',
+                'oil psi', 'lubrication pressure', 'oil reading', 'check oil',
+            ],
+            'temperature': [
+                'temperature', 'temp', 'coolant', 'how hot',
+                'coolant temperature', 'engine temperature', 'coolant temp', 'engine temp',
+                'how hot is the engine', 'how hot is the coolant',
+                'range of coolant', 'coolant range', 'engine heat',
+                'water temperature', 'water temp',
+                'what is the temperature', 'current temp', 'temp reading', 'check temperature',
+            ],
+            'fuel': [
+                'fuel', 'gas',
+                'fuel level', 'fuel remaining', 'fuel left', 'how much fuel', 'how much gas',
+                'fuel percentage', 'tank level', 'fuel gauge',
+            ],
+            'battery': [
+                'battery', 'voltage',
+                'battery level', 'battery voltage', 'battery charge', 'battery status',
+                'what is the voltage', 'current voltage', 'system voltage',
+            ],
+            'speed': [
+                'speed', 'how fast', 'knots', 'velocity', 'sog',
+                'what is my speed', 'current speed', 'how fast am i',
+                'speed over ground', 'boat speed', 'speed in knots', 'knots right now',
+            ],
+            'heading': [
+                'heading', 'direction', 'course', 'which way', 'bearing', 'compass',
+                'what is my heading', 'current heading', 'what direction am i',
+                'which way am i', 'course over ground', 'what direction',
+                'compass heading', 'where am i heading',
+            ],
+            'boost': [
+                'boost', 'turbo', 'manifold pressure',
+                'boost pressure', 'turbo pressure', 'boost level',
+            ],
+            'hours': [
+                'engine hours', 'hours', 'runtime', 'operating time', 'run time',
+                'how many hours', 'operating hours', 'how long has the engine',
+            ],
+            'location': [
+                'location', 'position', 'where am i', 'coordinates', 'gps',
+                'latitude', 'longitude', 'my location', 'my position',
+                'current position', 'gps position',
+            ],
+            'time': [
+                'what time', 'current time', 'time is it', 'date',
+                'what time is it', 'what is the date', 'current date',
+            ],
+            'help': [
+                'what can you do', 'help', 'capabilities', 'commands', 'how to use',
+                'help me', 'your capabilities', 'list commands', 'how to use you',
+            ],
+            'status': [
+                'status', 'all systems', 'overview',
+                'system status', 'overall status', 'boat status', 'engine status',
+                'engine state', 'state of the engine', 'how is everything',
+                'status report', 'give me an overview', 'how is the engine',
+                'engine check', 'everything okay', 'systems check',
+            ],
+            'reboot': [
+                'reboot', 'restart', 'power cycle', 'shut down', 'shutdown',
+            ],
         }
 
         for category, patterns in simple_patterns.items():
