@@ -881,7 +881,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 |----|-----|----------|--------|
 | BUG-01 | **Mute not working** | RESOLVED S44 2026-04-09. ALSA hardware mute (cset numid=2) cuts S330 speaker at OS level. Don confirmed working. | `[x]` DONE S44 |
 | BUG-02 | **Voice 9-second delay** | RESOLVED S44c 2026-04-09. PDFProcessor deferred import in query_handler.py. 9.6s → 0.6s confirmed. | `[x]` DONE S44c |
-| BUG-03 | **"Nothing heard" on first voice query after wake word** | 2026-04-09 S43. KaldiRecognizer creation takes ~2s (triggers Vosk LOG messages). arecord starts AFTER KaldiRecognizer ready. User speaks during wake word → ack WAV → 0.5s sleep → KaldiRecognizer init (2s) — speech missed during those 2s. Fix: pre-warm KaldiRecognizer at service startup, not on first listen() call. | `[ ]` Next session |
+| BUG-03 | **"Nothing heard" on first voice query after wake word** | RESOLVED S44 2026-04-09. Pre-warm KaldiRecognizer at startup via _prewarm_recognizer(). listen() uses pre-warmed instance instantly; kicks off next pre-warm in background while recording. Don confirmed "works fast." | `[x]` DONE S44 |
 
 ---
 
