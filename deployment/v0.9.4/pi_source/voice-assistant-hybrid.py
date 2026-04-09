@@ -16,6 +16,7 @@ import os
 import sys
 import wave
 import subprocess
+import threading
 from vosk import Model, KaldiRecognizer
 import argparse
 import time
@@ -49,6 +50,7 @@ class HybridVoiceAssistant:
         self.detected_wake_word = None  # Store detected wake word
         self.ack_wav = None
         self._mic_locked = False
+        self._prewarmed_rec = None  # Pre-warmed KaldiRecognizer for instant listen()
         signal.signal(signal.SIGUSR1, self._handle_mic_lock)
         signal.signal(signal.SIGUSR2, self._handle_mic_unlock)
 
@@ -158,14 +160,31 @@ class HybridVoiceAssistant:
             print(f"  ⚠ Pre-generate ack error: {e}", flush=True)
             self.ack_wav = None
 
+    def _prewarm_recognizer(self):
+        """Pre-create a KaldiRecognizer so listen() can start arecord without 2s init delay."""
+        try:
+            if not self.vosk_model:
+                self.vosk_model = Model(VOSK_MODEL)
+            self._prewarmed_rec = KaldiRecognizer(self.vosk_model, SAMPLE_RATE)
+        except Exception as e:
+            print(f"  ⚠ Pre-warm recognizer error: {e}", flush=True)
+            self._prewarmed_rec = None
+
     def listen(self, max_duration=LISTEN_DURATION):
         """Stream audio with VAD — stops after speech + 1.5s silence instead of fixed duration."""
         print(f"🎤 Listening (VAD, max {max_duration}s)...", flush=True)
 
-        if not self.vosk_model:
-            self.vosk_model = Model(VOSK_MODEL)
+        # Use pre-warmed recognizer if available (no 2s init delay)
+        if self._prewarmed_rec is not None:
+            rec = self._prewarmed_rec
+            self._prewarmed_rec = None
+        else:
+            if not self.vosk_model:
+                self.vosk_model = Model(VOSK_MODEL)
+            rec = KaldiRecognizer(self.vosk_model, SAMPLE_RATE)
 
-        rec = KaldiRecognizer(self.vosk_model, SAMPLE_RATE)
+        # Pre-warm next recognizer in background while we listen
+        threading.Thread(target=self._prewarm_recognizer, daemon=True).start()
 
         # Stream raw audio from arecord (no fixed duration)
         proc = subprocess.Popen(
@@ -318,13 +337,13 @@ class HybridVoiceAssistant:
             return False
 
         self.pregenerate_ack()
+        self._prewarm_recognizer()
+        print("  ✓ KaldiRecognizer pre-warmed — first listen() will be instant", flush=True)
         self.speak("Voice assistant ready. Say helm to activate.")
         print("🎤 Listening for wake words...", flush=True)
 
         try:
             # Start wake word detection in background thread
-            import threading
-
             def wake_word_listener():
                 """Background thread for wake word detection"""
                 self.wake_word_detector.listen(callback=self.on_wake_word_detected)
