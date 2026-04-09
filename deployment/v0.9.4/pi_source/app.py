@@ -585,6 +585,17 @@ def anchor_advice_proxy():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+@app.route('/helm/mute', methods=['POST'])
+def helm_mute_proxy():
+    """Proxy HELM mute toggle to ai_bridge (same origin via Flask:3000 avoids CORS)."""
+    try:
+        r = requests.post('http://localhost:3002/helm/mute',
+                          json=request.get_json(), timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @app.route('/manual')
 def manual():
     """Serve the d3kOS user manual as a full HTML page."""

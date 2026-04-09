@@ -24,6 +24,7 @@ import os
 import json
 import queue
 import logging
+import subprocess
 import threading
 import time
 from datetime import datetime, timezone
@@ -321,17 +322,34 @@ def helm_mute():
     """
     Browser calls this when operator taps the HELM mute button.
     Body: {'muted': true|false}
-    Immediately stops any active espeak subprocess and sets mute state.
-    Persists mute state to file so restarts inherit the setting.
+    Uses ALSA hardware mute on the S330 Playback switch for instant silence —
+    stops any playing audio immediately regardless of source process.
+    Also sets tts module flag and persists to file for voice service pre-check.
     """
     data  = request.get_json(silent=True) or {}
     muted = bool(data.get('muted', True))
+
+    # OS-level: mute/unmute S330 speaker immediately (kills any playing audio)
+    # numid=2 = 'Anker PowerConf S330 Playback Switch' — sset won't find it by name
+    alsa_val = 'off' if muted else 'on'
+    try:
+        subprocess.run(
+            ['amixer', '-c', 'S330', 'cset', 'numid=2', alsa_val],
+            capture_output=True, timeout=2
+        )
+    except Exception as exc:
+        log.warning('ALSA mute command failed: %s', exc)
+
+    # In-process flag (stops tts.py from starting new speech in this process)
     tts.set_muted(muted)
+
+    # Persist for voice-assistant-hybrid.py pre-speech check
     try:
         with open(MUTE_STATE_FILE, 'w') as fh:
             json.dump({'muted': muted}, fh)
     except Exception as exc:
         log.warning('Could not save mute state: %s', exc)
+
     log.info('HELM TTS %s', 'MUTED' if muted else 'UNMUTED')
     return jsonify({'ok': True, 'muted': muted})
 
