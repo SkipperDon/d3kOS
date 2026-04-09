@@ -216,6 +216,33 @@ def anchor_advice():
     return jsonify(result)
 
 
+@app.route('/anchor/set', methods=['POST'])
+def anchor_set():
+    """Set anchor drop position from d3kOS page. Stores in AnchorWatch instance."""
+    data = request.get_json(silent=True) or {}
+    lat = data.get('lat')
+    lon = data.get('lon')
+    if lat is None or lon is None:
+        return jsonify({'ok': False, 'error': 'lat and lon required'}), 400
+    radius_m = float(data.get('radius_m', 25.0))
+    result = anchor_watch.set_anchor(float(lat), float(lon), radius_m)
+    return jsonify(result)
+
+
+@app.route('/anchor/clear', methods=['POST'])
+def anchor_clear():
+    """Clear anchor watch — stop monitoring."""
+    result = anchor_watch.clear_anchor()
+    return jsonify(result)
+
+
+@app.route('/anchor/state')
+def anchor_state_route():
+    """Return current anchor watch state: active, alarm, lat/lon, distance_m."""
+    result = anchor_watch.get_state()
+    return jsonify(result)
+
+
 # ── Node-RED webhook endpoints ─────────────────────────────────────────────────
 
 @app.route('/webhook/arrival', methods=['POST'])

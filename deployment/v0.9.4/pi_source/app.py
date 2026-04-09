@@ -526,6 +526,65 @@ def helm_assistant():
     return render_template('helm-assistant.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
 
 
+@app.route('/anchor-watch')
+def anchor_watch_page():
+    return render_template('anchor-watch.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
+
+
+@app.route('/anchor/set', methods=['POST'])
+def anchor_set():
+    """Get current vessel position from SK, tell ai_bridge to set anchor."""
+    try:
+        data = request.get_json(silent=True) or {}
+        radius_m = float(data.get('radius_m', 25.0))
+        r = requests.get('http://localhost:8099/signalk/v1/api/vessels/self/navigation/position', timeout=3)
+        pos = r.json().get('value', {})
+        lat = float(pos['latitude'])
+        lon = float(pos['longitude'])
+        result = requests.post('http://localhost:3002/anchor/set',
+                               json={'lat': lat, 'lon': lon, 'radius_m': radius_m},
+                               timeout=5)
+        return jsonify(result.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/anchor/state')
+def anchor_state():
+    try:
+        r = requests.get('http://localhost:3002/anchor/state', timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/anchor/dismiss', methods=['POST'])
+def anchor_dismiss_proxy():
+    try:
+        r = requests.post('http://localhost:3002/anchor/dismiss', timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/anchor/clear', methods=['POST'])
+def anchor_clear_proxy():
+    try:
+        r = requests.post('http://localhost:3002/anchor/clear', timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/anchor/advice')
+def anchor_advice_proxy():
+    try:
+        r = requests.get('http://localhost:3002/anchor/advice', timeout=60)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @app.route('/manual')
 def manual():
     """Serve the d3kOS user manual as a full HTML page."""
