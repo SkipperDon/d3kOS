@@ -2092,3 +2092,113 @@ SESSION QUALITY SCORE              : 90/100
 Average: 89/100 | Trend: stable | Primary gap: MLS (structural — continuation sessions)
 
 ---
+
+## Session 2026-04-08 (S40) — M14 verification fixes + context menu + font sizes
+**Goal:** Fix M14 so engine cell tap actually opens AI diagnostic (three bugs identified from Don's test), fix context menu on hold, increase diag overlay fonts to usable size.
+
+**Context:** Continuation of S39b. S39b closed with M14 as a known uncertainty. Don tested after S39b and reported: (1) tapping engine cells did nothing; (2) holding cells showed an unhelpful context menu; (3) fonts too small in diag overlay. Restart Services "unknown command" error also reported.
+
+**Completed:**
+
+- **overlays.js syntax error fix** — root cause #1 of "nothing happens": literal newline was embedded inside `/\n/g` regex on line 81, producing an invalid multi-line regex. JavaScript SyntaxError at parse time meant the entire overlays.js failed to load — `openDiag()` was undefined. Fixed via Python script on Pi (joined two broken lines into one). `node --input-type=module` confirmed no syntax errors after fix. Synced to repo.
+
+- **instruments.js — _setCellState() decoupled from onclick** — root cause #2: `_setCellState()` was setting `el.onclick = openDiag(id)` only when alarm state was non-null. Normal readings → onclick = null → tap did nothing. Fixed: `_setCellState()` now manages CSS alarm classes only. Engine cell onclick wired unconditionally in `_init()` for all 5 cells.
+
+- **cellRpm typo fixed** — instruments.js `_init()` had `'cellRPM'` in the cell list; actual DOM ID is `'cellRpm'`. RPM cell onclick was silently not wiring. Fixed to `'cellRpm'`.
+
+- **cloud_agent.py correct path** — root cause of "unknown command: restart_service": `handle_restart_services()` was deployed to `/opt/d3kos/services/cloud_agent.py` (no hyphen). Systemd service runs from `/opt/d3kos/services/cloud-agent/cloud_agent.py` (hyphenated). The restart handler was never seen by the running process. Re-deployed to correct path, service restarted. Confirmed by log: `INFO Received command: restart_service`.
+
+- **Context menu on engine cells replaced** — index.html: all 5 engine cells (`cellRpm`, `cellOil`, `cellCoolant`, `cellFuel`, `cellBat`) had `oncontextmenu="openCtx(event,'...')"` showing useless placeholder menu items on long-press. Changed to `oncontextmenu="openDiag('cellXxx')"` — both tap and hold now open AI diagnostic overlay.
+
+- **Diag overlay font sizes increased** — d3kos.css:
+  - `.dc-lbl`: 20px → 22px
+  - `.dc-note`: 18px → 22px
+  - `.diag-ai-lbl`: 20px → 22px
+  - `.diag-ai-txt` (AI response body): 18px → 24px
+  - `.diag-btn64`: font 18px → 22px, height 64px → 72px
+
+- **All files deployed to Pi** — index.html, instruments.js, d3kos.css deployed via SCP. Flask restarted. Chromium force-reloaded.
+
+- **M14 verified working by Don** — "beautifully done it working"
+
+- **Restart Services confirmed and explained** — Don asked what it does vs reboot. Confirmed: restarts 4 application services (voice, ai-bridge, gemini-proxy, predictive), Pi stays running. Don: "that was brilliant and perfect."
+
+**Files changed — repo (Helm-OS):**
+
+| File | Change |
+|------|--------|
+| `deployment/v0.9.4/pi_source/overlays.js` | Regex syntax error fix — literal newline removed from `/\n/g` on line 81 |
+| `deployment/v0.9.4/pi_source/instruments.js` | _setCellState onclick decoupled; _init unconditional engine cell wiring; cellRpm typo fix |
+| `deployment/v0.9.4/pi_source/cloud_agent.py` | handle_restart_services() + dispatch case (also corrected Pi deploy path) |
+| `deployment/v0.9.4/pi_source/index.html` | 5 engine cells: oncontextmenu→openDiag; correct context menu removed |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | Diag overlay font increases (dc-note, diag-ai-txt, diag-btn64, dc-lbl, diag-ai-lbl) |
+
+**Files changed — Pi:**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `overlays.js` | `/opt/d3kos/services/dashboard/static/js/overlays.js` | Regex fix — openDiag() now loads |
+| `instruments.js` | `/opt/d3kos/services/dashboard/static/js/instruments.js` | onclick decoupling + typo fix |
+| `cloud_agent.py` | `/opt/d3kos/services/cloud-agent/cloud_agent.py` | Restart handler (correct path) |
+| `index.html` | `/opt/d3kos/services/dashboard/templates/index.html` | Context menu → openDiag |
+| `d3kos.css` | `/opt/d3kos/services/dashboard/static/css/d3kos.css` | Font sizes |
+
+**Decisions:**
+- context menu oncontextmenu events on non-engine cells (cellSpeed, cellDepth, cellCourse, etc.) left as-is — openCtx() still appropriate for those cells, Don did not request changes there
+- Restart Services = soft restart of 4 d3kOS app services only, NOT a full Pi reboot — this distinction confirmed and documented for Don
+
+**Ollama:** Not used this session.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-08 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Phase C — M1 Anchor Watch d3kOS page (Signal K anchor position API research needed first)
+- Phase C — M15 alert delivery pipeline
+- Manual RAG ingest (deferred by Don)
+
+---
+
+QUALITY METRICS — 2026-04-08 (S40)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 2
+MLS  (Memory Load Success)         : 0  (continuation — context compaction from S39b)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 87/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: REC=2 — (1) overlays.js regex had literal newline (AI introduced during code generation); (2) cloud_agent.py deployed to wrong path (hyphen omitted in directory name).
+ROOT CAUSE NOTE: MLS=0 — structural: session resumed from prior context compaction (S39b).
+
+5-SESSION TREND (S36 → S37 → S38 → S39b → S40):
+Scores: 90 → 90 → 90 → 90 → 87 | Average: 89.4/100
+Primary improvement target: REC — both events this session were avoidable: verify Pi deploy paths before deploying; test JS syntax before deploying (node --check).
+Trend: slight dip from 90 stable. Zero UAC events in last 5 sessions.
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- M14 AI Engine Diagnostic — fully working, confirmed by Don. Three root causes found and fixed: JS syntax error in overlays.js, onclick wiring only in alarm state, wrong Pi deploy path for cloud_agent.py.
+- Context menu on engine cells replaced with openDiag() — hold and tap both open AI diagnostic.
+- cellRpm typo fixed — RPM cell now wires correctly.
+- Diag overlay fonts significantly increased (AI text 18→24px, buttons 18→22px, labels 20→22px, notes 18→22px).
+- Restart Services confirmed working and explained to Don (soft restart, not reboot).
+
+NOT COMPLETED / DEFERRED:
+- Manual RAG ingest — deferred by Don ("leave the manual as is for now it ok")
+- Phase C (M1 Anchor Watch, M15 alert delivery) — authorized next, not started
+
+KNOWN GAPS OR UNCERTAINTIES:
+- overlays.js was also at `deployment/d3kOS/dashboard/static/js/overlays.js` — confirm that copy was also updated to match the fixed version on Pi.
+- instruments.js at `deployment/d3kOS/dashboard/static/js/instruments.js` — same dual-path concern.
+
+OPERATOR ACTIONS REQUIRED:
+- None — all fixes verified by Don this session.
+
+---

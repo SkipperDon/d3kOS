@@ -763,18 +763,18 @@ html, body {
 .diag-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
 .dc { padding: 16px 12px; text-align: center; background: var(--cell); border-radius: 12px; border: 2px solid var(--rule); }
 .dc.bad { background: var(--alrt-bg); border-color: var(--alrt-bdr); }
-.dc-lbl { font-size: 20px; font-weight: 700; letter-spacing: .14em; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
+.dc-lbl { font-size: 22px; font-weight: 700; letter-spacing: .14em; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
 .dc-val { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 1; color: var(--g-txt); }
 .dc.bad .dc-val { color: var(--alrt-num); }
-.dc-note { font-size: 18px; font-weight: 600; color: var(--ink3); margin-top: 4px; }
+.dc-note { font-size: 22px; font-weight: 600; color: var(--ink3); margin-top: 4px; }
 .diag-ai { background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
-.diag-ai-lbl { font-size: 20px; font-weight: 700; letter-spacing: .14em; color: var(--g-txt); margin-bottom: 10px; }
-.diag-ai-txt { font-size: 18px; font-weight: 500; color: var(--ink2); line-height: 1.8; }
+.diag-ai-lbl { font-size: 22px; font-weight: 700; letter-spacing: .14em; color: var(--g-txt); margin-bottom: 10px; }
+.diag-ai-txt { font-size: 24px; font-weight: 500; color: var(--ink2); line-height: 1.8; }
 .diag-ai-txt b { color: var(--ink); font-weight: 700; }
 .diag-btns { display: flex; gap: 12px; flex-wrap: wrap; }
 .diag-btn64 {
-  flex: 1; min-width: 140px; height: 64px; border-radius: 12px; border: none; cursor: pointer;
-  font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 700;
+  flex: 1; min-width: 140px; height: 72px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 700;
   letter-spacing: .06em; transition: all .15s;
 }
 .db-primary { background: var(--alrt-bdr); color: #fff; }

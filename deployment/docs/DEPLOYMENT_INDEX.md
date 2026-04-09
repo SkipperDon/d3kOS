@@ -821,3 +821,13 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/v0.9.4/pwa/app.js` | **[UPDATED — S39]** "Restart Pi" card added to `renderSettings()`. Sends `restart_service` via `apiSendCommand()`. Polls via `apiPollCommand()` every 5s, 2-min timeout. HostPapa: `/staging/app/app.js` |
 | HostPapa: `page-help.php` | **[UPDATED — S39]** "User Manual" quick-link card added (7th card, links to `/manual/`). Book SVG icon. `staging/wp-content/themes/twentytwenty-child/page-help.php` |
 | HostPapa: `page-manual.php` | **[DEPLOYED S38 — ADDED TO REPO S39]** User Manual page template. PDF download button (GitHub releases). 16-section ToC. "Ask Helm" RAG section. `staging/wp-content/themes/twentytwenty-child/page-manual.php` |
+
+## v0.9.9.2 Phase B — S40 M14 Bug Fixes + Font Sizes (2026-04-08)
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.4/pi_source/overlays.js` | **[FIXED — S40]** Regex syntax error on line 81: literal newline embedded in `/\n/g` caused JavaScript SyntaxError at parse time — openDiag() never loaded. Fixed. Pi: `/opt/d3kos/services/dashboard/static/js/overlays.js` |
+| `deployment/v0.9.4/pi_source/instruments.js` | **[UPDATED — S40]** `_setCellState()` decoupled from onclick management (onclick was only set in alarm state — normal readings left cells untappable). `_init()` now wires onclick for all 5 engine cells unconditionally. `cellRPM` typo fixed to `cellRpm` (matches DOM ID). Pi: `/opt/d3kos/services/dashboard/static/js/instruments.js` |
+| `deployment/v0.9.4/pi_source/index.html` | **[UPDATED — S40]** 5 engine cells (cellRpm, cellOil, cellCoolant, cellFuel, cellBat): `oncontextmenu` changed from `openCtx(event,'...')` to `openDiag('cellXxx')`. Long-press now opens AI diagnostic instead of useless placeholder context menu. Pi: `/opt/d3kos/services/dashboard/templates/index.html` |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED — S40]** Diag overlay fonts increased: `.dc-lbl` 20→22px, `.dc-note` 18→22px, `.diag-ai-lbl` 20→22px, `.diag-ai-txt` 18→24px, `.diag-btn64` font 18→22px + height 64→72px. Pi: `/opt/d3kos/services/dashboard/static/css/d3kos.css` |
+| `deployment/v0.9.4/pi_source/cloud_agent.py` | **[DEPLOY CORRECTED — S40]** S39 deployed to wrong path (no hyphen). Re-deployed to `/opt/d3kos/services/cloud-agent/cloud_agent.py` (correct). Restart Services handler now active. |

@@ -530,7 +530,7 @@ function _init() {
   setInterval(_pollWaypoint, WP_POLL_MS);
   _connectRouteSSE();
   // Engine cells are always tappable for AI diagnostic (regardless of alarm state)
-  ['cellCoolant','cellOil','cellBat','cellFuel','cellRPM'].forEach(function(id) {
+  ['cellCoolant','cellOil','cellBat','cellFuel','cellRpm'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) { el.onclick = function(){ openDiag(id); }; el.style.cursor = 'pointer'; }
   });
