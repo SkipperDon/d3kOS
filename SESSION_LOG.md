@@ -2202,3 +2202,167 @@ OPERATOR ACTIONS REQUIRED:
 - None — all fixes verified by Don this session.
 
 ---
+
+## Session 2026-04-08 (S41) — Phase C: M1 Anchor Watch + Manual RAG Ingest
+**Goal:** Build M1 Anchor Watch d3kOS page (all tiers, 25m default), ingest user manual into ChromaDB RAG, fix anchor watch UI issues reported by Don.
+
+**Context:** Continuation of S40. Phase C authorized by Don. Two parallel tracks: Anchor Watch page build + Manual RAG ingest (ran in background on Pi while page was built).
+
+---
+
+**Completed:**
+
+**M1 Anchor Watch — d3kOS page (all tiers — T0)**
+- `anchor_watch.py` (AI bridge) — three new methods added:
+  - `set_anchor(lat, lon, radius_m)` — stores anchor position in d3kOS independently of Signal K. Does NOT require SK anchor tracking. Sets `_active=True`, speaks "Anchor set. Watching within X metres." via TTS, broadcasts SSE `anchor_status`.
+  - `clear_anchor()` — stops monitoring, resets state, broadcasts `anchor_status` inactive.
+  - `get_state()` — returns live state including `distance_m` calculated via Haversine from stored anchor to current vessel position (from SK REST).
+  - `_check_drag_stored()` — drag detection using d3kOS-stored position + `geo.haversine_nm()`. 3-consecutive-poll confirm before alarm. Does not depend on SK `navigation/anchor/currentRadius`.
+  - `_check_drag()` modified to prefer stored position; falls back to SK anchor paths if no stored position.
+- `ai_bridge.py` — three new Flask routes: `POST /anchor/set`, `POST /anchor/clear`, `GET /anchor/state`.
+- `app.py` (Flask dashboard) — six new routes:
+  - `GET /anchor-watch` — renders `anchor-watch.html`
+  - `POST /anchor/set` — gets current vessel position from SK REST API server-side, passes to ai_bridge `/anchor/set`. Avoids CORS issues (Flask:3000 proxies to ai_bridge:3002).
+  - `GET /anchor/state` — proxies to ai_bridge.
+  - `POST /anchor/dismiss` — proxies to ai_bridge.
+  - `POST /anchor/clear` — proxies to ai_bridge.
+  - `GET /anchor/advice` — proxies to ai_bridge (60s timeout for Gemini).
+- `anchor-watch.html` — full d3kOS-styled page:
+  - Standard `#status-bar` with `◀ Dashboard` back button, `⚓ ANCHOR WATCH` title, INACTIVE/WATCHING/DRAG ALERT status pill, DAY/NGT buttons.
+  - Canvas map (300×260): anchor cross at centre, dashed watch-radius circle, vessel dot with drift line. Shows "Set anchor to begin" when inactive.
+  - Three stat cards: Distance (m), Radius (m), Drift Dir (degrees).
+  - Radius slider 10–100m, default 25m, step 5m.
+  - SET ANCHOR + CLEAR buttons (72px height, 22px font — large touch targets).
+  - Flashing red alarm overlay (anchor-pulse animation): DISMISS ALARM (80px, white) + ASK HELM AI FOR ADVICE + AI advice text area.
+  - SSE listener on ai_bridge `/stream` for `anchor_alert` and `anchor_status` events.
+  - Polls `/anchor/state` every 8 seconds when active.
+  - `setTheme()` with localStorage persistence — reads `d3kTheme`, falls back to time-of-day.
+- `index.html` — Anchor Watch button added to More menu (⚓ icon, "Monitor position at anchor").
+
+**Verified on Pi:** `curl http://localhost:3000/anchor-watch` → 200. `curl http://localhost:3002/anchor/state` → `{"active":false,"vessel_lat":43.685...,"vessel_lon":-79.521...}` — vessel position live from SK.
+
+**Design decision — SK independence:**
+anchor_watch.py stores anchor position in d3kOS memory (not in Signal K). Rationale: SK PUT for `navigation/anchor/position` has uncertain auth requirements; d3kOS Haversine calculation using current vessel position from SK REST is reliable and sufficient. Falls back to SK anchor paths if user has SK anchor watch configured independently.
+
+---
+
+**Manual RAG Ingest — d3kos_documents ChromaDB**
+- `D3KOS_USER_MANUAL_v0992.md` copied to Pi `/tmp/`.
+- `ingest_manual.py` written: splits manual by `## ` sections (16 sections), then further chunks with `RecursiveCharacterTextSplitter(chunk_size=800, overlap=100)`.
+- Ollama started on-demand (nomic-embed-text 768d) — same pattern as `fish_rag_llm.py`.
+- Old manual chunks deleted from collection first (idempotent).
+- 78 chunks embedded and stored in `d3kos_documents` collection.
+- Collection size: 2,001 → 2,079 total docs.
+- Helm Assistant can now answer questions from all 16 manual sections.
+- Verified: `col.get(where={'source': 'D3KOS_USER_MANUAL_v0992.md'})` → 78 chunks confirmed.
+
+---
+
+**UI Fixes (reported by Don during testing):**
+
+1. **Anchor watch no back/dashboard button**: Was using custom `#aw-bar` with `color:var(--ink)` (near-black in day mode on dark bar = invisible). Fixed: replaced with standard `#status-bar` + `.back-btn` class (rgba(255,255,255,.75) — always visible).
+
+2. **No day/night button**: Added `btnDay` / `btnNight` buttons to status bar with `setTheme()` using exact same pattern as `engine-monitor.html`. Reads `localStorage.d3kTheme`, falls back to time-of-day.
+
+3. **Fonts same colour as header (invisible)**: `.aw-stat-lbl` and `.aw-stat-unit` were using `var(--ink3)` = `rgba(214,237,214,.24)` in night mode (24% opacity on dark cell background — nearly invisible). Fixed to `var(--ink)` (full opacity) for labels and `var(--ink2)` (48% opacity) for units.
+
+4. **Bearing renamed to Drift Dir**: "Bearing" is correct nautical terminology (compass bearing from anchor to vessel) but "Drift Direction" is clearer for an anchor watch context. Renamed stat card header.
+
+5. **Diag overlay — hardcoded demo button removed**: "REDUCE TO 1800 RPM" button was leftover static demo content from pre-M14 build. Removed. "FULL AI BRIEF" renamed to "ASK HELM AI" (clearer intent — opens Helm Navigator side panel). "AI Navigator queries not stored" is NOT an error — it is the standard Helm AI privacy notice (query text not logged). Explained to Don.
+
+---
+
+**BUG-01 logged in PROJECT_CHECKLIST.md:**
+Mute not working — Helm still speaks when both mute buttons (anchor watch + dashboard) set to mute. Reported during testing (was speaking about destination while at anchor). Root cause unknown. To investigate next session: `ai_bridge.py` mute endpoint, `tts-mute.json` persistence, SSE reconnection from anchor-watch.html side effects.
+
+---
+
+**Files changed — repo (Helm-OS):**
+
+| File | Change |
+|------|--------|
+| `deployment/v0.9.4/pi_source/anchor-watch.html` | NEW — full anchor watch page |
+| `deployment/v0.9.4/pi_source/anchor_watch.py` | NEW in repo — synced from Pi (set_anchor, clear_anchor, get_state, _check_drag_stored) |
+| `deployment/v0.9.4/pi_source/ai_bridge.py` | UPDATED — /anchor/set, /anchor/clear, /anchor/state routes |
+| `deployment/v0.9.4/pi_source/app.py` | UPDATED — /anchor-watch + 5 proxy routes |
+| `deployment/v0.9.4/pi_source/index.html` | UPDATED — Anchor Watch in More menu; diag buttons cleaned (demo removed, FULL AI BRIEF→ASK HELM AI) |
+| `PROJECT_CHECKLIST.md` | UPDATED — BUG-01 mute logged; M1 status |
+
+**Files changed — Pi:**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `anchor_watch.py` | `/opt/d3kos/services/ai-bridge/features/anchor_watch.py` | Patched — set_anchor, clear_anchor, get_state, _check_drag_stored |
+| `ai_bridge.py` | `/opt/d3kos/services/ai-bridge/ai_bridge.py` | Patched — 3 new anchor routes |
+| `app.py` | `/opt/d3kos/services/dashboard/app.py` | Patched — anchor-watch page + 5 proxy routes |
+| `anchor-watch.html` | `/opt/d3kos/services/dashboard/templates/anchor-watch.html` | NEW |
+| `index.html` | `/opt/d3kos/services/dashboard/templates/index.html` | Anchor Watch in More menu; diag buttons |
+| ChromaDB | `/opt/d3kos/data/vector-db/` | 78 manual chunks added (2001→2079 docs) |
+
+---
+
+**Decisions:**
+- Anchor position stored in d3kOS (not Signal K) — avoids SK PUT auth uncertainty; Haversine from SK REST position is reliable.
+- "Drift Dir" preferred over "Bearing" for anchor watch context — more intuitive for the skipper.
+- "AI Navigator queries not stored" is expected Helm AI behavior — not a bug; explained to Don.
+
+**Ollama:** Used on Pi for RAG ingest (nomic-embed-text 768d embedding). Pi-side cost = $0.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-08 | TBD |
+| Ollama (Pi) | nomic-embed-text for RAG ingest | $0.00 |
+| Session total | | TBD |
+
+**Pending / Next session:**
+- BUG-01: Mute not working — investigate ai_bridge mute endpoint + tts-mute.json + SSE reconnection
+- Phase C M15: Alert delivery pipeline (email via MailPoet T1+, in-app push)
+- M19 Phase 4 blockers: safety page claims, pricing T3 claims, i18n claims — resolve before live push
+- Phase 4 live push — Don clicks Push to Live in cPanel
+
+---
+
+QUALITY METRICS — 2026-04-08 (S41)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0  (continuation — no /session-start run)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS=0 — structural: continuation session from S40. /session-start not run.
+
+5-SESSION TREND (S37 → S38 → S39b → S40 → S41):
+Scores: 90 → 90 → 90 → 87 → 90 | Average: 89.4/100
+Primary improvement target: MLS — structurally 0 in continuation sessions.
+Trend: stable at 90. Zero REC and UAC events this session.
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- M1 Anchor Watch page fully built and deployed (T0 all tiers). Backend: set_anchor/clear_anchor/get_state + Haversine drag detection. Frontend: canvas map, DAY/NGT, back button, stats, slider, alarm overlay. More menu entry added.
+- Manual RAG ingest complete: 78 chunks from D3KOS_USER_MANUAL_v0992.md in d3kos_documents (2,079 total).
+- Anchor watch UI fixed: invisible labels, missing day/night, missing back button — all resolved.
+- Diag overlay cleaned: hardcoded demo button removed, FULL AI BRIEF → ASK HELM AI.
+- BUG-01 (mute) logged in PROJECT_CHECKLIST for investigation.
+
+NOT COMPLETED / DEFERRED:
+- BUG-01 mute investigation — next session
+- Phase C M15 alert delivery pipeline — not started
+- Phase 4 live push — pending M19 blocker resolution
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Anchor watch not yet tested at real anchor with GPS live fix — tested via /anchor/state JSON only (vessel position confirmed live). Full drag detection requires being at anchor on the water.
+- SSE reconnection from anchor-watch.html to ai_bridge:3002 may cause mute side effects — not yet confirmed as root cause of BUG-01.
+- Anchor watch page layout not seen in day mode by Don — DAY/NGT fixes applied but not confirmed on screen.
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for today's Claude API cost
+- Test Anchor Watch page: More menu → Anchor Watch → SET ANCHOR → verify map shows anchor cross and status shows WATCHING
+- Confirm DAY/NGT button now visible in top bar of Anchor Watch page
+- OIC assessment before session formally closed
+
+---
