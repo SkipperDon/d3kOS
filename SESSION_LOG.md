@@ -1995,3 +1995,100 @@ Primary improvement target: MLS — structurally 0 in continuation sessions.
 Trend: stable at 90. Zero UAC events in last 5 sessions.
 
 ---
+
+## Session 2026-04-08 (S39b) — page-manual into d3kOS, manual v2.1.0
+**Goal:** Complete page-manual integration into the d3kOS Pi dashboard. Serve the user manual from the Pi itself as a navigable HTML page.
+
+**Completed:**
+- **manual.html** created: full 16-section user manual as a d3kOS-styled Flask template
+  - Dark navy theme (#0A2342 bg, #2EB5A3 teal, #F0EAD8 text)
+  - Sticky ToC sidebar (left 268px) with all 16 sections, touch-friendly links
+  - All section content: intro, wizard steps, dashboard, weather, cameras, engine, Helm, boat log, mobile app, FMPi/OTA, fleet, settings, remote access, health system, troubleshooting, quick reference
+  - Tables for all reference data (gauges, tier features, quick reference card)
+  - Active section highlighting via scroll listener
+  - Back button → Dashboard
+- **app.py** updated: `/manual` route added (renders `manual.html`)
+- **index.html** updated: "Help / Manual" button added to More menu grid (§7, book icon 📚)
+- All 3 files deployed to Pi; `d3kos-dashboard` restarted; `curl http://localhost:3000/manual` → 200
+- **D3KOS_USER_MANUAL_v0992.md** updated to v2.1.0:
+  - More menu table updated to reflect actual menu items (AI Navigation, Engine Dashboard, Helm Assistant, etc.)
+  - §6 AI Engine Diagnostic: explicit T2/T3 tier gate added; panel description added
+  - §9 Mobile App: "Restart Pi Services" subsection added (M3/M4)
+  - §16 Quick Reference: new rows — "Restart Pi services" and "Help / Manual"
+  - Document version bumped 2.0.0 → 2.1.0
+
+**Verification instructions given to Don:**
+- M14: Tap engine cell on Pi dashboard → diagnostic panel with Gemini analysis (T3 — live data expected)
+- M3/M4: Open staging PWA → Settings → Restart Pi card → Restart Services button → should confirm in ~60s
+- Help/Manual: More menu on Pi → "Help / Manual" (book icon) → manual page opens with ToC sidebar
+
+**Files changed — repo (Helm-OS):**
+| File | Change |
+|------|--------|
+| `deployment/v0.9.4/pi_source/manual.html` | NEW — 714-line manual HTML template, d3kOS styled |
+| `deployment/v0.9.4/pi_source/app.py` | /manual route added |
+| `deployment/v0.9.4/pi_source/index.html` | Help/Manual button in More menu |
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` | v2.1.0 — More menu, §6 tier gate, §9 Restart Pi, §16 QR |
+
+**Files changed — Pi:**
+| File | Pi Path | Change |
+|------|---------|--------|
+| `manual.html` | `/opt/d3kos/services/dashboard/templates/manual.html` | NEW |
+| `app.py` | `/opt/d3kos/services/dashboard/app.py` | /manual route |
+| `index.html` | `/opt/d3kos/services/dashboard/templates/index.html` | Help/Manual in More menu |
+
+---
+
+### Release Package Manifest (Pi — S39b)
+- Version: v0.9.9.2 in-progress
+- Update type: incremental
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `manual.html` | `/opt/d3kos/services/dashboard/templates/manual.html` | base | NEW — full user manual served locally |
+| `app.py` | `/opt/d3kos/services/dashboard/app.py` | base | /manual route added |
+| `index.html` | `/opt/d3kos/services/dashboard/templates/index.html` | base | Help/Manual in More menu |
+
+- Post-install: `sudo systemctl restart d3kos-dashboard` — **already done**. Service active, /manual returns 200.
+- Rollback: revert the 3 files from git (`git checkout HEAD~1 -- deployment/v0.9.4/pi_source/`)
+- Health check: `curl http://localhost:3000/manual` → 200
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- `/manual` page live on Pi: full 16-section manual, dark marine styling, sticky ToC, 200 verified
+- Help/Manual button added to More menu on Pi dashboard
+- Manual updated to v2.1.0 — M14 tier gate, M3/M4 Restart Pi, latest More menu, Help/Manual in quick reference
+- Verification instructions for M14 and Restart Pi given to operator
+
+NOT COMPLETED / DEFERRED:
+- Manual PDF not generated (Don confirmed: will create GitHub release later)
+- Manual RAG ingest still deferred (requires Ollama for nomic-embed-text 768d)
+- Phase C (M1 Anchor Watch, M15) — not started — authorized next
+
+KNOWN GAPS OR UNCERTAINTIES:
+- M14 on dashboard: dashboard restart was done, but M14 dashboard code (overlays.js, instruments.js) was deployed in the PREVIOUS context session (S38/S39). If those deploys didn't happen correctly, M14 may not be live. Verification by Don will confirm.
+
+OPERATOR ACTIONS REQUIRED:
+1. Verify M14 on Pi touchscreen (see instructions above)
+2. Verify Restart Pi in staging PWA Settings (see instructions above)
+3. Open More menu on Pi → confirm "Help / Manual" appears → tap it to confirm manual page loads
+
+---
+
+QUALITY METRICS — 2026-04-08 (S39b)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0  (continuation session)
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+
+5-SESSION TREND (S35 → S36 → S37 → S38 → S39/S39b):
+Average: 89/100 | Trend: stable | Primary gap: MLS (structural — continuation sessions)
+
+---
