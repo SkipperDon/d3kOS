@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, initial-scale=1">
+<title>d3kOS User Manual — v0.9.9.2</title>
+<style>
+/* ── Reset & base ────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:18px}
+body{
+  font-family:'Segoe UI',Nunito,Arial,sans-serif;
+  background:#0A2342;
+  color:#F0EAD8;
+  display:flex;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* ── Sidebar ToC ─────────────────────────────────────────────── */
+#toc{
+  width:268px;
+  flex-shrink:0;
+  background:#0F2D50;
+  border-right:1px solid rgba(240,234,216,0.1);
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+}
+#toc-header{
+  padding:12px 16px 10px;
+  border-bottom:1px solid rgba(240,234,216,0.1);
+  flex-shrink:0;
+}
+#toc-header .back-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#162B47;
+  border:1px solid rgba(46,181,163,0.35);
+  border-radius:8px;
+  padding:10px 14px;
+  color:#2EB5A3;
+  font-size:1rem;
+  font-weight:700;
+  cursor:pointer;
+  text-decoration:none;
+  min-height:48px;
+  width:100%;
+  justify-content:center;
+  transition:background .2s;
+}
+#toc-header .back-btn:hover{background:#1C3558}
+#toc-title{
+  margin-top:10px;
+  font-size:0.75rem;
+  font-weight:700;
+  letter-spacing:.12em;
+  color:#2EB5A3;
+  text-transform:uppercase;
+  text-align:center;
+}
+#toc-list{
+  flex:1;
+  overflow-y:auto;
+  padding:6px 8px;
+  list-style:none;
+}
+#toc-list li a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:6px;
+  color:#C8BEA8;
+  text-decoration:none;
+  font-size:0.9rem;
+  line-height:1.3;
+  min-height:48px;
+  transition:background .15s,color .15s;
+}
+#toc-list li a:hover,#toc-list li a.active{
+  background:rgba(46,181,163,0.12);
+  color:#F0EAD8;
+}
+#toc-list li a .sec-num{
+  width:26px;
+  flex-shrink:0;
+  font-size:0.8rem;
+  font-weight:700;
+  color:#2EB5A3;
+  font-family:'Courier New',monospace;
+}
+#toc-version{
+  padding:8px 12px;
+  font-size:0.75rem;
+  color:rgba(200,190,168,0.5);
+  text-align:center;
+  border-top:1px solid rgba(240,234,216,0.07);
+  flex-shrink:0;
+}
+
+/* ── Main content area ───────────────────────────────────────── */
+#content{
+  flex:1;
+  overflow-y:auto;
+  padding:28px 32px 60px;
+  scroll-behavior:smooth;
+}
+
+/* ── Sections ────────────────────────────────────────────────── */
+.section{
+  margin-bottom:36px;
+  padding-bottom:28px;
+  border-bottom:1px solid rgba(240,234,216,0.08);
+}
+.section:last-child{border-bottom:none}
+.section h2{
+  font-size:1.4rem;
+  font-weight:700;
+  color:#F0EAD8;
+  margin-bottom:14px;
+  padding-bottom:8px;
+  border-bottom:2px solid rgba(46,181,163,0.4);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.section h2 .sec-label{
+  font-family:'Courier New',monospace;
+  font-size:0.85rem;
+  color:#2EB5A3;
+  background:rgba(46,181,163,0.12);
+  border:1px solid rgba(46,181,163,0.3);
+  border-radius:4px;
+  padding:2px 8px;
+  flex-shrink:0;
+}
+.section h3{
+  font-size:1.05rem;
+  font-weight:700;
+  color:#2EB5A3;
+  margin:18px 0 8px;
+}
+p{
+  line-height:1.75;
+  color:#C8BEA8;
+  margin-bottom:10px;
+}
+p strong{color:#F0EAD8}
+ul,ol{
+  padding-left:1.4em;
+  color:#C8BEA8;
+  line-height:1.75;
+  margin-bottom:10px;
+}
+li{margin-bottom:4px}
+li strong{color:#F0EAD8}
+code{
+  background:rgba(46,181,163,0.08);
+  border:1px solid rgba(46,181,163,0.2);
+  border-radius:3px;
+  padding:1px 6px;
+  font-family:'Courier New',monospace;
+  font-size:0.9em;
+  color:#2EB5A3;
+}
+
+/* ── Tables ──────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;margin:12px 0 16px}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.95rem;
+}
+th{
+  background:rgba(46,181,163,0.15);
+  color:#2EB5A3;
+  font-weight:700;
+  padding:10px 12px;
+  text-align:left;
+  border:1px solid rgba(46,181,163,0.2);
+}
+td{
+  padding:9px 12px;
+  border:1px solid rgba(240,234,216,0.08);
+  color:#C8BEA8;
+  vertical-align:top;
+  line-height:1.6;
+}
+td strong{color:#F0EAD8}
+tr:nth-child(even) td{background:rgba(22,43,71,0.5)}
+
+/* ── Info / note boxes ───────────────────────────────────────── */
+.note{
+  background:rgba(46,181,163,0.07);
+  border-left:3px solid #2EB5A3;
+  border-radius:0 6px 6px 0;
+  padding:10px 14px;
+  margin:10px 0 14px;
+  color:#C8BEA8;
+  font-size:0.95rem;
+  line-height:1.65;
+}
+.warn{
+  background:rgba(212,146,15,0.08);
+  border-left:3px solid #D4920F;
+  border-radius:0 6px 6px 0;
+  padding:10px 14px;
+  margin:10px 0 14px;
+  color:#C8BEA8;
+  font-size:0.95rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────────────────────────── -->
+<nav id="toc">
+  <div id="toc-header">
+    <a href="/" class="back-btn">&#8592; Dashboard</a>
+    <div id="toc-title">User Manual</div>
+  </div>
+  <ul id="toc-list">
+    <li><a href="#s1"><span class="sec-num">§1</span>Introduction</a></li>
+    <li><a href="#s2"><span class="sec-num">§2</span>Setup Wizard</a></li>
+    <li><a href="#s3"><span class="sec-num">§3</span>Main Dashboard</a></li>
+    <li><a href="#s4"><span class="sec-num">§4</span>Weather Panel</a></li>
+    <li><a href="#s5"><span class="sec-num">§5</span>Marine Vision</a></li>
+    <li><a href="#s6"><span class="sec-num">§6</span>Engine Dashboard</a></li>
+    <li><a href="#s7"><span class="sec-num">§7</span>Helm Assistant</a></li>
+    <li><a href="#s8"><span class="sec-num">§8</span>Boat Log</a></li>
+    <li><a href="#s9"><span class="sec-num">§9</span>Mobile App</a></li>
+    <li><a href="#s10"><span class="sec-num">§10</span>Fix My Pi / OTA</a></li>
+    <li><a href="#s11"><span class="sec-num">§11</span>Fleet (T3)</a></li>
+    <li><a href="#s12"><span class="sec-num">§12</span>Settings</a></li>
+    <li><a href="#s13"><span class="sec-num">§13</span>Remote Access</a></li>
+    <li><a href="#s14"><span class="sec-num">§14</span>Health System</a></li>
+    <li><a href="#s15"><span class="sec-num">§15</span>Troubleshooting</a></li>
+    <li><a href="#s16"><span class="sec-num">§16</span>Quick Reference</a></li>
+  </ul>
+  <div id="toc-version">d3kOS v0.9.9.2 &nbsp;·&nbsp; April 2026</div>
+</nav>
+
+<!-- ── Content ───────────────────────────────────────────────── -->
+<main id="content">
+
+  <!-- §1 Introduction -->
+  <section class="section" id="s1">
+    <h2><span class="sec-label">§1</span>Introduction</h2>
+    <p>d3kOS is a marine navigation hub that runs on a Raspberry Pi mounted at your helm. It integrates chart navigation (AvNav), engine monitoring (NMEA 2000 via Signal K), AI-powered vessel assistance (Helm), camera monitoring (Marine Vision), weather overlays, predictive maintenance, and a boat log — all accessible from a single touchscreen interface.</p>
+    <p><strong>What d3kOS is not:</strong> it is not a standalone chartplotter. It works alongside your existing MFD and VHF radio. It adds an AI intelligence layer and centralised monitoring that your MFD does not provide.</p>
+    <h3>Service Tiers</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Tier</th><th>Cost</th><th>What it adds</th></tr>
+      <tr><td><strong>T0 — Base</strong></td><td>Free forever</td><td>Full local dashboard — GPS, engine, voice, cameras, AI. No account required. 100% offline capable.</td></tr>
+      <tr><td><strong>T1 — Mobile</strong></td><td>Free with account</td><td>T0 + mobile companion app, QR pairing, cloud sync, remote monitoring</td></tr>
+      <tr><td><strong>T2 — Premium</strong></td><td>$9.99/month</td><td>T1 + AI performance analysis, predictive maintenance alerts, OTA software updates, PDF reports</td></tr>
+      <tr><td><strong>T3 — Professional</strong></td><td>$99.99/year</td><td>T2 + unlimited boats (fleet), fleet-wide analytics, priority support</td></tr>
+    </table></div>
+    <p>Tier is shown at the top of the Settings page. Upgrade at <strong>atmyboat.com/pricing</strong>.</p>
+    <h3>First Boot</h3>
+    <p>On first power-up, d3kOS launches the <strong>Setup Wizard</strong> automatically. Complete all 8 steps before the main dashboard becomes accessible. The wizard saves your vessel, engine, and electronics configuration — the AI uses this information to provide accurate diagnostics specific to your boat.</p>
+  </section>
+
+  <!-- §2 Setup Wizard -->
+  <section class="section" id="s2">
+    <h2><span class="sec-label">§2</span>Initial Setup Wizard</h2>
+    <p>The wizard runs once at first boot. It has 8 steps indicated by dots at the top of the card. Your progress is saved automatically — if you close the browser, it resumes where you left off. A <strong>← Back</strong> button appears on every step from Step 2 onward.</p>
+
+    <h3>Step 1 — Welcome</h3>
+    <p>Introduces d3kOS. No data entry required. Tap <strong>GET STARTED ›</strong> to advance.</p>
+
+    <h3>Step 2 — Vessel Information</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Field</th><th>What to enter</th><th>Example</th></tr>
+      <tr><td><strong>Vessel Name</strong> (required)</td><td>Your boat's registered name</td><td><code>MV Serenity</code></td></tr>
+      <tr><td><strong>Home Port</strong></td><td>Marina or harbour</td><td><code>Kingston, ON</code></td></tr>
+      <tr><td><strong>Dashboard Language</strong></td><td>UI language</td><td>English (Canada)</td></tr>
+      <tr><td><strong>Manufacturer</strong></td><td>Boat builder</td><td>Regal, Sea Ray, Bayliner</td></tr>
+      <tr><td><strong>Year / Model</strong></td><td>Model year and designation</td><td>2019, 2600</td></tr>
+      <tr><td><strong>Length / Boat Type / Region</strong></td><td>Physical specs</td><td>26 ft, Bowrider, Canada</td></tr>
+    </table></div>
+
+    <h3>Step 3 — Engine Configuration</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Field</th><th>Example</th></tr>
+      <tr><td><strong>Make / Year / Model</strong></td><td>Mercruiser, 2018, 5.0L MPI Alpha</td></tr>
+      <tr><td><strong>Horsepower / Cylinders</strong></td><td>220 HP, 6 cyl</td></tr>
+      <tr><td><strong>Fuel Type / Induction</strong></td><td>Gasoline, Naturally Aspirated</td></tr>
+      <tr><td><strong>Idle RPM / Max RPM (WOT)</strong></td><td>700 / 4800</td></tr>
+    </table></div>
+    <p>Enable the twin-engine toggle if you have two engines — port and starboard fields appear separately.</p>
+
+    <h3>Step 4 — Nav Gear & NMEA Gateway</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Field</th><th>Example</th></tr>
+      <tr><td><strong>Chart Plotter / MFD</strong></td><td>Garmin GPSMAP 1242xsv</td></tr>
+      <tr><td><strong>VHF Radio</strong></td><td>Standard Horizon GX2400</td></tr>
+      <tr><td><strong>Gateway Model</strong></td><td>Actisense NGT-1, Yacht Devices YDNG</td></tr>
+      <tr><td><strong>Fuel Sender Standard</strong></td><td>US Standard (240–33Ω) or European (0–190Ω)</td></tr>
+    </table></div>
+
+    <h3>Step 5 — NMEA Gateway DIP Switches</h3>
+    <p>Generates a custom DIP switch diagram for your CX5106 gateway based on Step 4 entries. The diagram shows exact switch positions for your engine setup. The "WHY THESE SETTINGS" section explains each switch in plain language. <strong>Power off the gateway before changing DIP switches.</strong></p>
+
+    <h3>Step 6 — Pair Your Phone</h3>
+    <p>A QR code appears. On your phone, open <strong>atmyboat.com/app</strong>, log in, tap <strong>Pair Device</strong>, and scan the QR code. The QR code encodes your Pi's unique device token. Tap <strong>SKIP THIS STEP</strong> to pair later from <strong>Settings → Mobile</strong>.</p>
+
+    <h3>Step 7 — Gemini API Key</h3>
+    <p>d3kOS uses Google Gemini AI for Helm, engine diagnostics, and document analysis. To get a free key: go to <strong>aistudio.google.com</strong> → sign in → <strong>Get API Key</strong> → <strong>Create API key</strong>. The key starts with <code>AIza</code>. It is stored locally on your Pi. Tap <strong>SKIP THIS STEP</strong> to add later in Settings → AI Configuration.</p>
+
+    <h3>Step 8 — Ready to Set Sail</h3>
+    <p>All configuration complete. Tap <strong>LAUNCH d3kOS ›</strong> — the wizard saves all data and loads the main dashboard.</p>
+  </section>
+
+  <!-- §3 Main Dashboard -->
+  <section class="section" id="s3">
+    <h2><span class="sec-label">§3</span>Main Dashboard</h2>
+    <h3>Instrument Grid</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Cell</th><th>Data source</th><th>What it shows</th></tr>
+      <tr><td><strong>Speed</strong></td><td>Signal K / NMEA 2000</td><td>Speed over ground in knots</td></tr>
+      <tr><td><strong>Course</strong></td><td>Signal K / NMEA 2000</td><td>Course over ground, true degrees</td></tr>
+      <tr><td><strong>Position</strong></td><td>Signal K / NMEA 2000</td><td>Lat/Lon in degrees and decimal minutes</td></tr>
+      <tr><td><strong>Depth</strong></td><td>Signal K / NMEA 2000</td><td>Depth below keel in metres</td></tr>
+      <tr><td><strong>Coolant Temp</strong></td><td>Signal K / NMEA 2000</td><td>Engine coolant temperature in °C</td></tr>
+      <tr><td><strong>Oil Pressure</strong></td><td>Signal K / NMEA 2000</td><td>Engine oil pressure in PSI</td></tr>
+      <tr><td><strong>Next Waypoint</strong></td><td>AvNav</td><td>Distance (nm), bearing (°T), ETA to active waypoint</td></tr>
+      <tr><td><strong>Wind</strong></td><td>Signal K / NMEA 2000</td><td>Wind speed and direction (if transducer connected)</td></tr>
+      <tr><td><strong>Fuel</strong></td><td>Signal K / NMEA 2000</td><td>Fuel level percentage (if sender connected)</td></tr>
+      <tr><td><strong>Voltage</strong></td><td>Signal K / NMEA 2000</td><td>House bank voltage</td></tr>
+    </table></div>
+    <h3>Cell Colour States</h3>
+    <ul>
+      <li><strong>Normal</strong> — white/grey — within acceptable range</li>
+      <li><strong>Advisory</strong> — amber — approaching threshold — monitor closely</li>
+      <li><strong>Alert</strong> — orange — threshold exceeded — take action</li>
+      <li><strong>Critical</strong> — red — critical limit reached — stop and investigate</li>
+    </ul>
+    <p>When a critical alert fires, a red ticker banner appears at the bottom of the screen. Helm speaks the alert aloud. Tapping a coolant or oil pressure cell in alert state opens the <strong>AI Engine Diagnostic</strong> overlay (T2/T3 only).</p>
+    <h3>Navigation Bar (Bottom)</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Button</th><th>Action</th></tr>
+      <tr><td><strong>Dashboard</strong></td><td>Returns to instrument grid from any sub-screen</td></tr>
+      <tr><td><strong>Weather</strong></td><td>Opens the Weather panel (Windy + Radar)</td></tr>
+      <tr><td><strong>Marine Vision</strong></td><td>Opens the camera grid</td></tr>
+      <tr><td><strong>HELM</strong></td><td>Opens the Helm AI listening overlay — tap once to listen, tap again to stop</td></tr>
+      <tr><td><strong>Boat Log</strong></td><td>Opens the Boat Log</td></tr>
+      <tr><td><strong>More ⋮⋮</strong></td><td>Opens the secondary menu (Engine, Settings, Documents, Help, etc.)</td></tr>
+    </table></div>
+    <h3>More Menu</h3>
+    <p>Access secondary features: AI Navigation, Engine Dashboard, Helm Assistant, Initial Setup, Upload Documents, Manage Documents, Settings, Help / Manual.</p>
+    <h3>Weather Conditions Panel</h3>
+    <p>Slide-out panel on the left edge — shows wind speed/direction, temperature, barometric pressure, and sea state summary. Tap <strong>WX</strong> or swipe from the left edge to open/close.</p>
+  </section>
+
+  <!-- §4 Weather Panel -->
+  <section class="section" id="s4">
+    <h2><span class="sec-label">§4</span>Weather Panel</h2>
+    <h3>Windy — Wind &amp; Wave Map</h3>
+    <p>Embedded Windy.com map showing wind speed, direction, and wave height overlays centred on your GPS position. Pinch to zoom, drag to pan. Defaults to wave height overlay — tap the map menu to switch to wind, pressure, rain, etc. Wind in knots, temperature in °C. <strong>Requires internet.</strong></p>
+    <h3>Radar</h3>
+    <p>Embedded RainViewer radar map showing precipitation. Animated — shows the last 2 hours of radar frames. <strong>Requires internet.</strong></p>
+    <h3>Switching Tabs</h3>
+    <p>Two tabs at the top: <strong>WINDY</strong> and <strong>RADAR</strong>. Tap to switch. Both maps lazy-load on first open.</p>
+  </section>
+
+  <!-- §5 Marine Vision -->
+  <section class="section" id="s5">
+    <h2><span class="sec-label">§5</span>Marine Vision — Camera System</h2>
+    <h3>Camera Grid</h3>
+    <p>Main Marine Vision screen shows a grid of all configured camera slots. Each cell displays a live feed (if connected), camera name, and a status indicator: green (live), amber (connecting), red (offline). Tap any cell to open it full-screen — pinch to zoom, Record button to start/stop clip recording, Back to return to grid.</p>
+    <h3>Camera Slots</h3>
+    <p>Cameras are assigned to named slots (Bow, Stern, Port, Starboard, Helm, etc.) in Settings → Cameras. Up to 8 slots supported. Slots without a physical camera assigned show a placeholder.</p>
+    <h3>Fish Detection</h3>
+    <p>When a camera is active, d3kOS runs a YOLOv8-based AI model looking for fish in the frame. On detection: a <strong>FISH DETECTED</strong> banner appears, species identification queries the AI, species name and habitat notes appear, and the detection is logged with timestamp and confidence level. Runs at low priority — does not affect stream performance.</p>
+    <h3>Forward Watch — AI Collision Avoidance</h3>
+    <p>A bow-mounted camera configured as <strong>Forward Watch</strong> analyses the video feed for marine hazards (approaching vessel, person in water, kayak, debris). On detection: a <strong>HAZARD DETECTED</strong> alert fires, object type and estimated distance display, and GPS coordinates are pushed to your chartplotter as an AIS-like target. <strong>Forward Watch is a safety aid — it does not replace a proper watch or VHF radio.</strong></p>
+    <h3>Recordings</h3>
+    <p>Camera clips stored at <code>/home/d3kos/camera-recordings/</code>. Named with camera slot and timestamp. Manage storage from Settings → Cameras → Storage.</p>
+  </section>
+
+  <!-- §6 Engine Dashboard -->
+  <section class="section" id="s6">
+    <h2><span class="sec-label">§6</span>Engine Dashboard &amp; Predictive Maintenance</h2>
+    <h3>Engine Gauges</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Gauge</th><th>Units</th><th>Normal range</th></tr>
+      <tr><td><strong>RPM</strong></td><td>rev/min</td><td>Varies by engine (see your manual)</td></tr>
+      <tr><td><strong>Coolant Temperature</strong></td><td>°C</td><td>75–95°C typical inboard</td></tr>
+      <tr><td><strong>Oil Pressure</strong></td><td>PSI</td><td>40–80 PSI at operating temp</td></tr>
+      <tr><td><strong>Alternator Voltage</strong></td><td>V</td><td>13.8–14.4V when charging</td></tr>
+      <tr><td><strong>Fuel Flow</strong></td><td>L/hr or GPH</td><td>Varies by throttle</td></tr>
+      <tr><td><strong>Hours</strong></td><td>h</td><td>Cumulative engine hours</td></tr>
+      <tr><td><strong>Trim</strong></td><td>°</td><td>0° = full down</td></tr>
+    </table></div>
+    <p>For twin-engine setups, port and starboard gauges appear side by side.</p>
+    <h3>AI Engine Diagnostic</h3>
+    <p>Tap the <strong>AI DIAGNOSTIC</strong> button (or tap any cell in alert state on the main dashboard) to send current engine readings to Helm for analysis. Helm assesses the data against your engine's specification and provides a plain-language status report or recommended action. <strong>Available on T2 and T3 only.</strong></p>
+    <h3>Predictive Health Panel</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Cell</th><th>What it shows</th></tr>
+      <tr><td><strong>Advisory Events</strong></td><td>Count of advisory-level threshold crossings this month</td></tr>
+      <tr><td><strong>Critical Events</strong></td><td>Count of critical-level events this month</td></tr>
+      <tr><td><strong>Last Event</strong></td><td>Type and timestamp of the most recent alert</td></tr>
+      <tr><td><strong>Trend</strong></td><td>AI assessment: Stable / Declining / Improving</td></tr>
+    </table></div>
+    <p>d3kOS logs every engine snapshot to a local database. The predictive service analyses these logs continuously. When it detects a developing problem — coolant trending up over multiple sessions, oil pressure gradually declining — it fires a predictive alert <em>before</em> readings reach a threshold. Alerts appear on the dashboard ticker, are spoken by Helm, sent to your phone (T1+), and logged in your AtMyBoat account.</p>
+    <div class="note"><strong>Example predictive alert:</strong> "Coolant temperature has averaged 4°C higher than your baseline over the last 3 sessions. Recommend checking coolant level and inspecting the raw water impeller before your next voyage."</div>
+  </section>
+
+  <!-- §7 Helm Assistant -->
+  <section class="section" id="s7">
+    <h2><span class="sec-label">§7</span>Helm Assistant — AI Chat</h2>
+    <p>Helm is your AI First Mate. It understands your vessel, engine, location, and current instrument state.</p>
+    <h3>Starting a Conversation</h3>
+    <p><strong>Voice:</strong> Tap the <strong>HELM</strong> button on the navigation bar. The "HELM IS LISTENING" overlay appears. Speak naturally — Helm uses Vosk for speech recognition (runs locally, no internet required for transcription). Piper TTS (Amy — female voice) reads the response aloud.</p>
+    <p><strong>Text:</strong> In the Helm Assistant page (More → Helm Assistant), type your question and tap <strong>Send</strong>.</p>
+    <h3>What You Can Ask</h3>
+    <p>Helm has context about your vessel name, type, engine, specifications, current GPS position, speed, course, engine readings, active navigation route, boat log entries, and any documents you have uploaded.</p>
+    <p>Example questions:</p>
+    <ul>
+      <li>"What's my ETA to the next waypoint at current speed?"</li>
+      <li>"My coolant is running at 98°C — is that normal for my engine?"</li>
+      <li>"What should I check if my oil pressure drops below 40 PSI?"</li>
+      <li>"What is the legal minimum life jacket requirement in Ontario?"</li>
+      <li>"What are the bag limits for walleye in Lake Erie?"</li>
+    </ul>
+    <h3>Mute / Pause</h3>
+    <p>Tap the <strong>mute</strong> button (speaker icon, top-right of Helm screen) to toggle TTS voice on or off. <strong>Mute state is saved across reboots.</strong> Helm pauses automatically when you record a voice note in the Boat Log, then resumes.</p>
+    <h3>Documents</h3>
+    <p>Helm can answer questions from documents you have uploaded (vessel manuals, engine guides, fishing regulations). Go to More → Upload Documents to add files.</p>
+  </section>
+
+  <!-- §8 Boat Log -->
+  <section class="section" id="s8">
+    <h2><span class="sec-label">§8</span>Boat Log</h2>
+    <p>Your onboard journal — records engine snapshots, voice notes, text entries. Exports to CSV or JSON.</p>
+    <h3>Adding a Voice Note</h3>
+    <ol>
+      <li>Tap <strong>Boat Log</strong> in the navigation bar</li>
+      <li>Tap the <strong>microphone</strong> button</li>
+      <li>Speak — recording stops automatically after a pause, or tap again to stop</li>
+      <li>Helm transcribes the note using Vosk (local — no internet required)</li>
+      <li>Transcribed text appears and is saved automatically with a timestamp</li>
+    </ol>
+    <h3>Engine Entries</h3>
+    <p>Engine data is captured automatically every 30 minutes when the engine is running: RPM, coolant temperature, oil pressure, voltage, and fuel flow. Engine entries also trigger on significant events — if coolant exceeds the advisory threshold, an entry is written automatically.</p>
+    <h3>Viewing and Exporting</h3>
+    <p>Entries appear in reverse chronological order. Tap any entry to expand it. Tap <strong>Export</strong> to download as <strong>CSV</strong> (spreadsheet-compatible, with unit metadata) or <strong>JSON</strong> (full structured data).</p>
+  </section>
+
+  <!-- §9 Mobile App -->
+  <section class="section" id="s9">
+    <h2><span class="sec-label">§9</span>Mobile Companion App</h2>
+    <p>The d3kOS companion app is a Progressive Web App (PWA) available at <strong>atmyboat.com/app</strong>. No App Store download required — install from your phone's browser.</p>
+    <h3>Installing</h3>
+    <p><strong>iPhone/iPad (Safari):</strong> Open Safari → atmyboat.com/app → log in → Share button → Add to Home Screen → Add.</p>
+    <p><strong>Android (Chrome):</strong> Open Chrome → atmyboat.com/app → log in → ⋮ menu → Add to Home Screen → Install.</p>
+    <h3>Pairing Your Phone</h3>
+    <ol>
+      <li>On your Pi: <strong>Settings → Mobile → Pair Device</strong> — QR code appears</li>
+      <li>In the app: tap <strong>Pair New Device</strong> and scan the QR code</li>
+      <li>Pairing completes automatically — both screens confirm</li>
+    </ol>
+    <h3>App Features</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Feature</th><th>What it shows</th><th>Tier</th></tr>
+      <tr><td><strong>Find My Boat</strong></td><td>Last known GPS position, system health, engine snapshot</td><td>T1 (free)</td></tr>
+      <tr><td><strong>Live Monitoring</strong></td><td>Real-time engine data and alerts via P2P connection</td><td>T1 (free)</td></tr>
+      <tr><td><strong>Alerts</strong></td><td>Push notifications for engine alerts, anchor drag, Pi offline</td><td>T1 (free)</td></tr>
+      <tr><td><strong>Chart Room</strong></td><td>Voyage summaries, engine trends, PDF reports</td><td>T1 (free)</td></tr>
+      <tr><td><strong>Fix My Pi</strong></td><td>Remote AI-guided diagnostic and repair</td><td>T1 pay-per-use / T2+ included</td></tr>
+      <tr><td><strong>OTA Update</strong></td><td>Update d3kOS software remotely</td><td>T1+</td></tr>
+      <tr><td><strong>Fleet Map</strong></td><td>All boats on one map</td><td>T3</td></tr>
+    </table></div>
+    <h3>Chart Room — Reports</h3>
+    <p>Shows voyage summaries (distance, duration, fuel used, max RPM), engine trend graphs (last 30 days), and PDF diagnostic reports (T2+). To view a PDF: Chart Room → Reports → tap any report.</p>
+    <h3>Restart Pi Services</h3>
+    <p>In Settings → Restart Pi, tap <strong>Restart Services</strong> to remotely restart core d3kOS services (voice, AI, Gemini, engine monitor). A progress indicator shows the status. Takes approximately 30–60 seconds.</p>
+  </section>
+
+  <!-- §10 Fix My Pi / OTA -->
+  <section class="section" id="s10">
+    <h2><span class="sec-label">§10</span>Fix My Pi &amp; OTA Updates</h2>
+    <h3>Fix My Pi</h3>
+    <p>Remote diagnostic and repair service. Access from the d3kOS mobile app → Fix My Pi tab, or from atmyboat.com/fix-my-pi.</p>
+    <p><strong>How it works:</strong></p>
+    <ol>
+      <li>Describe the problem (e.g. "Dashboard shows blank screen", "Engine data stopped updating")</li>
+      <li>Submit — queued in the AtMyBoat command queue</li>
+      <li>Pi syncs within 15–30 minutes and pulls the command</li>
+      <li>d3kOS runs automated diagnostics across all services</li>
+      <li>A PDF report is generated and delivered to your Chart Room</li>
+    </ol>
+    <div class="tbl-wrap"><table>
+      <tr><th>Tier</th><th>Fix My Pi cost</th></tr>
+      <tr><td>T1</td><td>$29.99 per incident</td></tr>
+      <tr><td>T2 / T3</td><td>Included — unlimited</td></tr>
+    </table></div>
+    <p><strong>Can fix remotely:</strong> stopped services, configuration corruption, disk space, network problems, software crashes.<br>
+    <strong>Cannot fix remotely:</strong> physical hardware failures, power supply problems, GPS antenna disconnections, camera hardware faults.</p>
+    <h3>OTA Software Updates</h3>
+    <p>Over-the-Air updates for T1, T2, and T3 subscribers. No SD card removal or keyboard required.</p>
+    <ol>
+      <li>In the app: <strong>Settings → System → Check for Updates</strong></li>
+      <li>If available, version number and release notes are shown</li>
+      <li>Tap <strong>Install Update</strong> — update is queued</li>
+      <li>Pi downloads and installs on next sync — typically 5–10 minutes</li>
+      <li>Pi reboots once — app shows "Update complete" when back online</li>
+    </ol>
+    <div class="note">OTA updates never touch your personal data, vessel configuration, boat log, or API keys.</div>
+  </section>
+
+  <!-- §11 Fleet -->
+  <section class="section" id="s11">
+    <h2><span class="sec-label">§11</span>Fleet Management (T3)</h2>
+    <p>Monitor multiple boats from a single T3 account.</p>
+    <h3>Setting Up a Fleet</h3>
+    <ol>
+      <li>Log in to atmyboat.com with your T3 account</li>
+      <li>Go to <strong>Account → Fleet → Create Fleet</strong></li>
+      <li>Give your fleet a name — a join code is generated</li>
+      <li>Share the code with other T3 users to let them join</li>
+    </ol>
+    <h3>Fleet Map Colours</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>Colour</th><th>Meaning</th></tr>
+      <tr><td><strong>Green</strong></td><td>All systems healthy, synced within 30 minutes</td></tr>
+      <tr><td><strong>Amber</strong></td><td>Advisory alert active, or last sync 30–120 minutes ago</td></tr>
+      <tr><td><strong>Red</strong></td><td>Critical alert active, or last sync > 2 hours ago</td></tr>
+      <tr><td><strong>Grey</strong></td><td>Pi offline or not synced in > 24 hours</td></tr>
+    </table></div>
+    <p>Tap any boat dot to see vessel name, last sync time, active alerts, last known position, and engine health summary.</p>
+    <h3>Leaving a Fleet</h3>
+    <p>Go to <strong>Settings → Fleet → Leave Fleet</strong> on the Pi. The boat is removed from the fleet map immediately.</p>
+  </section>
+
+  <!-- §12 Settings -->
+  <section class="section" id="s12">
+    <h2><span class="sec-label">§12</span>Settings</h2>
+    <p>Full-page screen accessible from the <strong>More</strong> menu.</p>
+    <h3>Engine Settings</h3>
+    <p>Service interval, oil change interval, total engine hours, hours since last service, Save / Reset Service Counter.</p>
+    <h3>Display &amp; Units</h3>
+    <p>Distance (nautical miles / km), Speed (knots / km/h), Temperature (°C / °F), Pressure (PSI / kPa / bar). Applies across all screens after Save.</p>
+    <h3>Alert Thresholds</h3>
+    <p>Set advisory, alert, and critical limits for coolant temperature, oil pressure, depth below keel, and voltage (low). Default values come from your engine specification — adjust only if your engine manual specifies different limits.</p>
+    <h3>Mobile App</h3>
+    <p>Pair Device (QR code), Paired Devices list (tap to unpair), Alert Preferences (which alerts notify your phone), Sync Status (last sync / next sync).</p>
+    <h3>Predictive Maintenance</h3>
+    <p>Enable/disable predictive analysis, Baseline Reset (use after major engine work), Alert Sensitivity (Low / Medium / High).</p>
+    <h3>AI Configuration (Gemini)</h3>
+    <p>Enter or update Gemini API key, toggle Voice Responses, toggle Auto-Diagnose Alerts, Save Configuration.</p>
+    <h3>Fleet (T3 only)</h3>
+    <p>Create Fleet, Join Fleet (enter join code), Leave Fleet, Fleet Status.</p>
+    <h3>Data Management</h3>
+    <p>Export All Data (ZIP), Clear Trip Data (requires confirmation), Clear Benchmarks (requires confirmation).</p>
+    <h3>System</h3>
+    <p>Reboot System (requires confirmation), Check for Updates (T1+), Install Update (appears when available), Initial Setup Reset (requires triple confirmation — contact support first), Visit AtMyBoat.com.</p>
+  </section>
+
+  <!-- §13 Remote Access -->
+  <section class="section" id="s13">
+    <h2><span class="sec-label">§13</span>Remote Access</h2>
+    <p>Shows the status of d3kOS's connection to the AtMyBoat.com monitoring service.</p>
+    <p>When connected, AtMyBoat.com receives: vessel name and approximate GPS position (last known — not a live track), system health status, engine data summaries (trend data — not raw readings), alert events (type and timestamp).</p>
+    <div class="tbl-wrap"><table>
+      <tr><th>Status</th><th>Meaning</th></tr>
+      <tr><td><strong>Connected</strong> (green)</td><td>Data is flowing to AtMyBoat.com</td></tr>
+      <tr><td><strong>Offline</strong> (amber)</td><td>Pi has no internet — data queued for next connection</td></tr>
+      <tr><td><strong>Disconnected</strong> (red)</td><td>Connection error — check network settings</td></tr>
+    </table></div>
+    <div class="note"><strong>Privacy:</strong> GPS coordinates sent as approximate position only (±500m). T0 users can disable cloud sync entirely — d3kOS will never contact AtMyBoat.com. Control what data is shared in Settings → Remote Access.</div>
+  </section>
+
+  <!-- §14 Autonomous Health -->
+  <section class="section" id="s14">
+    <h2><span class="sec-label">§14</span>Autonomous Health System</h2>
+    <p>Six autonomous agents run continuously in the background (v0.9.8+).</p>
+    <div class="tbl-wrap"><table>
+      <tr><th>Agent</th><th>Function</th></tr>
+      <tr><td><strong>AA1 — Service Watchdog</strong></td><td>Monitors all 10 critical d3kOS services every 5 minutes. Restarts any stopped service. Alerts AtMyBoat.com if a service cannot be restarted.</td></tr>
+      <tr><td><strong>AA2 — Log Rotation</strong></td><td>Prevents log files from filling the SD card. Rotates and compresses old logs automatically.</td></tr>
+      <tr><td><strong>AA3 — Health Reporter</strong></td><td>Sends system health summaries to AtMyBoat.com. Generates the health score in the mobile app.</td></tr>
+      <tr><td><strong>AA4 — Update Checker</strong></td><td>Checks for available OTA updates and notifies the mobile app. Does not install without your confirmation.</td></tr>
+      <tr><td><strong>AA5 — Network Resilience</strong></td><td>Monitors WiFi and cellular. Reconnects automatically on drop. Switches connections if configured.</td></tr>
+      <tr><td><strong>AA6 — Backup Agent</strong></td><td>Backs up vessel config, boat log, and engine history to USB at /mnt/usb-backup when a drive is inserted. Idle if no USB drive.</td></tr>
+    </table></div>
+    <h3>Health Score</h3>
+    <p>The mobile app shows a <strong>Health Score (0–100)</strong>. Reflects services running, recent failures, disk space, last sync, and active alerts. Score of 100 = everything normal. Below 80 = investigate. Below 50 = at least one critical service failed.</p>
+    <h3>Failure Intelligence</h3>
+    <p>When a service fails and cannot be auto-recovered, d3kOS generates a <strong>Failure Report</strong> sent to AtMyBoat.com. The report includes which service failed, error logs, actions attempted, and recommended repair steps. Appears in Account → Diagnostics. T1+ users can initiate Fix My Pi directly from the report.</p>
+  </section>
+
+  <!-- §15 Troubleshooting -->
+  <section class="section" id="s15">
+    <h2><span class="sec-label">§15</span>Troubleshooting</h2>
+
+    <h3>Dashboard doesn't load / blank screen</h3>
+    <p>The dashboard runs at <code>http://localhost:3000</code> — Chromium connects directly to Flask. If you changed a template file, allow 30 seconds for Flask to restart. Check <code>systemctl is-active d3kos-dashboard</code>.</p>
+
+    <h3>Instrument cells show "---"</h3>
+    <p>Signal K is not receiving data from your NMEA gateway. Check: gateway is powered on and connected; Signal K server status at <code>http://[pi-ip]:8099/admin</code>; baud rate matches your DIP switch setting from Step 5 of the wizard.</p>
+
+    <h3>Next Waypoint shows "No active route"</h3>
+    <p>No route is active in AvNav. Open AvNav from the More menu → load a route → tap Activate → return to dashboard (updates within 15 seconds).</p>
+
+    <h3>GPS position not showing</h3>
+    <p>Ensure your GPS source is connected and transmitting to Signal K. If indoors, GPS will not get a fix — go outside with sky view. Check Signal K data browser for <code>navigation.position</code> — if it shows <code>null</code>, the GPS source is not connected.</p>
+
+    <h3>Helm Assistant not responding / no voice</h3>
+    <ul>
+      <li>Check Gemini API key is set in Settings → AI Configuration</li>
+      <li>Check the USB microphone is plugged in and not muted — tap Helm and speak, check the waveform</li>
+      <li>For TTS silence: check Settings → AI Configuration → Voice Responses is not muted</li>
+      <li><strong>Note:</strong> if Helm was muted before the last reboot, it stays muted. Check the mute state first.</li>
+    </ul>
+
+    <h3>Camera shows "Connecting" / offline</h3>
+    <p>Check that the camera USB or RTSP source is connected. Check camera slot assignment in Settings → Cameras. Restart camera service: Settings → System → Reboot, or contact support.</p>
+
+    <h3>Mobile app not connecting to Pi</h3>
+    <ol>
+      <li>Confirm the Pi is paired — Settings → Mobile → check the paired devices list</li>
+      <li>Check that the Pi has an internet connection — app communicates through AtMyBoat.com when you're away from the boat</li>
+      <li>If Pi is online but showing as offline, wait 15 minutes for the next sync cycle</li>
+      <li>If pairing is lost, re-pair from Settings → Mobile → Pair Device</li>
+    </ol>
+
+    <h3>Fix My Pi not completing</h3>
+    <p>Fix My Pi requires the Pi to sync with AtMyBoat.com — Pi must have internet access. Check the Remote Access page to confirm the Pi is connected. If the fix completes but the problem persists, contact support at atmyboat.com/contact.</p>
+
+    <h3>On-screen keyboard not appearing</h3>
+    <p>The Squeekboard on-screen keyboard appears automatically on text input tap. If not: tap the field again. If behind the main window, check the bottom of the screen.</p>
+
+    <h3>System time wrong after reboot</h3>
+    <p>The Pi has no hardware clock. Time is set by NTP when internet is available (1–2 minutes after network connection). Offline: <code>fake-hwclock</code> keeps approximate time between reboots.</p>
+
+    <h3>Health score below 80</h3>
+    <p>Open the mobile app → tap Health Score to see which component is failing. Common causes: AA6 is amber if no USB drive inserted (insert one or ignore); a service stopped — watchdog will attempt restart; disk space low — clear trip data or export and clear the boat log.</p>
+  </section>
+
+  <!-- §16 Quick Reference -->
+  <section class="section" id="s16">
+    <h2><span class="sec-label">§16</span>Quick Reference Card</h2>
+    <div class="tbl-wrap"><table>
+      <tr><th>Feature</th><th>How to access</th><th>Internet required?</th></tr>
+      <tr><td>Instrument data</td><td>Main dashboard</td><td>No</td></tr>
+      <tr><td>Chart navigation</td><td>More → AvNav</td><td>No (cached charts)</td></tr>
+      <tr><td>Wind/wave map (Windy)</td><td>Weather → Windy tab</td><td>Yes</td></tr>
+      <tr><td>Radar</td><td>Weather → Radar tab</td><td>Yes</td></tr>
+      <tr><td>Camera feeds</td><td>Marine Vision</td><td>No</td></tr>
+      <tr><td>Fish detection</td><td>Automatic when cameras active</td><td>No</td></tr>
+      <tr><td>Forward Watch (collision avoidance)</td><td>Settings → Cameras → Enable Forward Watch</td><td>No</td></tr>
+      <tr><td>AI Helm</td><td>HELM button (voice or text)</td><td>Yes (Gemini API)</td></tr>
+      <tr><td>Engine diagnostics (AI)</td><td>Tap engine cell or Engine Dashboard → AI Diagnostic (T2/T3)</td><td>Yes (Gemini API)</td></tr>
+      <tr><td>Predictive maintenance</td><td>Automatic background analysis</td><td>No</td></tr>
+      <tr><td>Boat log voice note</td><td>Boat Log → microphone</td><td>No</td></tr>
+      <tr><td>Data export</td><td>Boat Log → Export</td><td>No</td></tr>
+      <tr><td>Mobile app</td><td>atmyboat.com/app</td><td>Yes (pairing and cloud sync)</td></tr>
+      <tr><td>Find My Boat</td><td>App → home screen</td><td>Yes</td></tr>
+      <tr><td>Restart Pi services</td><td>App → Settings → Restart Pi</td><td>Yes (via cloud)</td></tr>
+      <tr><td>Fix My Pi</td><td>App → Fix My Pi, or atmyboat.com</td><td>Yes</td></tr>
+      <tr><td>OTA update</td><td>App → Settings → Check for Updates</td><td>Yes</td></tr>
+      <tr><td>Fleet map</td><td>atmyboat.com → Community (T3)</td><td>Yes</td></tr>
+      <tr><td>Settings</td><td>More → Settings</td><td>No</td></tr>
+      <tr><td>Help / Manual</td><td>More → Help / Manual</td><td>No (served locally)</td></tr>
+    </table></div>
+    <p style="margin-top:20px;font-size:0.85rem;color:rgba(200,190,168,0.6);text-align:center">
+      d3kOS User Manual v0.9.9.2 &nbsp;·&nbsp; Document version 2.0.0 &nbsp;·&nbsp; April 2026
+    </p>
+  </section>
+
+</main>
+
+<script>
+// Highlight active ToC item as user scrolls
+(function(){
+  const sections = document.querySelectorAll('.section');
+  const links    = document.querySelectorAll('#toc-list a');
+  const content  = document.getElementById('content');
+
+  function update(){
+    let active = null;
+    sections.forEach(function(s){
+      if(s.getBoundingClientRect().top <= 80) active = s.id;
+    });
+    links.forEach(function(a){
+      const match = a.getAttribute('href') === '#' + active;
+      a.classList.toggle('active', match);
+    });
+  }
+
+  content.addEventListener('scroll', update, {passive:true});
+  update();
+})();
+</script>
+</body>
+</html>

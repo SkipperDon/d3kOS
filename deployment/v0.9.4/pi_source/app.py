@@ -526,6 +526,12 @@ def helm_assistant():
     return render_template('helm-assistant.html', vessel_name=VESSEL_NAME, ui_lang=UI_LANG)
 
 
+@app.route('/manual')
+def manual():
+    """Serve the d3kOS user manual as a full HTML page."""
+    return render_template('manual.html')
+
+
 @app.route('/docs/<name>')
 def serve_doc(name):
     """Serve a markdown doc file from /opt/d3kos/docs/ as plain text."""
