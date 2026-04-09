@@ -50,13 +50,13 @@ SIMULATED_STATUS = {
 }
 
 class AIQueryHandler:
-    def __init__(self):
+    def __init__(self, no_rag: bool = False):
         self.config = self.load_config()
         self.skills = self.load_skills()
         self.signalk = SignalKClient() if SIGNALK_AVAILABLE else None
 
-        # Initialize PDF processor for RAG
-        if RAG_AVAILABLE:
+        # Initialize PDF processor for RAG (skip when --no-rag for fast voice response)
+        if RAG_AVAILABLE and not no_rag:
             try:
                 print("Initializing PDF RAG system...", flush=True)
                 self.pdf_processor = PDFProcessor()
@@ -774,6 +774,8 @@ def main():
     """Test the query handler"""
     parser = argparse.ArgumentParser(description='d3kOS AI Query Handler')
     parser.add_argument('question', nargs='*', help='Question to ask the AI')
+    parser.add_argument('--no-rag', action='store_true',
+                        help='Skip PDF/RAG initialisation for faster voice response')
     parser.add_argument('--force-provider', choices=['openrouter', 'onboard'],
                        help='Force specific AI provider')
     parser.add_argument('--classify-only', action='store_true',
@@ -786,7 +788,7 @@ def main():
 
     question = " ".join(args.question)
 
-    handler = AIQueryHandler()
+    handler = AIQueryHandler(no_rag=args.no_rag)
 
     # Classify-only mode (for intelligent routing in voice assistant)
     if args.classify_only:
