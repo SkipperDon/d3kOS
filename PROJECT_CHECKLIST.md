@@ -875,6 +875,14 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | M6 | **Layer 2 — TTS multilingual (Piper)** | Per-language Piper voice models. Significant Pi build. **DEFERRED to v1.1.** | `[–]` Deferred v1.1 |
 | M7 | **Layer 3 — AI responses in user language** | Inject selected UI language into Gemini system prompt. One-line change in `query_handler.py`. Trivial — include in build. | `[x]` **COMPLETE 2026-04-08 S38** — Language injection added to `gemini-proxy.py` (Port 8097) at system_prompt build. Reads `/opt/d3kos/config/user-preferences.json` → `language` field. If not 'en'/'english', appends "Respond in {language}." to system prompt. Deployed to Pi, d3kos-gemini-proxy restarted, service active. |
 
+### BUG LOG — Reported But Not Yet Investigated
+
+| ID | Bug | Reported | Status |
+|----|-----|----------|--------|
+| BUG-01 | **Mute not working — Helm still speaks when both mute buttons set to mute** | 2026-04-08 S40b. Both anchor watch page and main dashboard mute buttons show muted, but Helm TTS still speaks (was talking about destination while anchoring). Root cause unknown — mute state may not be persisting correctly after anchor watch page open/close, or SSE reconnection resets mute state. Investigate: `ai_bridge.py` mute endpoint, `tts-mute.json` persistence, anchor watch SSE reconnection side effects. | `[ ]` Next session |
+
+---
+
 ### REMOVED FROM BUILD (never requested)
 
 | ID | Item | Reason |
