@@ -115,6 +115,13 @@ class PortArrivalMonitor:
         if vessel_lat is None or vessel_lon is None:
             return  # No GPS fix
 
+        # SOG gate: suppress arrival briefing when boat is stationary/docked.
+        # Prevents stale AvNav waypoints from triggering false arrival TTS.
+        sog_ms = sk.get('sog_ms') or nav.get('sog_ms') or 0.0
+        sog_kts = ms_to_knots(sog_ms)
+        if sog_kts < 0.5:
+            return  # Boat not underway — skip arrival check
+
         distance_nm = haversine_nm(vessel_lat, vessel_lon, dest_lat, dest_lon)
 
         if distance_nm <= ARRIVAL_TRIGGER_NM:

@@ -159,7 +159,8 @@ def _espeak(text: str) -> bool:
 def _piper(text: str) -> bool:
     """
     piper TTS: requires voice model at /usr/share/piper/voices/en_US-lessac-medium.onnx
-    Not currently available on Pi (no voice model installed) — fall back to espeak-ng.
+    Uses Popen (not subprocess.run) so processes are registered to _active_procs
+    and can be killed immediately when mute is toggled.
     """
     model_path = '/usr/share/piper/voices/en_US-lessac-medium.onnx'
     if not os.path.isfile(model_path):
@@ -167,13 +168,42 @@ def _piper(text: str) -> bool:
         return _espeak(text)
 
     try:
-        cmd = [
-            'bash', '-c',
-            f'echo {_shell_quote(text)} | piper --model {model_path} --output_raw '
-            f'| aplay -D {AUDIO_DEVICE} -r 22050 -f S16_LE -c 1 -q',
-        ]
-        result = subprocess.run(cmd, timeout=30, capture_output=True)
-        return result.returncode == 0
+        piper_cmd = ['piper', '--model', model_path, '--output_raw']
+        aplay_cmd = ['aplay', '-D', AUDIO_DEVICE, '-r', '22050', '-f', 'S16_LE', '-c', '1', '-q']
+
+        piper_proc = subprocess.Popen(
+            piper_cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        aplay_proc = subprocess.Popen(
+            aplay_cmd,
+            stdin=piper_proc.stdout,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        piper_proc.stdout.close()
+        with _procs_lock:
+            _active_procs.extend([piper_proc, aplay_proc])
+        try:
+            piper_proc.stdin.write(text.encode() + b'\n')
+            piper_proc.stdin.close()
+            aplay_proc.wait(timeout=30)
+            piper_proc.wait(timeout=5)
+        finally:
+            with _procs_lock:
+                for p in [piper_proc, aplay_proc]:
+                    if p in _active_procs:
+                        _active_procs.remove(p)
+        return aplay_proc.returncode == 0
+    except subprocess.TimeoutExpired:
+        log.warning('TTS piper timed out — killing')
+        _kill_active()
+        return False
+    except FileNotFoundError:
+        log.error('piper not found — falling back to espeak-ng')
+        return _espeak(text)
     except Exception as exc:
         log.warning('Piper TTS failed: %s', exc)
         return False

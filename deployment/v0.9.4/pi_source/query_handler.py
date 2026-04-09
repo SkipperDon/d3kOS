@@ -100,13 +100,28 @@ class AIQueryHandler:
         return None
 
     def get_boat_status(self):
-        """Get current boat status from Signal K or simulated data"""
+        """Get current boat status from Signal K or simulated data.
+        Normalises SK SI units to the units expected by the rest of this class:
+          coolant_temp_k  (Kelvin)  → coolant_temp  (Fahrenheit)
+          oil_pressure_pa (Pascals) → oil_pressure   (PSI)
+        """
         if self.signalk:
             try:
                 status = self.signalk.get_boat_status()
-                # Replace None values with simulated fallback
+                # Normalise SK unit key names / convert SI → imperial base units
+                if 'coolant_temp_k' in status and status['coolant_temp_k'] is not None:
+                    k = status.pop('coolant_temp_k')
+                    status['coolant_temp'] = round((k - 273.15) * 9 / 5 + 32, 1)
+                elif 'coolant_temp_k' in status:
+                    status.pop('coolant_temp_k')
+                if 'oil_pressure_pa' in status and status['oil_pressure_pa'] is not None:
+                    pa = status.pop('oil_pressure_pa')
+                    status['oil_pressure'] = round(pa * 0.000145038, 1)
+                elif 'oil_pressure_pa' in status:
+                    status.pop('oil_pressure_pa')
+                # Replace any remaining None values with simulated fallback
                 for key in SIMULATED_STATUS:
-                    if key in status and status[key] is None:
+                    if status.get(key) is None:
                         status[key] = SIMULATED_STATUS[key]
                 return status
             except Exception as e:
