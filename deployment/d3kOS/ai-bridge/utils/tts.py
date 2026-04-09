@@ -10,14 +10,124 @@ Environment:
 """
 
 import os
+import json
 import logging
 import subprocess
 import threading
+import time
+
+import numpy as np
+import sounddevice as sd
+import soundfile as sf
 
 log = logging.getLogger(__name__)
 
-TTS_ENGINE   = os.environ.get('TTS_ENGINE', 'espeak-ng')
-AUDIO_DEVICE = os.environ.get('AUDIO_DEVICE', 'plughw:S330,0')
+TTS_ENGINE    = os.environ.get('TTS_ENGINE', 'espeak-ng')
+AUDIO_DEVICE  = os.environ.get('AUDIO_DEVICE', 'plughw:S330,0')
+SPEAKING_FILE = '/opt/d3kos/config/tts-speaking.json'
+MUTE_FILE     = '/opt/d3kos/config/tts-mute.json'
+
+# ── Speaking state flag ────────────────────────────────────────────────────────
+def _write_speaking(speaking: bool):
+    try:
+        with open(SPEAKING_FILE, 'w') as fh:
+            json.dump({'speaking': speaking}, fh)
+    except Exception:
+        pass
+
+
+# ── TTSPlayer — chunk-based playback with pause/resume/stop ───────────────────
+def _find_s330_device() -> int | None:
+    """Return sounddevice index for the Anker S330 output, or None to use default."""
+    try:
+        for i, d in enumerate(sd.query_devices()):
+            if ('S330' in d['name'] or 'Anker' in d['name']) and d['max_output_channels'] > 0:
+                log.info('TTSPlayer using device %d: %s', i, d['name'])
+                return i
+    except Exception:
+        pass
+    return None
+
+
+class TTSPlayer:
+    def __init__(self):
+        self.paused   = False
+        self.stopped  = False
+        self.position = 0
+        self.lock     = threading.Lock()
+        self.device   = _find_s330_device()
+
+    def play(self, wav_file: str):
+        """Load WAV and stream chunk-by-chunk. Supports pause/resume/stop mid-sentence."""
+        try:
+            data, samplerate = sf.read(wav_file, dtype='float32')
+        except Exception as exc:
+            log.warning('TTSPlayer: could not read %s — %s', wav_file, exc)
+            return
+
+        # Resample to device native rate if needed (S330 wants 48000Hz, Piper outputs 22050Hz)
+        if self.device is not None:
+            try:
+                dev_rate = int(sd.query_devices(self.device, 'output')['default_samplerate'])
+                if samplerate != dev_rate:
+                    ratio = dev_rate / samplerate
+                    new_len = int(len(data) * ratio)
+                    if data.ndim == 1:
+                        data = np.interp(np.linspace(0, len(data)-1, new_len),
+                                         np.arange(len(data)), data).astype(np.float32)
+                    else:
+                        data = np.column_stack([
+                            np.interp(np.linspace(0, len(data)-1, new_len),
+                                      np.arange(len(data)), data[:, ch]).astype(np.float32)
+                            for ch in range(data.shape[1])
+                        ])
+                    samplerate = dev_rate
+            except Exception as exc:
+                log.warning('TTSPlayer: resample failed — %s', exc)
+
+        with self.lock:
+            self.stopped = False
+            self.paused  = False
+
+        _write_speaking(True)
+
+        def _play():
+            i = self.position
+            while i < len(data):
+                with self.lock:
+                    if self.stopped:
+                        self.position = 0
+                        _write_speaking(False)
+                        return
+                    if self.paused:
+                        time.sleep(0.05)
+                        continue
+                sd.play(data[i:i + 1024], samplerate, device=self.device)
+                sd.wait()
+                i += 1024
+            self.position = 0
+            _write_speaking(False)
+
+        threading.Thread(target=_play, daemon=True).start()
+
+    def pause(self):
+        with self.lock:
+            self.paused = True
+
+    def resume(self):
+        with self.lock:
+            self.paused = False
+
+    def stop(self):
+        with self.lock:
+            self.stopped = True
+            self.paused  = False
+            self.position = 0
+        sd.stop()
+        _write_speaking(False)
+
+
+player = TTSPlayer()
 
 # ── Mute state ─────────────────────────────────────────────────────────────────
 _muted = False
@@ -26,11 +136,14 @@ _procs_lock = threading.Lock()
 
 
 def set_muted(muted: bool):
-    """Mute or unmute TTS. Muting immediately kills any active speech subprocess."""
+    """Mute or unmute TTS. Muting pauses TTSPlayer immediately; unmuting resumes."""
     global _muted
     _muted = muted
     if muted:
-        _kill_active()
+        player.pause()
+        _kill_active()   # also kill any legacy espeak/aplay procs
+    else:
+        player.resume()
 
 
 def is_muted() -> bool:
@@ -158,55 +271,35 @@ def _espeak(text: str) -> bool:
 
 def _piper(text: str) -> bool:
     """
-    piper TTS: requires voice model at /usr/share/piper/voices/en_US-lessac-medium.onnx
-    Uses Popen (not subprocess.run) so processes are registered to _active_procs
-    and can be killed immediately when mute is toggled.
+    Piper TTS: generate WAV to temp file, then stream via TTSPlayer (pause/resume/stop).
+    Falls back to espeak-ng if piper binary or voice model is missing.
     """
-    model_path = '/usr/share/piper/voices/en_US-lessac-medium.onnx'
+    model_path = '/opt/d3kos/models/piper/en_US-amy-medium.onnx'
     if not os.path.isfile(model_path):
         log.warning('Piper voice model not found at %s — falling back to espeak-ng', model_path)
         return _espeak(text)
 
+    wav_file = '/tmp/d3kos_tts.wav'
     try:
-        piper_cmd = ['piper', '--model', model_path, '--output_raw']
-        aplay_cmd = ['aplay', '-D', AUDIO_DEVICE, '-r', '22050', '-f', 'S16_LE', '-c', '1', '-q']
-
         piper_proc = subprocess.Popen(
-            piper_cmd,
+            ['/usr/local/bin/piper', '--model', model_path, '--output_file', wav_file],
             stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-        aplay_proc = subprocess.Popen(
-            aplay_cmd,
-            stdin=piper_proc.stdout,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        piper_proc.stdout.close()
-        with _procs_lock:
-            _active_procs.extend([piper_proc, aplay_proc])
-        try:
-            piper_proc.stdin.write(text.encode() + b'\n')
-            piper_proc.stdin.close()
-            aplay_proc.wait(timeout=30)
-            piper_proc.wait(timeout=5)
-        finally:
-            with _procs_lock:
-                for p in [piper_proc, aplay_proc]:
-                    if p in _active_procs:
-                        _active_procs.remove(p)
-        return aplay_proc.returncode == 0
-    except subprocess.TimeoutExpired:
-        log.warning('TTS piper timed out — killing')
-        _kill_active()
-        return False
+        piper_proc.communicate(input=text.encode())
+        if piper_proc.returncode != 0:
+            log.warning('Piper exited with code %d — falling back to espeak-ng', piper_proc.returncode)
+            return _espeak(text)
     except FileNotFoundError:
         log.error('piper not found — falling back to espeak-ng')
         return _espeak(text)
     except Exception as exc:
-        log.warning('Piper TTS failed: %s', exc)
-        return False
+        log.warning('Piper TTS failed: %s — falling back to espeak-ng', exc)
+        return _espeak(text)
+
+    player.play(wav_file)
+    return True
 
 
 def _festival(text: str) -> bool:

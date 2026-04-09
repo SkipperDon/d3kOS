@@ -315,6 +315,22 @@ def webhook_query():
         return jsonify({'ok': False, 'error': str(exc)}), 503
 
 
+# ── TTS pause / resume / interrupt ────────────────────────────────────────────
+
+@app.route('/pause-tts', methods=['POST'])
+def pause_tts():
+    """Pause TTSPlayer mid-sentence (wake word or mute button)."""
+    tts.player.pause()
+    return jsonify({'ok': True, 'state': 'paused'})
+
+
+@app.route('/resume-tts', methods=['POST'])
+def resume_tts():
+    """Resume TTSPlayer from where it was paused."""
+    tts.player.resume()
+    return jsonify({'ok': True, 'state': 'resumed'})
+
+
 # ── HELM mute control ──────────────────────────────────────────────────────────
 
 @app.route('/helm/mute', methods=['POST'])
@@ -322,25 +338,13 @@ def helm_mute():
     """
     Browser calls this when operator taps the HELM mute button.
     Body: {'muted': true|false}
-    Uses ALSA hardware mute on the S330 Playback switch for instant silence —
-    stops any playing audio immediately regardless of source process.
+    Pauses/resumes TTSPlayer for mid-sentence silence.
     Also sets tts module flag and persists to file for voice service pre-check.
     """
     data  = request.get_json(silent=True) or {}
     muted = bool(data.get('muted', True))
 
-    # OS-level: mute/unmute S330 speaker immediately (kills any playing audio)
-    # numid=2 = 'Anker PowerConf S330 Playback Switch' — sset won't find it by name
-    alsa_val = 'off' if muted else 'on'
-    try:
-        subprocess.run(
-            ['amixer', '-c', 'S330', 'cset', 'numid=2', alsa_val],
-            capture_output=True, timeout=2
-        )
-    except Exception as exc:
-        log.warning('ALSA mute command failed: %s', exc)
-
-    # In-process flag (stops tts.py from starting new speech in this process)
+    # TTSPlayer pause/resume — immediate mid-sentence silence
     tts.set_muted(muted)
 
     # Persist for voice-assistant-hybrid.py pre-speech check

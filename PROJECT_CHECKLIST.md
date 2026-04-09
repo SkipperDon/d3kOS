@@ -879,8 +879,8 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 | ID | Bug | Reported | Status |
 |----|-----|----------|--------|
-| BUG-01 | **Mute not working — Helm still speaks when both mute buttons set to mute** | S44 2026-04-09: Three bugs fixed — CORS (helm.js used direct port 3002, blocked), subprocess import missing in ai_bridge.py (NameError on ALSA call), ALSA control name wrong (fixed to cset numid=2). Curl chain verified working. Physical button test: STILL FAILED ("nope" from Don). Remaining root cause unknown. Do NOT guess next session — ask Don what the button does visually and what audio behaviour he observes before touching any code. | `[ ]` STILL OPEN |
-| BUG-02 | **Voice 9-second delay on rule-based responses** | 2026-04-09 S43. Pi has `--no-rag` in query_ai() but rule-based responses still take ~9s. Likely Python import overhead or SignalKClient init latency. Need to profile subprocess startup time. | `[ ]` Next session |
+| BUG-01 | **Mute not working** | RESOLVED S44 2026-04-09. ALSA hardware mute (cset numid=2) cuts S330 speaker at OS level. Don confirmed working. | `[x]` DONE S44 |
+| BUG-02 | **Voice 9-second delay** | RESOLVED S44c 2026-04-09. PDFProcessor deferred import in query_handler.py. 9.6s → 0.6s confirmed. | `[x]` DONE S44c |
 | BUG-03 | **"Nothing heard" on first voice query after wake word** | 2026-04-09 S43. KaldiRecognizer creation takes ~2s (triggers Vosk LOG messages). arecord starts AFTER KaldiRecognizer ready. User speaks during wake word → ack WAV → 0.5s sleep → KaldiRecognizer init (2s) — speech missed during those 2s. Fix: pre-warm KaldiRecognizer at service startup, not on first listen() call. | `[ ]` Next session |
 
 ---

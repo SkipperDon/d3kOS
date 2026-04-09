@@ -22,14 +22,10 @@ except ImportError:
     SIGNALK_AVAILABLE = False
     print("⚠ Signal K client not available, using simulated data")
 
-# Import PDF Processor for RAG
+# PDF Processor import is deferred — loaded inside __init__ only when RAG is needed
+# This avoids ~8s import cost on every --no-rag voice query subprocess call
 sys.path.insert(0, '/opt/d3kos/services/documents')
-try:
-    from pdf_processor import PDFProcessor
-    RAG_AVAILABLE = True
-except ImportError:
-    RAG_AVAILABLE = False
-    print("⚠ PDF Processor not available, manual search disabled")
+RAG_AVAILABLE = True  # confirmed on first use; set False if import fails
 
 # Paths
 CONFIG_PATH = "/opt/d3kos/config/ai-config.json"
@@ -55,12 +51,16 @@ class AIQueryHandler:
         self.skills = self.load_skills()
         self.signalk = SignalKClient() if SIGNALK_AVAILABLE else None
 
-        # Initialize PDF processor for RAG (skip when --no-rag for fast voice response)
-        if RAG_AVAILABLE and not no_rag:
+        # Initialize PDF processor for RAG (deferred import — skip entirely when --no-rag)
+        if not no_rag:
             try:
+                from pdf_processor import PDFProcessor  # import here not at module level
                 print("Initializing PDF RAG system...", flush=True)
                 self.pdf_processor = PDFProcessor()
                 print("✓ PDF RAG system ready", flush=True)
+            except ImportError:
+                print("⚠ PDF Processor not available, manual search disabled", flush=True)
+                self.pdf_processor = None
             except Exception as e:
                 print(f"⚠ PDF RAG initialization failed: {e}", flush=True)
                 self.pdf_processor = None
