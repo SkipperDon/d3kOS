@@ -256,6 +256,29 @@ def handle_fix_my_pi(cmd_id, base_url, api_key, device_token):
         logger.error(f"fix_my_pi exception: {e}")
 
 
+def handle_restart_services(cmd_id, base_url, api_key, device_token):
+    """Restart core d3kOS application services (voice, AI, Gemini, predictive)."""
+    import subprocess
+    SERVICES = [
+        'd3kos-voice',
+        'd3kos-ai-bridge',
+        'd3kos-gemini-proxy',
+        'd3kos-predictive',
+    ]
+    results = []
+    for svc in SERVICES:
+        try:
+            r = subprocess.run(['sudo', 'systemctl', 'restart', svc],
+                               capture_output=True, text=True, timeout=30)
+            results.append(f"{svc}:{'ok' if r.returncode == 0 else 'err'}")
+        except Exception as e:
+            results.append(f"{svc}:exc")
+            logger.warning(f"restart_services: {svc} exception: {e}")
+    summary = ', '.join(results)
+    ack_command(base_url, api_key, device_token, cmd_id, 'completed', {'output': summary})
+    logger.info(f"restart_services: {summary}")
+
+
 def handle_ota_upgrade(cmd_id, base_url, api_key, device_token):
     """Download, verify, and install the latest d3kOS release."""
     try:
@@ -533,6 +556,9 @@ def dispatch(cmd, base_url, api_key, device_token):
 
     elif command == 'fix_my_pi':
         handle_fix_my_pi(cmd_id, base_url, api_key, device_token)
+
+    elif command == 'restart_service':
+        handle_restart_services(cmd_id, base_url, api_key, device_token)
 
     elif command == 'ota_upgrade':
         handle_ota_upgrade(cmd_id, base_url, api_key, device_token)

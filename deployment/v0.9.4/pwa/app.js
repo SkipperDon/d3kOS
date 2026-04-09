@@ -2462,6 +2462,79 @@ screens.settings = function renderSettings() {
 
   container.appendChild(otaCard);
 
+  // Restart Pi
+  const rstCard = el('div', { class: 'card' });
+  rstCard.appendChild(el('div', { class: 'card-title' }, 'Restart Pi'));
+  const rstDesc = el('div', { style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;' },
+    'Restart all d3kOS services on your vessel without a full reboot.'
+  );
+  const rstBtn    = el('button', { class: 'btn btn-ghost' }, 'Restart Services');
+  const rstResult = el('div', { style: 'margin-top: 8px; font-size: 0.9rem; display: none;' });
+
+  rstBtn.addEventListener('click', async () => {
+    if (!state.vessel) {
+      rstResult.textContent  = 'No vessel selected.';
+      rstResult.style.color  = 'var(--red)';
+      rstResult.style.display = 'block';
+      return;
+    }
+    rstBtn.disabled    = true;
+    rstBtn.textContent = 'Sending…';
+    rstResult.style.display = 'none';
+
+    try {
+      const { command_id } = await apiSendCommand(state.vessel.pi_installation_id, 'restart_service', {});
+      rstResult.textContent  = `Command queued (#${command_id}). Waiting for Pi…`;
+      rstResult.style.color  = 'var(--text-muted)';
+      rstResult.style.display = 'block';
+      rstBtn.textContent = 'Restarting…';
+
+      // Poll for completion every 5 s, timeout after 2 min
+      let elapsed = 0;
+      const MAX_WAIT = 2 * 60 * 1000;
+      const pollId = setInterval(async () => {
+        elapsed += 5000;
+        try {
+          const status = await apiPollCommand(command_id);
+          if (status.status === 'completed') {
+            clearInterval(pollId);
+            rstResult.textContent  = '✓ Services restarted successfully.';
+            rstResult.style.color  = 'var(--green)';
+            rstBtn.disabled    = false;
+            rstBtn.textContent = 'Restart Services';
+          } else if (status.status === 'failed') {
+            clearInterval(pollId);
+            const msg = status.result?.error || 'Restart failed.';
+            rstResult.textContent  = '✗ ' + msg;
+            rstResult.style.color  = 'var(--red)';
+            rstBtn.disabled    = false;
+            rstBtn.textContent = 'Restart Services';
+          } else if (elapsed >= MAX_WAIT) {
+            clearInterval(pollId);
+            rstResult.textContent  = 'Timed out — Pi did not respond within 2 minutes.';
+            rstResult.style.color  = 'var(--red)';
+            rstBtn.disabled    = false;
+            rstBtn.textContent = 'Restart Services';
+          } else {
+            rstResult.textContent = `Restarting… (${Math.round(elapsed / 1000)}s elapsed)`;
+          }
+        } catch { /* poll failure is non-fatal */ }
+      }, 5000);
+
+    } catch (err) {
+      rstResult.textContent  = '✗ ' + (err.message || 'Command failed.');
+      rstResult.style.color  = 'var(--red)';
+      rstResult.style.display = 'block';
+      rstBtn.disabled    = false;
+      rstBtn.textContent = 'Restart Services';
+    }
+  });
+
+  rstCard.appendChild(rstDesc);
+  rstCard.appendChild(rstBtn);
+  rstCard.appendChild(rstResult);
+  container.appendChild(rstCard);
+
   // Fix My Pi
   const fmpCard = el('div', { class: 'card' });
   fmpCard.appendChild(el('div', { class: 'card-title' }, 'Fix My Pi'));
@@ -2635,83 +2708,6 @@ screens.settings = function renderSettings() {
       ticketsList.textContent = 'Could not load tickets.';
     }
   })();
-
-  // Privacy & Data
-  const privacyCard = el('div', { class: 'card' });
-  privacyCard.appendChild(el('div', { class: 'card-title' }, 'Privacy & Data'));
-  privacyCard.appendChild(el('div', {
-    style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;',
-  }, 'Download a copy of your data or permanently delete your account.'));
-
-  const exportBtn = el('button', { class: 'btn btn-ghost', style: 'margin-bottom: 8px;' }, 'Download My Data');
-  exportBtn.addEventListener('click', async () => {
-    exportBtn.disabled = true;
-    exportBtn.textContent = 'Preparing…';
-    try {
-      const token = localStorage.getItem('app_token') || '';
-      const res = await fetch('https://atmyboat.com/staging/app/data-export.php', {
-        headers: { 'Authorization': 'Bearer ' + token },
-      });
-      if (!res.ok) throw new Error('Export failed');
-      const json = await res.text();
-      const blob = new Blob([json], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = 'atmyboat-data-export.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert('Could not export data. Please try again or contact support.');
-    } finally {
-      exportBtn.disabled = false;
-      exportBtn.textContent = 'Download My Data';
-    }
-  });
-  privacyCard.appendChild(exportBtn);
-
-  const deleteAccountBtn = el('button', {
-    class: 'btn btn-danger',
-    style: 'display: block;',
-  }, 'Delete My Account');
-  let deleteStep = 0;
-  deleteAccountBtn.addEventListener('click', async () => {
-    if (deleteStep === 0) {
-      deleteStep = 1;
-      deleteAccountBtn.textContent = 'Tap again to confirm permanent deletion';
-      deleteAccountBtn.style.opacity = '0.7';
-      setTimeout(() => {
-        if (deleteStep === 1) {
-          deleteStep = 0;
-          deleteAccountBtn.textContent = 'Delete My Account';
-          deleteAccountBtn.style.opacity = '';
-        }
-      }, 5000);
-      return;
-    }
-    deleteStep = 0;
-    deleteAccountBtn.disabled = true;
-    deleteAccountBtn.textContent = 'Deleting…';
-    try {
-      const token = localStorage.getItem('app_token') || '';
-      const res = await fetch('https://atmyboat.com/staging/app/data-delete.php', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirm: true }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Delete failed');
-      alert('Your account data has been deleted. You will now be signed out.');
-      clearSession();
-      showLoginUI();
-    } catch {
-      alert('Could not delete account. Please contact skipperdon@atmyboat.com.');
-      deleteAccountBtn.disabled = false;
-      deleteAccountBtn.textContent = 'Delete My Account';
-    }
-  });
-  privacyCard.appendChild(deleteAccountBtn);
-  container.appendChild(privacyCard);
 
   // Sign out
   container.appendChild(
