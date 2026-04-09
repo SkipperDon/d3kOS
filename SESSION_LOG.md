@@ -2425,3 +2425,105 @@ OPERATOR ACTIONS REQUIRED:
 - Next session: investigate Vosk transcription output for "coolant temperature"
 
 ---
+
+## Session 2026-04-09 (S43) — Voice Keyword Classification Fix + Signal K Simulated Data Bug
+**Goal:** Fix voice bug where known sensor keywords (coolant temperature, RPM) fell through to Gemini/RAG instead of instant rule-based path. Investigate and fix simulated sensor data being returned instead of real Signal K values.
+
+---
+
+**Completed:**
+
+**Voice Keyword Classification Fix — DEPLOYED to Pi**
+- Root cause identified: `classify_simple_query()` in `query_handler.py` had two issues:
+  1. Bare `'which'` in `procedure_keywords` blocked all "which way am I heading"-type navigation queries → returned None → Gemini
+  2. Only multi-word phrases in `simple_patterns` — bare `'coolant'`, `'rpm'`, `'engine state'` all fell through
+- Fix: removed bare `'which'` from `procedure_keywords` (replaced with `'which type'`, `'which kind'`); rewrote `simple_patterns` with single-word + full natural speech variants for all 10 sensor categories (temperature, rpm, oil, fuel, battery, speed, heading, boost, hours, status)
+- TDD: `test_query_handler.py` created with 48 test cases before verifying fix — 13 failures before fix, 48/48 pass after fix
+- Deployed `query_handler.py` to Pi `/opt/d3kos/services/ai/query_handler.py`. Service restarted active.
+
+**Signal K Simulated Data Bug — DEPLOYED to Pi**
+- Root cause identified: `get_boat_status()` in `query_handler.py` called `signalk_client.get_boat_status()` (returns None for unavailable sensors), then substituted `SIMULATED_STATUS` fake values for every None key. Engine off = no PGN 127489 (Dynamic Engine Parameters) → oil pressure and coolant temp None → filled with fake 45 PSI / 180°F.
+- `signalk_client.py` already converts units internally (K→°F, Pa→PSI). The conversion code in `query_handler.py` was dead code.
+- Fix: removed the `for key in SIMULATED_STATUS: if status.get(key) is None: status[key] = SIMULATED_STATUS[key]` block from `query_handler.py`. Simplified `get_boat_status()` to just return `signalk_client.get_boat_status()` directly, SIMULATED_STATUS only on full exception.
+- Response formatting already handled None correctly (`if status.get('oil_pressure') else "sensor not available"`).
+
+**Signal K Zero-Value Falsy Bug — DEPLOYED to Pi (signalk_client.py)**
+- Root cause: `if sog` and `if cog` in `signalk_client.py` treat 0 as falsy → speed=0 knots and heading=0° (due North) returned as None instead of real values.
+- Fix: `if sog is not None` and `if cog is not None` — both now return 0.0 correctly.
+- Also fixed in `query_handler.py` response dict: `status.get('speed') is not None` and `status.get('heading') is not None`.
+- `signalk_client.py` copied from Pi to repo at `deployment/v0.9.4/pi_source/signalk_client.py`.
+
+**Confirmed by Don:** Live voice responses now give honest "sensor not available" when engine off, real values when engine on.
+
+**48/48 tests passing.**
+
+---
+
+**Decisions:**
+- `'overheating'` stays in `diagnostic_intents` (→ Gemini for diagnosis), not in temperature patterns. Don confirmed Option B: overheating queries get Gemini AI analysis, not a raw temperature reading.
+- SIMULATED_STATUS kept for full Signal K outage only — not used as a per-sensor fallback.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-09 | TBD |
+| Ollama | N/A | $0.00 |
+
+**Pending:**
+- 9-second subprocess delay on rule-based voice responses (Pi has `--no-rag`; delay is elsewhere — Python import overhead or SignalKClient init overhead; not yet profiled)
+- "Nothing heard" on first query after wake word — KaldiRecognizer init (~2s) blocks arecord start; speech during init window is missed
+- BUG-01 mute — still open from S42; tts.py Popen fix deployed but not confirmed working by Don
+
+---
+
+### Release Package Manifest — S43 2026-04-09
+
+- Version: no version bump (bug fix only)
+- Update type: hotfix
+- Changed files:
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `query_handler.py` | `/opt/d3kos/services/ai/query_handler.py` | base | classify_simple_query() keyword expansion; get_boat_status() simulated data removed; speed/heading is-not-None response fix |
+| `signalk_client.py` | `/opt/d3kos/services/ai/signalk_client.py` | base | Zero-value falsy fix for speed (sog=0) and heading (cog=0) |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-voice.service` (completed)
+- Rollback: `git checkout HEAD -- deployment/v0.9.4/pi_source/query_handler.py` + redeploy
+- Health check: `systemctl is-active d3kos-voice.service` → active; ask "rpm" → "Engine RPM is 0"; ask "coolant temperature" → "Temperature sensor not available"
+- Release notes: Voice now returns honest sensor status — "sensor not available" when engine is off, real values when running. Speed (0 knots) and heading (0°/North) now correctly reported instead of showing as unavailable.
+
+---
+
+QUALITY METRICS — 2026-04-09 S43
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+ACCOMPLISHED THIS SESSION:
+- Voice keyword classification fixed: 13 failing phrases now route correctly to rule-based handler (TDD: 48/48 pass)
+- Signal K simulated data bug fixed: engine-off sensors now report "not available" instead of fake 45 PSI / 180°F
+- Zero-value falsy bug fixed in signalk_client.py: speed=0 and heading=0° now correctly reported
+- All three fixes deployed to Pi and confirmed working by Don
+
+NOT COMPLETED / DEFERRED:
+- 9-second subprocess delay on rule-based responses — not profiled, cause unknown
+- "Nothing heard" on first voice query — KaldiRecognizer warm-up latency not fixed
+- BUG-01 mute — Popen fix from S42 not yet confirmed working
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Coolant temperature and oil pressure will be real values when engine is ON (PGN 127489); not yet confirmed on the water with engine running — only verified engine-off behavior this session
+- Fuel level and battery voltage sensors may not be wired to NMEA 2000 (no SK paths found for tanks.fuel or electrical.batteries) — will show "sensor not available" even with engine on
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for today's Claude API cost
+- Test voice with engine ON — verify coolant temp and oil pressure return real values (not "sensor not available")
+- OIC assessment before session formally closed
+
+---

@@ -101,29 +101,14 @@ class AIQueryHandler:
 
     def get_boat_status(self):
         """Get current boat status from Signal K or simulated data.
-        Normalises SK SI units to the units expected by the rest of this class:
-          coolant_temp_k  (Kelvin)  → coolant_temp  (Fahrenheit)
-          oil_pressure_pa (Pascals) → oil_pressure   (PSI)
+        signalk_client.get_boat_status() already converts SI units (K→°F, Pa→PSI).
+        Sensors not available in Signal K (e.g. engine off → no PGN 127489)
+        are returned as None — callers must check before displaying.
+        SIMULATED_STATUS is only used when Signal K is completely unreachable.
         """
         if self.signalk:
             try:
-                status = self.signalk.get_boat_status()
-                # Normalise SK unit key names / convert SI → imperial base units
-                if 'coolant_temp_k' in status and status['coolant_temp_k'] is not None:
-                    k = status.pop('coolant_temp_k')
-                    status['coolant_temp'] = round((k - 273.15) * 9 / 5 + 32, 1)
-                elif 'coolant_temp_k' in status:
-                    status.pop('coolant_temp_k')
-                if 'oil_pressure_pa' in status and status['oil_pressure_pa'] is not None:
-                    pa = status.pop('oil_pressure_pa')
-                    status['oil_pressure'] = round(pa * 0.000145038, 1)
-                elif 'oil_pressure_pa' in status:
-                    status.pop('oil_pressure_pa')
-                # Replace any remaining None values with simulated fallback
-                for key in SIMULATED_STATUS:
-                    if status.get(key) is None:
-                        status[key] = SIMULATED_STATUS[key]
-                return status
+                return self.signalk.get_boat_status()
             except Exception as e:
                 print(f"⚠ Signal K error: {e}, using simulated data")
                 return SIMULATED_STATUS
@@ -558,8 +543,8 @@ Provide concise, accurate answers based on this boat's specific configuration an
             'temperature': f"Coolant temperature is {self._format_temperature(status['coolant_temp'], _sys)}." if status.get('coolant_temp') else "Temperature sensor not available.",
             'fuel': f"Fuel level is {status.get('fuel_level', 'unknown')} percent." if status.get('fuel_level') else "Fuel level sensor not available.",
             'battery': f"Battery voltage is {status.get('battery_voltage', 'unknown')} volts." if status.get('battery_voltage') else "Battery voltage sensor not available.",
-            'speed': f"Current speed is {self._format_speed(status['speed'], _sys)}." if status.get('speed') else "Speed sensor not available.",
-            'heading': f"Heading is {status.get('heading', 'unknown')} degrees." if status.get('heading') else "Heading sensor not available.",
+            'speed': f"Current speed is {self._format_speed(status['speed'], _sys)}." if status.get('speed') is not None else "Speed sensor not available.",
+            'heading': f"Heading is {status.get('heading', 'unknown')} degrees." if status.get('heading') is not None else "Heading sensor not available.",
             'boost': f"Boost pressure is {self._format_pressure(status['boost_pressure'], _sys)}." if status.get('boost_pressure') else "Boost pressure sensor not available.",
             'hours': f"Engine has {status.get('engine_hours', 'unknown')} hours." if status.get('engine_hours') else "Engine hours not available.",
             'status': self.get_full_status_response(status)
