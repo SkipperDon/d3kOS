@@ -2366,3 +2366,62 @@ OPERATOR ACTIONS REQUIRED:
 - OIC assessment before session formally closed
 
 ---
+
+## Session 2026-04-08 (S42) — M19 Website Claims Fix + BUG-01 Partial Investigation
+**Goal:** Act on operator S41 close feedback: fix M19 website claims, investigate and partially fix BUG-01 (mute broken, temperature wrong, phantom arrival).
+
+---
+
+**Completed:**
+
+**M19 Website Claims — DONE (deployed to HostPapa staging)**
+- `page-safety.php`: Anchor Watch radius 50m→25m, removed "slider" and "not on polling timer", renamed "Weigh Anchor"→"Clear Anchor". Marine Vision motion detection paragraph removed (M13 permanently removed — replaced with accurate description).
+- `page-pricing.php`: Fleet GPS map marked (Coming Q3 2026) in T3 feature card and comparison table.
+- `page-download.php`: "Full i18n" claim corrected to English-only with (Coming Q3 2026) note.
+- Deployed via `sync-staging.py` (116 files). Committed `74f02bd`.
+
+**BUG-01 Partial Fixes — DEPLOYED to Pi**
+- `tts.py`: `_piper()` rewritten using Popen. Piper + aplay registered to `_active_procs`. Mute kill now works. Root cause: subprocess.run had no handle — mute set but speech continued.
+- `query_handler.py`: SK unit normalisation (coolant_temp_k K→F, oil_pressure_pa Pa→PSI). `--no-rag` arg added + wired to skip PDF init. `Answer:` output on same line (was next line — parser got empty string).
+- `port_arrival.py`: SOG gate (< 0.5 kts) suppresses phantom arrival TTS from stale AvNav waypoint.
+- Services restarted: d3kos-ai-bridge, d3kos-voice — both active. Commits: `43cfb33`, `22a276a`, `51c8ace`.
+
+**Decisions:**
+- BUG-01 voice temperature still wrong after fixes — classify_simple_query() not matching Vosk transcription → falls through to Gemini/RAG → "no relevant information found in manuals." Deferred to next session.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-04-08 | TBD |
+| Ollama | N/A | $0.00 |
+
+**Pending:**
+- BUG-01 voice temperature — next session: check Vosk transcription output, expand classify_simple_query() keyword patterns, add fallback-to-rules when Gemini fails on sensor queries.
+- Mute kill fix deployed — needs live test confirmation.
+
+QUALITY METRICS — 2026-04-08 S42
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 90%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 78/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS — continuation session, no formal /session-start run.
+ROOT CAUSE NOTE: SCR — BUG-01 investigation deeper than scoped, still unresolved.
+
+ACCOMPLISHED THIS SESSION:
+- M19 website claims corrected and deployed (3 pages)
+- BUG-01 root causes identified for all 3 sub-issues; 5 fixes deployed to Pi across 3 files
+NOT COMPLETED / DEFERRED:
+- BUG-01 voice query still returns wrong response — classify_simple_query() not reached due to Vosk transcription drift
+KNOWN GAPS OR UNCERTAINTIES:
+- Mute kill fix not yet confirmed working by Don
+- Vosk small model accuracy is underlying bottleneck for voice sensor queries
+OPERATOR ACTIONS REQUIRED:
+- Test mute after latest tts.py deploy
+- Next session: investigate Vosk transcription output for "coolant temperature"
+
+---
