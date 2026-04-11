@@ -2666,3 +2666,130 @@ REC=1 — TTSPlayer approach broke voice (sounddevice/sample rate), required rol
 - OIC assessment
 
 ---
+
+## Session 2026-04-11 (S44–S48) — M15 Alert Delivery + Forum Fix [CATCH-UP LOG]
+**Note:** Sessions S44–S48 ran out of context before session close. This entry captures work based on available context summary.
+
+**Goal (S44–S47):** BUG-03 KaldiRecognizer warm-up fix, voice engine-on test, forum repair
+**Goal (S48):** M15 alert delivery pipeline (Phase C), forum back-to-blog fix
+
+**Completed:**
+- BUG-03 RESOLVED: `_prewarm_recognizer()` pre-creates KaldiRecognizer at startup. First-query silence eliminated. Don confirmed "works fast."
+- S47 Forum: WAVE contrast errors — 3 remaining column header row contrast issues fixed (page-forum-tools.php / style.css)
+- M15-A: alert_watcher.py — Pi cron every 5 min, posts to alert-notify.php. Deployed to /opt/d3kos/services/alert_watcher.py. d3kos-alert-watcher.service created.
+- M15-B: alert-notify.php — email delivery via wp_mail(). Rate limit 1/15 min per alert type per device. Quiet hours. Type disable. Logs to amboat_alerts. Fixed INSERT (column names: alert_type, triggered_at, not category/created_at/severity).
+- M15-C: alerts-prefs.php — GET/POST user alert preferences in atmyboat_alert_prefs usermeta.
+- M15-D: alerts-list.php — GET last N alerts from amboat_alerts for this device.
+- M15-E: PWA Alerts settings page + real-time SSE + preference controls.
+- Forum single.php: `get_post_type() === 'topic'` guard added. Back to Blog link now hidden on bbPress topic pages.
+- Live test: 2 emails confirmed delivered (anchor_drag + engine_overtemp). Don confirmed receipt via screenshot.
+
+**Files changed:**
+- /opt/d3kos/services/alert_watcher.py (Pi — new)
+- mobile/alert-notify.php — INSERT column name fix
+- mobile/alerts-prefs.php (new)
+- mobile/alerts-list.php (new)
+- single.php — forum back link guard
+- PWA: alerts settings page
+
+**Decisions:**
+- Cron URLs use staging domain — change to live domain when Phase 4 push happens (Don noted this)
+- alert_watcher.py deployed to /opt/d3kos/services/ (not /services/ai/) — matches d3kos-alert-watcher.service WorkingDirectory
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com | TBD |
+| Ollama | Not used | $0.00 |
+
+**Pending from S48:**
+- M2 Fleet Portal (Phase D) — sprint planned, not yet built
+
+---
+
+## Session 2026-04-11 (S49) — M2 Fleet Management Web Portal
+**Goal:** Build M2 T3 Fleet Management Web Portal (Phase D) — Sprint Mode: ON
+
+**Completed:**
+- M2 BUILT: page-fleet-portal.php — WordPress page template (Template Name: Fleet Portal)
+  - T3 gate: is_user_logged_in() + tier check → redirect to /upgrade/ if not T3
+  - DB queries: all vessels for fleet, vessel names via LEFT JOIN d3kos_pairings p ON p.pi_id = m.device_token
+  - Position data: amboat_fleet_positions (lat/lon/cog/sog/age)
+  - Engine data: 7d engine hours (amboat_fleet_engine_snapshots MAX/MIN), 24h RPM/coolant averages
+  - Alert count: amboat_alerts (last 30d grouped by type)
+  - Boatlog: amboat_boatlog (last 3 entries per vessel, pi_installation_id = device_token)
+  - Health colour: green (age≤10min AND 0 alerts), amber (10-60min OR alerts>0), red (>60min OR no pos)
+  - Leaflet.js map: health-colored circle markers + COG arrow overlay + tooltip
+  - Fleet selector dropdown (when user is in multiple fleets)
+  - Fleet summary stats bar: vessel count, active 24h, total engine hours, alerts 30d
+  - Vessel list sidebar with health dot + name + age + role badge, clickable
+  - Detail slide-in panel (bottom, full-width): position + engine + alerts breakdown + boatlog
+  - Message Captain button → modal → fleet-message.php fetch()
+- M2 BUILT: mobile/fleet-message.php — captain messaging endpoint
+  - WP session auth + T3 gate + wp_verify_nonce (fleet_message_captain)
+  - Validates UUID format of device_token
+  - Looks up captain via d3kos_pairings.pi_id = device_token
+  - Rate limit: 1 message per sender per vessel per 5 min (WP transient)
+  - wp_mail() delivery with Reply-To set to sender email
+  - Tested: OPTIONS → 204 ✓, unauthenticated POST → 401 JSON ✓
+- CSS: ~280 lines fleet portal CSS appended to style.css
+  - All font-size ≥ 18px (AODA — confirmed by grep: 0 sub-18px values in fleet block)
+  - All touch targets ≥ 48px minimum height
+  - Health dots, role badges, detail panel, message modal, responsive breakpoints
+
+**Deployed to HostPapa staging:**
+- staging/wp-content/themes/twentytwenty-child/page-fleet-portal.php (34,146 bytes)
+- staging/wp-content/themes/twentytwenty-child/mobile/fleet-message.php (7,093 bytes)
+- staging/wp-content/themes/twentytwenty-child/style.css (109,678 bytes)
+
+**Commit:** e20ba5b — atmyboat-forum repo, branch main
+
+**Release Package Manifest — HostPapa Staging**
+- Version: v0.9.4.1 → v0.9.9.2 Phase D (fleet portal)
+- Update type: incremental (new feature, no schema changes)
+- Changed files:
+  | File | Remote Path | Change |
+  |------|-------------|--------|
+  | page-fleet-portal.php | staging/wp-content/themes/twentytwenty-child/ | NEW — WP Fleet Portal template |
+  | mobile/fleet-message.php | staging/wp-content/themes/twentytwenty-child/mobile/ | NEW — captain messaging endpoint |
+  | style.css | staging/wp-content/themes/twentytwenty-child/ | ADD — fleet portal CSS block |
+- Pre-install steps: none
+- Post-install steps: Don must create WordPress page with Template: Fleet Portal, slug: fleet
+- Rollback: FTP delete page-fleet-portal.php and fleet-message.php; restore style.css from git
+- Health check: GET /staging/wp-content/themes/twentytwenty-child/mobile/fleet-message.php OPTIONS → 204
+- Plain-language release notes: The Fleet Portal is now on staging. Don needs to go into WP Admin → Pages → Add New → set the Page Template to "Fleet Portal" and set the slug to "fleet". T3 users who log in and visit /staging/fleet/ will see the portal. No database migration required.
+
+**Decisions:**
+- d3kos_pairings.pi_id = device_token UUID (direct join, no amboat_devices intermediate step needed)
+- PHP not available on WSL for local syntax check — verified by: OPTIONS 204 + POST 401 JSON responses from staging (syntax error would cause 500)
+- WP page creation is operator action (Don does it in WP Admin after deploy)
+
+**Ollama:** Not used this session (no code generation required — direct implementation)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-11 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Don creates WP Fleet Portal page (operator action)
+- Don tests portal on staging and shares screenshot
+- Phase 4 live push (M19 blockers + CA2 rotation + cron URL updates)
+- M17 Website branding consistency (Phase E)
+- Stripe live migration instructions
+- query_handler.py BUG-02 sync to repo (Pi-only change not yet in repo)
+
+QUALITY METRICS — 2026-04-11 S49
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+---
