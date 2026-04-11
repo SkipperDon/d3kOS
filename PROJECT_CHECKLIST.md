@@ -327,7 +327,8 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 **Owner: Don** — Keyboard nav · WAVE scan · Touch targets (≥48×48px) · Contrast (4.5:1) · Screen reader
 - [x] **COMPLETE 2026-03-26** — Don ran WAVE on all pages and confirmed all red items cleared. Known exception: WordPress frame WP bar (not our code, ignored). Footer still broken but deferred by operator.
 - **WAVE FORUM RE-TEST COMPLETE (S47 addendum 2026-04-11):** 24 contrast errors → 3 → 0. Final fix: `li.bbp-header` / `ul.bbp-forums-header` explicit dark background. Don confirmed "all good now." AIM Score: 9/10.
-- **OPERATOR ACTION STILL PENDING:** Run bbPress repair at staging/wp-admin/tools.php?page=bbp-repair → "Recount all forum topics" to fix stale counts (AI-Assisted Fixes: 6 should be 3; d3kOS Support: 9 should be 5; Engine & Mechanical: 6 should be 3).
+- **OPERATOR ACTION STILL PENDING:** Run bbPress repair at staging/wp-admin/tools.php?page=bbp-repair → "Recount all forum topics" to fix stale counts (AI-Assisted Fixes: 6 should be 3; d3kOS Support: 9 should be 5; Engine & Mechanical: 6 should be 3). Note: repair ran S48 — counts still off. Operator chose to leave.
+- **S48 FIX:** `single.php` — "← Back to Blog" was shown on bbPress topic pages (WordPress falls back to single.php for `topic` post type). Fixed: post type check added; topics now show "← Back to Forum" linking to parent forum. Deployed 2026-04-11.
 
 ### Phase 3B — Pre-Launch Security & Testing (REQUIRED before Phase 4)
 
@@ -365,6 +366,11 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 - [ ] Rotate Gemini API key
 - [ ] Change FTP password for d3kos@atmyboat.com
 - [ ] **PRIVACY POLICY** — Set effective date in `deployment/features/privacy/PRIVACY_POLICY_TEMPLATE.md` to today's date, paste into WordPress page at atmyboat.com/privacy-policy/, publish before clicking Push to Live
+- [ ] **UPDATE cPanel CRON JOBS (M15-D)** — Two cron jobs were added in staging. Before/after live push, update BOTH:
+  - `offline-check.php`: change `/staging/wp-content/...` → `/wp-content/...`
+  - `fix-my-pi-timeout.php` (if staging URL): confirm it points to live URL
+  - Remove the staging-URL versions once live versions are confirmed working
+  - cPanel → Advanced → Cron Jobs → edit each entry
 
 ### Post-Launch
 - [ ] Monitor Gemini API usage (free tier: 20 req/day)
@@ -856,7 +862,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 | ID | Item | Details | Status |
 |----|------|---------|--------|
-| M15 | **Alert delivery pipeline — email + in-app, toggles, quiet hours** | **Twilio SMS removed — never approved. No additional cost solutions only.** Delivery channels: (1) Email via MailPoet (T1+) — primary external channel; (2) In-app notification when PWA is active via existing WebRTC/poll connection. Alert types (from §16.8): engine oil, coolant, RPM spike, battery, anchor drag, Pi offline, Fix My Pi complete, OTA available. Alert types removed: SMS, Twilio, motion detection (M13 removed). User controls: toggle each alert type on/off in PWA Settings; quiet hours (start/end time); Pi offline threshold (default 30 min). Infrastructure: Pi detects alert → writes to HostPapa `alert-dispatch.php` → sends email via MailPoet → PWA picks up on next poll. | `[ ]` |
+| M15 | **Alert delivery pipeline — email + in-app, toggles, quiet hours** | **Twilio SMS removed — never approved. No additional cost solutions only.** Delivery channels: (1) Email via wp_mail() (T1+); (2) In-app badge in PWA. Alert types: anchor_drag, engine_overtemp, engine_oil_pressure, low_fuel, gps_lost, collision_risk. User controls: master email toggle, per-type toggles, quiet hours. Pi offline cron check (60 min, cPanel). | `[x]` **COMPLETE 2026-04-11 S48** — 5 parts deployed: (A) `alert-notify.php` Pi→email HostPapa endpoint; (B) `alert_watcher.py` v0.9.6 cloud notify with local pre-filter; (C) Pi settings.html alert prefs UI + Flask `/api/settings/alert-preferences`; (D) `offline-check.php` cron endpoint; (E) PWA app.js badge zero-on-view + visibilitychange refresh. **Phase 4 action required:** update cPanel cron URLs from /staging/ to / (see Phase 4 checklist). |
 
 ### Website
 

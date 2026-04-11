@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-d3kOS Alert Watcher — P4 Alert-Triggered Immediate Export
+d3kOS Alert Watcher — P4 Alert-Triggered Immediate Export + M15 Cloud Notify
 Polls the self-healing issues.db every 30 seconds.
 When a new CRITICAL or high-priority WARNING alert appears, triggers an
 immediate export via export-manager (:8094) rather than waiting for the
 next scheduled 30-minute export.
 
-Categories that trigger immediate export:
+M15 addition: also POSTs the alert to HostPapa alert-notify.php so the
+account holder receives an email notification. Fire-and-forget — cloud
+notify failure never blocks the export trigger or the poll loop.
+
+Categories that trigger immediate export + email notification:
   - anchor_drag
   - engine_overtemp
   - engine_oil_pressure
@@ -14,13 +18,15 @@ Categories that trigger immediate export:
   - gps_lost
   - collision_risk
 
-All other categories: export on normal schedule.
+All other categories: export on normal schedule, no email.
 
 State: last seen issue ID stored in /opt/d3kos/config/alert-watcher-state.json
+Cloud: credentials from /opt/d3kos/config/cloud-config.json
+Token: device identity from /opt/d3kos/config/device-token.json
 
 Service: d3kos-alert-watcher
 Author:  d3kOS Team
-Version: 0.9.4
+Version: 0.9.6
 """
 
 import json
@@ -34,13 +40,20 @@ from pathlib import Path
 import requests
 
 # ── Config ────────────────────────────────────────────────────────────────────
-ISSUES_DB     = Path('/opt/d3kos/data/self-healing/issues.db')
-STATE_FILE    = Path('/opt/d3kos/config/alert-watcher-state.json')
-LOG_FILE      = Path('/opt/d3kos/logs/alert-watcher.log')
-EXPORT_URL    = 'http://localhost:8094/export/generate'
-POLL_INTERVAL = 30   # seconds
+ISSUES_DB          = Path('/opt/d3kos/data/self-healing/issues.db')
+STATE_FILE         = Path('/opt/d3kos/config/alert-watcher-state.json')
+CLOUD_CONFIG_FILE  = Path('/opt/d3kos/config/cloud-config.json')
+DEVICE_TOKEN_FILE  = Path('/opt/d3kos/config/device-token.json')
+LOG_FILE           = Path('/opt/d3kos/logs/alert-watcher.log')
+EXPORT_URL         = 'http://localhost:8094/export/generate'
+POLL_INTERVAL      = 30   # seconds
 
-# Alert categories that trigger an immediate export
+USER_PREFS_FILE = Path('/opt/d3kos/config/user-preferences.json')
+
+NOTIFY_PATH = '/wp-content/themes/twentytwenty-child/mobile/alert-notify.php'
+NOTIFY_TIMEOUT = 5  # seconds — fire-and-forget, short timeout
+
+# Alert categories that trigger an immediate export AND email notification
 IMMEDIATE_EXPORT_CATEGORIES = {
     'anchor_drag',
     'engine_overtemp',
@@ -57,6 +70,144 @@ logger.setLevel(logging.INFO)
 _h = RotatingFileHandler(str(LOG_FILE), maxBytes=2 * 1024 * 1024, backupCount=2)
 _h.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
 logger.addHandler(_h)
+
+
+def load_alert_prefs():
+    """
+    Read alert_prefs from user-preferences.json.
+    Returns dict with keys: email, enabled_types, quiet_hours.
+    Returns None if file missing — caller should treat as all-enabled.
+    """
+    try:
+        if USER_PREFS_FILE.exists():
+            data = json.loads(USER_PREFS_FILE.read_text())
+            return data.get('alert_prefs')
+    except Exception as e:
+        logger.warning(f'Failed to read alert prefs: {e}')
+    return None
+
+
+def local_prefs_allow(alert_type, severity, prefs):
+    """
+    Return True if local prefs permit this alert to be sent as email.
+    prefs=None means no local config → allow all.
+    Critical severity bypasses quiet hours (matches server-side logic).
+    """
+    if prefs is None:
+        return True
+
+    # Master email toggle
+    if not prefs.get('email', True):
+        return False
+
+    # Per-type check
+    enabled = prefs.get('enabled_types')
+    if isinstance(enabled, list) and alert_type not in enabled:
+        return False
+
+    # Quiet hours (only for non-critical)
+    if severity != 'critical':
+        qh = prefs.get('quiet_hours')
+        if isinstance(qh, dict) and qh.get('start') and qh.get('end'):
+            try:
+                from datetime import timezone
+                import zoneinfo
+                try:
+                    tz = zoneinfo.ZoneInfo(qh.get('tz', 'UTC'))
+                except Exception:
+                    tz = timezone.utc
+                now_int  = int(datetime.now(tz).strftime('%H%M'))
+                q_start  = int(qh['start'].replace(':', ''))
+                q_end    = int(qh['end'].replace(':', ''))
+                in_quiet = (q_start > q_end and (now_int >= q_start or now_int < q_end)) or \
+                           (q_start <= q_end and q_start <= now_int < q_end)
+                if in_quiet:
+                    return False
+            except Exception as e:
+                logger.warning(f'Quiet hours check error: {e}')
+
+    return True
+
+
+def load_cloud_config():
+    """
+    Load cloud-config.json. Returns dict with amboat_api_key and amboat_base_url,
+    or None if the file is missing or the key is still a placeholder.
+    """
+    try:
+        with open(CLOUD_CONFIG_FILE) as f:
+            cfg = json.load(f)
+    except FileNotFoundError:
+        logger.warning(f'cloud-config.json not found at {CLOUD_CONFIG_FILE} — cloud notify disabled')
+        return None
+    except Exception as e:
+        logger.warning(f'Failed to parse cloud-config.json: {e} — cloud notify disabled')
+        return None
+
+    api_key = cfg.get('amboat_api_key', '')
+    if not api_key or api_key == 'YOUR_32_CHAR_HEX_KEY_HERE':
+        logger.warning('amboat_api_key not set in cloud-config.json — cloud notify disabled')
+        return None
+
+    return cfg
+
+
+def get_device_token():
+    """Return device token UUID from device-token.json, or None if unavailable."""
+    try:
+        if DEVICE_TOKEN_FILE.exists():
+            with open(DEVICE_TOKEN_FILE) as f:
+                data = json.load(f)
+            token = data.get('device_token')
+            if token:
+                return token
+    except Exception as e:
+        logger.warning(f'Failed to read device-token.json: {e}')
+    return None
+
+
+def notify_cloud_alert(base_url, api_key, device_token, alert_type, severity, message, timestamp):
+    """
+    POST alert to HostPapa alert-notify.php. Fire-and-forget — returns True/False
+    for logging only; caller never blocks on failure.
+
+    Server-side rate limiting (15 min per type per device) prevents email floods.
+    Quiet hours and per-type toggles are also enforced server-side.
+    """
+    url = base_url.rstrip('/') + NOTIFY_PATH
+    headers = {
+        'Authorization':  f'Bearer {api_key}',
+        'X-Device-Token': device_token,
+        'Content-Type':   'application/json',
+    }
+    payload = {
+        'alert_type': alert_type,
+        'severity':   severity,
+        'message':    message,
+        'timestamp':  timestamp,
+    }
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=NOTIFY_TIMEOUT)
+        if r.status_code == 200:
+            data = r.json()
+            emailed = data.get('data', {}).get('emailed', False)
+            reason  = data.get('data', {}).get('reason', 'unknown')
+            logger.info(
+                f'Cloud notify [{alert_type}/{severity}]: '
+                f'emailed={emailed} reason={reason}'
+            )
+            return True
+        else:
+            logger.warning(
+                f'Cloud notify [{alert_type}] HTTP {r.status_code}: {r.text[:120]}'
+            )
+            return False
+    except requests.exceptions.Timeout:
+        logger.warning(f'Cloud notify [{alert_type}] timed out after {NOTIFY_TIMEOUT}s — continuing')
+        return False
+    except Exception as e:
+        logger.warning(f'Cloud notify [{alert_type}] error: {e} — continuing')
+        return False
 
 
 def load_state():
@@ -82,10 +233,14 @@ def save_state(last_issue_id):
 def check_new_critical_alerts(last_id):
     """
     Check issues.db for new alerts since last_id.
-    Returns (new_last_id, should_export_now, trigger_reason).
+    Returns (new_last_id, should_export_now, trigger_reason, notify_queue).
+
+    notify_queue is a list of dicts for alerts that should trigger an email:
+      [{'alert_type', 'severity', 'message', 'timestamp'}, ...]
+    Server-side rate limiting handles dedup — we send all qualifying alerts.
     """
     if not ISSUES_DB.exists():
-        return last_id, False, None
+        return last_id, False, None, []
 
     try:
         conn = sqlite3.connect(str(ISSUES_DB))
@@ -103,37 +258,53 @@ def check_new_critical_alerts(last_id):
         conn.close()
 
         if not rows:
-            return last_id, False, None
+            return last_id, False, None, []
 
-        new_last_id = rows[-1]['id']
-        should_export = False
+        new_last_id    = rows[-1]['id']
+        should_export  = False
         trigger_reason = None
+        notify_queue   = []
 
         for row in rows:
-            severity = (row['severity'] or '').lower()
-            category = (row['category'] or '').lower()
-            status   = (row['status']   or '').lower()
+            severity = (row['severity']    or '').lower()
+            category = (row['category']    or '').lower()
+            status   = (row['status']      or '').lower()
+            desc     = (row['description'] or '').strip()
+            ts       = (row['timestamp']   or datetime.utcnow().isoformat())
 
             if status == 'resolved':
                 continue
 
-            # Critical alerts always trigger export
+            # Critical alerts: trigger export + notify
             if severity == 'critical':
-                should_export = True
-                trigger_reason = f"critical alert id={row['id']} category={category}"
-                break
+                if not should_export:
+                    should_export  = True
+                    trigger_reason = f"critical alert id={row['id']} category={category}"
+                notify_queue.append({
+                    'alert_type': category,
+                    'severity':   severity,
+                    'message':    desc or f"Critical alert: {category}",
+                    'timestamp':  ts,
+                })
+                continue
 
-            # High-priority warning categories also trigger export
+            # High-priority warning categories: trigger export + notify
             if severity == 'warning' and category in IMMEDIATE_EXPORT_CATEGORIES:
-                should_export = True
-                trigger_reason = f"priority warning id={row['id']} category={category}"
-                break
+                if not should_export:
+                    should_export  = True
+                    trigger_reason = f"priority warning id={row['id']} category={category}"
+                notify_queue.append({
+                    'alert_type': category,
+                    'severity':   severity,
+                    'message':    desc or f"Warning: {category}",
+                    'timestamp':  ts,
+                })
 
-        return new_last_id, should_export, trigger_reason
+        return new_last_id, should_export, trigger_reason, notify_queue
 
     except Exception as e:
         logger.error(f'DB read error: {e}')
-        return last_id, False, None
+        return last_id, False, None, []
 
 
 def trigger_export(reason):
@@ -158,9 +329,17 @@ def trigger_export(reason):
 
 
 def run():
-    logger.info('d3kOS Alert Watcher starting (v0.9.4)')
+    logger.info('d3kOS Alert Watcher starting (v0.9.6)')
     last_id = load_state()
     logger.info(f'Resuming from issue_id={last_id}')
+
+    # Load cloud credentials once at startup (re-read on None to handle late config)
+    cloud_cfg    = load_cloud_config()
+    device_token = get_device_token()
+    if cloud_cfg and device_token:
+        logger.info('Cloud notify: enabled')
+    else:
+        logger.info('Cloud notify: disabled (missing cloud-config.json or device-token.json)')
 
     # Cooldown: minimum seconds between consecutive export triggers
     # Prevents storm of exports if many alerts fire at once
@@ -169,7 +348,7 @@ def run():
 
     while True:
         try:
-            new_last_id, should_export, reason = check_new_critical_alerts(last_id)
+            new_last_id, should_export, reason, notify_queue = check_new_critical_alerts(last_id)
 
             if new_last_id != last_id:
                 logger.debug(f'New alerts: id {last_id} → {new_last_id}')
@@ -188,6 +367,33 @@ def run():
                         f'Export cooldown active ({remaining}s remaining) — '
                         f'skipping trigger for [{reason}]'
                     )
+
+            # ── Cloud notify — fire-and-forget for each qualifying alert ──────
+            if notify_queue:
+                # Retry cloud config load if it was unavailable at startup
+                if not cloud_cfg:
+                    cloud_cfg    = load_cloud_config()
+                    device_token = get_device_token()
+
+                if cloud_cfg and device_token:
+                    base_url    = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/')
+                    api_key     = cloud_cfg.get('amboat_api_key', '')
+                    alert_prefs = load_alert_prefs()
+                    for alert in notify_queue:
+                        # Local pre-filter — avoids unnecessary cloud calls
+                        if not local_prefs_allow(alert['alert_type'], alert['severity'], alert_prefs):
+                            logger.debug(
+                                f"Local prefs suppressed notify for "
+                                f"{alert['alert_type']}/{alert['severity']}"
+                            )
+                            continue
+                        notify_cloud_alert(
+                            base_url, api_key, device_token,
+                            alert['alert_type'],
+                            alert['severity'],
+                            alert['message'],
+                            alert['timestamp'],
+                        )
 
         except Exception as e:
             logger.error(f'Watcher loop error: {e}')

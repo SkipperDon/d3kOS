@@ -234,6 +234,8 @@ const screens = {};
 function navigate(screenId) {
   state.currentScreen = screenId;
   updateNavActive(screenId);
+  // User is opening the alerts screen — they are now viewing alerts, clear the badge
+  if (screenId === 'alerts') updateAlertBadge(0);
   const fn = screens[screenId];
   if (fn) {
     getEl('screen').innerHTML = '';
@@ -400,6 +402,18 @@ function updateAlertBadge(count) {
   if (!badge) return;
   badge.textContent = count;
   badge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+// Lightweight background poll — fetches alert count only (limit=1 to minimise payload).
+// Only updates the badge; never re-renders the current screen.
+// Not called when user is already viewing the alerts screen.
+function refreshAlertCount() {
+  const piId = state.vessel ? state.vessel.pi_installation_id : null;
+  if (!piId || !state.token || state.currentScreen === 'alerts') return;
+  apiAlertsList(piId, 1).then(data => {
+    state.alertCount = data.total || 0;
+    updateAlertBadge(state.alertCount);
+  }).catch(() => {});
 }
 
 // ── Login Screen ──────────────────────────────────────────────────────────────
@@ -1975,7 +1989,9 @@ screens.alerts = function renderAlerts() {
 
   apiAlertsList(piId).then(data => {
     renderList(data.total, data.alerts || []);
-    updateAlertBadge(data.total);
+    // User is actively viewing this screen — badge is 0 (seen).
+    // refreshAlertCount() will restore count when they leave this screen.
+    updateAlertBadge(0);
   }).catch(() => { /* keep cached view on error */ });
 };
 
@@ -4430,10 +4446,19 @@ function init() {
 
   // Auto-refresh every 5 minutes when app is visible
   setInterval(() => {
-    if (!document.hidden && state.token && state.currentScreen === 'dashboard') {
-      refreshDashboard();
+    if (!document.hidden && state.token) {
+      if (state.currentScreen === 'dashboard') {
+        refreshDashboard(); // full refresh includes badge update
+      } else if (state.currentScreen !== 'alerts') {
+        refreshAlertCount(); // lightweight badge-only poll on non-dashboard screens
+      }
     }
   }, 5 * 60 * 1000);
+
+  // Refresh alert badge when user returns to the PWA tab
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && state.token) refreshAlertCount();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

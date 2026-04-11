@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] — v0.9.9.2 Phase C — M15 Alert Delivery Pipeline (S48 2026-04-11)
+
+### Added
+
+- **M15 Alert Delivery — alert-notify.php** — Pi-facing HostPapa endpoint. Bearer + device-token auth. wp_mail() email on critical/priority alerts. Master email toggle, per-type toggles (6 alert types), quiet hours with timezone support. 15-min rate limiting per type per device via WP transients.
+
+- **M15 Alert Delivery — alert_watcher.py v0.9.6** — Pi service extended with cloud notify. Fire-and-forget POST to alert-notify.php per qualifying alert. Local pre-filter reads `user-preferences.json` `alert_prefs` before cloud call. 2-min export cooldown unchanged.
+
+- **M15 Alert Delivery — Pi Settings UI** — `settings.html` alert preferences section: master email toggle, 6 per-type toggles, quiet hours (start/end/timezone). Flask API: GET/POST `/api/settings/alert-preferences` reads/writes `user-preferences.json`.
+
+- **M15 Alert Delivery — offline-check.php** — cPanel cron endpoint (60-min). Queries `COALESCE(last_seen_at, registered_at) < NOW() - INTERVAL 60 MINUTE`. wp_mail() to account holder with offline duration + troubleshooting. 4-hour rate limit per device.
+
+- **M15 Alert Delivery — PWA badge refresh** — Badge zeroes when user opens alerts screen. `refreshAlertCount()` polls count from non-alerts screens. `visibilitychange` and 5-min interval keep badge current.
+
+### Fixed
+
+- **Forum: single.php back link** — bbPress topics displayed "← Back to Blog" because WordPress falls back to `single.php` for `topic` post type. Fixed: post type check added; topics now show "← Back to Forum" (linking to parent forum); blog posts unchanged.
+
+---
+
 ## [0.9.6] - 2026-04-07 (In Progress)
 
 ### Summary
