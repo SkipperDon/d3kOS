@@ -278,12 +278,12 @@ html, body {
 }
 .rt-lbl {
   font-size: 22px; font-weight: 700; letter-spacing: .2em;
-  color: var(--g-txt); text-transform: uppercase;
+  color: rgba(255,255,255,.9); text-transform: uppercase;
   writing-mode: vertical-rl; transform: rotate(180deg);
 }
 .nav-row .row-tab { border-right-color: var(--rule-lt); background: transparent; }
 .nav-row .rt-bar { opacity: .2; }
-.nav-row .rt-lbl { color: var(--ink3); }
+.nav-row .rt-lbl { color: rgba(255,255,255,.6); }
 
 /* ── THE INSTRUMENT CELL ── */
 .ic {
