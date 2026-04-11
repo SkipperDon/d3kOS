@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ ui_lang }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -14,8 +14,8 @@
     --panel: #F0F4F0;
     --cell:  #FFFFFF;
     --ink:   #040C04;
-    --ink2:  rgba(4,12,4,.52);
-    --ink3:  rgba(4,12,4,.28);
+    --ink2:  #484c48;
+    --ink3:  #636863;
     --g:     #003A00;
     --g-txt: #004400;
     --g-dim: rgba(0,58,0,.06);
@@ -31,8 +31,8 @@
     --panel: #070E07;
     --cell:  #0B130B;
     --ink:   #D6EDD6;
-    --ink2:  rgba(214,237,214,.55);
-    --ink3:  rgba(214,237,214,.30);
+    --ink2:  #b8ccb8;
+    --ink3:  #8fa68f;
     --g:     #00C400;
     --g-txt: #00CC00;
     --g-dim: rgba(0,196,0,.08);
@@ -63,8 +63,8 @@
   .sb-back.disabled { opacity: .35; cursor: default; pointer-events: none; }
   .sb-brand { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .15em; color: #fff; }
   .sb-sep   { width: 1px; height: 28px; background: rgba(255,255,255,.2); }
-  .sb-title { font-size: 20px; font-weight: 600; letter-spacing: .08em; color: rgba(255,255,255,.75); flex: 1; }
-  .sb-counter { font-size: 18px; color: rgba(255,255,255,.45); flex-shrink: 0; }
+  .sb-title { font-size: 20px; font-weight: 600; letter-spacing: .08em; color: rgba(255,255,255,.92); flex: 1; }
+  .sb-counter { font-size: 18px; color: rgba(255,255,255,.80); flex-shrink: 0; }
 
   /* ── Scroll area ── */
   #setup-scroll { position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
@@ -292,9 +292,31 @@
     letter-spacing: .06em; cursor: pointer; transition: all .15s;
     text-align: center; line-height: 50px; text-decoration: none; }
   .locked-go:hover { border-color: var(--g-bdr); color: var(--ink2); }
+
+  /* ── Skip-to-content ── */
+  .skip-to-content {
+    position: absolute; left: -9999px; top: auto;
+    height: 1px; width: 1px; overflow: hidden;
+    text-decoration: none;
+  }
+  .skip-to-content:focus {
+    position: fixed; left: 16px; top: 60px;
+    height: auto; width: auto; overflow: visible;
+    background: var(--g-txt); color: #fff;
+    padding: 12px 24px; border-radius: 8px; z-index: 9999;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px; font-weight: 700; letter-spacing: .05em;
+  }
+  /* ── Screen-reader only ── */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
 </style>
 </head>
 <body>
+<a class="skip-to-content" href="#main-content">Skip to main content</a>
 
 <div id="sb">
   {% if run_count > 0 %}
@@ -310,6 +332,8 @@
   <div class="sb-counter">{{ run_count }}/{{ run_limit }} runs used</div>
   {% endif %}
 </div>
+
+<a id="main-content" aria-hidden="true" tabindex="-1"></a>
 
 {% if run_count >= run_limit %}
 <!-- ═══════════════ TIER 0 LOCKED ═══════════════ -->
@@ -625,12 +649,15 @@
 
         <div class="sec-div">Engine Count</div>
 
-        <div class="toggle-row" onclick="toggleTwin()" id="twin-toggle-row">
+        <div class="toggle-row" role="switch" aria-checked="false" tabindex="0"
+             id="twin-toggle-row"
+             onclick="toggleTwin()"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTwin();}">
           <div>
             <div class="toggle-row-lbl">Twin engines</div>
             <div class="toggle-row-sub">Port and starboard — affects NMEA DIP switch settings</div>
           </div>
-          <div class="tgl" id="twin-tgl"></div>
+          <div class="tgl" id="twin-tgl" aria-hidden="true"></div>
         </div>
 
         <div class="engine2-block" id="engine2-block">
@@ -1059,6 +1086,7 @@
         document.getElementById('twin-tgl').classList.add('on');
         document.getElementById('engine2-block').classList.add('visible');
         document.getElementById('h_engine_count').value = 'twin';
+        document.getElementById('twin-toggle-row').setAttribute('aria-checked', 'true');
       }
       if (s.step && s.step > 1) goTo(s.step);
     } catch(e) {}
@@ -1142,6 +1170,7 @@
     document.getElementById('twin-tgl').classList.toggle('on', twinEnabled);
     document.getElementById('engine2-block').classList.toggle('visible', twinEnabled);
     document.getElementById('h_engine_count').value = twinEnabled ? 'twin' : 'single';
+    document.getElementById('twin-toggle-row').setAttribute('aria-checked', twinEnabled ? 'true' : 'false');
     saveState();
   }
 
