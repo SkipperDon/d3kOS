@@ -44,6 +44,8 @@
 </head>
 <body>
 
+<a class="skip-to-content" href="#main-content">Skip to main content</a>
+
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
@@ -56,7 +58,7 @@
 </div>
 
 <!-- SCROLLABLE CONTENT -->
-<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
+<div id="main-content" style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
 <div style="max-width:760px;margin:0 auto;padding:24px">
 
   <!-- SUMMARY BAR -->
@@ -84,12 +86,13 @@
   </div>
 
   <!-- DELETE CONFIRM DIALOG -->
-  <div id="confirmBack" style="display:none;position:fixed;inset:0;z-index:700;
+  <div id="confirmBack" role="dialog" aria-modal="true" aria-labelledby="dlg-title"
+       style="display:none;position:fixed;inset:0;z-index:700;
         background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
         align-items:center;justify-content:center;padding:16px">
     <div style="background:var(--panel);border:3px solid var(--crit-bdr);border-radius:20px;
                 width:min(480px,94vw);padding:28px 28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.08em;color:var(--crit);margin-bottom:8px">
+      <div id="dlg-title" style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.08em;color:var(--crit);margin-bottom:8px">
         &#128465; Delete Document?
       </div>
       <p style="font-size: 18px;font-weight:600;color:var(--ink2);line-height:1.7;margin-bottom:20px">
@@ -175,7 +178,7 @@ async function loadDocs() {
 
     if (!docs.length) {
       list.innerHTML = `
-        <div class="sec-header">&#128193; Your Documents</div>
+        <h2 class="sec-header">&#128193; Your Documents</h2>
         <div class="empty-state">
           <div class="empty-icon">&#128228;</div>
           <div class="empty-msg">No Documents Yet</div>
@@ -189,7 +192,7 @@ async function loadDocs() {
       return;
     }
 
-    let rows = `<div class="sec-header">&#128193; Your Documents</div>`;
+    let rows = `<h2 class="sec-header">&#128193; Your Documents</h2>`;
     for (const doc of docs) {
       const name = _esc(doc.filename || doc.name || 'Unknown');
       const size = _fmtSize(doc.size || 0);
@@ -201,7 +204,7 @@ async function loadDocs() {
             <div class="doc-row-name">${name}</div>
             <div class="doc-row-meta">${size}${date ? ' &middot; ' + date : ''}</div>
           </div>
-          <button class="doc-del-btn" title="Delete ${name}"
+          <button class="doc-del-btn" aria-label="Delete ${name}"
             onclick="confirmDelete(${JSON.stringify(doc.filename || doc.name || '')})">&#128465;</button>
         </div>`;
     }
@@ -209,7 +212,7 @@ async function loadDocs() {
 
   } catch (e) {
     list.innerHTML = `
-      <div class="sec-header" style="color:var(--crit)">&#9888; Could Not Load</div>
+      <h2 class="sec-header" style="color:var(--crit)">&#9888; Could Not Load</h2>
       <p style="font-size: 18px;color:var(--ink2);line-height:1.7;margin-bottom:14px">
         The manuals service at localhost:8083 is not responding.<br>
         <span style="font-size: 18px;color:var(--ink3)">${_esc(e.message)}</span>

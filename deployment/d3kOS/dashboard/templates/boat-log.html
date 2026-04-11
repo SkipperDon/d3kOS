@@ -230,12 +230,13 @@
 </style>
 </head>
 <body>
+<a class="skip-to-content" href="#main-content">Skip to main content</a>
 
 <div class="bl-wrap">
 
   <!-- Status bar -->
   <div id="sb">
-    <a href="/" class="bl-back">&#9664;</a>
+    <a href="/" class="bl-back" aria-label="Back to dashboard">&#9664;</a>
     <div class="sb-sep"></div>
     <div class="bl-page-title">Boat Log</div>
     <div class="sb-right">
@@ -244,7 +245,7 @@
   </div>
 
   <!-- Scrollable body -->
-  <div class="bl-body">
+  <div class="bl-body" id="main-content">
   <div class="bl-inner">
 
     <!-- Service status bar -->
@@ -266,7 +267,7 @@
     </div>
 
     <!-- Voice Record Panel -->
-    <div class="bl-sec-head">Voice Note</div>
+    <h2 class="bl-sec-head">Voice Note</h2>
     <div class="bl-record-panel" id="record-panel">
       <button class="bl-rec-btn" id="rec-btn" onclick="toggleRecord()" title="Tap to record">
         <span id="rec-icon">🎤</span>
@@ -290,7 +291,7 @@
     </div>
 
     <!-- Entry list -->
-    <div class="bl-sec-head">Log Entries</div>
+    <h2 class="bl-sec-head">Log Entries</h2>
     <div class="bl-list" id="bl-entry-list">
       <div class="bl-empty">
         <div class="bl-empty-icon">📋</div>
@@ -413,7 +414,7 @@ function renderEntries() {
       '<div class="bl-entry-head">' +
         '<span class="bl-entry-ts">' + tsStr + '</span>' +
         '<span class="bl-entry-type ' + bc + '">' + bl + '</span>' +
-        '<button class="bl-entry-del" onclick="deleteEntry(' + i + ')" title="Delete">✕</button>' +
+        '<button class="bl-entry-del" onclick="deleteEntry(' + i + ')" aria-label="Delete entry">✕</button>' +
       '</div>' +
       (isEng
         ? _engineGrid(e)
