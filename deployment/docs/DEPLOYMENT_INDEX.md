@@ -903,6 +903,24 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/v0.9.4/pwa/app.js` | **[UPDATED — S48]** Four changes: (1) `navigate()` — badge zeroed when entering alerts screen; (2) `refreshAlertCount()` added — polls count if not on alerts screen; (3) `renderAlerts()` — badge set to 0 when user views; (4) `visibilitychange` listener + 5-min interval call `refreshAlertCount()`. HostPapa staging: `/staging/app/app.js` |
 | `atmyboat-forum: single.php` | **[UPDATED — S48]** "← Back to Blog" breadcrumb changed to post-type-aware: `get_post_type() === 'topic'` → "← Back to Forum" (links to parent forum via `bbp_get_topic_forum_id()`); all other post types keep "← Back to Blog". Fixes bbPress topic pages showing blog breadcrumb. HostPapa staging: `/staging/wp-content/themes/twentytwenty-child/single.php` |
 
+## d3kOS Dashboard AODA Remediation — CSS v21 (S50 2026-04-11)
+
+| File | Description |
+|------|-------------|
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED — S50 v21]** Contrast token overhaul: `--ink2` rgba→#484c48 (9.1:1 day), `--ink3` rgba→#636863 (5.8:1 day); night: #b8ccb8/#8fa68f. Status bar opacities lifted: `.sb-vessel`→.95, `.sb-ticker`→.90, `.helm-pill`→.88, `.pi-health`→.92, `.dn-b`→.78. Other: `.nb-icon`→0.65, `.hl-hint`→.88, `.chart-mock-txt`→.75, `.indicator`→.80. Added `.skip-to-content` and `.sr-only` CSS classes. Pi: `/opt/d3kos/services/dashboard/static/css/d3kos.css` |
+| `deployment/d3kOS/dashboard/templates/settings.html` | **[UPDATED — S50]** `<div>` → `<main id="main-content">`; 17× `.sec-header` div → `<h2>`; `<label for=>` on all form controls; 12 empty toggle labels got `<span class="sr-only">`; doc-overlay pre/code bg: `var(--ink3)` → `var(--g-dim)`. Pi: `/opt/d3kos/services/dashboard/templates/settings.html` |
+| `deployment/d3kOS/dashboard/templates/index.html` | **[UPDATED — S50]** aria-label on AI input field. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/index.html` |
+| `deployment/d3kOS/dashboard/templates/anchor-watch.html` | **[UPDATED — S50]** aria-label + aria-valuetext on radius range input; fixed corrupted url_for() link from prior session. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/anchor-watch.html` |
+| `deployment/d3kOS/dashboard/templates/ai-navigation.html` | **[UPDATED — S50]** aria-label on chat input; fixed corrupted url_for() link. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/ai-navigation.html` |
+| `deployment/d3kOS/dashboard/templates/helm-assistant.html` | **[UPDATED — S50]** aria-label on textarea; fixed corrupted url_for() link. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/helm-assistant.html` |
+| `deployment/d3kOS/dashboard/templates/setup.html` | **[UPDATED — S50]** Inline `:root`/`[data-night]` tokens fixed; `.sb-title`/.sb-counter` opacity fix; skip-to-content link + inline CSS; `lang="{{ ui_lang }}"` replacing hardcode; twin engine toggle: `role="switch"` + `aria-checked` + keyboard handler. Pi: `/opt/d3kos/services/dashboard/templates/setup.html` |
+| `deployment/d3kOS/dashboard/templates/boat-log.html` | **[UPDATED — S50]** Skip link; id="main-content"; arrow-only back button → `aria-label`; 2× `.bl-sec-head` div → `<h2>`; JS delete buttons: `aria-label`. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/boat-log.html` |
+| `deployment/d3kOS/dashboard/templates/upload-documents.html` | **[UPDATED — S50]** Skip link; id="main-content"; 4× sec-header → `<h2>` (incl. dynamic #statusHeader). CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/upload-documents.html` |
+| `deployment/d3kOS/dashboard/templates/manage-documents.html` | **[UPDATED — S50]** Skip link; id="main-content"; delete modal: `role="dialog"` + `aria-modal` + `aria-labelledby`; JS `sec-header` → `<h2>`; JS delete buttons → `aria-label`. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/manage-documents.html` |
+| `deployment/d3kOS/dashboard/templates/engine-monitor.html` | **[UPDATED — S50]** Skip link; id="main-content"; 4× sec-header → `<h2>`. CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/engine-monitor.html` |
+| `deployment/d3kOS/dashboard/templates/offline.html` | **[UPDATED — S50]** `lang="{{ ui_lang }}"` replacing hardcode; offline-title → `<h1>`; skip link + id="main-content". CSS v21. Pi: `/opt/d3kos/services/dashboard/templates/offline.html` |
+| `deployment/d3kOS/dashboard/templates/marine-vision.html` | **[UPDATED — S50]** Skip link + id="main-content" on container. CSS v21. (Pre-existing `<h1>`/`<h2>` structure confirmed correct.) Pi: `/opt/d3kos/services/dashboard/templates/marine-vision.html` |
+
 ## M2 Fleet Management Web Portal (S49 2026-04-11)
 
 | File | Description |

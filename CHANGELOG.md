@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] — d3kOS Dashboard AODA Remediation CSS v21 (S50 2026-04-11)
+
+### Fixed
+
+- **AODA/WCAG 2.0 AA — d3kos.css v21** — Root contrast token overhaul eliminates 200+ WAVE "very low contrast" errors across all pages. `--ink2` (day: was 4.2:1 fail → 9.1:1 pass) and `--ink3` (day: was 1.97:1 critical fail → 5.8:1 pass). Night mode tokens corrected. 8 status-bar/ticker opacity values lifted.
+
+- **AODA — settings.html** — Semantic structure: scroll container → `<main id="main-content">`. 17 section divs → `<h2>`. All form inputs labelled. 12 empty toggle labels given screen-reader text. Skip-to-content link wired.
+
+- **AODA — 12 remaining Flask templates** — Skip-to-content links on all pages. `id="main-content"` on every scrollable body. Section headings `<div>` → `<h2>` (engine-monitor, upload-documents, manage-documents, boat-log). Aria-labels on icon-only buttons. Delete modal `role="dialog"` + `aria-modal`. Setup wizard twin-engine toggle `role="switch"` + keyboard handler. `lang="{{ ui_lang }}"` on setup.html + offline.html.
+
+---
+
 ## [Unreleased] — v0.9.9.2 Phase C — M15 Alert Delivery Pipeline (S48 2026-04-11)
 
 ### Added

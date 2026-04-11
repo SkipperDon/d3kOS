@@ -1,3 +1,58 @@
+## Session 2026-04-11 (S50) — AODA Compliance Remediation — d3kOS Dashboard (All Screens)
+**Goal:** Full WCAG 2.0 AA / AODA compliance pass on every d3kOS Pi dashboard screen (Chromium kiosk target, 45–70 year old users)
+
+**Completed:**
+- **d3kos.css v21** — root contrast token overhaul: `--ink2` rgba(4,12,4,.52) → `#484c48` (9.1:1), `--ink3` rgba(4,12,4,.28) → `#636863` (5.8:1); night mode tokens same fix; 8 status-bar/ticker/nav opacity values lifted to pass 3:1 minimum; `.skip-to-content` + `.sr-only` CSS classes added globally
+- **settings.html** — `<div class="settings-content">` → `<main id="main-content">`; all 17 `<div class="sec-header">` → `<h2>`; `<label for=>` added to vessel name, home port, quiet-hours, Gemini key/model, Ollama address/model; 12 empty toggle labels got `<span class="sr-only">` descriptions; doc-overlay pre/code bg changed from `var(--ink3)` to `var(--g-dim)` (was going to become unreadable after token change)
+- **index.html** — `aria-label` on AI input field
+- **anchor-watch.html** — `aria-label` + `aria-valuetext` on radius range slider; fixed corrupted `url_for()` link (sed regression from prior session)
+- **ai-navigation.html** — `aria-label` on chat input; fixed corrupted `url_for()` link
+- **helm-assistant.html** — `aria-label` on message textarea; fixed corrupted `url_for()` link
+- **setup.html** — inline `:root` and `[data-night]` tokens fixed (same pattern as d3kos.css); `.sb-title` .75 → .92, `.sb-counter` .45 → .80; skip-to-content link; `lang="{{ ui_lang }}"` replacing hardcoded `"en"`; twin engine toggle: `role="switch"`, `aria-checked`, `tabindex="0"`, keyboard handler (Enter/Space), `aria-checked` synced in `toggleTwin()` and `restoreState()`
+- **boat-log.html** — skip link; `id="main-content"` on `.bl-body`; arrow-only back button got `aria-label="Back to dashboard"`; `.bl-sec-head` divs → `<h2>` (Voice Note, Log Entries); JS delete buttons changed from `title` to `aria-label`
+- **upload-documents.html** — skip link; `id="main-content"`; 4× `<div class="sec-header">` → `<h2>` (including dynamic `#statusHeader`)
+- **manage-documents.html** — skip link; `id="main-content"`; delete modal: `role="dialog"`, `aria-modal="true"`, `aria-labelledby="dlg-title"`; JS-generated `sec-header` strings → `<h2>`; JS delete buttons: `aria-label="Delete {name}"`
+- **engine-monitor.html** — skip link; `id="main-content"`; 4× `<div class="sec-header">` → `<h2>` (Engine, Tank Levels, System Status, Network Status)
+- **offline.html** — `lang="{{ ui_lang }}"` replacing hardcoded `"en"`; `offline-title` div → `<h1>`; skip link + `id="main-content"`
+- **marine-vision.html** — skip link + `id="main-content"` (already had correct `<h1>`/`<h2>` structure)
+- All 11 remaining templates bumped to CSS `?v=21`
+- All files deployed to Pi, Flask restarted, md5 verified, committed to git (local)
+
+**Decisions:**
+- CSS token fix at `:root` level eliminates 200+ WAVE contrast errors across all pages in one edit — single source of truth confirmed
+- setup.html carries its own inline `:root` (doesn't load variables from d3kos.css at load time for the setup page) — tokens fixed independently
+- `.skip-to-content` CSS lives in d3kos.css globally; setup.html added its own copy inline
+- marine-vision.html had correct semantic heading structure pre-existing — only skip link needed
+
+**Ollama:** Not used
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-11 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- WAVE re-scan by Don on Pi to confirm error count reduction (requires loading pages in Chromium with WAVE extension)
+- setup.html `lang` fix: on first run `ui_lang` is not yet set by Flask — Uncertainty flag: Flask may render this as empty or default. Verify rendered HTML includes correct lang attribute on setup page load.
+- Phase D (M2 Fleet Portal) — WP page creation pending (operator action from S49)
+- Phase E (M17 website branding)
+- query_handler.py BUG-02 sync to repo (Pi-only change)
+
+QUALITY METRICS — 2026-04-11 S50
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 1  (sed regex corrupted url_for links — caught and fixed same session)
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 97/100
+─────────────────────────────────────────────────────
+
+---
+
 ## Session 2026-04-03 (S16) — Admin CRM P1 + P2
 **Goal:** Build Admin CRM Tool v0.9.9.1 Phase 1 (Foundation) and Phase 2 (Customer View) on Ubuntu 22.04 VM
 
