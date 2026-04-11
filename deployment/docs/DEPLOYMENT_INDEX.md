@@ -863,3 +863,23 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/d3kOS/ai-bridge/utils/tts.py` | **[UPDATED — S44]** Added TTSPlayer class: chunk-based WAV playback via sounddevice with pause/resume/stop; `_write_speaking()` helper for tts-speaking.json; `_find_s330_device()` auto-detects S330 in sounddevice list; `set_muted()` calls `player.pause()/resume()`; `_piper()` generates WAV then calls `player.play()`. NOTE: TTSPlayer path not confirmed working for ai_bridge alerts — if alerts silent, restore from git. Pi: `/opt/d3kos/services/ai-bridge/utils/tts.py` |
 | `deployment/v0.9.4/pi_source/test_voice_mute.py` | **[NEW — S44]** TDD test suite for voice mute behavior. 8 tests: piper not called when muted; aplay not called when muted; aplay blocked mid-piper if muted; missing tts-mute.json = not muted; ack suppressed when muted; ack plays when unmuted; respond correctly to muted state toggle. All 8 pass. Pi-only: run `python3 test_voice_mute.py` from voice service dir. |
 | Pi only: `query_handler.py` | **[UPDATED — S44 BUG-02]** `PDFProcessor` import moved from module level to inside `__init__` guarded by `if not no_rag:`. Eliminates 7.95s chromadb import cost on `--no-rag` voice queries. 9.6s → 0.6s. Pi: `/opt/d3kos/services/ai/query_handler.py` (not yet synced to repo — Pi-only change) |
+
+## v0.9.3 Website Forum Nuclear Fix + Content Seeding (S47 2026-04-11)
+
+| File | Description |
+|------|-------------|
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/bbpress.css` | **[UPDATED — S47]** Nuclear rewrite. Font floor: `#bbpress-forums, #bbpress-forums * { font-size: 18px !important; line-height: 1.7 !important; }`. Full-width container overrides with explicit `background-color: var(--bg-deep) !important` on all Twenty Twenty parent containers: `.site-inner`, `#primary`, `.content-area`, `.post-inner`, `.section-inner`, `.singular-content`, `.site-content`, `.entry-content`, `.entry-header` — all + `body.single-forum`, `body.single-topic`, `body.forum-archive` class variants. WAVE contrast fix: explicit dark backgrounds on `li.bbp-topic`, `li.bbp-reply`, `.bbp-reply-author`, `.bbp-topic-author`, `article`, `.hentry`. Root cause: Twenty Twenty white `background-color` on `.entry-content` bled through to bbPress elements causing 24 WAVE contrast failures. |
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/style.css` | **[UPDATED — S47]** Version bumped 0.5.1 → 0.5.2. Forces cache-bust for all enqueued theme files including bbpress.css. |
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/functions.php` | **[UPDATED — S47]** Added front-end deprecated notice suppressor at top of file (before theme setup): `set_error_handler()` for `E_DEPRECATED|E_USER_DEPRECATED`, non-admin only. Suppresses bbPress `seems_utf8()` deprecated in WP 6.9.0. Confirmed working by Don. |
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/footer.php` | **[UPDATED — S47]** Footer Community column fallback: `'Forum' => home_url('/community/')` → `home_url('/forum/')`. Corrects footer Forum link when no WP nav menu assigned to footer-community location. |
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/setup/seed-forum.php` | **[CREATED AND DELETED — S47]** Temporary PHP seeder (v1/v2/v3 iterations). Final v3 seeded 19 factual articles across all 7 forums using direct forum IDs. Deleted from server and repo after completion. Not a permanent theme file. |
+
+### Forum Content Seeded — S47 2026-04-11
+19 articles across 7 forums (all HostPapa staging only):
+- **d3kOS Support (ID 389):** 5 articles — Wi-Fi Setup, System Not Responding, NMEA 2000 Wiring, SD Card Maintenance, Alarm Silencing
+- **Marine Electronics (ID 399):** 2 articles — AIS Integration, VHF/DSC Emergency Setup
+- **Engine & Mechanical (ID 394):** 3 articles — Engine Hours Tracking, Raw Water Impeller Inspection, Winterization
+- **Electrical & Wiring (ID 403):** 2 articles — Shore Power Safety, 12V Fusing
+- **Navigation & Charts (ID 396):** 2 articles — Chart Updates via USB, Radar Overlay Setup
+- **General Seamanship (ID 401):** 2 articles — Pre-Departure Checklist, Anchoring Technique
+- **AI-Assisted Fixes (ID 391):** 3 articles — Voice Diagnostics, AI Engine Health Reports, Smart Alerts
