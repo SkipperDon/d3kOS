@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="{{ ui_lang }}">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>d3kOS &mdash; Offline</title>
-  <link rel="stylesheet" href="/static/css/d3kos.css?v=21">
+  <link rel="stylesheet" href="/static/css/d3kos.css">
 </head>
 <body>
-<a class="skip-to-content" href="#main-content">Skip to main content</a>
 
   <div id="status-bar">
     <a href="/" class="back-btn" style="display:inline-block; text-decoration:none">&#9664; Dashboard</a>
@@ -15,10 +14,10 @@
     <span id="clock"></span>
   </div>
 
-  <div id="main-content" class="screen active">
+  <div class="screen active">
     <div class="offline-wrap">
       <div class="offline-icon">&#128268;</div>
-      <h1 class="offline-title">Service Unreachable</h1>
+      <div class="offline-title">Service Unreachable</div>
       <div class="offline-sub">
         AvNav or a required service is not responding.<br>
         Check that all services are running on the Pi.<br><br>

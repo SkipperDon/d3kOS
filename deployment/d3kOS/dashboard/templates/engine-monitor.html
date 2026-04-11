@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Engine Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=21">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=19">
 <style>
 /* ── ENGINE CELL GRID ── */
 .eng-grid {
@@ -174,8 +174,6 @@
 </head>
 <body>
 
-<a class="skip-to-content" href="#main-content">Skip to main content</a>
-
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
@@ -188,7 +186,7 @@
 </div>
 
 <!-- SCROLLABLE BODY -->
-<div id="main-content" style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y">
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y">
 <div style="padding:16px 16px 32px">
 
   <!-- CONNECTION BANNER -->
@@ -200,7 +198,7 @@
 
   <!-- ── 1 · ENGINE ── -->
   <div class="sec">
-    <h2 class="sec-header">&#9881; Engine</h2>
+    <div class="sec-header">&#9881; Engine</div>
     <div class="eng-grid eng-grid-5">
       <div class="eng-cell" id="cell-rpm">
         <div class="eng-lbl">RPM</div>
@@ -237,7 +235,7 @@
 
   <!-- ── 3 · TANK LEVELS ── -->
   <div class="sec">
-    <h2 class="sec-header">&#128703; Tank Levels</h2>
+    <div class="sec-header">&#128703; Tank Levels</div>
     <div class="eng-grid eng-grid-4">
       <div class="eng-cell" id="cell-fw">
         <div class="eng-lbl">Fresh Water</div>
@@ -268,7 +266,7 @@
 
   <!-- ── 4 · SYSTEM STATUS ── -->
   <div class="sec">
-    <h2 class="sec-header">&#128187; System Status</h2>
+    <div class="sec-header">&#128187; System Status</div>
     <div class="eng-grid eng-grid-4">
       <div class="sys-cell">
         <div class="sys-lbl">CPU Temp</div>
@@ -298,7 +296,7 @@
 
   <!-- ── 5 · NETWORK STATUS ── -->
   <div class="sec">
-    <h2 class="sec-header">&#128225; Network Status</h2>
+    <div class="sec-header">&#128225; Network Status</div>
     <div class="net-grid">
       <div class="net-card">
         <div class="net-dot pulse" id="dot-signalk"></div>

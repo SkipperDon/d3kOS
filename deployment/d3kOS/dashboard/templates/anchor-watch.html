@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Anchor Watch &middot; {{ vessel_name }}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=21">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=20">
 <style>
 /* ── ANCHOR WATCH PAGE ── */
 body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Petch',sans-serif; }
@@ -126,7 +126,7 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Pet
 <div id="aw-page">
   <!-- Canvas map -->
   <div id="aw-map-wrap">
-    <canvas id="aw-canvas" width="300" height="260" aria-label="Anchor position map"></canvas>
+    <canvas id="aw-canvas" width="300" height="260"></canvas>
   </div>
 
   <!-- Stats -->
@@ -154,7 +154,7 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Pet
       <span>Watch Radius</span>
       <span id="aw-radius-val">25 m</span>
     </div>
-    <input type="range" id="aw-radius" min="10" max="100" value="25" step="5" aria-label="Watch radius in metres" aria-valuetext="25 metres">
+    <input type="range" id="aw-radius" min="10" max="100" value="25" step="5">
     <div id="aw-radius-ticks"><span>10 m</span><span>50 m</span><span>100 m</span></div>
   </div>
 

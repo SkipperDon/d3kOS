@@ -5,52 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>d3kOS &mdash; Settings &amp; Help</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/d3kos.css?v=21">
+  <link rel="stylesheet" href="/static/css/d3kos.css?v=15">
 </head>
 <body>
-  <a class="skip-to-content" href="#main-content">Skip to main content</a>
-  
 
   <!-- TOP BAR -->
   <div id="status-bar">
     <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
     <span class="brand">&#9881;&#65039; Settings &amp; Help</span>
+    <div class="indicators">
+      <span id="ind-internet" class="indicator" title="Internet">&#127760;</span>
+      <span id="ind-avnav"    class="indicator" title="AvNav :8080">&#128506;</span>
+      <span id="ind-gemini"   class="indicator" title="AI :3001">&#129302;</span>
+      <span id="ind-signalk"  class="indicator" title="Signal K :8099">&#128225;</span>
+      <span id="ind-ollama"   class="indicator" title="Ollama LAN">&#129504;</span>
+    </div>
     <span id="clock"></span>
   </div>
 
   <!-- TWO-COLUMN BODY -->
   <div class="settings-page-body">
-  <!-- SECTION INDEX BAR — sticky, horizontally scrollable -->
-  <nav class="sec-index" id="sec-index" aria-label="Page sections">
-      <button class="sec-idx-btn" data-target="s-status" onclick="scrollToSec('s-status')" aria-label="Jump to Status">📡 Status</button>
-      <button class="sec-idx-btn" data-target="s-engine" onclick="scrollToSec('s-engine')" aria-label="Jump to Engine">⚓ Engine</button>
-      <button class="sec-idx-btn" data-target="s-units" onclick="scrollToSec('s-units')" aria-label="Jump to Units">📏 Units</button>
-      <button class="sec-idx-btn" data-target="s-alerts" onclick="scrollToSec('s-alerts')" aria-label="Jump to Alerts">🔔 Alerts</button>
-      <button class="sec-idx-btn" data-target="s-ai" onclick="scrollToSec('s-ai')" aria-label="Jump to AI">🤖 AI</button>
-      <button class="sec-idx-btn" data-target="s-camera" onclick="scrollToSec('s-camera')" aria-label="Jump to Camera">📹 Camera</button>
-      <button class="sec-idx-btn" data-target="s-data" onclick="scrollToSec('s-data')" aria-label="Jump to Data">💾 Data</button>
-      <button class="sec-idx-btn" data-target="s-network" onclick="scrollToSec('s-network')" aria-label="Jump to Network">🌐 Network</button>
-      <button class="sec-idx-btn" data-target="s-charts" onclick="scrollToSec('s-charts')" aria-label="Jump to Charts">🗺 Charts</button>
-      <button class="sec-idx-btn" data-target="s-openplotter" onclick="scrollToSec('s-openplotter')" aria-label="Jump to OpenPlotter">🔌 OpenPlotter</button>
-      <button class="sec-idx-btn" data-target="s-start" onclick="scrollToSec('s-start')" aria-label="Jump to Guide">🚀 Guide</button>
-      <button class="sec-idx-btn" data-target="s-roadmap" onclick="scrollToSec('s-roadmap')" aria-label="Jump to Roadmap">📅 Roadmap</button>
-      <button class="sec-idx-btn" data-target="s-actions" onclick="scrollToSec('s-actions')" aria-label="Jump to Actions">🔧 Actions</button>
-      <button class="sec-idx-btn" data-target="s-sysinfo" onclick="scrollToSec('s-sysinfo')" aria-label="Jump to System">💻 System</button>
-      <button class="sec-idx-btn" data-target="s-license" onclick="scrollToSec('s-license')" aria-label="Jump to License">🎫 License</button>
-      <button class="sec-idx-btn" data-target="s-about" onclick="scrollToSec('s-about')" aria-label="Jump to About">ℹ️ About</button>
-      <button class="sec-idx-btn" data-target="s-community" onclick="scrollToSec('s-community')" aria-label="Jump to Community">🌍 Community</button>
-  </nav>
-
-
 
     <!-- SCROLLABLE CONTENT -->
     <div class="settings-scroll-area" id="settingsScroll">
-    <main id="main-content" class="settings-content">
+    <div class="settings-content">
 
 
       <!-- ① SYSTEM STATUS -->
       <div class="sec" id="s-status">
-        <h2 class="sec-header">&#128225; System Status &mdash; Live</h2>
+        <div class="sec-header">&#128225; System Status &mdash; Live</div>
         <div class="status-grid">
           <div class="si"><div class="si-name">AvNav Charts</div><div class="si-val" id="si-avnav">&#8212;</div><div class="si-sub">localhost:8080</div></div>
           <div class="si"><div class="si-name">Signal K</div><div class="si-val" id="si-signalk">&#8212;</div><div class="si-sub">localhost:8099</div></div>
@@ -70,7 +53,7 @@
 
       <!-- ② ENGINE CONFIGURATION -->
       <div class="sec" id="s-engine">
-        <h2 class="sec-header">&#9875; Engine Configuration</h2>
+        <div class="sec-header">&#9875; Engine Configuration</div>
         <div class="g2">
           <div class="card">
             <label class="card-label" for="svc-int">Service Interval</label>
@@ -102,7 +85,7 @@
 
       <!-- ③ UNITS & DISPLAY -->
       <div class="sec" id="s-units">
-        <h2 class="sec-header">&#128207; Units &amp; Display</h2>
+        <div class="sec-header">&#128207; Units &amp; Display</div>
         <div class="g2">
           <div class="card">
             <label class="card-label" for="dist-u">Distance</label>
@@ -148,7 +131,6 @@
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
               <label class="toggle">
-                <span class="sr-only">Measurement system toggle</span>
                 <input type="checkbox" id="met-tog" onchange="document.getElementById('met-lbl').textContent=this.checked?'Metric':'Imperial'">
                 <span class="tslider"></span>
               </label>
@@ -164,110 +146,50 @@
 
       <!-- ④ ALERTS & NOTIFICATIONS -->
       <div class="sec" id="s-alerts">
-        <h2 class="sec-header">&#128276; Alerts &amp; Notifications</h2>
-
-        <!-- Master email toggle -->
-        <div class="card" style="margin-bottom:14px;">
-          <div class="trow">
-            <div>
-              <div class="trow-lbl">Email Notifications</div>
-              <div class="trow-sub">Send email to your AtMyBoat.com account when alerts fire</div>
-            </div>
-            <label class="toggle"><span class="sr-only">Email notifications on/off</span><input type="checkbox" id="alert-email-on" checked><span class="tslider"></span></label>
-          </div>
-        </div>
-
-        <!-- Per-type toggles -->
-        <div class="trow-lbl" style="margin-bottom:8px;">Alert Types</div>
-        <div class="g2" style="margin-bottom:14px;">
+        <div class="sec-header">&#128276; Alerts &amp; Notifications</div>
+        <div class="g2">
           <div class="card">
             <div class="trow">
-              <div><div class="trow-lbl">Anchor Drag</div><div class="trow-sub">Alert when anchor moves beyond set radius</div></div>
-              <label class="toggle"><span class="sr-only">Anchor Drag alert on/off</span><input type="checkbox" id="alert-type-anchor_drag" checked><span class="tslider"></span></label>
+              <div><div class="trow-lbl">Service Due Alert</div><div class="trow-sub">Notify when scheduled service is due</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
             </div>
           </div>
           <div class="card">
             <div class="trow">
-              <div><div class="trow-lbl">Engine Overheat</div><div class="trow-sub">Alert on high engine temperature</div></div>
-              <label class="toggle"><span class="sr-only">Engine Overheat alert on/off</span><input type="checkbox" id="alert-type-engine_overtemp" checked><span class="tslider"></span></label>
+              <div><div class="trow-lbl">Overheat Warning</div><div class="trow-sub">Alert on high engine temperature</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
             </div>
           </div>
           <div class="card">
             <div class="trow">
-              <div><div class="trow-lbl">Low Oil Pressure</div><div class="trow-sub">Alert on low engine oil pressure</div></div>
-              <label class="toggle"><span class="sr-only">Low Oil Pressure alert on/off</span><input type="checkbox" id="alert-type-engine_oil_pressure" checked><span class="tslider"></span></label>
+              <div><div class="trow-lbl">Low Oil Pressure</div><div class="trow-sub">Alert on low oil pressure reading</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
             </div>
           </div>
           <div class="card">
             <div class="trow">
-              <div><div class="trow-lbl">Low Fuel</div><div class="trow-sub">Alert when fuel level is low</div></div>
-              <label class="toggle"><span class="sr-only">Low Fuel alert on/off</span><input type="checkbox" id="alert-type-low_fuel" checked><span class="tslider"></span></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="trow">
-              <div><div class="trow-lbl">GPS Signal Lost</div><div class="trow-sub">Alert when GPS fix is lost</div></div>
-              <label class="toggle"><span class="sr-only">GPS Signal Lost alert on/off</span><input type="checkbox" id="alert-type-gps_lost" checked><span class="tslider"></span></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="trow">
-              <div><div class="trow-lbl">Collision Risk</div><div class="trow-sub">Alert on AIS proximity warning</div></div>
-              <label class="toggle"><span class="sr-only">Collision Risk alert on/off</span><input type="checkbox" id="alert-type-collision_risk" checked><span class="tslider"></span></label>
+              <div><div class="trow-lbl">Battery Voltage Alert</div><div class="trow-sub">Alert on low battery voltage</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
             </div>
           </div>
         </div>
-
-        <!-- Quiet hours -->
-        <div class="card" style="margin-bottom:14px;">
-          <div class="trow-lbl" style="margin-bottom:6px;">Quiet Hours</div>
-          <div class="trow-sub" style="margin-bottom:14px;">Suppress non-critical email alerts during these hours. Critical alerts always send.</div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
-            <div>
-              <label for="alert-quiet-start" style="display:block;font-size:20px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">From</label>
-              <input type="time" id="alert-quiet-start" class="fc" style="width:140px;">
-            </div>
-            <div>
-              <label for="alert-quiet-end" style="display:block;font-size:20px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">To</label>
-              <input type="time" id="alert-quiet-end" class="fc" style="width:140px;">
-            </div>
-            <div>
-              <label for="alert-tz" style="display:block;font-size:20px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Timezone</label>
-              <select id="alert-tz" class="fc" style="width:220px;">
-                <option value="UTC">UTC</option>
-                <option value="America/Halifax">Halifax (AT)</option>
-                <option value="America/Toronto">Toronto / Eastern (ET)</option>
-                <option value="America/Chicago">Chicago / Central (CT)</option>
-                <option value="America/Denver">Denver / Mountain (MT)</option>
-                <option value="America/Vancouver">Vancouver / Pacific (PT)</option>
-                <option value="America/Anchorage">Anchorage (AKT)</option>
-                <option value="Pacific/Honolulu">Honolulu (HT)</option>
-                <option value="Europe/London">London (GMT/BST)</option>
-                <option value="Europe/Paris">Paris / CET</option>
-                <option value="Australia/Sydney">Sydney (AEST)</option>
-              </select>
-            </div>
-          </div>
-          <div style="font-size:18px;color:var(--muted);margin-top:10px;">Leave From and To blank to disable quiet hours.</div>
-        </div>
-
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="saveAlertPrefs()">&#128190; Save Alert Settings</button>
+          <button class="btn btn-primary" onclick="showToast('&#10003; Alert settings saved')">&#128190; Save Alert Settings</button>
         </div>
       </div>
 
 
       <!-- ⑤ AI ASSISTANT -->
       <div class="sec" id="s-ai">
-        <h2 class="sec-header">&#129302; AI Assistant &mdash; Gemini &amp; Vessel Settings</h2>
+        <div class="sec-header">&#129302; AI Assistant &mdash; Gemini &amp; Vessel Settings</div>
         <div class="g2" style="margin-bottom:14px;">
           <div class="card">
-            <label class="card-label" for="vessel-name">Vessel Name</label>
+            <label class="card-label">Vessel Name</label>
             <p class="card-desc">Used in AI system prompt context</p>
             <input type="text" id="vessel-name" class="fc" value="{{ vessel_name }}" placeholder="e.g. Serenity">
           </div>
           <div class="card">
-            <label class="card-label" for="home-port">Home Port</label>
+            <label class="card-label">Home Port</label>
             <p class="card-desc">Used in AI system prompt context</p>
             <input type="text" id="home-port" class="fc" value="{{ home_port }}" placeholder="e.g. Toronto, ON">
           </div>
@@ -283,15 +205,15 @@
             Free tier sufficient. Key stays on your Pi &mdash; never sent elsewhere. Token counts logged only &mdash; query text never stored.
           </div>
           <div class="trow" style="padding-bottom:14px;">
-            <div><label for="gem-key" style="font-weight:700;">API Key</label><div class="trow-sub">Paste from aistudio.google.com &mdash; saved to gemini.env on Pi</div></div>
+            <div><strong>API Key</strong><div class="trow-sub">Paste from aistudio.google.com &mdash; saved to gemini.env on Pi</div></div>
             <div style="display:flex;gap:8px;width:360px;">
-              <input type="password" id="gem-key" class="fc" placeholder="AIzaSy&hellip;" style="flex:1;font-family:'Courier New',monospace;font-size: 20px;" aria-label="Gemini API Key">
+              <input type="password" id="gem-key" class="fc" placeholder="AIzaSy&hellip;" style="flex:1;font-family:'Courier New',monospace;font-size: 20px;">
               <button class="btn btn-primary" style="min-width:80px;padding:0 14px;font-size: 20px;" onclick="var i=document.getElementById('gem-key');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button>
             </div>
           </div>
           <div class="trow">
-            <div><label for="gem-model" style="font-weight:700;">Gemini Model</label><div class="trow-sub">Flash = faster &middot; Pro = smarter</div></div>
-            <select id="gem-model" class="fc" style="width:300px;">
+            <div><strong>Gemini Model</strong><div class="trow-sub">Flash = faster &middot; Pro = smarter</div></div>
+            <select class="fc" style="width:300px;">
               <option>gemini-2.5-flash (Recommended)</option>
               <option>gemini-2.0-flash</option>
               <option>gemini-2.5-pro (Most Capable)</option>
@@ -310,10 +232,10 @@
             <button class="ai-mode" onclick="selAI(this)">&#128187; Ollama<br><span style="font-size: 20px;font-weight:400;">127.0.0.1:11434</span></button>
           </div>
           <div style="margin-top:14px;">
-            <label for="ollama-addr" style="display:block;font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</label>
-            <input type="text" id="ollama-addr" class="fc" value="127.0.0.1:11434" style="font-family:'Courier New',monospace;margin-bottom:10px;">
-            <label for="ollama-model" style="display:block;font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</label>
-            <input type="text" id="ollama-model" class="fc" value="phi3.5:latest" style="font-family:'Courier New',monospace;">
+            <div style="font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama LAN Address</div>
+            <input type="text" class="fc" value="127.0.0.1:11434" style="font-family:'Courier New',monospace;margin-bottom:10px;">
+            <div style="font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ollama Model</div>
+            <input type="text" class="fc" value="phi3.5:latest" style="font-family:'Courier New',monospace;">
           </div>
           <div>
             <div style="font-size: 20px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 6px;">System Prompt Preview</div>
@@ -322,11 +244,11 @@
           <div style="margin-top:12px;">
             <div class="trow">
               <div><div class="trow-lbl">Cache last 10 responses</div><div class="trow-sub">Available for offline review &mdash; response text only, no query text</div></div>
-              <label class="toggle"><span class="sr-only">Cache last 10 responses on/off</span><input type="checkbox" checked><span class="tslider"></span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
             </div>
             <div class="trow">
               <div><div class="trow-lbl">Log token counts only</div><div class="trow-sub">Privacy rule &mdash; query text never stored (always enforced)</div></div>
-              <label class="toggle"><span class="sr-only">Log token counts only (always on)</span><input type="checkbox" checked disabled><span class="tslider"></span></label>
+              <label class="toggle"><input type="checkbox" checked disabled><span class="tslider"></span></label>
             </div>
           </div>
         </div>
@@ -335,10 +257,10 @@
 
       <!-- ⑥ CAMERA SETUP -->
       <div class="sec" id="s-camera">
-        <h2 class="sec-header">
+        <div class="sec-header">
           &#128249; Camera Setup
-          <button class="btn btn-primary" style="padding:6px 14px;min-height:48px;" onclick="camScan()">&#128269; Scan</button>
-        </h2>
+          <button class="btn btn-primary" style="padding:6px 14px;min-height:0;" onclick="camScan()">&#128269; Scan</button>
+        </div>
 
         <!-- Wizard states -->
         <div id="cam-scanning" style="display:none;padding:20px;text-align:center;font-size:20px;color:var(--ink2);">
@@ -375,7 +297,7 @@
 
       <!-- ⑦ DATA MANAGEMENT -->
       <div class="sec" id="s-data">
-        <h2 class="sec-header">&#128190; Data Management</h2>
+        <div class="sec-header">&#128190; Data Management</div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="showToast('&#10003; All data exported successfully')">&#128228; Export All Data</button>
           <button class="btn" onclick="showToast('Select JSON file to import&hellip;')">&#128229; Import Data</button>
@@ -387,7 +309,7 @@
 
       <!-- ⑧ NETWORK & CONNECTIVITY -->
       <div class="sec" id="s-network">
-        <h2 class="sec-header">&#127760; Network &amp; Connectivity</h2>
+        <div class="sec-header">&#127760; Network &amp; Connectivity</div>
         <div class="g2">
           <div>
             <table class="port-table">
@@ -413,11 +335,11 @@
             <div class="card" style="margin-bottom:10px;">
               <div class="trow">
                 <div><div class="trow-lbl">Windy weather panel</div><div class="trow-sub">embed.windy.com &mdash; requires internet</div></div>
-                <label class="toggle"><span class="sr-only">Windy weather panel on/off</span><input type="checkbox" checked><span class="tslider"></span></label>
+                <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
               </div>
               <div class="trow">
                 <div><div class="trow-lbl">Radar panel (RainViewer)</div><div class="trow-sub">rainviewer.com &mdash; requires internet</div></div>
-                <label class="toggle"><span class="sr-only">Radar panel on/off</span><input type="checkbox" checked><span class="tslider"></span></label>
+                <label class="toggle"><input type="checkbox" checked><span class="tslider"></span></label>
               </div>
             </div>
             <button class="btn-full btn-outline" style="font-size: 20px;padding:14px;" onclick="showToast('WiFi: use OpenPlotter at localhost:8081 &rarr; Network')">&#128246; Network Settings (OpenPlotter)</button>
@@ -428,7 +350,7 @@
 
       <!-- ⑨ CHART SETUP & DOCS -->
       <div class="sec" id="s-charts">
-        <h2 class="sec-header">&#128506; Chart Setup &amp; Documentation</h2>
+        <div class="sec-header">&#128506; Chart Setup &amp; Documentation</div>
         <div class="g2">
           <button class="doc-btn" onclick="openDoc('AVNAV_OCHARTS_INSTALL')">
             <div class="doc-icon">&#128230;</div>
@@ -456,7 +378,7 @@
 
       <!-- ⑩ OPENPLOTTER & INFRASTRUCTURE -->
       <div class="sec" id="s-openplotter">
-        <h2 class="sec-header">&#128268; OpenPlotter &amp; System Infrastructure</h2>
+        <div class="sec-header">&#128268; OpenPlotter &amp; System Infrastructure</div>
         <div class="g3">
           <button class="doc-btn" onclick="openDoc('OPENPLOTTER_REFERENCE')">
             <div class="doc-icon">&#9881;&#65039;</div>
@@ -474,7 +396,7 @@
 
       <!-- ⑪ GETTING STARTED -->
       <div class="sec" id="s-start">
-        <h2 class="sec-header">&#128640; Getting Started &mdash; How to Use d3kOS</h2>
+        <div class="sec-header">&#128640; Getting Started &mdash; How to Use d3kOS</div>
         <div class="g2">
           <div>
             <div style="font-size: 20px;color:var(--muted);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase;">Daily Use</div>
@@ -501,7 +423,7 @@
 
       <!-- ⑫ PHASE ROADMAP -->
       <div class="sec" id="s-roadmap">
-        <h2 class="sec-header">&#128197; d3kOS Phase Roadmap</h2>
+        <div class="sec-header">&#128197; d3kOS Phase Roadmap</div>
         <div class="phases">
           <div class="phase-item">
             <div class="ph-badge ph-done">&#10003;</div>
@@ -533,7 +455,7 @@
 
       <!-- ⑬ SYSTEM ACTIONS -->
       <div class="sec" id="s-actions">
-        <h2 class="sec-header">&#128295; System Actions</h2>
+        <div class="sec-header">&#128295; System Actions</div>
         <div class="btn-group">
           <button class="btn" onclick="svcAction('signalk','Restart Signal K (:8099)?')">&#128260; Restart Signal K</button>
           <button class="btn" onclick="svcAction('nodered','Restart Node-RED?')">&#128260; Restart Node-RED</button>
@@ -550,7 +472,7 @@
 
       <!-- ⑭ SYSTEM INFORMATION -->
       <div class="sec" id="s-sysinfo">
-        <h2 class="sec-header">&#128187; System Information</h2>
+        <div class="sec-header">&#128187; System Information</div>
         <div class="card">
           <div class="info-grid">
             <span class="info-k">System:</span><span class="info-v">d3kOS v2.0</span>
@@ -564,7 +486,7 @@
             <span class="info-k">Uptime:</span><span class="info-v" id="si-uptime">&#8212;</span>
           </div>
           <div style="margin-top:12px;">
-            <button class="btn" style="font-size: 20px;padding:8px 16px;min-height:48px;" onclick="loadSysinfo()">&#128260; Refresh</button>
+            <button class="btn" style="font-size: 20px;padding:8px 16px;min-height:0;" onclick="loadSysinfo()">&#128260; Refresh</button>
           </div>
         </div>
       </div>
@@ -572,7 +494,7 @@
 
       <!-- ⑮ LICENSE & TIER -->
       <div class="sec" id="s-license">
-        <h2 class="sec-header">&#127867; License &amp; Tier</h2>
+        <div class="sec-header">&#127867; License &amp; Tier</div>
         <div class="card">
           <div class="info-grid">
             <span class="info-k">Tier:</span><span class="info-v" style="color:#FFD700;font-weight:700;">Tier 2</span>
@@ -585,7 +507,7 @@
 
       <!-- ⑯ ABOUT d3kOS -->
       <div class="sec" id="s-about">
-        <h2 class="sec-header">&#8505;&#65039; About d3kOS</h2>
+        <div class="sec-header">&#8505;&#65039; About d3kOS</div>
         <div class="card">
           <p style="font-size:18px;margin-bottom:12px;"><strong>d3kOS</strong> is a comprehensive marine electronics system for chart navigation, engine monitoring, AI-assisted passage planning, and vessel camera monitoring.</p>
           <p style="font-size: 20px;color:var(--muted);margin-bottom:12px;">Built on Raspberry Pi 4B with AvNav (primary charts at :8080), Signal K integration (:8099), NMEA support via OpenPlotter (:8081), and Gemini AI (:3001) with Ollama offline fallback (192.168.1.36:11434).</p>
@@ -621,7 +543,7 @@
 
       <!-- ⑰ COMMUNITY & MOBILE PAIRING -->
       <div class="sec" id="s-community">
-        <h2 class="sec-header">&#127758; AtMyBoat Community &amp; Mobile Pairing</h2>
+        <div class="sec-header">&#127758; AtMyBoat Community &amp; Mobile Pairing</div>
         <div class="g2">
           <div class="card">
             <div class="trow-lbl" style="margin-bottom:6px;">AtMyBoat.com</div>
@@ -645,7 +567,7 @@
       </div>
 
 
-    </main><!-- /main-content / settings-content -->
+    </div><!-- /settings-content -->
     </div><!-- /settings-scroll-area -->
 
 
@@ -1041,59 +963,6 @@
       .catch(() => showToast('\u2717 Save failed \u2014 check connection'));
     }
 
-    /* ── ALERT PREFERENCES ── */
-    const ALERT_TYPES = ['anchor_drag','engine_overtemp','engine_oil_pressure','low_fuel','gps_lost','collision_risk'];
-
-    function loadAlertPrefs() {
-      fetch('/api/settings/alert-preferences')
-        .then(r => r.json())
-        .then(d => {
-          if (!d.ok) return;
-          const p = d.prefs;
-          document.getElementById('alert-email-on').checked = p.email !== false;
-          const enabled = p.enabled_types || ALERT_TYPES;
-          ALERT_TYPES.forEach(t => {
-            const el = document.getElementById('alert-type-' + t);
-            if (el) el.checked = enabled.includes(t);
-          });
-          if (p.quiet_hours) {
-            document.getElementById('alert-quiet-start').value = p.quiet_hours.start || '';
-            document.getElementById('alert-quiet-end').value   = p.quiet_hours.end   || '';
-            const tzSel = document.getElementById('alert-tz');
-            if (p.quiet_hours.tz) tzSel.value = p.quiet_hours.tz;
-          }
-        })
-        .catch(() => {/* use defaults already set in HTML */});
-    }
-
-    function saveAlertPrefs() {
-      const emailOn    = document.getElementById('alert-email-on').checked;
-      const enabledTypes = ALERT_TYPES.filter(t => {
-        const el = document.getElementById('alert-type-' + t);
-        return el ? el.checked : true;
-      });
-      const qStart = (document.getElementById('alert-quiet-start').value || '').trim();
-      const qEnd   = (document.getElementById('alert-quiet-end').value   || '').trim();
-      const qTz    = document.getElementById('alert-tz').value || 'UTC';
-
-      const prefs = {
-        email:         emailOn,
-        enabled_types: enabledTypes,
-        quiet_hours:   (qStart && qEnd) ? {start: qStart, end: qEnd, tz: qTz} : null
-      };
-
-      fetch('/api/settings/alert-preferences', {
-        method:  'POST',
-        headers: {'Content-Type': 'application/json'},
-        body:    JSON.stringify(prefs)
-      })
-      .then(r => r.json())
-      .then(d => showToast(d.ok ? '\u2713 Alert settings saved' : '\u2717 ' + (d.error || 'Save failed')))
-      .catch(() => showToast('\u2717 Save failed \u2014 check connection'));
-    }
-
-    window.addEventListener('load', loadAlertPrefs);
-
   </script>
 
   <!-- Doc overlay — responds to data-night via CSS vars -->
@@ -1120,64 +989,13 @@
     .doc-p  { margin:0 0 10px; }
     .doc-ul { margin:0 0 10px 24px; padding:0; }
     .doc-ul li { margin-bottom:6px; }
-    #doc-overlay pre { background:var(--g-dim); border:1px solid var(--g-bdr); border-radius:6px;
-      padding:14px 16px; font-size: 18px; overflow-x:auto;
+    #doc-overlay pre { background:var(--ink3); border-radius:6px;
+      padding:14px 16px; font-size:17px; overflow-x:auto;
       color:var(--ink); white-space:pre-wrap; margin:0 0 12px; }
-    #doc-overlay code { background:var(--g-dim); border-radius:3px;
-      padding:1px 5px; font-size: 18px; color:var(--ink); }
-    #doc-overlay hr { border:none; border-top:1px solid var(--rule); margin:16px 0; }
+    #doc-overlay code { background:var(--ink3); border-radius:3px;
+      padding:1px 5px; font-size:17px; color:var(--ink); }
+    #doc-overlay hr { border:none; border-top:1px solid var(--ink3); margin:16px 0; }
     #doc-overlay strong { color:var(--ink); }
-  
-    /* ── Section index bar ── */
-    .sec-index {
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      background: var(--bar);
-      border-bottom: 2px solid var(--accent);
-      display: flex;
-      gap: 8px;
-      padding: 8px 16px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .sec-index::-webkit-scrollbar { display: none; }
-    .sec-idx-btn {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 14px;
-      min-height: 48px;
-      background: transparent;
-      color: #ffffff;
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 24px;
-      font-family: 'Chakra Petch', sans-serif;
-      font-size: 18px;
-      font-weight: 500;
-      white-space: nowrap;
-      cursor: pointer;
-      touch-action: manipulation;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .sec-idx-btn:hover,
-    .sec-idx-btn:focus-visible {
-      background: rgba(0,204,0,0.15);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .sec-idx-btn.active {
-      background: rgba(0,204,0,0.2);
-      color: #00CC00;
-      border-color: #00CC00;
-      border-width: 2px;
-      font-weight: 700;
-    }
   </style>
 
 <script>
@@ -1209,58 +1027,5 @@
   })();
 </script>
 
-
-  <script>
-  // ── Section index: scroll + active highlight ───────────────────────────
-  function scrollToSec(id) {
-    const el  = document.getElementById(id);
-    const box = document.querySelector('.settings-page-body');
-    const idx = document.getElementById('sec-index');
-    if (!el || !box) return;
-    // Highlight immediately on tap — don't wait for IntersectionObserver
-    if (typeof window.setActive === 'function') window.setActive(id);
-    const idxH  = idx ? idx.offsetHeight : 0;
-    const boxR  = box.getBoundingClientRect();
-    const elR   = el.getBoundingClientRect();
-    box.scrollBy({ top: elR.top - boxR.top - idxH - 8, behavior: 'smooth' });
-  }
-
-  // Highlight active section as user scrolls
-  (function() {
-    const body = document.querySelector('.settings-page-body');
-    const secs = document.querySelectorAll('.sec[id]');
-    const idx  = document.getElementById('sec-index');
-    if (!body || !secs.length || !idx) return;
-    const idxH = () => idx.offsetHeight + 16;
-
-    window.setActive = function(id) {
-      idx.querySelectorAll('.sec-idx-btn').forEach(b => b.classList.remove('active'));
-      const btn = idx.querySelector(`.sec-idx-btn[data-target="${id}"]`);
-      if (btn) {
-        btn.classList.add('active');
-        btn.scrollIntoView({ block: 'nearest', inline: 'center' });
-      }
-    };
-
-    const obs = new IntersectionObserver(entries => {
-      // Find topmost visible section
-      let top = null;
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          if (!top || e.boundingClientRect.top < top.boundingClientRect.top) top = e;
-        }
-      });
-      if (top) setActive(top.target.id);
-    }, {
-      root: body,
-      rootMargin: `-${idxH()}px 0px -60% 0px`,
-      threshold: 0
-    });
-
-    secs.forEach(s => obs.observe(s));
-    // Highlight first on load
-    if (secs.length) setActive(secs[0].id);
-  })();
-  </script>
 </body>
 </html>

@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; Upload Documents</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=21">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=15">
 </head>
 <body>
-
-<a class="skip-to-content" href="#main-content">Skip to main content</a>
 
 <!-- STATUS BAR -->
 <div id="status-bar">
@@ -23,12 +21,12 @@
 </div>
 
 <!-- SCROLLABLE CONTENT -->
-<div id="main-content" style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
 <div style="max-width:760px;margin:0 auto;padding:24px">
 
   <!-- UPLOAD FORM -->
   <div class="sec">
-    <h2 class="sec-header">&#128228; Upload a PDF Manual</h2>
+    <div class="sec-header">&#128228; Upload a PDF Manual</div>
     <p style="font-size: 18px;color:var(--ink2);line-height:1.7;margin-bottom:20px">
       Upload PDF manuals for your equipment. Uploaded files are indexed for AI-assisted answers
       about your vessel systems. Maximum file size: 500 MB.
@@ -68,13 +66,13 @@
 
   <!-- STATUS CARD -->
   <div class="sec" id="statusCard" style="display:none">
-    <h2 class="sec-header" id="statusHeader"></h2>
+    <div class="sec-header" id="statusHeader"></div>
     <div id="statusBody" style="font-size: 18px;font-weight:500;color:var(--ink2);line-height:1.7"></div>
   </div>
 
   <!-- PROGRESS -->
   <div class="sec" id="progressCard" style="display:none">
-    <h2 class="sec-header">&#128260; Uploading&hellip;</h2>
+    <div class="sec-header">&#128260; Uploading&hellip;</div>
     <div style="height:8px;background:var(--rule);border-radius:4px;overflow:hidden;margin-bottom:14px">
       <div id="progressBar" style="height:100%;width:0%;background:var(--g-txt);border-radius:4px;
                                     transition:width .3s"></div>
@@ -84,7 +82,7 @@
 
   <!-- QUICK LINKS -->
   <div class="sec">
-    <h2 class="sec-header">&#128279; Quick Links</h2>
+    <div class="sec-header">&#128279; Quick Links</div>
     <div class="g2">
       <a href="/manage-documents" style="text-decoration:none">
         <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:16px 18px">

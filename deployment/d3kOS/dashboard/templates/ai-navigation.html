@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; AI Navigation</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=21">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=15">
 <style>
   /* Full-page chat layout */
   #chat-wrap {
@@ -98,8 +98,6 @@
 </style>
 </head>
 <body>
-  <a class="skip-to-content" href="#main-content">Skip to main content</a>
-  
 
 <!-- STATUS BAR -->
 <div id="status-bar">
@@ -141,7 +139,6 @@
 <div id="input-bar">
   <input type="text" id="ai-input" placeholder="Ask a navigation question…"
     autocomplete="off" autocorrect="off" spellcheck="false"
-    aria-label="Ask a navigation question"
     onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
   <button id="btn-send" onclick="sendMsg()" title="Send">&#10148;</button>
 </div>

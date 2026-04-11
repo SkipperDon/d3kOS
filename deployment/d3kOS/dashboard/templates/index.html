@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>d3kOS &middot; {{ vessel_name }}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=21">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=20">
 <style>
 /* ── WX FULLSCREEN (I-11 v0.9.2) ── */
 #wxFs {
@@ -117,7 +117,7 @@
         <div class="rt-bar"></div>
         <div class="rt-lbl">Engine</div>
       </div>
-      <div class="ic" id="cellRpm" oncontextmenu="openDiag('cellRpm')">
+      <div class="ic" id="cellRpm" oncontextmenu="openCtx(event,'RPM')">
         <div class="ic-l">RPM</div>
         <div class="ic-v">2250</div>
         <div class="ic-u">rev / min</div>
@@ -127,22 +127,22 @@
         <div class="ic-v">+8&deg;</div>
         <div class="ic-u">degrees</div>
       </div>
-      <div class="ic" id="cellOil" oncontextmenu="openDiag('cellOil')">
+      <div class="ic" id="cellOil" oncontextmenu="openCtx(event,'Oil Pressure')">
         <div class="ic-l">Oil Press</div>
         <div class="ic-v">52</div>
         <div class="ic-u">PSI &middot; normal</div>
       </div>
-      <div class="ic" id="cellCoolant" oncontextmenu="openDiag('cellCoolant')">
+      <div class="ic" id="cellCoolant" oncontextmenu="openCtx(event,'Coolant Temp')">
         <div class="ic-l">Coolant</div>
         <div class="ic-v">---</div>
         <div class="ic-u">C</div>
       </div>
-      <div class="ic" id="cellFuel" oncontextmenu="openDiag('cellFuel')">
+      <div class="ic" id="cellFuel" oncontextmenu="openCtx(event,'Fuel')">
         <div class="ic-l">Fuel</div>
         <div class="ic-v">68%</div>
         <div class="ic-u">84 L &middot; 2h 40m</div>
       </div>
-      <div class="ic" id="cellBat" oncontextmenu="openDiag('cellBat')">
+      <div class="ic" id="cellBat" oncontextmenu="openCtx(event,'Battery')">
         <div class="ic-l">Battery</div>
         <div class="ic-v">13.8</div>
         <div class="ic-u">V &middot; charging</div>
@@ -227,7 +227,7 @@
         </div>
         <div class="ai-in">
           <button class="mic72" id="spMic" onclick="toggleMic()">&#127908;</button>
-          <input class="ai-txt" placeholder="Ask a navigation question&hellip;" id="aiField" aria-label="Ask a navigation question">
+          <input class="ai-txt" placeholder="Ask a navigation question&hellip;" id="aiField">
         </div>
       </div>
 
@@ -364,11 +364,11 @@
       <div class="diag-head-ico">&#128295;</div>
       <div>
         <div class="diag-head-over">AI ENGINE DIAGNOSTIC</div>
-        <div class="diag-head-title" id="diagTitle">AI Engine Diagnostic</div>
+        <div class="diag-head-title">Coolant Temperature High</div>
       </div>
     </div>
     <div class="diag-body">
-      <div class="diag-grid" id="diagGrid">
+      <div class="diag-grid">
         <div class="dc bad">
           <div class="dc-lbl">Coolant Temp</div>
           <div class="dc-val">92&deg;</div>
@@ -387,14 +387,15 @@
       </div>
       <div class="diag-ai">
         <div class="diag-ai-lbl">&#129302; AI ANALYSIS &mdash; GEMINI 2.5 FLASH</div>
-        <div class="diag-ai-txt" id="diagAiTxt">
+        <div class="diag-ai-txt">
           Coolant at <b>92&deg;C</b> is above normal cruise range (75&ndash;88&deg;C) but below critical shutdown (105&deg;C). Oil pressure normal &mdash; rules out major internal failure. Most likely cause: <b>partial raw water cooling restriction</b> &mdash; debris on intake screen or early impeller wear.<br><br>
           Recommendation: <b>Reduce to 1800 RPM</b> and monitor for 5 minutes. If temperature stabilises, continue at reduced speed to Kingston. If it climbs above <b>98&deg;C</b>, anchor and shut down engine immediately.
         </div>
       </div>
       <div class="diag-btns">
-        <button class="diag-btn64 db-info" onclick="closeDiag();openSplit('ai')">ASK HELM AI</button>
-        <button class="diag-btn64 db-dismiss" onclick="closeDiag()">DISMISS</button>
+        <button class="diag-btn64 db-primary" onclick="closeDiag();toast('Reducing RPM &mdash; monitoring coolant temp')">REDUCE TO 1800 RPM</button>
+        <button class="diag-btn64 db-info" onclick="closeDiag();openSplit('ai')">FULL AI BRIEF</button>
+        <button class="diag-btn64 db-dismiss" onclick="closeDiag()">MONITOR &middot; DISMISS</button>
       </div>
     </div>
   </div>
@@ -514,17 +515,6 @@
         <span class="ms-btn-lbl">Settings</span>
         <span class="ms-btn-sub">System &amp; configuration</span>
       </button>
-      <!-- 7 -->
-      <button class="ms-btn" onclick="closeMenu();navTo('/anchor-watch')">
-        <span class="ms-btn-icon">&#9875;</span>
-        <span class="ms-btn-lbl">Anchor Watch</span>
-        <span class="ms-btn-sub">Monitor position at anchor</span>
-      </button>
-      <button class="ms-btn" onclick="closeMenu();navTo('/manual')">
-        <span class="ms-btn-icon">&#128218;</span>
-        <span class="ms-btn-lbl">Help / Manual</span>
-        <span class="ms-btn-sub">User guide &amp; reference</span>
-      </button>
     </div>
   </div>
 </div>
@@ -546,7 +536,7 @@
 <script src="{{ url_for('static', filename='js/instruments.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/overlays.js') }}"></script>
-<script src="{{ url_for('static', filename='js/helm.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/helm.js') }}"></script>
 <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cameras.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ai-bridge.js') }}"></script>
