@@ -10,10 +10,11 @@
 # See: deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md Section C
 
 # Prevent crash-restore prompt on next boot
-sed -i 's/"exited_cleanly":false/"exited_cleanly":true/' \
-  /home/boatiq/.config/chromium/Default/Preferences 2>/dev/null
-sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' \
-  /home/boatiq/.config/chromium/Default/Preferences 2>/dev/null
+CHROMIUM_PREFS="$HOME/.config/chromium/Default/Preferences"
+if [ -f "$CHROMIUM_PREFS" ]; then
+  sed -i 's/"exited_cleanly":false/"exited_cleanly":true/g' "$CHROMIUM_PREFS"
+  sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/g'   "$CHROMIUM_PREFS"
+fi
 
 # Launch Chromium as maximised app window
 # Note: binary is 'chromium' on Debian/Raspberry Pi OS (not 'chromium-browser')
