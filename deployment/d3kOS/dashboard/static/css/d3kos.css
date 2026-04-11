@@ -66,10 +66,10 @@
   --rule:     rgba(0,0,0,.10);
   --rule-lt:  rgba(0,0,0,.05);
 
-  /* Text */
+  /* Text — solid values required for WCAG 2.0 AA contrast on #FFFFFF */
   --ink:      #040C04;
-  --ink2:     rgba(4,12,4,.52);
-  --ink3:     rgba(4,12,4,.28);
+  --ink2:     #484c48;   /* 9.1:1 on white */
+  --ink3:     #636863;   /* 5.8:1 on white — replaces rgba(.28) which was 1.97:1 */
 
   /* Green — single accent, used precisely */
   --g:        #003A00;
@@ -125,8 +125,8 @@ html, body {
   --rule:     rgba(255,255,255,.07);
   --rule-lt:  rgba(255,255,255,.04);
   --ink:      #D6EDD6;
-  --ink2:     rgba(214,237,214,.48);
-  --ink3:     rgba(214,237,214,.24);
+  --ink2:     #b8ccb8;   /* 12:1 on #020702 night bg */
+  --ink3:     #8fa68f;   /* 8.9:1 on #020702 — replaces rgba(.24) which was 1.73:1 */
   --g:        #00C400;
   --g-mid:    #00A400;
   --g-hi:     #00E040;
@@ -182,11 +182,11 @@ html, body {
 .sb-sep { width: 1px; height: 22px; background: rgba(255,255,255,.18); flex-shrink: 0; }
 .sb-vessel {
   font-size: 18px; font-weight: 700; letter-spacing: .1em;
-  color: rgba(255,255,255,.75); flex-shrink: 0;
+  color: rgba(255,255,255,.95); flex-shrink: 0;
 }
 .sb-ticker {
   flex: 1; font-size: 18px; font-weight: 600; letter-spacing: .07em;
-  color: rgba(255,255,255,.55);
+  color: rgba(255,255,255,.90);
   overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   transition: color .3s;
 }
@@ -198,14 +198,14 @@ html, body {
   padding: 5px 14px; border-radius: 20px;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
   font-size: 18px; font-weight: 700; letter-spacing: .12em;
-  color: rgba(255,255,255,.45); cursor: pointer; transition: all .2s;
+  color: rgba(255,255,255,.88); cursor: pointer; transition: all .2s;
 }
 .helm-pill.live {
   background: rgba(255,255,255,.18); color: #fff;
   animation: helmPill .9s ease-in-out infinite;
 }
 @keyframes helmPill { 0%,100%{background:rgba(255,255,255,.18)}50%{background:rgba(255,255,255,.3)} }
-.hp-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.3); transition: all .2s; }
+.hp-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.65); transition: all .2s; }
 .helm-pill.live .hp-dot { background: #fff; box-shadow: 0 0 6px #fff; }
 
 /* ── PI HEALTH INDICATOR (v0.9.8 AA3) ── */
@@ -215,7 +215,7 @@ html, body {
   background: rgba(0,0,0,.3);
   font-family: 'Chakra Petch', sans-serif;
   font-size: 18px; font-weight: 700; letter-spacing: .07em;
-  color: rgba(255,255,255,.7);
+  color: rgba(255,255,255,.92);
   cursor: default; flex-shrink: 0;
 }
 .pi-health-dot {
@@ -239,7 +239,7 @@ html, body {
 .dn-b {
   padding: 4px 13px; border-radius: 16px; border: none; background: none;
   font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 700;
-  letter-spacing: .08em; color: rgba(255,255,255,.38);
+  letter-spacing: .08em; color: rgba(255,255,255,.78);
   cursor: pointer; transition: all .2s;
 }
 .dn-b.on { background: rgba(255,255,255,.9); color: var(--bar); }
@@ -274,7 +274,7 @@ html, body {
 }
 .rt-bar {
   width: 3px; height: 36px;
-  background: var(--g-txt); border-radius: 2px; opacity: .5;
+  background: var(--g-txt); border-radius: 2px; opacity: .8;
 }
 .rt-lbl {
   font-size: 22px; font-weight: 700; letter-spacing: .2em;
@@ -407,7 +407,7 @@ html, body {
 .chart-mock-txt {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 18px; letter-spacing: .18em;
-  color: var(--g-txt); opacity: .25; text-align: center; line-height: 3;
+  color: var(--g-txt); opacity: .75; text-align: center; line-height: 3;
 }
 #chart-frame {
   width: 100%; height: 100%; border: none; display: block;
@@ -590,7 +590,7 @@ html, body {
 [data-night] .nb.on:not(.helm), [data-night] .nb.nb-active:not(.helm) { background: rgba(0,196,0,.10); }
 .nb.on .nb-lbl, .nb.nb-active .nb-lbl { color: var(--g-txt); }
 /* Inactive icons dimmed; active icons full opacity */
-.nb-icon { font-size: 32px; line-height: 1; opacity: 0.38; }
+.nb-icon { font-size: 32px; line-height: 1; opacity: 0.65; }
 .nb.on .nb-icon, .nb.nb-active .nb-icon { opacity: 1; color: var(--g-txt); }
 /* HELM active: white bar indicator when overlay is open */
 .nb.helm.nb-active::after { display: block; background: rgba(255,255,255,.85); left: 10px; right: 10px; }
@@ -615,7 +615,7 @@ html, body {
 .helm-row {
   display: flex; align-items: center; gap: 8px;
 }
-.nb.helm .nb-icon { font-size: 32px; opacity: 0.6; line-height: 1; }
+.nb.helm .nb-icon { font-size: 32px; opacity: 0.85; line-height: 1; }
 .nb.helm .nb-lbl  { font-size: 28px; font-weight: 700; letter-spacing: .06em; }
 /* State text — same size as label, dimmed */
 .nb-state {
@@ -692,11 +692,11 @@ html, body {
   font-family: 'Bebas Neue', sans-serif; font-size: 42px;
   letter-spacing: .18em; color: #fff;
 }
-.hl-hint { font-size: 18px; font-weight: 600; letter-spacing: .06em; color: rgba(255,255,255,.5); }
+.hl-hint { font-size: 18px; font-weight: 600; letter-spacing: .06em; color: rgba(255,255,255,.88); }
 .hl-cancel {
   padding: 16px 36px; border-radius: 30px;
-  background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.7); font-family: 'Chakra Petch', sans-serif;
+  background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.4);
+  color: rgba(255,255,255,.92); font-family: 'Chakra Petch', sans-serif;
   font-size: 18px; font-weight: 700; letter-spacing: .1em; cursor: pointer;
   transition: all .2s;
 }
@@ -1064,7 +1064,7 @@ body.anchor-alarm-active {
   font-size: 20px; letter-spacing: .15em; color: #fff; flex: 1;
 }
 .indicators { display: flex; align-items: center; gap: 8px; }
-.indicator { font-size: 18px; opacity: .45; cursor: default; transition: opacity .2s; }
+.indicator { font-size: 18px; opacity: .80; cursor: default; transition: opacity .2s; }
 .indicator.ok { opacity: 1; }
 .indicator.off { opacity: .2; filter: grayscale(1); }
 #status-bar #clock {
@@ -1622,3 +1622,30 @@ select:focus { border-color: var(--g-txt); }
   color: rgba(255,255,255,.45);
 }
 .hl-mute:active { opacity: .75; }
+
+/* ══════════════════════════════════════
+   AODA / WCAG 2.0 AA — Accessibility
+══════════════════════════════════════ */
+
+/* Screen-reader only — visually hidden but announced */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* Skip-to-content link — hidden until focused by keyboard */
+.skip-to-content {
+  position: absolute; left: -9999px; top: auto;
+  height: 1px; width: 1px; clip: rect(0,0,0,0); overflow: hidden;
+  text-decoration: none;
+}
+.skip-to-content:focus {
+  position: fixed; left: 16px; top: 56px;
+  height: auto; width: auto; clip: auto; overflow: visible;
+  background: var(--g-txt); color: #fff;
+  padding: 12px 24px; border-radius: 8px; z-index: 9999;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px; font-weight: 700; letter-spacing: .05em;
+  box-shadow: var(--e3);
+}

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Anchor Watch &middot; {{ vessel_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=21">
+<style>
+/* ── ANCHOR WATCH PAGE ── */
+body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Petch',sans-serif; }
+
+/* Page body starts below fixed status bar */
+#aw-page {
+  display:flex; flex-direction:column;
+  position:fixed; top:48px; left:0; right:0; bottom:0;
+  overflow:hidden;
+}
+
+/* Status pill in top bar */
+#aw-status-pill {
+  padding:4px 14px; border-radius:20px; font-size:18px; font-weight:700;
+  letter-spacing:.08em; background:var(--cell); color:var(--ink2);
+  border:2px solid var(--g-bdr); white-space:nowrap;
+}
+#aw-status-pill.watching { background:#0d3d2a; color:#2de68a; border-color:#2de68a; }
+#aw-status-pill.alarm    { background:#5a0a0a; color:#ff4444; border-color:#ff4444; }
+
+/* Canvas map area */
+#aw-map-wrap {
+  display:flex; justify-content:center; align-items:center;
+  padding:12px 16px 8px; flex-shrink:0;
+}
+#aw-canvas { border-radius:16px; border:2px solid var(--g-bdr); background:#061520; }
+
+/* Stats row — visible colours in both day and night */
+#aw-stats {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:10px; padding:0 16px; flex-shrink:0;
+}
+.aw-stat {
+  background:var(--cell); border-radius:12px; border:2px solid var(--rule);
+  padding:14px 10px; text-align:center;
+}
+.aw-stat-lbl {
+  font-size:20px; font-weight:700; letter-spacing:.12em; color:var(--ink);
+  text-transform:uppercase; margin-bottom:6px;
+}
+.aw-stat-val {
+  font-family:'Bebas Neue',sans-serif; font-size:40px; line-height:1; color:var(--g-txt);
+}
+.aw-stat-unit { font-size:18px; color:var(--ink2); margin-top:4px; }
+#stat-dist.over .aw-stat-val { color:var(--alrt-num); }
+
+/* Radius slider */
+#aw-radius-wrap {
+  padding:10px 20px; flex-shrink:0;
+}
+#aw-radius-label {
+  font-size:22px; font-weight:700; color:var(--ink); margin-bottom:8px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+#aw-radius-val { color:var(--g-txt); font-family:'Bebas Neue',sans-serif; font-size:28px; }
+#aw-radius {
+  width:100%; accent-color:var(--g-hi); height:10px; appearance:none;
+  background: linear-gradient(to right, var(--g-hi) 0%, var(--g-hi) var(--pct,30%), var(--rule) var(--pct,30%), var(--rule) 100%);
+  border-radius:5px; outline:none; -webkit-appearance:none;
+}
+#aw-radius-ticks { display:flex; justify-content:space-between; font-size:18px; color:var(--ink2); margin-top:4px; }
+
+/* Buttons */
+#aw-btns {
+  display:flex; gap:12px; padding:10px 16px 16px; flex-shrink:0;
+}
+.aw-btn {
+  flex:1; height:72px; border-radius:14px; border:none; cursor:pointer;
+  font-family:'Chakra Petch',sans-serif; font-size:22px; font-weight:700;
+  letter-spacing:.06em; transition:all .15s;
+}
+#btn-set   { background:#1a6b48; color:#fff; }
+#btn-set:active { background:#128040; }
+#btn-clear { background:var(--g-dim); color:var(--g-txt); border:2px solid var(--g-bdr); }
+#btn-clear:active { background:var(--cell); }
+
+/* Alarm overlay */
+#aw-alarm {
+  display:none; position:fixed; inset:0; z-index:200;
+  background:rgba(120,0,0,.92); flex-direction:column;
+  justify-content:center; align-items:center; gap:24px; padding:32px;
+}
+#aw-alarm.show { display:flex; animation:alarm-pulse 1s infinite; }
+@keyframes alarm-pulse {
+  0%,100%{ background:rgba(120,0,0,.92); }
+  50%{ background:rgba(200,0,0,.95); }
+}
+#alarm-icon { font-size:80px; }
+#alarm-title {
+  font-family:'Bebas Neue',sans-serif; font-size:52px; letter-spacing:.1em; color:#fff;
+}
+#alarm-dist { font-size:30px; color:#ffaaaa; font-weight:700; }
+#btn-dismiss {
+  width:100%; height:80px; border-radius:14px; border:none; cursor:pointer;
+  background:#fff; color:#8b0000; font-family:'Chakra Petch',sans-serif;
+  font-size:26px; font-weight:700; letter-spacing:.08em;
+}
+#btn-advice {
+  width:100%; height:72px; border-radius:14px; border:2px solid #ffaaaa; cursor:pointer;
+  background:transparent; color:#ffaaaa; font-family:'Chakra Petch',sans-serif;
+  font-size:22px; font-weight:700;
+}
+#alarm-advice { font-size:22px; color:#ffd0d0; line-height:1.7; text-align:center; max-width:500px; }
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR (same pattern as engine-monitor) -->
+<div id="status-bar">
+  <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
+  <span class="brand">&#9875; ANCHOR WATCH</span>
+  <span id="aw-status-pill">INACTIVE</span>
+  <div class="dn" style="margin-left:auto">
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)">DAY</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)">NGT</button>
+  </div>
+</div>
+
+<div id="aw-page">
+  <!-- Canvas map -->
+  <div id="aw-map-wrap">
+    <canvas id="aw-canvas" width="300" height="260" aria-label="Anchor position map"></canvas>
+  </div>
+
+  <!-- Stats -->
+  <div id="aw-stats">
+    <div class="aw-stat" id="stat-dist">
+      <div class="aw-stat-lbl">Distance</div>
+      <div class="aw-stat-val" id="val-dist">---</div>
+      <div class="aw-stat-unit">metres</div>
+    </div>
+    <div class="aw-stat">
+      <div class="aw-stat-lbl">Radius</div>
+      <div class="aw-stat-val" id="val-radius">25</div>
+      <div class="aw-stat-unit">metres</div>
+    </div>
+    <div class="aw-stat">
+      <div class="aw-stat-lbl">Drift Dir</div>
+      <div class="aw-stat-val" id="val-bearing">---</div>
+      <div class="aw-stat-unit">degrees</div>
+    </div>
+  </div>
+
+  <!-- Radius slider -->
+  <div id="aw-radius-wrap">
+    <div id="aw-radius-label">
+      <span>Watch Radius</span>
+      <span id="aw-radius-val">25 m</span>
+    </div>
+    <input type="range" id="aw-radius" min="10" max="100" value="25" step="5" aria-label="Watch radius in metres" aria-valuetext="25 metres">
+    <div id="aw-radius-ticks"><span>10 m</span><span>50 m</span><span>100 m</span></div>
+  </div>
+
+  <!-- Action buttons -->
+  <div id="aw-btns">
+    <button class="aw-btn" id="btn-set" onclick="setAnchor()">SET ANCHOR</button>
+    <button class="aw-btn" id="btn-clear" onclick="clearAnchor()">CLEAR</button>
+  </div>
+</div>
+
+<!-- Alarm overlay -->
+<div id="aw-alarm" role="alert" aria-live="assertive">
+  <div id="alarm-icon">&#9875;</div>
+  <div id="alarm-title">ANCHOR DRAG</div>
+  <div id="alarm-dist">Vessel has moved <span id="alarm-m">---</span> m</div>
+  <div id="alarm-advice"></div>
+  <button id="btn-dismiss" onclick="dismissAlarm()">DISMISS ALARM</button>
+  <button id="btn-advice" onclick="getAdvice()">ASK HELM AI FOR ADVICE</button>
+</div>
+
+<script>
+/* ── THEME (same as engine-monitor) ── */
+function setTheme(t, manual) {
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  document.getElementById('btnDay').classList.toggle('on',   t === 'day');
+  document.getElementById('btnNight').classList.toggle('on', t === 'night');
+  if (manual) localStorage.setItem('d3kTheme', t);
+}
+(function() {
+  var stored = localStorage.getItem('d3kTheme');
+  if (stored) { setTheme(stored); return; }
+  var h = new Date().getHours();
+  setTheme(h >= 7 && h < 20 ? 'day' : 'night');
+})();
+
+/* ── State ── */
+var _state = { active:false, alarm:false, anchor_lat:null, anchor_lon:null,
+               radius_m:25, vessel_lat:null, vessel_lon:null, distance_m:null };
+var _pollTimer = null;
+
+/* ── Canvas ── */
+var _canvas = document.getElementById('aw-canvas');
+var _ctx    = _canvas.getContext('2d');
+
+function _calcBearing(lat1, lon1, lat2, lon2) {
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+  var x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+          Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function _drawMap() {
+  var W = _canvas.width, H = _canvas.height;
+  var cx = W / 2, cy = H / 2, maxR = Math.min(cx, cy) - 18;
+
+  _ctx.clearRect(0, 0, W, H);
+  _ctx.fillStyle = '#061520';
+  _ctx.fillRect(0, 0, W, H);
+
+  if (!_state.active || !_state.anchor_lat) {
+    _ctx.strokeStyle = '#1e3a4a';
+    _ctx.lineWidth = 2;
+    _ctx.setLineDash([8, 6]);
+    _ctx.beginPath(); _ctx.arc(cx, cy, maxR * 0.7, 0, Math.PI * 2); _ctx.stroke();
+    _ctx.setLineDash([]);
+    _ctx.strokeStyle = '#2eb5a3'; _ctx.lineWidth = 3;
+    _ctx.beginPath(); _ctx.moveTo(cx-10,cy); _ctx.lineTo(cx+10,cy); _ctx.stroke();
+    _ctx.beginPath(); _ctx.moveTo(cx,cy-10); _ctx.lineTo(cx,cy+10); _ctx.stroke();
+    _ctx.fillStyle = '#4a6b7a';
+    _ctx.font = '20px Chakra Petch'; _ctx.textAlign = 'center';
+    _ctx.fillText('Set anchor to begin', cx, H - 14);
+    return;
+  }
+
+  var scale = (maxR * 0.68) / _state.radius_m;
+
+  /* Watch circle */
+  _ctx.strokeStyle = '#2eb5a3'; _ctx.lineWidth = 2;
+  _ctx.setLineDash([8, 5]);
+  _ctx.beginPath(); _ctx.arc(cx, cy, maxR * 0.68, 0, Math.PI * 2); _ctx.stroke();
+  _ctx.setLineDash([]);
+
+  /* Anchor drop cross */
+  _ctx.strokeStyle = '#2eb5a3'; _ctx.lineWidth = 3;
+  _ctx.beginPath(); _ctx.moveTo(cx-12,cy); _ctx.lineTo(cx+12,cy); _ctx.stroke();
+  _ctx.beginPath(); _ctx.moveTo(cx,cy-12); _ctx.lineTo(cx,cy+12); _ctx.stroke();
+  _ctx.fillStyle = '#2eb5a3';
+  _ctx.beginPath(); _ctx.arc(cx, cy, 6, 0, Math.PI * 2); _ctx.fill();
+
+  /* Vessel dot */
+  if (_state.vessel_lat && _state.distance_m !== null) {
+    var brg = _calcBearing(_state.anchor_lat, _state.anchor_lon, _state.vessel_lat, _state.vessel_lon);
+    var brgRad = (brg - 90) * Math.PI / 180;
+    var r = Math.min(_state.distance_m * scale, maxR * 0.95);
+    var px = cx + Math.cos(brgRad) * r;
+    var py = cy + Math.sin(brgRad) * r;
+
+    _ctx.strokeStyle = _state.alarm ? '#ff4444' : '#888';
+    _ctx.lineWidth = 1.5; _ctx.setLineDash([4, 4]);
+    _ctx.beginPath(); _ctx.moveTo(cx,cy); _ctx.lineTo(px,py); _ctx.stroke();
+    _ctx.setLineDash([]);
+
+    _ctx.fillStyle = _state.alarm ? '#ff4444' : '#fff';
+    _ctx.beginPath(); _ctx.arc(px, py, 10, 0, Math.PI * 2); _ctx.fill();
+    _ctx.strokeStyle = _state.alarm ? '#ff8888' : '#aaa';
+    _ctx.lineWidth = 2;
+    _ctx.beginPath(); _ctx.arc(px, py, 10, 0, Math.PI * 2); _ctx.stroke();
+  }
+
+  if (_state.distance_m !== null) {
+    _ctx.fillStyle = '#7aadbc';
+    _ctx.font = '18px Chakra Petch'; _ctx.textAlign = 'center';
+    _ctx.fillText(_state.distance_m.toFixed(1) + ' m from anchor', cx, H - 8);
+  }
+}
+
+/* ── Radius slider ── */
+var _slider = document.getElementById('aw-radius');
+_slider.addEventListener('input', function() {
+  var v = parseInt(this.value);
+  document.getElementById('aw-radius-val').textContent = v + ' m';
+  document.getElementById('val-radius').textContent = v;
+  var pct = ((v - 10) / 90 * 100).toFixed(1) + '%';
+  this.style.setProperty('--pct', pct);
+});
+_slider.dispatchEvent(new Event('input'));
+
+/* ── Actions ── */
+function setAnchor() {
+  var radius = parseInt(_slider.value);
+  document.getElementById('btn-set').textContent = 'SETTING…';
+  fetch('/anchor/set', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({radius_m: radius})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.ok) { _startPoll(); }
+    else { alert('Could not set anchor: ' + (d.error || 'unknown error')); }
+    document.getElementById('btn-set').textContent = 'SET ANCHOR';
+  })
+  .catch(function(e) {
+    alert('Error: ' + e.message);
+    document.getElementById('btn-set').textContent = 'SET ANCHOR';
+  });
+}
+
+function clearAnchor() {
+  fetch('/anchor/clear', {method:'POST'})
+  .then(function(r){ return r.json(); })
+  .then(function() { _stopPoll(); _resetUI(); });
+}
+
+function dismissAlarm() {
+  fetch('/anchor/dismiss', {method:'POST'})
+  .then(function(r){ return r.json(); })
+  .then(function() {
+    _state.alarm = false;
+    document.getElementById('aw-alarm').classList.remove('show');
+    _updateStatusPill();
+  });
+}
+
+function getAdvice() {
+  document.getElementById('btn-advice').textContent = 'ASKING HELM AI…';
+  document.getElementById('alarm-advice').textContent = '';
+  fetch('/anchor/advice')
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    document.getElementById('alarm-advice').textContent = d.advice || 'No advice available.';
+    document.getElementById('btn-advice').textContent = 'ASK HELM AI FOR ADVICE';
+  })
+  .catch(function() { document.getElementById('btn-advice').textContent = 'ASK HELM AI FOR ADVICE'; });
+}
+
+/* ── Poll ── */
+function _startPoll() { _pollState(); _pollTimer = setInterval(_pollState, 8000); }
+function _stopPoll()  { if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; } }
+
+function _pollState() {
+  fetch('/anchor/state')
+  .then(function(r){ return r.json(); })
+  .then(function(d) { _state = d; _updateUI(); })
+  .catch(function(){});
+}
+
+/* ── UI ── */
+function _updateUI() {
+  _updateStatusPill();
+  _updateStats();
+  _drawMap();
+  if (_state.alarm) {
+    document.getElementById('aw-alarm').classList.add('show');
+    if (_state.distance_m !== null)
+      document.getElementById('alarm-m').textContent = _state.distance_m.toFixed(1);
+  }
+}
+
+function _updateStatusPill() {
+  var pill = document.getElementById('aw-status-pill');
+  pill.className = '';
+  if (_state.alarm)       { pill.textContent = 'DRAG ALERT'; pill.classList.add('alarm'); }
+  else if (_state.active) { pill.textContent = 'WATCHING';   pill.classList.add('watching'); }
+  else                    { pill.textContent = 'INACTIVE'; }
+}
+
+function _updateStats() {
+  var distEl   = document.getElementById('val-dist');
+  var statDist = document.getElementById('stat-dist');
+  if (_state.distance_m !== null) {
+    distEl.textContent = _state.distance_m.toFixed(1);
+    statDist.classList.toggle('over', _state.distance_m > (_state.radius_m || 25));
+  } else {
+    distEl.textContent = '---';
+    statDist.classList.remove('over');
+  }
+  document.getElementById('val-radius').textContent = _state.radius_m || 25;
+  if (_state.vessel_lat && _state.anchor_lat) {
+    document.getElementById('val-bearing').textContent =
+      Math.round(_calcBearing(_state.anchor_lat, _state.anchor_lon, _state.vessel_lat, _state.vessel_lon));
+  } else {
+    document.getElementById('val-bearing').textContent = '---';
+  }
+}
+
+function _resetUI() {
+  _state = { active:false, alarm:false, anchor_lat:null, anchor_lon:null,
+             radius_m:25, vessel_lat:null, vessel_lon:null, distance_m:null };
+  document.getElementById('aw-alarm').classList.remove('show');
+  _updateUI();
+}
+
+/* ── SSE from ai_bridge ── */
+var _sse = new EventSource('http://localhost:3002/stream');
+_sse.addEventListener('anchor_alert', function(e) {
+  var d = JSON.parse(e.data);
+  if (d.alarm) {
+    _state.alarm = true;
+    if (d.drift_m !== undefined) _state.distance_m = d.drift_m;
+    var m = _state.distance_m;
+    document.getElementById('alarm-m').textContent = (m !== null && m.toFixed) ? m.toFixed(1) : (m || '?');
+    document.getElementById('aw-alarm').classList.add('show');
+    _updateStatusPill(); _drawMap();
+  }
+});
+_sse.addEventListener('anchor_status', function(e) {
+  var d = JSON.parse(e.data);
+  if (d.active !== undefined) _state.active = d.active;
+  if (d.alarm  !== undefined) _state.alarm  = d.alarm;
+  if (d.anchor_lat) _state.anchor_lat = d.anchor_lat;
+  if (d.anchor_lon) _state.anchor_lon = d.anchor_lon;
+  if (d.radius_m)   _state.radius_m   = d.radius_m;
+  _updateStatusPill(); _drawMap();
+  if (!d.alarm) document.getElementById('aw-alarm').classList.remove('show');
+});
+
+/* ── Init ── */
+_drawMap();
+_pollState();
+</script>
+</body>
+</html>
