@@ -883,3 +883,10 @@ No new files deployed this session. Checklist and governance updates only:
 - **Navigation & Charts (ID 396):** 2 articles — Chart Updates via USB, Radar Overlay Setup
 - **General Seamanship (ID 401):** 2 articles — Pre-Departure Checklist, Anchoring Technique
 - **AI-Assisted Fixes (ID 391):** 3 articles — Voice Diagnostics, AI Engine Health Reports, Smart Alerts
+
+### S47 Addendum — WAVE Column Header Contrast Fix (2026-04-11)
+
+| File | Description |
+|------|-------------|
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/bbpress.css` | **[UPDATED — S47 addendum]** Added column header row fix: `#bbpress-forums li.bbp-header, ul.bbp-forums-header, ul.bbp-forums-header li { background-color: var(--bg-deep) !important; color: var(--text-primary) !important; }`. Root cause: bbPress default styles set lighter background on header row — not covered by nuclear `#bbpress-forums *` rule. WAVE 3 contrast errors → 0. Version cache-bust: 0.5.3. |
+| `atmyboat-forum: wp-content/themes/twentytwenty-child/style.css` | **[UPDATED — S47 addendum]** Version bumped 0.5.2 → 0.5.3 for cache bust. |
