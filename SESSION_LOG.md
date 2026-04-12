@@ -1,3 +1,131 @@
+## Session 2026-04-12 (S55d) — Staging Deployment + Session Close
+**Goal:** Deploy v0.9.9.3 changes to HostPapa staging (item 9), complete session close governance
+
+---
+
+### ACCOMPLISHED THIS SESSION
+
+**Staging deployment — 3 waves — COMPLETE**
+
+**Wave 1 — FI4 PHP endpoints (new files)**
+Deployed 3 new FI4 Config Backup & Recovery PHP endpoints to `staging/wp-content/themes/twentytwenty-child/mobile/`:
+- `config-backup.php` — Pi config package upload (Bearer auth, stores in amboat_config_packages)
+- `config-restore.php` — latest config package retrieval (Bearer auth, returns JSON blob)
+- `config-backup-status.php` — admin: list all Pi config backups with timestamps
+
+**Wave 2 — Full theme sync (120 files)**
+`sync-staging.py` — full child theme deploy to HostPapa staging. All 120 theme files synced (1 skipped). Includes all v0.9.9.2 and v0.9.9.3 changes: Fleet Portal, Alert Delivery, Community Map, Security Hardening (SA1–SA3/SA6), Stripe end-to-end, AODA compliance, and FI4 Recovery Key endpoints.
+
+**Wave 3 — PWA deploy (9 files)**
+`deploy-pwa.py` — PWA files deployed to `staging/app/`. Includes app.js with Recovery Key card (Settings screen, T1+, shows Pi device_token for Fix My Pi recovery flow).
+
+**Smoke tests — all green:**
+| Endpoint | Expected | Result |
+|----------|----------|--------|
+| `staging/mobile/config-backup.php` | 401 (no auth) | 401 |
+| `staging/mobile/config-restore.php` | 404 (no data) | 404 |
+| `staging/mobile/config-backup-status.php` | 401 (no auth) | 401 |
+| `staging/` | 200 | 200 |
+| `staging/app/` | 200 | 200 |
+| `staging/mobile/alert-notify.php` | 401 (no auth) | 401 |
+
+**PROJECT_CHECKLIST item 9 marked COMPLETE. Item 10 marked READY.**
+
+---
+
+### Files Changed This Session
+
+| File | Change |
+|------|--------|
+| `PROJECT_CHECKLIST.md` | Items 9 COMPLETE, 10 READY — Phase 4 runbook section added |
+| `SESSION_LOG.md` | S55d entry (this entry) |
+
+**HostPapa staging deployed (FTP — no repo change):**
+- `staging/mobile/config-backup.php` — new FI4 endpoint
+- `staging/mobile/config-restore.php` — new FI4 endpoint
+- `staging/mobile/config-backup-status.php` — new FI4 endpoint
+- `staging/app/app.js` + 8 other PWA files — Recovery Key card
+
+---
+
+### ACCOMPLISHED THIS SESSION
+- Item 9 (staging deployment): **COMPLETE** — 3-wave deploy, all smoke tests green
+
+### NOT COMPLETED / DEFERRED
+- Item 6d (GitHub release): Don creates — PDF in hand, release name v0.9.9.2
+- Item 7 (Pi image): Don performing SD card backup
+- Item 8 (archive.org): Don uploading — URL pending
+- Item 10 (Phase 4 live push): Awaiting Don — runbook presented in chat
+- Title bar text white: deferred — fix is `window.active.label.text.color: #ffffff` in `/home/d3kos/.config/labwc/themerc-override`
+- manual.html Pi /manual page: still v2.1.0 HTML — markdown source is v2.3.0 (update deferred)
+
+### KNOWN GAPS OR UNCERTAINTIES
+- archive.org URL not yet known — version-registry.php SHA-256 entry not yet updated for v0.9.9.3 image
+- cPanel cron URL update not yet done (offline-check.php /staging/ → /) — required before or during Phase 4
+- CREDENTIAL_ROTATION_CHECKLIST items CA4 fields still partially empty (WP admin creds, prod DB creds) — operator must complete before live push
+
+### OPERATOR ACTIONS REQUIRED
+- Complete Pi image backup (in progress)
+- Upload image to archive.org, provide URL
+- Execute Phase 4 runbook (credential rotation, cPanel cron update, Push to Live, smoke tests)
+- Create GitHub release v0.9.9.2 with PDF
+- OIC assessment before session formally closed
+
+---
+
+**Decisions:**
+- Staging deployment done as 3 separate waves (FI4 PHP, full theme, PWA) to isolate failure modes — each wave smoke-tested independently
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-12 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+---
+
+### Release Package Manifest — S55d
+
+- Version: v0.9.9.3 staging (pre-production)
+- Update type: incremental (staging sync — production push pending)
+
+| File | HostPapa Path | Partition | Change |
+|------|---------------|-----------|--------|
+| config-backup.php | staging/mobile/ | base | NEW — FI4 Pi config upload endpoint |
+| config-restore.php | staging/mobile/ | base | NEW — FI4 config package restore endpoint |
+| config-backup-status.php | staging/mobile/ | base | NEW — FI4 admin backup status view |
+| app.js (PWA) | staging/app/ | base | Recovery Key card in Settings (T1+) |
+| 8 PWA support files | staging/app/ | base | sw.js + manifest + icons + screens (full sync) |
+| 120 theme files | staging/wp-content/themes/twentytwenty-child/ | base | Full theme sync (all v0.9.9.2/v0.9.9.3 changes) |
+
+- Pre-install steps: none
+- Post-install steps: none (staging only — production push is item 10)
+- Rollback: restore from prior HostPapa backup or re-run deploy from previous commit
+- Health check: smoke test endpoints listed above
+
+```
+QUALITY METRICS — 2026-04-12 S55d
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS 0 — continuation session, /session-start not re-run after context compaction (structural — applies to all continuation sessions)
+
+5-SESSION TREND (S50/S51/S55/S55c/S55d): 73/63/75/85/90 → avg 77.2
+Primary gap: MLS — continuation sessions always score 0; structural limitation
+Trend: IMPROVING — three consecutive sessions improving (75→85→90)
+```
+
+---
+
 ## Session 2026-04-11 (S50) — AODA Compliance Remediation — d3kOS Dashboard (All Screens)
 **Goal:** Full WCAG 2.0 AA / AODA compliance pass on every d3kOS Pi dashboard screen (Chromium kiosk target, 45–70 year old users)
 
