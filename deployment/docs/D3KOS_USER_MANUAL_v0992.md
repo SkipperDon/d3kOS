@@ -3,7 +3,7 @@
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.2.0 — April 12, 2026
+**Document version:** 2.3.0 — April 12, 2026
 
 ---
 
@@ -283,6 +283,7 @@ The More menu provides access to secondary features:
 | **AI Navigation** | Marine AI assistant |
 | **Engine Dashboard** | Full engine instrument panel |
 | **Helm Assistant** | Engine diagnostics & AI chat |
+| **Anchor Watch** | Anchor drag alarm and drift monitor |
 | **Initial Setup** | Vessel configuration wizard |
 | **Upload Documents** | Add manuals & PDFs for Helm to reference |
 | **Manage Documents** | View & delete uploaded files |
@@ -299,6 +300,35 @@ A slide-out panel on the left edge of the dashboard shows current conditions:
 - Sea state summary
 
 Tap the **WX** button (or swipe from the left edge) to open/close it. This panel reads from Signal K when underway. When the vessel is docked and internet is available, it pulls from online weather services.
+
+---
+
+### Anchor Watch
+
+Anchor Watch monitors your anchored position and sounds an alarm if your boat drifts outside a defined radius. Available on all tiers — no account required.
+
+**Accessing Anchor Watch:** More menu → **Anchor Watch**
+
+**Setting your anchor:**
+1. Motor to your anchoring spot and drop the hook
+2. Open Anchor Watch — your current GPS position is captured automatically as the anchor reference point
+3. Set your **Watch Radius** — the acceptable drift distance in metres. Default is 25 m. Adjust for scope, tide, and conditions.
+4. Tap **Set Anchor** — the alarm activates
+
+**What you see on screen:**
+- A canvas mini-map showing your anchor point (⚓) and current vessel position (▲)
+- **Distance** — current distance from your anchor reference in metres
+- **Drift Dir** — compass direction of drift from the anchor point
+- Status: **Holding** (green) or **DRAGGING** (red)
+
+**When the alarm fires:**
+- The screen turns red and displays **ANCHOR DRAGGING**
+- Helm speaks an audible alarm through the Pi speakers
+- Tap **DISMISS** to silence the alarm (this does not reset the watch — monitoring continues)
+
+**Stopping Anchor Watch:** Tap **Clear Anchor** to disarm the alarm and return to standby.
+
+**Important:** Anchor Watch uses your Pi's GPS. GPS accuracy on a Pi is typically ±3–5 m. Set your radius to at least 15 m to avoid false alarms from GPS position drift while stationary.
 
 ---
 
@@ -798,8 +828,19 @@ Default values are set from your engine specification. Adjust only if your engin
 |---------|----------|
 | **Pair Device** | Displays the QR code to pair a new phone |
 | **Paired Devices** | Lists all paired phones — tap to unpair |
-| **Alert Preferences** | Which alert types send a push notification to your phone |
+| **Alert Preferences** | Toggle which alert types send a push notification to your phone |
+| **Quiet Hours** | Set a time window (e.g. 22:00–07:00) during which mobile alerts are suppressed |
 | **Sync Status** | Last sync time, next scheduled sync |
+
+**Alert types available for mobile push notification:**
+- Engine Critical (coolant, oil pressure, RPM at critical threshold)
+- Engine Advisory (approaching threshold)
+- Predictive Maintenance (trend-based warning)
+- Anchor Watch (drag alarm)
+- System / Service (service stopped, low disk, watchdog event)
+- OTA Update Available (new software ready to install)
+
+Each type has its own toggle — you can receive engine alerts without receiving system alerts, for example. Quiet Hours suppresses all mobile notifications during the set window; local Pi alarms (screen + TTS) are unaffected by Quiet Hours.
 
 ### Predictive Maintenance
 
@@ -864,6 +905,7 @@ Shows current status of the remote monitoring connection. See Section 13.
 | **Reboot System** | Restarts the Pi (requires confirmation) |
 | **Check for Updates** | Checks AtMyBoat.com for OTA update availability (T1+) |
 | **Install Update** | Queues OTA update for next sync (appears when update is available) |
+| **Recovery Key** | Displays your 36-character Recovery Key with a Copy button. Use this if you need to restore your Pi without your phone. Write it on a label inside your enclosure. (T1+) |
 | **Initial Setup Reset** | Clears all wizard configuration and relaunches the wizard (requires triple confirmation — contact support before using) |
 | **Visit AtMyBoat.com** | Opens AtMyBoat.com in a new tab (requires internet) |
 
