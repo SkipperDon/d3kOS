@@ -16,21 +16,29 @@ if [ -f "$CHROMIUM_PREFS" ]; then
   sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/g'   "$CHROMIUM_PREFS"
 fi
 
-# Launch Chromium as maximised app window
+# Clear stale session files to prevent crash-restore dialog
+rm -f "$HOME/.config/chromium/Default/Sessions/"* \
+       "$HOME/.config/chromium/Default/Current"* \
+       "$HOME/.config/chromium/Default/Last"* 2>/dev/null || true
+
+# Launch Chromium as maximised app window (no address bar, no tabs)
 # Note: binary is 'chromium' on Debian/Raspberry Pi OS (not 'chromium-browser')
+# --app=http://localhost/ uses nginx (not :3000 Flask direct) — enables theme-color title bar
 chromium \
-  --no-gl-override \
-  --app=http://localhost:3000 \
+  --app=http://localhost/ \
   --start-maximized \
+  --force-device-scale-factor=1 \
   --noerrdialogs \
   --disable-infobars \
   --no-first-run \
-  --disable-restore-last-session \
-  --disable-session-crashed-bubble \
-  --disable-features=TranslateUI \
-  --enable-features=OverlayScrollbar \
   --check-for-update-interval=31536000 \
+  --disable-session-crashed-bubble \
+  --hide-crash-restore-bubble \
+  --disable-restore-session-state \
+  --disable-translate \
+  --disable-features=TranslateUI,OverlayScrollbar \
   --ozone-platform=wayland \
-  --use-gl=angle \
-  --use-angle=swiftshader \
-  --disk-cache-size=1
+  --touch-events=enabled \
+  --enable-pinch \
+  --pull-to-refresh=0 \
+  --enable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents
