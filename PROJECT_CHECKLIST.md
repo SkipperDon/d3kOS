@@ -923,8 +923,8 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 | # | Item | Detail | Status |
 |---|------|--------|--------|
-| 1 | **Pi AODA compliance** | DEP13 — Track A (contrast), Track B (skip links/h2/aria), Track C (font floor). All 13 Flask templates + static pages. Plan from S51 ready. | `[~]` Awaiting go-ahead |
-| 2 | **Helm working** | Full d3kOS dashboard functional — all pages, all routes, day/night, More menu 9 items. Confirm after Pi reboot (S52 fixes). | `[~]` Pending Pi reboot confirmation |
+| 1 | **Pi AODA compliance** | DEP13 — Track A (contrast), Track B (skip links/h2/aria), Track C (font floor). All 13 Flask templates + static pages. Plan from S51 ready. | `[x]` **COMPLETE S54 2026-04-12** — Tracks A+B+C all done. 13 templates + d3kos.css. Commits b573e93, 90db62a, 46c015a. Deployed + confirmed on Pi (Don screenshots). |
+| 2 | **Helm working** | Full d3kOS dashboard functional — all pages, all routes, day/night, More menu 9 items. Confirm after Pi reboot (S52 fixes). | `[x]` **COMPLETE S54 2026-04-12** — Confirmed by Don screenshot after Pi reboot. ENGINE label white, status bar visible, day/night both working. |
 | 3 | **Speech working** | Voice assistant pipeline end-to-end: wake word → query → Piper TTS female voice response. TTSPlayer/S330 sample rate issue still open. Engine-on test needed. | `[ ]` Verify on Pi |
 | 4 | **Pi partition for config/restore** | Dedicated partition storing system config so Fix My Pi can save and restore configuration across reflashes. (FI4 — previously deferred.) | `[ ]` Not built |
 | 5 | **Cleanup unnecessary files** | Remove unused files from Pi. | `[ ]` Not done |
