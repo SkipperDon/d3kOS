@@ -138,7 +138,6 @@
   transition: background .3s;
 }
 .net-dot.ok   { background: var(--g-txt); }
-.net-dot.warn { background: var(--adv-bdr); }
 .net-dot.err  { background: var(--crit-bdr); }
 .net-dot.pulse { animation: aiPulse 2s ease-in-out infinite; }
 .net-info { flex: 1; }
@@ -152,9 +151,8 @@
   font-size: 18px; color: var(--ink3);
   margin-top: 2px;
 }
-.net-status.ok   { color: var(--g-txt); }
-.net-status.warn { color: var(--adv); }
-.net-status.err  { color: var(--crit); }
+.net-status.ok  { color: var(--g-txt); }
+.net-status.err { color: var(--crit); }
 
 /* ── CONNECTION BANNER ── */
 #conn-banner {
@@ -175,22 +173,24 @@
 </style>
 </head>
 <body>
-  <a class="skip-to-content" href="#main-content">Skip to main content</a>
-  
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
   <span class="brand">&#9881; Engine Dashboard</span>
   <div class="dn" style="margin-left:auto">
-    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)">DAY</button>
-    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)">NGT</button>
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)"   aria-label="Switch to day mode">DAY</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)" aria-label="Switch to night mode">NGT</button>
   </div>
   <span id="clock" style="margin-left:12px"></span>
 </div>
 
 <!-- SCROLLABLE BODY -->
-<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y">
+<span id="main-content"></span>
+<h1 class="sr-only">Engine Dashboard</h1>
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y"
+     role="main">
 <div style="padding:16px 16px 32px">
 
   <!-- CONNECTION BANNER -->
@@ -233,34 +233,6 @@
         <div class="eng-val" id="val-oil">—</div>
         <div class="eng-unit" id="unit-oil">PSI</div>
         <div class="eng-bar-wrap"><div class="eng-bar" id="bar-oil" style="width:0%"></div></div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ── 2 · PREDICTIVE HEALTH (v0.9.5) ── -->
-  <div class="sec">
-    <div class="sec-header">&#128302; Predictive Health</div>
-    <div class="eng-grid eng-grid-4">
-      <div class="eng-cell" id="pred-overall">
-        <div class="eng-lbl">Overall</div>
-        <div class="eng-val" id="pred-overall-val">&#8212;</div>
-        <div class="eng-unit" id="pred-overall-unit">checking&hellip;</div>
-      </div>
-      <div class="eng-cell" id="pred-coolant">
-        <div class="eng-lbl">Coolant</div>
-        <div class="eng-val" id="pred-coolant-val">&#8212;</div>
-        <div class="eng-unit" id="pred-coolant-unit">status</div>
-      </div>
-      <div class="eng-cell" id="pred-oil">
-        <div class="eng-lbl">Oil Press</div>
-        <div class="eng-val" id="pred-oil-val">&#8212;</div>
-        <div class="eng-unit" id="pred-oil-unit">status</div>
-      </div>
-      <div class="eng-cell" id="pred-rpm">
-        <div class="eng-lbl">RPM Trend</div>
-        <div class="eng-val" id="pred-rpm-val">&#8212;</div>
-        <div class="eng-unit" id="pred-rpm-unit">status</div>
       </div>
     </div>
   </div>
@@ -359,16 +331,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ── 6 · AUTONOMOUS AGENTS (v0.9.8) ── -->
-  <div class="sec">
-    <div class="sec-header">&#129302; Autonomous Agents</div>
-    <div class="net-grid" id="agentGrid">
-      <!-- Cards rendered dynamically by updateAgents() — no static HTML needed -->
-    </div>
-    <div style="font-family:'Chakra Petch',sans-serif;font-size:18px;color:var(--ink3);
-                margin-top:10px;padding:0 4px;" id="agentUpdated"></div>
   </div>
 
 </div><!-- /inner -->
@@ -595,109 +557,17 @@ function updateNetwork() {
     .catch(() => {});
 }
 
-/* ── AUTONOMOUS AGENTS (v0.9.8) — fully dynamic, no HTML changes needed for new agents ── */
-function updateAgents() {
-  fetch('/agents/status')
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-      var grid   = document.getElementById('agentGrid');
-      var agents = d.agents || {};
-      if (!grid) return;
-
-      Object.keys(agents).forEach(function (name) {
-        var a = agents[name];
-        var ok  = (a.status === 'green');
-        var err = (a.status === 'red');
-        var cls = ok ? 'ok' : (err ? 'err' : 'warn');
-
-        // Create card if it doesn't exist yet
-        var card = document.getElementById('agent-card-' + name);
-        if (!card) {
-          card = document.createElement('div');
-          card.className = 'net-card';
-          card.id = 'agent-card-' + name;
-          card.innerHTML =
-            '<div class="net-dot" id="agent-dot-' + name + '"></div>' +
-            '<div class="net-info">' +
-              '<div class="net-name">' + (a.label || name) + '</div>' +
-              '<div class="net-status" id="agent-msg-' + name + '">Loading\u2026</div>' +
-            '</div>';
-          grid.appendChild(card);
-        }
-
-        var dot = document.getElementById('agent-dot-' + name);
-        var msg = document.getElementById('agent-msg-' + name);
-        if (dot) dot.className = 'net-dot ' + cls;
-        if (msg) { msg.className = 'net-status ' + cls; msg.textContent = a.message || a.status; }
-      });
-
-      var upd = document.getElementById('agentUpdated');
-      if (upd && d.updated) upd.textContent = 'Last checked: ' + d.updated;
-    })
-    .catch(function () {
-      var grid = document.getElementById('agentGrid');
-      if (grid) grid.innerHTML =
-        '<div class="net-card"><div class="net-dot err"></div>' +
-        '<div class="net-info"><div class="net-name">Agent Service</div>' +
-        '<div class="net-status err">Offline \u2014 check d3kos-agents</div></div></div>';
-    });
-}
-
 /* ── INIT ── */
 openSK();
 updateSysinfo();
 updateNetwork();
-updateAgents();
 setInterval(updateSysinfo, 30000);
 setInterval(updateNetwork, 30000);
-setInterval(updateAgents, 300000);
 
 window.addEventListener('beforeunload', () => {
   clearTimeout(_reconnectTimer);
   if (_ws) try { _ws.close(); } catch (_) {}
 });
-
-/* -- PREDICTIVE HEALTH (v0.9.5) -- */
-(function () {
-  var STATUS_CLASS = { ALERT: "crit", WATCH: "adv", OK: "" };
-
-  function _setPredCell(id, status, msg) {
-    var cell = document.getElementById("pred-" + id);
-    var val  = document.getElementById("pred-" + id + "-val");
-    var unit = document.getElementById("pred-" + id + "-unit");
-    if (!cell || !val) return;
-    cell.className = "eng-cell" + (STATUS_CLASS[status] ? " " + STATUS_CLASS[status] : "");
-    val.textContent  = status || "—";
-    unit.textContent = (msg || "status").substring(0, 30);
-  }
-
-  function fetchPredictive() {
-    fetch("/predictive/status")
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        var f   = d.fields || {};
-        var ct  = f.coolant_temp_c   || {};
-        var oil = f.oil_pressure_kpa || {};
-        var rpm = f.rpm              || {};
-        var or_ = d.overall_risk     || "UNKNOWN";
-        _setPredCell("overall",  or_,        "engine health");
-        _setPredCell("coolant",  ct.status,  ct.status  === "OK" ? "normal" : ct.message  || "status");
-        _setPredCell("oil",      oil.status, oil.status === "OK" ? "normal" : oil.message || "status");
-        _setPredCell("rpm",      rpm.status, rpm.status === "OK" ? "normal" : rpm.message || "status");
-      })
-      .catch(function() {
-        ["overall","coolant","oil","rpm"].forEach(function(id) {
-          var v = document.getElementById("pred-" + id + "-val");
-          var u = document.getElementById("pred-" + id + "-unit");
-          if (v) v.textContent = "—";
-          if (u) u.textContent = "offline";
-        });
-      });
-  }
-
-  fetchPredictive();
-  setInterval(fetchPredictive, 60000);
-})();
 </script>
 </body>
 </html>

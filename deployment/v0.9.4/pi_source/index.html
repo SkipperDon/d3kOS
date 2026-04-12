@@ -53,6 +53,7 @@
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
 
   <!-- ══ 1 · STATUS BAR ══ -->
@@ -71,8 +72,8 @@
         <div class="hp-dot"></div>HELM
       </div>
       <div class="dn">
-        <button class="dn-b on" id="btnD" onclick="setTheme('day', true)">&#9728; DAY</button>
-        <button class="dn-b" id="btnN" onclick="setTheme('night', true)">&#9790; NIGHT</button>
+        <button class="dn-b on" id="btnD" onclick="setTheme('day', true)"   aria-label="Switch to day mode">&#9728; DAY</button>
+        <button class="dn-b" id="btnN" onclick="setTheme('night', true)" aria-label="Switch to night mode">&#9790; NIGHT</button>
       </div>
       <div id="clk">--:--</div>
     </div>
@@ -92,6 +93,8 @@
   </div>
 
   <!-- ══ 2 · INSTRUMENT PANEL ══ -->
+  <span id="main-content"></span>
+  <h1 class="sr-only">d3kOS Dashboard — {{ vessel_name }}</h1>
   <div id="inst">
 
     <!-- ROW TOGGLE — three-way: Both &middot; Engine &middot; Nav -->
@@ -117,7 +120,7 @@
         <div class="rt-bar"></div>
         <div class="rt-lbl">Engine</div>
       </div>
-      <div class="ic" id="cellRpm" oncontextmenu="openDiag('cellRpm')">
+      <div class="ic" id="cellRpm" oncontextmenu="openCtx(event,'RPM')">
         <div class="ic-l">RPM</div>
         <div class="ic-v">2250</div>
         <div class="ic-u">rev / min</div>
@@ -127,22 +130,22 @@
         <div class="ic-v">+8&deg;</div>
         <div class="ic-u">degrees</div>
       </div>
-      <div class="ic" id="cellOil" oncontextmenu="openDiag('cellOil')">
+      <div class="ic" id="cellOil" oncontextmenu="openCtx(event,'Oil Pressure')">
         <div class="ic-l">Oil Press</div>
         <div class="ic-v">52</div>
         <div class="ic-u">PSI &middot; normal</div>
       </div>
-      <div class="ic" id="cellCoolant" oncontextmenu="openDiag('cellCoolant')">
+      <div class="ic" id="cellCoolant" oncontextmenu="openCtx(event,'Coolant Temp')">
         <div class="ic-l">Coolant</div>
         <div class="ic-v">---</div>
         <div class="ic-u">C</div>
       </div>
-      <div class="ic" id="cellFuel" oncontextmenu="openDiag('cellFuel')">
+      <div class="ic" id="cellFuel" oncontextmenu="openCtx(event,'Fuel')">
         <div class="ic-l">Fuel</div>
         <div class="ic-v">68%</div>
         <div class="ic-u">84 L &middot; 2h 40m</div>
       </div>
-      <div class="ic" id="cellBat" oncontextmenu="openDiag('cellBat')">
+      <div class="ic" id="cellBat" oncontextmenu="openCtx(event,'Battery')">
         <div class="ic-l">Battery</div>
         <div class="ic-v">13.8</div>
         <div class="ic-u">V &middot; charging</div>
@@ -364,11 +367,11 @@
       <div class="diag-head-ico">&#128295;</div>
       <div>
         <div class="diag-head-over">AI ENGINE DIAGNOSTIC</div>
-        <div class="diag-head-title" id="diagTitle">AI Engine Diagnostic</div>
+        <div class="diag-head-title">Coolant Temperature High</div>
       </div>
     </div>
     <div class="diag-body">
-      <div class="diag-grid" id="diagGrid">
+      <div class="diag-grid">
         <div class="dc bad">
           <div class="dc-lbl">Coolant Temp</div>
           <div class="dc-val">92&deg;</div>
@@ -387,14 +390,15 @@
       </div>
       <div class="diag-ai">
         <div class="diag-ai-lbl">&#129302; AI ANALYSIS &mdash; GEMINI 2.5 FLASH</div>
-        <div class="diag-ai-txt" id="diagAiTxt">
+        <div class="diag-ai-txt">
           Coolant at <b>92&deg;C</b> is above normal cruise range (75&ndash;88&deg;C) but below critical shutdown (105&deg;C). Oil pressure normal &mdash; rules out major internal failure. Most likely cause: <b>partial raw water cooling restriction</b> &mdash; debris on intake screen or early impeller wear.<br><br>
           Recommendation: <b>Reduce to 1800 RPM</b> and monitor for 5 minutes. If temperature stabilises, continue at reduced speed to Kingston. If it climbs above <b>98&deg;C</b>, anchor and shut down engine immediately.
         </div>
       </div>
       <div class="diag-btns">
-        <button class="diag-btn64 db-info" onclick="closeDiag();openSplit('ai')">ASK HELM AI</button>
-        <button class="diag-btn64 db-dismiss" onclick="closeDiag()">DISMISS</button>
+        <button class="diag-btn64 db-primary" onclick="closeDiag();toast('Reducing RPM &mdash; monitoring coolant temp')">REDUCE TO 1800 RPM</button>
+        <button class="diag-btn64 db-info" onclick="closeDiag();openSplit('ai')">FULL AI BRIEF</button>
+        <button class="diag-btn64 db-dismiss" onclick="closeDiag()">MONITOR &middot; DISMISS</button>
       </div>
     </div>
   </div>
@@ -520,6 +524,7 @@
         <span class="ms-btn-lbl">Anchor Watch</span>
         <span class="ms-btn-sub">Monitor position at anchor</span>
       </button>
+      <!-- 8 -->
       <button class="ms-btn" onclick="closeMenu();navTo('/manual')">
         <span class="ms-btn-icon">&#128218;</span>
         <span class="ms-btn-lbl">Help / Manual</span>
@@ -546,7 +551,7 @@
 <script src="{{ url_for('static', filename='js/instruments.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/overlays.js') }}"></script>
-<script src="{{ url_for('static', filename='js/helm.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/helm.js') }}"></script>
 <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cameras.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ai-bridge.js') }}"></script>
