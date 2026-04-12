@@ -441,7 +441,8 @@
             <input type="text" id="recover-token"
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               autocomplete="off" spellcheck="false" autocorrect="off"
-              autocapitalize="none" maxlength="64"
+              autocapitalize="none" maxlength="36"
+              oninput="formatUUID(this)"
               style="font-family:'Bebas Neue',sans-serif;letter-spacing:.12em;">
             <div class="hint">36-character UUID &mdash; write this on a label and stick it to your Pi.</div>
           </div>
@@ -1422,6 +1423,17 @@
   /* ── FI4 Recovery panel ── */
   var CLOUD_RESTORE_URL = '/setup/recover';
 
+  function formatUUID(el) {
+    // Strip everything except hex digits, then insert hyphens at UUID positions
+    var raw = el.value.replace(/[^0-9a-fA-F]/g, '');
+    var out = '';
+    for (var i = 0; i < raw.length && i < 32; i++) {
+      if (i === 8 || i === 12 || i === 16 || i === 20) out += '-';
+      out += raw[i];
+    }
+    el.value = out;
+  }
+
   function showRecoverPanel() {
     document.getElementById('recover-panel').classList.add('visible');
     document.getElementById('recover-token').focus();
@@ -1445,7 +1457,7 @@
   }
 
   function doRecover() {
-    var token = document.getElementById('recover-token').value.trim();
+    var token = document.getElementById('recover-token').value.trim().toLowerCase();
     if (!token) { setRecoverStatus('Please enter your Recovery Key.', 'err'); return; }
     if (token.length < 8 || token.length > 64) {
       setRecoverStatus('Recovery Key looks invalid \u2014 check you have the full UUID.', 'err');
