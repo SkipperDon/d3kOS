@@ -32,8 +32,12 @@ echo Uploading backup_status.html...
 pscp -pw "%VM_PASS%" "%BACKUP_HTML%" %VM_USER%@%VM_HOST%:/tmp/backup_status.html
 if errorlevel 1 goto error
 
+echo Finding CRM directory on VM...
+plink -batch -pw "%VM_PASS%" %VM_USER%@%VM_HOST% "find /home -name 'app_patched.py' 2>/dev/null; find /opt -name 'app_patched.py' 2>/dev/null"
+
+echo.
 echo Copying files to CRM directory and restarting service...
-plink -batch -pw "%VM_PASS%" %VM_USER%@%VM_HOST% "echo '%VM_PASS%' | sudo -S bash -c 'cp /tmp/app_patched.py %CRM_DIR%/app_patched.py && cp /tmp/backup_status.html %CRM_DIR%/templates/backup_status.html && systemctl restart admin-crm.service && echo DONE'"
+plink -batch -pw "%VM_PASS%" %VM_USER%@%VM_HOST% "CRM_DIR=$(dirname $(find /home /opt -name 'app_patched.py' 2>/dev/null | head -1)); echo Installing to $CRM_DIR; echo '%VM_PASS%' | sudo -S bash -c \"cp /tmp/app_patched.py $CRM_DIR/app_patched.py && mkdir -p $CRM_DIR/templates && cp /tmp/backup_status.html $CRM_DIR/templates/backup_status.html && systemctl restart admin-crm.service && echo DONE\""
 if errorlevel 1 goto error
 
 echo.
