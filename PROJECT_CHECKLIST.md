@@ -831,7 +831,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | v0.9.9 | Security Audit & Penetration Testing — required gate before v1.0 | `[ ]` Planned |
 | v0.9.9.2 | Missed items — features specified but never built across all platforms | `[~]` In progress — M1/M2/M14/M15/M17 complete |
 | v0.9.9.3 | Pre-Launch — Pi AODA + speech + partition/restore + cleanup + manual + image | `[~]` **ACTIVE — see Part 13 below** |
-| v1.0 | Production launch — Phase 4 live push, archive.org image, staging → production | `[ ]` Blocked on v0.9.9.3 |
+| v1.0 | Production launch — Phase 4 live push, archive.org image, staging → production | `[x]` **COMPLETE 2026-04-12** — AtMyBoat.com live. archive.org: https://archive.org/details/d3kos_v0.9.9.2 |
 | v1.1 | CJK keyboard, self-hosted STUN coordination server, multi-language full | `[ ]` Future |
 
 ---
@@ -932,7 +932,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | 7 | **Create Pi image** | Full SD card image of v0.9.9.3 Pi state. | `[~]` **IN PROGRESS 2026-04-12 S55c** — Don performing SD card backup now. |
 | 8 | **Upload to archive.org** | Upload Pi image to archive.org item. Update OTA SHA-256 in version-registry.php. | `[x]` **COMPLETE 2026-04-12** — Image uploaded: https://archive.org/details/d3kos_v0.9.9.2 (50GB uncompressed .img). README.md updated. version-registry.php (HostPapa) — OTA SHA-256 not applicable for disk image (OTA uses services tar.gz). |
 | 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[x]` **COMPLETE 2026-04-12 S55d** — 3 waves deployed: FI4 PHP (3 files), full theme sync (120 files), PWA (9 files). Smoke tests all green: config-backup 401, config-restore 404, config-backup-status 401, staging home 200, PWA 200, alert-notify 401. |
-| 10 | **Promote to production** | Phase 4 live push — Don's hands only. Update cPanel cron URLs (offline-check.php). Rotate keys. Post-push smoke test. | `[~]` **READY — awaiting Don** — see Phase 4 runbook below. |
+| 10 | **Promote to production** | Phase 4 live push — Don's hands only. Update cPanel cron URLs (offline-check.php). Rotate keys. Post-push smoke test. | `[x]` **COMPLETE 2026-04-12 S55e** — crons updated (offline-check.php, fix-my-pi-timeout.php). Push to Live via Softaculous. 19/20 smoke tests green. /manual/ 404 expected (page not yet created). AtMyBoat.com is LIVE. |
 
 ---
 
