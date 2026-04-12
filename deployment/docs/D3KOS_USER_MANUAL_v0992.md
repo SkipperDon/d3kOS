@@ -1,9 +1,9 @@
 # d3kOS User Manual
-## Version 0.9.9.2
+## Version 0.9.9.3
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.1.0 — April 8, 2026
+**Document version:** 2.2.0 — April 12, 2026
 
 ---
 
@@ -19,6 +19,7 @@
 8. [Boat Log](#8-boat-log)
 9. [Mobile Companion App](#9-mobile-companion-app)
 10. [Fix My Pi & OTA Updates](#10-fix-my-pi--ota-updates)
+    - [Config Backup & Recovery (T1+)](#config-backup--recovery-t1)
 11. [Fleet Management (T3)](#11-fleet-management-t3)
 12. [Settings](#12-settings)
 13. [Remote Access](#13-remote-access)
@@ -638,6 +639,74 @@ OTA (Over-the-Air) updates allow you to upgrade your d3kOS installation remotely
 
 **What OTA updates can change:** application code, dashboard templates, Python services, and configuration defaults. OTA updates never touch your personal data, vessel configuration, boat log, or API keys.
 
+### Config Backup & Recovery (T1+)
+
+**Available for:** T1, T2, and T3 subscribers. T0 (free tier) does not include config backup.
+
+d3kOS automatically backs up your Pi's configuration to AtMyBoat's cloud every day. If your SD card ever fails, is lost, or you need to start from scratch, you can restore your full configuration in under two minutes — no manual re-entry required.
+
+**What is backed up:**
+- Vessel name and preferences (units, language, timezone)
+- Your tier assignment and feature access
+- Camera slot assignments
+- Alert preferences and quiet hours
+- Fleet assignment (T3)
+- Cloud connection credentials
+- AI and system settings
+
+**What is NOT backed up:**
+- Your Gemini API key — you re-enter this once after recovery (30 seconds)
+- Boat log entries — these are preserved in your AtMyBoat cloud account separately
+- Engine history data
+
+**Your Recovery Key**
+
+Your Recovery Key is a unique code tied to your Pi. You will need it if you restore your Pi without your phone.
+
+To find it: **More → Settings → System → Recovery Key** — there is a Copy button to save it to your clipboard.
+
+**Recommendation:** Write your Recovery Key on a small label and stick it inside your Pi enclosure. This gives you a backup of the backup.
+
+---
+
+#### Restoring Your Pi After a Reflash
+
+**Before you start:** Flash a fresh d3kOS image to your new SD card. Insert it and power on the Pi.
+
+**Option 1 — Restore using the d3kOS app (easiest)**
+
+1. The setup wizard loads on your Pi screen
+2. Open the **d3kOS app** on your phone
+3. Tap **Settings → Restore Pi**
+4. Select your vessel from the list
+5. The app sends your configuration directly to the Pi
+6. The wizard confirms "Config restored" and loads the dashboard
+7. Re-enter your Gemini API key in **More → Settings → AI Configuration**
+
+**Option 2 — Restore using your Recovery Key (no app required)**
+
+1. On the setup wizard welcome screen, tap **Recover Existing Pi**
+2. Enter your Recovery Key (the 36-character code from your Pi label or Settings page)
+3. Your configuration is downloaded from AtMyBoat's cloud
+4. Dashboard loads with all your settings restored
+5. Re-enter your Gemini API key in **More → Settings → AI Configuration**
+
+**Option 3 — Restore using the app when offline (no internet required)**
+
+1. Open the **d3kOS app** on your phone
+2. Tap **Settings → Restore Pi**
+3. Choose **Restore from App Cache**
+4. Both your Pi and phone must be on the same WiFi network
+5. The app sends your last saved configuration directly to the Pi over WiFi — no internet needed
+
+---
+
+#### Backup Frequency
+
+Your configuration is backed up automatically every time your Pi syncs with AtMyBoat's cloud (approximately every 30 seconds when connected). The backup is updated only when your configuration has actually changed — there is no noticeable performance impact.
+
+You can also trigger a manual backup at any time by running **Fix My Pi** from the app — config backup is the first step of every Fix My Pi run.
+
 ---
 
 ## 11. Fleet Management (T3)
@@ -914,6 +983,20 @@ Fish detection requires an active camera stream. If the camera is connecting or 
 3. If the Pi is online but showing as offline in the app, wait 15 minutes for the next sync cycle
 4. If pairing is lost, re-pair from Settings → Mobile → Pair Device on the Pi
 
+### SD card failed — need to restore Pi configuration
+
+If your Pi's SD card has died or been wiped, use the Config Backup & Recovery feature (T1+).
+See **Section 10 — Config Backup & Recovery** for full instructions. Summary:
+
+1. Flash a fresh d3kOS image to a new SD card
+2. Power on the Pi — the setup wizard loads
+3. Use the **d3kOS app → Settings → Restore Pi** (easiest), OR
+4. Tap **Recover Existing Pi** on the wizard and enter your Recovery Key
+5. Re-enter your Gemini API key after recovery completes
+
+If you are on T0 (free tier), config backup is not included. You will need to go through the
+full setup wizard as if it were a new installation.
+
 ### Fix My Pi request not completing
 
 1. Fix My Pi requires the Pi to sync with AtMyBoat.com — the Pi must have internet access
@@ -959,6 +1042,9 @@ Open the mobile app and tap **Health Score** to see which component is failing. 
 | Mobile app | atmyboat.com/app | Yes (for pairing and cloud sync) |
 | Find My Boat | App → home screen | Yes |
 | Fix My Pi | App → Fix My Pi, or atmyboat.com | Yes |
+| Config backup | Automatic on every sync (T1+) | Yes |
+| Restore Pi after reflash | App → Settings → Restore Pi, or setup wizard → Recover Existing Pi (T1+) | Yes (or LAN only) |
+| Your Recovery Key | More → Settings → System → Recovery Key | No |
 | OTA update | App or Settings → System → Check for Updates | Yes |
 | Fleet map | atmyboat.com → Community (T3) | Yes |
 | Restart Pi services | App → Settings → Restart Pi | Yes (via cloud) |
@@ -967,5 +1053,5 @@ Open the mobile app and tap **Health Score** to see which component is failing. 
 
 ---
 
-*d3kOS User Manual v0.9.9.2 — Document version 2.1.0 — April 8, 2026*
+*d3kOS User Manual v0.9.9.3 — Document version 2.2.0 — April 12, 2026*
 *AtMyBoat.com — Open-source marine intelligence*
