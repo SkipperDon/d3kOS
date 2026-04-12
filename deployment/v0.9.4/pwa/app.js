@@ -2320,6 +2320,38 @@ screens.settings = function renderSettings() {
     }
 
     container.appendChild(vesselCard);
+
+    // Recovery Key card (T1+) — shown only when vessel is paired and tier >= T1
+    if (state.tier !== 'T0') {
+      const recoveryToken = v.pi_installation_id || '';
+      const rkCard = el('div', { class: 'card' });
+      rkCard.appendChild(el('div', { class: 'card-title' }, 'Recovery Key'));
+      rkCard.appendChild(el('div', {
+        style: 'font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;',
+      }, 'Write this key on a label inside your Pi enclosure. You will need it if you ever reflash your SD card and do not have the app available.'));
+
+      const rkRow = el('div', { style: 'display: flex; align-items: center; gap: 10px; flex-wrap: wrap;' });
+      const rkCode = el('code', {
+        style: 'font-size: 0.85rem; background: var(--surface-alt, #f8fafc); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; flex: 1; word-break: break-all; color: var(--accent, #0ea5e9); letter-spacing: 0.03em; min-width: 0;',
+      }, recoveryToken || '—');
+      const rkCopyBtn = el('button', { class: 'btn btn-ghost', style: 'flex-shrink: 0; white-space: nowrap;' }, 'Copy Key');
+
+      rkCopyBtn.addEventListener('click', () => {
+        if (!recoveryToken) return;
+        navigator.clipboard.writeText(recoveryToken).then(() => {
+          rkCopyBtn.textContent = 'Copied!';
+          setTimeout(() => { rkCopyBtn.textContent = 'Copy Key'; }, 1500);
+        }).catch(() => {
+          /* fallback: select text for manual copy */
+          rkCopyBtn.textContent = 'Copy Key';
+        });
+      });
+
+      rkRow.appendChild(rkCode);
+      rkRow.appendChild(rkCopyBtn);
+      rkCard.appendChild(rkRow);
+      container.appendChild(rkCard);
+    }
   }
 
   // OTA Upgrade

@@ -643,7 +643,7 @@ OTA (Over-the-Air) updates allow you to upgrade your d3kOS installation remotely
 
 **Available for:** T1, T2, and T3 subscribers. T0 (free tier) does not include config backup.
 
-d3kOS automatically backs up your Pi's configuration to AtMyBoat's cloud every day. If your SD card ever fails, is lost, or you need to start from scratch, you can restore your full configuration in under two minutes — no manual re-entry required.
+d3kOS automatically backs up your Pi's configuration to AtMyBoat's cloud on every sync cycle (approximately every 30 seconds when connected). Backups are only sent when your configuration has actually changed — unchanged config is never uploaded twice. If your SD card ever fails, is lost, or you need to start from scratch, you can restore your full configuration in under two minutes — no manual re-entry required.
 
 **What is backed up:**
 - Vessel name and preferences (units, language, timezone)
@@ -663,7 +663,9 @@ d3kOS automatically backs up your Pi's configuration to AtMyBoat's cloud every d
 
 Your Recovery Key is a unique code tied to your Pi. You will need it if you restore your Pi without your phone.
 
-To find it: **More → Settings → System → Recovery Key** — there is a Copy button to save it to your clipboard.
+**Where to find it:**
+- On your Pi screen: **More → Settings → System → Recovery Key** — Copy button included
+- In the d3kOS app: **Settings → Recovery Key** — Copy button included
 
 **Recommendation:** Write your Recovery Key on a small label and stick it inside your Pi enclosure. This gives you a backup of the backup.
 

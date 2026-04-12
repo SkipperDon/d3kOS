@@ -299,6 +299,23 @@ def settings():
     )
 
 
+@app.route('/api/recovery-key')
+def api_recovery_key():
+    """
+    FI4 — Return device_token for PWA Recovery Key display.
+    Local-only endpoint — no auth needed (Pi LAN, port 3000).
+    """
+    try:
+        device_token = json.loads(
+            Path('/opt/d3kos/config/device-token.json').read_text()
+        ).get('device_token', '')
+    except Exception:
+        device_token = ''
+    if not device_token:
+        return jsonify({'success': False, 'error': 'device-token.json not found'}), 404
+    return jsonify({'success': True, 'device_token': device_token})
+
+
 @app.route('/sysinfo')
 def sysinfo():
     """

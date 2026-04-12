@@ -42,6 +42,8 @@ _diag_fix_url      = config["proxy_url"].replace("admin-api.php", "diagnostic-fi
 _diag_resolve_url  = config["proxy_url"].replace("admin-api.php", "diagnostic-resolve.php")
 _diag_past_url     = config["proxy_url"].replace("admin-api.php", "diagnostic-past-cases.php")
 _diag_headers_get  = {"Authorization": f"Bearer {config['proxy_api_key']}"}
+_backup_status_url = config["proxy_url"].replace("admin-api.php", "config-backup-status.php")
+_backup_status_hdrs = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
 
 def proxy_call_tickets(action: str, **kwargs) -> dict:
     payload = {"action": action, **kwargs}
@@ -735,6 +737,26 @@ def ticket_past_cases(ticket_id):
         return jsonify(resp.json()), resp.status_code
     except Exception as e:
         return jsonify({"success": False, "cases": [], "rule": None, "error": str(e)}), 500
+
+
+# ── FI4 — Config Backup Status ───────────────────────────────────────────────
+
+@app.route("/backup-status")
+@login_required
+def backup_status():
+    """FI4 — Show all Pi config backups with owner info (T2/T3 multi-boat admin view)."""
+    try:
+        resp = _requests.post(_backup_status_url, json={},
+                              headers=_backup_status_hdrs, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        backups = data.get("backups", [])
+        total   = data.get("total", 0)
+        return render_template("backup_status.html",
+                               backups=backups, total=total, error=None)
+    except Exception as e:
+        return render_template("backup_status.html",
+                               backups=[], total=0, error=str(e))
 
 
 if __name__ == "__main__":
