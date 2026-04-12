@@ -8,7 +8,7 @@ setlocal
 set VM_HOST=192.168.236.5
 set VM_USER=skipper
 set VM_PASS=d3kos2026$
-set CRM_DIR=/home/d3kos-admin/crm
+set CRM_DIR=/home/d3kos-admin
 
 REM Helm-OS repo root is 4 levels up from this script's directory:
 REM   scripts/ -> fi4-config-backup/ -> features/ -> deployment/ -> Helm-OS/
