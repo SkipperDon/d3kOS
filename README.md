@@ -4,24 +4,23 @@
 
 d3kOS transforms a Raspberry Pi 4 into a professional-grade marine helm system: real-time instrument dashboard, AI-powered vessel assistant, chart navigation, engine monitoring, IP camera system with fish detection, and a full boat log with voice notes — all running locally, no subscription required.
 
-**Version**: v0.9.2.2 — Release Candidate
-**Released**: March 23, 2026
+**Version**: v0.9.9.2 — Pre-Launch
+**Released**: April 12, 2026
 **OS**: Debian GNU/Linux 13 (Trixie)
-**Status**: Code complete — UAT in progress
+**Status**: Pre-launch — Phase 4 live push pending
 
 ---
 
 ## Download
 
-**Latest Release: v0.9.2.2 — Release Candidate**
+**Latest Release: v0.9.9.2 — Pre-Launch**
 
 | | |
 |---|---|
-| **Archive.org page** | https://archive.org/details/d-3k-os-v-0.9.2 |
-| **Direct download** | https://archive.org/download/d-3k-os-v-0.9.2/d3kOS%20v0.9.2.zip |
-| **Torrent** | https://archive.org/download/d-3k-os-v-0.9.2/d-3k-os-v-0.9.2_archive.torrent |
-| **Size** | 24.6 GB (full Pi disk image) |
-| **Format** | `.zip` — extract, then flash the `.img` inside |
+| **Archive.org page** | https://archive.org/details/d3kos_v0.9.9.2 |
+| **Direct download** | https://archive.org/download/d3kos_v0.9.9.2/d3kos_v0.9.9.2.img |
+| **Size** | ~50 GB (full Pi disk image — uncompressed) |
+| **Format** | `.img` — flash directly with Raspberry Pi Imager |
 | **Hardware** | Raspberry Pi 4B, 4GB RAM minimum |
 
 **Flash instructions:**
