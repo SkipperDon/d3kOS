@@ -10,13 +10,12 @@ set VM_USER=skipper
 set VM_PASS=d3kos2026$
 set CRM_DIR=/home/d3kos-admin/crm
 
-REM Locate Helm-OS repo root (two levels up from this script)
-set SCRIPT_DIR=%~dp0
-set FEATURE_DIR=%SCRIPT_DIR%..
-set REPO_ROOT=%FEATURE_DIR%\..\..
+REM Helm-OS repo root is 4 levels up from this script's directory:
+REM   scripts/ -> fi4-config-backup/ -> features/ -> deployment/ -> Helm-OS/
+set REPO_ROOT=%~dp0..\..\..\..\
 
-set APP_PY=%REPO_ROOT%\deployment\features\support-tickets\crm\app_patched.py
-set BACKUP_HTML=%REPO_ROOT%\deployment\features\support-tickets\crm\backup_status.html
+set APP_PY=%REPO_ROOT%deployment\features\support-tickets\crm\app_patched.py
+set BACKUP_HTML=%REPO_ROOT%deployment\features\support-tickets\crm\backup_status.html
 
 echo.
 echo Deploy FI4 Backup Status to Admin CRM VM
