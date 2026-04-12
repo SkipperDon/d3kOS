@@ -173,20 +173,24 @@
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
   <span class="brand">&#9881; Engine Dashboard</span>
   <div class="dn" style="margin-left:auto">
-    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)">DAY</button>
-    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)">NGT</button>
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)"   aria-label="Switch to day mode">DAY</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)" aria-label="Switch to night mode">NGT</button>
   </div>
   <span id="clock" style="margin-left:12px"></span>
 </div>
 
 <!-- SCROLLABLE BODY -->
-<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y">
+<span id="main-content"></span>
+<h1 class="sr-only">Engine Dashboard</h1>
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;touch-action:pan-y"
+     role="main">
 <div style="padding:16px 16px 32px">
 
   <!-- CONNECTION BANNER -->

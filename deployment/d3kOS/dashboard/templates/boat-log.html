@@ -230,6 +230,7 @@
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <div class="bl-wrap">
 
@@ -244,6 +245,8 @@
   </div>
 
   <!-- Scrollable body -->
+  <span id="main-content"></span>
+  <h1 class="sr-only">Boat Log</h1>
   <div class="bl-body">
   <div class="bl-inner">
 
@@ -268,8 +271,8 @@
     <!-- Voice Record Panel -->
     <div class="bl-sec-head">Voice Note</div>
     <div class="bl-record-panel" id="record-panel">
-      <button class="bl-rec-btn" id="rec-btn" onclick="toggleRecord()" title="Tap to record">
-        <span id="rec-icon">🎤</span>
+      <button class="bl-rec-btn" id="rec-btn" onclick="toggleRecord()" aria-label="Start or stop voice recording">
+        <span id="rec-icon" aria-hidden="true">🎤</span>
       </button>
       <div class="bl-rec-state" id="rec-state">TAP TO RECORD</div>
       <div class="bl-rec-timer" id="rec-timer">0:00</div>

@@ -98,19 +98,22 @@
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
   <span class="brand">&#129302; AI Navigation</span>
   <div class="dn" style="margin-left:auto">
-    <button class="dn-b" id="btnDay"   onclick="setTheme('day')">D</button>
-    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day')"   aria-label="Switch to day mode">D</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night')" aria-label="Switch to night mode">N</button>
   </div>
   <span id="clock"></span>
 </div>
 
 <!-- CHAT AREA -->
+<span id="main-content"></span>
+<h1 class="sr-only">AI Navigation Assistant</h1>
 <div id="chat-wrap">
   <div id="chat-inner">
 
@@ -139,8 +142,9 @@
 <div id="input-bar">
   <input type="text" id="ai-input" placeholder="Ask a navigation question…"
     autocomplete="off" autocorrect="off" spellcheck="false"
+    aria-label="Navigation question input"
     onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
-  <button id="btn-send" onclick="sendMsg()" title="Send">&#10148;</button>
+  <button id="btn-send" onclick="sendMsg()" aria-label="Send message">&#10148;</button>
 </div>
 
 <!-- TOAST -->

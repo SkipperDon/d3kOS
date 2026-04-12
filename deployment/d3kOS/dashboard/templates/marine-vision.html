@@ -373,6 +373,7 @@ h1 {
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <header>
   <div class="hdr-left">
@@ -380,12 +381,12 @@ h1 {
     <h1>Marine Vision</h1>
   </div>
   <div class="hdr-right">
-    <button class="dn-b" id="btnD" onclick="setTheme('day',true)">DAY</button>
-    <button class="dn-b" id="btnN" onclick="setTheme('night',true)">NGT</button>
+    <button class="dn-b" id="btnD" onclick="setTheme('day',true)"   aria-label="Switch to day mode">DAY</button>
+    <button class="dn-b" id="btnN" onclick="setTheme('night',true)" aria-label="Switch to night mode">NGT</button>
   </div>
 </header>
 
-<div class="container">
+<div class="container" id="main-content">
 
   <!-- Camera selector -->
   <div class="camera-selector" id="cameraSelector">
@@ -777,17 +778,17 @@ function identifyCapture(captureId) {
         html += '<div style="font-weight:700;font-size:24px;color:' + confColour + ';">' +
                 g.common_name + '</div>';
         if (g.scientific_name) {
-          html += '<div style="font-style:italic;font-size:17px;color:var(--g-txt);">' +
+          html += '<div style="font-style:italic;font-size:18px;color:var(--g-txt);">' +
                   g.scientific_name + '</div>';
         }
-        html += '<div style="font-size:17px;margin-top:4px;">Confidence: <strong>' +
+        html += '<div style="font-size:18px;margin-top:4px;">Confidence: <strong>' +
                 g.confidence + '</strong></div>';
         if (g.visual_features) {
-          html += '<div style="font-size:17px;margin-top:4px;color:var(--g-txt);">' +
+          html += '<div style="font-size:18px;margin-top:4px;color:var(--g-txt);">' +
                   g.visual_features + '</div>';
         }
         if (g.ontario_note) {
-          html += '<div style="font-size:17px;margin-top:6px;color:#e6a817;">&#9888; ' +
+          html += '<div style="font-size:18px;margin-top:6px;color:#e6a817;">&#9888; ' +
                   g.ontario_note + '</div>';
         }
         html += '</div>';
@@ -876,7 +877,7 @@ function loadRecordings() {
           return '<div class="recording-item">' +
             '<div>' +
               '<div class="recording-name">' + rec.filename + '</div>' +
-              (ts ? '<div style="font-size:17px;color:var(--ink3);">' + ts + '</div>' : '') +
+              (ts ? '<div style="font-size:18px;color:var(--ink3);">' + ts + '</div>' : '') +
             '</div>' +
             '<span class="recording-size">' + rec.size_mb + ' MB</span>' +
           '</div>';

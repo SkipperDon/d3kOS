@@ -8,20 +8,24 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}?v=15">
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- STATUS BAR -->
 <div id="status-bar">
   <a href="/" class="back-btn" style="text-decoration:none">&#9664; Dashboard</a>
   <span class="brand">&#128228; Upload Documents</span>
   <div class="dn" style="margin-left:auto">
-    <button class="dn-b" id="btnDay" onclick="setTheme('day')">D</button>
-    <button class="dn-b" id="btnNight" onclick="setTheme('night')">N</button>
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day')"   aria-label="Switch to day mode">D</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night')" aria-label="Switch to night mode">N</button>
   </div>
   <span id="clock"></span>
 </div>
 
 <!-- SCROLLABLE CONTENT -->
-<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)">
+<span id="main-content"></span>
+<h1 class="sr-only">Upload Documents</h1>
+<div style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow-y:auto;background:var(--bg)"
+     role="main">
 <div style="max-width:760px;margin:0 auto;padding:24px">
 
   <!-- UPLOAD FORM -->

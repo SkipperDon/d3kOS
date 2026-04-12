@@ -53,6 +53,7 @@
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 <div id="app" style="display:flex;flex-direction:column;height:100vh;padding-bottom:var(--bot-h);">
 
   <!-- ══ 1 · STATUS BAR ══ -->
@@ -71,8 +72,8 @@
         <div class="hp-dot"></div>HELM
       </div>
       <div class="dn">
-        <button class="dn-b on" id="btnD" onclick="setTheme('day', true)">&#9728; DAY</button>
-        <button class="dn-b" id="btnN" onclick="setTheme('night', true)">&#9790; NIGHT</button>
+        <button class="dn-b on" id="btnD" onclick="setTheme('day', true)"   aria-label="Switch to day mode">&#9728; DAY</button>
+        <button class="dn-b" id="btnN" onclick="setTheme('night', true)" aria-label="Switch to night mode">&#9790; NIGHT</button>
       </div>
       <div id="clk">--:--</div>
     </div>
@@ -92,6 +93,8 @@
   </div>
 
   <!-- ══ 2 · INSTRUMENT PANEL ══ -->
+  <span id="main-content"></span>
+  <h1 class="sr-only">d3kOS Dashboard — {{ vessel_name }}</h1>
   <div id="inst">
 
     <!-- ROW TOGGLE — three-way: Both &middot; Engine &middot; Nav -->

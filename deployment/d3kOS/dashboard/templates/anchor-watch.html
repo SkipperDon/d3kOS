@@ -111,6 +111,7 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Pet
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- STATUS BAR (same pattern as engine-monitor) -->
 <div id="status-bar">
@@ -118,15 +119,17 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Pet
   <span class="brand">&#9875; ANCHOR WATCH</span>
   <span id="aw-status-pill">INACTIVE</span>
   <div class="dn" style="margin-left:auto">
-    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)">DAY</button>
-    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)">NGT</button>
+    <button class="dn-b" id="btnDay"   onclick="setTheme('day',true)"   aria-label="Switch to day mode">DAY</button>
+    <button class="dn-b" id="btnNight" onclick="setTheme('night',true)" aria-label="Switch to night mode">NGT</button>
   </div>
 </div>
 
+<span id="main-content"></span>
+<h1 class="sr-only">Anchor Watch</h1>
 <div id="aw-page">
   <!-- Canvas map -->
   <div id="aw-map-wrap">
-    <canvas id="aw-canvas" width="300" height="260"></canvas>
+    <canvas id="aw-canvas" width="300" height="260" role="img" aria-label="Anchor position map showing vessel distance from anchor drop point"></canvas>
   </div>
 
   <!-- Stats -->
@@ -154,7 +157,7 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:'Chakra Pet
       <span>Watch Radius</span>
       <span id="aw-radius-val">25 m</span>
     </div>
-    <input type="range" id="aw-radius" min="10" max="100" value="25" step="5">
+    <input type="range" id="aw-radius" min="10" max="100" value="25" step="5" aria-label="Watch radius in metres">
     <div id="aw-radius-ticks"><span>10 m</span><span>50 m</span><span>100 m</span></div>
   </div>
 
