@@ -362,10 +362,10 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 - [x] Stripe E2E testing complete (Phase 3B above — all ST items) — confirmed 2026-04-01
 - [ ] Proper live deploy plan — to be scoped when v0.9.4.1 is complete
 - [ ] Post-push smoke test (all pages, AI widget, Stripe Fix My Pi)
-- [ ] GitHub repo set to Private
+- [–] ~~GitHub repo set to Private~~ — REMOVED: OTA firmware hosted on archive.org; public repo does not block downloads. Don confirmed 2026-04-11.
 - [ ] Rotate Gemini API key
 - [ ] Change FTP password for d3kos@atmyboat.com
-- [ ] **PRIVACY POLICY** — Set effective date in `deployment/features/privacy/PRIVACY_POLICY_TEMPLATE.md` to today's date, paste into WordPress page at atmyboat.com/privacy-policy/, publish before clicking Push to Live
+- [x] **PRIVACY POLICY** — Published to WordPress. Confirmed by Don 2026-04-11.
 - [ ] **UPDATE cPanel CRON JOBS (M15-D)** — Two cron jobs were added in staging. Before/after live push, update BOTH:
   - `offline-check.php`: change `/staging/wp-content/...` → `/wp-content/...`
   - `fix-my-pi-timeout.php` (if staging URL): confirm it points to live URL
@@ -401,7 +401,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | # | Item | Detail | Status |
 |---|------|--------|--------|
 | CA1 | Verify all credentials are in secure locations | No hardcoded keys in any PHP, Python, or JS file committed to git. All keys in: `inc/atmyboat-config.php` (HostPapa, gitignored), `cloud-config.json` (Pi, gitignored), `.env` (local dev, gitignored). | `[x]` **COMPLETE 2026-04-02 S15** — Repo scan clean. Pre-commit hooks on both repos. All secrets gitignored. |
-| CA2 | Credential rotation before live push | AMBOAT_API_KEY, Gemini API key, FTP password, Stripe webhook secrets — all rotated to fresh values before live. Old values (used during development) must not survive to production. | `[!]` **OPERATOR ACTION BEFORE PHASE 4** — Full checklist in `deployment/v0.9.3/CREDENTIAL_ROTATION_CHECKLIST.md`. Do not push live until complete. |
+| CA2 | Credential rotation before live push | AMBOAT_API_KEY, Gemini API key, FTP password, Stripe webhook secrets — all rotated to fresh values before live. Old values (used during development) must not survive to production. | `[x]` **COMPLETE — confirmed by Don 2026-04-11.** |
 | CA3 | Verify `.gitignore` coverage | Confirm every secrets file is covered: `atmyboat-config.php`, `cloud-config.json`, `cloud-credentials.json`, `.env`, `api-keys.json`. Run `git status` — none of these should appear. | `[x]` **COMPLETE 2026-04-02 S15** — Verified in both repos. All secrets files gitignored. Added `*-diag.php` + `check-*.php` to atmyboat-forum .gitignore. |
 | CA4 | Document credential vault | Don's credential document updated with final production values for all: WordPress admin, HostPapa cPanel, FTP, Stripe (live keys + webhook secrets), Gemini API key, AMBOAT_API_KEY, Metered.ca TURN credentials, Pi SSH key location. | `[~]` **IN PROGRESS S27c** — 10 known fields filled (FTP pw, staging DB pw, Stripe test keys x3, Gemini staging key, TURN credentials, Pi device_token, VM password). ~20 fields marked `[DON TO PROVIDE]` — require cPanel pw, prod DB pw, WP admin credentials, Stripe live keys, email/IMAP/SMTP. |
 | CA5 | Pre-commit hook active on atmyboat-forum repo | Verify `.git/hooks/pre-commit` blocks API key patterns in forum repo (same as Helm-OS). If absent: add it before any live-key commits are possible. | `[x]` **COMPLETE 2026-04-02 S15** — Hook created: `atmyboat-forum/.git/hooks/pre-commit`. Blocks 8 patterns: Stripe live/test, webhook, Gemini, AMBOAT_API_KEY, Anthropic, OpenAI, Metered TURN. |
@@ -443,7 +443,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 
 | # | App feature | Calls | What it does | Status |
 |---|------------|-------|--------------|--------|
-| AW1 | First install — device registration | `POST register-device.php` | Generates device UUID, stores on HostPapa, links to install | `[ ]` |
+| AW1 | First install — device registration | `POST register-device.php` | Generates device UUID, stores on HostPapa, links to install | `[x]` **NOT A PWA ITEM** — register-device.php is called by the Pi automatically on first boot after QR scan. App does not call it. Handled by cloud_agent.py pair_confirmed handler (S18). Confirmed 2026-04-11. |
 | AW2 | QR pairing — link device to account + vessel | `POST pair-device.php` | User scans QR on Pi → app sends UUID + user token + vessel name/type → account linked. T3: can pair multiple Pis. | `[x]` **DONE 2026-03-26 S3** — screens.pair: camera → jsQR → vessel form → pair-device-app.php. New endpoint uses app_token auth. |
 | AW3 | Fix My Pi — trigger diagnostic | `POST fix-my-pi-billing.php` → Stripe → `POST command-queue.php` | Charges $29.99, writes `fix_my_pi` command for the active Pi | `[x]` **DONE 2026-03-27 S4** — fix-my-pi-app.php (app_token auth): T0 blocked, T1 Stripe checkout + post-payment poll, T2 allowance check, T3 direct queue. PWA screens.fixmypi: disclaimer→progress→result. Stripe webhook updated for pi_installation_id. |
 | AW4 | Send command to Pi | `POST command-queue.php` | App writes command for the active Pi (restart_service, ota_update, reboot) | `[x]` **DONE 2026-03-26 S3** — app-command.php POST. Verifies Pi paired to user. Returns command_id. |
@@ -490,7 +490,7 @@ Full spec: `ATMYBOAT_BUILD_REFERENCE.md` Part 17.4
 | DEP8 | **S6 schema: run in phpMyAdmin** — CREATE TABLE `amboat_rtc_sessions` + `amboat_pdf_reports` (SQL delivered in S6 chat). PHP files already deployed, will 500 until tables exist. | `[x]` **DONE 2026-03-27** — both tables created, confirmed by operator |
 | DEP9 | **Create `staging/app/reports/` directory on HostPapa** — pdf-engine-report.php saves PDFs there. Needs to exist with write permissions (755). Use cPanel File Manager → staging/app/ → New Folder. | `[x]` **DONE 2026-03-27** — directory created by operator |
 | DEP10 | **TURN server** — relay for WebRTC when STUN P2P fails (carrier-grade NAT). | `[x]` **DONE 2026-03-27 S6c** — Metered.ca TURN (a.relay.metered.ca:3478). Pi: aioice timeout patch 5s→12s, live_session.py uses correct relay hostname. App: turn-credentials.php returns correct ICE servers. Relay confirmed: `178.156.179.144` (Metered.ca). Cellular test passed. |
-| DEP13 | **Pi AODA compliance pass** — WCAG 2.0 AA applied to all 20 static HTML pages (`/var/www/html/`) and 12 Flask templates. Skip-to-content links, id="main-content", focus-visible indicators, font-size floor 18px (26 violations fixed), min-height 48px touch targets. CSS appended to both `d3kos-touch.css` and `d3kos.css`. | `[~]` S8 static pages done. S50 Flask attempt FAILED AND REVERTED. **S51 PLAN COMPLETE — awaiting Don's go-ahead to execute.** Plan: Track A (contrast overrides ~50 selectors, no token changes), Track B (structural: skip links, h2, aria-labels on all 13 templates), Track C (font size for 45–70yr users). Full plan in S51 session chat. No execution without explicit "go ahead." |
+| DEP13 | **Pi AODA compliance pass — MANDATORY** — WCAG 2.0 AA applied to all 20 static HTML pages (`/var/www/html/`) and 12 Flask templates. Skip-to-content links, id="main-content", focus-visible indicators, font-size floor 18px, min-height 48px touch targets. CSS appended to both `d3kos-touch.css` and `d3kos.css`. | `[~]` S8 static pages done. S50 Flask attempt FAILED AND REVERTED. **S51 PLAN COMPLETE — awaiting Don's go-ahead.** Track A: contrast overrides ~50 selectors (no token changes). Track B: skip links, h2, aria-labels on all 13 templates. Track C: font size floor 45–70yr users. Required — commercial software, accessibility law. |
 | DEP17 | **Pi display config — restore Thursday state** | `d3kos-browser.desktop` found in `/home/d3kos/.config/autostart/` — did NOT exist on Thursday backup. Creates conflicting Chromium launch (`--start-fullscreen http://localhost/`) racing against labwc autostart (`--app --start-maximized http://localhost:3000`). **Fix: remove d3kos-browser.desktop.** Also: how wf-panel-pi was launching on Thursday not yet identified — need full USB backup comparison before touching anything. Pi menu and keyboard confirmed working on Thursday. | `[~]` **S52 PARTIAL FIX 2026-04-11** — `d3kos-browser.desktop` changed `--start-fullscreen` → `--start-maximized`. Deployed. wf-panel-pi will return after next Pi reboot. Don to confirm. |
 | DEP14 | **Settings & Help section index bar** — 17 pill buttons in sticky nav at top of Flask settings.html page. IntersectionObserver highlights active section on scroll. Tap scrolls `.settings-page-body` container directly. Pill colours: active = green outline + green text, default = white text transparent. | `[x]` **DONE 2026-03-28 S8** |
 | DEP15 | **Status bar indicators removed** — `<div class="indicators">` block (🌐🗺🤖📡🧠 icons beside clock) removed from Flask settings.html. | `[x]` **DONE 2026-03-28 S8** |
@@ -829,8 +829,9 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | v0.9.7 | Remote Diagnostic Console — support tickets, AI diagnosis, fix delivery | `[ ]` Planned |
 | v0.9.8 | Autonomous Agents + Failure Intelligence — self-healing Pi, recovery mode | `[ ]` Planned |
 | v0.9.9 | Security Audit & Penetration Testing — required gate before v1.0 | `[ ]` Planned |
-| v0.9.9.2 | Missed items — features specified but never built across all platforms | `[ ]` Planned |
-| v1.0 | Production launch — signalk-forward-watch AppStore, incremental OTA | `[ ]` Planned — blocked on v0.9.9 + v0.9.9.2 |
+| v0.9.9.2 | Missed items — features specified but never built across all platforms | `[~]` In progress — M1/M2/M14/M15/M17 complete |
+| v0.9.9.3 | Pre-Launch — Pi AODA + speech + partition/restore + cleanup + manual + image | `[~]` **ACTIVE — see Part 13 below** |
+| v1.0 | Production launch — Phase 4 live push, archive.org image, staging → production | `[ ]` Blocked on v0.9.9.3 |
 | v1.1 | CJK keyboard, self-hosted STUN coordination server, multi-language full | `[ ]` Future |
 
 ---
@@ -844,7 +845,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 | ID | Item | Details | Status |
 |----|------|---------|--------|
-| M1 | **Anchor Watch — d3kOS dedicated page** | Dedicated `anchor-watch.html` page on d3kOS (T0 — all tiers). NOT in PWA (T0 users have no mobile app). Set Anchor button captures current GPS → stores anchor position. Radius slider default **25m** (adjustable — 25m is the safety-correct default; 50m puts you into neighbouring boats at anchor). Active state: Leaflet mini-map showing boat vs anchor drop point + live distance text. TTS alarm + visual flashing overlay on drag detect (3-poll confirm, 45s). DISMISS button always visible when alarm active. Repeat alarm every 60s until dismissed. T1+ sends mobile push via alert delivery pipeline (M15). Backend (`anchor_watch.py` at AI bridge :3002) fully deployed. Research needed before build: how d3kOS sets anchor position in Signal K vs independent storage. Spec: `ATMYBOAT_BUILD_REFERENCE.md` §16.9 + Part 18. | `[ ]` |
+| M1 | **Anchor Watch — d3kOS dedicated page** | Dedicated `anchor-watch.html` page on d3kOS (T0 — all tiers). NOT in PWA (T0 users have no mobile app). Set Anchor button captures current GPS → stores anchor position. Radius slider default **25m** (adjustable — 25m is the safety-correct default; 50m puts you into neighbouring boats at anchor). Active state: Leaflet mini-map showing boat vs anchor drop point + live distance text. TTS alarm + visual flashing overlay on drag detect (3-poll confirm, 45s). DISMISS button always visible when alarm active. Repeat alarm every 60s until dismissed. T1+ sends mobile push via alert delivery pipeline (M15). Backend (`anchor_watch.py` at AI bridge :3002) fully deployed. | `[x]` **COMPLETE 2026-04-08 S41** — anchor-watch.html deployed to Pi. Flask route `/anchor-watch` in app.py. d3kOS stores anchor position natively (not SK). Haversine distance. Standard `#status-bar` + `.back-btn` + DAY/NGT. Checklist not updated at session close — corrected 2026-04-11. |
 | M14 | **AI Engine Diagnostic — live data** | When engine cell tapped, `openDiag()` currently shows hardcoded demo content. Fix: pull live Signal K readings on tap → POST all engine readings to Gemini → populate panel with real diagnosis (plain English, urgency, suggested fixes — format per MASTER_SYSTEM_SPEC §6.4.4). **Tier: T2 and T3 only.** Fire immediately on tap — no confirmation. Response also integrated into PDF engine report. | `[x]` **COMPLETE + VERIFIED 2026-04-08 S39/S40** — `openDiag()` fully rewritten as async Gemini call. Tier gate via `/config/tier` Flask endpoint. Live SK data from `window._d3kEngData` cache (instruments.js). T0/T1 shows upgrade prompt. T2/T3 POSTs to Gemini proxy port 8097. Panel populated dynamically. **S40 fixes:** (1) overlays.js regex syntax error (literal newline in /\n/g — JS SyntaxError at parse time); (2) _setCellState decoupled from onclick — all engine cells now always tappable; (3) cellRpm typo fixed; (4) context menu on hold replaced with openDiag(); (5) font sizes increased (AI text 24px, buttons 22px). Verified by Don: "beautifully done it working." |
 
 ### PWA — Missing Screens
@@ -858,7 +859,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 | ID | Item | Details | Status |
 |----|------|---------|--------|
-| M2 | **T3 Fleet Management Web Portal** | **SCOPE EXPANDED from "fleet map PWA screen" to full web-based fleet management portal.** T3 operators need a dedicated web screen (not just a PWA map). Requirements: (1) Leaflet map showing all fleet vessels with boat names (not anonymous dots), coloured by health score; (2) Click vessel → full vessel detail: engine data, performance metrics, captain log entries, PDF reports; (3) Send customer service messages to captains from the portal; (4) Fleet-level alert management and notification history; (5) Engine operations summary across fleet. Architecture: PHP web pages (HostPapa), extending the fleet backend already built. Similar UX pattern to Admin CRM. Backend (`fleet-map.php`, `fleet-analytics.php`) already built. | `[x]` **COMPLETE 2026-04-11 S49** — `page-fleet-portal.php` (WP template, T3 gate, Leaflet map, vessel list, detail panel, fleet summary stats) + `mobile/fleet-message.php` (captain messaging via wp_mail()) + CSS block in style.css. Deployed to HostPapa staging. **OPERATOR ACTION REQUIRED:** Create WP page with Template: Fleet Portal, slug: fleet. |
+| M2 | **T3 Fleet Management Web Portal** | **SCOPE EXPANDED from "fleet map PWA screen" to full web-based fleet management portal.** T3 operators need a dedicated web screen (not just a PWA map). Requirements: (1) Leaflet map showing all fleet vessels with boat names (not anonymous dots), coloured by health score; (2) Click vessel → full vessel detail: engine data, performance metrics, captain log entries, PDF reports; (3) Send customer service messages to captains from the portal; (4) Fleet-level alert management and notification history; (5) Engine operations summary across fleet. Architecture: PHP web pages (HostPapa), extending the fleet backend already built. Similar UX pattern to Admin CRM. Backend (`fleet-map.php`, `fleet-analytics.php`) already built. | `[x]` **COMPLETE 2026-04-11 S49** — `page-fleet-portal.php` (WP template, T3 gate, Leaflet map, vessel list, detail panel, fleet summary stats) + `mobile/fleet-message.php` (captain messaging via wp_mail()) + CSS block in style.css. Deployed to HostPapa staging. WordPress page created by Don (Template: Fleet Portal, slug: fleet) — confirmed complete 2026-04-11. |
 
 ### Alert Delivery (REDESIGNED — 2026-04-08)
 
@@ -871,7 +872,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | ID | Item | Details | Status |
 |----|------|---------|--------|
 | M16 | **Website AI not working — FIXED 2026-04-08 S38** | Root cause confirmed: `atmyboat-config.php` on staging defined `ATMYBOAT_API_KEY` but `ai-assistant.php` expects `GEMINI_API_KEY`. Fix deployed: added `GEMINI_API_KEY`, `GEMINI_MODEL` (gemini-2.5-flash-preview-04-17), `GEMINI_MAX_TOKENS` (1000) to staging `atmyboat-config.php`. Legacy `ATMYBOAT_API_KEY` kept for compatibility. | `[x]` **COMPLETE 2026-04-08 S38** |
-| M17 | **Website — full branding and design consistency** | **SCOPE EXPANDED from "forum theming only" to full website design review.** All public pages must be consistent, professional, and AODA-compliant. Issues identified: inconsistent fonts, font scale problems, layout flow, colour inconsistency across pages. Scope: (1) bbPress forum theming (categories, thread list, single topic, reply form — dark marine design system); (2) All page templates: consistent header, nav, footer, typography, spacing; (3) Design flows that guide the reader through the content; (4) Every page meets AODA minimum: 18px+ body, 4.5:1 contrast, 48×48px touch targets. Approach: audit all pages first (M19), then fix in a single pass. | `[ ]` |
+| M17 | **Website — full branding and design consistency** | **SCOPE EXPANDED from "forum theming only" to full website design review.** All public pages must be consistent, professional, and AODA-compliant. Issues identified: inconsistent fonts, font scale problems, layout flow, colour inconsistency across pages. Scope: (1) bbPress forum theming (categories, thread list, single topic, reply form — dark marine design system); (2) All page templates: consistent header, nav, footer, typography, spacing; (3) Design flows that guide the reader through the content; (4) Every page meets AODA minimum: 18px+ body, 4.5:1 contrast, 48×48px touch targets. | `[x]` **COMPLETE 2026-04-11 S46+S47** — S46: 88+ font-size violations fixed across 11 page templates (all pages 18px minimum). S47: bbpress.css nuclear rewrite — forum dark theme, full-width Twenty Twenty container overrides, WAVE 24 contrast errors resolved to 0. All files deployed to HostPapa staging. Checklist not updated at session close — corrected 2026-04-11. |
 | M18 | **Community page — finalize simplified layout** | Hall of fame and challenges removed (S37). Remaining: finalize map + stats + recent forum discussions + "Go to Forum" button. | `[x]` **COMPLETE 2026-04-08 S38** — Confirmed live on staging: map → stats → "Recent Discussions" layout. No further changes needed. |
 | M19 | **Website claims audit** | Claude reads all public-facing page templates, identifies features described but not built or not working, produces findings report with recommendations. Gate before Phase 4. | `[x]` **COMPLETE 2026-04-08 S38** — All 11 public pages audited. 3 hard blockers for Phase 4: (1) safety page claims Anchor Watch + AI Engine Diagnostic as current — both unbuilt; (2) pricing T3 claims Fleet GPS map — unbuilt; (3) download page claims "Full i18n" — Layer 0 only. Recommendation: add "Coming Soon" badges OR build M1/M14/M2 before live push. |
 | — | **page-manual.php + PDF + RAG** | User manual (D3KOS_USER_MANUAL_v0992.md) to be: (1) Generated as PDF; (2) Uploaded to GitHub; (3) Ingested into Pi RAG (ChromaDB) so Helm AI can answer questions from it; (4) Linked from Help page on website. NOT a full PHP page — just a link to the PDF download + RAG integration. | `[~]` **PARTIAL 2026-04-08 S39** — page-manual.php built (Template Name: User Manual, PDF download button + 16-section ToC). Deployed to HostPapa staging. Help page updated with "User Manual" quick-link card (7th card → `/manual/`). DEFERRED: (1) Don must create GitHub release with PDF; (2) RAG ingest deferred — requires Ollama running for nomic-embed-text 768d embeddings. |
@@ -901,15 +902,37 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 |----|------|--------|
 | M13 | ~~Marine Vision motion detection~~ | Never requested by Don. Removed 2026-04-08 S38. |
 
-### Integration Tests — Never Run
+### Integration Tests — Post-Launch (require live site + real hardware)
 
 | ID | Item | Expected Result | Status |
 |----|------|-----------------|--------|
-| M8 | **T1: Pi → website sync** | POST to `data-ingress.php` with real device token → 200 OK, engine snapshot in DB, `last_sync` updated | `[ ]` |
-| M9 | **T2: Command round-trip** | App queues `restart_service` → Pi picks up on next sync → executes → result returned to app within 35 min | `[ ]` |
-| M10 | **T3: Community data flow** | Enable boat_map in Pi Settings → position appears on `/community` map within 30 min | `[ ]` |
-| M11 | **T4: Anchor drag alert** | Simulate anchor drag on Pi → immediate export fires → alert in `amboat_alerts` DB within 2 min | `[ ]` |
-| M12 | **T5: Find My Boat** | Pi syncs position → Chart Room shows correct map marker within 35 min | `[ ]` |
+| M8 | **T1: Pi → website sync** | POST to `data-ingress.php` with real device token → 200 OK, engine snapshot in DB, `last_sync` updated | `[ ]` Post-launch |
+| M9 | **T2: Command round-trip** | App queues `restart_service` → Pi picks up on next sync → executes → result returned to app within 35 min | `[ ]` Post-launch |
+| M10 | **T3: Community data flow** | Enable boat_map in Pi Settings → position appears on `/community` map within 30 min | `[ ]` Post-launch |
+| M11 | **T4: Anchor drag alert** | Simulate anchor drag on Pi → immediate export fires → alert in `amboat_alerts` DB within 2 min | `[ ]` Post-launch |
+| M12 | **T5: Find My Boat** | Pi syncs position → Chart Room shows correct map marker within 35 min | `[ ]` Post-launch |
+
+---
+
+---
+
+## PART 13 — v0.9.9.3 Pre-Launch Build
+**Version:** v0.9.9.3
+**Status:** ACTIVE — defined by Don 2026-04-11
+**Definition of done:** All items below complete → Pi image created → uploaded to archive.org → staging updated → Phase 4 live push.
+
+| # | Item | Detail | Status |
+|---|------|--------|--------|
+| 1 | **Pi AODA compliance** | DEP13 — Track A (contrast), Track B (skip links/h2/aria), Track C (font floor). All 13 Flask templates + static pages. Plan from S51 ready. | `[~]` Awaiting go-ahead |
+| 2 | **Helm working** | Full d3kOS dashboard functional — all pages, all routes, day/night, More menu 9 items. Confirm after Pi reboot (S52 fixes). | `[~]` Pending Pi reboot confirmation |
+| 3 | **Speech working** | Voice assistant pipeline end-to-end: wake word → query → Piper TTS female voice response. TTSPlayer/S330 sample rate issue still open. Engine-on test needed. | `[ ]` Verify on Pi |
+| 4 | **Pi partition for config/restore** | Dedicated partition storing system config so Fix My Pi can save and restore configuration across reflashes. (FI4 — previously deferred.) | `[ ]` Not built |
+| 5 | **Cleanup unnecessary files** | Remove unused files from Pi. | `[ ]` Not done |
+| 6 | **Update user manual** | (a) Update manual content to v0.9.9.3; (b) Deploy to Pi RAG (ChromaDB ingest); (c) Update website page-manual.php; (d) Create GitHub release with PDF. | `[ ]` Not done |
+| 7 | **Create Pi image** | Full SD card image of v0.9.9.3 Pi state. | `[ ]` After items 1–6 complete |
+| 8 | **Upload to archive.org** | Upload Pi image to archive.org item. Update OTA SHA-256 in version-registry.php. | `[ ]` After item 7 |
+| 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[ ]` After item 8 |
+| 10 | **Promote to production** | Phase 4 live push — Don's hands only. Update cPanel cron URLs. Rotate keys. Post-push smoke test. | `[ ]` Final step |
 
 ---
 
