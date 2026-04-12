@@ -1,232 +1,119 @@
-# d3kOS — AI Marine Intelligence Platform
+# d3kOS — Helm Intelligence for Your Boat
 
-**An open-source helm operating system for Raspberry Pi**
+**An open-source operating system for Raspberry Pi that gives your boat a brain.**
 
-d3kOS transforms a Raspberry Pi 4 into a professional-grade marine helm system: real-time instrument dashboard, AI-powered vessel assistant, chart navigation, engine monitoring, IP camera system with fish detection, and a full boat log with voice notes — all running locally, no subscription required.
+If your boat doesn't have radar, a weather station, or a $5,000 multifunction display — d3kOS was built for you.
+Flash an SD card, plug it into a Raspberry Pi 4 at your helm, and you have a fully working marine intelligence centre running on a touchscreen. No programming required after installation.
 
-**Version**: v0.9.9.2 — Pre-Launch
-**Released**: April 12, 2026
-**OS**: Debian GNU/Linux 13 (Trixie)
-**Status**: Pre-launch — Phase 4 live push pending
+**Version**: v0.9.9.2 | **Released**: April 12, 2026 | **Platform**: Raspberry Pi 4B
+
+---
+
+## Is This for Me?
+
+d3kOS is built for the boater who:
+
+- Wants more situational awareness without spending thousands of dollars on marine electronics
+- Is comfortable with basic computer tasks but has little or no Raspberry Pi experience
+- Keeps a pleasure boat, fishing boat, or small cruiser on fresh water or coastal waters
+- Values safety features that work even when there is no internet connection
+
+If you can burn an SD card and connect a screen to a Pi, you can run d3kOS.
+The setup wizard walks you through the rest.
 
 ---
 
 ## Download
 
-**Latest Release: v0.9.9.2 — Pre-Launch**
+**Latest Release: v0.9.9.2**
 
 | | |
 |---|---|
 | **Archive.org page** | https://archive.org/details/d3kos_v0.9.9.2 |
 | **Direct download** | https://archive.org/download/d3kos_v0.9.9.2/d3kos_v0.9.9.2.img |
-| **Size** | ~50 GB (full Pi disk image — uncompressed) |
-| **Format** | `.img` — flash directly with Raspberry Pi Imager |
-| **Hardware** | Raspberry Pi 4B, 4GB RAM minimum |
+| **Format** | `.img` file — flash directly with Raspberry Pi Imager |
+| **Size** | ~50 GB uncompressed |
+| **Hardware** | Raspberry Pi 4B, 4 GB RAM minimum |
 
-**Flash instructions:**
-1. Download the `.zip` and extract it
-2. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
-3. Choose OS → Use custom → select the `.img` file
-4. Choose Storage → select your SD card (32GB+ recommended)
-5. Write
+**How to flash:**
 
----
+1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/) — free, works on Windows, Mac, Linux
+2. Open Imager → **Choose OS** → **Use custom** → select the `.img` file
+3. **Choose Storage** → select your SD card (32 GB or larger recommended)
+4. Click **Write** — done
 
-## What is d3kOS?
-
-d3kOS runs on a Raspberry Pi 4 mounted at your helm. It integrates:
-
-- **AvNav** chart plotter (replaces or complements your MFD)
-- **HELM** — voice-activated AI assistant powered by Gemini + local RAG
-- **Signal K** — NMEA 2000 / 0183 data aggregation hub
-- **Marine Vision** — up to 20 IP cameras with YOLOv8 fish detection and Gemini Vision species ID
-- **Engine Dashboard** — real-time gauges and alert monitoring
-- **Boat Log** — voice-to-text entries, engine auto-capture, CSV/JSON export
-- **18-language i18n** framework (UI language selectable in Settings)
-
-**d3kOS is not a standalone chartplotter.** It works alongside your existing MFD and VHF. It adds an AI intelligence layer and centralized monitoring that your MFD does not provide.
-
-**Key characteristics:**
-- 100% local operation — all core features work without internet
-- Touch-optimized for 1m helm viewing distance (IEC 62288 / ISO 9241-303 compliant fonts)
-- Offline-capable: Gemini AI with local RAG fallback
-- Open architecture: Flask, Signal K, standard web technologies
-- ~$500 hardware cost vs $5,000+ for traditional marine electronics
+Power on your Pi, wait 60 seconds, and the d3kOS setup wizard will launch automatically on your screen.
 
 ---
 
-## What's New in v0.9.2.2
+## What d3kOS Does
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
+d3kOS gives you nine dedicated tools, all accessible from the touchscreen at your helm:
 
-**Highlights:**
-- Full marine-grade instrument dashboard (Bebas Neue / Chakra Petch design system)
-- 8-step onboarding wizard with CX5106 DIP switch auto-configuration
-- Helm AI assistant with RAG → Gemini fallback
-- Engine Dashboard: 5 sections, full 1280px width, alert states
-- Marine Vision: slot/hardware architecture, 1–20 cameras, fish detection + species ID
-- Boat Log: voice-to-text (Vosk), engine auto-capture, CSV/JSON export
-- Weather: fullscreen Windy embed (no API key required)
-- Signal K v2.23.0
-- NMEA2000 simulator removed
-- User manual ingested into Pi RAG knowledge base
+| Tool | What It Does |
+|------|-------------|
+| **AI Navigation** | Ask plain-English questions about navigation, regulations, or your route — powered by Gemini AI with an offline knowledge base backup |
+| **Engine Dashboard** | Live engine gauges — RPM, coolant temperature, oil pressure, battery voltage, fuel level. Alerts when something needs attention |
+| **Helm Assistant** | Hands-free voice AI. Say "Helm" and ask anything. Works offline using a local knowledge base when there is no internet |
+| **Anchor Watch** | Monitors your anchor position while you rest. Sounds an alarm if the boat drifts beyond your set radius |
+| **Marine Vision** | Connects up to 20 IP cameras. Monitors your deck, dock lines, and surroundings. Includes fish detection for fishing boats |
+| **Boat Log** | Keeps an automatic log of your trips — engine starts and stops, position snapshots, and voice notes you record yourself |
+| **Upload Documents** | Load your engine manual, flare checklist, or any PDF onto the Pi so HELM can answer questions from your own documents |
+| **Settings** | Configure your vessel, units (metric or imperial), language, display, and connected hardware |
+| **Help / Manual** | The full user manual, always available on the Pi even without internet |
 
----
+The main dashboard also includes:
 
-## Hardware Requirements
-
-### Core (Required)
-
-| Component | Specification | Est. Cost |
-|-----------|---------------|-----------|
-| Raspberry Pi 4B | 4GB RAM minimum, 8GB recommended | $55–75 |
-| microSD Card | 32GB minimum, Class 10 A2 | $12–20 |
-| Touchscreen | 10.1" 1280×800, capacitive touch, HDMI+USB | $80–120 |
-| DC-DC Converter | 12V→5V, 5A, galvanic isolation (Victron Orion-Tr) | $35 |
-| USB GPS Receiver | Any gpsd-compatible (VK-162 or equivalent) | $15 |
-
-**Total Core System**: ~$350–450
-
-### Optional
-
-| Component | Specification | Est. Cost |
-|-----------|---------------|-----------|
-| Anker PowerConf S330 | USB speakerphone for HELM voice assistant | $130 |
-| Reolink RLC-810A | 4K IP camera, PoE, night vision (up to 20) | $90/each |
-| CX5106 or compatible | NMEA 2000 engine gateway (PiCAN-M also supported) | $120–200 |
-
-### Display
-
-- **Tested**: 10.1" 1280×800, 150 PPI
-- **Minimum**: 1024×600 (some layout degradation below 1280px)
-- **Brightness**: 1000 nit recommended for sunlight readability
-- **Touch**: Capacitive multi-touch (ILITEK controller confirmed working)
+- **Charts** — AvNav chart plotter integrated directly into the dashboard
+- **Weather** — live wind and wave map (Windy) for voyage planning
+- **Camera view** — all connected cameras at a glance
 
 ---
 
-## Software Stack
+## Supported by AtMyBoat.com
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Debian (Trixie) | GNU/Linux 13 | Base OS |
-| Flask | 3.x | Dashboard server (:3000) |
-| Signal K Server | 2.23.0 | NMEA 2000/0183 aggregation (:8099) |
-| AvNav | 20250822 | Chart navigation (:8080) |
-| Node-RED | 3.x | Engine data flows |
-| Gemini 2.5 Flash | via API | AI assistant + fish species ID |
-| Vosk | small-en-us | Offline speech-to-text (voice notes) |
-| Piper | en_US-amy | Offline text-to-speech (HELM responses) |
-| ChromaDB | local | RAG vector database (manuals + fish species) |
-| YOLOv8n | ONNX | Fish and obstacle detection |
-| OpenCPN | 5.12.4 Flatpak | Chart plotter (fallback / o-charts) |
-| Chromium | Latest | Kiosk browser (Wayland, `--app` mode) |
-| labwc | Latest | Wayland compositor |
+d3kOS is the open-source software. **[AtMyBoat.com](https://atmyboat.com)** is the community and support platform built around it.
+
+When you register at AtMyBoat.com you get:
+
+- **Mobile companion app** — check your boat's status from your phone, receive engine alerts, and view your boat log remotely
+- **Fix My Pi** — if something goes wrong, the app walks you through diagnosing and recovering your system
+- **Community forum** — other d3kOS boaters, setup questions, tips, and trip reports
+- **AI Help Centre** — ask boating questions from any browser, even when you are not on the boat
+
+AtMyBoat.com is free to join. The mobile app has free and supported tiers.
 
 ---
 
-## Quick Start
+## What You Need
 
-### Prerequisites
+### Required Hardware
 
-- Raspberry Pi 4 running Debian 13 (Trixie) with Wayland/labwc
-- Signal K Server installed and running on port 8099
-- Python 3.13, Node.js 20+, AvNav installed
+| Item | What to Look For |
+|------|-----------------|
+| Raspberry Pi 4B | 4 GB RAM minimum — 8 GB recommended |
+| microSD Card | 32 GB minimum, Class 10 or better |
+| Touchscreen | 10.1 inch, 1280×800, HDMI + USB touch. Must be rated for your environment. |
+| Power supply | 12V to 5V DC-DC converter rated at 5A minimum. Use a marine-grade isolated converter. |
+| USB GPS receiver | Any standard USB GPS (gpsd-compatible) |
 
-### Clone and Deploy
+### Optional Hardware
 
-```bash
-# On your workstation
-git clone https://github.com/SkipperDon/d3kOS.git
-cd d3kOS
+| Item | What It Adds |
+|------|-------------|
+| USB speakerphone (e.g. Anker S330) | Hands-free HELM voice assistant |
+| IP cameras (PoE, RTSP stream) | Marine Vision camera system |
+| NMEA 2000 gateway (e.g. CX5106 or PiCAN-M) | Live engine data from your NMEA 2000 network |
 
-# Deploy to Pi (replace with your Pi IP)
-scp -r deployment/d3kOS/dashboard/ d3kos@192.168.1.237:/opt/d3kos/services/
-scp -r deployment/d3kOS/services/ d3kos@192.168.1.237:/opt/d3kos/services/
-```
-
-See `deployment/` for full deployment scripts and configuration.
-
-### First Boot
-
-1. Power on Pi — wait ~60 seconds
-2. Chromium opens at `http://localhost:3000` in kiosk mode
-3. First-run: Setup Wizard launches automatically (8 steps)
-4. Complete vessel identity, engine type, NMEA gateway config, Gemini API key
-5. Dashboard is live
-
-### Services
-
-| Service | Port | Purpose |
-|---------|------|---------|
-| `d3kos-dashboard` | 3000 | Flask dashboard (main UI) |
-| `avnav` | 8080 | Chart navigation |
-| `upload_api` | 8081 | Manual upload |
-| `history_api` | 8082 | History data |
-| `manuals_api` | 8083 | Manual serving |
-| `camera` | 8084 | Camera stream manager |
-| `fish_detector` | 8086 | YOLOv8 fish detection |
-| `keyboard-api` | 8087 | On-screen keyboard control |
-| `ai_api` | 8089 | HELM voice AI service |
-| `boatlog-export-api` | 8095 | Boat log + voice notes |
-| `signalk` | 8099 | Signal K server |
-| `language_api` | 8101 | i18n language service |
-| `preferences_api` | 8107 | Metric/imperial preferences |
-| `remote_api` | 8111 | Remote access API |
+See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) and [`docs/CX5106_CONFIGURATION_GUIDE.md`](docs/CX5106_CONFIGURATION_GUIDE.md) for detailed setup guides.
 
 ---
 
-## Features
+## Language Support
 
-### Dashboard
+d3kOS supports 18 languages. Change the display language in Settings → Language at any time.
 
-- Instrument rows: ENGINE (RPM, coolant, oil, battery, fuel) + NAV (SOG, COG, position, next waypoint)
-- 3-way row toggle: ENGINE / NAV / BOTH
-- AvNav chart iframe (full chart plotter integration)
-- Day/Night theme — auto-schedule with manual override
-- Status bar: internet, AvNav, Gemini AI, Signal K, Ollama
-- 6-tab bottom nav: NAV, MARINE VISION, ENGINE, BOAT LOG, MORE + HELM button
-
-### HELM — AI Voice Assistant
-
-- Wake word: "Helm" (Vosk small-en-us, offline)
-- TTS: Piper en_US-amy (offline)
-- AI: Gemini 2.5 Flash (online) with local RAG fallback
-- RAG knowledge base: d3kOS user manual + Ontario fish regulations + vessel manuals
-- Software mute toggle (persists across reload)
-- Helm Assistant page: 4 quick-action buttons + full chat UI
-
-### Marine Vision — Camera System
-
-- Slot/Hardware architecture: named positions decouple from physical cameras
-- Up to 20 IP cameras, RTSP streams
-- Focus+filmstrip default view; grid mode available
-- Fish detection: YOLOv8n ONNX + EfficientNet-483 classifier
-- Fish species ID: Gemini Vision on-demand (common name, scientific name, Ontario regulation note)
-- 21 Ontario freshwater species in RAG knowledge base
-- Settings: scan, live thumbnails, role assignment (forward watch, active default, fish detection, grid display)
-
-### Engine Dashboard
-
-- 5 sections: Engine, Electrical, Tanks, System Status, Network Status
-- Progress bars, alert states (warning/critical), DAY/NGT toggle
-- Full 1280px width on Pi display
-
-### Boat Log
-
-- Manual text and voice entries (voice: Vosk offline transcription)
-- Engine auto-capture: start event, 30-min snapshots, stop event, alert crossings
-- Export: CSV + JSON with unit metadata
-- Metric and imperial configurations supported
-
-### Settings (16 Sections)
-
-Vessel identity, units (metric/imperial), display, audio, engine gateway, camera setup, language, Gemini API key, Signal K status, remote access, onboarding wizard, documentation viewer, and more.
-
-### i18n — 18 Languages
-
-All 13 UI pages wired with `data-i18n`. Language selectable in Settings → Language.
-
-Supported: Arabic, Danish, German, Greek, English, Spanish, Finnish, French, Croatian, Italian, Japanese, Dutch, Norwegian, Portuguese, Swedish, Turkish, Ukrainian, Chinese.
+Arabic · Danish · German · Greek · English · Spanish · Finnish · French · Croatian · Italian · Japanese · Dutch · Norwegian · Portuguese · Swedish · Turkish · Ukrainian · Chinese
 
 ---
 
@@ -234,141 +121,68 @@ Supported: Arabic, Danish, German, Greek, English, Spanish, Finnish, French, Cro
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Full release notes for all versions |
-| [CLAUDE.md](CLAUDE.md) | AI development guidelines and project operating procedures |
-| [deployment/docs/D3KOS_USER_MANUAL_v0922.md](deployment/docs/D3KOS_USER_MANUAL_v0922.md) | Full user manual — Setup Wizard, Dashboard, all features, Troubleshooting |
-| [deployment/docs/DEPLOYMENT_INDEX.md](deployment/docs/DEPLOYMENT_INDEX.md) | Index of all solution docs, feature dirs, tools |
-| [deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md](deployment/docs/MARINE_VISION_CAMERA_OVERHAUL.md) | Camera slot/hardware architecture |
-| [deployment/docs/FISH_DETECTION_ARCHITECTURE.md](deployment/docs/FISH_DETECTION_ARCHITECTURE.md) | YOLOv8 + Gemini Vision fish detection design |
-| [deployment/docs/OPENCPN_FLATPAK_OCHARTS.md](deployment/docs/OPENCPN_FLATPAK_OCHARTS.md) | OpenCPN + o-charts installation guide |
-| [PROJECT_CHECKLIST.md](PROJECT_CHECKLIST.md) | Master task list — all versions |
+| [`docs/D3KOS_USER_MANUAL_v2.3.0.md`](docs/D3KOS_USER_MANUAL_v2.3.0.md) | Full user manual — installation, setup wizard, all features, troubleshooting |
+| [`docs/INSTALLATION.md`](docs/INSTALLATION.md) | Step-by-step installation guide |
+| [`docs/SIGNALK_CONFIGURATION.md`](docs/SIGNALK_CONFIGURATION.md) | Connecting NMEA 0183 and NMEA 2000 instruments |
+| [`docs/CX5106_CONFIGURATION_GUIDE.md`](docs/CX5106_CONFIGURATION_GUIDE.md) | CX5106 NMEA gateway setup and DIP switch reference |
+| [`docs/REMOTE_ACCESS_SETUP.md`](docs/REMOTE_ACCESS_SETUP.md) | Accessing d3kOS from another device on your network |
+| [`docs/OPENCPN_FLATPAK_OCHARTS.md`](docs/OPENCPN_FLATPAK_OCHARTS.md) | Installing OpenCPN and paid o-charts chart packs |
+| [`CHANGELOG.md`](CHANGELOG.md) | Full version history |
 
 ---
 
-## Roadmap
+## Important — Safety Notice
 
-### v0.9.2.2 (Current — Release Candidate)
-- [x] Full instrument dashboard
-- [x] HELM AI assistant (Gemini + RAG)
-- [x] Marine Vision (1–20 cameras, fish detection + species ID)
-- [x] Boat Log with voice notes
-- [x] Engine Dashboard
-- [x] Signal K v2.23.0
-- [x] 18-language i18n
-- [x] 8-step onboarding wizard
-- [ ] UAT (5 metric + 5 imperial users) — in progress
-
-### v0.9.3 — AtMyBoat.com Community Platform
-- WordPress + child theme on HostPapa
-- bbPress forum at /forum/
-- AI assistant widget (Gemini via PHP)
-- AODA compliant
-
-### v0.9.4 — d3kOS Mobile Companion App
-- PWA on GitHub Pages (no App Store)
-- WebRTC/STUN P2P live tunnel (Pi ↔ phone)
-- Find My Boat, boat health dashboard
-- Fix My Pi diagnostic + restore
-- $0 ongoing infrastructure cost
-
-### v1.0
-- Multi-language voice (Whisper-small, 18-language Piper)
-- Mobile app + signalk-forward-watch public release
-- CJK keyboard support
-
----
-
-## Project Structure
-
-```
-d3kOS/
-├── README.md                        # This file
-├── CHANGELOG.md                     # Version history
-├── CLAUDE.md                        # AI development guidelines
-├── PROJECT_CHECKLIST.md             # Master task tracker
-├── SESSION_LOG.md                   # Development session log
-│
-├── deployment/
-│   ├── docs/                        # Solution documents and specs
-│   │   ├── D3KOS_USER_MANUAL_v0922.md
-│   │   ├── DEPLOYMENT_INDEX.md
-│   │   ├── MARINE_VISION_CAMERA_OVERHAUL.md
-│   │   └── ...
-│   ├── d3kOS/
-│   │   └── dashboard/               # Flask dashboard source
-│   │       ├── app.py
-│   │       ├── templates/           # Jinja2 HTML templates
-│   │       └── static/              # CSS, JS modules
-│   └── scripts/                     # Deploy and utility scripts
-│
-├── deployment/features/             # Feature build checklists
-└── deployment/v0.9.3/               # AtMyBoat.com platform files
-```
+> **d3kOS is not a certified navigation instrument and is not a substitute for proper seamanship, certified charts, or the navigation equipment required by the laws of your jurisdiction.**
+>
+> Always maintain a proper watch. Always carry the safety equipment required by law. Always have current certified charts for your waters. d3kOS is an aid to awareness — it does not replace your legal obligations as a vessel operator.
+>
+> **This software is provided as-is, with no warranty of any kind.** See [LICENSE](LICENSE) for the full terms. The authors and contributors accept no liability for loss, damage, injury, or death arising from the use of this software.
+>
+> AI-generated responses from HELM may be incorrect. Do not rely on AI output for safety-critical navigation decisions.
 
 ---
 
 ## Contributing
 
-Contributions welcome. Please:
+Contributions are welcome.
 
 1. Fork the repository
-2. Read [CLAUDE.md](CLAUDE.md) for development and coding standards
-3. Create a feature branch
-4. Follow the existing code style (Flask, vanilla JS, no frameworks in dashboard)
-5. Add tests where applicable
-6. Submit a pull request
+2. Create a feature branch
+3. Follow the existing code style — Flask backend, vanilla JavaScript frontend, no UI frameworks
+4. Submit a pull request with a clear description of what changed and why
 
-**Note:** This project uses the AAO Autonomous Action Operating Methodology. All AI-assisted development follows the standards documented in `CLAUDE.md`.
+For questions or to report an issue: [GitHub Issues](https://github.com/SkipperDon/d3kOS/issues)
 
 ---
 
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/SkipperDon/d3kOS/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/SkipperDon/d3kOS/discussions)
-- **User Manual**: [D3KOS_USER_MANUAL_v0922.md](deployment/docs/D3KOS_USER_MANUAL_v0922.md)
-
----
-
-## Acknowledgments
-
-Built on exceptional open-source projects:
-
-- **[Signal K](https://signalk.org/)** — Universal marine data standard
-- **[AvNav](https://www.wellenvogel.net/software/avnav/docs/en_index.html)** — Marine chart navigation
-- **[OpenCPN](https://opencpn.org/)** — Open-source chartplotter
-- **[Vosk](https://alphacephei.com/vosk/)** — Offline speech recognition
-- **[Piper](https://github.com/rhasspy/piper)** — Fast neural text-to-speech
-- **[YOLOv8](https://github.com/ultralytics/ultralytics)** — Real-time object detection
-- **[ChromaDB](https://www.trychroma.com/)** — Local vector database
-- **[Node-RED](https://nodered.org/)** — Flow-based automation
-
----
-
-## Licensing
+## License
 
 d3kOS is dual licensed:
 
 **Open Source — GPL v3**
 Free to use, modify, and distribute under the GNU General Public License v3.0.
-Any derivative works must also be released under GPL v3. See [LICENSE](./LICENSE).
+Any derivative works must also be released under GPL v3. See [LICENSE](LICENSE).
 
 **Commercial License**
-Commercial use — including bundling with hardware for resale or distribution
-in paid products — requires a separate commercial license agreement.
-Contact: skipperdont@atmyboat.com | https://atmyboat.com
+Commercial use — including bundling with hardware for resale or distribution in paid products — requires a separate commercial license agreement.
+Contact: skipperdont@atmyboat.com
 
 ---
 
-## Version History
+## Acknowledgements
 
-| Version | Date | Status | Summary |
-|---------|------|--------|---------|
-| v0.9.2.2 | Mar 23, 2026 | **Release Candidate** | Full marine intelligence platform |
-| v0.9.2.1 | Mar 13, 2026 | Closed | Flask dashboard architecture, all 6 phases |
-| v0.9.2 | Mar 12, 2026 | Closed | Camera overhaul, i18n, Signal K upgrade |
-| v0.9.1.2 | Feb 20, 2026 | Closed | Voice assistant, self-healing, data export |
+Built on these outstanding open-source projects:
+
+- **[Signal K](https://signalk.org/)** — universal marine data standard
+- **[AvNav](https://www.wellenvogel.net/software/avnav/docs/en_index.html)** — marine chart navigation
+- **[OpenCPN](https://opencpn.org/)** — open-source chartplotter
+- **[Vosk](https://alphacephei.com/vosk/)** — offline speech recognition
+- **[Piper](https://github.com/rhasspy/piper)** — fast offline text-to-speech
+- **[YOLOv8](https://github.com/ultralytics/ultralytics)** — real-time object detection
+- **[ChromaDB](https://www.trychroma.com/)** — local vector database
+- **[Node-RED](https://nodered.org/)** — flow-based automation
 
 ---
 
-*d3kOS v0.9.2.2 — Built by boaters, for boaters. Powered by open source.*
+*Built by boaters, for boaters. Supported by [AtMyBoat.com](https://atmyboat.com).*
