@@ -931,8 +931,8 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | 6 | **Update user manual** | (a) Update manual content to v0.9.9.3; (b) Deploy to Pi RAG (ChromaDB ingest); (c) Update website page-manual.php; (d) Create GitHub release with PDF. | `[~]` **PARTIAL S55 2026-04-12** — (a) DONE: D3KOS_USER_MANUAL_v0992.md v2.3.0 — added Anchor Watch section, 6 alert types, Recovery Key in Settings. (b) DONE: RAG ingested 2079→2216 docs. (c) DEFERRED: page-manual.php ToC structure unchanged (16 sections); actionable only after (d). (d) DEFERRED — Don creates GitHub release with PDF (manual task). |
 | 7 | **Create Pi image** | Full SD card image of v0.9.9.3 Pi state. | `[~]` **IN PROGRESS 2026-04-12 S55c** — Don performing SD card backup now. |
 | 8 | **Upload to archive.org** | Upload Pi image to archive.org item. Update OTA SHA-256 in version-registry.php. | `[~]` **IN PROGRESS 2026-04-12** — Don uploading. URL pending — I'll insert link once provided. |
-| 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[~]` **READY S55c** — audit done. Files: FI4 PHP (config-backup/restore/status), PWA app.js (Recovery Key). M15+M2 already on staging. Deploy scripts: deploy-phase1.py, sync-staging.py, deploy-pwa.py. Pending Don completing item 8. |
-| 10 | **Promote to production** | Phase 4 live push — Don's hands only. Update cPanel cron URLs. Rotate keys. Post-push smoke test. | `[ ]` Final step |
+| 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[x]` **COMPLETE 2026-04-12 S55d** — 3 waves deployed: FI4 PHP (3 files), full theme sync (120 files), PWA (9 files). Smoke tests all green: config-backup 401, config-restore 404, config-backup-status 401, staging home 200, PWA 200, alert-notify 401. |
+| 10 | **Promote to production** | Phase 4 live push — Don's hands only. Update cPanel cron URLs (offline-check.php). Rotate keys. Post-push smoke test. | `[~]` **READY — awaiting Don** — see Phase 4 runbook below. |
 
 ---
 
