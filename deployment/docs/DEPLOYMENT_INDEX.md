@@ -957,3 +957,17 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/v0.9.4/pwa/sw.js` | **[UPDATED — S55]** Cache bumped v14 → v15. Deployed to HostPapa staging/app/sw.js. |
 | `deployment/docs/D3KOS_USER_MANUAL_v0992.md` | **[UPDATED — S55]** §10 Config Backup & Recovery: fixed sync frequency (was "every day" → "every 30 seconds, hash-gated"); added Recovery Key location in app (Settings → Recovery Key). |
 
+
+## GitHub Public Repo Cleanup + README Rewrite (S55f 2026-04-12)
+
+| File | Description |
+|------|-------------|
+| `README.md` | **[REWRITTEN — S55f]** Full public-audience rewrite. Targets 45–70 year old boaters/tinkerers. Three marketing taglines. Hero image (helm-monterey.png). "This Is Your Boat on AI" section. Who Is This For section. Nine tools table. Download section with archive.org URL. Hardware requirements. AtMyBoat.com community section (forum, marketplace, community map, mobile app, help centre). AODA/WCAG 2.0 AA + OWASP Top 10 + GDPR/PIPEDA/CCPA compliance section. 18 languages table. Safety disclaimer. Contributing + License + Acknowledgements. No prices anywhere. GitHub: `SkipperDon/d3kOS` main branch. |
+| `assets/lifestyle/helm-monterey.png` | **[NEW — S55f]** Hero image. Helm station with Garmin multifunction display + laptop + d3kOS screen. Used in README.md header. GitHub: `SkipperDon/d3kOS`. |
+| `assets/lifestyle/helm-woman-sea.png` | **[NEW — S55f]** Lifestyle photo. Boater at helm at sea. Used in "Who Is This For" section. GitHub: `SkipperDon/d3kOS`. |
+| `assets/lifestyle/hardware-man.png` | **[NEW — S55f]** Lifestyle photo. Middle Eastern man installing Raspberry Pi hardware. Used in "What You Need" section. GitHub: `SkipperDon/d3kOS`. |
+| `assets/lifestyle/hardware-woman.png` | **[NEW — S55f]** Lifestyle photo. Woman installing Pi hardware. Paired with hardware-man.png. GitHub: `SkipperDon/d3kOS`. |
+| `assets/screenshots/dashboard-day.png` | **[NEW — S55f]** d3kOS dashboard screenshot — day mode. Used in "This Is Your Boat on AI" section. GitHub: `SkipperDon/d3kOS`. |
+| `assets/screenshots/dashboard-night.png` | **[NEW — S55f]** d3kOS dashboard screenshot — night mode. Used in "Night Mode. Day Mode." section. GitHub: `SkipperDon/d3kOS`. |
+
+**Orphan branch pattern (standing rule):** GitHub repo `SkipperDon/d3kOS` must always be updated via orphan branch `public-release`. Never push from local `main` (contains all internal Helm-OS files). Orphan branch is created with only the 12 public files, images committed on top, force-pushed to GitHub `main`, branch deleted.
