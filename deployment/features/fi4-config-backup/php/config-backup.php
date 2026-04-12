@@ -109,15 +109,12 @@ $db->query(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 );
 
-// Validate device_token belongs to a real paired device
-// Check wpax_usermeta for atmyboat_app_token key (set at pairing)
+// Validate device_token belongs to a real registered device
+// Check amboat_devices (written by version-heartbeat.php on first sync — T1+)
 $stmt = $db->prepare(
-    'SELECT user_id FROM wpax_usermeta
-     WHERE meta_key = ? AND meta_value = ?
-     LIMIT 1'
+    'SELECT id FROM amboat_devices WHERE device_token = ? LIMIT 1'
 );
-$meta_key = 'atmyboat_app_token';
-$stmt->bind_param('ss', $meta_key, $device_token);
+$stmt->bind_param('s', $device_token);
 $stmt->execute();
 $stmt->store_result();
 $device_known = $stmt->num_rows > 0;

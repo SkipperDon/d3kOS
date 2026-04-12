@@ -37,16 +37,29 @@
 
 error_reporting(0);
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'GET required']);
+// Preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
     exit;
 }
 
-// ── Token from query string ───────────────────────────────────────────────────
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST'])) {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'GET or POST required']);
+    exit;
+}
 
-$device_token = trim($_GET['token'] ?? '');
+// ── Token — query string (GET) or JSON body (POST) ────────────────────────────
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $body = json_decode(file_get_contents('php://input'), true);
+    $device_token = trim($body['token'] ?? '');
+} else {
+    $device_token = trim($_GET['token'] ?? '');
+}
 
 if (empty($device_token) || strlen($device_token) > 64) {
     http_response_code(404);

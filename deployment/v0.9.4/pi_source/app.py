@@ -234,6 +234,51 @@ def setup_post():
     return redirect('/')
 
 
+@app.route('/setup/recover')
+def setup_recover():
+    """
+    FI4 Phase 3 — Proxy for config-restore.php.
+    Browser calls this (same origin, no CORS) → Pi calls HostPapa server-to-server.
+    """
+    token = request.args.get('token', '').strip()
+    if not token or len(token) > 64:
+        return jsonify({'success': False, 'error': 'No backup found'}), 404
+
+    try:
+        cloud_cfg = json.loads(Path('/opt/d3kos/config/cloud-config.json').read_text())
+        base_url  = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/')
+    except Exception:
+        base_url  = 'https://atmyboat.com/staging'
+
+    restore_url = (f"{base_url}/wp-content/themes/twentytwenty-child"
+                   "/mobile/config-restore.php")
+    # Use POST so Imunify360 treats it like other d3kOS API calls (GET gets bot-blocked)
+    try:
+        api_key = cloud_cfg.get('amboat_api_key', '')
+    except Exception:
+        api_key = ''
+
+    try:
+        r = requests.post(
+            restore_url,
+            json={'token': token},
+            timeout=20,
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'X-Device-Token': token,
+                'Content-Type': 'application/json',
+            },
+        )
+        try:
+            return jsonify(r.json()), r.status_code
+        except ValueError:
+            return jsonify({'success': False, 'error': f'Bad response from cloud (HTTP {r.status_code})'}), 502
+    except requests.exceptions.ConnectionError:
+        return jsonify({'success': False, 'error': 'Cloud unreachable — check internet connection'}), 503
+    except Exception as exc:
+        return jsonify({'success': False, 'error': f'Cloud error: {exc}'}), 503
+
+
 @app.route('/setup/restore', methods=['POST'])
 def setup_restore():
     """
