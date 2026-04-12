@@ -44,12 +44,72 @@ _diag_past_url     = config["proxy_url"].replace("admin-api.php", "diagnostic-pa
 _diag_headers_get  = {"Authorization": f"Bearer {config['proxy_api_key']}"}
 _backup_status_url = config["proxy_url"].replace("admin-api.php", "config-backup-status.php")
 _backup_status_hdrs = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+_issues_url        = config["proxy_url"].replace("admin-api.php", "issue-api.php")
+_issues_headers    = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+_publish_url       = config["proxy_url"].replace("admin-api.php", "update-publish.php")
+_publish_headers   = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+
 
 def proxy_call_tickets(action: str, **kwargs) -> dict:
     payload = {"action": action, **kwargs}
     resp = _requests.post(_tickets_url, json=payload, headers=_tickets_headers, timeout=15)
     resp.raise_for_status()
     return resp.json()
+
+
+def proxy_call_issues(params):
+    try:
+        r = _requests.get(_issues_url, params=params, headers=_issues_headers, timeout=10)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        app.logger.error(f"proxy_call_issues error: {e}")
+        return None
+
+
+def proxy_post_issues(payload):
+    try:
+        r = _requests.post(_issues_url, json=payload, headers=_issues_headers, timeout=10)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        app.logger.error(f"proxy_post_issues error: {e}")
+        return None
+
+
+def proxy_call_versions(params):
+    try:
+        r = _requests.get(
+            config["proxy_url"].replace("admin-api.php", "version-api.php"),
+            params=params,
+            headers=_issues_headers,
+            timeout=10,
+        )
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        app.logger.error(f"proxy_call_versions error: {e}")
+        return None
+
+
+def proxy_call_publish(params):
+    try:
+        r = _requests.get(_publish_url, params=params, headers=_publish_headers, timeout=10)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        app.logger.error(f"proxy_call_publish error: {e}")
+        return None
+
+
+def proxy_post_publish(payload):
+    try:
+        r = _requests.post(_publish_url, json=payload, headers=_publish_headers, timeout=15)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        app.logger.error(f"proxy_post_publish error: {e}")
+        return None
 
 
 def _check_lockout(ip):
@@ -737,6 +797,148 @@ def ticket_past_cases(ticket_id):
         return jsonify(resp.json()), resp.status_code
     except Exception as e:
         return jsonify({"success": False, "cases": [], "rule": None, "error": str(e)}), 500
+
+
+# ── FI3 — Failure Intelligence Dashboard ─────────────────────────────────────
+
+@app.route('/failures')
+@login_required
+def failures():
+    status = request.args.get('status', '')
+    page   = max(1, request.args.get('page', 1, type=int))
+    params = {'action': 'list', 'page': page}
+    if status:
+        params['status'] = status
+    data       = proxy_call_issues(params)
+    stats_data = proxy_call_issues({'action': 'stats'})
+    stats      = stats_data.get('stats', {}) if stats_data else {}
+    return render_template(
+        'failures.html',
+        issue          = None,
+        issues         = data.get('issues', []) if data else [],
+        total          = data.get('total', 0) if data else 0,
+        page           = data.get('page', 1) if data else 1,
+        pages          = data.get('pages', 1) if data else 1,
+        current_status = status,
+        stats          = stats,
+    )
+
+
+@app.route('/failure/<int:issue_id>')
+@login_required
+def failure_detail(issue_id):
+    data = proxy_call_issues({'action': 'get', 'id': issue_id})
+    if not data or not data.get('success'):
+        return 'Issue not found', 404
+    return render_template(
+        'failures.html',
+        issue       = data.get('issue'),
+        affected    = data.get('affected', []),
+        resolutions = data.get('resolutions', []),
+        reports     = data.get('reports', []),
+        issues      = None,
+        stats       = {},
+    )
+
+
+@app.route('/failure/<int:issue_id>/update', methods=['POST'])
+@login_required
+def failure_update(issue_id):
+    payload = {'action': 'update', 'id': issue_id}
+    new_status = request.form.get('status', '')
+    if new_status:
+        payload['status'] = new_status
+    version = request.form.get('fixed_in_version', '').strip()
+    if version:
+        payload['fixed_in_version'] = version
+    validation = request.form.get('validation_device', '').strip()
+    if validation:
+        payload['validation_device'] = validation
+    proxy_post_issues(payload)
+    return redirect(url_for('failure_detail', issue_id=issue_id))
+
+
+# ── Fleet Versions Dashboard ──────────────────────────────────────────────────
+
+@app.route('/fleet-versions')
+@login_required
+def fleet_versions():
+    data = proxy_call_versions({'action': 'fleet'})
+    dist = proxy_call_versions({'action': 'distribution'})
+    return render_template(
+        'fleet_versions.html',
+        devices      = data.get('devices', []) if data else [],
+        summary      = data.get('summary', {}) if data else {},
+        latest_ver   = data.get('latest_version', '') if data else '',
+        distribution = dist.get('distribution', []) if dist else [],
+        error        = None if data else 'Could not load fleet version data.',
+    )
+
+
+# ── Update Publisher ──────────────────────────────────────────────────────────
+
+@app.route('/publish-update', methods=['GET', 'POST'])
+@login_required
+def publish_update():
+    message = None
+    error   = None
+
+    if request.method == 'POST':
+        action = request.form.get('action', 'publish')
+
+        if action == 'deactivate':
+            vid = request.form.get('id', '')
+            result = proxy_post_publish({'action': 'deactivate', 'id': int(vid)})
+            if result and result.get('success'):
+                message = result.get('message', 'Version deactivated.')
+            else:
+                error = 'Deactivate failed.'
+
+        elif action == 'reactivate':
+            vid = request.form.get('id', '')
+            result = proxy_post_publish({'action': 'reactivate', 'id': int(vid)})
+            if result and result.get('success'):
+                message = result.get('message', 'Version reactivated.')
+            else:
+                error = 'Reactivate failed.'
+
+        else:
+            services_raw = request.form.get('services_to_restart', '').strip()
+            services = [s.strip() for s in services_raw.split(',') if s.strip()]
+            payload = {
+                'action':              'publish',
+                'update_type':         request.form.get('update_type', 'incremental'),
+                'version':             request.form.get('version', '').strip(),
+                'url':                 request.form.get('url', '').strip(),
+                'checksum':            request.form.get('checksum', '').strip(),
+                'released':            request.form.get('released', '').strip(),
+                't1_upgrade':          request.form.get('t1_upgrade') == '1',
+                'services_to_restart': services,
+                'release_notes':       request.form.get('release_notes', '').strip(),
+            }
+            if not payload['version']:
+                error = 'Version is required.'
+            else:
+                result = proxy_post_publish(payload)
+                if result and result.get('success'):
+                    message = result.get('message', f"v{payload['version']} published.")
+                else:
+                    error = f"Publish failed: {result.get('error', 'unknown') if result else 'no response'}"
+
+    current_data  = proxy_call_publish({'action': 'current'})
+    history_data  = proxy_call_publish({'action': 'list'})
+    current_inc   = current_data.get('incremental') if current_data else None
+    current_major = current_data.get('major') if current_data else None
+    history       = history_data.get('versions', []) if history_data else []
+
+    return render_template(
+        'publish_update.html',
+        current_inc   = current_inc,
+        current_major = current_major,
+        history       = history,
+        message       = message,
+        error         = error,
+    )
 
 
 # ── FI4 — Config Backup Status ───────────────────────────────────────────────
