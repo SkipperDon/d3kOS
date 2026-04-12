@@ -941,3 +941,17 @@ No new files deployed this session. Checklist and governance updates only:
 | `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED — S52]** `.rt-lbl { color: rgba(255,255,255,.9) }` — was `var(--g-txt)` (dark green #004400, unreadable against dark row-tab). `.nav-row .rt-lbl { color: rgba(255,255,255,.6) }` — was `var(--ink3)` (rgba(4,12,4,.28), near-invisible). Fix makes ENGINE/NAV vertical tab labels readable. Pi: `/opt/d3kos/services/dashboard/static/css/d3kos.css` — deployed S52. |
 | `deployment/pi_config/d3kos-browser.desktop` | **[UPDATED — S52]** `--start-fullscreen` → `--start-maximized`. Fullscreen mode overlaid wf-panel-pi making Pi system taskbar invisible. Maximized mode leaves system bar accessible. Pi: `/home/d3kos/.config/autostart/d3kos-browser.desktop` — deployed S52. **Takes effect on next Pi reboot.** |
 
+## FI4 Config Backup & Recovery — T2/T3 Multi-Boat Provisions (S55 2026-04-12)
+
+| File | Description |
+|------|-------------|
+| `deployment/features/fi4-config-backup/php/config-backup-status.php` | **[NEW — S55]** Admin CRM endpoint. POST, Bearer ADMIN_API_KEY. Queries amboat_config_packages LEFT JOIN d3kos_pairings (subquery MAX(user_id) per Pi) → wpax_users → wpax_usermeta. Returns all Pi backups with owner name, email, tier, device_token, d3kos_version, updated_at, restore_attempts. Deploy: `staging/wp-content/themes/twentytwenty-child/mobile/config-backup-status.php`. Deployed S55. |
+| `deployment/features/support-tickets/crm/app_patched.py` | **[UPDATED — S55]** Added `_backup_status_url` + `_backup_status_hdrs` vars. New route `/backup-status` (login_required): POSTs to config-backup-status.php, renders backup_status.html. VM deploy: run `deploy-crm-backup-status.bat` from Windows (VM unreachable from WSL). |
+| `deployment/features/support-tickets/crm/backup_status.html` | **[NEW — S55]** Admin CRM template. Table: Owner (link to customer profile), Email, Tier pill (T0/T1/T2/T3), Recovery Key (truncated + Copy button), d3kOS version, Last Backup, Restore count (red if >3). Empty state for no-backup-yet. |
+| `deployment/features/fi4-config-backup/scripts/deploy-crm-backup-status.bat` | **[NEW — S55]** Windows batch script. pscp.exe app_patched.py + backup_status.html to VM /tmp/, then plink sudo cp to /home/d3kos-admin/crm/ + restart admin-crm.service. Run from Windows when VM is available. |
+| `deployment/v0.9.4/pi_source/app.py` | **[UPDATED — S55]** Added `GET /api/recovery-key` — reads device-token.json, returns `{success, device_token}`. Local-only endpoint (Pi LAN). Deployed to Pi + d3kos-dashboard restarted. |
+| `deployment/d3kOS/dashboard/app.py` | **[UPDATED — S55]** Same `GET /api/recovery-key` route added to keep both app.py sources in sync. |
+| `deployment/v0.9.4/pwa/app.js` | **[UPDATED — S55]** Recovery Key card added to `screens.settings`. Shown when `state.vessel` and `state.tier !== 'T0'`. Displays `v.pi_installation_id` (= device_token) with Copy button and reflash label. Deployed to HostPapa staging/app/app.js. |
+| `deployment/v0.9.4/pwa/sw.js` | **[UPDATED — S55]** Cache bumped v14 → v15. Deployed to HostPapa staging/app/sw.js. |
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` | **[UPDATED — S55]** §10 Config Backup & Recovery: fixed sync frequency (was "every day" → "every 30 seconds, hash-gated"); added Recovery Key location in app (Settings → Recovery Key). |
+

@@ -697,7 +697,7 @@ Before any on-water testing, validate with synthetic known data:
 | FI2b | Update Publisher | version.php DB-backed (amboat_versions). update-publish.php CRM API. package-update.py local packager. CRM /publish-update page. | `[x]` S32 deployed |
 | FI2c | Version heartbeat | AA2 reports current_version to HostPapa on every run. amboat_devices.current_version. CRM fleet version view. | `[x]` S33 — version-heartbeat.php + version-api.php + fleet_versions.html |
 | FI3 | Admin CRM issue dashboard | /failures list + /failure/<id> detail. Lifecycle: open→diagnosed→fix_validated→released→closed. Progress bars. | `[x]` S31 deployed CRM |
-| FI4 | Recovery mode boot sequence | Fresh SD card detection. Download config packages. Restore settings + boatlog. | `[ ]` Deferred S34 |
+| FI4 | Recovery mode boot sequence | Fresh SD card detection. Download config packages. Restore settings + boatlog. | `[x]` **COMPLETE S55 2026-04-12** — Phase 1 (HostPapa backend), Phase 2 (cloud_agent push), Phase 3 (setup wizard recovery mode), Phase 4 (Pi settings Recovery Key display). T2/T3 multi-boat: config-backup-status.php + CRM /backup-status + PWA Recovery Key card + Pi GET /api/recovery-key. |
 
 ### 8E.3 — DevOps Release Workflow (new — confirmed S31+S32)
 Full lifecycle: bug detected (FI1) → clustered (FI2) → fixed on one Pi (validated) → packaged (`package-update.py`) → uploaded to HostPapa `updates/` → published via CRM `/publish-update` → all T1+ Pis auto-apply within 24h → fleet resolution tracked in FI3.
@@ -928,7 +928,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | 3 | **Speech working** | Voice assistant pipeline end-to-end: wake word → query → Piper TTS female voice response. TTSPlayer/S330 sample rate issue still open. Engine-on test needed. | `[ ]` Verify on Pi |
 | 4 | **Pi partition for config/restore** | Dedicated partition storing system config so Fix My Pi can save and restore configuration across reflashes. (FI4 — previously deferred.) | `[ ]` Not built |
 | 5 | **Cleanup unnecessary files** | Remove unused files from Pi. | `[ ]` Not done |
-| 6 | **Update user manual** | (a) Update manual content to v0.9.9.3; (b) Deploy to Pi RAG (ChromaDB ingest); (c) Update website page-manual.php; (d) Create GitHub release with PDF. | `[ ]` Not done |
+| 6 | **Update user manual** | (a) Update manual content to v0.9.9.3; (b) Deploy to Pi RAG (ChromaDB ingest); (c) Update website page-manual.php; (d) Create GitHub release with PDF. | `[~]` (a) FI4 section updated S55: correct sync frequency, Recovery Key in app noted. Full v0.9.9.3 content update still needed. |
 | 7 | **Create Pi image** | Full SD card image of v0.9.9.3 Pi state. | `[ ]` After items 1–6 complete |
 | 8 | **Upload to archive.org** | Upload Pi image to archive.org item. Update OTA SHA-256 in version-registry.php. | `[ ]` After item 7 |
 | 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[ ]` After item 8 |
