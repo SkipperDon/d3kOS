@@ -412,7 +412,20 @@ def agents_status():
 
 @app.route('/settings')
 def settings():
-    """Settings & Help page — placeholder. Full build in Phase 4."""
+    """Settings & Help page."""
+    # FI4: Recovery Key (device_token) and tier for conditional display
+    try:
+        device_token = json.loads(
+            Path('/opt/d3kos/config/device-token.json').read_text()
+        ).get('device_token', '')
+    except Exception:
+        device_token = ''
+    try:
+        lic = json.loads(Path('/opt/d3kos/config/license.json').read_text())
+        t = lic.get('tier', 'T0')
+        tier_num = int(str(t).replace('T', '')) if t else 0
+    except Exception:
+        tier_num = 0
     return render_template(
         'settings.html',
         avnav_port=AVNAV_PORT,
@@ -420,6 +433,8 @@ def settings():
         signalk_port=SIGNALK_PORT,
         vessel_name=VESSEL_NAME,
         home_port=HOME_PORT_VAL,
+        device_token=device_token,
+        tier_num=tier_num,
     )
 
 
