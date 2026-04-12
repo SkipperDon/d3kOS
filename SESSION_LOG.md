@@ -3323,3 +3323,151 @@ NOTE: Metrics reconstructed from git history. Not auditable.
 ```
 
 ---
+
+## Session 2026-04-12 (S55c) — Title bar, two-instance fix, RAG cleanup, staging audit
+**Goal:** Fix title bar text to white, clean stale RAG chunks, fill S52-S54 log gap, prep staging deployment
+
+---
+
+### ACCOMPLISHED THIS SESSION
+
+**1 — Chromium two-instance fix — COMPLETE**
+- Root cause: `launch-d3kos.sh` (called by labwc autostart, waits for Flask :3000 ready) was the REAL Chromium launcher using `--app=http://localhost:3000` (Flask direct). Separately, `d3kos-browser.desktop` was ALSO launching Chromium via lxsession-xdg-autostart → two Chromium processes every boot.
+- Fix: `launch-d3kos.sh` updated to `--app=http://localhost/` (nginx), added session cleanup, added full touch/pinch flags. `d3kos-browser.desktop` disabled (Hidden=true, NoDisplay=true, X-GNOME-Autostart-enabled=false).
+- Deployed to Pi. Pi rebooted. Single instance confirmed.
+- Commits: e290c61
+
+**2 — Title bar color — PARTIAL (deferred)**
+- `<meta name="theme-color" content="#003200">` added to index.html (both repo copies).
+- Deployed to Pi, dashboard restarted.
+- Result: title bar text still black. Root cause: labwc renders native window title bar independently of Chromium theme-color meta tag.
+- Correct fix identified: `window.active.label.text.color: #ffffff` in `/home/d3kos/.config/labwc/themerc-override`. Deferred per operator instruction.
+- Commits: 5590140
+
+**3 — RAG stale chunk cleanup — COMPLETE**
+- Discovered two stale manual sources in ChromaDB (`/opt/d3kos/data/vector-db/`):
+  - `D3KOS_USER_MANUAL_v0922.md` — 70 chunks (old v0.9.2.2 manual, fully superseded)
+  - `D3KOS_USER_MANUAL_v0992.md` — 215 chunks (current manual, S41 + S55 combined)
+- Deleted 70 v0922 chunks. New total: 2216 → 2146.
+- Also noted: `/home/d3kos/.cache/chroma/` is NOT the RAG database (0 collections, used for ONNX model cache only). RAG is at `/opt/d3kos/data/vector-db/`.
+
+**4 — S52/S53/S54 session log gap — FILLED**
+- Catch-up entries written for S52 (dashboard sync + ENGINE label fix), S53 (checklist corrections), S54 (DEP13 AODA all 3 tracks). Appended to SESSION_LOG.md with RECONSTRUCTED flag.
+- Commits: acc12d7
+
+**5 — HTML manual export — COMPLETE**
+- `D3KOS_USER_MANUAL_v2.3.0.html` generated via pandoc from v2.3.0 markdown.
+- Copied to `deployment/docs/` so Don can access at `\\wsl.localhost\Ubuntu\home\boatiq\Helm-OS\deployment\docs\D3KOS_USER_MANUAL_v2.3.0.html`.
+- Don printed to PDF: `C:\Downloads\D3KOS_USER_MANUAL_v2.3.0.pdf` — ready for GitHub release v0.9.9.2.
+
+**6 — Staging deployment audit — COMPLETE**
+- Full inventory of files needing HostPapa staging deploy identified:
+  - **Ready to deploy (not yet on staging):** FI4 PHP files (config-backup.php, config-restore.php, config-backup-status.php) + PWA app.js (Recovery Key card)
+  - **Already on staging (S48/S49):** alert-notify.php, offline-check.php, page-fleet-portal.php, fleet-message.php
+- Deploy scripts identified: `deploy-phase1.py` (FI4), `sync-staging.py` (full theme), `deploy-pwa.py` (PWA)
+- Staging deployment deferred — Don performing Pi image backup. Will deploy next.
+
+---
+
+### Files Changed This Session
+
+| File | Change |
+|------|--------|
+| `deployment/d3kOS/dashboard/templates/index.html` | Added theme-color #003200 meta tag |
+| `deployment/v0.9.4/pi_source/index.html` | Added theme-color #003200 meta tag |
+| `deployment/docs/D3KOS_USER_MANUAL_v2.3.0.html` | NEW — pandoc HTML export of manual v2.3.0 |
+| `deployment/d3kOS/scripts/launch-d3kos.sh` | Single launcher fix: --app=http://localhost/, touch flags, session cleanup |
+| `deployment/pi_config/d3kos-browser.desktop` | Disabled: Hidden=true, NoDisplay=true, X-GNOME-Autostart-enabled=false |
+| `PROJECT_CHECKLIST.md` | DEP17 updated: two-instance RESOLVED, title bar OPEN with fix path |
+| `SESSION_LOG.md` | S55b catch-up entries (S52/S53/S54) + S55c entry |
+
+**Pi files changed (deployed):**
+- `/opt/d3kos/services/dashboard/templates/index.html` — theme-color tag
+- `/opt/d3kos/scripts/launch-d3kos.sh` — single launcher, nginx URL
+- `/home/d3kos/.config/autostart/d3kos-browser.desktop` — disabled
+- ChromaDB `/opt/d3kos/data/vector-db/` — 70 stale v0922 chunks deleted (2216→2146)
+
+---
+
+### NOT COMPLETED / DEFERRED
+
+- Title bar text color: fix is one line in `/home/d3kos/.config/labwc/themerc-override` — deferred per Don
+- GitHub release v0.9.9.2: Don has PDF. Repo push and release creation to be discussed with Don
+- Staging deployment: audit done, deploy scripts identified — pending Don completing Pi image backup
+- page-manual.php update (item 6c): actionable once GitHub release URL is known
+- manual.html Pi /manual page: still v2.1.0 HTML content (markdown source is v2.3.0)
+
+---
+
+### KNOWN GAPS OR UNCERTAINTIES
+
+- Chromium base URL changed from localhost:3000 to localhost/ — instruments.js WX fullscreen uses absolute URLs per S27c fix so this is safe, but any code that hardcodes `:3000` may need review
+- Staging deploy not yet done — don't declare item 9 complete until files are confirmed live on staging and smoke-tested
+
+---
+
+### OPERATOR ACTIONS REQUIRED
+
+- Complete Pi backup image (in progress)
+- Upload image to archive.org (item 8)
+- Provide archive.org URL — I'll insert it into update manifest/release notes
+- Discuss GitHub push scope for v0.9.9.2 release
+- OIC assessment before session formally closed
+
+---
+
+**Decisions:**
+- launch-d3kos.sh is the authoritative Chromium launcher — d3kos-browser.desktop should remain disabled. Only one should ever run.
+- labwc themerc-override is the correct path for title bar color. Do not retry theme-color or Chromium flags — confirmed ineffective on this Pi setup.
+- RAG authoritative count: 2146 (after v0922 cleanup)
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-12 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+---
+
+### Release Package Manifest — S55c
+
+- Version: no bump (pre-image prep)
+- Update type: hotfix (single-instance fix + RAG cleanup)
+
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| index.html | /opt/d3kos/services/dashboard/templates/ | base | theme-color meta tag |
+| launch-d3kos.sh | /opt/d3kos/scripts/ | base | --app=localhost/ (nginx), single instance |
+| d3kos-browser.desktop | /home/d3kos/.config/autostart/ | runtime | Disabled — prevents duplicate Chromium |
+| ChromaDB vector-db | /opt/d3kos/data/vector-db/ | user-data | 70 stale v0922 chunks removed, 2146 total |
+
+- Pre-install steps: none
+- Post-install steps: Pi reboot to activate
+- Rollback: restore d3kos-browser.desktop.bak-pre-appmode (reverts to old launcher); ChromaDB chunks non-critical (v0922 content is fully superseded)
+- Health check: single Chromium instance after reboot; `pgrep chromium | wc -l` = 1; RAG count 2146
+
+```
+QUALITY METRICS — 2026-04-12 S55c
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 83%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 85/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: SGCR 83% — one implicit deploy (index.html restart) without
+  full pre-action statement during rapid iteration on title bar fix.
+ROOT CAUSE NOTE: MLS 0 — continuation session, /session-start not re-run
+  after context compaction.
+
+5-SESSION TREND (S49/S50/S51/S55/S55c): 90/73/63/75/85 → avg 77.2
+Primary gap: MLS — continuation sessions consistently score 0 (structural)
+Trend: RECOVERING — S55c (85) up from S55 (75), back toward S49 high (90)
+```
+
+---

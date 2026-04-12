@@ -929,9 +929,9 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | 4 | **Pi partition for config/restore** | Dedicated partition storing system config so Fix My Pi can save and restore configuration across reflashes. (FI4 — previously deferred.) | `[x]` **COMPLETE S55 2026-04-12** — FI4 Config Backup & Recovery deployed: config-backup-status.php (HostPapa), /backup-status CRM page, Pi GET /api/recovery-key, PWA Recovery Key card (T1+). Cloud-backed config packages via amboat_config_packages. |
 | 5 | **Cleanup unnecessary files** | Remove unused files from Pi. | `[x]` **COMPLETE S55 2026-04-12** — phi3.5 model removed (2.1G), tmp files cleared, boat_log + pictures/video preserved. 3GB recovered (27G → 24G). |
 | 6 | **Update user manual** | (a) Update manual content to v0.9.9.3; (b) Deploy to Pi RAG (ChromaDB ingest); (c) Update website page-manual.php; (d) Create GitHub release with PDF. | `[~]` **PARTIAL S55 2026-04-12** — (a) DONE: D3KOS_USER_MANUAL_v0992.md v2.3.0 — added Anchor Watch section, 6 alert types, Recovery Key in Settings. (b) DONE: RAG ingested 2079→2216 docs. (c) DEFERRED: page-manual.php ToC structure unchanged (16 sections); actionable only after (d). (d) DEFERRED — Don creates GitHub release with PDF (manual task). |
-| 7 | **Create Pi image** | Full SD card image of v0.9.9.3 Pi state. | `[ ]` After items 1–6 complete |
-| 8 | **Upload to archive.org** | Upload Pi image to archive.org item. Update OTA SHA-256 in version-registry.php. | `[ ]` After item 7 |
-| 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[ ]` After item 8 |
+| 7 | **Create Pi image** | Full SD card image of v0.9.9.3 Pi state. | `[~]` **IN PROGRESS 2026-04-12 S55c** — Don performing SD card backup now. |
+| 8 | **Upload to archive.org** | Upload Pi image to archive.org item. Update OTA SHA-256 in version-registry.php. | `[~]` **IN PROGRESS 2026-04-12** — Don uploading. URL pending — I'll insert link once provided. |
+| 9 | **Update staging** | Deploy v0.9.9.3 changes to HostPapa staging. Smoke test all pages. | `[~]` **READY S55c** — audit done. Files: FI4 PHP (config-backup/restore/status), PWA app.js (Recovery Key). M15+M2 already on staging. Deploy scripts: deploy-phase1.py, sync-staging.py, deploy-pwa.py. Pending Don completing item 8. |
 | 10 | **Promote to production** | Phase 4 live push — Don's hands only. Update cPanel cron URLs. Rotate keys. Post-push smoke test. | `[ ]` Final step |
 
 ---
