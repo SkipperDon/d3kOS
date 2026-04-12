@@ -930,3 +930,14 @@ No new files deployed this session. Checklist and governance updates only:
 | `atmyboat-forum: style.css` | **[UPDATED — S49]** +280 lines fleet portal CSS. All font-size ≥ 18px (AODA confirmed). All touch targets ≥ 48px. Health dots (green/amber/red with glow), role badges (owner/admin/member/view), fleet stats bar, vessel list panel, Leaflet map wrapper, detail slide-in panel, message captain modal, responsive breakpoints (≤900px, ≤600px). Version: 0.5.3 (no bump needed — CSS additions only). |
 
 **OPERATOR ACTION REQUIRED (M2):** Go to WP Admin → Pages → Add New → Title: "Fleet" → Template: Fleet Portal → Slug: fleet → Publish. T3 users then access at https://atmyboat.com/staging/fleet/
+
+## S52 Bug Fix — d3kOS Dashboard: More Menu, White Labels, Pi System Bar (2026-04-11)
+
+| File | Description |
+|------|-------------|
+| `deployment/d3kOS/dashboard/templates/index.html` | **[UPDATED — S52]** More menu restored to 9 items. Added button 7 (Anchor Watch: `closeMenu();navTo('/anchor-watch')`, anchor icon ⚓) and button 8 (Help/Manual: `closeMenu();navTo('/manual')`, book icon). Root cause: S41 and S39b additions were made only to v0.9.4/pi_source/index.html, never back-ported to this file. Pi: `/opt/d3kos/services/dashboard/templates/index.html` — deployed S52. |
+| `deployment/d3kOS/dashboard/app.py` | **[UPDATED — S52]** Added two Flask routes: `@app.route('/anchor-watch')` → renders `anchor-watch.html` with vessel_name/ui_lang; `@app.route('/manual')` → renders `manual.html`. These routes existed only in v0.9.4/pi_source/app.py — not in this file. Note: Pi's live app.py already had both routes (added in S41/S39b deploys directly to Pi). Pi: `/opt/d3kos/services/dashboard/app.py` |
+| `deployment/d3kOS/dashboard/templates/manual.html` | **[NEW IN THIS DIR — S52]** User manual template (702 lines). File existed on Pi and in v0.9.4/pi_source/ since S39b — now added to d3kOS/dashboard/templates/ to sync the two source directories. Pi: `/opt/d3kos/services/dashboard/templates/manual.html` |
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED — S52]** `.rt-lbl { color: rgba(255,255,255,.9) }` — was `var(--g-txt)` (dark green #004400, unreadable against dark row-tab). `.nav-row .rt-lbl { color: rgba(255,255,255,.6) }` — was `var(--ink3)` (rgba(4,12,4,.28), near-invisible). Fix makes ENGINE/NAV vertical tab labels readable. Pi: `/opt/d3kos/services/dashboard/static/css/d3kos.css` — deployed S52. |
+| `deployment/pi_config/d3kos-browser.desktop` | **[UPDATED — S52]** `--start-fullscreen` → `--start-maximized`. Fullscreen mode overlaid wf-panel-pi making Pi system taskbar invisible. Maximized mode leaves system bar accessible. Pi: `/home/d3kos/.config/autostart/d3kos-browser.desktop` — deployed S52. **Takes effect on next Pi reboot.** |
+
