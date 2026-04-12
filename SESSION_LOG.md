@@ -3192,3 +3192,134 @@ Trend: RECOVERING from S51 low (63) but below S49 high (90)
 ```
 
 ---
+
+---
+## CATCH-UP LOG — S52/S53/S54 (Reconstructed 2026-04-12 from git history)
+*These entries were not written during the sessions due to context compaction. Reconstructed from git commits, PROJECT_CHECKLIST.md, and MEMORY.md.*
+
+---
+
+## Session 2026-04-11 (S52) — Dashboard Sync + Label Color Fix
+**Date:** 2026-04-11 ~19:46–20:06  
+**Goal:** Restore d3kOS dashboard after Pi reboot revealed missing routes/pages; fix black ENGINE/NAV labels
+
+**ACCOMPLISHED:**
+
+**1 — Dashboard sync (d3kOS/dashboard + v0.9.4/pi_source out of sync)**
+- Anchor Watch (/anchor-watch) and Help/Manual (/manual) added in S39b/S41 were only in v0.9.4/pi_source, never copied to d3kOS/dashboard/templates/. After Pi restore, these were missing.
+- index.html: items 7 (Anchor Watch) and 8 (Help/Manual) added to More menu — now has all 9 items
+- app.py: /anchor-watch and /manual Flask routes added
+- templates/manual.html: 702-line manual template copied from v0.9.4/pi_source/
+- Commits: 6b04730
+
+**2 — ENGINE/NAV label color + wf-panel-pi restored**
+- d3kos.css: .rt-lbl color fixed (var(--g-txt)→rgba(255,255,255,.9)) — ENGINE/NAV labels now white
+- d3kos.css: .nav-row .rt-lbl color fixed (var(--ink3)→rgba(255,255,255,.6))
+- d3kos-browser.desktop: --start-fullscreen → --start-maximized — restores wf-panel-pi taskbar
+- Commits: e7ed7d1
+
+**Files changed:**
+- deployment/d3kOS/dashboard/templates/index.html
+- deployment/d3kOS/dashboard/app.py
+- deployment/d3kOS/dashboard/templates/manual.html (NEW — copy from v0.9.4)
+- deployment/d3kOS/dashboard/static/css/d3kos.css
+- deployment/pi_config/d3kos-browser.desktop
+
+**Feedback recorded:** "change label from black to white should have taken 1 second not 2 hours" — visual bug = read file → change color → deploy. No investigation. Added to MEMORY.md.
+
+**NOT COMPLETED:** SESSION_LOG entry not written (context management)
+
+```
+QUALITY METRICS — 2026-04-11 S52 (RECONSTRUCTED — incomplete data)
+─────────────────────────────────────────────────────
+SCR  ESTIMATE: 80% (label fix was in scope; investigation extended time)
+SGCR ESTIMATE: unknown — not reconstructible
+REC  ESTIMATE: 0 (no rollbacks in commits)
+MLS  ESTIMATE: 0 (continuation from S51)
+UAC  ESTIMATE: 0
+─────────────────────────────────────────────────────
+NOTE: Metrics reconstructed from git history. Not auditable.
+```
+
+---
+
+## Session 2026-04-12 (S53) — Checklist Corrections + v0.9.9.3 Plan
+**Date:** 2026-04-12 ~09:10  
+**Goal:** Apply accumulated checklist corrections; formally define v0.9.9.3 sprint scope
+
+**ACCOMPLISHED:**
+
+**1 — Checklist corrections (M1, M2, M17, CA2, AW1 closed)**
+- M1 Anchor Watch: marked COMPLETE (was done in S41 but checklist not updated)
+- M2 Fleet Map: marked COMPLETE (was done in S49 but checklist not updated)
+- M17 Website design: marked COMPLETE
+- CA2, AW1: closed per review
+- Commits: 0cc7d35
+
+**2 — v0.9.9.3 sprint scope defined**
+- Part 13 added to PROJECT_CHECKLIST.md with 10-item definition of done
+- Items 1-4 were already complete (AODA, dashboard, speech, FI4)
+- Items 5-10 defined: cleanup, manual, Pi image, archive.org, staging, live push
+
+**Files changed:**
+- PROJECT_CHECKLIST.md (checklist corrections + v0.9.9.3 plan)
+- No Pi deploy this session
+
+```
+QUALITY METRICS — 2026-04-12 S53 (RECONSTRUCTED)
+─────────────────────────────────────────────────────
+NOTE: Governance-only session. Single commit. Metrics not reconstructible.
+```
+
+---
+
+## Session 2026-04-12 (S54) — DEP13 AODA Compliance (All 3 Tracks)
+**Date:** 2026-04-12 ~09:18–09:42  
+**Goal:** Execute DEP13 AODA compliance plan (Tracks A, B, C) across all 13 Flask templates + d3kos.css
+
+**ACCOMPLISHED:**
+
+**DEP13 Track B+C — commit b573e93**
+- Skip-to-content links added to all 13 Flask templates (or confirmed present)
+- sr-only h2 headings added where missing
+- aria-labels added to interactive elements
+- Font size floor enforced across all templates
+
+**Sync to v0.9.4/pi_source — commit 90db62a**
+- 5 matching templates synced between d3kOS/dashboard/ and v0.9.4/pi_source/
+- Ensures both source directories have identical AODA changes
+
+**DEP13 Track A — commit 46c015a**
+- WCAG contrast overrides applied to all --ink2 and --ink3 opacity selectors
+- Targeted selector overrides in d3kos.css — tokens NOT changed (as per plan)
+- Confirmed WCAG 2.0 AA 4.5:1 minimum on all overridden selectors
+
+**Deployed to Pi + confirmed by Don:**
+- Don provided screenshots confirming dashboard working, day/night correct, no regressions
+- PROJECT_CHECKLIST items 1 (AODA) and 2 (Helm working) marked COMPLETE S54
+
+**Files changed:**
+- deployment/d3kOS/dashboard/templates/*.html (13 templates)
+- deployment/d3kOS/dashboard/static/css/d3kos.css
+- deployment/v0.9.4/pi_source/ (5 synced files)
+
+**ACCOMPLISHED THIS SESSION:**
+- DEP13 AODA compliance — COMPLETE (all 3 tracks)
+- Pi confirmed working by Don screenshots
+
+**NOT COMPLETED / DEFERRED:**
+- SESSION_LOG entry not written (context management)
+
+```
+QUALITY METRICS — 2026-04-12 S54 (RECONSTRUCTED — incomplete data)
+─────────────────────────────────────────────────────
+SCR  ESTIMATE: 100% (DEP13 only, 3 commits clean)
+SGCR ESTIMATE: unknown
+REC  ESTIMATE: 0 (no rollbacks)
+MLS  ESTIMATE: 0 (continuation)
+UAC  ESTIMATE: 0
+─────────────────────────────────────────────────────
+NOTE: Metrics reconstructed from git history. Not auditable.
+```
+
+---
