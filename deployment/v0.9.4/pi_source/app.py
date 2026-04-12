@@ -113,12 +113,19 @@ def index():
 def setup_get():
     """Onboarding wizard — 6 steps."""
     run_count = int(os.getenv('ONBOARDING_RUNS', '0'))
+    # FI4: provide HostPapa base URL for recovery panel JS
+    try:
+        cloud_cfg = json.loads(Path('/opt/d3kos/config/cloud-config.json').read_text())
+        cloud_base_url = cloud_cfg.get('base_url', 'https://atmyboat.com/staging')
+    except Exception:
+        cloud_base_url = 'https://atmyboat.com/staging'
     return render_template(
         'setup.html',
         error=None,
         run_count=run_count,
         run_limit=ONBOARDING_RUN_LIMIT,
         device_uuid=_get_device_uuid(),
+        cloud_base_url=cloud_base_url,
     )
 
 
@@ -164,10 +171,16 @@ def setup_post():
     run_count = int(os.getenv('ONBOARDING_RUNS', '0')) + 1
 
     if not vessel_name:
+        try:
+            cloud_cfg = json.loads(Path('/opt/d3kos/config/cloud-config.json').read_text())
+            cloud_base_url = cloud_cfg.get('base_url', 'https://atmyboat.com/staging')
+        except Exception:
+            cloud_base_url = 'https://atmyboat.com/staging'
         return render_template(
             'setup.html', error='Vessel name is required.',
             run_count=run_count - 1, run_limit=ONBOARDING_RUN_LIMIT,
             device_uuid=_get_device_uuid(),
+            cloud_base_url=cloud_base_url,
         )
 
     # Write vessel.env (non-sensitive owner config)
@@ -219,6 +232,59 @@ def setup_post():
     UI_LANG       = os.getenv('UI_LANG',      ui_lang)
 
     return redirect('/')
+
+
+@app.route('/setup/restore', methods=['POST'])
+def setup_restore():
+    """
+    FI4 Phase 3 — Config restore endpoint.
+    Called by the setup wizard after fetching a config package from HostPapa.
+    Writes each config file to /opt/d3kos/config/ then restarts cloud-agent.
+    Local-only — no auth needed (Pi LAN access, port 3000).
+    """
+    CONFIG_RESTORE_DIR = Path('/opt/d3kos/config')
+    ALLOWED_FILES = {
+        'cloud-config.json', 'device-token.json', 'license.json',
+        'user-preferences.json', 'ai-config.json', 'slots.json',
+        'hardware.json', 'fleet.json', 'community-prefs.json',
+        'onboarding.json', 'timezone.txt', 'tts-mute.json',
+    }
+
+    body = request.get_json(silent=True)
+    if not body or 'config_json' not in body:
+        return jsonify({'ok': False, 'error': 'config_json required'}), 400
+
+    try:
+        config_files = json.loads(body['config_json'])
+    except (json.JSONDecodeError, TypeError):
+        return jsonify({'ok': False, 'error': 'config_json is not valid JSON'}), 400
+
+    if not isinstance(config_files, dict):
+        return jsonify({'ok': False, 'error': 'config_json must be a JSON object'}), 400
+
+    CONFIG_RESTORE_DIR.mkdir(parents=True, exist_ok=True)
+    written = []
+    for fname, content in config_files.items():
+        # Whitelist only — prevents path traversal
+        if fname not in ALLOWED_FILES:
+            continue
+        dest = CONFIG_RESTORE_DIR / fname
+        try:
+            dest.write_text(content if isinstance(content, str) else json.dumps(content))
+            written.append(fname)
+        except OSError as exc:
+            return jsonify({'ok': False, 'error': f'Failed to write {fname}: {exc}'}), 500
+
+    # Restart cloud-agent so it picks up the restored device token (best-effort)
+    try:
+        subprocess.run(
+            ['sudo', 'systemctl', 'restart', 'd3kos-cloud-agent'],
+            timeout=10, check=False
+        )
+    except Exception:
+        pass
+
+    return jsonify({'ok': True, 'files_written': written})
 
 
 @app.route('/status')

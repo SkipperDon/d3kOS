@@ -257,6 +257,28 @@
     font-size: 20px; color: var(--adv-num); line-height: 1.7; }
   .tier-warn strong { display: block; margin-bottom: 4px; }
 
+  /* ── Recovery panel ── */
+  .recover-btn { width: 100%; height: 54px; margin-top: 14px; background: none;
+    border: 2px solid var(--g-bdr); border-radius: 12px; color: var(--g-txt);
+    font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
+    letter-spacing: .08em; cursor: pointer; transition: background .15s; }
+  .recover-btn:hover { background: var(--g-dim); }
+  .recover-panel { display: none; margin-top: 20px; background: var(--panel);
+    border: 1px solid var(--g-bdr); border-radius: 12px; padding: 24px 28px; }
+  .recover-panel.visible { display: block; }
+  .recover-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px;
+    letter-spacing: .08em; color: var(--g-txt); margin-bottom: 8px; }
+  .recover-sub { font-size: 20px; color: #595E59; line-height: 1.6; margin-bottom: 18px; }
+  .recover-status { font-size: 20px; margin-bottom: 14px; padding: 12px 16px;
+    border-radius: 8px; display: none; }
+  .recover-status.err { background: var(--alrt-bg); border: 1px solid var(--alrt-bdr); color: var(--alrt-num); display: block; }
+  .recover-status.ok  { background: var(--g-dim);   border: 1px solid var(--g-bdr);   color: var(--g-txt);   display: block; }
+  .recover-cancel { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px; color: #595E59; cursor: pointer; margin-top: 10px; padding: 4px 0; }
+  .recover-cancel:hover { color: var(--ink2); }
+  [data-night] .recover-cancel { color: #9CB89C; }
+  [data-night] .recover-sub    { color: #9CB89C; }
+
   /* ── Buttons ── */
   .btn-submit { width: 100%; height: 68px; background: var(--g-txt); color: #fff; border: none;
     border-radius: 12px; font-family: 'Chakra Petch', sans-serif; font-size: 22px;
@@ -402,6 +424,30 @@
         </div>
         {% endif %}
         <button type="button" class="btn-submit" onclick="goTo(2)">GET STARTED &rsaquo;</button>
+
+        <button type="button" class="recover-btn" onclick="showRecoverPanel()">RECOVER EXISTING Pi &rsaquo;</button>
+
+        <!-- ── Recovery panel (hidden until "Recover Existing Pi" tapped) ── -->
+        <div id="recover-panel" class="recover-panel">
+          <div class="recover-title">Restore Your Pi</div>
+          <div class="recover-sub">
+            Enter your Recovery Key to restore all your configuration from the cloud.
+            Your Recovery Key is the Device ID shown in <strong>Settings</strong> on
+            your original Pi, or in the <strong>d3kOS mobile app</strong>.
+          </div>
+          <div id="recover-status" class="recover-status"></div>
+          <div class="field">
+            <label for="recover-token">Recovery Key</label>
+            <input type="text" id="recover-token"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              autocomplete="off" spellcheck="false" autocorrect="off"
+              autocapitalize="none" maxlength="64"
+              style="font-family:'Bebas Neue',sans-serif;letter-spacing:.12em;">
+            <div class="hint">36-character UUID &mdash; write this on a label and stick it to your Pi.</div>
+          </div>
+          <button type="button" class="btn-submit" id="recover-btn-go" onclick="doRecover()">RESTORE Pi &rsaquo;</button>
+          <button type="button" class="recover-cancel" onclick="hideRecoverPanel()">Cancel</button>
+        </div>
       </div>
     </div>
 
@@ -1372,6 +1418,83 @@
       }
     }).catch(function(){});
   })();
+
+  /* ── FI4 Recovery panel ── */
+  var CLOUD_RESTORE_URL = '{{ cloud_base_url }}/wp-content/themes/twentytwenty-child/mobile/config-restore.php';
+
+  function showRecoverPanel() {
+    document.getElementById('recover-panel').classList.add('visible');
+    document.getElementById('recover-token').focus();
+  }
+
+  function hideRecoverPanel() {
+    document.getElementById('recover-panel').classList.remove('visible');
+    var st = document.getElementById('recover-status');
+    st.className = 'recover-status';
+    st.textContent = '';
+    document.getElementById('recover-token').value = '';
+    var btn = document.getElementById('recover-btn-go');
+    btn.disabled = false;
+    btn.textContent = 'RESTORE Pi \u203a';
+  }
+
+  function setRecoverStatus(msg, type) {
+    var el = document.getElementById('recover-status');
+    el.className = 'recover-status ' + type;
+    el.textContent = msg;
+  }
+
+  function doRecover() {
+    var token = document.getElementById('recover-token').value.trim();
+    if (!token) { setRecoverStatus('Please enter your Recovery Key.', 'err'); return; }
+    if (token.length < 8 || token.length > 64) {
+      setRecoverStatus('Recovery Key looks invalid \u2014 check you have the full UUID.', 'err');
+      return;
+    }
+    var btn = document.getElementById('recover-btn-go');
+    btn.disabled = true;
+    btn.textContent = 'Restoring\u2026';
+    setRecoverStatus('Contacting cloud \u2014 please wait\u2026', 'ok');
+
+    fetch(CLOUD_RESTORE_URL + '?token=' + encodeURIComponent(token))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success) {
+          setRecoverStatus(
+            data.error === 'No backup found'
+              ? 'No backup found for this Recovery Key. Check the key and try again.'
+              : (data.error || 'Restore failed. Try again.'),
+            'err'
+          );
+          btn.disabled = false;
+          btn.textContent = 'RESTORE Pi \u203a';
+          return null;
+        }
+        setRecoverStatus('Backup found \u2014 writing config files\u2026', 'ok');
+        return fetch('/setup/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config_json: data.config_json, version: data.version })
+        });
+      })
+      .then(function(r) { return r ? r.json() : null; })
+      .then(function(result) {
+        if (!result) return;
+        if (!result.ok) {
+          setRecoverStatus('Error writing config files: ' + (result.error || 'unknown error'), 'err');
+          btn.disabled = false;
+          btn.textContent = 'RESTORE Pi \u203a';
+          return;
+        }
+        setRecoverStatus('Config restored \u2014 loading dashboard\u2026', 'ok');
+        setTimeout(function() { window.location.href = '/'; }, 1500);
+      })
+      .catch(function(err) {
+        setRecoverStatus('Connection error: ' + err.message, 'err');
+        btn.disabled = false;
+        btn.textContent = 'RESTORE Pi \u203a';
+      });
+  }
 
   /* ── Restore saved state on page load ── */
   window.addEventListener('DOMContentLoaded', restoreState);
