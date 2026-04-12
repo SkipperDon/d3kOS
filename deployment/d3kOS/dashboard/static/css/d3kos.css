@@ -1656,3 +1656,84 @@ select:focus { border-color: var(--g-txt); }
   white-space: nowrap;
   border: 0;
 }
+
+/* ════════════════════════════════════════════════════════
+   AODA TRACK A — Contrast overrides
+   WCAG 1.4.3 (AA) — targeted selector colour fixes
+   --ink2 (52% opacity) ≈ 3.9:1 on white — fails AA normal text
+   --ink3 (28% opacity) ≈ 1.6:1 on white — hard fail
+   NEVER modify the tokens — 100+ uses across dashboard.
+   Solid overrides on known failing selectors only.
+   Day:   #595E59  ≈ 6.3:1 vs #FFFFFF
+   Night: #9CB89C  ≈ 9.8:1 vs #020702
+   DEP13 · 2026-04-12
+   ════════════════════════════════════════════════════════ */
+
+/* ── Day mode ── */
+.ic-l, .ic-u, .ic-wp .ic-eta,
+.sp-tab, .wx-sub,
+.rw-txt,
+.ai-msg.bot, .ai-msg .meta,
+.ac-body,
+.btn-ghost,
+.dc-lbl, .dc-note, .diag-ai-txt,
+.pr-lbl, .pr-pos, .pr-tap,
+.crit-txt, .arr-body,
+.ms-btn-sub,
+.row-pill-btn, .rtb-label,
+.ai-state.dim,
+.ctx-item,
+#anchor-meta, #anchor-advice,
+.ph-lbl,
+.nb-lbl, .nb-state,
+.bm-head, .bm-btn,
+.card-label, .card-desc,
+.trow-sub,
+.si-name, .si-val, .si-sub,
+.ai-mode,
+.prompt-box,
+.cs-empty, .cs-role,
+.port-table th, .port-table td,
+.doc-desc, .step-txt,
+.ph-fut, .ph-desc,
+.info-k,
+.stub-msg, .stub-sub,
+.wx-loading, .wx-sec-ttl, .wx-k, .wx-u, .wx-no-data, .wx-gps-note {
+  color: #595E59;
+}
+.ai-txt::placeholder { color: #595E59; }
+
+/* ── Night mode ── */
+[data-night] .ic-l, [data-night] .ic-u, [data-night] .ic-wp .ic-eta,
+[data-night] .sp-tab, [data-night] .wx-sub,
+[data-night] .rw-txt,
+[data-night] .ai-msg.bot, [data-night] .ai-msg .meta,
+[data-night] .ac-body,
+[data-night] .btn-ghost,
+[data-night] .dc-lbl, [data-night] .dc-note, [data-night] .diag-ai-txt,
+[data-night] .pr-lbl, [data-night] .pr-pos, [data-night] .pr-tap,
+[data-night] .crit-txt, [data-night] .arr-body,
+[data-night] .ms-btn-sub,
+[data-night] .row-pill-btn, [data-night] .rtb-label,
+[data-night] .ai-state.dim,
+[data-night] .ctx-item,
+[data-night] #anchor-meta, [data-night] #anchor-advice,
+[data-night] .ph-lbl,
+[data-night] .nb-lbl, [data-night] .nb-state,
+[data-night] .bm-head, [data-night] .bm-btn,
+[data-night] .card-label, [data-night] .card-desc,
+[data-night] .trow-sub,
+[data-night] .si-name, [data-night] .si-val, [data-night] .si-sub,
+[data-night] .ai-mode,
+[data-night] .prompt-box,
+[data-night] .cs-empty, [data-night] .cs-role,
+[data-night] .port-table th, [data-night] .port-table td,
+[data-night] .doc-desc, [data-night] .step-txt,
+[data-night] .ph-fut, [data-night] .ph-desc,
+[data-night] .info-k,
+[data-night] .stub-msg, [data-night] .stub-sub,
+[data-night] .wx-loading, [data-night] .wx-sec-ttl, [data-night] .wx-k,
+[data-night] .wx-u, [data-night] .wx-no-data, [data-night] .wx-gps-note {
+  color: #9CB89C;
+}
+[data-night] .ai-txt::placeholder { color: #9CB89C; }
