@@ -26,7 +26,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 // users. Without this filter, they land on the default wp-login.php form.
 // With it, they land on our branded /login/ page template.
 //
+// IMPORTANT: wp-admin logins must always go to native wp-login.php — never
+// redirect them to the custom page or the admin becomes unreachable.
+//
 add_filter( 'login_url', function ( $login_url, $redirect ) {
+    // Pass through unchanged for any wp-admin redirect
+    if ( ! empty( $redirect ) && strpos( rawurldecode( $redirect ), 'wp-admin' ) !== false ) {
+        return $login_url;
+    }
+    // Also pass through for explicit WP admin actions (reauth, postpass, etc.)
+    if ( isset( $_GET['action'] ) && in_array( $_GET['action'], [ 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register' ], true ) ) {
+        return $login_url;
+    }
     $custom = home_url( '/login/' );
     if ( ! empty( $redirect ) ) {
         $custom = add_query_arg( 'redirect_to', rawurlencode( $redirect ), $custom );
