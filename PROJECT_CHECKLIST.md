@@ -959,8 +959,10 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | W3 | `page-my-account.php` — account management | `[x]` **COMPLETE S56** — Profile display, change password, change email (re-verify), GDPR Art.15 JSON export, Art.17 account deletion with confirmation phrase. AODA AA. Deployed to staging. |
 | W4 | `inc/auth.php` — auth hooks | `[x]` **COMPLETE S56** — `login_url` filter (bbPress compat), `authenticate` filter (blocks `atmyboat_email_verified=0`), logout + lostpassword redirects. Deployed to staging. |
 | W5 | `functions.php` — add auth.php require_once | `[x]` **COMPLETE S56** — Added `require_once get_stylesheet_directory() . '/inc/auth.php'`. Deployed to staging. |
-| W6 | **Don action: Create 3 WP pages on staging** | `[ ]` **OPERATOR ACTION** — WP Admin → Pages → Add New for each: (1) Title: Register, Slug: register, Template: Register Page. (2) Title: Login, Slug: login, Template: Login Page. (3) Title: My Account, Slug: my-account, Template: My Account Page. |
-| W7 | **Don test: Register + verify email** | `[ ]` **OPERATOR ACTION** — Go to `atmyboat.com/staging/register/`. Fill form. Check email. Click verify link. Confirm redirected to `/login/`. Sign in. Confirm `/my-account/` loads. |
+| W6 | **Don action: Create 3 WP pages on staging** | `[x]` **COMPLETE S56** — Don confirmed pages created and permalink saved in WP Admin. |
+| W7 | **Don test: Register + verify email** | `[x]` **COMPLETE S57** — Don confirmed: registered, received verification email, clicked link, logged in, accessed /my-account/. Password change confirmed working. |
+| W7b | AODA fix — all sub-18px fonts + sign-out button | `[x]` **COMPLETE S57** — commit ee44552. All 3 pages patched and deployed. |
+| W7c | PRG fix — "Security check failed" after password change | `[x]` **COMPLETE S57** — Redirect after POST prevents nonce/session stale on refresh. |
 | W8 | **Don test: Login bbPress redirect** | `[ ]` **OPERATOR ACTION** — Log out. Go to `/staging/forum/`. Should redirect to `/staging/login/` (not wp-login.php). |
 
 ### Docs
