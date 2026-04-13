@@ -187,7 +187,7 @@ get_header();
 }
 .auth-eyebrow {
     font-family: 'JetBrains Mono', 'Courier New', monospace;
-    font-size: 0.72rem; letter-spacing: .18em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .18em; text-transform: uppercase;
     color: #D4A017; margin-bottom: .5rem;
 }
 .auth-title {
@@ -237,7 +237,7 @@ get_header();
 
 .auth-lbl {
     display: block;
-    font-size: .875rem; font-weight: 700;
+    font-size: 0.9rem; font-weight: 700;
     color: #C8BEA8; letter-spacing: .04em;
     margin-bottom: .4rem;
 }
@@ -288,7 +288,7 @@ get_header();
 .tag-opt {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .1em; text-transform: uppercase;
     background: rgba(26,122,110,.15);
     color: #22A090;
     border: 1px solid rgba(26,122,110,.3);

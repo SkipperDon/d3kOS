@@ -100,7 +100,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['account_action'] ) 
             // wp_set_password() invalidates the current auth cookie.
             // Re-authenticate so the user stays logged in.
             wp_set_auth_cookie( $user_id, true );
-            $action_done = 'change_password';
+            // PRG: redirect so browser refresh doesn't resubmit the POST
+            // (wp_set_password changes the session token, staling any prior nonce)
+            wp_safe_redirect( add_query_arg( 'action_done', 'change_password', home_url( '/my-account/' ) ) );
+            exit;
         }
 
     } elseif ( $act === 'change_email' ) {
@@ -137,9 +140,9 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['account_action'] ) 
                     [ 'Content-Type: text/plain; charset=UTF-8' ]
                 );
 
-                // Refresh user object for display
-                $current_user = wp_get_current_user();
-                $action_done  = 'change_email';
+                // PRG: redirect so browser refresh doesn't resubmit the POST
+                wp_safe_redirect( add_query_arg( 'action_done', 'change_email', home_url( '/my-account/' ) ) );
+                exit;
             }
         }
 
@@ -158,6 +161,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['account_action'] ) 
             exit;
         }
     }
+}
+
+// ── Read PRG success flag from GET (set by redirect after successful POST) ──
+if ( $action_done === '' && isset( $_GET['action_done'] ) ) {
+    $action_done = sanitize_key( wp_unslash( $_GET['action_done'] ) );
 }
 
 // ── Build values for template ──────────────────────────────────────────────
@@ -217,7 +225,7 @@ get_header();
 
 .acct-page-eyebrow {
     font-family: 'JetBrains Mono', 'Courier New', monospace;
-    font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .18em; text-transform: uppercase;
     color: #D4A017; margin-bottom: .5rem;
 }
 .acct-page-title {
@@ -252,7 +260,7 @@ get_header();
 }
 .acct-sec-lbl {
     font-family: 'JetBrains Mono', monospace;
-    font-size: .68rem; letter-spacing: .15em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .15em; text-transform: uppercase;
     color: #D4A017;
 }
 .acct-sec-body { padding: 1.75rem; }
@@ -268,29 +276,29 @@ get_header();
 }
 .acct-email-mono {
     font-family: 'JetBrains Mono', monospace;
-    font-size: .88rem; color: #C8BEA8;
+    font-size: 0.9rem; color: #C8BEA8;
 }
 .acct-badges { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .badge-tier {
     font-family: 'JetBrains Mono', monospace;
-    font-size: .63rem; letter-spacing: .1em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .1em; text-transform: uppercase;
     background: rgba(212,160,23,.12);
     color: #D4A017; border: 1px solid rgba(184,120,0,.3);
-    padding: 4px 12px; border-radius: 3px;
+    padding: 6px 12px; border-radius: 3px;
 }
 .badge-pi {
     font-family: 'JetBrains Mono', monospace;
-    font-size: .63rem; letter-spacing: .1em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .1em; text-transform: uppercase;
     background: rgba(0,180,80,.1);
     color: #60D890; border: 1px solid rgba(0,180,80,.25);
-    padding: 4px 12px; border-radius: 3px;
+    padding: 6px 12px; border-radius: 3px;
 }
 
 /* Form elements */
 .acct-field { margin-bottom: 1.25rem; }
 .acct-lbl {
     display: block;
-    font-size: .875rem; font-weight: 700;
+    font-size: 0.9rem; font-weight: 700;
     color: #C8BEA8; letter-spacing: .04em;
     margin-bottom: .4rem;
 }
@@ -362,9 +370,17 @@ get_header();
     text-align: center; margin-top: 2rem;
 }
 .sign-out-link {
-    font-size: .9rem; color: #8A8070; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 52px; padding: 0 2rem; border-radius: 4px;
+    font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 600;
+    color: #C8BEA8; text-decoration: none;
+    border: 1px solid rgba(240,234,216,.2);
+    background: transparent;
+    transition: border-color .2s, color .2s;
+    cursor: pointer;
 }
-.sign-out-link:hover { color: #FF8080; text-decoration: underline; }
+.sign-out-link:hover { color: #FF8080; border-color: rgba(200,50,50,.4); text-decoration: none; }
+.sign-out-link:focus { outline: none; box-shadow: 0 0 0 3px rgba(212,160,23,.4); }
 </style>
 
 <div class="acct-inner">
@@ -473,7 +489,7 @@ get_header();
                 AtMyBoat.com stores only your account information listed above.
                 Your boat sensor data is processed on your Pi and is never stored on our servers.
                 You may download or delete your account data at any time
-                <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">(GDPR Art.&nbsp;15 &amp; 17)</span>.
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;">(GDPR Art.&nbsp;15 &amp; 17)</span>.
             </p>
 
             <!-- Download -->

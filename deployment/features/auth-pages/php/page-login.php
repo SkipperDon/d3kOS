@@ -131,7 +131,7 @@ get_header();
 }
 .auth-eyebrow {
     font-family: 'JetBrains Mono', 'Courier New', monospace;
-    font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: .18em; text-transform: uppercase;
     color: #D4A017; margin-bottom: .5rem;
 }
 .auth-title {
@@ -163,7 +163,7 @@ get_header();
 .auth-field { margin-bottom: 1.25rem; }
 .auth-lbl {
     display: block;
-    font-size: .875rem; font-weight: 700;
+    font-size: 0.9rem; font-weight: 700;
     color: #C8BEA8; letter-spacing: .04em;
     margin-bottom: .4rem;
 }
