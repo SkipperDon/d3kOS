@@ -971,3 +971,19 @@ No new files deployed this session. Checklist and governance updates only:
 | `assets/screenshots/dashboard-night.png` | **[NEW — S55f]** d3kOS dashboard screenshot — night mode. Used in "Night Mode. Day Mode." section. GitHub: `SkipperDon/d3kOS`. |
 
 **Orphan branch pattern (standing rule):** GitHub repo `SkipperDon/d3kOS` must always be updated via orphan branch `public-release`. Never push from local `main` (contains all internal Helm-OS files). Orphan branch is created with only the 12 public files, images committed on top, force-pushed to GitHub `main`, branch deleted.
+
+
+## Auth Pages + Pi First-Boot Password Enforcement (S56 2026-04-13)
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` | **[UPDATED — S56]** v2.3.0 → v2.4.0. Added §2 First-Boot Password Setup (pre-step gate, rules), §12 Security Change Password (settings section), §17 AtMyBoat.com Account (full registration/login/account management/forgot password/access levels table). Footer updated. |
+| `deployment/d3kOS/dashboard/templates/setup.html` | **[UPDATED — S56]** Password pre-step div added before `wiz-1`. CSS: .sec-head / .pw-error classes. JS: `checkDefaultPassword()` (fetches /network/check-default-password), `submitPasswordChange()` (POSTs to /network/change-password). |
+| `deployment/d3kOS/dashboard/app.py` | **[UPDATED — S56]** Added ONBOARDING_FILE constant, `_password_changed()`, redirect guard in index(), GET /network/check-default-password, POST /network/change-password (sudo chpasswd + writes onboarding.json). |
+| `deployment/v0.9.4/pi_source/app.py` | **[UPDATED — S56]** Same changes as d3kOS/dashboard/app.py — both sources synced. |
+| `deployment/d3kOS/dashboard/templates/settings.html` | **[UPDATED — S56]** Security section (⑯) added with change password form and changePasswordFromSettings() async JS function. |
+| `deployment/features/auth-pages/php/page-register.php` | **[NEW — S56]** WP page template. Template Name: Register Page. Server-side 7-field form (§16.3). Email verification token (atmyboat_verify_token usermeta, 40 chars). Account blocked (atmyboat_email_verified=0) until verify link clicked. Also handles ?action=verify callback. AODA AA. Deploy: twentytwenty-child/page-register.php. |
+| `deployment/features/auth-pages/php/page-login.php` | **[NEW — S56]** WP page template. Template Name: Login Page. wp_signon() with email-verified check (blocks login if atmyboat_email_verified=0). Remember-me checkbox. WP lost-password flow returns to /login/?reset_sent=1. AODA AA. Deploy: twentytwenty-child/page-login.php. |
+| `deployment/features/auth-pages/php/page-my-account.php` | **[NEW — S56]** WP page template. Template Name: My Account Page. Gated (redirect to /login/ if not logged in). Sections: account overview (tier badge, Pi paired), change password (wp_set_password + wp_set_auth_cookie), change email (wp_update_user + re-verification), GDPR Art.15 JSON export, Art.17 account deletion (wp_delete_user, requires typing DELETE MY ACCOUNT). AODA AA. Deploy: twentytwenty-child/page-my-account.php. |
+| `deployment/features/auth-pages/php/inc/auth.php` | **[NEW — S56]** Auth hooks. login_url filter (priority 10, redirects wp-login.php → /login/, bbPress compatible). authenticate filter (priority 30, blocks accounts with atmyboat_email_verified=0). logout_redirect (→ /login/?logged_out=1). lostpassword_redirect (→ /login/?reset_sent=1). Deploy: twentytwenty-child/inc/auth.php. |
+| Pi: `/etc/sudoers.d/d3kos-chpasswd` | **[NEW — S56 deployed]** d3kos ALL=(ALL) NOPASSWD: /usr/sbin/chpasswd. Required for /network/change-password to call sudo chpasswd from Flask. Deployed via SSH + sudo tee. |

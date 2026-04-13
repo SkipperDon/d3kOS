@@ -937,5 +937,38 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 ---
 
+## PART 14 — Auth Pages + Pi Password Enforcement (S56 2026-04-13)
+**Version:** Post-v0.9.9.3 — next deploy cycle
+**Status:** IN PROGRESS — code complete, deployed to staging + Pi. Pending Don validation.
+
+### Pi — First-Boot Password Enforcement
+| # | Item | Status |
+|---|------|--------|
+| P1 | `setup.html` password pre-step UI | `[x]` **COMPLETE S56** — Added wizard pre-step that blocks onboarding until d3kos user password changed from default. CSS + HTML injected before `wiz-1`. |
+| P2 | `dashboard/app.py` + `v0.9.4/pi_source/app.py` password routes | `[x]` **COMPLETE S56** — `_password_changed()`, `/network/check-default-password`, `/network/change-password`. Both dashboard files synced. Redirect guard in `index()`. |
+| P3 | `settings.html` Security section | `[x]` **COMPLETE S56** — Added Security section with in-app password change UI. `changePasswordFromSettings()` async function. |
+| P4 | `/etc/sudoers.d/d3kos-chpasswd` on Pi | `[x]` **COMPLETE S56** — NOPASSWD entry for `/usr/sbin/chpasswd` added to Pi. Verified via `sudo -n chpasswd`. |
+| P5 | Deploy Pi files + service restart | `[x]` **COMPLETE S56** — `app.py`, `setup.html`, `settings.html` deployed via SCP. `d3kos-dashboard` restarted. Smoke: `check-default-password` → `{default:true}`, `change-password` short pw → HTTP 400. |
+| P6 | **Don test: Pi password change flow** | `[ ]` **OPERATOR ACTION** — Load `http://d3kos.local:3000`. Should redirect to Setup wizard and show password pre-step. Change password. Confirm redirect to main dashboard. Then test change in Settings §12. |
+
+### Website — Auth Pages (HostPapa Staging)
+| # | Item | Status |
+|---|------|--------|
+| W1 | `page-register.php` — server-side with email verification | `[x]` **COMPLETE S56** — 7-field form per §16.3 spec. Email verification token flow (account inactive until link clicked). AODA AA. Deployed to staging. |
+| W2 | `page-login.php` — custom login page | `[x]` **COMPLETE S56** — `wp_signon()`, email-verified gate, remember-me, forgot password link → WP reset flow. AODA AA. Deployed to staging. |
+| W3 | `page-my-account.php` — account management | `[x]` **COMPLETE S56** — Profile display, change password, change email (re-verify), GDPR Art.15 JSON export, Art.17 account deletion with confirmation phrase. AODA AA. Deployed to staging. |
+| W4 | `inc/auth.php` — auth hooks | `[x]` **COMPLETE S56** — `login_url` filter (bbPress compat), `authenticate` filter (blocks `atmyboat_email_verified=0`), logout + lostpassword redirects. Deployed to staging. |
+| W5 | `functions.php` — add auth.php require_once | `[x]` **COMPLETE S56** — Added `require_once get_stylesheet_directory() . '/inc/auth.php'`. Deployed to staging. |
+| W6 | **Don action: Create 3 WP pages on staging** | `[ ]` **OPERATOR ACTION** — WP Admin → Pages → Add New for each: (1) Title: Register, Slug: register, Template: Register Page. (2) Title: Login, Slug: login, Template: Login Page. (3) Title: My Account, Slug: my-account, Template: My Account Page. |
+| W7 | **Don test: Register + verify email** | `[ ]` **OPERATOR ACTION** — Go to `atmyboat.com/staging/register/`. Fill form. Check email. Click verify link. Confirm redirected to `/login/`. Sign in. Confirm `/my-account/` loads. |
+| W8 | **Don test: Login bbPress redirect** | `[ ]` **OPERATOR ACTION** — Log out. Go to `/staging/forum/`. Should redirect to `/staging/login/` (not wp-login.php). |
+
+### Docs
+| # | Item | Status |
+|---|------|--------|
+| D1 | `D3KOS_USER_MANUAL_v0992.md` v2.3.0 → v2.4.0 | `[x]` **COMPLETE S56** — Added §2 First-Boot Password Setup, §12 Security Change Password, §17 AtMyBoat.com Account (full registration/login/account management guide). |
+
+---
+
 *Archived originals: `.aao-backups/20260320_000000_checklist-merge/`*
 *Do not create new PROJECT_CHECKLIST.md files — update this file only.*
