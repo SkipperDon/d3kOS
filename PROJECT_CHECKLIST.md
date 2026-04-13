@@ -938,8 +938,8 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 ---
 
 ## PART 14 — Auth Pages + Pi Password Enforcement (S56 2026-04-13)
-**Version:** Post-v0.9.9.3 — next deploy cycle
-**Status:** IN PROGRESS — code complete, deployed to staging + Pi. Pending Don validation.
+**Version:** Post-v0.9.9.3 — deployed to production 2026-04-13
+**Status:** COMPLETE — pushed to production S57c. UpdraftPlus backup taken before push. All flows confirmed working by Don.
 
 ### Pi — First-Boot Password Enforcement
 | # | Item | Status |
