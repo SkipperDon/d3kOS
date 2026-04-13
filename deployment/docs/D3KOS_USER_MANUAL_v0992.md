@@ -3,7 +3,7 @@
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.3.0 — April 12, 2026
+**Document version:** 2.4.0 — April 13, 2026
 
 ---
 
@@ -11,6 +11,7 @@
 
 1. [Introduction](#1-introduction)
 2. [Initial Setup Wizard](#2-initial-setup-wizard)
+    - [First-Boot Password Setup](#first-boot-password-setup)
 3. [Main Dashboard](#3-main-dashboard)
 4. [Weather Panel](#4-weather-panel)
 5. [Marine Vision — Camera System](#5-marine-vision--camera-system)
@@ -22,10 +23,12 @@
     - [Config Backup & Recovery (T1+)](#config-backup--recovery-t1)
 11. [Fleet Management (T3)](#11-fleet-management-t3)
 12. [Settings](#12-settings)
+    - [Security — Change Password](#security--change-password)
 13. [Remote Access](#13-remote-access)
 14. [Autonomous Health System](#14-autonomous-health-system)
 15. [Troubleshooting](#15-troubleshooting)
 16. [Quick Reference Card](#16-quick-reference-card)
+17. [AtMyBoat.com Account](#17-atmyboatcom-account)
 
 ---
 
@@ -61,6 +64,31 @@ The wizard can be re-run at any time from **Settings → System → Initial Setu
 The wizard runs once at first boot. It has 8 steps indicated by dots at the top of the card. Your progress is saved automatically — if you close the browser, it resumes where you left off.
 
 A **← Back** button appears on every step from Step 2 onward. Use it to review and correct previous entries before moving forward.
+
+---
+
+### First-Boot Password Setup
+
+**This screen appears before Step 1 on the very first boot only.** It does not appear again once a password has been set.
+
+Every d3kOS Pi ships with the same default system password. Before the wizard begins, d3kOS checks whether the password has been changed. If it has not, this screen is displayed and the wizard cannot proceed until a new password is set.
+
+**Why this matters:** Your Pi is accessible to any device on your boat's WiFi network. Leaving the default password in place means anyone on that network could access your system settings.
+
+**What to do:**
+
+1. Enter a new password — minimum 8 characters
+2. Confirm the password
+3. Tap **Set Password & Continue →**
+
+**Rules:**
+- Minimum 8 characters
+- Cannot be the factory default password
+- Both fields must match
+
+On success, the password is changed immediately and the wizard advances to Step 1. The password screen will never appear again on this Pi.
+
+**Changing your password later:** after setup is complete, go to **Settings → Security → Change Password** at any time.
 
 ---
 
@@ -909,6 +937,23 @@ Shows current status of the remote monitoring connection. See Section 13.
 | **Initial Setup Reset** | Clears all wizard configuration and relaunches the wizard (requires triple confirmation — contact support before using) |
 | **Visit AtMyBoat.com** | Opens AtMyBoat.com in a new tab (requires internet) |
 
+### Security — Change Password
+
+| Control | Function |
+|---------|----------|
+| **New Password** | Enter your new password — minimum 8 characters |
+| **Confirm Password** | Re-enter to confirm |
+| **Change Password** | Applies the new password immediately |
+
+Use this section to change your d3kOS system password at any time after the initial setup. There is no requirement to enter your current password — you are already on your boat's private network.
+
+**When to change your password:**
+- Periodically as a security best practice
+- After allowing a guest or crew member access to the Pi
+- If you believe someone has learned your password
+
+The password change takes effect immediately. Your current browser session is not interrupted. Any other devices accessing the Pi dashboard will need to enter the new password on their next visit if SSH access is configured.
+
 ---
 
 ## 13. Remote Access
@@ -1097,5 +1142,133 @@ Open the mobile app and tap **Health Score** to see which component is failing. 
 
 ---
 
-*d3kOS User Manual v0.9.9.3 — Document version 2.2.0 — April 12, 2026*
+## 17. AtMyBoat.com Account
+
+AtMyBoat.com is the web platform that hosts the community forum, your account, and the cloud services that support the d3kOS mobile app. This section explains what you can do on the site, how to create an account, and how to manage it.
+
+---
+
+### What You Can Do Without an Account
+
+Most of the website is fully public. No registration or login is required to:
+
+| Page | What you can do |
+|------|----------------|
+| Homepage, /products, /hardware | Browse all content |
+| /download | Download the d3kOS image |
+| /compatible | Check engine compatibility |
+| /app | Read PWA install instructions |
+| /blog | Read all posts |
+| /forum | Read all threads, ask the AI assistant |
+| /features | Vote on feature requests |
+| /directory | Browse the business directory |
+| /marketplace | Browse buy/sell listings |
+| /hall-of-fame, /challenges | View community content |
+
+You only need an account to **participate** (post in the forum, create a listing, submit a feature request) or to use **cloud-connected features** (mobile app, community map, Chart Room).
+
+---
+
+### Creating an Account
+
+Go to **atmyboat.com/register**.
+
+**Registration fields:**
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| First name | Yes | |
+| Last name | Yes | |
+| Email address | Yes | Used as your login — must be a valid address |
+| Password | Yes | Minimum 8 characters |
+| Confirm password | Yes | Must match |
+| I agree to the Terms of Service and Privacy Policy | Yes | Required — cannot submit without this |
+| Send me product updates and community news | No | Optional — you can unsubscribe at any time |
+
+After submitting, AtMyBoat sends a verification email to the address you entered. **Your account is not active until you click the link in that email.** The link expires after 24 hours — request a new one from the login page if needed.
+
+Once verified, you are redirected to the login page.
+
+**You do not need a d3kOS Pi to register.** The website is open to anyone interested in the d3kOS platform — boaters researching the system, community members, and forum participants who have not yet built a Pi are all welcome.
+
+---
+
+### Logging In
+
+Go to **atmyboat.com/login**.
+
+Enter your email address and password. Tick **Remember me** to stay logged in on that device.
+
+**Links on the login page:**
+- **Forgot your password?** — sends a reset link to your email address
+- **Don't have an account?** — takes you to /register
+
+After login you are taken to your account dashboard.
+
+---
+
+### Managing Your Account
+
+Go to **atmyboat.com/my-account** (you must be logged in).
+
+#### Change Password
+
+1. Enter your new password (minimum 8 characters)
+2. Confirm the new password
+3. Click **Change Password**
+
+Your session remains active. Any other devices logged in with your account will need to log in again with the new password.
+
+#### Change Email Address
+
+1. Enter your new email address
+2. Enter your current password to confirm the change
+3. Click **Update Email**
+
+A verification email is sent to the new address. Your email does not change until you click the verification link. Until then, your old email address continues to work for login.
+
+#### Delete Account
+
+1. Click **Delete My Account**
+2. Enter your current password to confirm
+3. Click **Permanently Delete**
+
+Deleting your account removes all personal data from AtMyBoat's servers in compliance with GDPR Article 17 and PIPEDA. This includes:
+- Your profile and account details
+- Forum posts (anonymised — content is kept, your name is removed)
+- Paired Pi associations
+- Billing history
+
+**This action is permanent and cannot be undone.** Your Pi continues to function after account deletion — d3kOS operates fully offline at T0. Cloud features (mobile app, Fix My Pi, OTA updates) stop working until the Pi is paired with a new account.
+
+#### Download Your Data
+
+Click **Download My Data** to receive a ZIP file containing all personal data AtMyBoat holds about you — account details, paired device information, and any stored records. This complies with GDPR Article 15 (right of access).
+
+---
+
+### Forgot Password
+
+On the login page, click **Forgot your password?** and enter your email address. A password reset link is sent immediately. The link expires after 1 hour. Check your spam folder if it does not arrive within a few minutes.
+
+---
+
+### Access Levels by Tier
+
+Your account tier determines which website features are available after login:
+
+| Feature | No account | Free account (T0/T1) | T1 (Pi paired) | T2 | T3 |
+|---------|-----------|---------------------|-----------------|----|----|
+| Read forum | Yes | Yes | Yes | Yes | Yes |
+| Post in forum | No | Yes | Yes | Yes | Yes |
+| AI assistant widget | Yes | Yes | Yes | Yes | Yes |
+| Vote on feature requests | Yes | Yes | Yes | Yes | Yes |
+| Submit feature requests | No | No | T1+ | T1+ | Yes |
+| Community map (/community) | No | No | Yes | Yes | Yes |
+| Chart Room (/dashboard) | No | No | Yes | Yes | Yes |
+| Fleet management | No | No | No | No | Yes |
+
+---
+
+*d3kOS User Manual v0.9.9.3 — Document version 2.4.0 — April 13, 2026*
 *AtMyBoat.com — Open-source marine intelligence*

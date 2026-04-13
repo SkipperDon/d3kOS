@@ -528,7 +528,33 @@
       </div>
 
 
-      <!-- ⑯ ABOUT d3kOS -->
+      <!-- ⑯ SECURITY -->
+      <div class="sec" id="s-security">
+        <div class="sec-header">&#128274; Security &mdash; Change Password</div>
+        <div class="card">
+          <p class="card-desc" style="margin-bottom:18px;">
+            Change your d3kOS system password. Use this after first boot or to rotate your password periodically.
+          </p>
+          <div style="margin-bottom:16px;">
+            <label class="card-label" for="sec-pw-new">New Password</label>
+            <input type="password" id="sec-pw-new" class="fc" placeholder="Minimum 8 characters"
+              autocomplete="new-password" style="width:100%;padding:12px 14px;font-size:20px;margin-top:6px;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label class="card-label" for="sec-pw-confirm">Confirm Password</label>
+            <input type="password" id="sec-pw-confirm" class="fc" placeholder="Re-enter your password"
+              autocomplete="new-password" style="width:100%;padding:12px 14px;font-size:20px;margin-top:6px;">
+          </div>
+          <div id="sec-pw-msg" role="alert" aria-live="polite"
+            style="min-height:26px;font-size:20px;margin-bottom:12px;font-weight:600;"></div>
+          <button class="btn btn-save" id="sec-pw-btn" onclick="changePasswordFromSettings()">
+            &#128274; Change Password
+          </button>
+        </div>
+      </div>
+
+
+      <!-- ⑰ ABOUT d3kOS -->
       <div class="sec" id="s-about">
         <div class="sec-header">&#8505;&#65039; About d3kOS</div>
         <div class="card">
@@ -1069,6 +1095,41 @@
       '</a>';
     document.body.appendChild(banner);
   })();
+
+  /* ── Settings — Change Password ── */
+  async function changePasswordFromSettings() {
+    var pw  = document.getElementById('sec-pw-new').value;
+    var pw2 = document.getElementById('sec-pw-confirm').value;
+    var msg = document.getElementById('sec-pw-msg');
+    var btn = document.getElementById('sec-pw-btn');
+    msg.style.color = '';
+    msg.textContent = '';
+    if (pw.length < 8) { msg.style.color = 'var(--warn,#FFA500)'; msg.textContent = 'Password must be at least 8 characters.'; return; }
+    if (pw !== pw2)    { msg.style.color = 'var(--warn,#FFA500)'; msg.textContent = 'Passwords do not match.'; return; }
+    msg.style.color = 'var(--accent,#00CC00)';
+    msg.textContent = 'Changing password\u2026';
+    btn.disabled = true;
+    try {
+      var r = await fetch('/network/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: pw })
+      });
+      var d = await r.json();
+      if (d.success) {
+        msg.textContent = '\u2713 Password changed successfully.';
+        document.getElementById('sec-pw-new').value = '';
+        document.getElementById('sec-pw-confirm').value = '';
+      } else {
+        msg.style.color = 'var(--warn,#FFA500)';
+        msg.textContent = 'Error: ' + (d.error || 'Unknown error.');
+      }
+    } catch(e) {
+      msg.style.color = 'var(--warn,#FFA500)';
+      msg.textContent = 'Network error \u2014 try again.';
+    }
+    btn.disabled = false;
+  }
 </script>
 
 </body>

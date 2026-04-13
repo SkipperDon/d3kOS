@@ -294,6 +294,14 @@
     display: block; margin: 14px auto 0; letter-spacing: .06em; padding: 6px 0; }
   .btn-skip-step:hover { color: var(--ink2); }
 
+  /* ── Security pre-step ── */
+  .sec-head { background: var(--alrt-bg); border-bottom: 1px solid var(--alrt-bdr); padding: 28px 36px 22px; }
+  .sec-head-over  { font-size: 20px; font-weight: 700; letter-spacing: .2em; color: var(--alrt-num); margin-bottom: 6px; }
+  .sec-head-title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: .1em;
+    color: var(--alrt-num); line-height: 1.1; }
+  .sec-head-sub   { font-size: 20px; color: var(--alrt-num); margin-top: 10px; line-height: 1.7; opacity: .85; }
+  .pw-error { min-height: 28px; font-size: 20px; color: var(--alrt-num); margin-bottom: 8px; font-weight: 600; }
+
   /* ── Locked screen ── */
   .locked-wrap { display: flex; align-items: flex-start; justify-content: center;
     padding: 48px 20px 60px; min-height: calc(100vh - 56px); }
@@ -385,6 +393,32 @@
   </div>
 
   <form id="wiz-form" method="POST" action="/setup">
+
+    <!-- ═══ PASSWORD PRE-STEP — hidden until default password detected ═══ -->
+    <div class="wiz-step" id="wiz-password" style="display:none;">
+      <div class="sec-head">
+        <div class="sec-head-over">Security Setup Required</div>
+        <div class="sec-head-title">Change your<br>default password</div>
+        <div class="sec-head-sub">
+          Your device is using the factory default password. You must set a new password
+          before the setup wizard can continue. This protects your system from
+          unauthorised access on your boat&rsquo;s network.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="pw-new">New Password</label>
+          <input type="password" id="pw-new" placeholder="Minimum 8 characters" autocomplete="new-password">
+          <div class="hint">Must be at least 8 characters. Cannot be the default password.</div>
+        </div>
+        <div class="field">
+          <label for="pw-confirm">Confirm Password</label>
+          <input type="password" id="pw-confirm" placeholder="Re-enter your password" autocomplete="new-password">
+        </div>
+        <div class="pw-error" id="pw-error" role="alert" aria-live="polite"></div>
+        <button type="button" class="btn-submit" onclick="submitPasswordChange()">SET PASSWORD &amp; CONTINUE &rsaquo;</button>
+      </div>
+    </div>
 
     <!-- ═══ STEP 1 — WELCOME ═══ -->
     <div class="wiz-step active" id="wiz-1">
@@ -1509,7 +1543,65 @@
   }
 
   /* ── Restore saved state on page load ── */
-  window.addEventListener('DOMContentLoaded', restoreState);
+  window.addEventListener('DOMContentLoaded', function() {
+    restoreState();
+    checkDefaultPassword();
+  });
+
+  /* ── First-boot password gate ── */
+  function checkDefaultPassword() {
+    fetch('/network/check-default-password')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.default) return; /* already changed — proceed normally */
+        /* Show password step, hide progress bar and step 1 */
+        var wiz1 = document.getElementById('wiz-1');
+        var wizPw = document.getElementById('wiz-password');
+        var progress = document.getElementById('wiz-progress');
+        if (wiz1)    wiz1.classList.remove('active');
+        if (wizPw)   { wizPw.style.display = ''; wizPw.classList.add('active'); }
+        if (progress) progress.style.display = 'none';
+        setTimeout(function() {
+          var inp = document.getElementById('pw-new');
+          if (inp) inp.focus();
+        }, 100);
+      })
+      .catch(function() { /* endpoint unavailable — proceed normally */ });
+  }
+
+  async function submitPasswordChange() {
+    var pw  = document.getElementById('pw-new').value;
+    var pw2 = document.getElementById('pw-confirm').value;
+    var err = document.getElementById('pw-error');
+    err.textContent = '';
+    if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+    if (pw !== pw2)    { err.textContent = 'Passwords do not match.'; return; }
+    err.textContent = 'Setting password\u2026';
+    var btn = document.querySelector('#wiz-password .btn-submit');
+    if (btn) btn.disabled = true;
+    try {
+      var r = await fetch('/network/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: pw })
+      });
+      var d = await r.json();
+      if (d.success) {
+        /* Password set — restore progress bar and advance to step 1 */
+        var wizPw   = document.getElementById('wiz-password');
+        var progress = document.getElementById('wiz-progress');
+        if (wizPw)   { wizPw.classList.remove('active'); wizPw.style.display = 'none'; }
+        if (progress) progress.style.display = '';
+        goTo(1);
+      } else {
+        err.textContent = 'Error: ' + (d.error || 'Unknown error — try again.');
+        if (btn) btn.disabled = false;
+      }
+    } catch(e) {
+      err.textContent = 'Network error — try again.';
+      if (btn) btn.disabled = false;
+    }
+  }
 
   {% if error %}
   goTo(2);

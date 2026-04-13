@@ -34,6 +34,16 @@ load_dotenv(_VESSEL_ENV_PATH, override=True)
 load_dotenv(_APIKEYS_ENV_PATH, override=True)
 
 ONBOARDING_RUN_LIMIT = 10
+ONBOARDING_FILE = '/opt/d3kos/config/onboarding.json'
+
+
+def _password_changed() -> bool:
+    """Return True if the d3kos user has changed the default password."""
+    try:
+        with open(ONBOARDING_FILE) as f:
+            return json.load(f).get('password_changed', False)
+    except Exception:
+        return False
 
 
 def _get_device_uuid() -> str:
@@ -100,6 +110,9 @@ def index():
     # First-run: show onboarding wizard if vessel.env is missing
     if not os.path.exists(_VESSEL_ENV_PATH):
         return redirect('/setup')
+    # Security gate: force password change if still default
+    if not _password_changed():
+        return redirect('/setup?require_password=1')
     return render_template(
         'index.html',
         avnav_port=AVNAV_PORT,
@@ -219,6 +232,48 @@ def setup_post():
     UI_LANG       = os.getenv('UI_LANG',      ui_lang)
 
     return redirect('/')
+
+
+@app.route('/network/check-default-password', methods=['GET'])
+def check_default_password():
+    """Returns {default: true} if the d3kos password has not been changed yet."""
+    return jsonify({'default': not _password_changed()})
+
+
+@app.route('/network/change-password', methods=['POST'])
+def change_password():
+    """Change the d3kos system password. Writes flag to onboarding.json on success."""
+    data = request.get_json(silent=True) or {}
+    new_password = data.get('new_password', '').strip()
+
+    if not new_password or len(new_password) < 8:
+        return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
+
+    try:
+        result = subprocess.run(
+            ['sudo', '/usr/sbin/chpasswd'],
+            input=f'd3kos:{new_password}\n',
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode != 0:
+            return jsonify({'success': False, 'error': result.stderr.strip()}), 500
+
+        # Mark password changed in onboarding.json
+        try:
+            with open(ONBOARDING_FILE) as f:
+                onboarding = json.load(f)
+        except Exception:
+            onboarding = {}
+        onboarding['password_changed'] = True
+        os.makedirs(os.path.dirname(ONBOARDING_FILE), exist_ok=True)
+        with open(ONBOARDING_FILE, 'w') as f:
+            json.dump(onboarding, f, indent=2)
+
+        return jsonify({'success': True})
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'error': 'Timeout changing password'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/status')
