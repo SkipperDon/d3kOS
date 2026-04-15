@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 2.2 | **Last Updated:** 2026-04-08 S40 — M14 verified working (3 bugs fixed: JS syntax, onclick wiring, cloud_agent path); context menu→openDiag; font sizes increased
+**Version:** 2.3 | **Last Updated:** 2026-04-15 S58 — Admin CRM 403 fixed (ImunifyAV); admin-api.php renamed to crm-proxy.php; bow camera restored; all probe files cleaned up
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 

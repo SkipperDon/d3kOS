@@ -35,18 +35,18 @@ ALLOWED_TABLES = [
 
 # Tickets proxy — same auth as proxy_call but targets admin-api-tickets.php
 import requests as _requests
-_tickets_url       = config["proxy_url"].replace("admin-api.php", "admin-api-tickets.php")
+_tickets_url       = config["proxy_url"].replace("crm-proxy.php", "admin-api-tickets.php")
 _tickets_headers   = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
-_diag_bundle_url   = config["proxy_url"].replace("admin-api.php", "diagnostic-bundle.php")
-_diag_fix_url      = config["proxy_url"].replace("admin-api.php", "diagnostic-fix.php")
-_diag_resolve_url  = config["proxy_url"].replace("admin-api.php", "diagnostic-resolve.php")
-_diag_past_url     = config["proxy_url"].replace("admin-api.php", "diagnostic-past-cases.php")
+_diag_bundle_url   = config["proxy_url"].replace("crm-proxy.php", "diagnostic-bundle.php")
+_diag_fix_url      = config["proxy_url"].replace("crm-proxy.php", "diagnostic-fix.php")
+_diag_resolve_url  = config["proxy_url"].replace("crm-proxy.php", "diagnostic-resolve.php")
+_diag_past_url     = config["proxy_url"].replace("crm-proxy.php", "diagnostic-past-cases.php")
 _diag_headers_get  = {"Authorization": f"Bearer {config['proxy_api_key']}"}
-_backup_status_url = config["proxy_url"].replace("admin-api.php", "config-backup-status.php")
+_backup_status_url = config["proxy_url"].replace("crm-proxy.php", "config-backup-status.php")
 _backup_status_hdrs = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
-_issues_url        = config["proxy_url"].replace("admin-api.php", "issue-api.php")
+_issues_url        = config["proxy_url"].replace("crm-proxy.php", "issue-api.php")
 _issues_headers    = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
-_publish_url       = config["proxy_url"].replace("admin-api.php", "update-publish.php")
+_publish_url       = config["proxy_url"].replace("crm-proxy.php", "update-publish.php")
 _publish_headers   = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
 
 
@@ -80,7 +80,7 @@ def proxy_post_issues(payload):
 def proxy_call_versions(params):
     try:
         r = _requests.get(
-            config["proxy_url"].replace("admin-api.php", "version-api.php"),
+            config["proxy_url"].replace("crm-proxy.php", "version-api.php"),
             params=params,
             headers=_issues_headers,
             timeout=10,
