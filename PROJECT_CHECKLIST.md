@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 2.3 | **Last Updated:** 2026-04-15 S58 — Admin CRM 403 fixed (ImunifyAV); admin-api.php renamed to crm-proxy.php; bow camera restored; all probe files cleaned up
+**Version:** 2.4 | **Last Updated:** 2026-04-15 S59 — CLAUDE.md 7 fixes applied; claude-menu Haiku option added; S58+S59 SESSION_LOG entries written
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 

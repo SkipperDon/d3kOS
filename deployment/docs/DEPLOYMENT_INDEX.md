@@ -1015,3 +1015,12 @@ No new files deployed this session. Checklist and governance updates only:
 | File | Description |
 |------|-------------|
 | `C:\Users\donmo\Downloads\whatisd3kos.md` | **[NEW — S58]** d3kOS promotional video production shot list. 38 shots across 9 segments. Target: DIY boaters 45–70. Tone: relatable, practical. Format: 3–5 min narrated. Shots 30–34 expanded with specific URLs, step-by-step screen recording instructions, clip lengths, and recording tips. |
+
+## S59 2026-04-15 — CLAUDE.md Cleanup + claude-menu Haiku Option
+
+### Governance / Tooling Changes
+
+| File | Description |
+|------|-------------|
+| `/home/boatiq/CLAUDE.md` | **[UPDATED — S59]** 7 fixes applied: (1) deleted 18 lines of raw escaped scaffold text (lines 6–23); (2) added `## ⚠️ CRITICAL RULES` section with Deployment Approval, Scope Discipline, Pre-Change File List, Pi Diagnosis Protocol; (3) added HostPapa live site to Autonomous Operation confirm-before list; (4) replaced dead Ollama 192.168.1.36 reference with claude-haiku-4-5-20251001; (5) updated v0.9.3 staging rule — Phase 4 complete 2026-04-12; (6) updated v0.9.4 PWA host from GitHub Pages to atmyboat.com/staging/app/; (7) updated SESSION-START Step 1 MEMORY.md path from "project root" to actual path. |
+| `/home/boatiq/.local/bin/claude-menu` | **[UPDATED — S59]** Haiku option added: launch_claude() updated with optional model parameter; run_haiku() function added; menu item 5 (💡 Anthropic Haiku, Haiku 4.5, cost-efficient); Refresh moved to 6; --haiku direct flag added; choice range [1-5/q] → [1-6/q]. |
