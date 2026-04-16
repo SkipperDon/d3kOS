@@ -1024,3 +1024,24 @@ No new files deployed this session. Checklist and governance updates only:
 |------|-------------|
 | `/home/boatiq/CLAUDE.md` | **[UPDATED — S59]** 7 fixes applied: (1) deleted 18 lines of raw escaped scaffold text (lines 6–23); (2) added `## ⚠️ CRITICAL RULES` section with Deployment Approval, Scope Discipline, Pre-Change File List, Pi Diagnosis Protocol; (3) added HostPapa live site to Autonomous Operation confirm-before list; (4) replaced dead Ollama 192.168.1.36 reference with claude-haiku-4-5-20251001; (5) updated v0.9.3 staging rule — Phase 4 complete 2026-04-12; (6) updated v0.9.4 PWA host from GitHub Pages to atmyboat.com/staging/app/; (7) updated SESSION-START Step 1 MEMORY.md path from "project root" to actual path. |
 | `/home/boatiq/.local/bin/claude-menu` | **[UPDATED — S59]** Haiku option added: launch_claude() updated with optional model parameter; run_haiku() function added; menu item 5 (💡 Anthropic Haiku, Haiku 4.5, cost-efficient); Refresh moved to 6; --haiku direct flag added; choice range [1-5/q] → [1-6/q]. |
+
+## S60 2026-04-16 — PWA Live Deploy + Tier Bug Fix
+
+### PWA — Promoted to Live
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.4/pwa/app.js` | **[UPDATED — S60]** `API_BASE` changed from staging to live: `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile`. This is now the canonical source. Comment updated. |
+| `deployment/v0.9.4/pwa/sw.js` | **[UPDATED — S60]** `CACHE_NAME` bumped `d3kos-pwa-v15` → `d3kos-pwa-v16`. Forces all browsers to discard old cached app.js and fetch live version. Bump cache version on every deploy that changes a static asset. |
+| `deployment/v0.9.4/scripts/deploy-pwa.py` | **[UPDATED — S60]** Rewritten for dual-target deploy. Uploads to `/app/` (live, live API_BASE) and `/staging/app/` (staging, API_BASE substituted at deploy time). Single command deploys both environments. Usage: `python3 deployment/v0.9.4/scripts/deploy-pwa.py` from Helm-OS root. |
+| HostPapa live: `/app/` (all 9 PWA files) | **[NEW — S60]** First-ever live PWA deployment. Physical directory at FTP root `/app/` causes Apache to serve directly — WordPress marketing page `page-app.php` is shadowed. Live at `https://atmyboat.com/app/`. |
+| HostPapa staging: `/staging/app/app.js` | **[UPDATED — S60]** Staging app.js redeployed with staging API_BASE confirmed. Same files as live, staging PHP endpoints only. |
+| HostPapa staging: `/staging/app/sw.js` | **[UPDATED — S60]** CACHE_NAME v15 → v16 (same as live). |
+
+### Bug Fixes
+
+| Bug | Fix | Status |
+|-----|-----|--------|
+| `crm-proxy.php update_tier` stored tier as `"3"` (int string) not `"T3"` | Three write sites patched: `'T' . $new_tier`. Re-ran action to rewrite live DB value for admin@atmyboat.com. | `[x]` COMPLETE S59/S60 |
+| PWA had no live deploy — always ran from staging, calling staging PHP + staging DB | PWA deployed to `/app/` (live). `API_BASE` → live PHP. | `[x]` COMPLETE S60 |
+| Tier still shows T1 after above fixes | Root not yet confirmed. Suspected: SW cache or localStorage not cleared, or wrong account (don.moskaluk vs admin@atmyboat.com). Requires operator hard refresh + log out/in to verify. | `[!]` UNRESOLVED |

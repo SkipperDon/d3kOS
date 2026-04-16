@@ -1,13 +1,13 @@
 /**
  * d3kOS PWA — Application Logic
  * Vanilla JS SPA. No frameworks, no build step.
- * Runs on GitHub Pages, talks to atmyboat.com/staging PHP endpoints.
+ * Live at atmyboat.com/app/ — calls live PHP endpoints.
  */
 
 'use strict';
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const API_BASE     = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile';
+const API_BASE     = 'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile';
 
 // Normalize tier — DB may store "3" (integer) or "T3" (string). Always return "T0"…"T3".
 function normalizeTier(raw) {

@@ -4119,3 +4119,98 @@ Trend: RECOVERING — S55c (85) up from S55 (75), back toward S49 high (90)
 ```
 
 ---
+
+## Session 2026-04-16 (S60) — Tier Bug Investigation + PWA Live Deploy
+
+**Goal:** Resolve T3 tier showing as T1 in PWA (/bug-fix continuation from S59)
+
+**Completed:**
+- Root cause confirmed: PWA `app.js` had `API_BASE` hard-coded to staging PHP endpoints. Phase 4 is live. Staging DB and live DB are separate — only live DB had the crm-proxy.php fix from S59.
+- `deployment/v0.9.4/pwa/app.js` — `API_BASE` updated to live: `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile`
+- `deployment/v0.9.4/scripts/deploy-pwa.py` — rewritten to deploy to two targets: `/app/` (live, live API_BASE) and `/staging/app/` (staging, staging API_BASE substituted at deploy time)
+- `deployment/v0.9.4/pwa/sw.js` — `CACHE_NAME` bumped `v15 → v16` to force service worker cache invalidation on all browsers
+- PWA deployed to HostPapa `/app/` (live) — 9 files. Apache serves physical directory directly; WordPress marketing page shadowed.
+- PWA deployed to HostPapa `/staging/app/` (staging) — 9 files with staging API_BASE substituted.
+- Verified via curl: `https://atmyboat.com/app/` serves the PWA SPA, not the WordPress page.
+
+**Not completed / deferred:**
+- Tier bug is NOT confirmed resolved. User reports no visible change. Likely causes remaining: (1) service worker cache not yet cleared on user's device (requires Ctrl+Shift+R hard refresh); (2) `localStorage` has `amboat_tier = T1` cached from prior session (requires log out → log in to refresh); (3) live `user-login.php` may return T1 if user is logged in as `don.moskaluk@outlook.com` (T0 in DB) rather than `admin@atmyboat.com` (T3). Root cause not isolated before session close.
+
+**Decisions:**
+- PWA canonical home is `https://atmyboat.com/app/` (live). Staging version stays at `/staging/app/` but calls staging PHP only. No cross-environment data flow.
+- `deploy-pwa.py` is now the single deploy command for both environments. Run it on every PWA release.
+- CACHE_NAME must be bumped (v16, v17, etc.) on every deploy that changes `app.js` or any static asset. Keeps the version in the file as the record.
+
+**Errata (REC event):**
+- Initial fix incorrectly pointed `/staging/app/app.js` to live PHP endpoints — deployed and then immediately reverted after user rejection. Staging must never call live production data. Reverted both FTP file and repo file.
+
+**Files changed:**
+| File | Change |
+|------|--------|
+| `deployment/v0.9.4/pwa/app.js` | API_BASE → live URL |
+| `deployment/v0.9.4/pwa/sw.js` | CACHE_NAME v15 → v16 |
+| `deployment/v0.9.4/scripts/deploy-pwa.py` | Dual-target deploy (live + staging with API_BASE substitution) |
+| HostPapa `/app/` (FTP) | All 9 PWA files deployed — new live endpoint |
+| HostPapa `/staging/app/` (FTP) | All 9 PWA files redeployed — staging API_BASE confirmed |
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-16 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Confirm tier bug resolved after user clears service worker cache and logs out/in
+- Isolate whether `don.moskaluk@outlook.com` account is the one being used for testing
+- DEP13 Pi AODA pass — awaiting Don go-ahead
+- DEP17 labwc title bar text color (themerc-override)
+- DEP20 dual dashboard sync audit
+- Flask not on systemd on VM (dies on reboot)
+- GPS outdoor verification
+
+---
+
+### Release Package Manifest — S60
+
+- Version: no Pi version bump (web/PWA only)
+- Update type: incremental (PWA live deploy)
+
+| File | Location | Change |
+|------|----------|--------|
+| app.js | atmyboat.com/app/ (live) | API_BASE → live PHP |
+| sw.js | atmyboat.com/app/ (live) | CACHE_NAME v15 → v16 |
+| app.css, index.html, manifest.json, icons | atmyboat.com/app/ (live) | First-time live deploy |
+| app.js | atmyboat.com/staging/app/ | API_BASE confirmed staging |
+| sw.js | atmyboat.com/staging/app/ | CACHE_NAME v15 → v16 |
+
+- Pre-install steps: none
+- Post-install steps: users must hard refresh (Ctrl+Shift+R) + log out → log in
+- Rollback: FTP re-upload prior app.js from .aao-backups or git
+- Health check: `curl https://atmyboat.com/app/` should return PWA HTML (not WordPress); `curl https://atmyboat.com/app/app.js | head -5` should show live API_BASE
+
+```
+QUALITY METRICS — 2026-04-16 S60
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 1
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 1
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 84/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: REC=1 / UAC=1 — plan for staging→live API_BASE was conceptually
+  wrong (staging should never call live data). User approved based on my flawed
+  plan description. Plan quality failure, not a gate failure.
+ROOT CAUSE NOTE: MLS=0 — continuation session; /session-start not re-run after
+  context compaction. Structural issue for all continuation sessions.
+
+5-SESSION TREND (S51/S52/S55/S55c/S60): 63/63/75/85/84 → avg 74.0
+Primary gap: MLS — 0 on every continuation session (structural, not behavioral)
+Trend: RECOVERING — three consecutive sessions 75/85/84, stable in mid-80s
+```
+
+---

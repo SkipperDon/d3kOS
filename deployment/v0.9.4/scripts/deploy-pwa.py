@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
-Deploy PWA files to staging/app/ on HostPapa via FTPS.
+Deploy PWA files to HostPapa via FTPS.
+
+Deploys to TWO targets:
+  1. /app/          — live production (API_BASE → live PHP)
+  2. /staging/app/  — staging (API_BASE → staging PHP, substituted at deploy time)
+
 Reads FTP credentials from atmyboat-forum/.env
 
 Usage: python3 deployment/v0.9.4/scripts/deploy-pwa.py
 """
 
 import ftplib
+import io
 import sys
 from pathlib import Path
 
@@ -34,9 +40,25 @@ if not FTP_USER or not FTP_PASS:
     print("ERROR: FTP_USER or FTP_PASS missing in .env")
     sys.exit(1)
 
-# ─── What to deploy ──────────────────────────────────────────────────────────
-LOCAL_PWA   = Path(__file__).parent.parent / 'pwa'
-REMOTE_PWA  = '/staging/app'
+# ─── API_BASE values ─────────────────────────────────────────────────────────
+LIVE_API_BASE    = 'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile'
+STAGING_API_BASE = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile'
+
+# ─── Deploy targets ──────────────────────────────────────────────────────────
+LOCAL_PWA = Path(__file__).parent.parent / 'pwa'
+
+TARGETS = [
+    {
+        'label':    'Live    → /app/',
+        'remote':   '/app',
+        'api_base': LIVE_API_BASE,
+    },
+    {
+        'label':    'Staging → /staging/app/',
+        'remote':   '/staging/app',
+        'api_base': STAGING_API_BASE,
+    },
+]
 
 SKIP_NAMES = {'.git', 'ICONS_NEEDED.md'}
 
@@ -58,6 +80,7 @@ def connect():
         print("  Connected (plain FTP)")
         return ftp
 
+
 def ensure_remote_dir(ftp, remote_path):
     parts = [p for p in remote_path.split('/') if p]
     current = ''
@@ -68,7 +91,16 @@ def ensure_remote_dir(ftp, remote_path):
         except ftplib.error_perm:
             pass  # already exists
 
-def upload_dir(ftp, local_dir: Path, remote_dir: str):
+
+def make_app_js_bytes(api_base: str) -> bytes:
+    """Read repo app.js and substitute API_BASE for the target environment."""
+    source = (LOCAL_PWA / 'app.js').read_text(encoding='utf-8')
+    # The repo source always carries the live API_BASE — substitute when needed
+    result = source.replace(LIVE_API_BASE, api_base)
+    return result.encode('utf-8')
+
+
+def upload_dir(ftp, local_dir: Path, remote_dir: str, api_base: str):
     ensure_remote_dir(ftp, remote_dir)
     uploaded = 0
     for item in sorted(local_dir.iterdir()):
@@ -76,37 +108,47 @@ def upload_dir(ftp, local_dir: Path, remote_dir: str):
             continue
         remote_path = remote_dir.rstrip('/') + '/' + item.name
         if item.is_dir():
-            u = upload_dir(ftp, item, remote_path)
+            u = upload_dir(ftp, item, remote_path, api_base)
             uploaded += u
         elif item.is_file():
             try:
-                with open(item, 'rb') as f:
-                    ftp.storbinary(f'STOR {remote_path}', f)
-                print(f"  UP  {item.relative_to(local_dir.parent)}")
+                if item.name == 'app.js':
+                    # Substitute API_BASE for this environment
+                    data = io.BytesIO(make_app_js_bytes(api_base))
+                    ftp.storbinary(f'STOR {remote_path}', data)
+                else:
+                    with open(item, 'rb') as f:
+                        ftp.storbinary(f'STOR {remote_path}', f)
+                print(f"  UP  {item.name}")
                 uploaded += 1
             except Exception as e:
                 print(f"  ERR {item.name}: {e}")
     return uploaded
 
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 def main():
     print("=" * 60)
-    print("d3kOS PWA — Staging Deploy")
+    print("d3kOS PWA — Deploy (live + staging)")
     print("=" * 60)
-    print(f"Local:  {LOCAL_PWA}")
-    print(f"Remote: {FTP_HOST}{REMOTE_PWA}")
-    print()
 
     ftp = connect()
-    print(f"\nDeploying PWA files...")
-    uploaded = upload_dir(ftp, LOCAL_PWA, REMOTE_PWA)
+
+    for target in TARGETS:
+        print(f"\n── {target['label']} ──")
+        print(f"   API_BASE: {target['api_base']}")
+        uploaded = upload_dir(ftp, LOCAL_PWA, target['remote'], target['api_base'])
+        print(f"   {uploaded} files uploaded")
+
     ftp.quit()
 
     print()
     print("=" * 60)
-    print(f"Done. {uploaded} files uploaded.")
+    print("Done.")
+    print("  Live PWA    : https://atmyboat.com/app/")
+    print("  Staging PWA : https://atmyboat.com/staging/app/")
     print("=" * 60)
-    print(f"\nPWA live at: https://atmyboat.com/staging/app/")
+
 
 if __name__ == '__main__':
     main()
