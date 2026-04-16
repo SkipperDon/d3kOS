@@ -452,13 +452,13 @@ def tiers():
         confirmed = request.form.get("confirmed", "")
         form = {"user_id": user_id, "new_tier": new_tier, "reason": reason}
 
-        if not user_id.isdigit() or not new_tier.isdigit() or len(reason) < 10:
-            error = "User ID, tier (0–3), and reason (min 10 chars) are all required."
+        if not user_id.isdigit() or new_tier not in {'T0','T1','T2','T3'} or len(reason) < 10:
+            error = "User ID, tier (T0–T3), and reason (min 10 chars) are all required."
         elif confirmed == "1":
             try:
                 result = proxy_call("update_tier", db=db_key,
-                                    user_id=int(user_id), new_tier=int(new_tier), reason=reason)
-                success = f"Tier updated from {result['old_tier']} → T{result['new_tier']} for user {user_id}."
+                                    user_id=int(user_id), new_tier=new_tier, reason=reason)
+                success = f"Tier updated from {result['old_tier']} → {result['new_tier']} for user {user_id}."
                 form = {}
             except Exception as e:
                 error = str(e)

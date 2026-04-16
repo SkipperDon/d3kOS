@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist
-**Version:** 2.4 | **Last Updated:** 2026-04-16 S60 — PWA deployed to /app/ (live); deploy-pwa.py dual-target; sw.js cache v16; tier bug partially fixed (verification pending)
+**Version:** 2.5 | **Last Updated:** 2026-04-16 S61 — BUG-04 fully resolved: tier dropdown T0–T3 enforced at entry; 4 staging DB rows fixed; crm-proxy.php + app.py + tiers.html deployed
 **Replaces:** Helm-OS/PROJECT_CHECKLIST.md · deployment/d3kOS/PROJECT_CHECKLIST.md · deployment/v0.9.3/PROJECT_CHECKLIST.md
 **Archives:** `.aao-backups/20260320_000000_checklist-merge/` (all originals preserved as .bak)
 
@@ -978,7 +978,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 | # | Bug | Status | Detail |
 |---|-----|--------|--------|
-| BUG-04 | `crm-proxy.php update_tier` stored "3" not "T3" | `[x]` **FIXED S59/S60** | Fixed 3 write sites to use `'T' . $new_tier`. Re-ran update_tier for admin@atmyboat.com → live DB now stores 'T3'. |
+| BUG-04 | `crm-proxy.php update_tier` stored "3" not "T3" | `[x]` **FULLY FIXED S61 2026-04-16** | Root cause confirmed: tiers.html values "0"–"3" + `int(new_tier)` in Flask → DB accumulation of bare digits. Fix: (1) tiers.html dropdown values → "T0"–"T3"; (2) app_patched.py validates `new_tier not in {'T0','T1','T2','T3'}`, removes `int()` cast; (3) crm-proxy.php accepts string "T3", stores/returns as-is; (4) SQL fix: 4 staging DB rows patched T0–T3. Integer "3" now rejected with 400. E2E confirmed. |
 | BUG-05 | PWA called staging PHP from staging/app/ — no live deploy existed | `[x]` **FIXED S60** | PWA deployed to `https://atmyboat.com/app/` (live). `API_BASE` → live PHP. `deploy-pwa.py` now deploys both live + staging. `sw.js` CACHE_NAME bumped v15→v16. |
 | BUG-06 | PWA tier still shows T1 after above fixes | `[!]` **UNRESOLVED — operator action required** | Likely causes: (1) service worker cache not cleared — requires Ctrl+Shift+R hard refresh then log out → log in; (2) localStorage `amboat_tier` caching T1 from prior session; (3) user may be logging in as don.moskaluk@outlook.com (T0/T1) not admin@atmyboat.com (T3). Diagnosis blocked — cannot test without operator confirming which account is used and confirming hard refresh was done. |
 

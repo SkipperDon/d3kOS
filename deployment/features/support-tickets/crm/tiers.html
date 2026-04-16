@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Tier Management{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h2>Tier Management</h2>
+</div>
+
+{% if success %}
+<div class="success-banner">{{ success }}</div>
+{% endif %}
+{% if error %}
+<div class="error-banner">{{ error }}</div>
+{% endif %}
+
+<div class="profile-card" style="max-width:540px">
+  <h3>Change Customer Tier</h3>
+  <form method="POST" action="{{ url_for('tiers') }}">
+    <div class="form-group">
+      <label for="user_id">WP User ID</label>
+      <input type="number" id="user_id" name="user_id" value="{{ form.user_id or '' }}"
+             required placeholder="e.g. 42" class="form-input">
+    </div>
+    <div class="form-group">
+      <label for="new_tier">New Tier</label>
+      <select id="new_tier" name="new_tier" class="form-input">
+        <option value="T0" {% if form.new_tier == 'T0' %}selected{% endif %}>T0 — Free</option>
+        <option value="T1" {% if form.new_tier == 'T1' %}selected{% endif %}>T1 — Basic</option>
+        <option value="T2" {% if form.new_tier == 'T2' %}selected{% endif %}>T2 — Pro</option>
+        <option value="T3" {% if form.new_tier == 'T3' %}selected{% endif %}>T3 — Captain</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="reason">Reason <span class="label-note">(min 10 chars)</span></label>
+      <textarea id="reason" name="reason" rows="3" class="form-input"
+                placeholder="e.g. Customer requested upgrade — confirmed payment ref #…">{{ form.reason or '' }}</textarea>
+    </div>
+    {% if confirm %}
+    <div class="confirm-box">
+      <p>Change tier from <strong>{{ confirm.old_tier }}</strong> → <strong>{{ confirm.new_tier }}</strong> for user {{ confirm.user_id }}?</p>
+      <p class="confirm-reason">"{{ confirm.reason }}"</p>
+      <div class="confirm-buttons">
+        <input type="hidden" name="confirmed" value="1">
+        <input type="hidden" name="user_id" value="{{ confirm.user_id }}">
+        <input type="hidden" name="new_tier" value="{{ confirm.new_tier }}">
+        <input type="hidden" name="reason" value="{{ confirm.reason }}">
+        <button type="submit" class="btn-primary confirm-yes-btn">Confirm Change</button>
+        <a href="{{ url_for('tiers') }}" class="btn-secondary">Cancel</a>
+      </div>
+    </div>
+    {% else %}
+    <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;margin-top:8px">Review Change →</button>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
