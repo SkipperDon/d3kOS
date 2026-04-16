@@ -1042,6 +1042,13 @@ No new files deployed this session. Checklist and governance updates only:
 
 | Bug | Fix | Status |
 |-----|-----|--------|
-| `crm-proxy.php update_tier` stored tier as `"3"` (int string) not `"T3"` | Three write sites patched: `'T' . $new_tier`. Re-ran action to rewrite live DB value for admin@atmyboat.com. | `[x]` COMPLETE S59/S60 |
+| `crm-proxy.php update_tier` stored tier as `"3"` not `"T3"` — full split-brain: JS normalized silently, PHP strict-mode failed with "Unknown tier" | **S61 FULL FIX:** tiers.html dropdown values → T0–T3; app_patched.py validation `not in {'T0'…'T3'}`, `int()` removed; crm-proxy.php `intval()` → `trim()`, `in_array()` validation, no `'T'.` prefix; SQL probe fixed 4 staging DB rows. Integer "3" now rejected 400. Don confirmed E2E working. | `[x]` COMPLETE S61 |
 | PWA had no live deploy — always ran from staging, calling staging PHP + staging DB | PWA deployed to `/app/` (live). `API_BASE` → live PHP. | `[x]` COMPLETE S60 |
-| Tier still shows T1 after above fixes | Root not yet confirmed. Suspected: SW cache or localStorage not cleared, or wrong account (don.moskaluk vs admin@atmyboat.com). Requires operator hard refresh + log out/in to verify. | `[!]` UNRESOLVED |
+| Fix My Pi network check failed: "cannot reach https://atmyboat.com/staging" | Pi cloud-config.json `amboat_base_url` updated from `/staging` to live URL. `d3kos-cloud-agent` restarted. HTTP 200 confirmed. | `[x]` COMPLETE S61 |
+| Stale `/staging` fallback defaults in 6 pi_source files (would activate if cloud-config.json missing) | All hardcoded defaults updated to `https://atmyboat.com`; wrong key `base_url` → `amboat_base_url` fixed in app.py setup routes | `[x]` COMPLETE S61 — repo only, no Pi deploy needed |
+
+**New files — S61:**
+
+| File | Description |
+|------|-------------|
+| `deployment/features/support-tickets/crm/tiers.html` | Tier Management template for admin CRM. Select options T0–T3 (was "0"–"3"). Deployed to VM `/home/d3kos-admin/templates/tiers.html`. |

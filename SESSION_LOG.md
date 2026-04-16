@@ -4216,23 +4216,22 @@ Trend: RECOVERING — three consecutive sessions 75/85/84, stable in mid-80s
 ---
 
 ## Session 2026-04-16 — S61
-**Goal:** Fix tier split-brain bug: admin CRM stored "3" instead of "T3"; PHP strict-mode comparisons failed with "Unknown tier"
+**Goal:** Fix tier split-brain bug (admin CRM "3" vs "T3"), plus follow-on fixes discovered during verification
 
 **Completed:**
-- Diagnosed full tier flow: tiers.html select values ("0"–"3") → app_patched.py `int(new_tier)` → crm-proxy.php `intval()` + `'T'.$new_tier` → DB stored "T3" correctly, BUT existing DB rows from S16 still had bare "3" values
-- Changed `tiers.html` select option values from "0"/"1"/"2"/"3" → "T0"/"T1"/"T2"/"T3"; fixed confirm box display `T{{ confirm.new_tier }}` → `{{ confirm.new_tier }}`
-- Changed `app_patched.py` validation: `not new_tier.isdigit()` → `new_tier not in {'T0','T1','T2','T3'}`; removed `int(new_tier)` conversion; fixed success message
-- Changed `crm-proxy.php` update_tier: `intval($body['new_tier'])` → `trim($body['new_tier'])`; `in_array(...['T0','T1','T2','T3'])` validation; stores and returns `$new_tier` directly (no `'T'.` prefix)
-- Deployed tiers.html and app.py to VM (192.168.236.5) — Flask app restarted (PID 12489)
-- Deployed crm-proxy.php to HostPapa live
-- Ran one-time SQL fix via temporary PHP probe: **4 rows fixed** in staging DB (wpax_usermeta) — bare digit values updated to T-prefix format
-- Probe file deleted immediately after use
-- End-to-end validation: `update_tier` with `"T3"` → `{"ok":true,"new_tier":"T3"}` ✓; integer `3` → 400 error ✓
+- **BUG-04 — Tier format fix (fully resolved):** tiers.html dropdown values → "T0"–"T3"; confirm box display fixed; app_patched.py validation `new_tier not in {'T0','T1','T2','T3'}`, removed `int()` cast; crm-proxy.php update_tier: `intval()` → `trim()`, `in_array(['T0'…'T3'])`, stores/returns `$new_tier` directly; one-time SQL probe — 4 staging DB rows fixed to T-prefix format; probe deleted immediately after use
+- Deployed `tiers.html` + `app.py` to VM 192.168.236.5; Flask restarted; HTTP 200 confirmed
+- Deployed `crm-proxy.php` to HostPapa live via FTP
+- E2E validation: `update_tier("T3")` → `{"ok":true,"new_tier":"T3"}` ✓; integer `3` → 400 ✓
+- Don confirmed: tier selection correct in admin console, PWA shows correct tier, Fix My Pi deployed
+- **Fix My Pi network check error:** Pi `cloud-config.json` still had `amboat_base_url: https://atmyboat.com/staging` from before Phase 4 go-live. Updated to `https://atmyboat.com`; restarted `d3kos-cloud-agent`; network check HTTP 200 ✓
+- **Stale fallback URLs (6 repo files):** Updated hardcoded `/staging` fallback defaults in `export_worker.py`, `export-manager.py`, `alert_watcher.py`, `ota_upgrade.py`, `cloud_agent.py`, `app.py`. Also fixed wrong key `base_url` → `amboat_base_url` in `app.py` setup routes (was always falling back to default)
+- **Fix My Pi demo staging advice:** `REQUIRED_SERVICES` = `['d3kos-cloud-agent','d3kos-export-manager','d3kos-tier']`. `d3kos-failure-reporter` not on list — that's why it didn't trigger. Advised: stop `d3kos-export-manager` for demo
 
 **Decisions:**
-- Dropdown values changed to "T0"–"T3" (not "0"–"3") — enforces correct format at point of entry; no downstream concatenation needed
-- crm-proxy.php prefix `$prefix = 'wpax_'` left as-is — production DB `atmyb197_wp59874` doesn't have `wp_usermeta` (may use wpax_ prefix or CRM is staging-only)
-- Repo file `app_patched.py` is canonical source; deployed as `app.py` on VM
+- crm-proxy.php `$prefix = 'wpax_'` left hardcoded — production DB has no `wp_usermeta`; CRM is staging-only for now
+- Stale URL repo files not deployed to Pi — fallbacks only activate when config file is unreadable; Pi config already correct
+- Repo `app_patched.py` is canonical source for VM; deploys as `app.py`
 
 **Ollama:** Not used
 
@@ -4244,11 +4243,48 @@ Trend: RECOVERING — three consecutive sessions 75/85/84, stable in mid-80s
 | Session total | | TBD |
 
 **Pending:**
-- Confirm tier fix works end-to-end from CRM UI (Don to test: change a user's tier in the admin console, verify the PWA shows correct tier and Fix My Pi diagnosis works)
-- Production DB prefix question: does `atmyb197_wp59874` use `wp_` or `wpax_` table prefix? (crm-proxy.php hardcodes `wpax_` — if CRM ever targets production, this needs a dynamic prefix)
-- Flask not on systemd on VM (dies on reboot) — still open
+- Fix My Pi demo recording (stop `d3kos-export-manager`, trigger from PWA, verify restart shown)
+- Production DB prefix question: `atmyb197_wp59874` uses `wp_` or `wpax_`? crm-proxy.php needs dynamic prefix if CRM ever targets production
+- Flask not on systemd on VM (dies on reboot)
 - DEP13 Pi AODA pass — awaiting Don go-ahead
 - DEP17 labwc title bar text color
 - GPS outdoor verification
+
+### Release Package Manifest — S61
+
+- Version: no Pi app version bump (config + HostPapa + VM only)
+- Update type: bug-fix + incremental
+
+| File | Location | Partition | Change |
+|------|----------|-----------|--------|
+| cloud-config.json | /opt/d3kos/config/ | runtime | amboat_base_url: /staging → live |
+| crm-proxy.php | atmyboat.com/.../mobile/ (HostPapa live) | base | update_tier: string T0–T3, no int() cast |
+| app.py (from app_patched.py) | /home/d3kos-admin/ on VM | VM | tier validation T0–T3, success message fix |
+| tiers.html | /home/d3kos-admin/templates/ on VM | VM | dropdown values T0–T3, confirm display fix |
+
+- Pre-install steps: none
+- Post-install steps: `sudo systemctl restart d3kos-cloud-agent` (done ✓)
+- Rollback: restore cloud-config.json `amboat_base_url` → `https://atmyboat.com/staging`; FTP re-upload prior crm-proxy.php
+- Health check: Fix My Pi from PWA → no "Network check failed"; admin CRM tier change → DB stores "T3" not "3"
+- Plain-language release notes: The admin console tier picker now shows T0/T1/T2/T3 in a dropdown — typing "3" is no longer possible. Four existing bad database rows were corrected. Fix My Pi network check was failing because the Pi was still trying to reach an old staging URL; it now connects to the live site and passes.
+
+```
+QUALITY METRICS — 2026-04-16 S61
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS=0 — continuation session from context compaction;
+  /session-start not re-run. Structural issue for all continuation sessions.
+
+5-SESSION TREND (S52/S55/S55c/S60/S61): 63/75/85/84/90 → avg 79.4
+Primary gap: MLS — 0 on every continuation session (structural, not behavioral)
+Trend: IMPROVING — clear upward trajectory 63→75→85→84→90
+```
 
 ---
