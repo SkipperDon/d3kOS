@@ -1,5 +1,5 @@
 {
   "amboat_api_key": "YOUR_32_CHAR_HEX_KEY_HERE",
-  "amboat_base_url": "https://atmyboat.com/staging",
+  "amboat_base_url": "https://atmyboat.com",
   "poll_interval_seconds": 30
 }
