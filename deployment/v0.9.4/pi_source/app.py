@@ -129,9 +129,9 @@ def setup_get():
     # FI4: provide HostPapa base URL for recovery panel JS
     try:
         cloud_cfg = json.loads(Path('/opt/d3kos/config/cloud-config.json').read_text())
-        cloud_base_url = cloud_cfg.get('base_url', 'https://atmyboat.com/staging')
+        cloud_base_url = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com')
     except Exception:
-        cloud_base_url = 'https://atmyboat.com/staging'
+        cloud_base_url = 'https://atmyboat.com'
     return render_template(
         'setup.html',
         error=None,
@@ -186,9 +186,9 @@ def setup_post():
     if not vessel_name:
         try:
             cloud_cfg = json.loads(Path('/opt/d3kos/config/cloud-config.json').read_text())
-            cloud_base_url = cloud_cfg.get('base_url', 'https://atmyboat.com/staging')
+            cloud_base_url = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com')
         except Exception:
-            cloud_base_url = 'https://atmyboat.com/staging'
+            cloud_base_url = 'https://atmyboat.com'
         return render_template(
             'setup.html', error='Vessel name is required.',
             run_count=run_count - 1, run_limit=ONBOARDING_RUN_LIMIT,
@@ -259,9 +259,9 @@ def setup_recover():
 
     try:
         cloud_cfg = json.loads(Path('/opt/d3kos/config/cloud-config.json').read_text())
-        base_url  = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/')
+        base_url  = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com').rstrip('/')
     except Exception:
-        base_url  = 'https://atmyboat.com/staging'
+        base_url  = 'https://atmyboat.com'
 
     restore_url = (f"{base_url}/wp-content/themes/twentytwenty-child"
                    "/mobile/config-restore.php")

@@ -345,7 +345,7 @@ if __name__ == '__main__':
         tok = json.load(f)
 
     result = run_upgrade(
-        base_url=cfg.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/'),
+        base_url=cfg.get('amboat_base_url', 'https://atmyboat.com').rstrip('/'),
         api_key=cfg['amboat_api_key'],
         device_token=tok['device_token'],
     )
