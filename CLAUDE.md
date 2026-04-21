@@ -128,6 +128,14 @@ When asked to back up a file, use this convention. No other format.
 - Never purge current session's folder
 - Never delete anything without listing first and receiving explicit confirmation
 
+### 95% Certainty Rule (non-negotiable)
+
+Before stating any specific fact — file path, config key name, table name, endpoint URL, FTP path, service name — assess certainty. If certainty is below 95%, STOP and ask. Do not guess and present it as fact. Do not proceed and correct later. Ask the one targeted question needed to reach certainty, then execute.
+
+This applies to: file locations, config file paths, database field names, API endpoint paths, Pi service names, FTP paths, WordPress paths, anything location- or name-specific.
+
+Guessing and being wrong wastes more time than asking. One question now beats one correction later.
+
 ### Uncertainty Declaration Rule (AAO Section 20.2)
 
 When you are not certain of a claim, estimate, or recommendation — say so.

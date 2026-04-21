@@ -4288,3 +4288,64 @@ Trend: IMPROVING — clear upward trajectory 63→75→85→84→90
 ```
 
 ---
+
+## Session 2026-04-21 — S64b (continuation of S64 after context loss)
+**Goal:** Complete Gemini key rotation, update HostPapa live + staging, add 95% Certainty Rule to both CLAUDE.md files
+
+**Context:** S64 main (signalk-forward-watch v0.2.3 geodesy bug fix + npm publish + Pi deploy + GitHub push) was complete but session close was interrupted by context loss. This continuation session finished the credential rotation and governance updates.
+
+**Completed:**
+- **CREDENTIAL_VAULT.md updated:** Old Gemini key `...TouY` replaced with rotated key `...KxqY` in two locations (Section 5 line 143 and Section 19 line 508). Marked as ROTATED 2026-04-21.
+- **HostPapa live verified:** FTP read confirmed `atmyboat-config.php` at `wp-content/themes/twentytwenty-child/inc/atmyboat-config.php` contains new key `...KxqY`. Don updated via cPanel File Manager.
+- **HostPapa staging verified:** Same path under `staging/` — confirmed new key in place.
+- **Gemini 503 diagnosed:** "AI service unavailable" error was Google-side 503 (high demand), not a key or config problem. Key is valid.
+- **95% Certainty Rule added to /home/boatiq/CLAUDE.md:** Before stating any specific fact (file path, key name, FTP path, etc.) — if certainty is below 95%, ask. Root cause: I gave wrong FTP path (`/inc/` missing) without asking, wasting time.
+- **95% Certainty Rule added to /home/boatiq/Helm-OS/CLAUDE.md:** Same rule mirrored.
+
+**Decisions:**
+- Wrong FTP path (`inc/` missing) was identified as a guessing error. 95% Certainty Rule added to both CLAUDE.md files as structural prevention.
+- Emergency brake "stop" was honored: I stopped tool execution, listed files touched, awaited re-auth before continuing.
+
+**Violations this session:**
+- Initial FTP path instructions omitted `/inc/` — I guessed instead of asking. Don corrected it. Root cause of new 95% Certainty Rule.
+- Over-investigation on first attempt to update CREDENTIAL_VAULT.md (re-read full file when location was already known from summary).
+
+**Ollama:** Not used
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-21 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending (carried from S64 main):**
+- Fix README accuracy — Step 2 (model download) unnecessary since model bundled in npm
+- Move stray .txt files out of `/home/boatiq/signalk-forward-watch/` (they don't belong in plugin dir)
+- Rotate npm token (npmjs.com → Access Tokens) — token was in repo briefly during bad 0.2.2 publish
+- Pi Gemini key location: `api-keys.json` shows "NOT SET"; key is at `/opt/d3kos/config/gemini.env` per vault — not verified live
+
+**Note:** S62 (AAO v1.7, 2026-04-17) and S63 (TrueNAS SMB fix, 2026-04-20) were not logged here. Facts captured in MEMORY.md.
+
+---
+
+```
+QUALITY METRICS — 2026-04-21 S64b
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 0
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 90/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: MLS=0 — continuation session after context loss;
+  /session-start not re-run. Structural issue for all continuation sessions.
+
+5-SESSION TREND (S55/S55c/S60/S61/S64b): 75/85/84/90/90 → avg 84.8
+Primary gap: MLS — 0 on every continuation session (structural, not behavioral)
+Trend: STABLE — holding at 90 for two consecutive sessions
+```
+
+---
