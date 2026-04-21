@@ -1003,10 +1003,11 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 ---
 
-## PART 17 — v0.9.9.4 Bug Fixes (S65 2026-04-21)
+## PART 17 — v0.9.9.4 Bug Fixes — STANDING HOLISTIC BUG TRACKER
 
 **Version:** v0.9.9.4
-**Full investigation doc:** `deployment/docs/V09994_BUG_FIXES.md` — read before working on any of these items.
+**Standing rule:** ALL bugs on ALL platforms go here first — before any fix is attempted. No fix without a BUG-XX entry. Read this section AND `deployment/docs/V09994_BUG_FIXES.md` at the start of every session before accepting any new work.
+**Full investigation doc:** `deployment/docs/V09994_BUG_FIXES.md` — root cause analysis, affected files, fix history, and open questions for every bug.
 
 | # | Bug | Status | Detail |
 |---|-----|--------|--------|

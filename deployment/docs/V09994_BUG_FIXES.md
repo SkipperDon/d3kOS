@@ -1,7 +1,17 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.0.0 | **Created:** 2026-04-21 S65 | **Status:** IN PROGRESS
+**Version:** 1.1.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-04-21 S65 | **Status:** IN PROGRESS
 
-This document records all bugs identified and investigated in v0.9.9.4. Read it before working on any of these issues.
+## STANDING RULE — Read This First
+
+This document is the holistic bug tracker for all platforms. Every bug on every platform (Pi, HostPapa website, Admin CRM VM, PWA) is logged here before any fix is attempted. Bugs are reviewed and prioritized as a group — not fixed one-off.
+
+**At session start:** read this document AND PROJECT_CHECKLIST.md PART 17 before accepting any new work.
+
+**When a bug is reported:** log it here with BUG-XX number, symptom, and known details → THEN investigate → THEN fix. Never fix without logging first.
+
+**No fix is deployed without a corresponding entry in both this document and PART 17.**
+
+---
 
 ---
 
