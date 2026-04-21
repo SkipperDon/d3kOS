@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [signalk-forward-watch v0.2.3] — 2026-04-21
+
+### Fixed
+
+- **LatLon is not a constructor** — geodesy v2 is ESM-only (`"type": "module"`). `require()` from a CommonJS plugin returns a namespace object on Node 22+, not the `LatLon` class. On Node < 22 it throws `ERR_REQUIRE_ESM` at plugin load. In both cases all GPS-enriched detections were silently dropped and `environment.forwardWatch.detections` was never written. Fix: replaced geodesy with an inline spherical earth destination point formula (Vincenty spherical — mathematically identical). Removed `geodesy` from dependencies.
+
+### Changed
+
+- `.npmignore` hardened — `*.txt`, `ROADMAP.md`, `.aao-backups/` now excluded from published tarball.
+
+---
+
 ## [Unreleased] — d3kOS Dashboard AODA Remediation CSS v21 (S50 2026-04-11)
 
 ### Fixed
