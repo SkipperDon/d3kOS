@@ -832,6 +832,7 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | v0.9.9 | Security Audit & Penetration Testing — required gate before v1.0 | `[ ]` Planned |
 | v0.9.9.2 | Missed items — features specified but never built across all platforms | `[~]` In progress — M1/M2/M14/M15/M17 complete |
 | v0.9.9.3 | Pre-Launch — Pi AODA + speech + partition/restore + cleanup + manual + image | `[~]` **ACTIVE — see Part 13 below** |
+| v0.9.9.4 | Bug Fixes — Gemini 503 model change + Helm keyboard investigation | `[~]` **IN PROGRESS — see Part 17** |
 | v1.0 | Production launch — Phase 4 live push, archive.org image, staging → production | `[x]` **COMPLETE 2026-04-12** — AtMyBoat.com live. archive.org: https://archive.org/details/d3kos_v0.9.9.2 |
 | v1.1 | CJK keyboard, self-hosted STUN coordination server, multi-language full | `[ ]` Future |
 
@@ -997,6 +998,21 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 | AAO-4 | /home/boatiq/CLAUDE.md — Confidence Score Protocol | `[x]` **COMPLETE S62** | Synced from remote (727b9d2). Score 0–100, GREEN/YELLOW/AMBER/RED thresholds. Required before every non-trivial action. |
 | AAO-5 | /home/boatiq/CLAUDE.md — Clarification Gate | `[x]` **COMPLETE S62** | Synced from remote (727b9d2). 7 conditions that block autonomous proceeding regardless of Autonomous Mode. |
 | AAO-6 | Initialize LLM-Wiki layer for Helm-OS | `[ ]` Awaiting Don instruction | Wiki directory at `Helm-OS/wiki/`. Activate by saying "initialize the wiki." CLAUDE.md section is ready. |
+
+---
+
+---
+
+## PART 17 — v0.9.9.4 Bug Fixes (S65 2026-04-21)
+
+**Version:** v0.9.9.4
+**Full investigation doc:** `deployment/docs/V09994_BUG_FIXES.md` — read before working on any of these items.
+
+| # | Bug | Status | Detail |
+|---|-----|--------|--------|
+| BUG-07 | Gemini model `gemini-2.5-flash` returning HTTP 503 on all environments | `[x]` **COMPLETE S65 2026-04-21** | Root cause: Google-side capacity issue — `gemini-2.5-flash` unavailable system-wide. Fix: changed to `gemini-2.5-flash-lite` in all 4 locations: HostPapa staging, HostPapa production, Pi `api-keys.json` (port 8097), Pi `gemini-nav/config/gemini.env` (port 3001). All 4 confirmed working. See `V09994_BUG_FIXES.md` BUG-07 for full details and Pi dual-service architecture note. |
+| BUG-08 | Helm Assistant on-screen keyboard shows then immediately hides; manual keyboard does not type | `[~]` **IN PROGRESS — fix v2.1 insufficient** | `keyboard-fix.js` v2.1 deployed. D-Bus call works (`ok: true`). Keyboard API log confirms show+hide in same second. Root cause identified: `el.blur()` in pointerup handler fires previous tap's `{ once: true }` hideKeyboard listener BEFORE `_recentlyShown` is set by `showKeyboard()`. Guard does not cover this case. Why ai-assistant.html works but helm.html doesn't is not yet confirmed. Next step: test whether first tap (no prior listener) works correctly; investigate timing fix options. See `V09994_BUG_FIXES.md` BUG-08 for full investigation record. |
+| BUG-09 | CREDENTIAL_VAULT.md model entries show `gemini-2.5-flash` — stale after BUG-07 fix | `[x]` **COMPLETE S65 2026-04-21** | Updated 3 entries: Model (website) → gemini-2.5-flash-lite; Model (Pi) → gemini-2.5-flash-lite; Pi path note corrected to list both config files (api-keys.json port 8097 + gemini-nav/config/gemini.env port 3001). |
 
 ---
 

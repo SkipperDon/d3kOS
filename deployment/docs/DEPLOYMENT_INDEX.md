@@ -1052,3 +1052,25 @@ No new files deployed this session. Checklist and governance updates only:
 | File | Description |
 |------|-------------|
 | `deployment/features/support-tickets/crm/tiers.html` | Tier Management template for admin CRM. Select options T0–T3 (was "0"–"3"). Deployed to VM `/home/d3kos-admin/templates/tiers.html`. |
+
+---
+
+## S65 2026-04-21 — v0.9.9.4 Bug Fixes
+
+**Full investigation record:** `deployment/docs/V09994_BUG_FIXES.md` — contains root cause analysis, verification steps, and open investigation items for all bugs in this version. Read before touching any of these files.
+
+### BUG-07 — Gemini model change (COMPLETE)
+
+| File | Description |
+|------|-------------|
+| HostPapa staging: `inc/atmyboat-config.php` | **[UPDATED — S65]** `GEMINI_MODEL` → `gemini-2.5-flash-lite`. Root cause: `gemini-2.5-flash` returning 503 system-wide (Google capacity). Not committed — server-only file. |
+| HostPapa production: `inc/atmyboat-config.php` | **[UPDATED — S65]** Same change as staging. FTP deployed. Confirmed working end-to-end. |
+| Pi: `/opt/d3kos/config/api-keys.json` | **[UPDATED — S65]** `gemini_model` → `gemini-2.5-flash-lite`. Used by `d3kos-gemini-proxy.service` (port 8097). |
+| Pi: `/opt/d3kos/services/gemini-nav/config/gemini.env` | **[UPDATED — S65]** `GEMINI_MODEL` → `gemini-2.5-flash-lite`. Used by `d3kos-gemini.service` (port 3001, AI Navigation). Service restarted. Confirmed: `{"model":"gemini-2.5-flash-lite","online":true}`. |
+
+### BUG-08 — Helm Assistant keyboard (IN PROGRESS — fix v2.1 insufficient)
+
+| File | Description |
+|------|-------------|
+| Pi: `/var/www/html/js/keyboard-fix.js` | **[UPDATED v2.1 — S65, INSUFFICIENT]** Added `el.blur()` before `el.focus()` to force `zwp_text_input_v3` re-registration; added `_recentlyShown` 800ms guard. Still broken — keyboard shows then immediately hides. Root cause: previous tap's `{ once: true }` `hideKeyboard` listener fires during `el.blur()` before `_recentlyShown` is set. Fix v2.2 not yet written. Full analysis in `V09994_BUG_FIXES.md`. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[NEW — S65]** v0.9.9.4 bug investigation document. BUG-07 complete, BUG-08 in progress, BUG-09 (CREDENTIAL_VAULT.md model update) not started. |
