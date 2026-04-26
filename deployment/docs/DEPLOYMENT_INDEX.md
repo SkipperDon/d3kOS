@@ -1068,6 +1068,23 @@ No new files deployed this session. Checklist and governance updates only:
 | Pi: `/opt/d3kos/config/api-keys.json` | **[UPDATED — S65]** `gemini_model` → `gemini-2.5-flash-lite`. Used by `d3kos-gemini-proxy.service` (port 8097). |
 | Pi: `/opt/d3kos/services/gemini-nav/config/gemini.env` | **[UPDATED — S65]** `GEMINI_MODEL` → `gemini-2.5-flash-lite`. Used by `d3kos-gemini.service` (port 3001, AI Navigation). Service restarted. Confirmed: `{"model":"gemini-2.5-flash-lite","online":true}`. |
 
+### Marketing Scripts — d3kOS (NEW — 2026-04-24)
+
+| File | Description |
+|------|-------------|
+| `/home/boatiq/d3kOS_Marketing_Scripts/01_What_is_d3kOS.txt` | **[NEW/REWRITTEN 2026-04-24]** What is d3kOS. Opens with alarm scenario. Confidence at helm framing. T0/T1+ privacy model. Price comparison. Supporting partner mobile app angle. |
+| `/home/boatiq/d3kOS_Marketing_Scripts/02_Accessibility_and_Design.txt` | **[NEW/REWRITTEN 2026-04-24]** Accessibility & Design. 18px minimum, 48px touch targets, Day/Night mode, WCAG 2.0 AA, voice control. Framed around clarity enabling confidence. |
+| `/home/boatiq/d3kOS_Marketing_Scripts/03_Privacy_Security_Data_Ownership.txt` | **[NEW/REWRITTEN 2026-04-24]** Privacy by tier. T0 = local only (Gemini queries only exception). T1+ = engine/GPS/alerts to atmyboat.com. Supporting partner angle via mobile app. |
+| `/home/boatiq/d3kOS_Marketing_Scripts/04_Hardware_and_Prerequisites.txt` | **[NEW/REWRITTEN 2026-04-24]** Hardware & prerequisites. Raspberry Pi, SD card, NMEA 2000 gateway, DIP switches, cameras (up to 20). Price comparison. Assembly = understanding. |
+| `/home/boatiq/d3kOS_Marketing_Scripts/05_Assembly_and_Configuration.txt` | **[NEW/REWRITTEN 2026-04-24]** Physical assembly walkthrough. "Every step is documented — you will not be left guessing." Confidence through doing it yourself. |
+| `/home/boatiq/d3kOS_Marketing_Scripts/06_Download_Install_First_Boot.txt` | **[NEW/REWRITTEN 2026-04-24]** Software download, SD flash, first boot. Corrected 8-step wizard (removed Gemini API key step, added account pairing and camera setup steps). |
+| `/home/boatiq/d3kOS_Marketing_Scripts/07_System_Overview_Architecture.txt` | **[NEW/REWRITTEN 2026-04-24]** Architecture overview. Signal K, AvNav, Gemini AI, predictive maintenance, P2P mobile app, T0/T1+ data tiers. Framed as confidence-building knowledge. |
+| `/home/boatiq/d3kOS_Marketing_Scripts/08_Why_d3kOS_and_The_Future.txt` | **[NEW/REWRITTEN 2026-04-24]** Why d3kOS exists. Women as fastest-growing boating demographic. Anchor drag scenario. signalk-forward-watch YOLOv8n obstacle detection. v1.0 roadmap. |
+
+**Marketing framework applied:** Primary audience = growing women boaters (aspiring/learning, 25–40). Secondary = women supporting their mate. Key messages: confidence at the helm starts with clarity · teaches as it assists · reduces mental load · affordable vs $3,000–$7,500 chartplottes. "For women" explicit label removed per framework. First-person founder voice retained.
+
+---
+
 ### BUG-08 — Helm Assistant keyboard (IN PROGRESS — fix v2.1 insufficient)
 
 | File | Description |

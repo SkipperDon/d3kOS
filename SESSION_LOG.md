@@ -4349,3 +4349,67 @@ Trend: STABLE — holding at 90 for two consecutive sessions
 ```
 
 ---
+
+## Session 2026-04-24 — Marketing Scripts Rewrite
+**Goal:** Rewrite 8 d3kOS marketing scripts for factual accuracy (v0.9.9.2, T0/T1+ privacy model) and apply women-boater marketing framework
+
+**Completed:**
+- **Pass 1 — Factual corrections (all 8 scripts):**
+  - Corrected privacy model throughout: T0 = data stays on Pi except Gemini AI queries only; T1+ = engine data, GPS position, alerts sync to atmyboat.com
+  - Removed incorrect "Step 7 — Gemini API Key" from wizard script (users don't configure their own key)
+  - Added AtMyBoat.com, mobile PWA companion app, and tier system — absent from all original Haiku-written scripts
+  - Corrected "open-source" framing: signalk-forward-watch and underlying tools (Signal K, AvNav) are open-source; d3kOS platform itself not framed as traditional open-source
+  - Added 20-camera support, Day/Night mode, WCAG 2.0 AA specifics, predictive maintenance, peer-to-peer WebRTC mobile connection
+- **Assessed marketing framework compliance** — reported honestly that factual corrections were done but framework was NOT yet applied; scripts remained technical-first, builder-centric. Confirmed direction with Don before second pass.
+- **Don clarified primary audience:** Growing women boaters (aspiring/learning, 25–40). Secondary: women supporting their mate. Experienced operators follow when primary messaging lands.
+- **Pass 2 — Marketing framework applied (all 8 scripts):**
+  - Script 01: Opens with unknown alarm scenario → confidence at helm framing → price comparison ($3,000–$7,500 vs hundreds) → supporting partner mobile app angle
+  - Script 02: "Learning to boat is hard enough — your equipment shouldn't fight you" → clarity enables confidence
+  - Script 03: Privacy by tier, clearly explained; supporting partner angle in T1+ mobile app
+  - Script 04: Hardware framed as empowering (you understand every component you install) → price comparison
+  - Script 05: "Every step is documented. You will not be left guessing." → confidence through doing it yourself
+  - Script 06: Opens with first-boot moment → corrected wizard steps → first-outing calibration
+  - Script 07: Architecture as confidence-building: "when you understand the system you're in control of it"
+  - Script 08: Fastest-growing boating demographic is women → "not a simpler system, a clearer one" → anchor drag alarm scenario → obstacle detection research → v1.0 roadmap
+  - All 8: "for women" explicit label removed; key messages ("confidence at the helm starts with clarity", "teaches as it assists", "reduces mental load", price comparison) woven throughout
+
+**Decisions:**
+- Primary audience locked: growing women boaters (aspirational/learning). Secondary: supporting partners. Experienced operators follow from primary messaging.
+- Supporting partner angle positioned around mobile app and AtMyBoat.com — natural, not forced
+- Scripts retain Don's first-person founder voice throughout
+- "For women" framing explicitly avoided per marketing framework
+
+**Ollama:** Not used
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-24 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Don's review of final script versions for any tone/content adjustments
+- No Pi, website, or VM work this session — all ongoing open items unchanged
+- BUG-08 keyboard v2.2, DEP13, DEP17, GPS outdoor verification all deferred
+
+---
+
+```
+QUALITY METRICS — 2026-04-24
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-SESSION TREND (S55c/S60/S61/S64b/S69): 85/84/90/90/100 → avg 89.8
+Primary gap: none this session — all metrics green
+Trend: IMPROVING — new high, first 100/100 recorded
+```
+
+---
