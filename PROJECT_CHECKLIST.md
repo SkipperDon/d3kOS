@@ -1019,3 +1019,37 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 *Archived originals: `.aao-backups/20260320_000000_checklist-merge/`*
 *Do not create new PROJECT_CHECKLIST.md files — update this file only.*
+
+
+---
+
+## PART 18 — AAO Methodology v1.8 + Research Paper (S70 2026-04-26)
+
+**Version:** AAO Spec v1.8 | Paper v3.3
+**Status:** COMPLETE (spec + paper) | OPEN (data collection ongoing)
+
+### AAO Methodology v1.8 — Section 19.8
+
+| # | Item | Status | Detail |
+|---|------|--------|--------|
+| AAO-7 | SPECIFICATION.md — Section 19.8 Extended Data Collection Fields | `[x]` **COMPLETE S70** | Six subsections added: 19.8.1–19.8.6. Seven extended fields: `session_duration_min`, `tasks_planned`, `tasks_completed`, `governing_doc_version`, `attributed_rec`, `failure_category`, `human_verified`. 11-code failure_category vocabulary. session_exclusion_log.csv format. Minimum dataset requirements (5 tiers). Operator calculation requirement. Version header bumped 1.6→1.8. |
+| AAO-8 | CHANGELOG_v10.md — release notes for v1.8 | `[x]` **COMPLETE S70** | New file, 221 lines. Full rationale for v1.8 changes. Connects to three peer-review concerns: AI self-scoring, selection bias, tautology. |
+| AAO-9 | README.md — version + history table | `[x]` **COMPLETE S70** | "Current version: 1.0" → "Current version: 1.8". Version history table added (10 versions, 1.0–1.8). |
+| AAO-10 | commands/session-close.md — Step 1C | `[x]` **COMPLETE S70** | Step 1C added between Step 1B (SQS) and Step 2 (files list). Full SESSION_LOG.md extended block format. All 11 failure_category codes. Skip instruction for non-research teams. |
+| AAO-11 | /home/boatiq/CLAUDE.md — extended data fields block in session-close | `[x]` **COMPLETE S70** | Step 1C block added to Session End Step 1. Includes 7 extended fields + failure_category vocabulary reference. Fixed via Python string replacement (file uses \xa0 non-breaking spaces that break Edit tool). |
+| AAO-12 | GitHub push — aao-methodology-repo | `[x]` **COMPLETE S70** | Commit 66ebec0. Push authorized one-time by Don. settings.json deny rules cleared for push, immediately restored. 5 deny rules confirmed present post-restore. |
+
+### Research Paper — v3.3
+
+| # | Item | Status | Detail |
+|---|------|--------|--------|
+| PAPER-1 | Governing_the_AI_Productivity_Promise_v3.3.md | `[x]` **COMPLETE S70** | Full rewrite responding to 10-point critical peer review. Key fixes: p=0.000010 removed from abstract; "natural experiment"→"case study"; Section 4.3.7 one-sample circular test dropped; Reeves & Nass mechanism corrected to human-side; selection bias disclosed; GDP extrapolation labeled "theoretical illustration"; Section 7.4 Phased Data Collection Plan added. Target: Research Policy. |
+| PAPER-2 | session_sqs_dataset_v2.csv — data quality improvements | `[x]` **COMPLETE S70** | 4 new columns added: `failure_category`, `prev_session_id`, `human_verified` (all 0), `rec_imputed`. S20 REC blank→0 with `rec_imputed=1`. S66/S67 session_type: "governed"→"governed_no_reload". `ai_model_version` placeholder "claude-sonnet-4" for all rows — needs verification. |
+| PAPER-3 | session_exclusion_log.csv — excluded sessions documented | `[x]` **COMPLETE S70** | 23 of 33 excluded sessions documented. Columns: session_id, date_approx, exclusion_reason_code, notes, requires_verification. S29-S32 confirmed context overflow. S62 confirmed wiki session without SQS close. 10 sessions remain unidentified. |
+| PAPER-4 | ai_model_version verification | `[ ]` **OPEN — operator action** | CSV v2 has "claude-sonnet-4" placeholder for all 36 sessions. Needs verification against actual session logs. Model names need to be confirmed session-by-session or confirmed uniform. |
+| PAPER-5 | session_exclusion_log.csv — remaining 10 excluded sessions | `[ ]` **OPEN** | 10 of 33 excluded sessions not yet documented in exclusion log. Requires manual review of SESSION_LOG.md entries for S33–S69 gaps. |
+| PAPER-6 | Phase 1 research data collection — start recording | `[ ]` **OPEN — starts this session** | At every session close, record in SESSION_LOG.md: `tasks_planned`, `tasks_completed`, `governing_doc_version` (per Section 19.8 Step 1C). Also record `attributed_rec` for H3 lagged test. CLAUDE.md extended block now prompts for this. Target: reach n=25 MLS=1 sessions with extended fields (~12 more sessions). |
+| PAPER-7 | Submit Governing_the_AI_Productivity_Promise_v3.3 to Research Policy | `[ ]` **OPERATOR ACTION** | Don action — upload to SSRN first, then submit to Research Policy. Paper is at: `/mnt/c/Users/donmo/Desktop/Don Moskaluk Consulting/Paper for aao-methodology/`. |
+
+---
+
