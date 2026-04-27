@@ -1053,3 +1053,47 @@ Completely independent of WordPress — direct MySQL + IMAP connections.
 
 ---
 
+
+## PART 19 — AAO Data Collection System (S71 2026-04-27)
+
+**Version:** Phase 1 plan approved
+**Status:** PLANNING COMPLETE — awaiting Don go-ahead for Phase 1 build
+**Architecture doc:** `aao-methodology-repo/data-collection/ARCHITECTURE.md` v1.1
+**Deploy target:** `atmyboat.com/research/` (HostPapa staging first, then live)
+
+### Resolved Decisions
+
+| # | Decision | Resolution |
+|---|----------|-----------|
+| DC-D1 | Server location | HostPapa — same `atmyb197_wp302`/`wp59874` DB, `aao_` table prefix |
+| DC-D2 | Configuration approach | Zero-config — API key as CLAUDE.md snippet, no separate file |
+| DC-D3 | project_type field | Removed from Phase 1 entirely |
+| DC-D4 | Code location | `aao-collector.py` in `aao-methodology-repo/data-collection/`; PHP in `Helm-OS/deployment/research/` |
+| DC-D5 | Registration email | `admin@atmyboat.com` via PHP `mail()` |
+| DC-D6 | Staging sync | WP Tools→Export/Import (no staging2 needed) |
+
+### Phase 1 Build Tasks
+
+| # | Task | Status | Owner |
+|---|------|--------|-------|
+| DC-01 | Architecture document v1.1 | `[x]` **COMPLETE S71** | — |
+| DC-02 | UpdraftPlus backup before DB changes | `[ ]` **OPEN — prerequisite** | Don |
+| DC-03 | Confirm `admin@atmyboat.com` deliverability on HostPapa | `[ ]` **OPEN** | Don (test) |
+| DC-04 | MySQL tables: `aao_contributors` + `aao_sessions` (schema in doc Section 5) | `[ ]` **OPEN** | Claude |
+| DC-05 | `aao-collector.py` — Python stdlib, reads `aao_api_key:` from CLAUDE.md | `[ ]` **OPEN** | Claude |
+| DC-06 | `aao-register.php` + registration form | `[ ]` **OPEN** | Claude |
+| DC-07 | `aao-submit.php` — validation, dedup, IP hash, storage | `[ ]` **OPEN** | Claude |
+| DC-08 | `aao-data.php` — public aggregate JSON API | `[ ]` **OPEN** | Claude |
+| DC-09 | `atmyboat.com/research/index.html` — landing page + download link | `[ ]` **OPEN** | Claude |
+| DC-10 | `atmyboat.com/research/privacy/` — privacy policy page | `[ ]` **OPEN** | Claude |
+| DC-11 | CLAUDE.md template update in `aao-methodology-repo` | `[ ]` **OPEN** | Claude |
+| DC-12 | `commands/session-close.md` — collector reminder line | `[ ]` **OPEN** | Claude |
+
+### Phase 2 (deferred — after 3–5 contributors)
+| DC-13 | Chart.js public dashboard at `atmyboat.com/research/` | `[ ]` **DEFERRED** | — |
+
+### Phase 3 (deferred — after 25 sessions collected)
+| DC-14 | Researcher API: `aao-data.php` query params + documentation page | `[ ]` **DEFERRED** | — |
+
+---
+

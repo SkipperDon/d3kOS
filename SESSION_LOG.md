@@ -4413,3 +4413,78 @@ Trend: IMPROVING — new high, first 100/100 recorded
 ```
 
 ---
+
+## Session 2026-04-27 — S71
+**Goal:** AAO Data Collection System — architecture planning + staging/production sync research
+
+**Completed:**
+- **Wiki committed:** `Helm-OS/wiki/` (13 files, initialized S62 2026-04-17) committed to git for the first time. Commit 6678846. MEMORY.md stale entry corrected (wiki was marked "not yet initialized").
+- **AAO Data Collection System — architecture document created:** `aao-methodology-repo/data-collection/ARCHITECTURE.md` v1.0 → v1.1. Full architecture for voluntary session metric submission system. Commit d8f22a0 (v1.0), c931b39 (v1.1).
+- **Q1 — Staging/Production sync:** Research confirmed staging=`atmyb197_wp302` (prefix `wpax_`), production=`atmyb197_wp59874` (prefix unknown — likely `wp_`, never confirmed). Sync strategy: WordPress admin Tools→Export (Posts only) from production → Tools→Import on staging. Bypasses HostPapa clone tool entirely. Prefix-agnostic. No staging2 needed.
+- **Q2 — Email:** Confirmed PHP `mail()` from `admin@atmyboat.com` — existing HostPapa pattern.
+- **Q3 — Zero-config collector:** Removed `project_type` and `aao-collector.cfg` entirely. API key delivered as ready-to-paste CLAUDE.md snippet after registration. Collector reads `aao_api_key:` line from CLAUDE.md automatically — no separate file, no setup beyond pasting one line.
+- **Q4 — Code location:** `aao-collector.py` in `aao-methodology-repo/data-collection/`. HostPapa PHP files in `Helm-OS/deployment/research/`. Same database (`atmyb197_wp302` staging / `atmyb197_wp59874` production) with `aao_` prefixed tables.
+- **Q5 — Backup:** UpdraftPlus before any DB changes — deferred to Don before Phase 1 build.
+- **MEMORY.md updated:** DB names + sync strategy permanently recorded. Wiki status corrected. Will not ask Don for DB names again.
+
+**Decisions:**
+- No staging2 — WordPress native Export/Import is the correct sync tool for content, cPanel Push to Live for code. These two flows are independent.
+- Zero-config is the right design — CLAUDE.md IS the config. No friction beyond adopting AAO methodology.
+- `project_type` removed from Phase 1 entirely — adds friction, adds no value at current dataset size.
+- aao-collector.py belongs in the methodology repo, not d3kOS — it is methodology infrastructure.
+- Session ended in "ponder" state — Don pausing to review plan before Phase 1 build begins.
+
+**Files changed this session:**
+| File | Change |
+|------|--------|
+| `Helm-OS/wiki/` (13 files) | Committed to git — existed since S62, never committed |
+| `aao-methodology-repo/data-collection/ARCHITECTURE.md` | Created v1.0, updated to v1.1 |
+| `/home/boatiq/.claude/projects/-home-boatiq/memory/MEMORY.md` | Corrected wiki status; added DB names + sync strategy |
+
+**Ollama:** Not used
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-04-27 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending / Open items carried forward:**
+- DC-02: UpdraftPlus backup before any HostPapa DB changes (Don action)
+- DC-03: Confirm `admin@atmyboat.com` email deliverability from HostPapa (Don test)
+- Production DB prefix: `atmyb197_wp59874` uses `wp_` or `wpax_`? — open but not blocking for research system
+- All Phase 1 build tasks (DC-04 through DC-12) — awaiting Don's go-ahead after review
+- BUG-08, DEP13, DEP17, GPS, Flask/systemd — all deferred from prior sessions, unchanged
+
+---
+
+```
+QUALITY METRICS — 2026-04-27 S71
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+5-SESSION TREND (S60/S61/S64b/S69/S71): 84/90/90/100/100 → avg 92.8
+Primary gap: none this session — all metrics green
+Trend: IMPROVING — avg climbed from 89.8 (S69) to 92.8 (S71)
+```
+
+EXTENDED DATA FIELDS — 2026-04-27
+─────────────────────────────────────────────────────
+session_duration_min   : 90 (estimate — no exact start time recorded)
+tasks_planned          : 1 (AAO Data Collection System architecture)
+tasks_completed        : 1
+governing_doc_version  : 2026-04-26
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---

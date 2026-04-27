@@ -1091,3 +1091,13 @@ No new files deployed this session. Checklist and governance updates only:
 |------|-------------|
 | Pi: `/var/www/html/js/keyboard-fix.js` | **[UPDATED v2.1 — S65, INSUFFICIENT]** Added `el.blur()` before `el.focus()` to force `zwp_text_input_v3` re-registration; added `_recentlyShown` 800ms guard. Still broken — keyboard shows then immediately hides. Root cause: previous tap's `{ once: true }` `hideKeyboard` listener fires during `el.blur()` before `_recentlyShown` is set. Fix v2.2 not yet written. Full analysis in `V09994_BUG_FIXES.md`. |
 | `deployment/docs/V09994_BUG_FIXES.md` | **[NEW — S65]** v0.9.9.4 bug investigation document. BUG-07 complete, BUG-08 in progress, BUG-09 (CREDENTIAL_VAULT.md model update) not started. |
+
+---
+
+### AAO Data Collection System — S71 2026-04-27
+
+| File | Description |
+|------|-------------|
+| `aao-methodology-repo/data-collection/ARCHITECTURE.md` | **[NEW — S71 2026-04-27]** AAO Data Collection System architecture v1.1. Full plan: Python stdlib collector reads `aao_api_key:` from CLAUDE.md (zero-config), HostPapa PHP+MySQL endpoint at `atmyboat.com/research/`, public aggregate dashboard (Phase 2), researcher API (Phase 3). DB: `aao_contributors` + `aao_sessions` in existing HostPapa DB with `aao_` prefix. Privacy: IP hashed SHA-256, no raw credentials stored, GDPR/PIPEDA compliant. |
+| `Helm-OS/wiki/` (13 files) | **[COMMITTED — S71 2026-04-27, created S62 2026-04-17]** LLM-Wiki layer: 5 entities (pwa, pi-system, tier-system, atmyboat-website, d3kos-platform), 2 concepts (php-proxy-pattern, two-source-sync-rule), 2 questions, index, log. Previously untracked — committed commit 6678846. |
+
