@@ -4488,3 +4488,91 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+## Session 2026-05-01 — S72
+**Goal:** Assess merge conflict markers in `signalk-forward-watch/plugin/gps-calculator.js`
+
+**Completed:**
+- Session start executed: MEMORY.md, PROJECT_CHECKLIST.md (including PART 17 bugs), and SESSION_LOG.md (S70 + S71 entries) all read
+- Located `gps-calculator.js` at `/home/boatiq/signalk-forward-watch/plugin/gps-calculator.js`
+- Confirmed file on disk is **already clean** — no merge conflict markers present. Resolved at commit `9bddc24 fix: replace geodesy with inline haversine`
+- Confirmed working tree clean on `main` branch, up to date with origin
+- Assessed both conflicting versions: purely cosmetic differences (comment wording, single-line vs multi-line return). Functionally identical — zero logic difference
+- Confirmed Vincenty spherical math is correct (`_destinationPoint` formula)
+- Checked `index.js` for SignalK path conflicts — none found (no `registerPutHandler`, no conflicting path registrations)
+- Assessment delivered: "plugin is conflicting" warning in Signal K is caused by Node throwing a syntax error when it tried to `require()` a file containing conflict markers — not a plugin path conflict. File is now resolved, should load cleanly. Recommended checking Pi-deployed copy at `~/.signalk/node_modules/signalk-forward-watch/` if warning persists
+
+**Decisions:**
+- No code changes made — assessment confirmed fix at commit 9bddc24 is correct and complete
+- Don to verify Pi-deployed copy if Signal K still shows conflict warning
+
+**Ollama:** Not used
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-05-01 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending / Open items carried forward (unchanged):**
+- BUG-08: keyboard-fix.js v2.2 still needed (helm.html keyboard flash)
+- DEP13: Pi AODA compliance pass — awaiting go-ahead
+- DEP17: Pi title bar text (labwc themerc-override)
+- DC-04–12: AAO Data Collection System Phase 1 build — awaiting Don's go-ahead
+- PAPER-7: Submit paper v3.3 to Research Policy (Don action)
+- GPS outdoor verification
+- signalk-forward-watch: Pi copy may still have old file — verify if SK still shows conflict
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- Session start complete — all memory files loaded
+- gps-calculator.js assessment: conflict markers are NOT in the live file; fix at 9bddc24 is correct; Vincenty math verified; cosmetic-only conflict resolution confirmed
+
+NOT COMPLETED / DEFERRED:
+- Don did not confirm whether SK on Pi still shows the conflict warning after the v0.2.3 fix — Pi-side verification still open
+
+KNOWN GAPS OR UNCERTAINTIES:
+- Pi's installed copy of the plugin (`~/.signalk/node_modules/signalk-forward-watch/`) has not been verified this session — uncertainty flag: the file may still contain conflict markers if the Pi was not updated after v0.2.3
+
+OPERATOR ACTIONS REQUIRED:
+- OIC assessment before session formally closed
+- If Signal K on Pi still shows "plugin conflicting": SSH to Pi and run `grep -n "<<<<<<\|>>>>>>>" ~/.signalk/node_modules/signalk-forward-watch/plugin/gps-calculator.js` to check
+
+---
+
+QUALITY METRICS — 2026-05-01 S72
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+  SCR:  100 × 0.30 = 30.0
+  SGCR: 100 × 0.30 = 30.0
+  REC:  100 × 0.15 = 15.0  (REC=0)
+  MLS:  100 × 0.10 = 10.0
+  UAC:  100 × 0.15 = 15.0  (UAC=0)
+─────────────────────────────────────────────────────
+5-SESSION TREND (S61 → S64b → S71 → S71-marketing → S72):
+Scores: 90 → 90 → 100 → 100 → 100
+Average last 5: 96.0/100
+Trend: STABLE HIGH — three consecutive 100/100 sessions
+Primary improvement target: none identified — all metrics green
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-05-01 S72
+─────────────────────────────────────────────────────
+session_duration_min   : ~20 (estimate — short assessment session)
+tasks_planned          : 1 (gps-calculator.js conflict assessment)
+tasks_completed        : 1
+governing_doc_version  : 2026-04-26
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---
