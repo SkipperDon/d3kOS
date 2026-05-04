@@ -4671,3 +4671,137 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+## S74 — 2026-05-04
+
+### Goal
+
+Fix Stripe webhook misconfiguration discovered via Stripe failure email. Both live mode webhook endpoints were still pointing to /staging/ paths after Phase 4 launch.
+
+---
+
+### Work Completed
+
+**Committed S73 session log (session-start cleanup)**
+- S73 entry (2026-05-01 pi-deck-tools research) was uncommitted in working tree at session start
+- Committed as `2bc4bb0` before any new work began
+
+**Stripe Webhook Fix — BUG-10**
+
+Root cause confirmed: Phase 4 live push (2026-04-12) deployed the WordPress site to production but Stripe Dashboard webhook endpoints were never updated. Both live mode endpoints pointed to `/staging/` paths — real production Stripe events (subscriptions, Fix My Pi charges, cancellations) had been failing since Phase 4 launch.
+
+Steps completed:
+1. Don navigated to Stripe Dashboard → Developers → Webhooks
+2. Don updated both existing endpoints to production URLs (modified in-place, then imported — resulting in 4 endpoints; duplicates removed)
+3. Final live endpoints confirmed:
+   - `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/fix-my-pi-billing.php?action=webhook` (Active, 0 failures)
+   - `https://atmyboat.com/wp-admin/admin-ajax.php?action=atmyboat_stripe_webhook` (Active, 0 failures)
+4. New signing secrets obtained from Stripe Dashboard
+5. Live `inc/atmyboat-config.php` updated via FTPS Python script:
+   - `STRIPE_WEBHOOK_SECRET` → new live Fix My Pi secret
+   - `STRIPE_WEBHOOK_SECRET_SUB` → new live subscription secret
+6. `CREDENTIAL_VAULT.md` updated: live mode webhook secrets added, old staging entries marked deleted
+
+**Governance updates**
+- BUG-10 added to PROJECT_CHECKLIST.md PART 17 (retroactive — fix applied same session)
+- BUG-10 added to `deployment/docs/V09994_BUG_FIXES.md` with full root cause and fix record
+
+---
+
+### Files Changed
+
+| File | Location | Change |
+|------|----------|--------|
+| `SESSION_LOG.md` | Helm-OS/ | S73 commit (cleanup) + this S74 entry |
+| `CREDENTIAL_VAULT.md` | /home/boatiq/ | Live Stripe webhook secrets added; staging entries marked deleted |
+| `deployment/docs/V09994_BUG_FIXES.md` | Helm-OS/ | BUG-10 added; version bumped 1.1.0→1.2.0 |
+| `PROJECT_CHECKLIST.md` | Helm-OS/ | BUG-10 added to PART 17 |
+| `inc/atmyboat-config.php` | HostPapa live server (via FTPS) | STRIPE_WEBHOOK_SECRET + STRIPE_WEBHOOK_SECRET_SUB updated to live values |
+
+---
+
+### Key Decisions
+
+- BUG-10 was discovered and fixed in the same session (Stripe email → immediate fix). Retroactively logged to PART 17 and V09994_BUG_FIXES.md per standing holistic bug tracking rule.
+- No Pi deployment this session — no Release Package Manifest required.
+
+---
+
+### Costs
+
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-05-04 | TBD |
+| Session total | | TBD (Claude API only) |
+
+---
+
+### Pending / Deferred
+
+- BUG-08: Helm keyboard v2.2 fix still needed
+- DEP13: Pi AODA Flask templates — plan ready, awaiting go-ahead
+- DEP17: Pi title bar text color (one-line labwc fix)
+- BUG-06: PWA tier shows T1 — requires operator hard-refresh + login test
+- W8: Test bbPress login redirect (operator action)
+- P6: Test Pi first-boot password change (operator action, requires Pi)
+- PAPER-7: Submit paper v3.3 to Research Policy (operator action)
+- AAO Data Collection System Phase 1 (DC-02–DC-12) — awaiting Don go-ahead
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- S73 session log committed (cleanup from prior session)
+- BUG-10 diagnosed and resolved: Stripe live webhooks now point to production URLs
+- Live inc/atmyboat-config.php updated with correct signing secrets via FTPS
+- CREDENTIAL_VAULT.md updated with live webhook secrets
+- BUG-10 logged retroactively to PART 17 and V09994_BUG_FIXES.md
+
+NOT COMPLETED / DEFERRED:
+- BUG-08, DEP13, DEP17, BUG-06 — pre-existing, no work this session
+- All operator-action items deferred to Don
+
+KNOWN GAPS OR UNCERTAINTIES:
+- No live Stripe events have fired yet to confirm end-to-end webhook processing — first real subscription/Fix My Pi charge will be the true live test
+- Unknown how many real Stripe events were missed between 2026-04-12 and 2026-05-04 while webhooks pointed to staging — any subscription upgrades or Fix My Pi charges in that window may not have been processed correctly
+
+OPERATOR ACTIONS REQUIRED:
+- OIC assessment before session formally closed
+- Check Stripe Dashboard → Payments → review any transactions between April 12 and May 4 to confirm no missed webhook processing (tier upgrades, Fix My Pi fulfillment)
+- Check console.anthropic.com for actual Claude API cost
+
+---
+
+QUALITY METRICS — 2026-05-04 S74
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+  SCR:  100 × 0.30 = 30.0
+  SGCR: 100 × 0.30 = 30.0
+  REC:  100 × 0.15 = 15.0  (REC=0)
+  MLS:  100 × 0.10 = 10.0
+  UAC:  100 × 0.15 = 15.0  (UAC=0)
+─────────────────────────────────────────────────────
+5-SESSION TREND (S70 → S71 → S72 → S73 → S74):
+Scores: 100 → 100 → 100 → 100 → 100
+Average last 5: 100/100
+Trend: STABLE HIGH — five consecutive 100/100 sessions
+Primary improvement target: none identified
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-05-04 S74
+─────────────────────────────────────────────────────
+session_duration_min   : ~60 (estimate)
+tasks_planned          : 0 (reactive session — no sprint scope declared)
+tasks_completed        : 1 (BUG-10 Stripe webhook fix)
+governing_doc_version  : CLAUDE.md 2026-04-26
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---
