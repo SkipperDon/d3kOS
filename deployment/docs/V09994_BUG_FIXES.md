@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.1.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-04-21 S65 | **Status:** IN PROGRESS
+**Version:** 1.2.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-05-04 S74 | **Status:** IN PROGRESS
 
 ## STANDING RULE — Read This First
 
@@ -139,6 +139,38 @@ Alternative: instead of `el.blur()` + `el.focus()`, use `el.dispatchEvent(new Fo
 + `el.focus()` so zwp_text_input_v3 is re-registered without firing existing event listeners.
 
 **Awaiting Don's next session to continue investigation and approve fix.**
+
+---
+
+---
+
+## BUG-10 — Stripe Webhook Endpoints Pointing to /staging/ After Phase 4 Live Push
+
+**Status:** `[x]` RESOLVED S74 2026-05-04
+**Platform:** HostPapa (website + Stripe account)
+**Reported:** 2026-05-04 via Stripe failure email (6 failed deliveries since 2026-05-01)
+
+### Symptom
+Stripe emailed to report webhook endpoint `https://atmyboat.com/staging/wp-admin/admin-ajax.php?action=atmyboat_stripe_webhook` had been failing since May 1, 2026. Investigation revealed BOTH live mode webhook endpoints still pointed to `/staging/` paths — meaning all real production Stripe events (subscription payments, cancellations, Fix My Pi charges) since Phase 4 launch (2026-04-12) were being delivered to the staging subdirectory rather than the live site.
+
+### Root Cause
+Phase 4 live push (2026-04-12) deployed the WordPress site to production but the Stripe Dashboard webhook endpoint URLs were never updated from staging paths to live paths. The webhook signing secrets in `inc/atmyboat-config.php` on the live server were the old staging secrets, not matching any live endpoint.
+
+### Affected Files / Systems
+- Stripe Dashboard — both live mode webhook endpoints (misconfigured URLs)
+- `inc/atmyboat-config.php` on HostPapa live server — stale signing secrets
+- `CREDENTIAL_VAULT.md` — live webhook secret entries were `[DON TO PROVIDE]` placeholders
+
+### Fix Applied (S74 2026-05-04)
+1. Don updated both Stripe Dashboard webhook endpoints to production URLs:
+   - `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/fix-my-pi-billing.php?action=webhook`
+   - `https://atmyboat.com/wp-admin/admin-ajax.php?action=atmyboat_stripe_webhook`
+2. New signing secrets obtained from Stripe Dashboard
+3. Live `inc/atmyboat-config.php` updated via FTPS: `STRIPE_WEBHOOK_SECRET` + `STRIPE_WEBHOOK_SECRET_SUB`
+4. `CREDENTIAL_VAULT.md` updated with live secrets; staging entries marked deleted
+
+### Verification
+Both endpoints confirmed Active, 0 failures in Stripe Dashboard post-fix.
 
 ---
 
