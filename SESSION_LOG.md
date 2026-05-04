@@ -4576,3 +4576,98 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+## Session 2026-05-01 — S73
+**Goal:** Research github.com/boatybits/pi-deck-tools — assess whether any components are useful for d3kOS.
+
+**Completed:**
+- Session-start executed: MEMORY.md, PROJECT_CHECKLIST.md (PART 17 bugs), SESSION_LOG.md (S71 + S72) all read
+- Spawned research agent to fetch and analyze pi-deck-tools repo fully (README, file tree, all source files)
+- Delivered structured YES/MAYBE/NO assessment report for each component vs d3kOS architecture
+
+**Key findings:**
+- pi-deck-tools is an early-stage hobbyist toolkit (Pi 5 + OpenCPN + tkinter + VNC). Created with GitHub Copilot.
+- **Architectural mismatch:** tkinter/VNC vs Flask/Chromium-kiosk — almost nothing is a direct drop-in
+- **YES — new capability:** `apps/sun_moon.py` — Skyfield-based celestial almanac (sun/moon rise/set, twilight windows, star charts as nautical PDFs). d3kOS has no celestial feature. Dependencies: skyfield, reportlab, matplotlib. If celestial module or night-watch agent ever scoped, this is the starting implementation.
+- **YES — reference:** `docs/signalk_api_notes.md` — SK path/unit table (Kelvin, Pascals, path conventions). Confirms d3kOS existing knowledge.
+- **MAYBE — reference:** `shared/signalk.py` — 20-line minimal SK REST poller; simpler than d3kOS WebSocket client. Pattern reference only.
+- **MAYBE — reference:** `apps/hifiberry_volume.py` — ALSA threading pattern; different hardware from S330.
+- **NO:** tkinter UI, VNC launcher, OpenCPN SQLite reader, Maidenhead calculator — architecturally incompatible or no marine value.
+
+**Decision:** No immediate action. Reference note added to MEMORY.md. If celestial/almanac feature ever scoped for d3kOS, adapt `sun_moon.py` as starting point.
+
+**Files changed this session:** None — research only.
+
+**Ollama:** Not used
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-05-01 | TBD |
+| Ollama | Not used | $0.00 |
+| Session total | | TBD |
+
+**Pending / Open items carried forward (unchanged):**
+- BUG-06: PWA tier T1 unresolved (operator action)
+- BUG-08: keyboard-fix.js v2.2 still needed
+- DEP13: Pi AODA compliance — awaiting go-ahead
+- DEP17: Pi title bar text (labwc themerc-override) — deferred
+- DC-04–12: AAO Data Collection System Phase 1 build — awaiting Don's go-ahead
+- PAPER-7: Submit paper v3.3 to Research Policy (Don action)
+- GPS outdoor verification
+- signalk-forward-watch Pi copy: verify if SK still shows conflict warning
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- pi-deck-tools fully researched and assessed against d3kOS architecture
+- Structured YES/MAYBE/NO component report delivered
+- One new capability identified (sun_moon.py celestial almanac) — logged to MEMORY.md
+
+NOT COMPLETED / DEFERRED:
+- None — single research task, fully completed
+
+KNOWN GAPS OR UNCERTAINTIES:
+- pi-deck-tools is early-stage; the repo may evolve — assessment reflects 2026-05-01 state
+- sun_moon.py adaptation complexity for d3kOS not estimated — would require scoping
+
+OPERATOR ACTIONS REQUIRED:
+- OIC assessment before session formally closed
+- Decide whether celestial/almanac feature belongs on the d3kOS roadmap
+
+---
+
+QUALITY METRICS — 2026-05-01 S73
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+  SCR:  100 × 0.30 = 30.0
+  SGCR: 100 × 0.30 = 30.0
+  REC:  100 × 0.15 = 15.0  (REC=0)
+  MLS:  100 × 0.10 = 10.0
+  UAC:  100 × 0.15 = 15.0  (UAC=0)
+─────────────────────────────────────────────────────
+5-SESSION TREND (S64b → S71 → S71-marketing → S72 → S73):
+Scores: 90 → 100 → 100 → 100 → 100
+Average last 5: 98.0/100
+Trend: STABLE HIGH — four consecutive 100/100 sessions
+Primary improvement target: none identified — all metrics green
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-05-01 S73
+─────────────────────────────────────────────────────
+session_duration_min   : ~20 (estimate — short research session)
+tasks_planned          : 1 (pi-deck-tools research and assessment)
+tasks_completed        : 1
+governing_doc_version  : 2026-04-26
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---
