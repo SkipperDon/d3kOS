@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist (Active Items)
-**Version:** 3.1 | **Last Updated:** 2026-05-11 S77 — SafeHelm concept gauge article drafted
+**Version:** 3.2 | **Last Updated:** 2026-05-11 S78 — SafeHelm + d3k-lite concept gauge articles complete
 **Archive:** `PROJECT_CHECKLIST_ARCHIVE.md` — all completed work, decisions, and history preserved
 
 > This file contains OPEN, IN-PROGRESS, and BLOCKED items only.
@@ -28,15 +28,28 @@
 
 ---
 
-## SAFEHELM — CONCEPT GAUGE (NEW — 2026-05-11 S77)
+## SAFEHELM — CONCEPT GAUGE (S77–S78 2026-05-11)
 
-**Status:** Concept design complete. Community interest gauge in progress.
+**Status:** Concept design complete. Forum article ready. Community interest gauge pending publication.
 
 | # | Item | Status |
 |---|------|--------|
-| SH-1 | Forum article drafted (Navigation & Charts) — ready for posting | `[~]` Awaiting user post |
+| SH-1 | Forum article finalized (Navigation & Charts) — ready for posting | `[~]` Awaiting user post |
 | SH-2 | Community feedback on COLREGs compliance gap | `[ ]` Pending article publication |
 | SH-3 | Phase 1 (Shadow Mode) design approval — if community interest confirmed | `[ ]` Blocked on SH-2 |
+
+---
+
+## D3K-LITE — INTEREST GAUGE (NEW — 2026-05-11 S78)
+
+**Status:** Feasibility study complete (1,261 lines). Forum article ready. Community interest gauge pending publication.
+
+| # | Item | Status |
+|---|------|--------|
+| DL-1 | Interest gauge article drafted (Navigation & Charts) — ready for posting | `[~]` Awaiting user post |
+| DL-2 | Topic tags prepared (openplotter, d3k-lite, kiosk-dashboard, ai-assistant, fix-my-pi, interest-gauge, feedback-wanted, signal-k) | `[✓]` Done S78 |
+| DL-3 | Community feedback on Fix My Pi, dashboard layout, mobile features | `[ ]` Pending article publication |
+| DL-4 | Phase 1 build approval — if community interest validates | `[ ]` Blocked on DL-3 |
 
 ---
 
