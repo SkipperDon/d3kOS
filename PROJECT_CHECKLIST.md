@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist (Active Items)
-**Version:** 3.0 | **Last Updated:** 2026-05-11 S76 — SafeHelm design added
+**Version:** 3.1 | **Last Updated:** 2026-05-11 S77 — SafeHelm concept gauge article drafted
 **Archive:** `PROJECT_CHECKLIST_ARCHIVE.md` — all completed work, decisions, and history preserved
 
 > This file contains OPEN, IN-PROGRESS, and BLOCKED items only.
@@ -25,6 +25,18 @@
 | # | Bug | Status | Detail |
 |---|-----|--------|--------|
 | BUG-08 | Helm Assistant on-screen keyboard shows then immediately hides; manual keyboard does not type | `[~]` **IN PROGRESS — fix v2.1 insufficient** | `keyboard-fix.js` v2.1 deployed. Root cause: `el.blur()` fires previous tap's `{ once: true }` hideKeyboard listener BEFORE `_recentlyShown` is set. Next step: test whether first tap (no prior listener) works; consider removing `el.blur()` + using `requestAnimationFrame` around `el.focus()`. Full record: `V09994_BUG_FIXES.md` BUG-08. |
+
+---
+
+## SAFEHELM — CONCEPT GAUGE (NEW — 2026-05-11 S77)
+
+**Status:** Concept design complete. Community interest gauge in progress.
+
+| # | Item | Status |
+|---|------|--------|
+| SH-1 | Forum article drafted (Navigation & Charts) — ready for posting | `[~]` Awaiting user post |
+| SH-2 | Community feedback on COLREGs compliance gap | `[ ]` Pending article publication |
+| SH-3 | Phase 1 (Shadow Mode) design approval — if community interest confirmed | `[ ]` Blocked on SH-2 |
 
 ---
 
