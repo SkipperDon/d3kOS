@@ -1094,6 +1094,14 @@ No new files deployed this session. Checklist and governance updates only:
 
 ---
 
+### SafeHelm Collision Avoidance — S76 2026-05-11
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/SAFEHELM_DESIGN.md` | **[NEW — S76 2026-05-11]** SafeHelm collision avoidance system — complete technical design v1.0. 7-layer architecture: Sensor Fusion (confidence scoring + degraded modes), Real-Time Execution (100ms deterministic loop + watchdog), Vessel Dynamics (turn radius, stopping distance, prop walk, current), COLREGs Engine (CPA/TCPA, Rules 13–17 classifier, escape heading finder), Multi-Vessel Conflict Solver (priority graph, deadlock resolution), Human Interface (alarm budget, voice via ai_bridge, AvNav widget), Safety Envelope (Control Barrier Function, hard constraints). AvNav: NMEA TCP injection for virtual AIS targets + User JS widget overlay. Voice: `POST localhost:3002/webhook/alert` through existing ai_bridge; CRITICAL alerts bypass mute via direct espeak-ng subprocess. pypilot: direct TCP port 23322. GitHub target: `d3kOS/services/safehelm/`. 5-phase build roadmap. 10 known gaps documented in PROJECT_CHECKLIST.md PART 18. Design only — no code built this session. |
+
+---
+
 ### AAO Data Collection System — S71 2026-04-27
 
 | File | Description |

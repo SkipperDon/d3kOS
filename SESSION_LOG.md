@@ -4805,3 +4805,22 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+## S76 — 2026-05-11
+**Goal:** SafeHelm collision avoidance system — design and architecture
+
+**Completed:**
+- `deployment/docs/SAFEHELM_DESIGN.md` created — 7-layer architecture, Python module spec, AvNav integration, Helm voice integration, pypilot integration, 15-section technical design
+- Architecture: standalone Python service on port 8095, reads Signal K WebSocket, writes virtual AIS via SK REST, commands pypilot port 23322 direct TCP, serves AvNav widget via Flask
+- AvNav: NMEA TCP injection for chart targets + User JS widget for status overlay
+- Voice: routes through ai_bridge `/webhook/alert` (port 3002) — CRITICAL bypasses mute via direct espeak-ng
+- Gap analysis: 10 gaps identified — camera range estimation is the single hardest unsolved problem
+
+**No Pi deploy. No HostPapa deploy. No git push.**
+
+**Pending:**
+- Phase 1 build not started (design only)
+- Camera range estimation unresolved
+- Rule 12 / Rule 19 not yet designed
+
+---

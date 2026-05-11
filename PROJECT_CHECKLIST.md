@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist (Active Items)
-**Version:** 3.0 | **Last Updated:** 2026-05-07 S75 — split into active + archive
+**Version:** 3.0 | **Last Updated:** 2026-05-11 S76 — SafeHelm design added
 **Archive:** `PROJECT_CHECKLIST_ARCHIVE.md` — all completed work, decisions, and history preserved
 
 > This file contains OPEN, IN-PROGRESS, and BLOCKED items only.
@@ -223,6 +223,33 @@
 | v0.9.4.1 | Blocked on Phase 4 live push for public availability. Code complete on staging. | `[ ]` |
 | v0.9.9 | Security audit gates v1.0 full launch — see SA4-SA7 above | `[ ]` |
 | v1.1 | CJK keyboard, self-hosted STUN coordination server | `[ ]` Future |
+
+---
+
+---
+
+## PART 18 — SafeHelm Collision Avoidance Module (S76 2026-05-11)
+
+**Design document:** `deployment/docs/SAFEHELM_DESIGN.md`
+**Target:** `github.com/SkipperDon/d3kOS/services/safehelm/`
+**Status:** Design complete. Build not started.
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| SH-01 | Resolve camera range estimation | `[!]` BLOCKED | Hardest unsolved problem — single camera cannot give range without stereo or radar. Options: integrate radar, monocular depth estimation, apparent size DB. Must be resolved before Phase 1 starts. |
+| SH-02 | Add Rule 12 (sailing vessels) to COLREGs classifier | `[ ]` | Port/starboard tack, windward/leeward. Requires wind angle input from NMEA. |
+| SH-03 | Add Rule 19 (restricted visibility) mode | `[ ]` | Fog/night detection, speed reduction advisory, fog signal output, suspend Rules 12–18. |
+| SH-04 | Night / low-light camera fallback | `[ ]` | Auto-switch to AIS_ONLY when camera confidence → 0 after sunset or in fog. |
+| SH-05 | Add Rule 18 vessel type hierarchy | `[ ]` | Use AIS vessel type field. Power→Sailing→Fishing→RAM→NUC pecking order. |
+| SH-06 | Spec AIS-camera fusion algorithm | `[ ]` | Association threshold, bearing/position proximity matching, duplicate suppression. |
+| SH-07 | Virtual MMSI expiry logic | `[ ]` | Remove ghost vessels from Signal K when camera loses track. TTL-based cleanup. |
+| SH-08 | Startup health check | `[ ]` | Verify Signal K reachable, GPS fix, AIS receiving before operating. Alert captain if not. |
+| SH-09 | Connect depth sounder to Safety Envelope | `[ ]` | Pipeline from SK depth path into `shallow_water_depth_m` check. |
+| SH-10 | Incident logging spec | `[ ]` | File, format, fields, review UI. Required for post-incident verification. |
+| SH-11 | Phase 1 Shadow Mode build | `[ ]` | Log-only — no alarms, no autopilot. CPA/TCPA + COLREGs classifier working. |
+| SH-12 | Phase 2 Advisory Mode build | `[ ]` | Voice alerts via ai_bridge + AvNav widget. Sea trial validation. |
+| SH-13 | Phase 3 Conflict Solver build | `[ ]` | Multi-vessel graph, non-compliant vessel detection, defensive mode. |
+| SH-14 | Phase 4 pypilot integration | `[ ]` | Only after Phase 2 sea trial confirms advisory accuracy. High risk — do not rush. |
 
 ---
 
