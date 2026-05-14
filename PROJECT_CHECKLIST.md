@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist (Active Items)
-**Version:** 3.2 | **Last Updated:** 2026-05-11 S78 — SafeHelm + d3k-lite concept gauge articles complete
+**Version:** 3.3 | **Last Updated:** 2026-05-12 S79 — WiBoat + SafeHelm integrated architecture complete
 **Archive:** `PROJECT_CHECKLIST_ARCHIVE.md` — all completed work, decisions, and history preserved
 
 > This file contains OPEN, IN-PROGRESS, and BLOCKED items only.
@@ -233,7 +233,7 @@
 | DC-08 | `aao-data.php` — public aggregate JSON API | Claude | `[ ]` |
 | DC-09 | `atmyboat.com/research/index.html` — landing page + download link | Claude | `[ ]` |
 | DC-10 | `atmyboat.com/research/privacy/` — privacy policy page | Claude | `[ ]` |
-| DC-11 | CLAUDE.md template update in `aao-methodology-repo` | Claude | `[ ]` |
+| DC-11 | CLAUDE.md template update in `aao-methodology-repo` | Claude | `[✓]` Done S81 — 3-tier Classification Gate, Atomic Spec, Watchdog, provider-agnostic |
 | DC-12 | `commands/session-close.md` — collector reminder line | Claude | `[ ]` |
 
 ---
@@ -243,6 +243,7 @@
 | # | Item | Status |
 |---|------|--------|
 | AAO-6 | Initialize LLM-Wiki for Helm-OS | `[ ]` Awaiting Don instruction — say "initialize the wiki" to activate |
+| AAO-7 | Update `aao-methodology-repo/SPECIFICATION.md` to formally add Section 23 — Three-Tier Agentic Model / Adaptive Governance Specification Principle (v1.9 README/CLAUDE.md updated S81; SPECIFICATION.md not yet updated) | Claude | `[ ]` |
 | BUG-06 | PWA tier still shows T1 | `[!]` Operator action: (1) Ctrl+Shift+R hard refresh, (2) log out → log in as admin@atmyboat.com (T3), (3) check localStorage `amboat_tier`. Cannot diagnose further without operator confirmation. |
 | SQS | SQS calculation block in CLAUDE.md session-close | `[ ]` Already running correctly — confirm and close |
 | v0.9.4.1 | Blocked on Phase 4 live push for public availability. Code complete on staging. | `[ ]` |
@@ -261,7 +262,7 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| SH-01 | Resolve camera range estimation | `[!]` BLOCKED | Hardest unsolved problem — single camera cannot give range without stereo or radar. Options: integrate radar, monocular depth estimation, apparent size DB. Must be resolved before Phase 1 starts. |
+| SH-01 | Resolve camera range estimation | `[~]` PARTIAL | S79: WiBoat WiFi CSI solves range for non-AIS targets in integrated system (range + bearing from CSI). Camera-only mode remains bearing-only. Integrated SafeHelm+WiBoat resolves L1 limitation — camera targets fuse with WiBoat contacts when within ±15° bearing + ±50m range. No longer blocks Phase 1 start. |
 | SH-02 | Add Rule 12 (sailing vessels) to COLREGs classifier | `[ ]` | Port/starboard tack, windward/leeward. Requires wind angle input from NMEA. |
 | SH-03 | Add Rule 19 (restricted visibility) mode | `[ ]` | Fog/night detection, speed reduction advisory, fog signal output, suspend Rules 12–18. |
 | SH-04 | Night / low-light camera fallback | `[ ]` | Auto-switch to AIS_ONLY when camera confidence → 0 after sunset or in fog. |
@@ -275,6 +276,33 @@
 | SH-12 | Phase 2 Advisory Mode build | `[ ]` | Voice alerts via ai_bridge + AvNav widget. Sea trial validation. |
 | SH-13 | Phase 3 Conflict Solver build | `[ ]` | Multi-vessel graph, non-compliant vessel detection, defensive mode. |
 | SH-14 | Phase 4 pypilot integration | `[ ]` | Only after Phase 2 sea trial confirms advisory accuracy. High risk — do not rush. |
+
+---
+
+## PART 19 — WiBoat + SafeHelm Integrated System (S79 2026-05-12)
+
+**Architecture document:** `C:\Users\donmo\Downloads\wiboat\WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md`
+**Status:** Architecture complete. Phase 1 build not started.
+**Relationship to PART 18:** WiBoat is the sensor layer that integrates with SafeHelm. Architecture supersedes SAFEHELM_SYSTEM_SPEC.md for ports, MMSIs, and API formats.
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| WB-01 | Assign static IP to WiBoat RPi 4B on boat router | `[!]` OPERATOR ACTION | Replace 192.168.1.WB placeholder in all config files. Must happen before any Phase 1 code is written. |
+| WB-02 | Procure WiBoat Phase 1 hardware | `[ ]` | RPi 4B 4GB, 2× ALFA AWUS036NH, 2× 12dBi omni antennas, LMR-400, DC-DC converter, Heltec V3. See BOM in architecture doc §16. |
+| WB-03 | Flash RPi 4B with Bullseye 32-bit, lock kernel 5.10 | `[ ]` | Do NOT run apt upgrade after flash. Kernel must stay 5.10 for nexmon_csi compatibility. |
+| WB-04 | Install nexmon_csi via picsi, confirm CSI packets on UDP :5500 | `[ ]` | Phase 1 gate G1.1 depends on this. |
+| WB-05 | Implement wiboat-processor.py (range only) + WebSocket :8766 | `[ ]` | Phase 1 WiBoat deliverable. IFFT ToF range, Kalman tracker, contact JSON schema. |
+| WB-06 | Connect WiBoat to SafeHelm via LAN — confirm contact feed received | `[ ]` | Phase 1 integration gate G1.3. |
+| WB-07 | Flash Heltec V3, confirm Meshtastic LoRa operation | `[ ]` | Phase 1 gate G1.4. |
+| WB-08 | Phase 1 acceptance gates (all 5) | `[ ]` | G1.1–G1.5 per architecture doc §10. Must all pass before Phase 2. |
+| WB-09 | Phase 2: 2-antenna bearing (MUSIC AoA), marine environment test | `[ ]` | Gate: ±20° at 100m, <30% FP fibreglass at 100m. |
+| WB-10 | Phase 2: SafeHelm advisory mode + WiBoat CPA integration | `[ ]` | Voice alerts, AvNav widget, WiBoat contacts as 998xxxxxx AIS targets. |
+| WB-11 | Phase 2 sea trial (4-hour advisory-only passage) | `[ ]` | HARD GATE: zero false CRITICAL alarms, captain endorsement required. |
+| WB-12 | Phase 3: 4-antenna array, full 360° bearing, batman-adv mesh | `[ ]` | Removes port/starboard ambiguity. Cooperative contacts from nearby WiBoat boats. |
+| WB-13 | Migration Gate 3: bench single-box validation on RPi 5 | `[ ]` | Non-16k kernel + all d3kOS services + WiBoat simultaneously. Must pass before Phase 4. |
+| WB-14 | G3.5 calendar gate: one full sailing season in Phase 2 advisory mode | `[ ]` | HARD GATE — cannot be bypassed. Phase 4 autopilot blocked until complete. |
+| WB-15 | Phase 4: single-box consolidation (ALFA adapters to RPi 5) | `[ ]` | Migration Gate 4. 4-hour shadow run at anchor before sea use. |
+| WB-16 | Phase 4: SafeHelm autopilot (pypilot integration, sea trial) | `[ ]` | Only after WB-14 + WB-15. High risk — see architecture doc §13. |
 
 ---
 
