@@ -1,8 +1,8 @@
 # WiBoat + SafeHelm + Communications
 ## Functional Requirements Document
 
-**Document:** `WIBOAT_SAFEHELM_FRD_v1.1.md`
-**Version:** 1.1
+**Document:** `WIBOAT_SAFEHELM_FRD_v1.2.md`
+**Version:** 1.2
 **Date:** 2026-05-15
 **Status:** Draft — Approved for Development Planning
 **Author:** Skipper Don | AtMyBoat.com
@@ -17,6 +17,7 @@
 |---|---|---|---|
 | 1.0 | 2026-05-15 | Skipper Don / Claude Code | Initial FRD — derived from architecture, business case, NFR, and SafeHelm spec |
 | 1.1 | 2026-05-15 | Skipper Don / Claude Code | Dual-network config confirmed (on-boat 10.42.0.2 / LAN 192.168.1.x); 4-antenna hardware baselined to Phase 1 with SP4T RF switch; G2 resolved; G3 resolved by design; FR-WB-021/022/024 updated to reflect P2 delivery on 4-antenna bearing |
+| 1.2 | 2026-05-15 | Skipper Don / Claude Code | Resolved 12 specification gaps: CSI throughput channel definition (Issue 1); range confidence discard hysteresis (Issue 2); heading freshness timeout and COG fallback hierarchy (Issue 3); IMU-unavailable degraded clutter mode (Issue 4); PIW override path bypassing display thresholds (Issue 5); Kalman stability numeric thresholds (Issue 6); CPA/TCPA mathematical model and polar-to-Cartesian conversion (Issue 7); alarm budget level table (Issue 8); LoRa coordinate encoding format (Issue 9); multistatic batman-adv fusion algorithm (Issue 10); Gemini explanation throttling policy (Issue 11); CBF predictive constraint with vessel dynamics and captain override rules (Issue 12) |
 
 ---
 
@@ -234,9 +235,9 @@ After Migration Gate 3 bench validation passes, all services consolidate onto a 
 
 **FR-WB-001 [P1]** The system shall extract Channel State Information (CSI) from the Raspberry Pi 4B internal BCM43455 WiFi chip using nexmon_csi firmware patch, operating in monitor mode on 2.4 GHz channel 6 (configurable).
 
-**FR-WB-002 [P1]** The system shall output raw CSI packets as UDP datagrams on localhost:5500 at a minimum rate of 100 packets per second per channel.
+**FR-WB-002 [P1]** The system shall output raw CSI packets as UDP datagrams on localhost:5500 at a minimum rate of 100 packets per second per logical antenna channel. Definition of "channel": one physical antenna position in the sequential SP4T switching cycle. With 4-antenna UCA and equal dwell time per position, total nexmon_csi output shall be ≥ 400 pps (100 pps × 4 antenna positions). In Phase 1 single-antenna mode (before SP4T activation), total output shall be ≥ 100 pps. The per-channel rate governs MUSIC input quality; the total rate governs watchdog thresholds (see FR-WB-003).
 
-**FR-WB-003 [P1]** If CSI throughput drops below 80 packets per second for more than 3 consecutive seconds, the system shall set sensor mode to DEGRADED_SENSING and notify the SafeHelm sensor hub.
+**FR-WB-003 [P1]** If CSI throughput drops below the degraded threshold for more than 3 consecutive seconds, the system shall set sensor mode to DEGRADED_SENSING and notify the SafeHelm sensor hub. Degraded threshold: Phase 1 (single-antenna): < 80 pps total. Phase 2+ (4-antenna SP4T): < 320 pps total (equivalent to < 80 pps on any single antenna channel). The per-channel floor of 80 pps applies regardless of phase.
 
 **FR-WB-004 [P1]** The nexmon_csi service shall be managed by systemd with `Restart=on-failure`. Recovery from a crash shall complete within 5 seconds without OS reboot.
 
@@ -252,7 +253,7 @@ After Migration Gate 3 bench validation passes, all services consolidate onto a 
 
 **FR-WB-012 [P1]** Range accuracy shall be validated against a known 1 m² aluminium reflector at 10 m, 25 m, and 50 m. Acceptance criterion: ±5 m at 50 m range.
 
-**FR-WB-013 [P1]** Range confidence shall be expressed as a float 0.0–1.0, decaying with weak CSI signal strength. A range confidence below 0.30 shall result in the contact being discarded.
+**FR-WB-013 [P1]** Range confidence shall be expressed as a float 0.0–1.0, decaying with weak CSI signal strength. A contact shall not be discarded on a single low-confidence measurement. Discard requires range confidence below 0.30 for **3 or more consecutive processing frames**. On discard: the associated Kalman filter state shall be reset and the track closed. The contact may be re-acquired as a new track if signal recovers. Range confidence below 0.30 applies before classification — a contact that fails this threshold does not proceed to the TFLite classifier and does not increment classification confidence scores. The temporal hysteresis prevents transient multipath nulls from generating spurious track loss events.
 
 **FR-WB-014 [P1]** Range noise floor, minimum detectable range, and maximum reliable range shall be documented in the Phase 1 validation report.
 
@@ -264,7 +265,15 @@ After Migration Gate 3 bench validation passes, all services consolidate onto a 
 
 **FR-WB-022 [P2]** The system shall use Unitary Root MUSIC on the 4-channel UCA (antennas sampled sequentially via SP4T RF switch at BCM43455 input). Bearing accuracy shall be validated at ±15° from all four quadrants (forward, aft, port, starboard). At marine target speeds (≤20 kts / 10 m/s), the 40 ms inter-antenna sampling interval introduces ≤0.4 m target displacement — within the ±15° bearing accuracy budget at ranges ≥ 30 m.
 
-**FR-WB-023 [P2]** Bearing requires own vessel heading from Signal K (path: `vessels.self.navigation.headingTrue`). If Signal K heading is unavailable, `bearing_deg_true` shall be set to null and `bearing_confidence` to 0.0. The contact shall be treated as range-only. This degradation shall be logged and displayed.
+**FR-WB-023 [P2]** Bearing requires own vessel heading resolved via the following fallback hierarchy:
+
+1. **Primary:** `vessels.self.navigation.headingTrue` from Signal K. Fresh if data age ≤ 5 seconds.
+2. **Fallback:** `vessels.self.navigation.courseOverGroundTrue` (COG) from Signal K — used only when `headingTrue` is stale (> 5 seconds old) AND own vessel SOG ≥ 1.0 kt. COG is an acceptable heading proxy when making way; it is unreliable at low speed or when stopped.
+3. **Degraded:** If neither `headingTrue` nor COG qualifies, `bearing_deg_true` shall be set to null and `bearing_confidence` to 0.0.
+
+A heading source is considered stale after **5 seconds** without a fresh Signal K update. Stale heading shall be logged once per 30-second interval to avoid log flooding. When operating on COG fallback, `bearing_source` in the contact JSON shall be set to `"cog_fallback"` to distinguish from compass heading.
+
+Range-only contacts (`bearing_deg_true = null`) **shall not enter CPA/TCPA computation**. They trigger proximity-by-distance alerts only (per FR-SH-043). This prevents false COLREGs advisories from contacts with no angular position information.
 
 **FR-WB-024 [P2]** Phase 2 shall validate 360° bearing coverage by testing bearing accuracy from all four quadrants (forward, aft, port, starboard). Hardware is installed from Phase 1; this validation is part of the Phase 2 sea trial gate.
 
@@ -274,7 +283,11 @@ After Migration Gate 3 bench validation passes, all services consolidate onto a 
 
 **FR-WB-031 [P2]** The system shall apply a bandpass wave frequency filter rejecting oscillations in the 0.1–0.5 Hz range (wave-induced CSI fluctuation). Filter bounds shall be configurable.
 
-**FR-WB-032 [P2]** The system shall implement ego-motion compensation: pitch and roll data from the IMU (when available via Signal K) and own-vessel speed from GPS shall be used to de-trend CSI phase shifts caused by own-vessel motion.
+**FR-WB-032 [P2]** The system shall implement ego-motion compensation using a two-tier approach based on IMU availability:
+
+**Tier A — Full compensation (IMU available):** Pitch and roll data from the IMU (via Signal K) plus own-vessel speed and COG from GPS are used to de-trend CSI phase shifts caused by own-vessel motion. This is the target operating state.
+
+**Tier B — Degraded compensation (IMU unavailable, G5 not resolved):** When IMU data is absent or stale (> 3 seconds), the system shall operate in `DEGRADED_CLUTTER` mode. Own-vessel speed and COG from GPS provide partial velocity de-trending for forward motion only. Pitch and roll compensation is suspended. The wave frequency bandpass filter (FR-WB-031) remains active as the primary clutter suppressor. The system shall log `IMU_UNAVAILABLE` and set `ego_motion_mode: "gps_only"` in the health API response (FR-WB-062). DEGRADED_CLUTTER mode does not suspend sensing — it reduces clutter discrimination accuracy. This is an acceptable Phase 2 operating state until G5 is resolved.
 
 **FR-WB-033 [P2]** The system shall implement sea clutter discrimination using an LSTM-based spatial-temporal stationarity filter. Waves are temporally stationary (rhythmic oscillation); vessels are spatially mobile (linear vector). This distinction shall reduce false alarm rate to below 30% in Beaufort 4 sea state.
 
@@ -290,6 +303,15 @@ After Migration Gate 3 bench validation passes, all services consolidate onto a 
 - ≥ 0.70: contact enters COLREGs engine; classification label displayed
 - 0.40–0.69: contact displayed with UNCERTAIN marker; does not trigger COLREGs rule
 - < 0.40: contact logged but not displayed; contributes to post-voyage training data
+
+**FR-WB-043a [P2] — PIW Override Path (Exception to FR-WB-043):** When the TFLite classifier returns `person_in_water` at **any confidence level**, including below 0.40, the PIW override path activates unconditionally:
+- The contact **bypasses** the display confidence threshold — it is displayed with the MOB/PIW symbol regardless of composite_confidence
+- The contact **bypasses** the COLREGs entry threshold — it enters the CRITICAL alert path directly
+- A CRITICAL voice advisory is issued immediately (FR-SH-060, FR-DK-031)
+- The alarm budget exemption applies (FR-SH-061)
+- The Gemini confidence breakdown shall include the word "LOW CONFIDENCE PIW DETECTION" when composite_confidence < 0.40, so the captain can make an informed judgment
+
+Rationale: the cost of a false alarm is a brief slow-down. The cost of a suppressed PIW detection is a life. These thresholds must never be applied symmetrically to PIW. A PIW at 0.05 confidence is always worth acting on.
 
 **FR-WB-044 [P2]** For contacts within 40 m, classification confidence of ≥ 0.95 shall be the Phase 5 target. Contacts within 40 m below 0.70 confidence shall trigger a proximity alert regardless of classification.
 
@@ -309,7 +331,20 @@ After Migration Gate 3 bench validation passes, all services consolidate onto a 
 
 **FR-WB-050 [P1]** The system shall maintain a Kalman filter per active contact, tracking position, velocity (range rate), and heading rate over time.
 
-**FR-WB-051 [P1]** A contact shall be marked `kalman_stable: true` when the Kalman filter has converged on at least 3 consistent observations.
+**FR-WB-051 [P1]** A contact shall be marked `kalman_stable: true` when the Kalman filter has received at least 3 consecutive observations within a 500 ms rolling window that satisfy all of the following numeric consistency thresholds:
+
+| Metric | Threshold | Rationale |
+|---|---|---|
+| Range variance across 3-frame window | ≤ 15 m² (±3.9 m RMS) | Rejects multipath spikes and target jump artifacts |
+| Bearing variance across 3-frame window | ≤ 100 °² (±10° RMS) | Consistent with MUSIC accuracy spec at range ≥ 30 m |
+| Time window | All 3 observations within 500 ms | Prevents stale frames from satisfying stability |
+
+"Consistent" means all three observations fall within these bounds simultaneously. A single outlier in any metric resets the convergence counter to zero.
+
+Stability state management:
+- `kalman_stable` resets to `false` on contact dropout (5 consecutive missing frames per FR-WB-052); re-acquisition starts a fresh convergence count
+- Classification confidence does not affect stability — stability is a geometric tracking property only
+- Phase 1: bearing variance threshold applies only once MUSIC is active (Phase 2); in Phase 1 (range-only), only range variance and time window apply
 
 **FR-WB-052 [P1]** A contact that does not appear in 5 consecutive processing frames (500 ms) shall be removed from the active contact list and its track closed.
 
@@ -400,7 +435,26 @@ SafeHelm is organized as a 7-layer stack per `SAFEHELM_SYSTEM_SPEC.md`. This sec
 - Give-way / stand-on status based on relative bearing and vessel type
 - Recommended action: course change (degrees, port or starboard), speed reduction, or no action required
 
-**FR-SH-042 [P2]** CPA/TCPA for WiBoat contacts shall use `range_rate_ms` (range closing rate) plus bearing rate-of-change across frames. CPA/TCPA computation for WiBoat contacts shall only execute when `kalman_stable == true` AND `composite_confidence >= 0.50`. Below this threshold, a proximity alert by distance is used instead.
+**FR-SH-042 [P2]** CPA/TCPA for WiBoat contacts shall use the following mathematical model:
+
+**Coordinate conversion (polar → Cartesian):**
+Own vessel is the Cartesian origin (0, 0). Contact polar coordinates (range_m, bearing_deg_true) are converted to Cartesian (x, y) at each frame:
+```
+x = range_m × sin(bearing_rad)
+y = range_m × cos(bearing_rad)
+```
+
+**Relative velocity estimation:**
+Own vessel velocity vector (Vx_own, Vy_own) is derived from SOG and COG from Signal K. Contact velocity vector (Vx_c, Vy_c) is estimated from the Cartesian position change across the last 3 stable Kalman frames divided by elapsed time. Relative velocity: (Vx_rel, Vy_rel) = (Vx_c − Vx_own, Vy_c − Vy_own).
+
+**CPA and TCPA:**
+Using standard linear CPA algebra on the relative position and relative velocity vectors. TCPA = − (P · V) / |V|² where P is relative position vector and V is relative velocity vector. CPA = |P + V × TCPA|. If TCPA < 0, vessels are already diverging — no action required.
+
+**Bearing confidence guard:** When `bearing_confidence < 0.50`, bearing rate-of-change is unreliable. In this case, CPA/TCPA computation is suspended and proximity-by-distance alert (FR-SH-043) is used instead.
+
+**Range-only contacts:** Contacts with `bearing_deg_true = null` do not enter CPA/TCPA computation. Proximity-by-distance alert only.
+
+**Execution gate:** CPA/TCPA computation runs only when `kalman_stable == true` AND `composite_confidence >= 0.50` AND `bearing_deg_true != null` AND `bearing_confidence >= 0.50`.
 
 **FR-SH-043 [P2]** Proximity alert thresholds (applied when CPA/TCPA not computable):
 - Contact within 200 m: WARNING level alert
@@ -428,7 +482,22 @@ SafeHelm is organized as a 7-layer stack per `SAFEHELM_SYSTEM_SPEC.md`. This sec
 
 **FR-SH-060 [P2]** All advisories shall be delivered via the d3kOS Helm voice system (POST to ai_bridge :3002/webhook/alert). CRITICAL level alerts shall additionally use direct espeak-ng subprocess call to bypass any mute state.
 
-**FR-SH-061 [P2]** The alarm budget shall not exceed 6 actionable warnings per hour during normal operation. After 6 warnings, the system shall enter QUIET mode for 2 minutes before re-enabling non-critical alerts. CRITICAL alerts (CPA < 100 m, PIW detection, BLIND mode) are exempt from the alarm budget.
+**FR-SH-061 [P2]** The alarm budget shall not exceed 6 actionable warnings per hour during normal operation. After 6 warnings, the system shall enter QUIET mode for 2 minutes before re-enabling non-critical alerts.
+
+The following table defines which advisory levels increment the alarm budget counter:
+
+| Advisory Level | Increments Budget | Notes |
+|---|---|---|
+| INFO | No | Situational awareness only — no action required |
+| ADVISORY | No | Monitoring only — does not constitute an actionable warning |
+| WARNING | **Yes** | Requires action; increments counter |
+| HIGH | **Yes** | Requires prompt action; increments counter |
+| CRITICAL | No — **Exempt** | Always delivered; never suppressed by QUIET mode |
+| SYSTEM | No | Sensor/mode status — not an actionable warning |
+
+**Repeated alert rule:** A repeated alert for the same `contact_id` within the 2-minute dismiss window (FR-SH-064) does not increment the budget counter. The counter increments only on first delivery of a WARNING or HIGH alert for a given contact within the dismiss window. If CPA reduces by more than 20% after dismissal, re-delivery is treated as a new event and increments the counter.
+
+**PIW exemption:** PIW alerts are CRITICAL level — exempt from the budget and never suppressed by QUIET mode.
 
 **FR-SH-062 [P2]** Every advisory shall include:
 - What was detected (object type, range, bearing)
@@ -444,7 +513,15 @@ SafeHelm is organized as a 7-layer stack per `SAFEHELM_SYSTEM_SPEC.md`. This sec
 
 ### 6.7 Layer 7 — Safety Envelope
 
-**FR-SH-070 [P4]** Control Barrier Functions (CBF) shall enforce hard constraints on autopilot commands. The CBF shall veto any course command that would bring CPA below the configured minimum safe distance (default: 50 m).
+**FR-SH-070 [P4]** Control Barrier Functions (CBF) shall enforce hard constraints on autopilot commands. The CBF shall veto any course command that would bring **predicted future CPA** below the configured minimum safe distance (default: 50 m).
+
+**Predictive evaluation:** CBF operates on future CPA, not instantaneous CPA. For each proposed autopilot command (heading change), the CBF simulates the resulting vessel trajectory using the vessel dynamics model (FR-SH-031) and computes the predicted CPA against all active contacts. The prediction horizon is the greater of: 3 × own vessel stopping distance at current speed, or 2 minutes. If the predicted CPA under the proposed command falls below the safety margin, the command is vetoed and an alternative minimum-deviation heading is computed that satisfies the constraint.
+
+**Vessel dynamics integration:** Turn radius and stopping distance at current speed (from `safehelm-config.json`, FR-SH-031) are used to compute the achievable trajectory. A command that physically cannot be completed within the prediction horizon is treated as a straight-line trajectory at current heading for the inertial segment.
+
+**Captain EXECUTE override:** When the captain taps EXECUTE on an advisory, the recommended heading is permitted even if it would reduce CPA below the configured safety margin, provided the heading does not violate the **absolute hard floor: CPA < 10 m**. The 10 m hard floor is not configurable and cannot be overridden by any software command. Only physical helm input (FR-SH-071) bypasses CBF entirely.
+
+**CBF scope:** CBF applies to autopilot commands only (Phase 4). It does not constrain manual helming. The captain retains full authority at the physical helm at all times.
 
 **FR-SH-071 [P4]** Physical helm input (any change in wheel or tiller position) shall disengage SafeHelm autopilot mode immediately and unconditionally. This is a hardware-level override; it shall not be bypassable in software.
 
@@ -683,7 +760,27 @@ This section defines the advisory text, trigger conditions, priority, and recomm
 
 **FR-CM-013 [P2]** LoRa vessels shall be tracked at MONITOR priority only in SafeHelm. Their update rate (~60 s) is too slow for CPA/TCPA computation. They shall appear on the chart but shall not trigger CRITICAL alarms. This is by design — long-range awareness, not collision avoidance.
 
-**FR-CM-014 [P2]** Hazard alerts detected by WiBoat shall be broadcast over the LoRa mesh with: object type, relative GPS coordinates (derived from own position), confidence score, and timestamp. Raw CSI data and vessel identity shall never be transmitted over the mesh.
+**FR-CM-014 [P2]** Hazard alerts detected by WiBoat shall be broadcast over the LoRa mesh with: object type, hazard coordinates (encoded as bearing/range per the format below), confidence score, and timestamp. Raw CSI data and vessel identity shall never be transmitted over the mesh.
+
+**Hazard coordinate encoding format:**
+```json
+{
+  "object_type": "deadhead",
+  "bearing_deg": 127,
+  "range_m": 85,
+  "confidence": 0.81,
+  "ts_utc": 1747350412
+}
+```
+- `bearing_deg`: integer, 0–359 degrees true (relative to transmitting vessel's heading at time of detection)
+- `range_m`: integer, metres
+- `ts_utc`: Unix epoch seconds UTC
+
+**Receiving vessel transform:** The receiving vessel converts the hazard to its own reference frame using: absolute hazard position = transmitting vessel position + bearing/range vector, then converts to bearing/range from own position. The receiving vessel must have a valid GPS fix to perform this transform.
+
+**Timestamp drift tolerance:** ±30 seconds between nodes. Meshtastic nodes use GPS-disciplined clock when a GPS fix is available; NTP otherwise. Alerts older than 5 minutes shall be discarded as stale and not displayed.
+
+**Privacy rationale:** Bearing/range encoding avoids transmitting own vessel's absolute GPS position over the mesh.
 
 **FR-CM-015 [P2]** Received hazard alerts from other mesh vessels shall be displayed in AvNav as a shared hazard layer. A received alert shall display: source vessel (node ID only, anonymized), hazard type, coordinates, age of detection. Received alerts shall not trigger voice advisories unless the hazard is within 1 nm of own vessel.
 
@@ -695,7 +792,26 @@ This section defines the advisory text, trigger conditions, priority, and recomm
 
 **FR-CM-020 [P3]** When two or more WiBoat-equipped vessels are within 500 m, their 5 GHz WiFi adapters shall form a batman-adv mesh network automatically.
 
-**FR-CM-021 [P3]** In cooperative mesh mode, the WiBoat contact lists from both vessels shall be merged. A contact visible to both vessels shall gain elevated confidence (multistatic confirmation). Each contact in the merged list shall carry a `source_node_id` field identifying which vessel detected it.
+**FR-CM-021 [P3]** In cooperative mesh mode, the WiBoat contact lists from multiple vessels shall be merged using the following algorithm:
+
+**Contact matching criteria** (two contacts are considered the same physical target when ALL of the following hold):
+- Bearing deviation: ≤ 25° between the bearing vectors resolved to a common reference frame
+- Range deviation: ≤ 50 m from the AIS-derived or GPS-derived position of each node
+- Classification agreement: same class, OR at least one contact is classified `unknown`
+- Time difference: observations within ≤ 2 seconds of each other
+
+**Merge result:**
+- `range_m`: weighted mean, weight = range_confidence of each node
+- `bearing_deg_true`: weighted mean, weight = bearing_confidence of each node
+- `classification`: class with higher confidence score; if both have equal confidence, the node with more Kalman-stable frames wins
+- `composite_confidence`: `min(1.0, c_node1 + c_node2 × 0.30)` — multistatic bonus of 30% of the second node's confidence, capped at 1.0
+- `source_node_ids`: array of all contributing node IDs (e.g., `["node_A", "node_B"]`)
+
+**No-match (separate tracks):** If bearing deviation > 25° or range deviation > 50 m, the contacts are maintained as independent tracks. They are not merged.
+
+**Classification contradiction:** If two contacts match spatially (bearing ≤ 25°, range ≤ 50 m) but have contradictory classifications each with composite_confidence > 0.60 (e.g., node A says `vessel`, node B says `deadhead`), the contacts shall be flagged as `TRACKING_CONFLICT`, both tracks retained, and a SYSTEM advisory issued: "Contact classification conflict between sensors — monitor manually."
+
+**Kalman state fusion:** Each node independently maintains its Kalman filter. The merged contact uses innovation-weighted combination of the two Kalman estimates. `kalman_stable` in the merged contact requires both source nodes to independently report `kalman_stable: true` before the merged track is considered stable.
 
 **FR-CM-022 [P3]** batman-adv mesh topology shall be self-healing. Vessels entering and leaving the mesh shall not require configuration changes.
 
@@ -734,6 +850,28 @@ The AI quality layer comprises three distinct functions with separate latency an
 **FR-AI-024 [P2]** If the Gemini proxy is offline or returns an error, the advisory shall still be delivered without the explanation. The system shall not block on AI explanation availability.
 
 **FR-AI-025 [P2]** The Gemini explanation layer shall also respond to Helm voice queries about WiBoat status (see Section 10.4).
+
+**FR-AI-026 [P2] — Gemini Explanation Throttling Policy:** The following rules govern query rate to the Gemini proxy (port 8097):
+
+**Rate limit:** Maximum **4 explanation queries per 60-second rolling window**. This applies across all contacts and advisory events combined.
+
+**Queue behaviour:** When the rate limit is reached, additional qualifying queries are placed in a priority queue. Queue ordering:
+
+| Priority | Advisory Level / Event |
+|---|---|
+| 1 (highest) | CRITICAL alerts, PIW detections |
+| 2 | HIGH advisories |
+| 3 | WARNING advisories |
+| 4 | New contacts ≥ 0.70 confidence |
+| 5 (lowest) | ADVISORY level, confidence 0.70–0.79 |
+
+Maximum queue depth: 8 pending queries. When queue is full, the lowest-priority pending query is dropped and logged as `EXPLANATION_DROPPED`.
+
+**Caching:** If the same `contact_id` generates a new advisory within 10 minutes, and the classification type and confidence tier (≥0.70, 0.40–0.69) are unchanged, the prior explanation is reused without a new Gemini query. Cache key: `contact_id + classification_type + confidence_tier`. Cache TTL: 10 minutes.
+
+**Low-priority deferral:** Priority 5 queries (ADVISORY, confidence 0.70–0.79) are deferred until the queue has been empty for ≥ 5 seconds. If the queue remains busy for > 60 seconds, the low-priority explanation is skipped and logged as `EXPLANATION_SKIPPED`. The advisory itself is still delivered without the explanation.
+
+**Burst scenario:** If 20 qualifying contacts appear within one processing cycle (e.g., entering a busy harbour), the throttle queue accepts the highest-priority 8 and drops the rest. The captain receives advisories for all contacts immediately; explanations are delivered as queue capacity allows.
 
 ### 9.3 Post-Voyage Optimization — Gemini Pro (Async, cloud)
 
@@ -1050,7 +1188,7 @@ These are unresolved at FRD v1.0. Each must be resolved before the phase indicat
 | G2 | ~~WiBoat static IP not yet assigned~~ **RESOLVED 2026-05-15** | Resolved | On-boat IP confirmed: `10.42.0.2` (hardcoded). LAN/dev network: `192.168.1.x`. See Section 4.2 and FR-DK-011. |
 | G3 | ~~Port/starboard bearing ambiguity in 2-antenna (Phase 1–2)~~ **RESOLVED BY DESIGN** | Phase 1 hardware | 4-antenna UCA with SP4T RF switch installed from Phase 1. Bearing ambiguity eliminated by Phase 2 MUSIC activation. No forward-looking assumption required. See FR-WB-021, FR-WB-022. |
 | G4 | Waterlogged wood dielectric contrast vs. seawater at 2.4 GHz | Before P2 classification | Marine environment test data required |
-| G5 | IMU signal path to WiBoat processor not implemented | Before P2 | Signal K IMU → WiBoat heading compensation |
+| G5 | IMU signal path to WiBoat processor not implemented | Before P2 | Signal K IMU → WiBoat heading compensation. **v1.2:** FR-WB-032 Tier B degraded mode documented — GPS-only de-trending operational pending IMU path resolution |
 | G6 | WiBoat CPU budget on RPi 5 (Phase 4) unvalidated | Before P4 | Migration Gate 3 resolves |
 | G7 | 5 GHz adapter for batman-adv mesh not in Phase 1–2 BOM | Before P3 | Budget and procure for Phase 3 |
 | G8 | Rain/spray WiFi range degradation unquantified | Phase 2 report | Marine environment test characterizes |
@@ -1097,7 +1235,7 @@ These are unresolved at FRD v1.0. Each must be resolved before the phase indicat
 
 ---
 
-*WiBoat + SafeHelm Functional Requirements Document v1.1*
+*WiBoat + SafeHelm Functional Requirements Document v1.2*
 *2026-05-15 | Skipper Don | AtMyBoat.com*
 *Source documents: WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md v1.0 · SAFEHELM_SYSTEM_SPEC.md v1.0 · nfr wiboat.odt · WiBoat_SafeHelm_Business_Case.docx · wifi_marine_radar_RD_framework.md v0.1 · wiboat review of integration.odt · WiFi can identify object types.odt*
 *Temporary location: C:\Users\donmo\Downloads\wiboat\ — to be relocated to Helm-OS project directory in a future session*
