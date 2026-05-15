@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist (Active Items)
-**Version:** 3.3 | **Last Updated:** 2026-05-12 S79 — WiBoat + SafeHelm integrated architecture complete
+**Version:** 3.4 | **Last Updated:** 2026-05-15 S82 — WiBoat FRD v1.1, BOM v2.0, docs relocated to Helm-OS; WB-01/02/09/12 updated
 **Archive:** `PROJECT_CHECKLIST_ARCHIVE.md` — all completed work, decisions, and history preserved
 
 > This file contains OPEN, IN-PROGRESS, and BLOCKED items only.
@@ -281,24 +281,26 @@
 
 ## PART 19 — WiBoat + SafeHelm Integrated System (S79 2026-05-12)
 
-**Architecture document:** `C:\Users\donmo\Downloads\wiboat\WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md`
-**Status:** Architecture complete. Phase 1 build not started.
+**Architecture document:** `deployment/docs/wiboat/WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md` (moved from Downloads S82)
+**FRD:** `deployment/docs/wiboat/WIBOAT_SAFEHELM_FRD_v1.1.md` (v1.1 S82 — dual-network, 4-antenna Phase 1)
+**BOM:** `deployment/docs/wiboat/WiBoat_BOM_v2.md` (v2.0 S82 — 4-antenna + SP4T switch, $565–$868 CAD)
+**Status:** Architecture + FRD + BOM complete. Phase 1 build not started.
 **Relationship to PART 18:** WiBoat is the sensor layer that integrates with SafeHelm. Architecture supersedes SAFEHELM_SYSTEM_SPEC.md for ports, MMSIs, and API formats.
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| WB-01 | Assign static IP to WiBoat RPi 4B on boat router | `[!]` OPERATOR ACTION | Replace 192.168.1.WB placeholder in all config files. Must happen before any Phase 1 code is written. |
-| WB-02 | Procure WiBoat Phase 1 hardware | `[ ]` | RPi 4B 4GB, 2× ALFA AWUS036NH, 2× 12dBi omni antennas, LMR-400, DC-DC converter, Heltec V3. See BOM in architecture doc §16. |
+| WB-01 | Assign static IP `10.42.0.2` to WiBoat RPi 4B on boat router; confirm RPi 5 on-boat IP | `[!]` OPERATOR ACTION | IP confirmed S82: `10.42.0.2` on-boat. Must assign on boat router. Also confirm RPi 5 on-boat IP (`10.42.0.1` is placeholder in FRD). Must happen before Phase 1 code. |
+| WB-02 | Procure WiBoat Phase 1 hardware | `[ ]` | BOM v2.0 ready: RPi 4B 4GB, 2× ALFA AWUS036NH, 4× 12dBi omni antennas, 1× SP4T RF switch, LMR-400, Heltec V3. Est. $565–$868 CAD. See `deployment/docs/wiboat/WiBoat_BOM_v2.md`. |
 | WB-03 | Flash RPi 4B with Bullseye 32-bit, lock kernel 5.10 | `[ ]` | Do NOT run apt upgrade after flash. Kernel must stay 5.10 for nexmon_csi compatibility. |
 | WB-04 | Install nexmon_csi via picsi, confirm CSI packets on UDP :5500 | `[ ]` | Phase 1 gate G1.1 depends on this. |
 | WB-05 | Implement wiboat-processor.py (range only) + WebSocket :8766 | `[ ]` | Phase 1 WiBoat deliverable. IFFT ToF range, Kalman tracker, contact JSON schema. |
 | WB-06 | Connect WiBoat to SafeHelm via LAN — confirm contact feed received | `[ ]` | Phase 1 integration gate G1.3. |
 | WB-07 | Flash Heltec V3, confirm Meshtastic LoRa operation | `[ ]` | Phase 1 gate G1.4. |
 | WB-08 | Phase 1 acceptance gates (all 5) | `[ ]` | G1.1–G1.5 per architecture doc §10. Must all pass before Phase 2. |
-| WB-09 | Phase 2: 2-antenna bearing (MUSIC AoA), marine environment test | `[ ]` | Gate: ±20° at 100m, <30% FP fibreglass at 100m. |
+| WB-09 | Phase 2: 4-antenna bearing (MUSIC AoA via SP4T switch), marine environment test | `[ ]` | Updated S82: hardware Phase 1, software Phase 2. Gate: ±15° at 100m (4-antenna UCA, no port/starboard ambiguity). |
 | WB-10 | Phase 2: SafeHelm advisory mode + WiBoat CPA integration | `[ ]` | Voice alerts, AvNav widget, WiBoat contacts as 998xxxxxx AIS targets. |
 | WB-11 | Phase 2 sea trial (4-hour advisory-only passage) | `[ ]` | HARD GATE: zero false CRITICAL alarms, captain endorsement required. |
-| WB-12 | Phase 3: 4-antenna array, full 360° bearing, batman-adv mesh | `[ ]` | Removes port/starboard ambiguity. Cooperative contacts from nearby WiBoat boats. |
+| WB-12 | Phase 3: 360° bearing validation, batman-adv cooperative mesh | `[ ]` | Updated S82: 4-antenna hardware is Phase 1 (no longer a Phase 3 upgrade). Phase 3 = full-quadrant validation testing + batman-adv mesh only. |
 | WB-13 | Migration Gate 3: bench single-box validation on RPi 5 | `[ ]` | Non-16k kernel + all d3kOS services + WiBoat simultaneously. Must pass before Phase 4. |
 | WB-14 | G3.5 calendar gate: one full sailing season in Phase 2 advisory mode | `[ ]` | HARD GATE — cannot be bypassed. Phase 4 autopilot blocked until complete. |
 | WB-15 | Phase 4: single-box consolidation (ALFA adapters to RPi 5) | `[ ]` | Migration Gate 4. 4-hour shadow run at anchor before sea use. |

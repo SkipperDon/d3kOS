@@ -4824,3 +4824,109 @@ human_verified         : 0
 - Rule 12 / Rule 19 not yet designed
 
 ---
+
+## S82 — 2026-05-15
+**Goal:** WiBoat + SafeHelm FRD v1.1 update (dual-network, 4-antenna Phase 1 baseline, IP confirmed); BOM v2.0 creation; permanent document home in Helm-OS
+
+**Completed:**
+- **FRD v1.1** — Updated `WIBOAT_SAFEHELM_FRD_v1.0.md` to v1.1 (9 targeted edits):
+  - Dual-network config added throughout: on-boat `10.0.0.0/24` (WiBoat `10.42.0.2` hardcoded), LAN/dev `192.168.1.x` with `WIBOAT_HOST` env override
+  - 4-antenna UCA with SP4T GPIO-controlled RF switch baselined to Phase 1 hardware (was Phase 3 upgrade path)
+  - FR-WB-021/022/024 moved P3 → P2 (hardware available Phase 1, bearing software activated Phase 2)
+  - G2 marked RESOLVED: static IP confirmed `10.42.0.2`
+  - G3 marked RESOLVED BY DESIGN: 4-antenna UCA eliminates port/starboard bearing ambiguity from Phase 2
+  - Phase Reference Key updated; Phase Applicability Matrix updated
+  - Dependencies table updated: 4× antennas + SP4T switch from Phase 1; 2× ALFA TX injectors from Phase 1
+  - Revision History updated with v1.1 entry
+- **BOM v2.0** — Created `WiBoat_BOM_v2.md` (new file, replaces .docx v1.0):
+  - 4-antenna UCA from Phase 1 (was 2-antenna P1, 4-antenna P3 upgrade)
+  - SP4T RF switch (GPIO-controlled) enables 4-channel time-multiplexed CSI on single BCM43455
+  - Both ALFA AWUS036NH TX injectors from Phase 1 for full azimuthal probe coverage
+  - Phase 1 cost estimate: $565–$868 CAD (revised from ~$456–$712)
+  - EIRP limit documented and flagged: ALFA at full power (30 dBm) + 12 dBi = 40.5 dBm EXCEEDS ISED limit; fix: set TX power to 21 dBm
+  - Complete GPIO wiring guide, SP4T part options, UCA layout, assembly sequence
+  - Network config section with /etc/dhcpcd.conf and wiboat-config.json examples
+- **Permanent document home** — All engineering deliverables moved from `Downloads\wiboat\` (temp) to Helm-OS project:
+  - `deployment/docs/wiboat/WIBOAT_SAFEHELM_FRD_v1.1.md`
+  - `deployment/docs/wiboat/WiBoat_BOM_v2.md`
+  - `deployment/docs/wiboat/WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md`
+  - `deployment/docs/wiboat/wifi_marine_radar_RD_framework.md`
+  - `deployment/docs/wiboat/diagrams/` — 3 SVG architecture diagrams
+  - `deployment/docs/safehelm/SAFEHELM_SYSTEM_SPEC.md`
+- **DEPLOYMENT_INDEX.md** updated with WiBoat + SafeHelm section (8 new entries)
+- **Committed** — commit `2f1008d` — 11 files, 5,317 insertions
+
+**Decisions:**
+- SP4T RF switch approach chosen for 4-channel CSI: single BCM43455 cycles through 4 antenna ports via GPIO — no 2nd RPi 4B required. At marine speeds (≤10 m/s), 40 ms inter-antenna sampling introduces ≤0.4 m displacement — within ±15° accuracy budget at ≥30 m range.
+- BOM created as `.md` not `.docx` — docx binary editing unsafe from WSL; .md is maintainable and version-controlled
+- `WIBOAT_HOST` env var pattern chosen for network switching — avoids editing config files when switching between on-boat (10.x.x.x) and LAN/dev (192.168.1.x) environments
+
+**No Pi deploy. No HostPapa deploy. No git push.**
+
+**Pending:**
+- WB-01 still open: operator must assign static IP `10.42.0.2` on boat router before Phase 1 code
+- WB-02: hardware procurement not started (BOM now complete — ready to order)
+- FRD still in Downloads as `WIBOAT_SAFEHELM_FRD_v1.0.md` (filename not renamed in Downloads — canonical copy is in Helm-OS as v1.1)
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- FRD updated to v1.1 — dual-network, 4-antenna Phase 1 baseline, G2+G3 resolved
+- BOM v2.0 created — 4-antenna + SP4T switch + full assembly guide
+- All engineering docs relocated to permanent Helm-OS project home
+- DEPLOYMENT_INDEX.md updated with WiBoat+SafeHelm section
+
+NOT COMPLETED / DEFERRED:
+- WB-01 (static IP on boat router) — operator action, cannot be done by Claude
+- WB-02 (hardware procurement) — operator action
+- Phase 1 code build — not started; design and requirements phase complete this session
+- BUG-08, DEP13, DEP17 — pre-existing open items, no work this session
+
+KNOWN GAPS OR UNCERTAINTIES:
+- D3kOS RPi 5 on-boat IP is `10.42.0.1` in FRD examples — operator must confirm actual address assigned on boat router
+- SP4T RF switch timing compatibility with nexmon_csi packet rate not bench-validated — assumption based on published research; needs Phase 1 hardware test
+- EIRP calculation assumes 4m LMR-400 cable loss at 1.5 dB/4m — actual loss depends on cable quality; must verify before on-water deployment
+
+OPERATOR ACTIONS REQUIRED:
+- OIC assessment before session formally closed
+- Assign static IP `10.42.0.2` to WiBoat RPi 4B on boat router (WB-01)
+- Confirm RPi 5 on-boat IP that `10.42.0.1` placeholder should become
+- Hardware procurement decision (BOM v2.0 ready — $565–$868 CAD Phase 1 estimate)
+- Check console.anthropic.com for actual Claude API cost
+
+---
+
+QUALITY METRICS — 2026-05-15 S82
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+  SCR:  100 × 0.30 = 30.0
+  SGCR: 100 × 0.30 = 30.0
+  REC:  100 × 0.15 = 15.0  (REC=0)
+  MLS:  100 × 0.10 = 10.0
+  UAC:  100 × 0.15 = 15.0  (UAC=0)
+─────────────────────────────────────────────────────
+5-SESSION TREND (S74 → S76 → S77 → S79 → S82):
+Scores: 100 → [S76 not scored] → [S77 not scored] → [S79 not scored] → 100
+Average last 2 scored: 100/100
+Trend: STABLE HIGH
+Primary improvement target: none identified
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-05-15 S82
+─────────────────────────────────────────────────────
+session_duration_min   : ~120 (estimate — continued from prior context)
+tasks_planned          : 3 (FRD update, BOM update, document move)
+tasks_completed        : 3
+governing_doc_version  : CLAUDE.md 2026-05-14
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---
