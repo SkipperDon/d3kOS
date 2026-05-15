@@ -60,6 +60,21 @@ These documents explain what problem was solved and exactly how the solution wor
 | `deployment/docs/SIMULATOR_REMOVAL_INSTRUCTIONS.md` | NMEA2000 Simulator removal spec — 14-phase removal procedure. Completed 2026-03-12, commit `a2b05b4`. |
 | `deployment/docs/CHARTS_OPENCPN_FIX_INSTRUCTIONS.md` | **[v0.9.2 — ACTIVE]** Charts button / OpenCPN windowed mode fix spec. Tasks 1+2 complete (2026-03-12): index.html charts case uses `goWindowed()`, charts.html `launchOpenCPN()` rewritten. Remaining: nginx proxy for Node-RED `/launch-opencpn` (port 1880 not yet proxied). See STATUS section in doc. |
 | `deployment/docs/SAFEHELM_DESIGN.md` | **[v1.0 — 2026-05-11 S77]** Production-ready maritime collision avoidance system design — 7-layer architecture, COLREGs compliance framework, research gap analysis, safety envelope, multi-vessel conflict solver. 1,312 lines. Concept-only; no code written. Design suitable for open-source GitHub publication when community validates interest. |
+| `deployment/docs/safehelm/SAFEHELM_SYSTEM_SPEC.md` | **[v1.0 — 2026-05-11]** SafeHelm system-level specification — 7-layer stack detail, file structure `/opt/d3kos/services/safehelm/`, systemd service definition, COLREGs engine internals. Companion to SAFEHELM_DESIGN.md. |
+
+### WiBoat + SafeHelm — Engineering Documents (S82 2026-05-15)
+
+WiFi CSI marine radar + COLREGs collision avoidance system. Two-box phase (WiBoat RPi 4B + d3kOS RPi 5), Phase 4 single-box consolidation. No code written yet — design and requirements complete.
+
+| Document | What It Covers |
+|----------|---------------|
+| `deployment/docs/wiboat/WIBOAT_SAFEHELM_FRD_v1.1.md` | **[v1.1 — 2026-05-15 S82]** Full engineering-grade Functional Requirements Document — 18 sections, 150+ FRs covering all 4 phases. Dual-network config (on-boat 10.42.0.2 / LAN 192.168.1.x). 4-antenna UCA with SP4T RF switch from Phase 1. COLREGs advisory spec (14 advisories from Rules 8, 12–19). G2 resolved, G3 resolved by design. Source: 9 wiboat design documents. |
+| `deployment/docs/wiboat/WiBoat_BOM_v2.md` | **[v2.0 — 2026-05-15 S82]** Full Phase 1 hardware bill of materials and assembly instructions. 4-antenna UCA from Phase 1 (was 2-antenna P1, 4-antenna P3). SP4T GPIO-controlled RF switch for 4-channel time-multiplexed CSI on BCM43455. 2x ALFA AWUS036NH TX injectors from Phase 1. Phase 1 cost estimate $565–$868 CAD. EIRP limit and TX power constraint documented. Supersedes WiBoat_BOM_Assembly_Instructions.docx v1.0. |
+| `deployment/docs/wiboat/WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md` | **[v1.0 — 2026-05-12 S79]** Authoritative integration reference — complete port registry, MMSI registry, WiBoat Contact JSON Schema v1.0, Phase 1–4 roadmap, Migration Gates, 10 known gaps. WiBoat IP placeholder `192.168.1.WB` (now confirmed `10.42.0.2` on-boat per FRD v1.1). |
+| `deployment/docs/wiboat/wifi_marine_radar_RD_framework.md` | **[v0.1 — 2026-05-11]** WiBoat standalone R&D framework — hardware BOM (original), open-source building blocks (nexmon_csi, picsi, csiread, signalk-radar, signalk-to-nmea0183, signalk-meshtastic). Reference document; superseded by FRD v1.1 and BOM v2.0 for engineering decisions. |
+| `deployment/docs/wiboat/diagrams/wiboat_dual_use_radio_architecture.svg` | WiBoat dual-use radio architecture diagram |
+| `deployment/docs/wiboat/diagrams/wiboat_mesh_architecture.svg` | WiBoat LoRa + batman-adv mesh architecture diagram |
+| `deployment/docs/wiboat/diagrams/wifi_marine_object_classification_pipeline.svg` | WiFi CSI object classification pipeline diagram |
 
 | `deployment/v0.9.2/python/keyboard-api.py` | **[2026-03-13]** keyboard-api port 8085→8087 (8086 was fish detector). /window/toggle endpoint restored (was missing from repo). Pi: `/opt/d3kos/services/system/keyboard-api.py` |
 | `deployment/v0.9.2/nginx/d3kos-nginx.conf` | **[2026-03-13]** /window/ and /keyboard/ proxy_pass updated to 8087. Both sites-available/default and sites-enabled/default kept in sync. |
@@ -1110,3 +1125,11 @@ No new files deployed this session. Checklist and governance updates only:
 | `aao-methodology-repo/data-collection/ARCHITECTURE.md` | **[NEW — S71 2026-04-27]** AAO Data Collection System architecture v1.1. Full plan: Python stdlib collector reads `aao_api_key:` from CLAUDE.md (zero-config), HostPapa PHP+MySQL endpoint at `atmyboat.com/research/`, public aggregate dashboard (Phase 2), researcher API (Phase 3). DB: `aao_contributors` + `aao_sessions` in existing HostPapa DB with `aao_` prefix. Privacy: IP hashed SHA-256, no raw credentials stored, GDPR/PIPEDA compliant. |
 | `Helm-OS/wiki/` (13 files) | **[COMMITTED — S71 2026-04-27, created S62 2026-04-17]** LLM-Wiki layer: 5 entities (pwa, pi-system, tier-system, atmyboat-website, d3kos-platform), 2 concepts (php-proxy-pattern, two-source-sync-rule), 2 questions, index, log. Previously untracked — committed commit 6678846. |
 
+
+---
+
+### WiBoat + SafeHelm Integrated Architecture — S79 2026-05-12
+
+| File | Description |
+|------|-------------|
+| `C:\Users\donmo\Downloads\wiboat\WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md` | **[NEW — S79 2026-05-12]** Full integrated architecture for WiBoat (WiFi CSI radar) + SafeHelm (COLREGs collision avoidance) + Communications (LoRa Meshtastic mesh). 18 sections. Defines: two-box phase (RPi 4B + RPi 5) architecture, single-box Phase 4 migration, complete port registry (13 services, no conflicts), MMSI registry (4 distinct ranges), WiBoat→SafeHelm WebSocket contact feed (full JSON schema), WiBoat `WiBoatReader` thread spec, AIS+WiBoat fusion rule, 4-gate migration path with bench validation gate, Phase 1–4 roadmap with 88 tasks and explicit acceptance gates, 10 known gaps. Key insight: WiBoat WiFi CSI resolves SafeHelm L1 limitation (monocular camera cannot estimate range) — provides range + bearing for non-AIS targets enabling CPA/TCPA math on kayaks, dinghies, unlicensed powerboats. Sensor picture: 0–250m WiFi CSI, 0–250m camera (bearing only), 0–500m batman-adv mesh, 0–50nm AIS, 5–15km LoRa. Architecture supersedes SAFEHELM_SYSTEM_SPEC.md for ports/MMSIs/API formats. |
