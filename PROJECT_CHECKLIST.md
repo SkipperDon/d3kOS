@@ -55,15 +55,122 @@
 
 ## OPERATOR / ON-BOAT TASKS
 
+**Last updated:** 2026-05-19 S83 (rev 2) — 96-item full checklist. See full printable version: `C:\Users\donmo\Downloads\d3kOS_OnBoat_Validation_Checklist.md`
+
+### INSTALLATION (physical setup — do these first)
+
 | # | Item | Owner | Status |
 |---|------|-------|--------|
-| OB-1 | UAT: 5 metric + 5 imperial users | Don (recruit) | `[ ]` Ready — S-06 fixes deployed 2026-03-17 |
-| OB-2 | o-charts chart activation | Don | `[ ]` See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` |
-| OB-3 | GPS outdoor verification | Don (Pi at dock) | `[!]` Test: check Signal K position outdoors, confirm lat/lon non-zero |
-| OB-4 | Camera on-boat tests | Don (on boat with cameras) | `[!]` 24hr stability + performance + storage. DHCP reservations done 2026-03-23. |
-| OB-5 | Battery voltage — verify Garmin sends PGN 127508 | Don (on boat, Garmin on) | `[!]` SSH to Pi, run `curl -s 'http://localhost:8099/signalk/v1/api/vessels/self/electrical' \| python3 -m json.tool` |
-| OB-6 | Pi first-boot password change flow | Don | `[ ]` Load `http://d3kos.local:3000` — should redirect to Setup wizard password pre-step |
-| OB-7 | bbPress login redirect test | Don | `[ ]` Log out → go to `/staging/forum/` → must redirect to `/staging/login/` (not wp-login.php) |
+| OB-I01 | Install RPi + 10.1" screen at helm — confirm power, boot, `d3kos.local:3000` loads | Don | `[ ]` |
+| OB-I02 | Confirm boat hotspot network is `10.42.0.x` — DHCP reservations already set 2026-03-23 | Don | `[ ]` |
+| OB-I03 | Connect cameras — confirm bow at `10.42.0.100`, stern at `10.42.0.63` via Settings → Camera Setup → Scan | Don | `[ ]` |
+| OB-I04 | Connect NMEA2000 backbone to Pi via USB gateway — confirm Signal K sees data | Don | `[ ]` |
+
+### d3kOS CORE — First Boot & System Validation
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-1 | First-boot password change flow — load `http://d3kos.local:3000`, must redirect to Setup wizard password step | Don | `[ ]` |
+| OB-2 | GPS outdoor verification — at dock with clear sky, confirm Signal K `/api/vessels/self/navigation/position` shows non-zero lat/lon | Don | `[!]` Never confirmed with live fix |
+| OB-3 | Signal K live data check — confirm SOG, COG, DEPTH, AIS targets all populating in dashboard instrument ribbon | Don | `[!]` Requires NMEA2000 connected |
+| OB-4 | Battery voltage — verify Garmin sends PGN 127508: `curl -s 'http://localhost:8099/signalk/v1/api/vessels/self/electrical' \| python3 -m json.tool` | Don | `[!]` |
+| OB-5 | BUG-08 touchscreen keyboard test — tap HELM mic field on Pi screen, keyboard must appear and stay visible, typed text must appear in field. Confirms keyboard-fix.js v2.1 result. | Don | `[~]` v2.1 deployed — needs physical touchscreen test |
+
+### CAMERAS — Installation & Validation
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-C01 | Settings → Camera Setup on Pi touchscreen — create bow/stern slots, assign hardware, confirm thumbnails load | Don | `[ ]` Requires cameras on boat network |
+| OB-C02 | Marine Vision page on Pi touchscreen — Focus mode shows bow as primary, stern in filmstrip. Tap filmstrip tile → swaps to primary. | Don | `[ ]` Requires cameras |
+| OB-C03 | Fish detection on both cameras independently — stern has `fish_detection=true`, bow does not. Captures in DB must show `slot_id=stern`. | Don | `[ ]` Requires cameras |
+| OB-C04 | Marine Vision bounding boxes appear on correct primary tile when fish detected | Don | `[ ]` Requires cameras + fish detection trigger |
+| OB-C05 | Camera offline amber state — unplug one camera, Marine Vision must show "Camera offline" amber overlay, not a crash | Don | `[ ]` Requires cameras |
+| OB-C06 | 24-hour stability + performance — both cameras running, CPU <35%, memory <970MB, scan completes in <3 sec | Don | `[!]` Never run on boat |
+| OB-C07 | Storage check — confirm recordings directory is not filling root partition after 24hr | Don | `[ ]` Part of OB-C06 window |
+
+### HELM DISTANCE — Readability at the Wheel (from cancelled UAT INC-16)
+
+Stand at normal helm position (~1 metre from the 10.1" screen):
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-H01 | Instrument labels (SOG, DEPTH, COURSE) readable at 1 metre without moving closer | Don | `[ ]` |
+| OB-H02 | Instrument values (current SOG and DEPTH numbers) readable at 1 metre | Don | `[ ]` |
+| OB-H03 | Bottom nav labels (Dashboard, Weather, Boat Log etc.) readable at 1 metre | Don | `[ ]` |
+| OB-H04 | Status bar (vessel name + clock) readable at 1 metre | Don | `[ ]` |
+| OB-H05 | Night mode readable in low light (green on black, no washed-out colours) | Don | `[ ]` |
+| OB-H06 | Day mode readable in bright daylight — no glare or low-contrast text | Don | `[ ]` |
+
+### BOAT LOG — Requires Engine Running
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-L01 | Voice record — tap record button, speak, tap stop — new VOICE entry must appear in log list | Don | `[ ]` |
+| OB-L02 | Engine auto-capture — start engine, wait 30 min — ENGINE badge entry must appear in Boat Log | Don | `[ ]` Requires engine running |
+| OB-L03 | Entry type badges are distinct — VOICE / ENGINE / WEATHER / ALERT show different colours | Don | `[ ]` |
+
+### ENGINE MONITOR — Requires Engine Running
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-E01 | Engine Monitor page — 6 metric tiles visible (SOG, RPM, oil, coolant, battery, fuel) | Don | `[ ]` |
+| OB-E02 | Values update in real time when engine is running — not static `---` | Don | `[ ]` |
+
+### o-CHARTS (Don's task — requires OpenCPN + account)
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-O01 | OpenCPN launches from Charts button on dashboard | Don | `[ ]` See `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md` |
+| OB-O02 | o-charts plugin visible in OpenCPN plugin manager | Don | `[ ]` |
+| OB-O03 | Licensed charts visible for your area | Don | `[ ]` |
+| OB-O04 | Chart renders — no blank tiles in local area | Don | `[ ]` |
+
+### FULL UI TOUCHSCREEN WALKTHROUGH (every page on Pi screen)
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-P01 | Setup wizard — all 6 steps load and progress dots advance | Don | `[ ]` |
+| OB-P02 | Dashboard home — instrument ribbon + nav bar functional | Don | `[ ]` |
+| OB-P03 | HELM overlay — opens, close button works, mute works | Don | `[ ]` |
+| OB-P04 | Weather panel — loads from left, AvNav still visible, data present | Don | `[ ]` |
+| OB-P05 | Marine Vision — focus mode, filmstrip swap, grid mode | Don | `[ ]` Requires cameras |
+| OB-P06 | Boat Log — voice record full flow: record → stop → entry appears with transcription | Don | `[ ]` |
+| OB-P07 | More menu — all 6 items present, icons + labels correct size | Don | `[ ]` |
+| OB-P08 | Settings — loads, dropdowns finger-friendly, units change works, Signal K status shows | Don | `[ ]` |
+| OB-P09 | AI Navigation — loads, query returns response, Gemini badge visible | Don | `[ ]` |
+| OB-P10 | Engine Monitor — 6 tiles visible, values update with engine running | Don | `[ ]` Requires engine |
+| OB-P11 | Anchor Watch — GPS position shown, set radius, alarm triggers | Don | `[ ]` Requires GPS fix |
+| OB-P12 | Upload Documents — file picker present | Don | `[ ]` |
+| OB-P13 | Manage Documents — list or empty state shown | Don | `[ ]` |
+| OB-P14 | Data History — page loads, export includes unit metadata | Don | `[ ]` |
+| OB-P15 | Charts / AvNav — chart pane visible on dashboard, tiles load for local area | Don | `[ ]` Requires GPS / tiles downloaded |
+| OB-P16 | QR Pairing — QR code displays on Pi screen, scannable with phone | Don | `[ ]` |
+
+### SERVICES HEALTH CHECK (SSH to Pi required)
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-S01 | All services active: dashboard, camera-stream, fish-detector, gemini, gemini-proxy, signalk, avnav | Don | `[ ]` `systemctl is-active <service>` for each |
+| OB-S02 | Signal K responding: `curl -s http://localhost:8099/signalk` returns valid JSON | Don | `[ ]` |
+| OB-S03 | Root partition health: `df -h /` shows <80% full | Don | `[ ]` |
+| OB-S04 | Memory: `free -m` shows >200MB available | Don | `[ ]` |
+
+### KNOWN OPEN ISSUES — Confirm fix status on boat
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-Q01 | BUG-08 keyboard final result — keyboard stays visible AND typing works on Pi touchscreen | Don | `[~]` v2.1 fix — needs physical confirmation |
+| OB-Q02 | DEP17 title bar text — should be white text on Pi Labwc desktop | Don | `[~]` One-line fix available if still black |
+| OB-Q03 | i18n gaps — Initial Setup, QR Code, Upload Manual, History pages: change language, note any untranslated strings | Don | `[ ]` |
+| OB-Q04 | Remote Access / WebSocket — Settings → Network: WebSocket status shows connected | Don | `[ ]` |
+| OB-Q05 | Node-RED: Settings → System Status — should show disabled/inactive, NOT error | Don | `[ ]` |
+
+### UAT — Metric/Imperial (recruit testers after above items pass)
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-U01 | 5 metric users: SOG in knots/km/h, DEPTH in metres, temp °C, distance in km/nm, export shows metric metadata | Don (recruit) | `[ ]` Ready — S-06 fixes deployed 2026-03-17 |
+| OB-U02 | 5 imperial users: SOG in knots, DEPTH in feet, temp °F, distance in nm/miles, export shows imperial metadata | Don (recruit) | `[ ]` |
 
 ---
 
