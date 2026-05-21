@@ -1,16 +1,25 @@
 # Entity: Pi System
 
-*Last updated: S62 2026-04-17 | Sources: MEMORY.md, pi-system.md*
+*Last updated: S85 2026-05-20 | Sources: MEMORY.md, pi-system.md — S85: PiCAN-M added, N2K hardware section added*
 
 ---
 
 ## Hardware
 
+- **Model:** Raspberry Pi 5
 - **IP:** 192.168.1.237
 - **User:** d3kos
 - **SSH key:** `~/.ssh/id_d3kos`
-- **OS:** Raspberry Pi (labwc window manager)
+- **OS:** Raspberry Pi OS (labwc Wayland compositor)
 - **RAM:** 8GB
+- **CAN bus HAT:** PiCAN-M — provides `can0`, the Pi's physical connection to the NMEA 2000 backbone
+
+## NMEA 2000
+
+See [[entities/nmea2000-layer]] for full detail. Short version:
+- **PiCAN-M** = the Pi's N2K interface (GPIO HAT → can0)
+- **CX5106** = separate engine ADC device ON the N2K bus (not the Pi's interface)
+- Signal K reads all N2K traffic via canboat-js on can0
 
 ## Systemd Services
 

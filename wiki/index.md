@@ -9,12 +9,17 @@
 - [[entities/d3kos-platform]] · d3kOS Pi platform — architecture, services, ports, paths · seeds: MEMORY.md
 - [[entities/atmyboat-website]] · AtMyBoat.com — WordPress, HostPapa, deploy rules · seeds: MEMORY.md
 - [[entities/tier-system]] · T0–T3 tier definitions, storage, enforcement · seeds: MEMORY.md S61
-- [[entities/pi-system]] · Pi hardware, services map, SSH, watchdog · seeds: pi-system.md
+- [[entities/pi-system]] · Pi hardware (RPi 5), services map, PiCAN-M, SSH, watchdog · seeds: pi-system.md — updated S85
 - [[entities/pwa]] · Progressive Web App — hosting, identity, cache, STUN · seeds: MEMORY.md
+- [[entities/safehelm]] · Collision avoidance — design only, 7-layer, port 8095, COLREGs, synthetic AIS · seeds: SAFEHELM_DESIGN.md S85
+- [[entities/wiboat]] · WiFi CSI marine radar — RPi 4B, nexmon_csi, 4-antenna UCA, WS:8766 · seeds: FRD v1.2 S85
+- [[entities/nmea2000-layer]] · PiCAN-M (Pi HAT) vs CX5106 (engine ADC) — critical distinction, AIS isolation · seeds: pi-system.md S85
+- [[entities/d3k-lite]] · Free OpenPlotter addon concept — design only, Flask:8085, 70% d3kOS reuse · seeds: feasibility.md S85
 
 ## Concepts
 - [[concepts/php-proxy-pattern]] · Flask CRM → PHP → MySQL pattern — permanent architecture · seeds: MEMORY.md
 - [[concepts/two-source-sync-rule]] · d3kOS/dashboard/ + v0.9.4/pi_source/ must always stay in sync · seeds: MEMORY.md S52
+- [[concepts/ais-isolation]] · 4-layer isolation preventing synthetic AIS targets reaching N2K bus/transponder · seeds: SafeHelm design S85
 
 ## Sources
 *(empty — add raw/ documents as ingested)*
