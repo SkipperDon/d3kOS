@@ -383,6 +383,7 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 | SH-12 | Phase 2 Advisory Mode build | `[ ]` | Voice alerts via ai_bridge + AvNav widget. Sea trial validation. |
 | SH-13 | Phase 3 Conflict Solver build | `[ ]` | Multi-vessel graph, non-compliant vessel detection, defensive mode. |
 | SH-14 | Phase 4 pypilot integration | `[ ]` | Only after Phase 2 sea trial confirms advisory accuracy. High risk — do not rush. |
+| SH-15 | AIS isolation audit — explicit transmitPGNs whitelist in Signal K canboat-js provider | `[ ]` | **Phase 1 hard gate.** Current state is implicit (nothing configured wrong) but not verified. Must be explicit whitelist before any synthetic AIS injection ships. S85: 4-layer isolation spec written in `wiki/concepts/ais-isolation.md`. |
 
 ---
 

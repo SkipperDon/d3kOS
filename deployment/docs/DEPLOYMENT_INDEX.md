@@ -1123,7 +1123,7 @@ No new files deployed this session. Checklist and governance updates only:
 | File | Description |
 |------|-------------|
 | `aao-methodology-repo/data-collection/ARCHITECTURE.md` | **[NEW — S71 2026-04-27]** AAO Data Collection System architecture v1.1. Full plan: Python stdlib collector reads `aao_api_key:` from CLAUDE.md (zero-config), HostPapa PHP+MySQL endpoint at `atmyboat.com/research/`, public aggregate dashboard (Phase 2), researcher API (Phase 3). DB: `aao_contributors` + `aao_sessions` in existing HostPapa DB with `aao_` prefix. Privacy: IP hashed SHA-256, no raw credentials stored, GDPR/PIPEDA compliant. |
-| `Helm-OS/wiki/` (13 files) | **[COMMITTED — S71 2026-04-27, created S62 2026-04-17]** LLM-Wiki layer: 5 entities (pwa, pi-system, tier-system, atmyboat-website, d3kos-platform), 2 concepts (php-proxy-pattern, two-source-sync-rule), 2 questions, index, log. Previously untracked — committed commit 6678846. |
+| `Helm-OS/wiki/` (18 files) | **[UPDATED — S85 2026-05-20, created S62, committed S71]** LLM-Wiki layer: 9 entities (+ safehelm, wiboat, nmea2000-layer, d3k-lite added S85), 3 concepts (+ ais-isolation added S85), 2 questions, index, log. S85 commit 7bd87f9. Session-start skill now reads wiki at Step 3 before any task. |
 
 
 ---
