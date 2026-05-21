@@ -1,6 +1,6 @@
 # Entity: AtMyBoat.com Website
 
-*Last updated: S62 2026-04-17 | Sources: MEMORY.md, atmyboat_v093.md*
+*Last updated: S86 2026-05-21 | Sources: MEMORY.md, atmyboat_v093.md*
 
 ---
 
@@ -63,8 +63,22 @@ Credentials + SQL + php://input in one file triggers 403. Fix: split to `*-confi
 - WCAG 2.0 AA 4.5:1 contrast minimum
 - Fonts: Fraunces (headings) + Nunito (body) + JetBrains Mono (code)
 
+## Stripe Webhooks (S74 2026-05-04 — FIXED)
+
+Both Stripe webhook endpoints were pointing to `/staging/` since Phase 4 launch (2026-04-12). Production webhook calls were going to staging handlers.
+
+**Fix S74:** Updated both endpoints in Stripe Dashboard to production URLs. New signing secrets written to live `inc/atmyboat-config.php` via FTPS.
+
+| Constant | Purpose |
+|----------|---------|
+| `STRIPE_WEBHOOK_SECRET` | Fix My Pi webhook |
+| `STRIPE_WEBHOOK_SECRET_SUB` | Subscription webhook |
+
+Credentials in CREDENTIAL_VAULT.md Live Mode section.
+
 ## Related
 
 - [[entities/tier-system]] — subscription tiers
 - [[entities/pwa]] — mobile PWA hosted here
+- [[entities/admin-console-vm]] — CRM admin interface manages site data
 - [[concepts/php-proxy-pattern]]

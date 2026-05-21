@@ -1,6 +1,6 @@
 # Entity: PWA (Progressive Web App)
 
-*Last updated: S62 2026-04-17 | Sources: MEMORY.md, project_v094_php.md*
+*Last updated: S86 2026-05-21 | Sources: MEMORY.md, project_v094_php.md*
 
 ---
 
@@ -57,6 +57,7 @@ Delete probe immediately after use.
 
 - Stripe on `atmyboat.com` only — never in-app
 - Stripe keys ARE configured on HostPapa staging — do not ask Don to set up again
+- **Stripe webhooks fixed S74** — both endpoints were pointing to `/staging/` since Phase 4 launch (2026-04-12). Fixed 2026-05-04. See [[entities/atmyboat-website]] for details.
 
 ## Security (v0.9.9 audit complete)
 

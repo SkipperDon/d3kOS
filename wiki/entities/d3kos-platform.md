@@ -1,6 +1,6 @@
 # Entity: d3kOS Platform
 
-*Last updated: S62 2026-04-17 | Sources: MEMORY.md, pi-system.md*
+*Last updated: S86 2026-05-21 | Sources: MEMORY.md, pi-system.md*
 
 ---
 
@@ -50,6 +50,22 @@ Static CSS/assets require explicit nginx location block — without it they fall
 ## Chromium Launcher
 
 `launch-d3kos.sh` is the real launcher (waits for Flask :3000, then opens `http://localhost/`). `d3kos-browser.desktop` was disabled (Hidden=true) in S55b — two instances were running. Single instance confirmed.
+
+## Gemini Model (current)
+
+`gemini-2.5-flash-lite` — changed from `gemini-2.5-flash` in S65 (persistent 503 errors on flash).
+
+Two separate Gemini services on Pi — BOTH must be updated when changing model:
+| Service | Port | Config file |
+|---------|------|-------------|
+| `d3kos-gemini-proxy.service` | 8097 | `/opt/d3kos/config/api-keys.json` |
+| `d3kos-gemini.service` (AI Navigation) | 3001 | `/opt/d3kos/services/gemini-nav/config/gemini.env` |
+
+## Open Bugs
+
+| Bug | Status | Description |
+|-----|--------|-------------|
+| BUG-08 | `[~]` IN PROGRESS | Helm Assistant on-screen keyboard shows then immediately hides. `keyboard-fix.js` v2.1 deployed — insufficient. Root cause: `el.blur()` fires previous tap's `{ once: true }` hideKeyboard listener before `_recentlyShown` is set. v2.2 fix needed. |
 
 ## Decisions
 
