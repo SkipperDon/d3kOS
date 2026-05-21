@@ -32,3 +32,9 @@
 - Contradictions flagged: none
 - Open questions: BUG-06 tier display (blocked), SESSION_LOG S56–S61 gap
 - Status: ACTIVE
+
+## [2026-05-21] research | S87 — sail-o-vision reply drafted; AIS700 N2K behaviour confirmed; simulator concept filed
+- Files changed: SESSION_LOG.md, wiki/log.md
+- Wiki pages updated: none (facts noted in log only — sail-o-vision entity update deferred to next session with confirmed new facts)
+- Contradictions flagged: AIS isolation 4-layer design assumes general AIS transponder relay risk; Adam's AIS700 does not relay received N2K AIS PGNs — no contradiction, just different hardware context
+- Open questions: Adam's Axiom MMSI suppression behaviour for 99xxx range (untested)
