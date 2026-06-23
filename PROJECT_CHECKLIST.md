@@ -416,5 +416,29 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 
 ---
 
+---
+
+## PART 20 — v0.9.9.5 Research & Discussion Backlog
+
+**Full document:** `deployment/docs/V09995_DISCUSSION_PLAN.md`
+**Created:** 2026-06-23 S92
+**Purpose:** Tracks ideas, research topics, and architectural discussions that have been explored but are not yet approved for build. When an item is approved, it gets a task breakdown here in the checklist.
+
+| # | Topic | Status | Summary |
+|---|-------|--------|---------|
+| D01 | WiBoat — WiFi CSI Marine Radar | `DESIGN COMPLETE` | FRD v1.2 + BOM v2.0 done. Blocked on hardware procurement (WB-02) and IP confirmation (WB-01). |
+| D02 | SafeHelm — Collision Avoidance | `DESIGN COMPLETE` | 7-layer architecture + COLREGs framework done. Blocked on community validation (forum article not yet posted — SH-1). |
+| D03 | Sail-O-Vision Collaboration | `RESEARCH` | nmea_client.py assessed as reusable in SafeHelm. Dragon's Lair simulator concept filed. Awaiting Don decision on outreach. |
+| D04 | D3K-Lite — OpenPlotter Addon | `AWAITING COMMUNITY` | Feasibility (1,261 lines) + forum article done. Blocked on community validation (article not yet posted — DL-1). |
+| D05 | signalk-forward-watch v0.2.4 | `PARTIAL DESIGN` | 3 small improvements discussed: download-on-first-run, OpenPlotter test, README fix. |
+| D06 | AAO Data Collection System | `AWAITING OPERATOR` | Architecture v1.1 done. Blocked on DC-02 (UpdraftPlus backup) and DC-03 (email confirm) — Don's actions. |
+| D07 | Mobile App PWA — Remaining | `PARTIAL DESIGN` | Strategy decided. Fix My Pi, Find My Boat, OTA, fleet map not yet built. Blocked on on-boat validation first. |
+| D08 | pypilot Integration | `DEFERRED` | SafeHelm Phase 4 only. Hard gate: one full sailing season in advisory mode (WB-14) must pass first. |
+| D09 | Research Paper Submission | `AWAITING OPERATOR` | Paper v3.3 complete. Don to verify ai_model_version (PAPER-4), document excluded sessions (PAPER-5), then submit (PAPER-7). |
+| D10 | AAO Methodology Evolution | `RESEARCH` | Section 24 not yet exercised. Threshold of 3 questions may need tuning after first real build. |
+| D11 | 360° Marine Vision: NCS2 + Satellite + Cellular | `PARTIAL DESIGN` | 4× Reolink cameras + Intel NCS2 + YOLOv8n via OpenVINO. Sub-stream RTSP + frame skip + MQTT → d3kOS. Satellite base layer (NASA GIBS / Copernicus) + eSIM/4G. Standalone module. Open questions: NCS2 vs Hailo/Coral hardware, marine class model source, AvNav vs MapLibre chart engine. |
+
+---
+
 *Completed work archived in: `PROJECT_CHECKLIST_ARCHIVE.md`*
 *Do not delete entries — update status or move to archive only.*

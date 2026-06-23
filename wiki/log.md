@@ -38,3 +38,17 @@
 - Wiki pages updated: none (facts noted in log only — sail-o-vision entity update deferred to next session with confirmed new facts)
 - Contradictions flagged: AIS isolation 4-layer design assumes general AIS transponder relay risk; Adam's AIS700 does not relay received N2K AIS PGNs — no contradiction, just different hardware context
 - Open questions: Adam's Axiom MMSI suppression behaviour for 99xxx range (untested)
+
+## [2026-05-29] update | S89 — AAO v2.0 Section 24 authored and pushed to GitHub
+- Files changed: aao-methodology-repo/SPECIFICATION.md, aao-methodology-repo/CLAUDE.md, /home/boatiq/CLAUDE.md
+- Wiki pages updated: none (methodology doc, not wiki entity)
+- Contradictions flagged: none
+- Open questions: none
+
+## [2026-05-30] comms | S90 — LinkedIn comment drafted: quantified Adaptive Governance Spec example (S83 SGCR violation → spec sharpening → 6 consecutive 100/100 sessions)
+
+## [2026-06-23] planning | S92 — v0.9.9.5 Discussion Plan created; 11 research items captured
+- Files changed: deployment/docs/V09995_DISCUSSION_PLAN.md (new), PROJECT_CHECKLIST.md (PART 20 added), deployment/docs/DEPLOYMENT_INDEX.md (V09995 indexed)
+- Wiki pages updated: wiki/log.md only
+- Contradictions flagged: none
+- Open questions: D11 hardware selection (NCS2 vs Hailo/Coral), D11 marine class model source, D11 chart engine (AvNav vs MapLibre)
