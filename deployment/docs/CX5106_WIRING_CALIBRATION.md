@@ -1,7 +1,8 @@
 # CX5106 Wiring & Calibration Guide — Monterey 265 SEL
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Created:** 2026-07-10 S95
+**Updated:** 2026-07-10 S95
 **Status:** RESEARCH COMPLETE — awaiting on-boat verification
 **Relates to:** BUG-11 (third-party device compatibility), d3kOS engine monitoring via NMEA 2000
 
@@ -118,26 +119,29 @@ resistance range your senders produce.
 | Water temp | ~300 Ω (cold/40°C) → 22 Ω (hot/120°C) | Similar |
 | Trim / tilt | 0–190 Ω | 0–190 Ω |
 
-The CX5106 is marketed as **0–190 Ω** (European standard). If your Monterey 265 SEL
-senders use the US standard (240–33 Ω for fuel), the digital readings in d3kOS will
-be wrong — empty may display as partial, full may read as over-range.
+The CX5106 is marketed as **0–190 Ω** (European standard).
 
-### How to Confirm Your Sender Standard (Before Calibration)
+**Monterey Boats is an American manufacturer. The Monterey 265 SEL uses US-standard
+senders (240 Ω empty → 33 Ω full for fuel).** The CX5106's default 0–190 Ω range
+does NOT match. If used without reconfiguration, fuel readings in d3kOS will be
+inverted and wrong — empty will display as partial or full, full will read as
+over-range or zero.
 
-Use a multimeter. With key off:
+**The CX5106 must be reconfigured for the US sender resistance range before
+calibration will produce accurate results.** This is a required step, not optional.
 
-1. Disconnect the blue sender wire at the gauge (so meter reads sender only).
-2. Set meter to resistance (Ω).
-3. Measure between blue wire and black (ground).
-4. Record the resistance with tank known empty, and again when known full.
+### Sender Resistance — Confirmed Values for Monterey 265 SEL
 
-| Result | Your standard |
-|--------|--------------|
-| ~240 Ω empty, ~33 Ω full | US standard — note this for CX5106 config |
-| ~0 Ω empty, ~180–190 Ω full | European standard — CX5106 default matches |
+| Sender Type | Confirmed Standard | Empty | Full / Max |
+|-------------|-------------------|-------|------------|
+| Fuel level | US | ~240 Ω | ~33 Ω |
+| Oil pressure | US | ~10 Ω (0 PSI) | ~184 Ω (max pressure) |
+| Water temp | US | ~300 Ω (cold/40°C) | ~22 Ω (hot/120°C) |
+| Trim / tilt | 0–190 Ω (widely universal) | 0 Ω | ~190 Ω |
 
-If your senders are US standard, the CX5106 must be reconfigured for the correct
-resistance range before calibration will produce accurate results.
+Verify the exact fuel sender resistance with a multimeter at known empty and known
+full if precise calibration is needed. The values above are US standard; individual
+sending units can vary slightly.
 
 ---
 
@@ -215,8 +219,8 @@ calibration — a Signal K offset only masks an underlying calibration error.
 
 ## Open Items Before On-Boat Verification
 
-- [ ] Confirm Monterey 265 SEL sender standard: measure resistance at known empty/full (multimeter required)
-- [ ] Confirm CX5106 channel configuration for US vs. European resistance range
+- [x] Confirmed: Monterey 265 SEL is US-manufactured — US sender standard applies (240–33 Ω fuel)
+- [ ] Reconfigure CX5106 channels from default 0–190 Ω (European) to US resistance ranges — REQUIRED before calibration
 - [ ] Perform Stage 1 and Stage 2 calibration on the boat
 - [ ] Verify Signal K paths are populating after calibration
 - [ ] Confirm d3kOS engine monitor displays match analog gauges
