@@ -1,212 +1,207 @@
 # CX5106 Wiring & Calibration Guide — Monterey 265 SEL
 
-**Version:** 1.1.0
+**Version:** 2.0.0
 **Created:** 2026-07-10 S95
-**Updated:** 2026-07-10 S95
+**Updated:** 2026-07-10 S95 (major correction — parallel connection claim removed)
 **Status:** RESEARCH COMPLETE — awaiting on-boat verification
 **Relates to:** BUG-11 (third-party device compatibility), d3kOS engine monitoring via NMEA 2000
 
 ---
 
-## Overview
+## ⚠️ CORRECTION — Previous Version Error
 
-This document covers how to wire the CX5106 analog-to-NMEA 2000 converter to the
-Monterey 265 SEL dash gauge harness, and how to calibrate it so readings are accurate
-in d3kOS and Signal K. Research compiled from ABYC standards, marine electronics
-forums, and CX5106 product documentation.
-
-The CX5106 reads existing analog sender signals (fuel, oil pressure, water temperature,
-trim) and converts them to NMEA 2000 PGNs, which Signal K ingests and d3kOS displays.
+Version 1.x of this document stated the CX5106 connects **in parallel** with existing gauges.
+**This was wrong.** Further research confirmed the CX5106/CX5003 family requires the original
+analog gauge to be **disconnected**. See Part 2 for full explanation and device choice guidance.
 
 ---
 
-## Part 1 — Understanding the Monterey 265 SEL Gauge Wires
+## Part 1 — Monterey 265 SEL Gauge Wires (Confirmed)
 
-Each dash gauge on the Monterey 265 SEL has three wires: **black**, **purple**, and **blue**.
+Each dash gauge has three wires: **black**, **purple**, and **blue**.
 
 ### Wire Functions
 
-| Wire | Function | Standard |
-|------|----------|----------|
-| **Black** | Ground (negative return) | Universal — ABYC and all manufacturers |
-| **Purple** | 12V ignition power — energises the gauge when key is ON | ABYC standard |
-| **Blue** | Sender signal input — variable resistance from the sending unit | Manufacturer-simplified harness (see note below) |
+| Wire | Function | Confidence |
+|------|----------|------------|
+| **Black** | Ground (negative return) | Confirmed — universal ABYC standard |
+| **Purple** | 12V ignition power — gauge powers on with key | Confirmed — ABYC standard |
+| **Blue** | Sender signal — variable resistance from the sending unit | Confirmed — only role left in a 3-wire harness |
 
 ### Why Blue is the Sender Wire
 
-ABYC defines sender-specific colors at the *engine* end of the circuit:
-light blue for oil pressure, pink for fuel, tan for water temperature. However, when a
-manufacturer runs a unified 3-wire harness to all dash gauges using the same three colors,
-power (purple) and ground (black) are already assigned — the only remaining role for
-the third wire is the sender signal input. This 3-wire pattern (purple/black/blue) is
-confirmed across multiple marine boat manufacturers.
+ABYC defines sender-specific colors at the *engine end* of the circuit (light blue = oil
+pressure, pink = fuel, tan = water temp). When a manufacturer runs a unified 3-wire harness
+to all dash gauges using the same three colors, power (purple) and ground (black) are already
+accounted for — blue is the sender signal. This 3-wire pattern is confirmed across multiple
+North American boat manufacturers including Monterey.
 
-**The blue wire carries a variable resistance signal** from the sending unit (inside
-your tank, on your engine) back to the gauge. This is exactly what the CX5106 reads.
-
-### What Each Wire Does in the Circuit
+### Circuit Diagram
 
 ```
-Sender unit (tank float, oil pressure sender, temp sender)
+Sending unit (tank float / oil pressure sender / temp sender)
         │
-        │  Variable resistance (e.g. 240 Ω empty → 33 Ω full for US fuel)
+        │  Variable resistance (US standard: 240 Ω empty → 33 Ω full for fuel)
         │
-Blue wire ─────────────────────────────────────────────── Gauge sender terminal
-Purple wire (12V ignition) ────────────────────────────── Gauge B+ terminal
-Black wire (ground) ───────────────────────────────────── Gauge ground terminal
+Blue wire ─────────── Gauge sender terminal
+Purple wire ────────── Gauge B+ terminal  (12V ignition)
+Black wire ─────────── Gauge ground terminal
 ```
 
 ---
 
-## Part 2 — CX5106 Connection
+## Part 2 — CX5106 Connection: Critical Decision Point
 
-The CX5106 wires **in parallel with your existing gauges**. It uses a high-impedance
-input — it listens to the same sender signal the gauge already reads. Your analog
-gauges continue to work normally after the CX5106 is added.
+### Does the CX5106 Connect in Parallel With Existing Gauges?
 
-### Wiring Diagram
+**No — not confirmed. Evidence points to required gauge disconnection.**
+
+Most budget analog-to-NMEA 2000 converters, including the CX5106/CX5003 family, do **not**
+have the electrical isolation needed to share a sender with an existing analog gauge. Without
+isolation, connecting the converter in parallel disrupts the voltage the gauge depends on —
+both the converter and the gauge will read incorrectly.
+
+A confirmed user report on the YBW Forum (CX5003, same device family):
+> *"worked fine once I realized you have to disconnect original gauges"*
+
+This means with the CX5106, you face a choice:
+
+---
+
+### Option A — Use CX5106, Remove Analog Gauges
+
+Connect the CX5106 sender terminal directly to the blue (sender) wire and the ground terminal
+to the black (ground) wire. The analog gauge is removed from the circuit (or left disconnected).
+d3kOS becomes the only readout.
 
 ```
-Sender unit (in tank / on engine)
+Sending unit
         │
-        └──── Blue wire ──────┬──── to gauge sender terminal (existing)
-                              └──── to CX5106 analog input terminal (that channel)
+        └──── Blue wire ──── CX5106 analog input terminal (channel for that sender)
 
-Black wire (ground) ──────────┬──── to gauge ground terminal (existing)
-                              └──── to CX5106 ground terminal
+Black wire ──────────────── CX5106 ground terminal
 
-Purple wire (12V ignition) ────────  to gauge B+ terminal ONLY
-                                      do NOT connect to CX5106
-
-CX5106 own power supply (separate wires from the CX5106 itself):
-  Red lead  ──── ignition-switched 12V source (clean, fused)
+CX5106 own power (its own wiring harness):
+  Red lead  ──── ignition-switched 12V (fused, separate from gauge circuit)
   Black lead ─── chassis ground
-  N2K port  ──── NMEA 2000 backbone (via drop cable to backbone T-connector)
-                  This connects through PiCAN-M to the Pi
+  N2K port  ──── NMEA 2000 backbone (drop cable → T-connector → PiCAN-M → Pi)
+
+Analog gauge: disconnected or removed
 ```
 
-### Key Rules
-
-- **Purple does NOT connect to the CX5106.** That is gauge power only.
-- **CX5106 needs its own 12V supply** (red/black leads) — do not power it from the gauge circuit.
-- **One CX5106 channel per sender** — fuel sender to channel 1, oil pressure sender to channel 2, etc.
-- **N2K port connects to the NMEA 2000 backbone** — same bus the PiCAN-M is on.
-
-### Parallel Operation Warning
-
-Most installations work correctly in parallel. However, at least one user reported that
-the CX5003 (same device family) did not work correctly in parallel with existing gauges
-on some engine types, possibly due to impedance loading affecting gauge accuracy.
-
-**Test:** After wiring in the CX5106, verify your analog gauge still reads correctly.
-If the gauge reading shifts, disconnect the CX5106 sender terminal — the gauge should
-immediately return to normal. This confirms the CX5106 is loading the circuit. In this
-case, consult the CX5106 manufacturer about impedance matching.
+**Suitable if:** You are replacing your analog gauges entirely with digital display via d3kOS.
 
 ---
 
-## Part 3 — Sender Resistance Ranges
+### Option B — Keep Analog Gauges, Use Actisense EMU-1 Instead
 
-This is the most critical step for accuracy. The CX5106 must be configured for the
-resistance range your senders produce.
+If you want to **keep your Monterey analog gauges working** AND have digital readings in
+d3kOS, the CX5106 is the wrong device. The **Actisense EMU-1** is specifically engineered
+for parallel operation:
 
-### US vs. European Standard — Know Which You Have
+- Automatically detects the presence of an existing analog gauge on each channel
+- Adjusts its calibration to account for the shared sender load
+- Opto-isolation between N2K power and device power — no interference with gauge circuit
+- Calibrates via Windows software (Actisense Config Tool) with dropdown sender profiles
+- Supports US and European sender resistance standards
 
-| Sender Type | US Standard (most North American boats) | European / Metric Standard |
-|-------------|----------------------------------------|---------------------------|
-| Fuel level | 240 Ω (empty) → 33 Ω (full) | 0 Ω (empty) → 190 Ω (full) |
-| Oil pressure | 10 Ω → 184 Ω (0–10 bar) | Similar |
-| Water temp | ~300 Ω (cold/40°C) → 22 Ω (hot/120°C) | Similar |
-| Trim / tilt | 0–190 Ω | 0–190 Ω |
+With the EMU-1, both the analog gauge and d3kOS digital display run simultaneously from
+the same sender — no gauge removal required.
 
-The CX5106 is marketed as **0–190 Ω** (European standard).
+**Suitable if:** You want to keep the original Monterey dash gauges as a backup/primary
+display and also see values in d3kOS.
 
-**Monterey Boats is an American manufacturer. The Monterey 265 SEL uses US-standard
-senders (240 Ω empty → 33 Ω full for fuel).** The CX5106's default 0–190 Ω range
-does NOT match. If used without reconfiguration, fuel readings in d3kOS will be
-inverted and wrong — empty will display as partial or full, full will read as
-over-range or zero.
+---
 
-**The CX5106 must be reconfigured for the US sender resistance range before
-calibration will produce accurate results.** This is a required step, not optional.
+### Summary — Which Device For Which Scenario
 
-### Sender Resistance — Confirmed Values for Monterey 265 SEL
+| Goal | Device | Analog Gauge |
+|------|--------|-------------|
+| Digital only — replace gauges with d3kOS | CX5106 | Removed |
+| Both analog and digital simultaneously | Actisense EMU-1 | Kept and working |
 
-| Sender Type | Confirmed Standard | Empty | Full / Max |
-|-------------|-------------------|-------|------------|
+---
+
+## Part 3 — Sender Resistance: US Standard Confirmed
+
+Monterey Boats is an American manufacturer. The Monterey 265 SEL uses **US-standard senders**.
+
+### Confirmed Resistance Values
+
+| Sender Type | US Standard | Empty | Full / Max |
+|-------------|------------|-------|------------|
 | Fuel level | US | ~240 Ω | ~33 Ω |
-| Oil pressure | US | ~10 Ω (0 PSI) | ~184 Ω (max pressure) |
+| Oil pressure | US | ~10 Ω (0 PSI) | ~184 Ω (max) |
 | Water temp | US | ~300 Ω (cold/40°C) | ~22 Ω (hot/120°C) |
-| Trim / tilt | 0–190 Ω (widely universal) | 0 Ω | ~190 Ω |
+| Trim / tilt | Universal | 0 Ω | ~190 Ω |
 
-Verify the exact fuel sender resistance with a multimeter at known empty and known
-full if precise calibration is needed. The values above are US standard; individual
-sending units can vary slightly.
+### CX5106 Resistance Range Mismatch
+
+The CX5106 is pre-configured for **0–190 Ω (European standard)**. Your fuel sender uses
+240–33 Ω (US standard). These are inverted and scaled differently.
+
+**No confirmed user-accessible resistance range calibration exists for the CX5106.**
+The device has DIP switches for RPM ratio only. There is no documented software
+interface, SD card config, or hardware adjustment to change the fuel sender resistance
+range from European to US standard.
+
+This is a **potential blocker** for accurate fuel level readings with the CX5106 on
+a US-standard boat. Oil pressure and temperature resistance ranges are similar enough
+between US and European standards that those readings may be usable; fuel level is not.
+
+**With the Actisense EMU-1:** sender standard is selected in the Windows config software —
+US and European profiles are both supported with a dropdown selection.
 
 ---
 
-## Part 4 — Calibration Procedure
+## Part 4 — CX5106 Calibration (What Actually Exists)
 
-Calibration is performed at the CX5106 level (via its SD card configuration interface
-or Windows software if provided). Signal K and d3kOS receive the already-calibrated
-values — get the CX5106 right first.
+The CX5106 does **not** have a sophisticated calibration interface. Based on confirmed
+user reports and product documentation:
 
-### Stage 1 — Key On, Engine Off (Low Reference Point)
+| Feature | CX5106 | Actisense EMU-1 |
+|---------|--------|-----------------|
+| Configuration interface | DIP switches (RPM ratio only) | Windows USB software |
+| Sender profile selection | None documented | Dropdown — US/EU/custom |
+| Resistance range adjustment | None confirmed | Yes — per channel |
+| Parallel gauge detection | No | Yes — automatic |
+| Two-point calibration | Not documented | Yes — via software |
 
-1. Turn ignition to ON position (engine not running).
-2. Note the reading on each analog gauge (fuel level, oil pressure = 0, water temp = ambient).
-3. In the CX5106 configuration, enter the low reference value for each channel.
-   - Fuel: note gauge position (e.g. half tank)
-   - Oil pressure: 0 PSI / 0 bar
-   - Water temp: ambient temperature (e.g. 20°C / 68°F)
+### What DIP Switches Control on CX5106
 
-### Stage 2 — Engine Running at Known Values
+The only confirmed configurable parameter via DIP switches is the **tachometer RPM ratio**
+(engine pulses per revolution — varies by engine type). This sets the correct RPM scaling.
+All other channels (fuel, oil, temp) read at the fixed factory resistance range.
 
-1. Start engine and run until fully at operating temperature.
-2. Read each analog gauge and record the values.
-3. In the CX5106 configuration, enter the high reference value for each channel.
-   - Oil pressure: read from gauge (e.g. 40 PSI)
-   - Water temp: read from gauge (e.g. 85°C / 185°F)
-   - Fuel: should match Stage 1 reading (level unchanged during a short run)
+### Practical Calibration Approach for CX5106
 
-The CX5106 uses these two reference points to interpolate resistance → engineering value
-across the full sender range.
+If proceeding with Option A (gauge removed):
 
-### Stage 3 — Verify in Signal K and d3kOS
-
-After CX5106 calibration:
-
-1. SSH to Pi: `ssh d3kos@192.168.1.237`
-2. Check Signal K is receiving the values:
+1. Wire as per Part 2 Option A diagram.
+2. Connect N2K backbone to PiCAN-M and confirm Signal K is receiving PGNs.
+3. Check Signal K values via SSH:
    ```
    curl http://localhost:3000/signalk/v1/api/vessels/self/propulsion/
    curl http://localhost:3000/signalk/v1/api/vessels/self/tanks/
    ```
-3. Compare Signal K values to your analog gauges.
-4. Open d3kOS engine monitor page — values should match analog gauges.
+4. Compare readings against a known reference (e.g. measure actual fuel with a dipstick;
+   read oil pressure with a mechanical gauge temporarily installed).
+5. If Signal K values are consistently offset, apply a correction in `~/.signalk/settings.json`:
+   ```json
+   "tanks.fuel.0.currentLevel": {
+     "calibration": { "offset": 0.05 }
+   }
+   ```
+   Apply: `sudo systemctl restart signalk`
 
-### Fine-Tuning in Signal K (if needed)
-
-If d3kOS shows a consistent offset from the analog gauge (e.g. always reads 5°C high),
-Signal K can apply a correction factor. In `~/.signalk/settings.json`, under the
-relevant path, add a `calibration` offset:
-
-```json
-"propulsion.0.temperature": {
-  "calibration": {
-    "offset": -5
-  }
-}
-```
-
-Apply with: `sudo systemctl restart signalk`
-
-This is a last-resort fine-tune. If the offset is large, re-do the CX5106 hardware
-calibration — a Signal K offset only masks an underlying calibration error.
+**Important:** If the fuel reading is drastically wrong (e.g. reads full when empty), this
+is the US/European resistance range mismatch — a Signal K offset cannot fix a scaled/inverted
+reading. In that case, the CX5106 is not compatible with your fuel sender without hardware
+modification, and the Actisense EMU-1 is the appropriate device.
 
 ---
 
-## Part 5 — Resistance Quick Reference
+## Part 5 — Signal K Path Reference
 
 | Gauge Type | Signal K Path | NMEA 2000 PGN | US Sender Range |
 |-----------|--------------|----------------|-----------------|
@@ -217,13 +212,15 @@ calibration — a Signal K offset only masks an underlying calibration error.
 
 ---
 
-## Open Items Before On-Boat Verification
+## Open Items Before On-Boat Work
 
-- [x] Confirmed: Monterey 265 SEL is US-manufactured — US sender standard applies (240–33 Ω fuel)
-- [ ] Reconfigure CX5106 channels from default 0–190 Ω (European) to US resistance ranges — REQUIRED before calibration
-- [ ] Perform Stage 1 and Stage 2 calibration on the boat
-- [ ] Verify Signal K paths are populating after calibration
-- [ ] Confirm d3kOS engine monitor displays match analog gauges
+- [x] Wire colours confirmed: black = ground, purple = 12V ignition, blue = sender signal
+- [x] Monterey = US manufacturer — US sender standard applies (240–33 Ω fuel)
+- [x] Parallel connection NOT supported by CX5106 — gauge must be disconnected (Option A) or switch to Actisense EMU-1 (Option B)
+- [ ] **Decision required:** Option A (CX5106, remove gauges) or Option B (Actisense EMU-1, keep gauges)?
+- [ ] If Option A: confirm fuel sender resistance with multimeter to verify US/European range before relying on fuel level reading
+- [ ] If Option A: wire CX5106 per Part 2 diagram, confirm Signal K PGNs arriving
+- [ ] If Option B: purchase Actisense EMU-1, install Actisense Config Tool, configure sender profiles
 
 ---
 
@@ -233,6 +230,8 @@ calibration — a Signal K offset only masks an underlying calibration error.
 - [Engine Instrument Wiring Made Easy — boats.com](https://www.boats.com/how-to/engine-instrument-wiring-made-easy/)
 - [Standard Boat Wiring Color Codes — CP Performance](https://www.cpperformance.com/t-boat_wiring_colors.aspx)
 - [CX-5106 NMEA 2000 Converter — iMarinex](https://www.imarinex.com/product/cx-5106-nmea-2000-converter-up-to-13-sensors/)
-- [N2K Engine Monitor User Experiences — YBW Forum](https://forums.ybw.com/threads/anyone-tried-the-cheap-n2k-engine-monitor-on-ebay.557725/page-2)
+- [N2K Engine Monitor User Experiences — YBW Forum](https://forums.ybw.com/threads/anyone-tried-the-cheap-n2k-engine-monitor-on-ebay.557725/)
 - [Analog to NMEA 2000 using the CX5003 — Trawler Forum](https://www.trawlerforum.com/threads/analog-to-nema-2000-using-the-cx5003.75442/)
+- [Actisense EMU-1 Review — Panbo](https://panbo.com/actisense-emu-1-analog-engine-gauges-to-nmea-2000-happiness/)
+- [Analog to NMEA 2000 Engine Instruments — Downeast Boat Forum](https://downeastboatforum.com/threads/analog-to-nmea-2000-engine-instruments.45321/)
 - [ABYC Color Codes Explained — Pacer Group](https://www.pacergroup.net/pacer-news/abyc-color-codes-explained/)
