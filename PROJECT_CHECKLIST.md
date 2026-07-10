@@ -25,6 +25,7 @@
 | # | Bug | Status | Detail |
 |---|-----|--------|--------|
 | BUG-08 | Helm Assistant on-screen keyboard shows then immediately hides; manual keyboard does not type | `[~]` **IN PROGRESS — fix v2.1 insufficient** | `keyboard-fix.js` v2.1 deployed. Root cause: `el.blur()` fires previous tap's `{ once: true }` hideKeyboard listener BEFORE `_recentlyShown` is set. Next step: test whether first tap (no prior listener) works; consider removing `el.blur()` + using `requestAnimationFrame` around `el.focus()`. Full record: `V09994_BUG_FIXES.md` BUG-08. |
+| BUG-09 | AvNav chart data corrupts after boat power loss; broader scope: audit all critical services for unclean-shutdown vulnerability and design self-healing | `[ ]` **OPEN — research required** | Root cause: unexpected power loss (boat electrical) causes filesystem/data corruption in AvNav. Two-part scope: (1) research AvNav-specific recovery — detect corruption on boot, auto-repair or restore from known-good state; (2) full audit of all critical services (Signal K, Flask APIs, SQLite DBs, ChromaDB RAG, AvNav) for power-loss vulnerability — design a unified self-healing strategy (integrity check + auto-repair on boot via systemd). Full record: `V09994_BUG_FIXES.md` BUG-09. |
 
 ---
 

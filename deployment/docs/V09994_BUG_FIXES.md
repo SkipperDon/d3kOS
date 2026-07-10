@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.2.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-05-04 S74 | **Status:** IN PROGRESS
+**Version:** 1.3.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-10 S94 | **Status:** IN PROGRESS
 
 ## STANDING RULE — Read This First
 
@@ -194,3 +194,76 @@ Both endpoints confirmed Active, 0 failures in Stripe Dashboard post-fix.
 - It is NOT confirmed why ai-assistant.html works while helm.html doesn't. The investigation
   was interrupted. The re-focus-after-send difference is noted but causality not proven.
 - `CREDENTIAL_VAULT.md` model entries updated S65 — gemini-2.5-flash-lite, both Pi config paths corrected.
+
+---
+
+## BUG-09 — AvNav data corruption after power loss; self-healing audit for all critical services
+
+**Status:** `[ ]` OPEN — research required. Logged 2026-07-10 S94. No fix attempted yet.
+**Platform:** Pi (primary); all d3kOS services (secondary audit scope)
+
+### Symptom
+AvNav chart navigation software becomes corrupted after unexpected power loss on the boat.
+Root cause confirmed by operator: loss of boat electrical power (not a software crash) causes
+an unclean shutdown of the Pi, leaving AvNav in a corrupted state on next boot.
+
+### Known Root Cause
+Unexpected power loss = no graceful systemd shutdown = services killed mid-write. AvNav
+stores chart tile caches, route data, and config files on the Pi filesystem. Any write in
+progress at power-off can leave files partially written or in an inconsistent state.
+Same risk applies to any service that writes to disk without journaling or atomic commits.
+
+### Research Required — Part 1: AvNav-Specific Recovery
+
+Questions to answer before designing a fix:
+
+| # | Question | Approach |
+|---|----------|----------|
+| R1 | What data does AvNav write that is corruption-prone? (tile cache, routes, config, track log) | Read AvNav docs + inspect `/home/d3kos/.avnav/` on Pi |
+| R2 | Does AvNav have a built-in integrity check or recovery mode? | Review AvNav source / docs |
+| R3 | Can corrupted AvNav state be detected on boot (e.g. failed service start, specific error in journal)? | Test: simulate power cut, observe systemd journal |
+| R4 | What is the minimal recovery action? (delete cache only? restore from backup? reinstall?) | Determine from R1 + R3 |
+| R5 | Can the recovery be automated in a systemd `ExecStartPre=` script? | Design after R4 |
+
+### Research Required — Part 2: System-Wide Self-Healing Audit
+
+Scope: every service that writes persistent state on the Pi.
+
+| Service | Writes To | Corruption Risk | Self-Healing Strategy (TBD) |
+|---------|-----------|-----------------|------------------------------|
+| AvNav | `/home/d3kos/.avnav/` (tile cache, routes, config) | HIGH — confirmed | TBD — see Part 1 |
+| Signal K | `~/.signalk/` (settings.json, security.json, plugin data) | MEDIUM — JSON config | Validate JSON on boot; restore from `.bak` if parse fails |
+| Flask services (dashboard, camera, boatlog, etc.) | `/opt/d3kos/config/*.json` | MEDIUM — config JSON | Validate JSON on boot; restore factory defaults if corrupt |
+| SQLite DBs (boatlog, fix-my-pi, engine snapshots) | `/opt/d3kos/data/*.db` | MEDIUM — SQLite has WAL mode | Enable WAL mode if not set; run `PRAGMA integrity_check` on boot |
+| ChromaDB (RAG vector store) | `/home/boatiq/rag-stack/chroma_db/` | HIGH — binary index files | Detect corruption; trigger re-ingest from source documents |
+| AvNav tile downloads | `/home/d3kos/.avnav/data/` | LOW — re-downloadable | Delete partial tiles; re-download on demand |
+
+### Proposed Architecture: Unified Boot Self-Healing Service
+
+Concept: a single `d3kos-selfheal.service` that runs `ExecStartPre` before all other services:
+
+```
+1. Check AvNav state → repair if corrupt
+2. Validate all JSON config files → restore from .bak if invalid
+3. Run SQLite integrity check on all DBs → log failures, alert via Fix My Pi
+4. Check ChromaDB index → flag for re-ingest if corrupt
+5. Log self-heal result to /opt/d3kos/logs/selfheal.log
+6. Optionally: POST result to Fix My Pi watchdog endpoint
+```
+
+**This is design only — no code written. Research questions (R1–R5) must be answered before implementation begins.**
+
+### Fix Status
+| Step | Status |
+|------|--------|
+| Logged to PART 17 + V09994_BUG_FIXES.md | `[x]` Done S94 |
+| AvNav research (R1–R5) | `[ ]` Not started |
+| System-wide service audit (confirm risk levels) | `[ ]` Not started |
+| Self-healing service design (atomic spec) | `[ ]` Blocked on research |
+| Implementation | `[ ]` Blocked on design |
+| Pi deployment + test | `[ ]` Blocked on implementation |
+
+### Operator Actions Required Before Research Can Begin
+- Confirm: is the Pi accessible via SSH right now for log inspection?
+- Confirm: which AvNav data was lost/corrupted (routes? tile cache? settings?)
+- Confirm: is there a specific AvNav error message on boot, or does it just silently fail?
