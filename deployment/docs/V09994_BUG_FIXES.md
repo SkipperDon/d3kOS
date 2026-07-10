@@ -270,85 +270,126 @@ Concept: a single `d3kos-selfheal.service` that runs `ExecStartPre` before all o
 
 ---
 
-## BUG-11 — No way to verify third-party AIS, GPS, microphone, or speaker devices are working when connected to d3kOS
+## BUG-11 — No universal method to verify any brand of AIS, GPS, microphone, or speaker is working when connected to d3kOS
 
-**Status:** `[ ]` OPEN — research required. Logged 2026-07-10 S95. No fix attempted yet.
+**Status:** `[ ]` OPEN — research required. Logged 2026-07-10 S95. Updated S95.
 **Platform:** Pi (all hardware integration points)
 
 ### Symptom
-When a boater connects a third-party AIS receiver, GPS source, microphone, or speaker to d3kOS,
-there is no built-in mechanism to confirm the device is functional and being used by the system.
-The d3kOS dashboard provides no device health indicators for these peripheral categories.
+When any boater connects an AIS receiver, GPS source, microphone, or speaker to d3kOS —
+regardless of brand or model — there is no built-in mechanism to confirm the device is
+functional and being used by the system. The d3kOS dashboard provides no device health
+indicators for these peripheral categories.
+
 A device that is incompatible, misconfigured, or silently failing produces the same user
-experience as a working device — no data, no error, no feedback.
+experience as a working device: no data, no error, no feedback.
 
-### Known Problem Statement
-d3kOS was developed and tested with specific reference hardware. Other brands exist and
-are commonly used in marine environments. Two distinct failure classes apply:
+### Governing Constraint
+**The solution cannot be brand-specific.** d3kOS is used worldwide. The make and model
+of connected hardware is unknown in advance and varies by user. The fix must define
+a generic detection framework that works for any compliant device in each category —
+not a whitelist of supported brands, not a lookup table of known hardware.
 
-1. **Compatibility failure** — the device uses a protocol variant, baud rate, or connector
-   type that d3kOS does not support. Result: device connected but ignored by the system.
+The correct question is not "what devices does Don use?" — it is "how does d3kOS
+reliably detect, verify, and monitor any device of this type?"
 
-2. **Silent operational failure** — device is compatible and recognized on boot, but
-   subsequently stops producing valid data (cable fault, power brownout, signal loss).
-   d3kOS has no watchdog for ongoing device health in this category.
+### Two Failure Classes to Solve For
 
-Neither failure class currently surfaces a notification to the operator.
+**Class A — Compatibility failure (at connect time)**
+The device uses a protocol variant, baud rate, physical interface, or data format
+that d3kOS does not currently handle. Result: device plugged in, system sees nothing,
+user sees nothing. No error surfaced.
 
-### Scope of Research Required
+**Class B — Silent operational failure (at runtime)**
+The device is compatible and recognized on boot, but subsequently stops producing
+valid data (cable fault, power brownout, RF signal loss, USB disconnect/reconnect).
+d3kOS has no runtime watchdog for this condition. The user receives no warning.
 
-#### Part 1 — Device Category Inventory
-For each of the four device categories, answer:
-- What hardware was used during d3kOS development and testing?
-- What interface does d3kOS use to consume data from this device (serial port, ALSA device, Signal K path, etc.)?
-- What third-party brands/models are commonly used in the same role?
+Both failure classes must be addressable by the generic framework.
 
-| Device Category | d3kOS Integration Point | Reference Hardware (if known) | Common Third-Party Brands |
-|----------------|------------------------|-------------------------------|--------------------------|
-| AIS receiver | Signal K (N2K or serial NMEA 0183) | TBD — research required | Vesper, Garmin, Standard Horizon, Comar |
-| GPS source | Signal K (N2K or serial NMEA 0183) | TBD — research required | Garmin, Furuno, Simrad, u-blox USB pucks |
-| Microphone | ALSA capture device / Jabra S330 assumed | Jabra S330 (confirmed voice interface) | Blue Yeti, Rode, generic USB mics |
-| Speaker / audio output | ALSA playback device / Jabra S330 assumed | Jabra S330 (confirmed Piper TTS output) | Any USB or 3.5mm speaker |
+### Research Plan
 
-#### Part 2 — Compatibility Research
-For each device category:
-- What protocol/format variations exist that could cause silent incompatibility?
-- Are there known Signal K compatibility issues with specific AIS or GPS brands?
-- Does d3kOS hard-code any device paths (`/dev/ttyUSB0`, `hw:0,0`) that would break with different hardware enumeration order?
+#### Part 1 — Understand d3kOS Current Integration Points (read existing code/config on Pi)
 
-| # | Research Question | Category | Approach |
-|---|------------------|----------|----------|
-| R1 | What NMEA 0183 baud rates do different AIS/GPS brands use? Does d3kOS auto-detect or require manual config? | AIS, GPS | Review Signal K settings + serial config; check SignalK NMEA 0183 provider config |
-| R2 | Does d3kOS assume a specific ALSA card index for mic input and speaker output? | Mic, Speaker | Read `audio_api.py` or equivalent; check ALSA config files on Pi |
-| R3 | Does Signal K on d3kOS support both NMEA 0183 and NMEA 2000 input simultaneously? | AIS, GPS | Review running Signal K config on Pi (requires SSH access) |
-| R4 | What happens when a recognized device stops producing data — is there a timeout or silence detection? | All | Review Signal K timeout settings; check if any Flask service monitors data freshness |
-| R5 | Are there third-party AIS brands known to have Signal K compatibility issues? | AIS | Research Signal K community + GitHub issues |
+For each device category, determine how d3kOS currently consumes the device — this is
+what the detection framework must hook into.
 
-#### Part 3 — Notification Design
-Once the compatibility and failure-mode picture is clear, determine:
-- Which failure modes can be detected at boot vs. detected at runtime?
-- What is the correct notification path? (d3kOS dashboard alert, Fix My Pi watchdog, voice TTS, or all three?)
-- Should detection be passive (monitor existing data streams) or active (ping device on a schedule)?
+| Device Category | Expected d3kOS Integration | What to Confirm on Pi |
+|----------------|---------------------------|----------------------|
+| AIS receiver | Signal K NMEA 0183 serial provider OR NMEA 2000 via PiCAN-M | Which Signal K providers are configured; are they bound to a specific `/dev/tty*` path? |
+| GPS source | Signal K NMEA 0183 or NMEA 2000 | Same as AIS — how is position data ingested? Is it the same provider or separate? |
+| Microphone | ALSA capture device (Linux audio subsystem) | Is a specific card/device hardcoded? Does `arecord -l` show the device? |
+| Speaker / audio output | ALSA playback device | Is a specific card/device hardcoded in Piper TTS config or `ai_bridge.py`? |
 
-| Notification Trigger | Proposed Channel | Priority |
-|--------------------|-----------------|----------|
-| Device not recognized on boot | Dashboard persistent alert + Fix My Pi | HIGH |
-| Device recognized but no data for N seconds | Dashboard warning + optional TTS | MEDIUM |
-| Device previously working now silent | Dashboard warning + Fix My Pi alert | HIGH |
-| Incompatible device brand / protocol mismatch | Dashboard setup guide link | MEDIUM |
+#### Part 2 — Generic Detection Strategy Per Category
+
+The goal: determine what evidence d3kOS can observe — without knowing the device brand —
+to answer "is this device present and producing valid data?"
+
+| Device Category | Class A Detection (is it connected and recognized?) | Class B Detection (is it producing valid data?) |
+|----------------|---------------------------------------------------|------------------------------------------------|
+| AIS | Does Signal K have an active provider for this path? Is any AIS NMEA sentence (e.g. `!AIVDM`) arriving at the configured port? | Monitor `vessels.*.navigation.position` or AIS paths in Signal K — did last-seen timestamp go stale? |
+| GPS | Is a valid `$GPRMC` / `$GPGGA` sentence arriving at the configured serial path OR is Signal K path `navigation.position` populating? | Monitor Signal K position path — age of last fix > N seconds = silent failure |
+| Microphone | Does `arecord -l` enumerate a capture device? Does a short test capture produce non-silent audio (RMS > threshold)? | Periodic short capture test: flat/zero RMS = device silent or dead |
+| Speaker | Does `aplay -l` enumerate a playback device? Does a test tone play without ALSA error? | Periodic test tone: ALSA error or no-output = device gone |
+
+**Key principle:** all four detection strategies rely only on standard Linux subsystem
+interfaces (Signal K data paths, ALSA enumeration, NMEA sentence presence) — not on
+any brand-specific driver, SDK, or device identifier. Any compliant device will produce
+the expected signals if working correctly.
+
+#### Part 3 — Detection Timing Model
+
+Determine when each check should run:
+
+| Check Type | Timing | Rationale |
+|-----------|--------|-----------|
+| Boot presence check | On `d3kos-selfheal.service` startup (before other services) | Catch Class A failures before the user ever reaches the dashboard |
+| Runtime data-freshness check | Polling loop, every N seconds (N TBD) | Catch Class B failures during a voyage |
+| On-demand check | User-triggered from Settings or Fix My Pi | Allow user to re-run check after cable swap or reboot |
+
+#### Part 4 — Notification Design
+
+When a check fails, determine the correct notification path:
+
+| Failure Scenario | Notification Channel | Priority |
+|-----------------|---------------------|----------|
+| Device absent at boot (not enumerated) | Dashboard persistent banner + Fix My Pi diagnostic | HIGH |
+| Device present but no valid data at boot | Dashboard persistent banner + voice TTS warning | HIGH |
+| Device was working, now silent > N seconds | Dashboard warning + optional voice TTS | MEDIUM |
+| Device absent at boot but not configured (user has no such device) | No notification — absence is expected | N/A |
+
+**Open design question:** how does d3kOS know whether a device category is expected?
+(e.g. a boat with no AIS should not receive an "AIS missing" alert.)
+Resolution options: (a) a device configuration page in Settings where user declares what is installed,
+(b) auto-detect at first boot and cache the inventory, (c) only alert when a device was previously seen.
+This question must be answered before implementation can begin.
+
+#### Part 5 — Compatibility Gap Handling
+
+Some devices will fail Class A detection because d3kOS does not yet support their protocol
+variant (e.g. non-standard baud rate, NMEA 2000 PGN d3kOS does not subscribe to, etc.).
+
+For these cases the resolution is not "add support for brand X" but:
+- Identify the protocol gap (what standard are we missing?)
+- Extend d3kOS to support the standard, not the brand
+- Examples: auto-negotiate NMEA 0183 baud rates; support common GPS sentence variants
+  (`$GNRMC` as well as `$GPRMC`); handle ALSA device re-enumeration on USB disconnect/reconnect
 
 ### Fix Status
 | Step | Status |
 |------|--------|
 | Logged to PART 17 + V09994_BUG_FIXES.md | `[x]` Done S95 |
-| Part 1: device category inventory (interface + reference hardware) | `[ ]` Not started |
-| Part 2: compatibility research (R1–R5) | `[ ]` Not started |
-| Part 3: notification design | `[ ]` Blocked on Part 1 + 2 |
-| Implementation | `[ ]` Blocked on design |
+| Reframed as generic/model-agnostic framework | `[x]` Done S95 |
+| Part 1: read current d3kOS integration points on Pi (requires SSH) | `[ ]` Not started |
+| Part 2: generic detection strategy per category | `[ ]` Blocked on Part 1 |
+| Part 3: detection timing model | `[ ]` Blocked on Part 2 |
+| Part 4: notification design + "expected device" question answered | `[ ]` Blocked on Part 2 |
+| Part 5: compatibility gap audit | `[ ]` Blocked on Part 1 |
+| Implementation — device health monitor service | `[ ]` Blocked on design |
 | Pi deployment + test | `[ ]` Blocked on implementation |
 
-### Operator Context Needed Before Research Begins
-- Confirm: which specific AIS receiver brand/model is used on your boat (or intended)?
-- Confirm: which GPS source — dedicated GPS puck, chartplotter over N2K, or built-in Pi GPS HAT?
-- Confirm: is the Jabra S330 the only mic/speaker, or are you looking to support other devices?
-- Confirm: has a specific third-party device already failed silently on d3kOS? If yes, which one?
+### Pre-Research Prerequisite
+SSH access to the Pi is required to read current Signal K provider config and ALSA
+device configuration. No specific device brand information is needed before research begins.
+Research starts from what d3kOS currently does — and builds the generic framework outward from there.
