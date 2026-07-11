@@ -52,3 +52,9 @@
 - Wiki pages updated: wiki/log.md only
 - Contradictions flagged: none
 - Open questions: D11 hardware selection (NCS2 vs Hailo/Coral), D11 marine class model source, D11 chart engine (AvNav vs MapLibre)
+## [2026-07-11] fix | S96 — BUG-12 AIS provider re-enabled; AvNav serial conflict fixed; o-charts expiry diagnosed
+- Files changed: PROJECT_CHECKLIST.md (BUG-12 row, OB-O05-08), V09994_BUG_FIXES.md (BUG-12 entry), DEPLOYMENT_INDEX.md (S96 entry)
+- Pi config changed: ~/.signalk/settings.json (ais enabled:true), /var/lib/avnav/avnav_server.xml (ignore usbid 1-1.4:1.0)
+- Wiki pages updated: log.md (this entry)
+- Contradictions flagged: none
+- Open questions: o-charts license renewal required (OB-O05)

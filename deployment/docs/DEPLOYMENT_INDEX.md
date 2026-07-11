@@ -1120,6 +1120,19 @@ No new files deployed this session. Checklist and governance updates only:
 
 ---
 
+### On-Boat Debugging — S96 2026-07-11 (Pi IP 172.20.10.8)
+
+| File / Change | Description |
+|---------------|-------------|
+| Pi: `/home/d3kos/.signalk/settings.json` | **[FIXED — S96 2026-07-11]** AIS pipedProvider `"enabled": false` → `true`. Root cause of BUG-12: rtl_ais was running on TCP 10110 but SK was not reading from it. Fix: Python JSON edit + `sudo systemctl restart signalk`. |
+| Pi: `/var/lib/avnav/avnav_server.xml` | **[FIXED — S96 2026-07-11]** Added `<UsbDevice usbid="1-1.4:1.0" type="ignore"/>` inside `AVNUsbSerialReader` block. Stops AvNav from fighting gpsd for the u-blox GPS serial port. Backup at `/var/lib/avnav/avnav_server.xml.bak.20260711`. |
+| `Helm-OS/deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S96 2026-07-11]** BUG-12 full entry added (v1.4.0 → v1.5.0). Covers AIS provider disabled, AvNav serial conflict, o-charts license expiry finding. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S96 2026-07-11]** BUG-12 row added to PART 17 (FIXED). OB-O05/06/07/08 added under o-CHARTS section: o-charts license renewal blocking items. |
+
+**Note:** AvNav charts remain blank — o-charts license (CAac + CAgl) expired 2026-04-01. Renewal is a Don action (OB-O05 through OB-O08). Not a software defect — chart data on disk is intact.
+
+---
+
 ### AAO Data Collection System — S71 2026-04-27
 
 | File | Description |

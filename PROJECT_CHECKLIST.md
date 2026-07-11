@@ -1,5 +1,5 @@
 # d3kOS & AtMyBoat.com — Master Project Checklist (Active Items)
-**Version:** 3.4 | **Last Updated:** 2026-05-15 S82 — WiBoat FRD v1.1, BOM v2.0, docs relocated to Helm-OS; WB-01/02/09/12 updated
+**Version:** 3.5 | **Last Updated:** 2026-07-11 S96 — BUG-12 logged; AvNav serial conflict fix applied on-boat
 **Archive:** `PROJECT_CHECKLIST_ARCHIVE.md` — all completed work, decisions, and history preserved
 
 > This file contains OPEN, IN-PROGRESS, and BLOCKED items only.
@@ -27,6 +27,7 @@
 | BUG-08 | Helm Assistant on-screen keyboard shows then immediately hides; manual keyboard does not type | `[~]` **IN PROGRESS — fix v2.1 insufficient** | `keyboard-fix.js` v2.1 deployed. Root cause: `el.blur()` fires previous tap's `{ once: true }` hideKeyboard listener BEFORE `_recentlyShown` is set. Next step: test whether first tap (no prior listener) works; consider removing `el.blur()` + using `requestAnimationFrame` around `el.focus()`. Full record: `V09994_BUG_FIXES.md` BUG-08. |
 | BUG-09 | AvNav chart data corrupts after boat power loss; broader scope: audit all critical services for unclean-shutdown vulnerability and design self-healing | `[ ]` **OPEN — research required** | Root cause: unexpected power loss (boat electrical) causes filesystem/data corruption in AvNav. Two-part scope: (1) research AvNav-specific recovery — detect corruption on boot, auto-repair or restore from known-good state; (2) full audit of all critical services (Signal K, Flask APIs, SQLite DBs, ChromaDB RAG, AvNav) for power-loss vulnerability — design a unified self-healing strategy (integrity check + auto-repair on boot via systemd). Full record: `V09994_BUG_FIXES.md` BUG-09. |
 | BUG-11 | No universal method to verify any brand of AIS, GPS, microphone, or speaker is working when connected to d3kOS; solution must be model-agnostic and work for any device worldwide | `[ ]` **OPEN — research required** | Solution cannot be brand-specific. Research must define a generic detection framework: (1) how does d3kOS detect device presence vs. absence for each category, regardless of make/model; (2) how is ongoing health monitored (data flow, silence detection); (3) what is the notification path when a device fails or is missing. Full record: `V09994_BUG_FIXES.md` BUG-11. |
+| BUG-12 | AIS not showing in dashboard — Signal K AIS pipedProvider was disabled; rtl_ais was running but SK was not reading from it | `[x]` **FIXED S96 2026-07-11** | Root cause: `ais` pipedProvider set to `enabled: false` in `~/.signalk/settings.json` (unknown when changed). rtl_ais was running correctly on TCP 10110 the whole time. Fix: enabled the provider via Python JSON edit, restarted Signal K. Stale test MMSIs (800000001/800000003) cleared on restart. Full record: `V09994_BUG_FIXES.md` BUG-12. |
 
 ---
 
@@ -126,6 +127,15 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 | OB-O02 | o-charts plugin visible in OpenCPN plugin manager | Don | `[ ]` |
 | OB-O03 | Licensed charts visible for your area | Don | `[ ]` |
 | OB-O04 | Chart renders — no blank tiles in local area | Don | `[ ]` |
+
+### o-CHARTS LICENSE RENEWAL — AvNav (Don's task — urgent)
+
+| # | Item | Owner | Status |
+|---|------|-------|--------|
+| OB-O05 | Renew Canada chart subscription at www.o-charts.org — CAac (Atlantic) + CAgl (Great Lakes) both expired **2026-04-01** | Don | `[!]` **BLOCKING — AvNav shows blank** |
+| OB-O06 | After renewal: download new chart `.zip` files from o-charts.org → My Devices → Pi fingerprint | Don | `[ ]` Blocked on OB-O05 |
+| OB-O07 | Install new charts via AvNav at `http://172.20.10.8:8080` → Charts → Upload | Don | `[ ]` Blocked on OB-O06 |
+| OB-O08 | Verify AvNav chart renders for Port Colborne / Lake Erie area | Don | `[ ]` Blocked on OB-O07 |
 
 ### FULL UI TOUCHSCREEN WALKTHROUGH (every page on Pi screen)
 

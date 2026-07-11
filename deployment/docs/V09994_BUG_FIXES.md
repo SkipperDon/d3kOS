@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.4.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-10 S95 | **Status:** IN PROGRESS
+**Version:** 1.5.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-11 S96 | **Status:** IN PROGRESS
 
 ## STANDING RULE — Read This First
 
@@ -393,3 +393,74 @@ For these cases the resolution is not "add support for brand X" but:
 SSH access to the Pi is required to read current Signal K provider config and ALSA
 device configuration. No specific device brand information is needed before research begins.
 Research starts from what d3kOS currently does — and builds the generic framework outward from there.
+
+---
+
+## BUG-12 — AIS targets not showing in dashboard; Signal K AIS provider disabled
+
+**Status:** `[x]` FIXED — 2026-07-11 S96
+**Logged:** 2026-07-11 S96 (on-boat, Don at Port Colborne area, Pi IP 172.20.10.8)
+**Platform:** Pi (d3kOS dashboard)
+
+### Symptom
+AIS targets not appearing in dashboard or AvNav. Don reported "AIS may not be working" during on-boat session S96.
+
+### Root Cause
+Signal K `ais` pipedProvider was set to `"enabled": false` in `~/.signalk/settings.json`.
+`rtl_ais` was running correctly (process `/usr/bin/rtl_ais -h 127.0.0.1 -P 10110 -n`)
+and outputting NMEA0183 AIS sentences to TCP port 10110 — exactly what the provider
+is configured to read. The provider being disabled meant SK was not consuming any of it.
+
+When/how it was disabled is unknown. No AIS PGNs were observed on the NMEA2000 bus (can0)
+during testing, confirming RTL-SDR is the intended (and only) AIS path.
+
+Stale test vessel MMSIs (800000001, 800000003) visible in SK prior to fix — leftover
+from the simulator removed March 2026. These cleared on SK service restart.
+
+### Investigation Method (S96 — Pi Diagnosis Protocol)
+Three parallel agents:
+1. Services/logs: confirmed all services active; AIS vessel count showed only test MMSIs
+2. Config/git: found `"enabled": false` in pipedProviders for 'ais'; rtl_ais running on 10110
+3. Filesystem: disk 23% used, memory 4.7GB free, no filesystem issues
+
+### Fix Applied
+```bash
+# On Pi via SSH:
+python3 -c "
+import json
+with open('/home/d3kos/.signalk/settings.json', 'r') as f:
+    d = json.load(f)
+for p in d['pipedProviders']:
+    if p['id'] == 'ais':
+        p['enabled'] = True
+with open('/home/d3kos/.signalk/settings.json', 'w') as f:
+    json.dump(d, f, indent=2)
+"
+sudo systemctl restart signalk
+```
+
+### Verification
+- Signal K vessel count after restart: 1 (own vessel only — correct clean state)
+- Test MMSIs cleared on restart — confirmed
+- rtl_ais still running on port 10110 — confirmed
+- Whether live AIS targets appear depends on VHF range of nearby vessels at time of test
+
+### Side Investigation — AvNav Serial Port Conflict (same session)
+During the BUG-12 investigation, a separate AvNav issue was also found and fixed:
+AvNav's `AVNUsbSerialReader` was repeatedly failing to open `/dev/ttyACM0` (the u-blox 7 GPS)
+because gpsd/Signal K already had exclusive access. This caused a continuous error loop in the
+AvNav log (`ERROR, unable to open port`). AvNav was still navigating via its `AVNSignalKHandler`
+(data from SK at port 8099), but the serial reader conflict caused log spam and resource waste.
+
+**Fix applied:** Added `<UsbDevice usbid="1-1.4:1.0" type="ignore"/>` inside the
+`AVNUsbSerialReader` block in `/var/lib/avnav/avnav_server.xml`. Backup at
+`/var/lib/avnav/avnav_server.xml.bak.20260711`. AvNav restarted. Error loop confirmed gone.
+
+Note: This is a separate issue from BUG-09 (power-loss file corruption). The serial conflict
+may be pre-existing and unrelated to the power loss event. BUG-09 investigation (R1-R5) remains open.
+
+### Relation to BUG-11
+BUG-11 (generic device detection framework) was opened because AIS "may not be working"
+and there was no way to tell. BUG-12 is the specific failure BUG-11 would have caught —
+the AIS provider being silently disabled with no alert or health indicator in the dashboard.
+BUG-11 research should consider this failure mode as a test case.
