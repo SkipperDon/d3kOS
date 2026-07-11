@@ -58,3 +58,9 @@
 - Wiki pages updated: log.md (this entry)
 - Contradictions flagged: none
 - Open questions: o-charts license renewal required (OB-O05)
+
+## [2026-07-11] bug-log | S97 — BUG-13 logged: speed gauge flicker + long-press UX issue
+- Files changed: PROJECT_CHECKLIST.md (PART 17 BUG-13 row), V09994_BUG_FIXES.md (v1.5.0→v1.6.0 full entry), DEPLOYMENT_INDEX.md (S97 section)
+- Wiki pages updated: none (no entity/concept changes — bug tracking only)
+- Contradictions flagged: none
+- Open questions: R1–R4 investigation steps defined in BUG-13 entry; root cause unknown pending investigation

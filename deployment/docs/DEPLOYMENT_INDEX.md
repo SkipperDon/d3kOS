@@ -1133,6 +1133,15 @@ No new files deployed this session. Checklist and governance updates only:
 
 ---
 
+### BUG-13 Logged — S97 2026-07-11
+
+| File / Change | Description |
+|---------------|-------------|
+| `Helm-OS/deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S97 2026-07-11]** BUG-13 full entry added (v1.5.0 → v1.6.0). Speed gauge flicker during throttle transitions + long-press options panel obscures gauge face. Platform: Pi d3kOS dashboard. Investigation required (R1–R4 steps defined). |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S97 2026-07-11]** BUG-13 row added to PART 17. v3.5 → v3.6. Status: OPEN — investigation required. |
+
+---
+
 ### AAO Data Collection System — S71 2026-04-27
 
 | File | Description |

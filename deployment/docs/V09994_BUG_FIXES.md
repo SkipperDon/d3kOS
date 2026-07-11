@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.5.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-11 S96 | **Status:** IN PROGRESS
+**Version:** 1.6.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-11 S97 | **Status:** IN PROGRESS
 
 ## STANDING RULE — Read This First
 
@@ -464,3 +464,98 @@ BUG-11 (generic device detection framework) was opened because AIS "may not be w
 and there was no way to tell. BUG-12 is the specific failure BUG-11 would have caught —
 the AIS provider being silently disabled with no alert or health indicator in the dashboard.
 BUG-11 research should consider this failure mode as a test case.
+
+---
+
+## BUG-13 — Speed gauge flickers between steady-state and current speed during throttle transitions; long-press opens options panel that obscures readout
+
+**Status:** `[ ]` OPEN — investigation required
+**Logged:** 2026-07-11 S97 (reported on-boat by Don)
+**Platform:** Pi (d3kOS dashboard — speed gauge tile)
+
+### Symptom
+
+**Issue 1 — Gauge flickering during speed transitions:**
+At steady cruising speed the gauge is stable and correct. When engine throttle is changed (speed increases or decreases), the display behaves as follows:
+1. Momentarily shows the new current speed
+2. Snaps back to the prior steady-state speed reading
+3. Oscillates back and forth between the old reading and the new reading continuously throughout the speed transition
+4. Does not settle cleanly on the new speed until the boat reaches a new steady state
+
+The gauge does not track the speed smoothly during acceleration or deceleration — it shows both the old and new values alternately rather than a continuous update.
+
+**Issue 2 — Long-press options panel obscures speed readout:**
+When Don pressed and held the gauge tile on the touchscreen (attempting to monitor the speed more closely), an options panel appeared. The panel appearance is noted as expected/functional, but the panel covered the gauge face, making it impossible to read the current speed during the interaction. There is no way to simultaneously view options and the live speed reading.
+
+### Known Context
+- Reported while under way — throttle changes during navigation
+- Signal K is the data source for speed (SOG — Speed Over Ground, path `navigation.speedOverGround`)
+- The dashboard gauge likely reads from a Signal K WebSocket or REST poll
+- Uncertainty flag: the exact gauge component file and rendering mechanism are unknown — investigation required
+
+### Hypothesized Root Causes (unconfirmed — investigation required)
+
+**Issue 1 candidates:**
+- A smoothing/moving-average algorithm on the gauge is showing both the smoothed average and the raw value alternately — the display is toggling between a lagging average and the live reading
+- The gauge is reading from two data sources (e.g. both a Signal K WebSocket push and a polling endpoint) and the two sources disagree during transitions, causing alternation
+- A debounce or throttle interval in the UI update loop is causing the gauge to render a stale cached value between live updates
+- Signal K itself may be emitting burst updates after a period of silence, arriving out-of-order or causing double-render on the consumer side
+
+**Issue 2 candidates:**
+- The options panel is rendered as an overlay that covers the full tile, including the gauge face
+- No picture-in-picture or compact-mode for the gauge while options are open
+- Touch event interpretation: a long-press that is meant for monitoring is being captured as a context-menu trigger
+
+### Investigation Required
+
+Before any fix is proposed:
+
+**R1 — Identify the gauge component:**
+- Which HTML/JS file renders the speed gauge tile on the dashboard?
+- What is the Signal K data path being consumed (`navigation.speedOverGround` or other)?
+- Is the update mechanism WebSocket (push) or polling (setInterval)?
+
+**R2 — Identify the smoothing/averaging logic:**
+- Is there a rolling average, exponential moving average (EMA), or debounce applied to the incoming speed value before it is rendered?
+- If yes: what is the window or time constant?
+- Is there a secondary data path (e.g. REST /api/v1/vessels/self alongside the WS stream) that could cause dual updates?
+
+**R3 — Identify the options panel mechanism:**
+- What event triggers the options panel on the speed tile (long-press, right-click, hold)?
+- What does the options panel display — tile configuration, raw value, units?
+- Does it cover the gauge or render alongside it?
+
+**R4 — On-boat reproduction:**
+- Reproduce the flicker by accelerating from idle to cruising speed while watching the dashboard
+- Capture approximate flicker rate (is it every ~1s, every 200ms, continuous?)
+- Confirm whether the flicker stops once the new speed is held steady
+
+### Fix Approach (pending investigation)
+
+Two separate fixes expected:
+
+**Fix 1 — Gauge stability:** Likely one of:
+- Remove or tune the smoothing algorithm so it does not create a visible split between raw and averaged values during transitions
+- Unify the data source so the gauge reads from exactly one source (WebSocket preferred)
+- Apply a single low-pass filter with an appropriate time constant (e.g. 1–2 seconds) that smooths rapid noise without introducing the oscillation
+
+**Fix 2 — Options panel UX:** Likely one of:
+- Render the options panel as a sidebar or bottom sheet instead of a full overlay, keeping the gauge face visible
+- Add a live speed readout inside the options panel so the value is still accessible
+- Shorten the long-press duration threshold or change the gesture to avoid accidental trigger while monitoring
+
+### Files Likely Affected (unconfirmed)
+- Pi: `/var/www/html/` — dashboard HTML/JS (specific file unknown — investigation required)
+- Possibly: `/opt/d3kos/services/` — any service feeding speed data to the dashboard
+
+### Checklist
+| Step | Status |
+|------|--------|
+| Logged to PART 17 + V09994_BUG_FIXES.md | `[x]` Done S97 |
+| R1 — Identify gauge component and data path | `[ ]` |
+| R2 — Identify smoothing/averaging logic | `[ ]` |
+| R3 — Identify options panel mechanism | `[ ]` |
+| R4 — On-boat reproduction and flicker rate | `[ ]` |
+| Fix 1 — Gauge stability | `[ ]` |
+| Fix 2 — Options panel UX | `[ ]` |
+| Verified stable at new steady-state speed on Pi touchscreen | `[ ]` |
