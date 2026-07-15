@@ -1,5 +1,5 @@
 # v0.9.9.5 — Research & Discussion Backlog
-**Version:** 1.0 | **Created:** 2026-06-23 S92 | **Status:** DISCUSSION / PRE-APPROVAL
+**Version:** 1.1 | **Created:** 2026-06-23 S92 | **Updated:** 2026-07-15 S99 — D13 added | **Status:** DISCUSSION / PRE-APPROVAL
 **Owner:** Donald Moskaluk — AtMyBoat.com / d3kOS
 
 > **Purpose:** Captures every idea, research topic, and architectural discussion that has been
@@ -398,6 +398,103 @@ Working Python framework provided in case study:
 
 ---
 
+## 13. VHF Communication Suite — Audio Replay + STT Transcription + Translation + Signal K Alerts
+
+**Status:** `[PARTIAL DESIGN]` — base project identified and assessed (S99 2026-07-15). Four-phase architecture defined. No d3kOS code written yet. Blocking unknown: VHF radio audio tap accessibility.
+
+**What was discussed and researched (S99 2026-07-15):**
+
+Based on open-source project `github.com/hwater/vhf-clear-audio-replay` (MIT, created 2026-07-02). Don intends to adapt and extend this project for d3kOS as a four-phase communications feature. Community engagement with project author underway.
+
+### Phase 1 — VHF Audio Replay (Base Project)
+
+Taps the VHF radio's speaker/line-out jack via a USB audio adapter. Records every transmission as a denoised MP3 using sox VOX detection and ffmpeg spectral denoising (EBU R128 normalization). Classifies recordings as speech vs. carrier noise via a lightweight Python modulation index classifier (numpy only — no ML model). Serves a browser-based replay list with waveform thumbnails on port 8088.
+
+**Signal path:**
+```
+VHF radio speaker out → USB audio adapter (C-Media 0d8c:0014)
+  → ALSA dsnoop (vhf device) → sox VOX threshold (3% amplitude)
+  → sox bandpass filter (250–3400 Hz) → ffmpeg FFT denoise + loudness normalize
+  → MP3 file → vhf-classify.py (modulation index) → speech or noise
+  → vhf-web.py (port 8088) → browser replay list
+```
+
+**New hardware required:** USB C-Media audio adapter (e.g. Unitek Y-247A, ~$10–15 CAD). No SDR hardware. RTL2838 dongle / rtl_ais stack completely unaffected.
+
+**d3kOS integration pattern:** Two systemd services (`vhf-recorder.service`, `vhf-web.service`) behind one nginx `location /vhf/` reverse-proxy block. Port 8088 is unoccupied in d3kOS port registry. Signal K vessel name integration pre-built in base project (reads `vessels.self.name`). Storage path redirected from `/srv/music/` (OwnTone-centric) to `/opt/d3kos/data/vhf/`. OwnTone dependency removed from service file (one-line edit).
+
+**Pre-install checks required:**
+- VHF radio model: confirm accessible audio output jack (speaker terminals or 3.5mm)
+- `/etc/asound.conf` on Pi: check for existing content — must merge if present
+- ALSA card index: base project pins adapter to `hw:3` — confirm no collision with existing Pi audio devices
+
+### Phase 2 — Signal K Keyword Alerts
+
+Post-transcription keyword scan pushes notifications to Signal K alert tree. Triggers a visual flash and optional TTS voice alert via the existing Helm AI voice path.
+
+**Keywords to detect:** `MAYDAY`, `PAN-PAN`, `SÉCURITÉ` / `SECURITE`, vessel MMSI (from Signal K `vessels.self.mmsi`), vessel name (from Signal K `vessels.self.name`).
+
+**Signal K notification PUT:**
+```
+PUT http://localhost:3000/signalk/v1/api/vessels/self/notifications/vhf/<alert-id>
+{ "value": { "message": "MAYDAY detected on CH16", "state": "alarm", "method": ["sound","visual"] } }
+```
+
+**Complexity:** ~20 lines of Python. Highest-value, lowest-cost enhancement. Can ship with Phase 1.
+
+### Phase 3 — Faster-Whisper STT Transcription
+
+Runs Faster-Whisper (CTranslate2-based) locally on the Pi CPU after each classified-speech MP3 is written. Not real-time — async post-processing only.
+
+| Model | RAM | Time per 10s clip on Pi 5 | Recommendation |
+|---|---|---|---|
+| `tiny` | ~150MB | ~3–5s | Minimum viable |
+| `base` | ~300MB | ~8–12s | Recommended — better maritime vocab |
+| `small` | ~500MB | ~25–40s | Too slow for realtime replay |
+
+**Transcript displayed in replay list** beside the audio waveform. Enables full-text search of radio log.
+
+**Dependency:** `pip install faster-whisper`. CUDA not required (CPU-only Pi). Model downloads from HuggingFace on first run — needs internet once; can be pre-downloaded during install.
+
+**Pi memory gate:** Confirm `free -m` on Pi shows >500MB available after d3kOS services load before committing to `base` model. If headroom is tight, use `tiny`.
+
+### Phase 4 — Argos Translate (Local Offline Translation)
+
+Pipes transcription text through Argos Translate (fully offline, CPU neural MT) for real-time English translation of non-English transmissions. Designed for international waters — French coast guard (St. Lawrence, Québec) is the primary Canadian use case.
+
+**Language detection:** `langdetect` Python library (~1MB, no model — pure statistical). Detects language before deciding whether to invoke translation model.
+
+**Model loading strategy:** Lazy-load on first detection of a specific language; cache model in memory for session. Pre-load French-English pair (~150MB) as default; expose language selector in Settings for user configuration. Do NOT pre-load all 30+ Argos language pairs.
+
+**Both original text and English translation displayed** in the replay list.
+
+---
+
+**Research conclusions:**
+- Base project (Phase 1) is a near-perfect d3kOS fit: Trixie-compatible, systemd-native, Signal K-aware, zero pip dependencies, MIT licensed. Fork and own it if needed.
+- Keyword alerts (Phase 2) is the highest value/effort ratio of the four phases — should ship with Phase 1.
+- Faster-Whisper (Phase 3) is feasible on Pi 5 with `base` model if memory headroom is confirmed. No GPU needed.
+- Argos Translate (Phase 4) requires language selection decision: which pairs to support (French-English at minimum for Canada). Lazy-load pattern prevents RAM overcommit.
+- Total new apt packages for Phase 1: `sox`, `ffmpeg`, `alsa-utils`, `python3-numpy`.
+- Total estimated build effort: Phase 1+2: ~4 hours. Phase 3: ~3 hours (model integration + UI). Phase 4: ~3 hours (language detection + translation pipeline + Settings UI). All four phases: ~10 hours.
+
+**Community context:** Project was discovered in July 2026. Don has engaged with the hwater/vhf-clear-audio-replay GitHub community. d3kOS implementation would be a fork/adaptation, not a direct inclusion.
+
+---
+
+**Open questions before Phase 1 build:**
+1. **Radio audio tap (BLOCKING):** What is the VHF radio model? Does it have a 3.5mm speaker jack or accessible speaker terminals for the USB audio adapter tap?
+2. **`/etc/asound.conf` check:** Does the Pi currently have an `/etc/asound.conf`? (Run `cat /etc/asound.conf` on Pi to verify before install.)
+3. **ALSA card index:** What audio devices are currently on the Pi? Run `aplay -l` on Pi to confirm card 3 is unoccupied (or adjust udev rule accordingly).
+4. **Pi memory headroom:** Run `free -m` on Pi after d3kOS services load — is there >500MB available for Faster-Whisper `base` model, or should `tiny` be used?
+5. **Translation languages:** French-English as the default pre-loaded pair — is that correct? Any other language pairs needed for anticipated cruising areas?
+
+**What would trigger moving to PROJECT_CHECKLIST.md:**
+- VHF radio audio tap confirmed accessible (blocking question 1 resolved)
+- Don approves Phase 1 + Phase 2 build start
+
+---
+
 ## 12. On-Boat Validation — Prerequisite for Everything Above
 
 **Status:** `[AWAITING OPERATOR]` — all build work above is blocked until d3kOS is validated at the helm.
@@ -428,7 +525,9 @@ Working Python framework provided in case study:
 | 10 | PWA feature build | Medium | On-boat validation | User experience |
 | 11 | Research paper submission | Zero (paper ready) | Don verifies dataset | Academic record |
 | 11b | 360° Vision: NCS2 cameras + satellite + cellular | High | Hardware selection + model source | Safety + awareness |
-| 12 | pypilot integration | Very High | SafeHelm Phase 2 sea trial | Automation |
+| 12 | VHF Communication Suite (D13) — Phase 1+2 | Low (~4h) | Radio audio tap confirmed | Safety + situational awareness |
+| 12b | VHF Communication Suite (D13) — Phase 3+4 (STT + Translation) | Medium (~6h) | Pi memory confirmed + Phase 1 live | Safety + international ops |
+| 13 | pypilot integration | Very High | SafeHelm Phase 2 sea trial | Automation |
 
 ---
 

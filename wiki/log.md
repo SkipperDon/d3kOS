@@ -64,3 +64,8 @@
 - Wiki pages updated: none (no entity/concept changes — bug tracking only)
 - Contradictions flagged: none
 - Open questions: R1–R4 investigation steps defined in BUG-13 entry; root cause unknown pending investigation
+## [2026-07-15] research | S99 — D13 VHF Communication Suite added to V09995 discussion plan
+- Files changed: deployment/docs/V09995_DISCUSSION_PLAN.md (v1.0→v1.1, D13 added), PROJECT_CHECKLIST.md (PART 20 D13 row), deployment/docs/DEPLOYMENT_INDEX.md (V09995 entry updated)
+- Wiki pages updated: none (no new entities — base project external, no Pi architecture changes)
+- Contradictions flagged: none
+- Open questions: VHF radio audio tap accessibility (blocking Phase 1); Pi memory headroom for Faster-Whisper base model; ALSA card index collision check

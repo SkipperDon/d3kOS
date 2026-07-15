@@ -559,3 +559,152 @@ Two separate fixes expected:
 | Fix 1 — Gauge stability | `[ ]` |
 | Fix 2 — Options panel UX | `[ ]` |
 | Verified stable at new steady-state speed on Pi touchscreen | `[ ]` |
+
+---
+
+## BUG-14 — CX5106 NMEA 2000 Engine Gateway Not Transmitting Data — Device Not Visible on NMEA 2000 Bus
+
+**Status:** `[ ]` OPEN — likely device defective
+**Logged:** 2026-07-13 S98 (on-boat, Monterey 265 SEL, Pi IP 172.20.10.8)
+**Platform:** Pi (NMEA 2000 network, CX5106 integration)
+
+### Symptom
+CX5106 engine data gateway installed on the boat. Device has power (green LED on). However, it does not transmit any NMEA 2000 messages. Signal K shows zero messages from CX5106 on the CAN0 NMEA 2000 bus. Only "Pangoo" device (ID 64) appears in the NMEA 2000 sources list.
+
+### Equipment & Configuration
+- **Device:** CX5106 NMEA 2000 analog-to-digital converter
+- **Boat:** Monterey 265 SEL (North American 8-cylinder gasoline engine)
+- **Signal source:** Purple sender wire (fuel tank level) — measured 40-70 Ohms (correct sender resistance range)
+- **DIP switch configuration:** SW3=ON (ignition coil RPM source), SW6=ON (8 cylinders)
+- **NMEA 2000 connection:** Drop cable connected to T-connector on PiCAN-M
+
+### Investigation Conducted (S98)
+1. **Power:** Green LED on CX5106 confirmed — device is powered
+2. **Sender signal:** Purple wire tested with multimeter (Ohms setting) — showed 40-70Ω resistance (correct for fuel sender)
+3. **DIP switches:** Verified set to correct positions for 8-cyl gasoline (SW3=ON, SW6=ON)
+4. **NMEA 2000 connection:** 
+   - Drop cable physically connected to T-connector
+   - Reseated connection 4 times
+   - No visible corrosion or damage
+5. **Signal K NMEA 2000 sources:** Only device visible is "Pangoo" (ID 64)
+   - CX5106 does NOT appear in `curl http://localhost:8099/signalk/v1/api/sources` output
+   - No CX5106 device ID enumerated on the bus
+
+### Known Details
+- Purple sender wire IS connected to CX5106 (only connection point for fuel sensor on this device)
+- Analog gauges on the dashboard still work correctly (they receive the purple sender signal directly, not via CX5106)
+- CAN0 interface on Pi is UP and receiving NMEA 2000 messages from Pangoo device (proves the backbone is functional)
+- All DIP switch positions verified against CX5106_CONFIGURATION_GUIDE.md for 8-cylinder gasoline engine
+
+### Root Cause Candidates
+1. **Most likely:** CX5106 device is defective (has power, receiving sender signal, but hardware/firmware failure prevents NMEA 2000 transmission)
+2. **Less likely but not ruled out:** CX5106 NMEA 2000 PHY or network stack failure (device isolated from the bus despite cable connection)
+3. **Very unlikely:** NMEA 2000 backbone has a termination issue affecting only this device (Pangoo device works fine on same bus)
+
+### Evidence Against Configuration Issues
+- DIP switches set to manufacturer spec
+- Sender wire connected and confirmed to have the signal (40-70Ω matches fuel sender resistance curve)
+- Cable physically connected and reseated multiple times
+- NMEA 2000 bus is active and receiving messages from other device
+
+### Next Steps (blocked pending resolution)
+If the device is defective:
+1. Obtain a replacement CX5106 unit
+2. Test the replacement with the same configuration
+3. If replacement works → original unit is confirmed defective; document as hardware failure
+4. If replacement also fails → issue is not the unit (revisit NMEA 2000 backbone or configuration)
+
+If a replacement is not available:
+1. Option: remove CX5106 and rely on analog gauges (they work correctly without it)
+2. Alternative: implement software-based signal conditioning on Pi to read the sender resistance directly via an ADC and convert to NMEA 2000 PGNs (complex, requires new hardware)
+
+### Relation to BUG-11
+BUG-11 (generic device health detection) would have caught this failure automatically. d3kOS should alert the user: "CX5106 device not found on NMEA 2000 bus" on boot. This bug demonstrates why BUG-11 is critical.
+
+---
+
+## BUG-15 — Course Heading Flashes Different Directions on d3kOS Dashboard While Boat Is Stationary
+
+**Status:** `[ ]` OPEN — investigation required
+**Logged:** 2026-07-13 S98 (on-boat, reported by Don)
+**Platform:** Pi (d3kOS dashboard — COG display)
+
+### Symptom
+While the boat is anchored or stationary (Speed Over Ground = 0), the course heading (COG — Course Over Ground) on the d3kOS dashboard display rapidly flashes between different directions. The display should remain stable or locked to a single direction when not moving.
+
+### Context
+- Reported during on-boat session while anchored / not under way
+- Speed gauge shows 0 or near-zero
+- Heading display is oscillating rapidly (flashing multiple directions)
+
+### Hypothesized Root Causes (unconfirmed — investigation required)
+
+**Candidate 1: GPS/GNSS receiver noise**
+- When SOG is zero or very low, GPS receivers often show erratic heading (since direction is meaningless with no movement)
+- Noise in the GPS signal can cause rapid COG swings when the vessel is stationary
+- Fix would be: filter out COG updates when SOG is below a threshold (e.g., ignore COG when SOG < 0.5 knots)
+
+**Candidate 2: Multiple heading sources with conflicting values**
+- d3kOS may be receiving COG from multiple sources (GPS NMEA0183 GGA/RMC sentence, compass heading, NMEA2000 PGN)
+- During stationary periods, these sources may disagree or one may return stale values
+- Dashboard rendering alternates between the sources
+
+**Candidate 3: Dashboard display caching / update bug**
+- Dashboard may be rendering cached COG values alongside fresh values
+- A rendering glitch could cause the old heading to display, then the new heading, then back to old — appearing as a flash
+
+**Candidate 4: Signal K WebSocket push bursts**
+- Signal K may emit multiple rapid COG updates when the heading is noisy, causing the dashboard to re-render multiple times per second
+- No debounce or rendering throttle on the consumer side
+
+### Investigation Required
+
+**R1 — Identify COG data source and rendering:**
+- What HTML/JS file renders the heading/COG display on d3kOS dashboard?
+- Is COG data sourced from Signal K WebSocket (push) or REST polling?
+- What is the update frequency?
+
+**R2 — Check Signal K COG path activity when stationary:**
+- On Pi SSH: `curl -s http://localhost:8099/signalk/v1/api/vessels/self/navigation/courseOverGroundTrue`
+- Observe: does the COG value change rapidly when SOG is near zero?
+- Capture: screenshot/log of the raw Signal K values during the flashing period
+
+**R3 — Check if COG is the issue or if other headings are also flashing:**
+- Does compass heading (if available in Signal K) also flash?
+- Does courseOverGroundMagnetic (COG magnetic variant) flash?
+- Or is it only COG that's affected?
+
+**R4 — On-boat reproduction and frequency measurement:**
+- Reproduce the flashing while stationary and anchored (low SOG)
+- Estimate the flashing rate (is it 1 Hz, 10 Hz, continuous?)
+- Note: does it stop as soon as the boat is underway (SOG > threshold)?
+
+### Proposed Fix (pending investigation)
+
+**Fix candidate:** Implement a COG validation filter in the dashboard consumer:
+```
+If SOG < 0.5 knots:
+  - Do NOT update the displayed COG
+  - Hold the previous stable value
+  - Or display "Heading uncertain — moving slowly" message
+Else:
+  - Display the live COG value
+```
+
+Alternative: implement a low-pass filter on COG that attenuates rapid changes when SOG is low.
+
+### Files Likely Affected (unconfirmed)
+- Pi: `/var/www/html/` — dashboard HTML/JS (heading/COG display — specific file unknown — investigation required)
+- Possibly: Signal K data consumers or WebSocket subscriptions
+
+### Checklist
+| Step | Status |
+|------|--------|
+| Logged to PART 17 + V09994_BUG_FIXES.md | `[x]` Done S98 |
+| R1 — Identify COG rendering component and data source | `[ ]` |
+| R2 — Observe raw Signal K COG values when stationary | `[ ]` |
+| R3 — Determine if issue is COG-specific or broader | `[ ]` |
+| R4 — On-boat reproduction and flashing frequency | `[ ]` |
+| Proposed fix — COG filter (SOG threshold validation) | `[ ]` |
+| Test fix on Pi dashboard | `[ ]` |
+| Verified: COG remains stable when stationary | `[ ]` |
