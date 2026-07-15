@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.6.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-11 S97 | **Status:** IN PROGRESS
+**Version:** 1.8.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-15 S100 | **Status:** IN PROGRESS
 
 ## STANDING RULE — Read This First
 
@@ -708,3 +708,92 @@ Alternative: implement a low-pass filter on COG that attenuates rapid changes wh
 | Proposed fix — COG filter (SOG threshold validation) | `[ ]` |
 | Test fix on Pi dashboard | `[ ]` |
 | Verified: COG remains stable when stationary | `[ ]` |
+
+---
+
+## BUG-16 — Engine Gauge Tap Dialog Shows Hardcoded/Simulated Data; Does Not Read Live Signal K Values or Compare Against Actual Tolerances
+
+**Status:** `[ ]` OPEN — logged only. No investigation or fix attempted.
+**Platform:** Pi (d3kOS dashboard — engine gauges)
+**Reported:** 2026-07-15 S100 — on-boat testing
+
+### Symptom
+
+When the operator taps/presses any engine gauge on the d3kOS dashboard (oil pressure, coolant
+temperature, RPM, battery voltage, fuel), a dialog appears. The dialog shows hardcoded or
+simulated data — for example, it indicates "oil pressure is too low" with a fixed value — rather
+than reading the actual live engine value from Signal K and evaluating whether that value is
+within the normal tolerance range for the boat.
+
+**Expected behaviour (as designed/intended):**
+1. Operator taps any gauge
+2. Dialog reads the actual live current value for that gauge from Signal K
+3. Compares the reading against the normal operating tolerance (advisory / alert / critical thresholds)
+4. If within tolerance → shows green "Normal" status with the actual reading
+5. If outside tolerance → shows specific advisory for that gauge stating:
+   - The actual reading vs. the expected normal range
+   - What the operator should do immediately
+   - Source: boat maintenance manual (if uploaded) OR AI-researched normal operating ranges for this engine
+
+**Observed behaviour:**
+- Dialog opens and shows data, but the data is simulated/hardcoded, not live Signal K readings
+- Reported example: oil pressure alarm shown even when oil pressure gauge on screen reads normally
+
+### Root Cause (preliminary — code inspection only; not yet confirmed on boat)
+
+Three issues identified in `deployment/v0.9.4/pi_source/overlays.js`:
+
+**Issue 1 — `showCrit()` is hardcoded (not live)**
+```js
+// Line 123 — overlays.js
+ticker.textContent = '⛔ CRITICAL — OIL PRESSURE 8 PSI — TAKE ACTION NOW';
+```
+This function displays a fixed string. The `8 PSI` value is a demo constant, not a live reading.
+If any code path triggers `showCrit()` on gauge tap, the operator sees simulated data.
+
+**Issue 2 — `showAlert()` is also hardcoded**
+```js
+// Line 20 — overlays.js
+ticker.textContent = '⚠ AIS ALERT — VESSEL CPA 0.18NM IN 4 MINUTES — HOLD COURSE';
+```
+Also a demo constant — unrelated to engine gauges but indicates the alert system was built
+with simulation data throughout.
+
+**Issue 3 — `openDiag()` silent fallback when Signal K cache is empty**
+`openDiag()` reads `window._d3kEngData` (live cache populated by Signal K WebSocket).
+If Signal K is offline or the cache has not been populated yet, `_diagReadingsSummary()`
+returns `'no live readings available (Signal K offline)'` and all gauge cards show `—` with
+`✓ Normal`. This creates a false "everything is normal" result when in fact no data was read.
+
+**Design gap — no maintenance manual integration:**
+The current `openDiag()` sends a generic Gemini prompt with the readings. It does not:
+- Reference the boat's uploaded maintenance manual for engine-specific tolerances
+- Use boat model / engine model to look up normal operating ranges
+- Source the advisory from boat-specific data
+
+### Affected Files
+
+| File | Location | Role |
+|------|----------|------|
+| `deployment/v0.9.4/pi_source/overlays.js` | Repo | `showCrit()`, `showAlert()`, `openDiag()` — all diagnostic dialog logic |
+| Pi: `/var/www/html/js/overlays.js` | Pi (deployed) | Live version |
+| `deployment/v0.9.4/pi_source/instruments.js` | Repo | `window._d3kEngData` cache write — needs verification |
+| Pi: `/var/www/html/js/instruments.js` | Pi (deployed) | Live version |
+
+### Investigation Required (deferred — holistic group review)
+
+- **R1:** Confirm which function is actually triggered when a gauge is tapped on Pi (is it `openDiag()` or `showCrit()` or something else?)
+- **R2:** Confirm whether `window._d3kEngData` is being populated on the Pi when engine is running
+- **R3:** Confirm the operator's tier level — `openDiag()` shows an "upgrade" screen for T0/T1 users instead of live data
+- **R4:** Determine if the fix scope is: (a) fix the data binding only, or (b) also add maintenance manual sourcing
+
+### Checklist
+| Step | Status |
+|------|--------|
+| Logged to PART 17 + V09994_BUG_FIXES.md | `[x]` Done S100 |
+| R1 — Confirm which function fires on gauge tap | `[ ]` |
+| R2 — Confirm `_d3kEngData` populated on Pi | `[ ]` |
+| R3 — Confirm operator tier level | `[ ]` |
+| R4 — Determine fix scope | `[ ]` |
+| Write fix | `[ ]` |
+| Deploy and verify on Pi | `[ ]` |
