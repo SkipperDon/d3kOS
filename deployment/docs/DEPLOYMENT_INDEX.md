@@ -1157,3 +1157,25 @@ No new files deployed this session. Checklist and governance updates only:
 | File | Description |
 |------|-------------|
 | `C:\Users\donmo\Downloads\wiboat\WIBOAT_SAFEHELM_INTEGRATED_ARCHITECTURE.md` | **[NEW — S79 2026-05-12]** Full integrated architecture for WiBoat (WiFi CSI radar) + SafeHelm (COLREGs collision avoidance) + Communications (LoRa Meshtastic mesh). 18 sections. Defines: two-box phase (RPi 4B + RPi 5) architecture, single-box Phase 4 migration, complete port registry (13 services, no conflicts), MMSI registry (4 distinct ranges), WiBoat→SafeHelm WebSocket contact feed (full JSON schema), WiBoat `WiBoatReader` thread spec, AIS+WiBoat fusion rule, 4-gate migration path with bench validation gate, Phase 1–4 roadmap with 88 tasks and explicit acceptance gates, 10 known gaps. Key insight: WiBoat WiFi CSI resolves SafeHelm L1 limitation (monocular camera cannot estimate range) — provides range + bearing for non-AIS targets enabling CPA/TCPA math on kayaks, dinghies, unlicensed powerboats. Sensor picture: 0–250m WiFi CSI, 0–250m camera (bearing only), 0–500m batman-adv mesh, 0–50nm AIS, 5–15km LoRa. Architecture supersedes SAFEHELM_SYSTEM_SPEC.md for ports/MMSIs/API formats. |
+
+---
+
+### BUG-14 Updated + BUG-16 Scope + BUG-17 Logged — S101 2026-07-20
+
+On-boat NMEA 2000 diagnosis session. CX5106 replacement unit confirmed on bus. Battery display failure logged as new bug.
+
+| File / Change | Description |
+|---------------|-------------|
+| `Helm-OS/deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S101 2026-07-20]** BUG-14 status → IN PROGRESS (v1.8.0 → v1.9.0). S101 findings appended: replacement CX5106 on bus at src=106, devices confirmed (Garmin/Pangoo/CX5106), one fuel packet received PGN 127505 at 19:32:36, tach wire = blue Pole 3 confirmed via research, DIP switches documented, RPM requirement flagged as unverified inference. BUG-17 new full entry added: battery voltage not displaying, Signal K `/vessels/self/electrical/` empty, dependent on BUG-14 resolution. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S101 2026-07-20]** PART 17: BUG-14 row → IN PROGRESS. BUG-16 scope note added (all engine gauges, not one). BUG-17 new row added: battery voltage not displaying. |
+| `/home/boatiq/CLAUDE.md` | **[UPDATED — S101 2026-07-20]** Hardware Claim Protocol added under Working Style. Rule: before stating any specific hardware fact, Claude must cite a WebSearch source from this session OR label claim `[UNVERIFIED INFERENCE]`. Recommending a physical action without a sourced reference is a UAC violation. Incident history embedded. |
+| `/home/boatiq/.claude/projects/-home-boatiq/memory/mercruiser_7p4l_gauge_wiring.md` | **[NEW — S101 2026-07-20]** Memory file: 1994 Mercruiser 7.4L 454 Bravo II RPM gauge terminal wire colors. Polo 1=Purple (12V)+White (illumination), Pole 2=Black (GND), Pole 3=Blue (tach signal — Monterey non-standard vs. ABYC gray). CX5106 DIP switches. NMEA 2000 status. RPM requirement flagged as unverified inference. |
+
+**NMEA 2000 device map confirmed on-boat (2026-07-20):**
+
+| Device | Source Address | Status |
+|--------|---------------|--------|
+| Garmin chartplotter | 0 | Normal |
+| Pangoo NMEA 2000 gateway | 64 | Normal — provides PGN 127488 |
+| CX5106 (replacement unit) | 106 | Heartbeat only — fuel continuous data pending tach wire connection |
+

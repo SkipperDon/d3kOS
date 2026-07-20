@@ -564,9 +564,43 @@ Two separate fixes expected:
 
 ## BUG-14 — CX5106 NMEA 2000 Engine Gateway Not Transmitting Data — Device Not Visible on NMEA 2000 Bus
 
-**Status:** `[ ]` OPEN — likely device defective
+**Status:** `[~]` IN PROGRESS — replacement unit on bus, tachometer signal connection pending
 **Logged:** 2026-07-13 S98 (on-boat, Monterey 265 SEL, Pi IP 172.20.10.8)
+**Updated:** 2026-07-20 S101 — new unit confirmed on NMEA 2000 bus
 **Platform:** Pi (NMEA 2000 network, CX5106 integration)
+
+### S101 Update — 2026-07-20 (On-boat, engine running)
+
+Old CX5106 unit replaced with new unit. New unit confirmed on NMEA 2000 bus.
+
+**NMEA 2000 network devices confirmed on bus:**
+| Source | Device | PGNs |
+|--------|--------|------|
+| src=0 | Garmin ECHOMAP Ultra 106sv | GPS, depth, heading, temp |
+| src=64 | Pangoo | PGN 127488 (Engine RPM) |
+| src=106 | CX5106 (new unit) | PGN 126993 (Heartbeat only, every 60s) |
+
+**Progress made:**
+- CX5106 on NMEA 2000 bus at src=106 — confirmed stable (heartbeat every 60 seconds)
+- Fuel sender (fuel gauge line) connected to CX5106
+- ONE fuel packet (PGN 127505, value=0%) received by Signal K at 19:32:36 — data path confirmed
+- CX5106 not broadcasting continuously — investigation ongoing
+
+**Tachometer signal wire — confirmed S101:**
+- **Blue wire, Pole 3 of RPM gauge** = tachometer signal (Monterey non-standard color; ABYC standard = gray)
+- Pole 1: Purple (12V ignition) + Red fused (illumination power) + White (illumination return)
+- Pole 2: Black (ground)
+- Pole 3: Blue = tachometer signal from engine coil/HEI → this is what CX5106 RPM input needs
+- NOTE: Clip to blue wire in PARALLEL — gauge continues to show RPM normally after clip
+
+**DIP switches on new unit:**
+- SW1: ON, SW2: OFF, SW3: ON, SW6: ON
+
+**Open question — NOT confirmed by source:**
+Whether CX5106 requires the RPM/tachometer signal to enable data output was inferred from observed behavior (one packet sent when RPM clip made contact) but has NOT been confirmed from CX5106 documentation. Treat as working hypothesis only.
+
+**Next step:**
+Connect CX5106 RPM input wire to blue wire at Pole 3 of RPM gauge (parallel clip). Verify with `candump can0` on Pi — should see PGN 127505 appearing at regular intervals.
 
 ### Symptom
 CX5106 engine data gateway installed on the boat. Device has power (green LED on). However, it does not transmit any NMEA 2000 messages. Signal K shows zero messages from CX5106 on the CAN0 NMEA 2000 bus. Only "Pangoo" device (ID 64) appears in the NMEA 2000 sources list.
@@ -797,3 +831,41 @@ The current `openDiag()` sends a generic Gemini prompt with the readings. It doe
 | R4 — Determine fix scope | `[ ]` |
 | Write fix | `[ ]` |
 | Deploy and verify on Pi | `[ ]` |
+
+---
+
+## BUG-17 — Battery Voltage Not Displaying on d3kOS Dashboard
+
+**Status:** `[ ]` OPEN — logged S101 2026-07-20
+**Logged:** 2026-07-20 S101 (on-boat, Monterey 265 SEL)
+**Platform:** Pi (d3kOS dashboard — battery/electrical display)
+
+### Symptom
+Battery voltage tile on d3kOS dashboard shows no data. Signal K path `/vessels/self/electrical/` returns empty. No battery voltage, no alternator voltage, no electrical data of any kind.
+
+### Confirmed S101
+```
+curl -s http://localhost:8099/signalk/v1/api/vessels/self/electrical/
+→ Empty response (no JSON data)
+```
+
+### Root Cause
+No battery voltage source present on the NMEA 2000 bus. The CX5106 is the intended source for battery/alternator voltage via PGN 127489 (Engine Parameters Dynamic). CX5106 is on the bus (heartbeat confirmed) but not yet broadcasting data PGNs — see BUG-14.
+
+### Two-part dependency
+1. **BUG-14 must be resolved first** — CX5106 must be continuously broadcasting before any PGN 127489 data appears
+2. **Battery input wire** — CX5106 may require a separate battery voltage input wire connected to its BAT+ terminal in addition to the sender wires. This has not been verified on Don's installation.
+
+### Signal K Path
+```
+/vessels/self/electrical/batteries/0/voltage
+```
+
+### Investigation Required
+- [ ] Confirm CX5106 has a battery voltage input terminal (check CX5106 wiring diagram)
+- [ ] Confirm which wire on Don's boat connects to CX5106 BAT+ terminal (if it exists)
+- [ ] After BUG-14 resolved: verify PGN 127489 appears in candump with battery voltage field populated
+- [ ] Verify d3kOS dashboard battery tile reads from correct Signal K path
+
+### Relation to BUG-14
+Cannot be fixed independently — resolving BUG-14 (CX5106 continuous data) is a prerequisite.
