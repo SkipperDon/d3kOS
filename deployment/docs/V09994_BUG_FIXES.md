@@ -869,3 +869,47 @@ No battery voltage source present on the NMEA 2000 bus. The CX5106 is the intend
 
 ### Relation to BUG-14
 Cannot be fixed independently — resolving BUG-14 (CX5106 continuous data) is a prerequisite.
+
+---
+
+## BUG-18 — Depth Gauge Not Registering on d3kOS Dashboard
+
+**Status:** `[ ]` OPEN — logged S103 2026-07-20
+**Logged:** 2026-07-20 S103
+**Platform:** Pi (d3kOS dashboard — depth display)
+
+### Symptom
+Depth gauge on d3kOS dashboard shows no data. Depth is expected to come from a depth sounder on the NMEA 2000 bus, read by Signal K, displayed by d3kOS.
+
+### Expected Data Path
+```
+Depth sounder → NMEA 2000 bus (PGN 128267 — Water Depth)
+  → Signal K → /vessels/self/environment/depth/belowKeel (or belowTransducer)
+  → d3kOS dashboard depth tile
+```
+
+### Root Cause
+Unknown — investigation required. Candidates in order of likelihood:
+
+1. **No depth sounder on NMEA 2000 bus** — depth sounder may be a standalone unit (not N2K connected) or may not be installed
+2. **Depth sounder present but not broadcasting PGN 128267** — device on bus but not transmitting depth PGNs
+3. **Signal K receiving PGN 128267 but d3kOS reading wrong path** — path mismatch between what Signal K publishes and what d3kOS subscribes to
+4. **d3kOS depth gauge display bug** — frontend not rendering the value even when Signal K has it
+
+### Investigation Steps (in order — do not skip)
+- [ ] On-boat: run `candump` or check Signal K data browser — is PGN 128267 appearing on the bus?
+- [ ] Check Signal K: `curl http://localhost:8099/signalk/v1/api/vessels/self/environment/depth/` — does it return any data?
+- [ ] If Signal K has data: check d3kOS dashboard source code for the depth tile — what Signal K path is it subscribing to?
+- [ ] If no Signal K data and no PGN 128267: determine whether a depth sounder is present and how it is connected
+
+### Signal K Paths to Check
+```
+/vessels/self/environment/depth/belowKeel
+/vessels/self/environment/depth/belowTransducer
+/vessels/self/environment/depth/belowSurface
+```
+
+### Fix Steps
+- [ ] Identify root cause from investigation above
+- [ ] Write fix (path correction, Signal K config, or d3kOS dashboard code — TBD)
+- [ ] Deploy and verify on Pi
