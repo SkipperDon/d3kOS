@@ -17,37 +17,36 @@
 
 ## 1. Tools to bring
 
-- Your analog multimeter
+- Your AstroAI digital multimeter
 - A short jumper wire to reach a known ground (engine block / battery negative)
 - Masking tape + pen for labelling wires
 - This sheet + a pen to fill in the results table at the bottom
 
 ---
 
-## 2. Setting the OLD-STYLE (analog) multimeter
+## 2. Setting the digital multimeter (AstroAI 2000 Counts)
 
 ### To find the SENDER wire ("S") — measuring resistance
-- Set the dial to **Ohms → Rx1**
-- **Zero it first, every time:** touch the two probes together and turn the **ZERO OHMS / Ω ADJ** knob
-  until the needle sits exactly on **0**.
-- Read the **OHMS scale** — it runs **backwards** (0 on the RIGHT, infinity on the LEFT).
-- On Rx1 the reading is direct (needle on 100 = 100 Ω). Look straight on to avoid parallax error.
+- Set the dial to **Ω → 2kΩ range**
+- No zeroing needed — digital meters self-zero automatically.
+- The display shows the actual resistance in ohms. A reading of "OL" means the wire is open (no path to ground) — not the S wire.
+- Use 2kΩ (not 200Ω) because a cold temperature sender can read above 200Ω; 2kΩ covers the full 33–240Ω range without overloading.
 
 ### To find the 12V wire ("I") — measuring voltage
-- Set the dial to **DC Volts → 50V range**
-- Read on the **0–50 scale** — 12V lands about a quarter of the way across (13–14V with engine running).
-- **Do NOT use a 10V or 15V range** — the charging system hits ~14V and will peg the needle.
+- Set the dial to **DC V → 20V range**
+- The display shows the actual voltage. 12–14V with the engine running.
+- **Do NOT use the 2V range** — it will show "OL" on a 12V circuit.
 
 ---
 
 ## 3. What each wire reads (this is how you tell them apart)
 
-| Wire's real job | Key **OFF** — Ohms (Rx1) to ground | Key **ON** — DC Volts (50V) to ground |
+| Wire's real job | Key **OFF** — Ω (2kΩ range) to ground | Key **ON** — DC V (20V range) to ground |
 |---|---|---|
-| **I — Ignition (+12V in)** | nothing / no reading | **~12–14 V** |
+| **I — Ignition (+12V in)** | OL / no reading | **~12–14 V** |
 | **⭐ S — Sender / Signal (TAP HERE)** | **a resistance in range (~33–240 Ω)** | small, varying voltage |
-| **G — Ground** | **~0 Ω** (needle swings full right) | 0 V |
-| **L — Light** | nothing / no reading | 0 V (→ 12V only when panel lights ON) |
+| **G — Ground** | **~0 Ω** (display reads near zero) | 0 V |
+| **L — Light** | OL / no reading | 0 V (→ 12V only when panel lights ON) |
 
 > ⭐ **The S wire is the only one that reads a resistance (ohms) to ground with the key OFF.
 > That is the wire the CX5106 taps.**
@@ -56,9 +55,9 @@
 
 ## 4. Step by step (at each gauge)
 
-- [ ] **1. Key OFF.** Meter on **Ohms Rx1**, zeroed. Back-probe each wire to a known ground.
+- [ ] **1. Key OFF.** Meter on **Ω → 2kΩ**. Back-probe each wire to a known ground.
   The **~0 Ω** wire = **Ground (G)**. The wire that reads a **resistance** = **Sender (S) — your target.**
-- [ ] **2. Key ON.** Meter on **DC Volts 50V**. The wire that jumps to **~12–14V** = **Ignition (I)**.
+- [ ] **2. Key ON.** Meter on **DC V → 20V**. The wire that jumps to **~12–14V** = **Ignition (I)**.
   The wire that is 12V only with panel lights ON = **Light (L)**.
 - [ ] **3. Confirm the S wire** using the proof for that gauge (Section 5).
 - [ ] **4. Label the wire with tape** the moment you confirm it. Do this once — never re-guess.
