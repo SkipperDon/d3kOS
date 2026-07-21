@@ -123,6 +123,7 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 |---|------|-------|--------|
 | OB-E01 | Engine Monitor page — 6 metric tiles visible (SOG, RPM, oil, coolant, battery, fuel) | Don | `[ ]` |
 | OB-E02 | Values update in real time when engine is running — not static `---` | Don | `[ ]` |
+| OB-E03 | **v0.9.9.4** — Once CX5106 sender/tach wire IDs are verified on-boat using `deployment/docs/CX5106_WIRE_ID_FIELD_PROCEDURE.md` (results table filled in), **publish that field procedure to d3kOS docs on the Pi**. Gated on on-boat verification. Relates to BUG-14, BUG-17. | Don / Claude | `[ ]` |
 
 ### o-CHARTS (Don's task — requires OpenCPN + account)
 
