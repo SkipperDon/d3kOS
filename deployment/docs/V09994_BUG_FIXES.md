@@ -913,3 +913,264 @@ Unknown — investigation required. Candidates in order of likelihood:
 - [ ] Identify root cause from investigation above
 - [ ] Write fix (path correction, Signal K config, or d3kOS dashboard code — TBD)
 - [ ] Deploy and verify on Pi
+
+---
+
+## BUG-19 — AIS Targets Not Visible on AvNav Map
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (AvNav chart display)
+**Checklist:** A-06 (pass with caveat — "have not seen anything broadcasting")
+
+### Symptom
+AIS is confirmed working in Signal K (rtl_ais running, AIS pipedProvider enabled per BUG-12 fix S96). When AIS-transmitting vessels are nearby, no symbols or target markers appear on the AvNav chart pane on the d3kOS dashboard. Operator reported: "AIS looks to be working but I do not see the location on the avnav map. There are no symbols showing."
+
+### Root Cause Candidates
+1. **AvNav not receiving AIS from Signal K** — AVNSignalKHandler may not be forwarding AIS target data to AvNav
+2. **AvNav AIS overlay disabled** — AIS target display layer may be turned off in AvNav config or UI
+3. **No AIS-transmitting vessels within range during testing** — A-06 noted "pass but have not seen anything broadcasting"; if no vessels were broadcasting, the test cannot confirm display works
+4. **AvNav AIS format mismatch** — Signal K AIS data format may not match what AvNav expects for symbol rendering
+
+### Investigation Steps (in order — do not skip)
+- [ ] SSH to Pi: check Signal K data browser for any `vessels.*` entries other than `self` — are AIS vessel objects present?
+- [ ] `curl http://localhost:8099/signalk/v1/api/vessels/ | python3 -m json.tool` — how many vessel entries?
+- [ ] Check AvNav config (`/var/lib/avnav/avnav_server.xml`) — is `AVNSignalKHandler` configured and enabled?
+- [ ] In AvNav web UI (port 8080): check if AIS target display is toggled on in the chart view controls
+- [ ] Test with a known AIS source (MMSI simulator or wait for a vessel): confirm whether symbols appear when verified AIS data is present in Signal K
+
+### Fix Steps
+- [ ] Identify root cause from investigation
+- [ ] Fix AVNSignalKHandler config, AvNav overlay setting, or data path as indicated
+- [ ] Deploy and verify on Pi with confirmed AIS traffic present
+
+---
+
+## BUG-20 — Camera Hazard Detections Not Appearing on AvNav Map
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (camera detection → AvNav integration)
+**Checklist:** G-10 (failed — no bounding boxes); operator report
+
+### Symptom
+Four cameras functioning and connected. Multiple real-world waterway hazards observed at close range on-boat: kayakers, deadhead log, ducks, geese, people swimming. None of these appeared as markers, overlays, or symbols on the AvNav chart. G-10 (fish detection bounding boxes) also failed — no bounding boxes visible on camera view.
+
+### Root Cause Candidates
+1. **Integration pipeline not built** — signalk-forward-watch can detect marine objects and publish to Signal K, but the pipeline to display those detections as AvNav chart overlays is likely not implemented
+2. **Fish detector not trained for above-water objects** — the fish detector (d3kos-fish-detector.service, port 8086, YOLOv8n + EfficientNet) is designed for fish detection. Kayakers, logs, ducks, geese, and swimmers are above-water targets it was not trained for
+3. **signalk-forward-watch not running or not detecting** — the forward-watch plugin may not be active or not detecting targets at the camera resolution/angle used
+4. **No AvNav overlay renderer built** — even if detections fire and reach Signal K, there is no AvNav overlay plugin or renderer to display them on the chart
+
+### Investigation Steps
+- [ ] SSH to Pi: `systemctl is-active signalk-forward-watch` (or check via SK plugin list) — is it running?
+- [ ] Check Signal K data browser: are any forward-watch detection events appearing as SK paths?
+- [ ] Confirm fish detector: does it produce any output when camera is aimed at surface objects? (`journalctl -u d3kos-fish-detector -n 50`)
+- [ ] Assess whether an AvNav overlay renderer for camera detections was ever built
+
+### Fix Steps
+- [ ] Determine scope: is this a "pipeline exists but broken" bug or a "feature not yet built" gap
+- [ ] If gap: design and build detection → Signal K → AvNav overlay pipeline as a new feature
+- [ ] If broken: diagnose and fix the broken component
+- [ ] Deploy and verify with real on-water targets
+
+---
+
+## BUG-21 — No Verbal or Visual Warning for Waterway Hazards
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (hazard warning system)
+**Operator report:** Blocking — cannot use d3kOS as a situational awareness tool without this
+
+### Symptom
+Cameras functioning. Kayakers, deadhead log, ducks, geese, and swimmers were observed at close range. No audio warning was played and no visual alert appeared on the d3kOS dashboard at any point.
+
+### Root Cause Candidates
+1. **Warning pipeline not built end-to-end** — the path from camera detection → hazard classification → alert threshold → audio/visual notification likely does not exist as a complete implementation
+2. **SafeHelm not implemented** — SafeHelm (the collision avoidance / COLREGs warning system) is design-only; no code has been written. This is the intended home for hazard warning logic
+3. **signalk-forward-watch alert integration missing** — even if forward-watch detects objects, no code wires those detections to the d3kOS notification or audio system
+4. **Audio output not configured for alerts** — Pi audio device may not be set up for notification playback even if alert logic existed
+
+### Investigation Steps
+- [ ] Confirm what warning/alert features are actually implemented in the current codebase (search d3kOS dashboard + services for alert/notification code)
+- [ ] Confirm SafeHelm build status: design-only confirmed — no code exists
+- [ ] Check if signalk-forward-watch has any alert output path implemented
+
+### Fix Steps
+- [ ] Scope decision required: is hazard warning a v0.9.9.4 fix or a new feature requiring full design?
+- [ ] If new feature: create feature spec and add to roadmap (likely v0.9.9.5 or SafeHelm Phase 1)
+- [ ] If partial implementation exists: diagnose and complete the warning pipeline
+- [ ] Test end-to-end with real hazard targets on water
+
+---
+
+## BUG-22 — Setup Wizard Bypassed on Fresh Load
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (d3kOS dashboard — entry point routing)
+**Checklist:** B-01 (failed), B-02 (failed)
+
+### Symptom
+On fresh browser load (or cleared cookies/localStorage), the system should redirect to the Setup Wizard Step 1 of 6. Instead, it loads directly to the main dashboard. B-01 and B-02 both failed.
+
+### Root Cause Candidates
+1. **Wizard-completed flag incorrectly persisted** — a `setup_complete` or similar flag in localStorage/cookie is set from a prior session and not cleared on fresh load
+2. **Redirect logic checking wrong condition** — the entry point in `index.html` or `dashboard.js` may check a condition that always evaluates to "wizard done"
+3. **Flag set prematurely during development** — the wizard may have been completed during development and the flag was never reset for production testing
+
+### Investigation Steps
+- [ ] Check `index.html` or main dashboard entry file: what condition triggers wizard redirect?
+- [ ] In browser dev tools on Pi: check localStorage and cookies for wizard-related flags
+- [ ] Clear all localStorage/cookies and reload — does wizard appear?
+- [ ] Trace the redirect logic path in source
+
+### Fix Steps
+- [ ] Identify the flag or condition causing bypass
+- [ ] Fix condition to correctly detect first-run state
+- [ ] Deploy and verify on Pi
+
+---
+
+## BUG-23 — Boat Log Voice Note Transcription Failing
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (Boat Log — voice note feature)
+**Checklist:** H-03 (failed)
+
+### Symptom
+Tapping the voice record button, speaking a sentence, then tapping stop does not produce a VOICE entry in the Boat Log list. H-03 failed on-boat.
+
+### Root Cause Candidates
+1. **STT service not running** — speech-to-text transcription service (Whisper or similar) may not be active on Pi
+2. **POST to `/api/boatlog/voice-note` failing** — the endpoint receiving the audio and triggering transcription may be returning an error
+3. **Transcription timeout** — STT taking longer than the UI waits, causing silent failure
+4. **Entry written to DB but not rendering** — transcription succeeds but the Boat Log list query does not fetch the new entry
+
+### Investigation Steps
+- [ ] SSH to Pi: `systemctl is-active d3kos-boatlog` (or whichever service handles voice notes)
+- [ ] Check `journalctl -u d3kos-boatlog -n 50` for errors during record+stop
+- [ ] In browser dev tools on Pi: check network tab when tapping stop — what does the POST response say?
+- [ ] Check SQLite DB: `sqlite3 /opt/d3kos/data/boatlog.db "SELECT * FROM entries ORDER BY id DESC LIMIT 5;"`
+
+### Fix Steps
+- [ ] Identify root cause from investigation
+- [ ] Fix service, endpoint, or rendering issue
+- [ ] Deploy and verify on Pi
+
+---
+
+## BUG-24 — Boat Log Engine Auto-Capture Not Working
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (Boat Log — engine auto-capture)
+**Checklist:** H-04 (failed)
+**Dependency:** May be blocked by BUG-14 (CX5106 not broadcasting RPM data)
+
+### Symptom
+After running the engine for 30+ minutes, no ENGINE badge entry appeared automatically in the Boat Log. H-04 failed on-boat.
+
+### Root Cause Candidates
+1. **Blocked by BUG-14** — engine auto-capture may require live RPM data from CX5106 to trigger. If CX5106 is not broadcasting (BUG-14 not resolved), RPM = 0 and auto-capture threshold is never met
+2. **Auto-capture service not running** — the background service monitoring engine state may not be active
+3. **RPM threshold logic broken** — even with RPM data present, the threshold check or time-based trigger may have a code bug
+4. **Boat Log write path broken** — auto-capture fires but cannot write the ENGINE entry (related to BUG-23 path)
+
+### Investigation Steps
+- [ ] First: confirm whether BUG-14 is resolved. If CX5106 not broadcasting, this bug cannot be tested independently
+- [ ] If CX5106 broadcasting: check Signal K for live RPM path (`/vessels/self/propulsion/*/revolutions`)
+- [ ] Check which service or script implements engine auto-capture and confirm it is running
+- [ ] Review the RPM threshold and time condition in source
+
+### Fix Steps
+- [ ] Resolve BUG-14 first (or confirm auto-capture works with simulated RPM)
+- [ ] Fix auto-capture trigger logic or service
+- [ ] Deploy and verify
+
+---
+
+## BUG-25 — AI Navigation (Gemini) Cannot Connect On Boat
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (AI Navigation — Gemini integration)
+**Checklist:** J-01 (failed), J-02 (failed), J-03 (failed)
+
+### Symptom
+AI Navigation page shows "could not connect." No response to queries. GEMINI badge never appears. J-01, J-02, J-03 all failed on-boat.
+
+### Root Cause Candidates
+1. **gemini-proxy service not running** (port 8097, reads `api-keys.json`) — most likely cause
+2. **gemini-nav service not running** (port 3001, reads `gemini.env`) — second Gemini service; both must be active
+3. **API key missing or expired** — key in `api-keys.json` or `gemini.env` may be invalid
+4. **Wrong model ID** — memory confirms `gemini-2.5-flash-lite` required on all environments; if model changed or was set to `gemini-2.5-flash` (returns 503 persistently), connection will fail
+5. **Network isolation on boat** — boat hotspot may not have internet access for Gemini API calls
+
+### Investigation Steps
+- [ ] SSH to Pi: `systemctl is-active d3kos-gemini` and `systemctl is-active d3kos-gemini-proxy` — both must show `active`
+- [ ] Check logs: `journalctl -u d3kos-gemini -n 30` and `journalctl -u d3kos-gemini-proxy -n 30`
+- [ ] Verify model in `api-keys.json` and `gemini.env` — must be `gemini-2.5-flash-lite`
+- [ ] Confirm boat hotspot has live internet: `curl -s https://www.google.com` from Pi
+- [ ] Test proxy directly: `curl http://localhost:8097/` and `curl http://localhost:3001/`
+
+### Fix Steps
+- [ ] Start failed service(s) and set to auto-start if not enabled
+- [ ] Correct model ID if wrong
+- [ ] Verify API key validity
+- [ ] Deploy and verify on Pi
+
+---
+
+## BUG-26 — Anchor Watch Set Anchor Failing; No Alarm Sound
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (Anchor Watch feature)
+**Checklist:** K-02 (failed), K-03 (unknown — no sound observed)
+
+### Symptom
+Anchor Watch page loads and shows GPS position (K-01 passed). Tapping "Set Anchor" does not arm monitoring — status does not change to armed/monitoring (K-02 failed). Whether the alarm triggers when the radius is exceeded is unknown; no alarm sound was observed (K-03 unknown).
+
+### Root Cause Candidates
+1. **Anchor watch service not running** — backend service that stores the anchor point and monitors drift may not be active
+2. **GPS position not being written to anchor reference** — the "Set Anchor" action may fail to persist the current position
+3. **API endpoint failure** — the frontend POST to set the anchor point may be returning an error silently
+4. **Audio notification system not configured** — even if monitoring works, Pi audio device may not be set for alarm playback
+
+### Investigation Steps
+- [ ] SSH to Pi: confirm anchor watch service exists and is running
+- [ ] In browser dev tools on Pi: check network tab when tapping "Set Anchor" — what is the API response?
+- [ ] Check what API endpoint Set Anchor calls and whether that endpoint exists and returns 200
+- [ ] Test audio: can the Pi play any sound? `aplay /usr/share/sounds/alsa/Front_Center.wav`
+
+### Fix Steps
+- [ ] Identify failing component (service, endpoint, or audio)
+- [ ] Fix and deploy
+- [ ] Verify on Pi with GPS fix active
+
+---
+
+## BUG-27 — Status Bar Text Not Readable at 1 Metre — AODA Violation
+
+**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Logged:** 2026-07-21 S104
+**Platform:** Pi (d3kOS dashboard — status bar CSS)
+**Checklist:** D-09 (failed)
+**Rule:** AODA minimum 18px ALL text — zero exceptions
+
+### Symptom
+Standing at the helm (~1 metre from the 10.1" touchscreen), the status bar showing vessel name and clock is not legible without leaning in or moving closer. D-09 failed.
+
+### Root Cause
+Status bar CSS is using a font size below 18px. Visual bug — straightforward CSS fix.
+
+### Investigation Steps
+- [ ] Read the status bar CSS in `d3kos.css` or the relevant template — find the font-size property for `.status-bar`, `#vessel-name`, `#clock`, or equivalent selectors
+- [ ] Confirm current size is below 18px
+
+### Fix Steps
+- [ ] Increase font size to minimum 18px (consider 20px+ for helm-distance readability)
+- [ ] Deploy and verify on Pi at 1 metre distance
