@@ -1155,7 +1155,7 @@ Anchor Watch page loads and shows GPS position (K-01 passed). Tapping "Set Ancho
 
 ## BUG-27 — Status Bar Text Not Readable at 1 Metre — AODA Violation
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[x]` COMPLETE — deployed to Pi + operator-confirmed 1 m legibility 2026-07-23
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (d3kOS dashboard — status bar CSS)
 **Checklist:** D-09 (failed)
@@ -1164,13 +1164,26 @@ Anchor Watch page loads and shows GPS position (K-01 passed). Tapping "Set Ancho
 ### Symptom
 Standing at the helm (~1 metre from the 10.1" touchscreen), the status bar showing vessel name and clock is not legible without leaning in or moving closer. D-09 failed.
 
-### Root Cause
-Status bar CSS is using a font size below 18px. Visual bug — straightforward CSS fix.
+### Root Cause (CORRECTED 2026-07-23)
+Original hypothesis ("font size below 18px") was WRONG — code inspection found nothing
+in the helm status bar (`#sb`) below the 18px AODA floor. Actual state: `.sb-vessel`
+(vessel name) = 18px (exactly at the floor), `#clk` (clock) = 22px (already above it).
+The real defect: 18px is the AODA *floor*, not a readable-at-1-metre size on a 10.1"
+screen. Fix = raise the two operator-named helm elements to helm-distance sizes.
+`#status-bar` (settings-page bar) and `.sb-ticker` were NOT the target.
 
 ### Investigation Steps
-- [ ] Read the status bar CSS in `d3kos.css` or the relevant template — find the font-size property for `.status-bar`, `#vessel-name`, `#clock`, or equivalent selectors
-- [ ] Confirm current size is below 18px
+- [x] Read the status bar CSS — confirmed `#sb` helm bar: `.sb-vessel` 18px, `#clk` 22px (d3kos.css); `#status-bar` is the separate settings-page bar
+- [x] Confirmed NOT below 18px — see corrected root cause
 
 ### Fix Steps
-- [ ] Increase font size to minimum 18px (consider 20px+ for helm-distance readability)
-- [ ] Deploy and verify on Pi at 1 metre distance
+- [x] Raised `.sb-vessel` 18→28px and `#clk` 22→26px (helm-distance readability)
+- [x] Deployed to Pi 2026-07-23 (`/opt/d3kos/services/dashboard/static/css/d3kos.css`; backup `.bak.20260723`)
+- [x] Operator confirmed legibility at 1 metre on the 10.1" screen — 2026-07-23
+
+### Fix Applied (2026-07-23)
+- **Files:** `deployment/d3kOS/dashboard/static/css/d3kos.css` (repo) → `/opt/d3kos/services/dashboard/static/css/d3kos.css` (Pi)
+- **Change:** `.sb-vessel` font-size 18→28px; `#clk` font-size 22→26px (font-size only; no other properties)
+- **Process:** AAO §23/§25 atomic spec (`deployment/docs/atomic-specs/BUG-27.md`) — Tier 3 (Haiku) implemented failing-test-first; Tier 1 (Opus) verified diff scope + CSS override probe (PASS); operator authorized Pi deploy.
+- **Backup/rollback:** `/opt/d3kos/services/dashboard/static/css/d3kos.css.bak.20260723`
+- **No service restart** (Flask serves static from disk per request).
