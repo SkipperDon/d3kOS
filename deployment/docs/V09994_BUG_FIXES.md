@@ -1126,7 +1126,7 @@ AI Navigation page shows "could not connect." No response to queries. GEMINI bad
 
 ## BUG-26 — Anchor Watch Set Anchor Failing; No Alarm Sound
 
-**Status:** `[~]` DIAGNOSED 2026-07-23 — ROOT CAUSE CONFIRMED. Anchor endpoints live on ai-bridge (`:3002`, verified: `/anchor/set`=405 POST-only, `/anchor/state`=200); dashboard (`:3000`) serves none (all 404). `anchor-watch.html` fetches bare `/anchor/*` → `:3000` → 404 → Set Anchor never arms (K-02). Fix = point the 5 anchor fetches at `AI_BRIDGE` (`:3002`), matching the file's existing SSE call. Atomic spec: `atomic-specs/BUG-26.md`. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
+**Status:** `[x]` FIXED + DEPLOYED TO PI S105 2026-07-23 — pending operator Set Anchor test at helm. Fix: 5 anchor fetches routed to `AI_BRIDGE` (`:3002`) in `anchor-watch.html`; deployed + dashboard restarted (backup `.bak.20260723`). ROOT CAUSE was: anchor endpoints live on ai-bridge (`:3002`, verified: `/anchor/set`=405 POST-only, `/anchor/state`=200); dashboard (`:3000`) serves none (all 404). `anchor-watch.html` fetches bare `/anchor/*` → `:3000` → 404 → Set Anchor never arms (K-02). Fix = point the 5 anchor fetches at `AI_BRIDGE` (`:3002`), matching the file's existing SSE call. Atomic spec: `atomic-specs/BUG-26.md`. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (Anchor Watch feature)
 **Checklist:** K-02 (failed), K-03 (unknown — no sound observed)
