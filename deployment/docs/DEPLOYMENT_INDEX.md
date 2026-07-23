@@ -1180,3 +1180,22 @@ On-boat NMEA 2000 diagnosis session. CX5106 replacement unit confirmed on bus. B
 | Pangoo NMEA 2000 gateway | 64 | Normal — provides PGN 127488 |
 | CX5106 (replacement unit) | 106 | Heartbeat only — fuel continuous data pending tach wire connection |
 
+
+---
+
+### S105 2026-07-23 — BUG-27, BUG-15, BUG-26 Fixes
+
+Tier 3 implementations of three on-boat validation bugs. TDD + atomic specs + Tier 1 verification.
+
+| File / Change | Description |
+|---------------|-------------|
+| `deployment/d3kOS/dashboard/static/css/d3kos.css` | **[UPDATED — S105 2026-07-23]** BUG-27 AODA helm-distance fix: `.sb-vessel` font-size 18px→28px, `#clk` font-size 22px→26px in helm/main dashboard status bar `#sb`. 18px is AODA floor, insufficient for 1m helm legibility on 10.1" screen. Committed 6f38c4e. Tier 1 verified + deployed to Pi (`/opt/d3kos/services/dashboard/static/css/d3kos.css`), byte-for-byte match. Operator on-boat check: confirm 1m legibility. |
+| `deployment/d3kOS/dashboard/static/js/instruments.js` | **[UPDATED — S105 2026-07-23]** BUG-15 COG flashing fix: (1) state var `let _lastSogKts = null;`, (2) SOG handler stores `_lastSogKts = parseFloat(kts);`, (3) COG guard `if (_lastSogKts !== null && _lastSogKts < 0.5) return;`, (4) test seam `window.SK_HANDLERS = SK_HANDLERS;`. Suppresses COG updates below 0.5 kn threshold (matches existing precedent line 353). TDD logic verified (Node.js simulator): stationary suppresses, moving allows. Committed 4420050. Tier 1 verification pending. Operator on-boat check: anchor, no COG flashing. |
+| `deployment/d3kOS/dashboard/templates/anchor-watch.html` | **[UPDATED — S105 2026-07-23]** BUG-26 anchor endpoint routing fix: (1) const `AI_BRIDGE = 'http://localhost:3002';`, (2-6) prefixed 5 fetches: /anchor/set, /anchor/clear, /anchor/dismiss, /anchor/advice, /anchor/state. Routes from dashboard :3000 (no routes) to ai-bridge :3002 (endpoints exist). SSE unchanged (already :3002). TDD source check verified: 5 AI_BRIDGE-prefixed, 0 bare calls. Committed 8fb7638. Tier 1 verification pending. K-02 (Set Anchor arming) now functional; K-03 (alarm) is downstream. Operator on-boat check: click SET ANCHOR, verify arms + alarm. |
+| `tests/bug27-status-bar-legibility.spec.ts` | **[NEW — S105 2026-07-23]** Playwright TDD test for BUG-27 helm status bar legibility. Two assertions: (1) `.sb-vessel` >= 28px, (2) `#clk` >= 26px. Created and committed 6f38c4e. Browser-dep workaround: Node.js CSS regex parser substituted (pre-approved per §25.5.1). Playwright test for integration verification on operator's system. |
+| `tests/bug15-cog-flashing.spec.ts` | **[NEW — S105 2026-07-23]** Playwright TDD test for BUG-15 COG flashing. Two scenarios: (1) stationary (SOG=0) — feed COG 10°, 200°, 45° → assert `#cellCourse .ic-v` UNCHANGED; (2) moving (SOG≈3 kn) — feed COG 90° → assert shows "90°". Creates and commits 4420050. Browser-dep workaround: Node.js logic simulator substituted (pre-approved per §25.5.1). Playwright test for integration verification on operator's system. |
+| `tests/bug26-anchor-watch-origin.spec.ts` | **[NEW — S105 2026-07-23]** Playwright TDD test for BUG-26 anchor endpoint routing. Two tests: (1) request interception verifies `/anchor/set` routed to localhost:3002 not :3000; (2) source verification verifies const `AI_BRIDGE` present, all 5 endpoints AI_BRIDGE-prefixed, zero bare calls. Committed 8fb7638. Browser-dep workaround: Node.js source check substituted (pre-approved per §25.5.1). Playwright test for integration verification on operator's system. |
+| `Helm-OS/deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S105 2026-07-23]** BUG-27 → COMPLETE (S105 deployed). BUG-15 → FIXED (logic gate threshold). BUG-26 → FIXED (endpoint routing). v1.8.0 → v2.0.0. Full session data appended. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S105 2026-07-23]** PART 17: BUG-27 marked COMPLETE (deployed + Tier 1 verified). BUG-15 marked FIXED (logic + test seam). BUG-26 marked FIXED (routing). v3.6 → v3.7. |
+
+---
