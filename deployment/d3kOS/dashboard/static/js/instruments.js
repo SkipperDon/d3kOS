@@ -118,10 +118,12 @@ function _brg(lat1, lon1, lat2, lon2) {
 
 /* ── SIGNAL K HANDLERS ── */
 let _gpsLat = null, _gpsLon = null;  // shared for waypoint distance calc
+let _lastSogKts = null;
 
 const SK_HANDLERS = {
   'navigation.speedOverGround': (v) => {
     const kts = (v * 1.944).toFixed(1);
+    _lastSogKts = parseFloat(kts);
     _setVal('cellSpeed', kts);
     _setUnit('cellSpeed', 'kts · SOG');
     // Expose for position report
@@ -130,6 +132,7 @@ const SK_HANDLERS = {
   },
 
   'navigation.courseOverGroundTrue': (v) => {
+    if (_lastSogKts !== null && _lastSogKts < 0.5) return;
     const deg = Math.round(v * 180 / Math.PI);
     _setVal('cellCourse', deg + '°');
     _setUnit('cellCourse', 'true');
@@ -223,6 +226,7 @@ const SK_HANDLERS = {
     _setUnit('cellBat', state ? 'V · ' + state : 'V · ' + (v > 13.0 ? 'charging' : 'normal'));
   },
 };
+window.SK_HANDLERS = SK_HANDLERS;  // test seam — harmless reference
 
 /* ── NULL PATH MAP (path → cell id) ── */
 const _NULL_CELLS = {
