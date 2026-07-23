@@ -199,6 +199,9 @@ var _state = { active:false, alarm:false, anchor_lat:null, anchor_lon:null,
                radius_m:25, vessel_lat:null, vessel_lon:null, distance_m:null };
 var _pollTimer = null;
 
+/* ── AI Bridge ── */
+const AI_BRIDGE = 'http://localhost:3002';
+
 /* ── Canvas ── */
 var _canvas = document.getElementById('aw-canvas');
 var _ctx    = _canvas.getContext('2d');
@@ -291,7 +294,7 @@ _slider.dispatchEvent(new Event('input'));
 function setAnchor() {
   var radius = parseInt(_slider.value);
   document.getElementById('btn-set').textContent = 'SETTING…';
-  fetch('/anchor/set', {
+  fetch(AI_BRIDGE + '/anchor/set', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({radius_m: radius})
   })
@@ -308,13 +311,13 @@ function setAnchor() {
 }
 
 function clearAnchor() {
-  fetch('/anchor/clear', {method:'POST'})
+  fetch(AI_BRIDGE + '/anchor/clear', {method:'POST'})
   .then(function(r){ return r.json(); })
   .then(function() { _stopPoll(); _resetUI(); });
 }
 
 function dismissAlarm() {
-  fetch('/anchor/dismiss', {method:'POST'})
+  fetch(AI_BRIDGE + '/anchor/dismiss', {method:'POST'})
   .then(function(r){ return r.json(); })
   .then(function() {
     _state.alarm = false;
@@ -326,7 +329,7 @@ function dismissAlarm() {
 function getAdvice() {
   document.getElementById('btn-advice').textContent = 'ASKING HELM AI…';
   document.getElementById('alarm-advice').textContent = '';
-  fetch('/anchor/advice')
+  fetch(AI_BRIDGE + '/anchor/advice')
   .then(function(r){ return r.json(); })
   .then(function(d) {
     document.getElementById('alarm-advice').textContent = d.advice || 'No advice available.';
@@ -340,7 +343,7 @@ function _startPoll() { _pollState(); _pollTimer = setInterval(_pollState, 8000)
 function _stopPoll()  { if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; } }
 
 function _pollState() {
-  fetch('/anchor/state')
+  fetch(AI_BRIDGE + '/anchor/state')
   .then(function(r){ return r.json(); })
   .then(function(d) { _state = d; _updateUI(); })
   .catch(function(){});
