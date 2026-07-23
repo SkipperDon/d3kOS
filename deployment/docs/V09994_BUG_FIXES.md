@@ -1035,7 +1035,7 @@ On fresh browser load (or cleared cookies/localStorage), the system should redir
 
 ## BUG-23 — Boat Log Voice Note Transcription Failing
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[~]` DIAGNOSED 2026-07-23 — partial. `boatlog-api` + `voice` services up, but `d3kos-voice-watchdog` **FAILED** (voice assistant running 1 thread, expected 2+); no local STT/whisper service found; mic capture absent at home (on-boat only). Transcription path unconfirmed — possible feature gap (Faster-Whisper STT is v0.9.9.5 D13, not built). Do NOT blind-restart the watchdog — find the 1-thread cause first. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (Boat Log — voice note feature)
 **Checklist:** H-03 (failed)
@@ -1094,7 +1094,7 @@ After running the engine for 30+ minutes, no ENGINE badge entry appeared automat
 
 ## BUG-25 — AI Navigation (Gemini) Cannot Connect On Boat
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[~]` DIAGNOSED 2026-07-23 — likely NOT a d3kOS bug. Both Gemini services up + enabled; live model = `gemini-2.5-flash-lite`; key present; `:3001/status` = online. Bad model (`gemini-2.5-flash`) exists only in `.bak`/`.ota-backup`, not live config. Root cause points to **internet egress** (Pi `curl google → 000`). Pending on-boat internet confirmation. Full diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (AI Navigation — Gemini integration)
 **Checklist:** J-01 (failed), J-02 (failed), J-03 (failed)
@@ -1126,7 +1126,7 @@ AI Navigation page shows "could not connect." No response to queries. GEMINI bad
 
 ## BUG-26 — Anchor Watch Set Anchor Failing; No Alarm Sound
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[~]` DIAGNOSED 2026-07-23 — ROOT CAUSE CONFIRMED. Anchor endpoints live on ai-bridge (`:3002`, verified: `/anchor/set`=405 POST-only, `/anchor/state`=200); dashboard (`:3000`) serves none (all 404). `anchor-watch.html` fetches bare `/anchor/*` → `:3000` → 404 → Set Anchor never arms (K-02). Fix = point the 5 anchor fetches at `AI_BRIDGE` (`:3002`), matching the file's existing SSE call. Atomic spec: `atomic-specs/BUG-26.md`. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (Anchor Watch feature)
 **Checklist:** K-02 (failed), K-03 (unknown — no sound observed)
