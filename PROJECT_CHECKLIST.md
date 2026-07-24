@@ -21,6 +21,8 @@
 **Version:** v0.9.9.4
 **Standing rule:** ALL bugs on ALL platforms go here first — before any fix is attempted. No fix without a BUG-XX entry. Read this section AND `deployment/docs/V09994_BUG_FIXES.md` at the start of every session before accepting any new work.
 **Full investigation doc:** `deployment/docs/V09994_BUG_FIXES.md`
+**On-boat analysis plan:** `deployment/docs/V09994_ONBOAT_ANALYSIS_PLAN.md` (S106 — expectations + per-bug investigation steps; fix in lab after on-boat evidence)
+**S106 operator corrections (2026-07-24):** E1 — BUG-18 depth source = **Garmin via NMEA 2000** (candidate "no depth sounder present" REMOVED). E2 — BUG-16: gauge tap must show that gauge's live value + normal range from the boat's documentation + advice (identical generic text = broken). Confound: o-charts license EXPIRED → AvNav blank → renew (OB-O05) before judging BUG-19/BUG-20 overlays.
 
 | # | Bug | Status | Detail |
 |---|-----|--------|--------|

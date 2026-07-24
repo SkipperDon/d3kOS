@@ -1,5 +1,16 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.8.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-15 S100 | **Status:** IN PROGRESS
+**Version:** 1.9.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-24 S106 | **Status:** IN PROGRESS
+
+> **S106 corrections & plan (2026-07-24):** On-boat analysis plan authored at
+> `V09994_ONBOAT_ANALYSIS_PLAN.md` (per-bug expected behavior + investigation steps; fix in lab
+> after on-boat evidence). Operator-confirmed expectations correct the records below:
+> - **E1 (BUG-18):** depth source = **Garmin unit via NMEA 2000**. The candidate "no depth
+>   sounder present" is WRONG and removed — the sounder exists on the bus; the problem is the
+>   Garmin depth not reaching the gauge.
+> - **E2 (BUG-16):** tapping any gauge must show that gauge's live value + its normal range from
+>   the boat's documentation + advice on the actual reading; identical generic text = broken.
+> - **Confound (BUG-19/BUG-20):** o-charts license expired 2026-04-01 → AvNav chart is blank;
+>   renew (OB-O05) and confirm the chart base renders BEFORE judging AIS/hazard overlays.
 
 ## STANDING RULE — Read This First
 

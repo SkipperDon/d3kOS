@@ -1199,3 +1199,11 @@ Tier 3 implementations of three on-boat validation bugs. TDD + atomic specs + Ti
 | `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S105 2026-07-23]** PART 17: BUG-27 marked COMPLETE (deployed + Tier 1 verified). BUG-15 marked FIXED (logic + test seam). BUG-26 marked FIXED (routing). v3.6 → v3.7. |
 
 ---
+
+### S106 2026-07-24 — v0.9.9.4 On-Boat Analysis Plan
+
+| File / Change | Description |
+|---------------|-------------|
+| `deployment/docs/V09994_ONBOAT_ANALYSIS_PLAN.md` | **[NEW — S106 2026-07-24]** On-boat analysis plan + operator-confirmed expectations for the 15 outstanding v0.9.9.4 bugs. Records the 3-phase workflow (BOAT investigate → LAB fix → BOAT deploy). Per-bug: expected behavior (acceptance criteria), on-boat observation/SSH checks, root-cause candidates, capture-for-lab. Confirms E1 (depth = Garmin via N2K) and E2 (gauge tap = live value + boat-documented tolerance + advice). Flags o-charts-expired confound for BUG-19/20 and open prerequisites P1/P2/P4. No code, no deploy. |
+
+---
