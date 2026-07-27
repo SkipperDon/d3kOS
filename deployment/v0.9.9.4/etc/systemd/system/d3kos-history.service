@@ -1,0 +1,13 @@
+[Unit]
+Description=d3kOS History API Server
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+ExecStart=/usr/bin/python3 /opt/d3kos/services/ai/history_api.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

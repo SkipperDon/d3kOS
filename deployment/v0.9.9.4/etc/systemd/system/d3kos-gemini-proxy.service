@@ -1,0 +1,18 @@
+[Unit]
+Description=d3kOS Gemini API Proxy
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/ai
+ExecStart=/usr/bin/python3 /opt/d3kos/services/ai/gemini-proxy.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+EnvironmentFile=-/opt/d3kos/config/d3kos.env
+
+[Install]
+WantedBy=multi-user.target

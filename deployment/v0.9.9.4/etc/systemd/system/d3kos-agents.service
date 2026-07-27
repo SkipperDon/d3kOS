@@ -1,0 +1,17 @@
+[Unit]
+Description=d3kOS Autonomous Agents (AA1-AA6)
+After=network.target d3kos-dashboard.service
+Wants=d3kos-dashboard.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/agents
+ExecStart=/usr/bin/python3 agent_scheduler.py
+Restart=always
+RestartSec=15
+# Give the dashboard time to start before agents begin writing status
+ExecStartPre=/bin/sleep 20
+
+[Install]
+WantedBy=multi-user.target

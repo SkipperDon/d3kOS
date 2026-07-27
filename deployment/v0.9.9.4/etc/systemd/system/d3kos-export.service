@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Export Service
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/export
+ExecStart=/usr/bin/python3 /opt/d3kos/services/export/export_service.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

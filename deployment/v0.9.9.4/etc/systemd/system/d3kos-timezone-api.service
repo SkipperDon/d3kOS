@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Timezone API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/d3kos/services/system
+ExecStart=/usr/bin/python3 /opt/d3kos/services/system/timezone-api.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

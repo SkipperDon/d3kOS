@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS Manual Management API
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/manuals
+ExecStart=/usr/bin/python3 /opt/d3kos/services/manuals/manuals_api.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

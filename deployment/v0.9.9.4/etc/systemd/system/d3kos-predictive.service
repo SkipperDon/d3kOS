@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Predictive Maintenance Service (v0.9.5)
+After=network.target d3kos-tier.service
+Wants=d3kos-tier.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/predictive
+ExecStart=/usr/bin/python3 predictive_maintenance.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

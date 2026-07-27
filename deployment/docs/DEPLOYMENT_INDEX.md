@@ -7,6 +7,20 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## ⚠ CANONICAL SOURCE TREE — v0.9.9.4 (S108 2026-07-27)
+
+| Path | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/` | **[NEW — S108]** **THE canonical source tree.** Seeded *from the running lab Pi* (`192.168.1.237`), which is the master system. Full Pi paths mirrored (`opt/…`, `var/…`, `etc/…`) — not flattened. 204 files. Secrets excluded (`*.env`, `api-keys.json`, `license.json`, `device-token.json`). See its `README.md`. |
+| `deployment/v0.9.9.4/MANIFEST.md5` | **[NEW — S108]** md5 of every deployed file. Regenerate on every deploy. |
+| `deployment/v0.9.9.4/tools/check-drift.sh` | **[NEW — S108]** Compares a Pi against the manifest. Exit 0 = no drift, 1 = drift, 2 = unreachable. **Run before any clone or release.** Baseline at seeding: 204/204 match. |
+| `deployment/v0.9.4/pi_source/` | **[SUPERSEDED — S108]** This was the **v0.9.9.2 release tree** (it stopped changing at release; its dates are not staleness). Retained for history and for recovering the v0.9.9.2 features still missing from the master — BUG-36 `_d3kEngData`, BUG-37 the seven `app.py` routes. **Do not deploy from it.** |
+| `deployment/d3kOS/dashboard/` | **[SUPERSEDED — S108]** A separate lineage that never contained the v0.9.9.2 features. The S105 deploy sourced `instruments.js` from here and silently removed the M14 cache (BUG-36). **Do not deploy from it.** |
+
+**Why:** two trees were both treated as canonical while `version.txt` was never bumped, so two systems running materially different code both reported `v0.9.2.2`. Root cause of BUG-28, BUG-36, BUG-37, and DEP20. Operator decision S108: the lab Pi is the master, relabelled **v0.9.9.4 (In Development)**; released only when the PART 17 bug list is cleared.
+
+---
+
 ## Governing Standards (Don's Engineering Standards)
 
 These documents define how all AI work must be performed. They are embedded in full in `/home/boatiq/CLAUDE.md` (auto-loaded every session). Source files in `/home/boatiq/`:

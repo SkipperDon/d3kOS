@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS Keyboard API (squeekboard DBus bridge)
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/system
+ExecStart=/usr/bin/python3 /opt/d3kos/services/system/keyboard-api.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,18 @@
+[Unit]
+Description=d3kOS Export Manager Service
+Documentation=https://github.com/boatiq/d3kos
+After=network.target d3kos-tier-api.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/export
+ExecStart=/usr/bin/python3 /opt/d3kos/services/export/export-manager.py
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

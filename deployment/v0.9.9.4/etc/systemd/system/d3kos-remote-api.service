@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS Remote Status API
+After=network.target d3kos-ai-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/d3kos/services/remote
+ExecStart=/usr/bin/python3 /opt/d3kos/services/remote/remote_api.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

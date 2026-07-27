@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Marine Vision &middot; {{ vessel_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/d3kos.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* override d3kos.css scroll lock — this page is scrollable */
+html, body {
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  font-family: 'Chakra Petch', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 20px;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 64px;
+  background: var(--bar);
+  border-bottom: 2px solid var(--g-bdr);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.hdr-left { display: flex; align-items: center; gap: 14px; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 48px;
+  background: rgba(0,80,0,0.4);
+  border: 2px solid rgba(80,200,80,0.5);
+  border-radius: 8px;
+  color: rgba(180,255,180,0.92);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  letter-spacing: .04em;
+}
+.back-btn:active { opacity: .7; }
+
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: .12em;
+  color: rgba(180,255,180,0.92);
+}
+
+/* .dn-b intentionally not redefined — d3kos.css handles it correctly */
+
+/* ── LAYOUT ── */
+.container {
+  padding: 10px;
+}
+
+/* ── CAMERA SELECTOR ── */
+.camera-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cam-btn {
+  padding: 0 28px;
+  height: 56px;
+  background: var(--g-dim);
+  border: 2px solid var(--g-bdr);
+  border-radius: 8px;
+  color: var(--g-txt);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .05em;
+  transition: background .15s;
+}
+.cam-btn:active { opacity: .75; }
+.cam-btn.active {
+  background: var(--g-txt);
+  color: var(--bg);
+  border-color: var(--g-txt);
+}
+.cam-btn.offline {
+  border-color: var(--ink3);
+  color: var(--ink3);
+  cursor: not-allowed;
+  opacity: .45;
+}
+.cam-btn.offline.active {
+  background: var(--ink3);
+  color: var(--bg);
+}
+/* connecting = RTSP reconnecting — show dimmed but keep tappable */
+.cam-btn.connecting {
+  border-color: var(--ink3);
+  color: var(--ink3);
+  opacity: .65;
+}
+
+.grid-btn {
+  padding: 0 28px;
+  height: 56px;
+  background: rgba(0,100,200,.1);
+  border: 2px solid rgba(0,136,255,.4);
+  border-radius: 8px;
+  color: #4499FF;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .05em;
+  transition: background .15s;
+}
+.grid-btn:active { opacity: .75; }
+.grid-btn.active { background: rgba(0,136,255,.25); border-color: #4499FF; }
+
+/* ── FEED CONTAINER ── */
+.camera-container {
+  background: var(--g-dim);
+  border: 2px solid var(--g-bdr);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.feed-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px;
+  color: var(--ink3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+#cameraFeed {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: var(--bg);
+  min-height: 300px;
+  object-fit: contain;
+  display: block;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 48px;
+  color: var(--g-txt);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  letter-spacing: .04em;
+  display: none;
+}
+
+/* grid mode — CSS grid of per-slot images */
+.cam-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+.cam-grid-cell { position: relative; }
+.cam-grid-cell img {
+  width: 100%;
+  height: auto;
+  min-height: 150px;
+  border-radius: 6px;
+  background: #000;
+  display: block;
+  object-fit: contain;
+}
+.cam-grid-label {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: .1em;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8);
+  pointer-events: none;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.control-btn {
+  height: 72px;
+  background: var(--g-txt);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: opacity .15s;
+}
+.control-btn:active:not(:disabled) { opacity: .8; }
+.control-btn:disabled {
+  background: var(--ink3);
+  color: var(--bg);
+  cursor: not-allowed;
+  opacity: .5;
+}
+.control-btn.recording {
+  background: var(--crit);
+  color: #fff;
+}
+
+/* ── STATUS / PANEL SECTIONS ── */
+.panel {
+  background: var(--g-dim);
+  border: 1px solid var(--g-bdr);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.panel h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: .1em;
+  color: var(--g-txt);
+  margin-bottom: 16px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--g-bdr);
+  font-size: 20px;
+}
+.status-row:last-of-type { border-bottom: none; }
+
+.status-label { color: var(--ink2); }
+.status-value { font-weight: 700; color: var(--g-txt); }
+.status-value.err  { color: var(--crit); }
+.status-value.warn { color: #CC8800; }
+
+/* ── ALL CAMERAS GRID (status cards) ── */
+.cam-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cam-status-card {
+  background: var(--bg);
+  border: 1px solid var(--g-bdr);
+  border-radius: 8px;
+  padding: 14px;
+}
+.cam-status-card.active-card { border-color: var(--g-txt); }
+
+.cam-status-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: .08em;
+  color: var(--g-txt);
+  margin-bottom: 6px;
+}
+.cam-status-detail { font-size: 18px; color: var(--ink2); margin-bottom: 2px; }
+
+/* ── FISH DETECTION ── */
+.detect-btn-wrap { margin-top: 14px; }
+
+.detect-btn {
+  width: 100%;
+  height: 72px;
+  background: var(--g-txt);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .04em;
+}
+.detect-btn:disabled {
+  background: var(--ink3);
+  color: var(--bg);
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+#detectionResults {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--g-bdr);
+  border-radius: 8px;
+  display: none;
+  font-size: 20px;
+}
+.detect-result-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: .08em;
+  color: var(--g-txt);
+  margin-bottom: 10px;
+}
+.detect-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--g-bdr);
+  color: var(--ink);
+}
+.detect-item:last-child { border-bottom: none; }
+
+/* ── RECORDINGS ── */
+.recordings-list {
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 14px;
+}
+
+.recording-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--g-bdr);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+.recording-name { color: var(--g-txt); font-weight: 600; }
+.recording-size  { color: var(--ink2); }
+
+.empty-msg {
+  text-align: center;
+  padding: 32px;
+  color: var(--ink3);
+  font-size: 20px;
+  letter-spacing: .04em;
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header>
+  <div class="hdr-left">
+    <a href="/" class="back-btn">&#9664; Main</a>
+    <h1>Marine Vision</h1>
+  </div>
+  <div class="hdr-right">
+    <button class="dn-b" id="btnD" onclick="setTheme('day',true)"   aria-label="Switch to day mode">DAY</button>
+    <button class="dn-b" id="btnN" onclick="setTheme('night',true)" aria-label="Switch to night mode">NGT</button>
+  </div>
+</header>
+
+<div class="container" id="main-content">
+
+  <!-- Camera selector -->
+  <div class="camera-selector" id="cameraSelector">
+    <span class="empty-msg" style="padding:0;">Loading cameras&hellip;</span>
+  </div>
+
+  <!-- Feed -->
+  <div class="camera-container">
+    <div class="feed-label" id="feedLabel">Active Camera</div>
+    <img id="cameraFeed" alt="Camera Feed">
+    <div class="cam-grid" id="camGrid" style="display:none;"></div>
+    <div class="loading-message" id="loadingMsg">Connecting to camera&hellip;</div>
+    <div class="controls">
+      <button class="control-btn" id="btnRecord"  disabled>Start Recording</button>
+      <button class="control-btn" id="btnCapture" disabled>Capture Photo</button>
+      <button class="control-btn" id="btnRefresh">Refresh</button>
+    </div>
+  </div>
+
+  <!-- Active camera status -->
+  <div class="panel" id="statusPanel">
+    <h2>Active Camera</h2>
+    <div class="status-row"><span class="status-label">Connection</span><span class="status-value" id="statConn">Checking&hellip;</span></div>
+    <div class="status-row"><span class="status-label">Camera</span><span class="status-value" id="statName">--</span></div>
+    <div class="status-row"><span class="status-label">IP</span><span class="status-value" id="statIP">--</span></div>
+    <div class="status-row"><span class="status-label">Recording</span><span class="status-value" id="statRec">Stopped</span></div>
+  </div>
+
+  <!-- All cameras overview (grid mode) -->
+  <div class="panel" id="allCamsPanel" style="display:none;">
+    <h2>All Cameras</h2>
+    <div class="cam-status-grid" id="allCamsGrid"></div>
+  </div>
+
+  <!-- Fish detection -->
+  <div class="panel">
+    <h2>Fish Detection</h2>
+    <div class="status-row"><span class="status-label">Status</span><span class="status-value" id="fishStatus">Checking&hellip;</span></div>
+    <div class="status-row"><span class="status-label">Model</span><span class="status-value" id="fishModel">--</span></div>
+    <div class="status-row"><span class="status-label">Classes</span><span class="status-value" id="fishClasses">--</span></div>
+    <div class="detect-btn-wrap">
+      <button class="detect-btn" id="btnDetect" onclick="runDetection()" disabled>Run Detection Now</button>
+    </div>
+    <div id="detectionResults">
+      <div class="detect-result-title">Detection Results</div>
+      <div id="detectionData"></div>
+    </div>
+  </div>
+
+  <!-- Recordings -->
+  <div class="panel">
+    <h2>Recent Recordings</h2>
+    <div class="recordings-list" id="recordingsList">
+      <div class="empty-msg">No recordings yet</div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ── THEME — mirrors theme.js logic, standalone for this page ── */
+var _manualTheme = false;
+
+function setTheme(t, manual) {
+  if (manual) _manualTheme = true;
+  if (t === 'night') document.body.setAttribute('data-night', '');
+  else               document.body.removeAttribute('data-night');
+  var btnD = document.getElementById('btnD');
+  var btnN = document.getElementById('btnN');
+  if (btnD) btnD.classList.toggle('on', t === 'day');
+  if (btnN) btnN.classList.toggle('on', t === 'night');
+  localStorage.setItem('d3kTheme', t);
+}
+
+function autoTheme() {
+  if (_manualTheme) return;
+  var stored = localStorage.getItem('d3kTheme');
+  if (stored) { setTheme(stored); return; }
+  var h = new Date().getHours();
+  setTheme(h >= 7 && h < 20 ? 'day' : 'night');
+}
+
+autoTheme();
+setInterval(autoTheme, 60000);
+
+/* ── STATE ── */
+var CAM_API    = 'http://localhost:8084';
+var FISH_API   = 'http://localhost:8086';
+var FEED_MS    = 125;   /* ~8 fps single feed */
+var GRID_MS    = 1500;  /* ~0.67 fps grid tiles — 4 cameras × 1500ms = sustainable Pi load */
+var isRecording = false;
+var feedInterval = null;
+var gridIntervals = [];
+var gridMode     = false;
+var activeSlotId = null;
+var allSlots     = [];
+
+/* ── INIT ── */
+window.addEventListener('load', function() {
+  loadSlots();
+  updateDetectionStatus();
+  loadRecordings();
+
+  setInterval(loadSlots,              15000);
+  setInterval(updateDetectionStatus,   5000);
+  setInterval(loadRecordings,         10000);
+});
+
+/* ── SLOTS — replaces /camera/list ── */
+function loadSlots() {
+  fetch(CAM_API + '/camera/slots')
+    .then(function(r) { return r.json(); })
+    .then(function(slots) {
+      allSlots = slots;
+      /* find active slot — active_default if it has a frame, else first with frame */
+      if (!activeSlotId) {
+        var def = slots.find(function(s) { return s.roles && s.roles.active_default; });
+        if (def && def.has_frame) {
+          activeSlotId = def.slot_id;
+        } else {
+          var withFrame = slots.find(function(s) { return s.has_frame; });
+          activeSlotId = withFrame ? withFrame.slot_id
+                       : def       ? def.slot_id
+                       : (slots[0] ? slots[0].slot_id : null);
+        }
+      }
+      renderSelector(slots);
+      renderAllCamsGrid(slots);
+      updateStatusFromSlots(slots);
+      if (!feedInterval && !gridMode) startFeed();
+    })
+    .catch(function() {
+      document.getElementById('cameraSelector').innerHTML =
+        '<span style="color:var(--crit);font-size:20px;">Camera service unavailable (:8084)</span>';
+    });
+}
+
+/* ── SELECTOR BUTTONS ── */
+function renderSelector(slots) {
+  var sel = document.getElementById('cameraSelector');
+  var html = '';
+  slots.forEach(function(s) {
+    var isActive  = s.slot_id === activeSlotId && !gridMode;
+    /* offline = hardware truly offline; connecting = dimmed but still tappable */
+    var isOffline    = s.hardware && s.hardware.status === 'offline';
+    var isConnecting = !isOffline && s.status !== 'online';
+    var cls = 'cam-btn' + (isActive ? ' active' : '')
+                        + (isOffline    ? ' offline'    : '')
+                        + (isConnecting ? ' connecting' : '');
+    html += '<button class="' + cls + '" onclick="switchCamera(\'' + s.slot_id + '\')">' + s.label + '</button>';
+  });
+  if (slots.length > 1) {
+    html += '<button class="grid-btn' + (gridMode ? ' active' : '') + '" onclick="toggleGrid()">Grid View</button>';
+  }
+  sel.innerHTML = html;
+}
+
+/* ── SWITCH CAMERA ── */
+function switchCamera(slotId) {
+  if (slotId === activeSlotId && !gridMode) return;
+  gridMode = false;
+  fetch(CAM_API + '/camera/switch/' + slotId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      activeSlotId = slotId;
+      loadSlots();
+      startFeed();
+    })
+    .catch(function() {});
+}
+
+/* ── GRID TOGGLE ── */
+function toggleGrid() {
+  gridMode = !gridMode;
+  renderSelector(allSlots);
+  if (gridMode) {
+    document.getElementById('cameraFeed').style.display = 'none';
+    document.getElementById('camGrid').style.display    = 'grid';
+    document.getElementById('feedLabel').textContent    = 'All Cameras — Grid View';
+    document.getElementById('allCamsPanel').style.display = 'block';
+    startGridFeed();
+    stopSingleFeed();
+  } else {
+    document.getElementById('cameraFeed').style.display = 'block';
+    document.getElementById('camGrid').style.display    = 'none';
+    document.getElementById('allCamsPanel').style.display = 'none';
+    stopGridFeed();
+    startFeed();
+  }
+}
+
+/* ── SINGLE FEED ── */
+function startFeed() {
+  stopSingleFeed();
+  stopGridFeed();
+  document.getElementById('cameraFeed').style.display = 'block';
+  document.getElementById('camGrid').style.display    = 'none';
+  var slot = allSlots.find(function(s) { return s.slot_id === activeSlotId; });
+  document.getElementById('feedLabel').textContent = slot ? slot.label : 'Active Camera';
+
+  feedInterval = setInterval(function() {
+    if (!activeSlotId) return;
+    var img  = document.getElementById('cameraFeed');
+    var load = document.getElementById('loadingMsg');
+    img.src  = CAM_API + '/camera/frame/' + activeSlotId + '?t=' + Date.now();
+    img.onload  = function() { load.style.display = 'none';  img.style.display = 'block'; };
+    img.onerror = function() { load.style.display = 'block'; load.textContent = 'No feed available'; img.style.display = 'none'; };
+  }, FEED_MS);
+}
+
+function stopSingleFeed() {
+  if (feedInterval) { clearInterval(feedInterval); feedInterval = null; }
+}
+
+/* ── GRID FEED ── */
+function startGridFeed() {
+  stopGridFeed();
+  var grid = document.getElementById('camGrid');
+  grid.innerHTML = '';
+  allSlots.forEach(function(s) {
+    var cell  = document.createElement('div');
+    cell.className = 'cam-grid-cell';
+    var img   = document.createElement('img');
+    img.id    = 'gf-' + s.slot_id;
+    img.alt   = s.label;
+    var lbl   = document.createElement('div');
+    lbl.className = 'cam-grid-label';
+    lbl.textContent = s.label;
+    cell.appendChild(img);
+    cell.appendChild(lbl);
+    grid.appendChild(cell);
+
+    var iv = setInterval(function() {
+      img.src = CAM_API + '/camera/frame/' + s.slot_id + '?t=' + Date.now();
+    }, GRID_MS);
+    gridIntervals.push(iv);
+  });
+}
+
+function stopGridFeed() {
+  gridIntervals.forEach(function(iv) { clearInterval(iv); });
+  gridIntervals = [];
+}
+
+/* ── STATUS from slots ── */
+function updateStatusFromSlots(slots) {
+  var slot = slots.find(function(s) { return s.slot_id === activeSlotId; });
+  if (!slot) return;
+
+  var conn = document.getElementById('statConn');
+  if (slot.status === 'online' && slot.has_frame) {
+    conn.textContent  = 'Connected';
+    conn.className    = 'status-value';
+    document.getElementById('btnRecord').disabled  = false;
+    document.getElementById('btnCapture').disabled = false;
+  } else if (slot.status === 'online') {
+    conn.textContent = 'Connected (No Frame)';
+    conn.className   = 'status-value warn';
+  } else {
+    conn.textContent = 'Offline';
+    conn.className   = 'status-value err';
+    document.getElementById('btnRecord').disabled  = true;
+    document.getElementById('btnCapture').disabled = true;
+  }
+
+  document.getElementById('statName').textContent = slot.label || '--';
+  document.getElementById('statIP').textContent   = (slot.hardware && slot.hardware.ip) ? slot.hardware.ip : '--';
+}
+
+/* ── ALL CAMERAS GRID (status cards) ── */
+function renderAllCamsGrid(slots) {
+  if (slots.length < 2) {
+    document.getElementById('allCamsPanel').style.display = 'none';
+    return;
+  }
+  var grid = document.getElementById('allCamsGrid');
+  grid.innerHTML = slots.map(function(s) {
+    var isActive = s.slot_id === activeSlotId;
+    var online   = s.status === 'online';
+    return '<div class="cam-status-card' + (isActive ? ' active-card' : '') + '">' +
+      '<div class="cam-status-name">' + s.label + (isActive ? ' &#9733;' : '') + '</div>' +
+      '<div class="cam-status-detail">IP: ' + ((s.hardware && s.hardware.ip) ? s.hardware.ip : '--') + '</div>' +
+      '<div class="cam-status-detail">Model: ' + ((s.hardware && s.hardware.model) ? s.hardware.model : 'Reolink') + '</div>' +
+      '<div class="cam-status-detail" style="color:' + (online ? 'var(--g-txt)' : 'var(--crit)') + ';">' +
+        (online ? 'Online' : 'Offline') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── FISH DETECTION ── */
+function updateDetectionStatus() {
+  fetch(FISH_API + '/detect/status')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var el = document.getElementById('fishStatus');
+      if (data.ready && data.status === 'active') {
+        el.textContent = 'Ready';
+        el.className   = 'status-value';
+        document.getElementById('btnDetect').disabled = false;
+      } else {
+        el.textContent = 'Not Ready';
+        el.className   = 'status-value warn';
+        document.getElementById('btnDetect').disabled = true;
+      }
+      document.getElementById('fishModel').textContent   = data.model   || '--';
+      document.getElementById('fishClasses').textContent = data.classes || '--';
+    })
+    .catch(function() {
+      document.getElementById('fishStatus').textContent = 'Error';
+      document.getElementById('fishStatus').className   = 'status-value err';
+    });
+}
+
+function runDetection() {
+  var btn     = document.getElementById('btnDetect');
+  var resDiv  = document.getElementById('detectionResults');
+  var dataDiv = document.getElementById('detectionData');
+  btn.disabled    = true;
+  btn.textContent = 'Detecting\u2026';
+  resDiv.style.display = 'block';
+  dataDiv.innerHTML = '<div style="color:var(--g-txt);">Running detection\u2026</div>';
+
+  fetch(FISH_API + '/detect/frame', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var html = '';
+      html += '<div class="detect-item"><strong>Person:</strong> ' +
+        (data.person_detected
+          ? '&#10003; Detected (' + (data.person_confidence * 100).toFixed(1) + '%)'
+          : '&#10007; Not detected') + '</div>';
+      html += '<div class="detect-item"><strong>Fish:</strong> ' +
+        (data.fish_detected
+          ? '&#10003; Detected (' + (data.fish_confidence * 100).toFixed(1) + '%)'
+          : '&#10007; Not detected') + '</div>';
+
+      if (data.detections && data.detections.length > 0) {
+        var cnt = data.detections.length;
+        html += '<div class="detect-item" style="font-weight:700;font-size:22px;">' +
+                '&#10003; ' + cnt + (cnt === 1 ? ' fish detected' : ' fish detected') + '</div>';
+
+        if (data.capture_triggered && data.capture_id) {
+          html += '<div class="detect-item" style="color:var(--g-txt);font-weight:700;">' +
+                  '&#128247; Capture saved — ID: ' + data.capture_id + '</div>';
+          /* ── Identify Species button — tap to call Gemini on demand ── */
+          html += '<div class="detect-item" style="margin-top:10px;">' +
+                  '<button id="btnIdentify_' + data.capture_id + '" ' +
+                  'class="detect-btn" style="height:64px;font-size:20px;" ' +
+                  'onclick="identifyCapture(' + data.capture_id + ')">' +
+                  '&#128270; Identify Species</button>' +
+                  '<div id="geminiResult_' + data.capture_id + '" style="margin-top:10px;"></div>' +
+                  '</div>';
+        }
+      } else {
+        html += '<div class="detect-item" style="color:var(--ink3);">No fish detected</div>';
+      }
+      dataDiv.innerHTML   = html;
+      btn.textContent     = 'Run Detection Now';
+      btn.disabled        = false;
+    })
+    .catch(function(err) {
+      dataDiv.innerHTML = '<div style="color:var(--crit);">Detection failed: ' + err.message + '</div>';
+      btn.textContent   = 'Run Detection Now';
+      btn.disabled      = false;
+    });
+}
+
+function identifyCapture(captureId) {
+  var idBtn    = document.getElementById('btnIdentify_'   + captureId);
+  var resArea  = document.getElementById('geminiResult_'  + captureId);
+  if (!idBtn) return;
+
+  idBtn.disabled    = true;
+  idBtn.textContent = 'Identifying\u2026';
+  resArea.innerHTML = '<div style="color:var(--g-txt);">Sending capture to Gemini Vision\u2026</div>';
+
+  fetch(FISH_API + '/detect/identify/' + captureId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var g    = data.gemini_id || {};
+      var html = '';
+      var src  = g.source || '';
+
+      if (g.common_name && g.common_name !== 'Unknown') {
+        /* ── Good ID ── */
+        var confColour = g.confidence === 'high'   ? 'var(--ink)' :
+                         g.confidence === 'medium' ? '#e6a817'    : 'var(--g-txt)';
+        html += '<div style="padding:10px;border:2px solid var(--g-bdr);border-radius:6px;">';
+        html += '<div style="font-weight:700;font-size:24px;color:' + confColour + ';">' +
+                g.common_name + '</div>';
+        if (g.scientific_name) {
+          html += '<div style="font-style:italic;font-size:18px;color:var(--g-txt);">' +
+                  g.scientific_name + '</div>';
+        }
+        html += '<div style="font-size:18px;margin-top:4px;">Confidence: <strong>' +
+                g.confidence + '</strong></div>';
+        if (g.visual_features) {
+          html += '<div style="font-size:18px;margin-top:4px;color:var(--g-txt);">' +
+                  g.visual_features + '</div>';
+        }
+        if (g.ontario_note) {
+          html += '<div style="font-size:18px;margin-top:6px;color:#e6a817;">&#9888; ' +
+                  g.ontario_note + '</div>';
+        }
+        html += '</div>';
+        /* Re-identify button stays available — low confidence = try again */
+        idBtn.textContent = '&#128270; Re-identify';
+        idBtn.disabled    = g.confidence === 'high';  /* lock only on high confidence */
+      } else {
+        /* ── Not identified / rate limited / cooldown ── */
+        var icon = (src === 'rate_limited' || src === 'cooldown') ? '&#9201;' : '&#9432;';
+        html += '<div style="padding:8px;border:1px solid var(--g-bdr);border-radius:6px;color:var(--g-txt);">' +
+                icon + ' ' + (g.visual_features || 'Species not identified') + '</div>';
+        /* Always allow retry — the whole point is "try again until good" */
+        idBtn.textContent = '&#128270; Try Again';
+        idBtn.disabled    = false;
+      }
+
+      resArea.innerHTML = html;
+    })
+    .catch(function(err) {
+      resArea.innerHTML = '<div style="color:var(--crit);">Identification failed: ' + err.message + '</div>';
+      idBtn.textContent = '&#128270; Try Again';
+      idBtn.disabled    = false;
+    });
+}
+
+/* ── RECORD / CAPTURE ── */
+function updateRecordBtn() {
+  var btn = document.getElementById('btnRecord');
+  if (isRecording) {
+    btn.textContent = 'Stop Recording';
+    btn.classList.add('recording');
+  } else {
+    btn.textContent = 'Start Recording';
+    btn.classList.remove('recording');
+  }
+}
+
+document.getElementById('btnRecord').addEventListener('click', function() {
+  var ep = isRecording ? (CAM_API + '/camera/record/stop') : (CAM_API + '/camera/record/start');
+  this.disabled = true;
+  fetch(ep, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      isRecording = data.recording !== undefined ? data.recording : !isRecording;
+      updateRecordBtn();
+      if (!isRecording) setTimeout(loadRecordings, 500);
+    })
+    .catch(function() { alert('Recording action failed'); })
+    .finally(function() { document.getElementById('btnRecord').disabled = false; });
+});
+
+document.getElementById('btnCapture').addEventListener('click', function() {
+  this.disabled = true;
+  var slotId = activeSlotId || '';
+  fetch(CAM_API + '/camera/capture', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { alert('Photo captured: ' + (data.filename || 'ok')); loadRecordings(); })
+    .catch(function() { alert('Capture failed'); })
+    .finally(function() { document.getElementById('btnCapture').disabled = false; });
+});
+
+document.getElementById('btnRefresh').addEventListener('click', function() {
+  loadSlots();
+  updateDetectionStatus();
+  loadRecordings();
+  if (gridMode) { stopGridFeed(); startGridFeed(); }
+  else          { stopSingleFeed(); startFeed(); }
+});
+
+/* ── RECORDINGS ── */
+function loadRecordings() {
+  fetch(CAM_API + '/camera/recordings')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var list = document.getElementById('recordingsList');
+      if (data.recordings && data.recordings.length > 0) {
+        list.innerHTML = data.recordings.map(function(rec) {
+          /* parse timestamp from filename: capture_bow_20260320_210922.jpg */
+          var ts = '';
+          var m = rec.filename.match(/(\d{8})_(\d{6})/);
+          if (m) {
+            var d = m[1], t = m[2];
+            ts = d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8) + ' ' +
+                 t.slice(0,2)+':'+t.slice(2,4)+':'+t.slice(4,6);
+          }
+          return '<div class="recording-item">' +
+            '<div>' +
+              '<div class="recording-name">' + rec.filename + '</div>' +
+              (ts ? '<div style="font-size:18px;color:var(--ink3);">' + ts + '</div>' : '') +
+            '</div>' +
+            '<span class="recording-size">' + rec.size_mb + ' MB</span>' +
+          '</div>';
+        }).join('');
+      } else {
+        list.innerHTML = '<div class="empty-msg">No recordings yet</div>';
+      }
+    })
+    .catch(function() {});
+}
+</script>
+</body>
+</html>

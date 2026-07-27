@@ -1,0 +1,19 @@
+[Unit]
+Description=d3kOS AI Bridge — localhost:3002
+After=network.target d3kos-dashboard.service d3kos-gemini.service
+Wants=d3kos-dashboard.service d3kos-gemini.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/ai-bridge
+ExecStart=/usr/bin/python3 ai_bridge.py
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=/opt/d3kos/services/ai-bridge/config/ai-bridge.env
+
+# Prevent output buffering so logs appear in journald immediately
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Cloud Link API
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/cloud
+ExecStart=/usr/bin/python3 /opt/d3kos/services/cloud/cloud-link-api.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

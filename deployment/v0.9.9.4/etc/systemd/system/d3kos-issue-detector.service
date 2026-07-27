@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Issue Detector Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/d3kos/services/self-healing
+ExecStart=/usr/bin/python3 /opt/d3kos/services/self-healing/issue_detector.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

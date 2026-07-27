@@ -1,0 +1,43 @@
+[Unit]
+Description=d3kOS Hybrid Voice Assistant
+Documentation=https://github.com/d3kos/d3kos
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/voice
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+Environment="HOME=/home/d3kos"
+
+# Main command - runs in interactive mode
+# Check if voice assistant is enabled for current tier
+ExecStartPre=/bin/bash -c 'curl -s http://localhost:8093/tier/feature/voice_assistant | jq -e ".enabled == true" || exit 1'
+
+ExecStart=/usr/bin/python3 /opt/d3kos/services/voice/voice-assistant-hybrid.py --auto-start
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=d3kos-voice
+
+# Resource limits
+Nice=-5
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=50
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

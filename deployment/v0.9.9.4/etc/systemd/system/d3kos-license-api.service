@@ -1,0 +1,19 @@
+[Unit]
+Description=d3kOS License API Service
+Documentation=https://github.com/boatiq/d3kos
+After=network.target d3kos-first-boot.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/license
+ExecStart=/usr/bin/python3 /opt/d3kos/services/license/license-api.py
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS FI1 Failure Reporter (Port 8106)
+After=network.target d3kos-agents.service
+PartOf=d3kos-agents.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/agents
+ExecStartPre=/bin/sleep 25
+ExecStart=/usr/bin/python3 failure_reporter.py
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

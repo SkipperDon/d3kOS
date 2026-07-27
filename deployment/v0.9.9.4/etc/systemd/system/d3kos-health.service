@@ -1,0 +1,13 @@
+[Unit]
+Description=d3kOS System Health Monitor
+After=network.target signalk.service nodered.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/d3kos-health.sh
+Restart=always
+User=root
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

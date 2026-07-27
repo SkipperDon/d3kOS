@@ -1,0 +1,18 @@
+[Unit]
+Description=d3kOS Network Management API
+After=network.target NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/network
+ExecStart=/usr/bin/python3 /opt/d3kos/services/network/network-api.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

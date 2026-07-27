@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS Backup API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/d3kos/services/system
+ExecStart=/usr/bin/python3 /opt/d3kos/services/system/backup-api.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS AI API Server
+After=network.target signalk.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/ai
+ExecStart=/usr/bin/python3 /opt/d3kos/services/ai/ai_api.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

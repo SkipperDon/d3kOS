@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Remediation Engine
+After=d3kos-issue-detector.service
+Requires=d3kos-issue-detector.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/d3kos/services/self-healing
+ExecStart=/usr/bin/python3 /opt/d3kos/services/self-healing/remediation_engine.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

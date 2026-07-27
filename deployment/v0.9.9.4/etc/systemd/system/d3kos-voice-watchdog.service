@@ -1,0 +1,17 @@
+[Unit]
+Description=d3kOS Voice Assistant Watchdog
+Documentation=https://github.com/d3kos/d3kos
+After=d3kos-voice.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/d3kos/scripts/voice-watchdog.sh
+User=root
+StandardOutput=journal
+StandardError=journal
+
+# Restart policy
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

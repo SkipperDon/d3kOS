@@ -1,0 +1,21 @@
+[Unit]
+Description=d3kOS Camera Stream Manager
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/marine-vision
+# Check if camera is enabled for current tier
+ExecStartPre=/bin/bash -c 'curl -s http://localhost:8093/tier/feature/camera | jq -e ".enabled == true" || exit 1'
+
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/d3kos/services/marine-vision/camera_stream_manager.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

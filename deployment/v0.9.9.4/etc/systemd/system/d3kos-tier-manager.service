@@ -1,0 +1,19 @@
+[Unit]
+Description=d3kOS Tier Management Service
+Documentation=https://github.com/boatiq/d3kos
+After=network-online.target d3kos-first-boot.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/d3kos/scripts/tier-manager.sh
+StandardOutput=journal
+StandardError=journal
+RemainAfterExit=yes
+
+# Run on every boot to check for tier changes
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

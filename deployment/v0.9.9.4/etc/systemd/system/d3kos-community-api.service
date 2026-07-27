@@ -1,0 +1,17 @@
+[Unit]
+Description=d3kOS Community API
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/community
+ExecStart=/usr/bin/python3 /opt/d3kos/services/community/community-api.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

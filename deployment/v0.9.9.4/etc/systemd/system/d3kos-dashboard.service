@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Marine Dashboard — localhost:3000
+After=network.target
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/dashboard
+ExecStart=/usr/bin/python3 app.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

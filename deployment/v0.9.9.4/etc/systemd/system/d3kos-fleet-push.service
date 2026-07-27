@@ -1,0 +1,17 @@
+[Unit]
+Description=d3kOS Fleet Push — position + engine to HostPapa every 1 min
+After=network.target d3kos-dashboard.service
+Wants=d3kos-dashboard.service
+
+[Service]
+Type=simple
+User=d3kos
+WorkingDirectory=/opt/d3kos/services/fleet
+ExecStart=/usr/bin/python3 fleet_push_service.py
+Restart=on-failure
+RestartSec=10
+EnvironmentFile=/opt/d3kos/services/fleet/config/fleet-push.env
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

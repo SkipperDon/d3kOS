@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Export Boot-time Upload
+After=network-online.target d3kos-export-manager.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=d3kos
+ExecStart=/opt/d3kos/scripts/export-on-boot.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

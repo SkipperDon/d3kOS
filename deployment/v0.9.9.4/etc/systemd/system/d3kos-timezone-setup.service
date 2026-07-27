@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS Timezone Auto-Detection
+After=network-online.target
+Wants=network-online.target
+Before=d3kos-first-boot.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/d3kos/scripts/detect-timezone.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

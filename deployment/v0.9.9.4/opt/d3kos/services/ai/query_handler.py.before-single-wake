@@ -1,0 +1,369 @@
+#!/usr/bin/env python3
+"""
+d3kOS AI Query Handler v5 - Optimized
+Supports OpenRouter (online) and rule-based patterns (offline)
+Phi-2 removed for performance - rule-based responses are 100× faster
+"""
+
+import json
+import sqlite3
+import time
+import urllib.request
+import urllib.error
+from datetime import datetime
+from pathlib import Path
+import sys
+import argparse
+
+# Import Signal K client
+try:
+    from signalk_client import SignalKClient
+    SIGNALK_AVAILABLE = True
+except ImportError:
+    SIGNALK_AVAILABLE = False
+    print("⚠ Signal K client not available, using simulated data")
+
+# Paths
+CONFIG_PATH = "/opt/d3kos/config/ai-config.json"
+SKILLS_PATH = "/opt/d3kos/config/skills.md"
+DB_PATH = "/opt/d3kos/data/conversation-history.db"
+
+# Fallback simulated boat status (used if Signal K unavailable)
+SIMULATED_STATUS = {
+    'rpm': 3200,
+    'oil_pressure': 45,
+    'coolant_temp': 180,
+    'fuel_level': 75,
+    'battery_voltage': 14.2,
+    'speed': 12.5,
+    'heading': 270
+}
+
+class AIQueryHandler:
+    def __init__(self):
+        self.config = self.load_config()
+        self.skills = self.load_skills()
+        self.signalk = SignalKClient() if SIGNALK_AVAILABLE else None
+        
+    def load_config(self):
+        """Load AI configuration"""
+        with open(CONFIG_PATH, 'r') as f:
+            return json.load(f)
+    
+    def load_skills(self):
+        """Load skills.md context"""
+        try:
+            with open(SKILLS_PATH, 'r') as f:
+                return f.read()
+        except FileNotFoundError:
+            return "No skills data available yet."
+    
+    def get_boat_status(self):
+        """Get current boat status from Signal K or simulated data"""
+        if self.signalk:
+            try:
+                status = self.signalk.get_boat_status()
+                # Replace None values with simulated fallback
+                for key in SIMULATED_STATUS:
+                    if key in status and status[key] is None:
+                        status[key] = SIMULATED_STATUS[key]
+                return status
+            except Exception as e:
+                print(f"⚠ Signal K error: {e}, using simulated data")
+                return SIMULATED_STATUS
+        return SIMULATED_STATUS
+    
+    def check_internet(self):
+        """Check if internet is available"""
+        try:
+            urllib.request.urlopen("https://www.google.com", timeout=3)
+            return True
+        except:
+            return False
+    
+    def query_openrouter(self, question, context):
+        """Query OpenRouter API"""
+        config = self.config["providers"]["openrouter"]
+
+        if not config["api_key"]:
+            raise ValueError("OpenRouter API key not configured")
+
+        # Use default_model from config
+        model = config["default_model"]
+
+        # Get current boat status for real-time data
+        boat_status = self.get_boat_status()
+        status_text = f"""
+Current Boat Status (Real-time Sensor Data):
+- Engine RPM: {boat_status.get('rpm', 'N/A')}
+- Oil Pressure: {boat_status.get('oil_pressure', 'N/A')} PSI
+- Coolant Temperature: {boat_status.get('coolant_temp', 'N/A')}°F
+- Fuel Level: {boat_status.get('fuel_level', 'N/A')}%
+- Battery Voltage: {boat_status.get('battery_voltage', 'N/A')}V
+- Speed: {boat_status.get('speed', 'N/A')} knots
+- Heading: {boat_status.get('heading', 'N/A')}°
+- Boost Pressure: {boat_status.get('boost_pressure', 'N/A')} PSI
+- Engine Hours: {boat_status.get('engine_hours', 'N/A')} hours
+"""
+
+        system_prompt = f"""You are a marine assistant for d3kOS.
+
+{status_text}
+
+Context from boat knowledge base:
+{context}
+
+Provide concise, accurate answers based on this boat's specific configuration and current sensor readings."""
+
+        data = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": question}
+            ],
+            "max_tokens": config["max_tokens"],
+            "temperature": config["temperature"]
+        }
+        
+        req = urllib.request.Request(
+            config["api_endpoint"],
+            data=json.dumps(data).encode('utf-8'),
+            headers={
+                "Authorization": f"Bearer {config['api_key']}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://d3kos.atmyboat.com",
+                "X-Title": "d3kOS Marine Assistant"
+            }
+        )
+        
+        try:
+            with urllib.request.urlopen(req, timeout=config["timeout"]/1000) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                return result["choices"][0]["message"]["content"], model
+        except Exception as e:
+            raise Exception(f"OpenRouter API error: {str(e)}")
+    
+    def classify_simple_query(self, question):
+        """Check if this is a simple query that can be answered with rules"""
+        q_lower = question.lower()
+        
+        simple_patterns = {
+            'rpm': ['rpm', 'revolution', 'engine speed', 'how fast is the engine'],
+            'oil': ['oil pressure', 'oil', 'lubrication'],
+            'temperature': ['temperature', 'temp', 'coolant', 'how hot', 'overheating'],
+            'fuel': ['fuel', 'gas', 'how much fuel', 'fuel remaining', 'fuel left'],
+            'battery': ['battery', 'voltage', 'electrical', 'power'],
+            'speed': ['speed', 'how fast', 'knots', 'velocity', 'sog'],
+            'heading': ['heading', 'direction', 'course', 'which way', 'bearing'],
+            'boost': ['boost', 'boost pressure', 'turbo', 'manifold pressure'],
+            'hours': ['engine hours', 'runtime', 'hours', 'operating time', 'run time'],
+            'location': ['location', 'position', 'where am i', 'coordinates', 'gps', 'latitude', 'longitude'],
+            'time': ['what time', 'current time', 'time is it', 'date'],
+            'help': ['what can you do', 'help', 'capabilities', 'commands', 'how to use'],
+            'status': ['status', 'how is', 'everything', 'all systems', 'overview']
+        }
+        
+        for category, patterns in simple_patterns.items():
+            for pattern in patterns:
+                if pattern in q_lower:
+                    return category
+        
+        return None
+    
+    def simple_response(self, category):
+        """Generate rule-based response for simple queries using current boat data"""
+        from datetime import datetime
+
+        # For queries that don't need boat status, return immediately
+        if category == 'time':
+            return f"Current time is {datetime.now().strftime('%I:%M %p')} on {datetime.now().strftime('%A, %B %d, %Y')}."
+        elif category == 'help':
+            return "I can help with: engine RPM, oil pressure, temperature, fuel level, battery voltage, speed, heading, boost pressure, engine hours, GPS location, current time, and overall system status. Just ask!"
+        elif category == 'location':
+            return self.get_location_response()
+
+        # Get current boat status only when needed
+        status = self.get_boat_status()
+
+        responses = {
+            'rpm': f"Engine RPM is {status.get('rpm', 'unknown')}.",
+            'oil': f"Oil pressure is {status.get('oil_pressure', 'unknown')} PSI." if status.get('oil_pressure') else "Oil pressure sensor not available.",
+            'temperature': f"Coolant temperature is {status.get('coolant_temp', 'unknown')} degrees." if status.get('coolant_temp') else "Temperature sensor not available.",
+            'fuel': f"Fuel level is {status.get('fuel_level', 'unknown')} percent." if status.get('fuel_level') else "Fuel level sensor not available.",
+            'battery': f"Battery voltage is {status.get('battery_voltage', 'unknown')} volts." if status.get('battery_voltage') else "Battery voltage sensor not available.",
+            'speed': f"Current speed is {status.get('speed', 'unknown')} knots." if status.get('speed') else "Speed sensor not available.",
+            'heading': f"Heading is {status.get('heading', 'unknown')} degrees." if status.get('heading') else "Heading sensor not available.",
+            'boost': f"Boost pressure is {status.get('boost_pressure', 'unknown')} PSI." if status.get('boost_pressure') else "Boost pressure sensor not available.",
+            'hours': f"Engine has {status.get('engine_hours', 'unknown')} hours." if status.get('engine_hours') else "Engine hours not available.",
+            'status': self.get_full_status_response(status)
+        }
+        return responses.get(category, "I can help with that.")
+
+    def get_location_response(self):
+        """Get GPS location response"""
+        try:
+            # Try to get position from Signal K
+            if self.signalk:
+                import urllib.request
+                import json
+                url = f"{self.signalk.base_url}vessels/self/navigation/position"
+                response = urllib.request.urlopen(url, timeout=2)
+                data = json.loads(response.read().decode('utf-8'))
+                if 'value' in data:
+                    lat = data['value'].get('latitude')
+                    lon = data['value'].get('longitude')
+                    if lat and lon:
+                        lat_dir = "N" if lat >= 0 else "S"
+                        lon_dir = "E" if lon >= 0 else "W"
+                        return f"Current position is {abs(lat):.4f}° {lat_dir}, {abs(lon):.4f}° {lon_dir}."
+        except:
+            pass
+        return "GPS position not available."
+
+    def get_full_status_response(self, status):
+        """Generate comprehensive status response"""
+        parts = []
+        
+        if status.get('rpm') is not None and status.get('rpm') > 0:
+            parts.append(f"Engine running at {status['rpm']} RPM")
+        elif status.get('rpm') == 0:
+            parts.append("Engine off")
+        
+        if status.get('oil_pressure'):
+            parts.append(f"oil {status['oil_pressure']} PSI")
+        
+        if status.get('coolant_temp'):
+            parts.append(f"temperature {status['coolant_temp']} degrees")
+        
+        if status.get('fuel_level'):
+            parts.append(f"fuel {status['fuel_level']} percent")
+        
+        if parts:
+            return "All systems normal. " + ", ".join(parts) + "."
+        else:
+            return "System status: sensors initializing or engine not running."
+    
+    def query_onboard(self, question, context):
+        """Query onboard AI - uses rule-based responses for supported queries
+
+        Phi-2 removed for performance. Complex queries require internet connection.
+        Supported queries: rpm, oil, temperature, fuel, battery, speed, heading,
+        boost, hours, location, time, help, status
+        """
+
+        # Check if this is a simple query
+        simple_category = self.classify_simple_query(question)
+
+        if simple_category:
+            print("  ⚡ Using fast rule-based response with real boat data", flush=True)
+            return self.simple_response(simple_category), "rules"
+
+        # Complex query - requires internet
+        print("  ℹ️  Complex query requires internet connection", flush=True)
+        supported = "rpm, oil pressure, temperature, fuel, battery, speed, heading, boost, hours, location, time, help, status"
+        return f"I can answer simple questions offline: {supported}. For complex questions, please connect to internet.", "rules"
+    
+    def query(self, question, force_provider=None):
+        """
+        Main query handler
+        
+        Args:
+            question: The user's question
+            force_provider: 'openrouter', 'onboard', or None for auto
+        
+        Returns:
+            dict with answer, provider, model, response_time
+        """
+        start_time = time.time()
+        
+        # Determine which provider to use
+        has_internet = self.check_internet()
+        
+        if force_provider == 'onboard':
+            provider = 'onboard'
+        elif force_provider == 'openrouter' and has_internet:
+            provider = 'openrouter'
+        elif has_internet and force_provider is None:
+            # Auto-select: use active_provider from config
+            active = self.config["active_provider"]
+            if self.config["providers"][active]["enabled"]:
+                provider = active
+            else:
+                provider = 'onboard'
+        else:
+            provider = 'onboard'
+        
+        # Prepare context for AI
+        context = self.skills
+        
+        # Query the selected provider
+        try:
+            if provider == 'openrouter':
+                answer, model = self.query_openrouter(question, context)
+                ai_used = 'online'
+            else:
+                answer, model = self.query_onboard(question, context)
+                ai_used = 'onboard'
+        except Exception as e:
+            # Fallback to onboard if online fails
+            if provider != 'onboard':
+                print(f"Online AI failed: {e}, falling back to onboard")
+                answer, model = self.query_onboard(question, context)
+                provider = 'onboard'
+                ai_used = 'onboard'
+            else:
+                raise
+        
+        response_time = int((time.time() - start_time) * 1000)
+        
+        # Store in database
+        self.store_conversation(question, answer, ai_used, provider, model, response_time)
+        
+        return {
+            "question": question,
+            "answer": answer,
+            "provider": provider,
+            "model": model,
+            "ai_used": ai_used,
+            "response_time_ms": response_time,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    def store_conversation(self, question, answer, ai_used, provider, model, response_time):
+        """Store conversation in database"""
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO conversations 
+            (question, answer, ai_used, provider, model, response_time_ms)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (question, answer, ai_used, provider, model, response_time))
+        
+        conn.commit()
+        conn.close()
+
+def main():
+    """Test the query handler"""
+    parser = argparse.ArgumentParser(description='d3kOS AI Query Handler')
+    parser.add_argument('question', nargs='+', help='Question to ask the AI')
+    parser.add_argument('--force-provider', choices=['openrouter', 'onboard'],
+                       help='Force specific AI provider')
+    args = parser.parse_args()
+    
+    question = " ".join(args.question)
+    
+    handler = AIQueryHandler()
+    
+    print(f"Question: {question}")
+    print("Processing...\n")
+    
+    result = handler.query(question, force_provider=args.force_provider)
+    
+    print(f"Provider: {result['provider']}")
+    print(f"Model: {result['model']}")
+    print(f"Response Time: {result['response_time_ms']}ms ({result['response_time_ms']/1000:.1f}s)")
+    print(f"\nAnswer:\n{result['answer']}")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,84 @@
+/* d3kOS Multitouch & Scroll Fix — link in every page <head>
+   <link rel="stylesheet" href="/d3kos-touch.css"> */
+
+main, .main-content { min-height: 0; }
+
+html, body {
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.scrollable, .lang-grid, .settings-list, .log-list,
+.dashboard-content, .content, [data-scroll='true'] {
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}
+
+* { -webkit-user-select: none; user-select: none; }
+input, textarea, select, [contenteditable] { -webkit-user-select: text; user-select: text; }
+
+button, a, [role='button'], [role='option'],
+.lang-btn, .menu-button, .nav-btn, .btn {
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+
+
+/* ═══════════════════════════════════════════════════════════
+   d3kOS AODA / WCAG 2.0 AA — Global Accessibility Rules
+   Appended to d3kos-touch.css. Do not edit inline.
+   Standard: AODA WCAG 2.0 Level AA  |  IEC 62288 Option B
+   ═══════════════════════════════════════════════════════════ */
+
+/* 1 — Skip-to-content link (visually hidden until focused) */
+.skip-to-content {
+  position: absolute;
+  top: -120px;
+  left: 16px;
+  background: #00CC00;
+  color: #000000;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 14px 28px;
+  z-index: 99999;
+  text-decoration: none;
+  border-radius: 0 0 8px 8px;
+  transition: top 0.15s ease;
+  white-space: nowrap;
+}
+.skip-to-content:focus {
+  top: 0;
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* 2 — Focus indicator — visible on keyboard/switch navigation */
+:focus-visible {
+  outline: 3px solid #00CC00 !important;
+  outline-offset: 3px !important;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 3 — Touch targets: min 48x48px on all interactive elements */
+button:not([data-aoda-exempt]),
+[role="button"]:not([data-aoda-exempt]),
+select:not([data-aoda-exempt]) {
+  min-height: 48px;
+}
+
+/* 4 — Minimum font size floor for small/label elements */
+small, .small, .muted-text, .badge,
+.caption, .hint, .api-status, .code-tag, .region,
+.d3k-logo, .demo-key, .demo-item {
+  font-size: max(18px, 1em) !important;
+}
