@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.10.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-27 S107 | **Status:** IN PROGRESS
+**Version:** 1.12.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-27 S108 | **Status:** IN PROGRESS
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -1489,3 +1489,194 @@ Compare the S106-sourced MerCruiser 454 Mag MPI values
 - [ ] Add fuel and depth cards, or stop offering those gauges a diagnostic dialog
 - [ ] Replace the hardcoded localhost Gemini URL with a relative/configurable endpoint
 - [ ] Acceptance test: each gauge tap must show **that** gauge's live value + documented range + advice on the actual reading
+
+---
+
+## BUG-35 — OTA Upgrade Destroys Three of the Four Fields in `version.txt`
+
+**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** LOW-MEDIUM (silent metadata loss; no outage)
+**Discovered** while correcting the lab Pi's stale version label in S108. **Latent — has never fired.**
+
+### Symptom
+After any successful OTA upgrade, `/opt/d3kos/config/version.txt` is reduced from four lines to
+one. `Release Date`, `Status` and `Build` are permanently destroyed. No error is raised and no
+service fails, so the loss is silent.
+
+### Root cause
+`ota_upgrade.py` step 7 rewrites the entire file with a single formatted line:
+```python
+# 7. Update version.txt
+try:
+    VERSION_FILE.write_text(f'd3kOS Version {latest_ver}\n')
+except Exception as e:
+    errors.append(f'Could not update version.txt: {e}')
+```
+`Path.write_text()` truncates the file. The other three fields are never re-emitted.
+
+### The file contract it violates (4 lines — current state of the lab Pi after S108)
+```
+d3kOS Version 0.9.9.2
+Release Date: April 12, 2026
+Status: Release
+Build: v0.9.9.2
+```
+
+### Affected files — 3 live copies, all with the defect at line 277
+| Copy | Path | Notes |
+|------|------|-------|
+| Pi — service path (**live**) | `/opt/d3kos/services/cloud-agent/ota_upgrade.py` | `d3kos-cloud-agent` unit has `WorkingDirectory=/opt/d3kos/services/cloud-agent` |
+| Pi — second copy | `/opt/d3kos/services/ota_upgrade.py` | **Diverged** — different md5 from the cloud-agent copy |
+| Repo | `deployment/v0.9.4/pi_source/ota_upgrade.py` | Only repo copy; lives in the frozen `pi_source` tree (see BUG-28) |
+
+md5 on the lab Pi: `7043f1d7…` (`services/`) vs `6105de65…` (`services/cloud-agent/`) — the two Pi
+copies are **not** identical, so any fix must be applied to each and their divergence resolved.
+There is **no** copy in `deployment/d3kOS/`, so the usual two-source-sync pairing does not apply here.
+
+### Impact
+- `export_categories.collect_version()` parses `Release Date:` and `Status:` by prefix — after an
+  OTA those keys simply vanish from the export payload. No error, just missing data.
+- `ota_upgrade.get_current_version()` and `cloud_agent.get_version()` keep working: both need only
+  line 1. **This is why the defect is silent.**
+- The S108 label correction (0.9.2.2 → 0.9.9.2, April 12 2026, Release) will be wiped by the first OTA.
+
+### NOT the cause of the S108 stale label
+`version.txt` still had all four fields with mtime **2026-03-23 20:32**, so no OTA has ever rewritten
+it. The April 12 v0.9.9.2 release simply never touched `version.txt` at all — a separate gap in the
+release process, recorded against BUG-28. Do not conflate the two.
+
+### Fix steps
+- [ ] Emit all four fields in step 7 (version, release date, status, build)
+- [ ] Source release date / status / build from the OTA manifest rather than hardcoding them
+- [ ] Apply to all three copies; resolve the `services/` vs `services/cloud-agent/` divergence first
+- [ ] TDD (failing test first): invoke the version-write step, then assert
+      `export_categories.collect_version()` still returns `version`, `release_date` and `status`
+- [ ] Regression: `ota_upgrade.get_current_version()` and `cloud_agent.get_version()` still return the bare version
+
+---
+
+> ## ⚠ S108 LINEAGE CORRECTION (2026-07-27) — READ BEFORE BUG-28, BUG-29, BUG-30 OR DEP20
+>
+> **The two repo trees are the opposite of how S107 read them.** Verified by md5, not inference:
+>
+> | Evidence | Result |
+> |---|---|
+> | Lab Pi `instruments.js.bak.20260723` (pre-S105) | `496d9800…` = **`deployment/v0.9.4/pi_source/instruments.js`** |
+> | Lab Pi `instruments.js` (current, post-S105) | `d957fb8b…` = **`deployment/d3kOS/dashboard/…/instruments.js`** |
+> | Lab Pi `app.py` | `34211e37…` = **`deployment/d3kOS/dashboard/app.py`** |
+>
+> | Feature | `v0.9.4/pi_source` | `d3kOS/dashboard` |
+> |---|---|---|
+> | `_d3kEngData` (M14 cache) | **6** | 0 |
+> | `/config/tier` · `/anchor/set` · `/helm/mute` | **present** | absent |
+>
+> **`deployment/v0.9.4/pi_source/` IS the v0.9.9.2 release tree.** It appears "frozen at Apr 8"
+> because it stopped changing *at release* — not because it is stale. **`deployment/d3kOS/dashboard/`
+> is a separate lineage that never contained the v0.9.9.2 features.** S107 concluded the reverse from
+> commit dates alone, and BUG-28 / BUG-29 / BUG-30 / DEP20 all inherit that error.
+>
+> **Operator decision S108:** the lab Pi is the **master**, relabelled **v0.9.9.4 (In Development)**.
+> The published v0.9.9.2 archive.org image is left as-is. A new canonical tree will be seeded
+> **from the Pi**, and both old trees archived. See BUG-36 … BUG-39.
+
+---
+
+## BUG-36 — S105 Deploy Regressed `instruments.js`: the M14 Engine-Data Cache Was Silently Removed
+
+**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** HIGH (feature loss, shipped by a "fix")
+**Caused by:** the S105 BUG-15 deploy on 2026-07-23 10:12
+
+### Evidence
+| File | `_d3kEngData` | Size | md5 |
+|---|---|---|---|
+| `instruments.js.bak.20260723` (pre-S105) | **6** | 19,201 | `496d9800…` = `pi_source` |
+| `instruments.js` (current) | **0** | 18,794 | `d957fb8b…` = `d3kOS/dashboard` |
+
+The S105 deploy sourced the file from `deployment/d3kOS/dashboard/`, which never had the cache.
+The three-line COG fix was correct; the file it was applied to was from the wrong lineage.
+
+### Consequence
+`overlays.js` line 61 reads:
+```js
+const eng = window._d3kEngData || {};
+```
+Nothing populates it now. `[UNVERIFIED INFERENCE — read from the code path, page not loaded]`
+the M14 AI Engine Diagnostic renders empty cards for every gauge.
+
+### Fix steps
+- [ ] Restore `_d3kEngData` into the master's `instruments.js`, **keeping** the S105 `_lastSogKts` COG gate
+- [ ] TDD: assert each SK handler writes its key into `window._d3kEngData`
+- [ ] Regression: confirm the S105 COG gate still suppresses updates below 0.5 kn
+
+---
+
+## BUG-37 — Dashboard `app.py` Is Missing All Seven v0.9.9.2 Routes
+
+**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** HIGH
+
+### Evidence
+Lab Pi `app.py` md5 `34211e37…` = `deployment/d3kOS/dashboard/app.py`. The v0.9.9.2 tree
+(`deployment/v0.9.4/pi_source/app.py`, md5 `d06b15da…`) defines seven routes the deployed file lacks:
+```
+/config/tier      /anchor/set     /anchor/state    /anchor/clear
+/anchor/dismiss   /anchor/advice  /helm/mute
+```
+
+### Consequence
+- **This is the true root cause of BUG-26.** The S105 fix (pointing `anchor-watch.html` at
+  `AI_BRIDGE` :3002) is a workaround for proxy routes that v0.9.9.2 already provides on :3000.
+- `/config/tier` missing → the M14 tier gate cannot query the licence tier.
+- `/helm/mute` missing → the S44 CORS fix has no server side.
+
+### Fix steps
+- [ ] Port the seven routes into the master's `app.py`
+- [ ] Re-evaluate whether the BUG-26 `AI_BRIDGE` workaround should stay or revert to the proxy
+- [ ] TDD: assert each route returns non-404
+
+---
+
+## BUG-38 — `overlays.js` Writes to Three DOM IDs That `index.html` Never Defines
+
+**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** MEDIUM-HIGH
+**Present in the v0.9.9.2 release itself — not a deployment gap**
+
+### Evidence
+`overlays.js` (md5-identical to the v0.9.9.2 source) calls:
+```js
+getElementById('diagGrid')   getElementById('diagTitle')   getElementById('diagAiTxt')
+```
+The deployed `index.html` **matches v0.9.9.2 exactly** and defines only `id="diagBack"`.
+Both repo trees' `index.html` are md5-identical (`295f287c…`) and define none of the three.
+DEPLOYMENT_INDEX records these IDs as added in S39 — **that change was never committed to either tree.**
+
+### Consequence
+`getElementById` returns `null` for all three. Combined with BUG-36 the diagnostic panel has
+neither data nor a container. Together these are a second, independent root cause of BUG-16.
+
+### Fix steps
+- [ ] Add `diagTitle`, `diagGrid`, `diagAiTxt` to the diag panel markup in `index.html`
+- [ ] TDD: assert each ID resolves before `openDiag()` writes to it
+- [ ] Add a null-guard in `overlays.js` so a missing container degrades instead of throwing
+
+---
+
+## BUG-39 — Cloning the Master Duplicates Six Identity Values Across Two Pis
+
+**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** HIGH (blocks the boat clone)
+**Must be resolved before the master card is cloned to the boat**
+
+### The duplicated identities (read from the lab Pi)
+| Item | Value | Consequence if duplicated |
+|---|---|---|
+| `device_token` | `701e5754-e2ce-4fa3-97a6-f2c7c7e020c6` | **Most serious** — one cloud identity for two Pis; telemetry, Fix My Pi, fleet and PWA pairing all collide in `amboat_devices` |
+| `installation_id` | `3861513b314c5ee7` (tier T3) | duplicate licence identity |
+| Signal K vessel UUID | `urn:mrn:signalk:uuid:e1592142-…` | duplicate identity on the marine data layer |
+| `machine-id` | `c654e389c17e42ceb33b756141ad0772` | duplicate host identity |
+| SSH host keys | 3 private keys | host-key collisions / MITM warnings |
+| Filesystem UUIDs | `d6944274…` (ext4), `F587-071F` (vfat) | a third copy joins the existing SD↔USB duplicate pair. PARTUUIDs differ so boot is safe, but UUID-based mounts are ambiguous |
+
+### Fix steps
+- [ ] First-boot regeneration script: new `device_token`, `machine-id`, SSH host keys, SK vessel UUID
+- [ ] Decide whether `installation_id` / tier is per-device or per-owner before regenerating it
+- [ ] Regenerate filesystem UUIDs on the clone (`tune2fs -U random`, `fatlabel`/`mlabel`) or accept and document
+- [ ] Verify the boat wifi profile and the `10.42.0.1/24` camera AP exist on the card
+- [ ] Acceptance: both Pis online simultaneously, each appearing as a distinct device in the CRM
