@@ -179,26 +179,56 @@ Never crash the OTA — the existing `try/except` that appends to `errors` stays
 
 ## BUG-39 — first-boot identity regeneration
 
-### Q39.1 — ⛔ **NEEDS OPERATOR** — Is `installation_id` (currently `3861513b314c5ee7`, tier T3) per-device or per-owner?
-**Why it blocks:** if per-device, the clone must get a new one and be re-licensed. If per-owner, it
-must be **preserved** or the boat Pi loses its T3 entitlement. Guessing either way risks either a
-licence collision or an unlicensed boat.
-**Status:** unanswered. The script must leave `license.json` **untouched** until this is answered.
+### Q39.1 — Is `installation_id` (currently `3861513b314c5ee7`, tier T3) per-device or per-owner?
+**A — ANSWERED BY OPERATOR 2026-07-27: per OWNER.**
+Therefore `license.json` must be **PRESERVED EXACTLY** on the clone. Do **not** regenerate
+`installation_id`, and do not touch `tier`, `features`, `subscription_status` or any other key in
+that file. Regenerating it would strip the boat of its T3 entitlement. The script must not write
+`license.json` at all — the constraint is unchanged from Phase A, but now for a *decided* reason
+rather than a blocked one.
 
-### Q39.2 — ⛔ **NEEDS OPERATOR** — Does regenerating `device_token` break the existing PWA pairing and the device's history on atmyboat.com?
-**Why it blocks:** `device_token` is the identity key in `amboat_devices`. A new token likely appears
-as a brand-new device, orphaning existing telemetry, tickets and PDF reports.
-**Status:** unanswered. Needs a decision on whether the **lab** or the **boat** keeps the existing
-token, and whether the other is re-paired from scratch.
+### Q39.2 — Does regenerating `device_token` break the existing pairing and history on atmyboat.com?
+**A — ANSWERED BY OPERATOR 2026-07-27: the boat gets a NEW `device_token`.**
+The lab Pi keeps `701e5754-e2ce-4fa3-97a6-f2c7c7e020c6`. The clone generates a fresh UUID4 on first
+boot and rewrites `device-token.json`. File schema is exactly two keys — `device_token` and
+`created_at` — and both must be rewritten (`created_at` = the regeneration time, ISO-8601 with `Z`,
+matching the existing format `2026-03-26T13:37:23.752409Z`).
+
+> **⚠ Tier-1 concern, flagged not blocking.** If the boat Pi is *already* registered on
+> atmyboat.com under its own existing token, giving the clone a brand-new token means the boat
+> re-registers as a third device and its prior telemetry, tickets and PDF reports stay attached to
+> the old record. `Uncertainty flag: S107 did not capture the boat Pi's device_token, so I cannot
+> tell whether it has history worth keeping.` The operator's decision stands and is implemented as
+> stated; this is recorded so the consequence is not a surprise.
 
 ### Q39.3 — Where is the Signal K vessel UUID stored, and is changing it safe?
-**Why it blocks:** the UUID is duplicated by any clone.
-**A (partial):** the value is served at
-`http://localhost:8099/signalk/v1/api/vessels/self/uuid` and is
-`urn:mrn:signalk:uuid:e1592142-4955-4b4d-a085-40fa674e0e13`. **I have not confirmed which file on
-disk holds it** — candidates are `~/.signalk/settings.json`, `~/.signalk/defaults.json` and
-`~/.signalk/baseDeltas.json`. **Tier 3 must not guess.** The spec therefore requires the script to
-*locate* the file at run time and fail loudly if it cannot, rather than hardcoding a path.
+**A — RESOLVED 2026-07-27, and it removes this item from BUG-39's scope.**
+
+Investigated on the lab Pi. Findings:
+
+| Check | Result |
+|---|---|
+| Live value from the API | `urn:mrn:signalk:uuid:e1592142-4955-4b4d-a085-40fa674e0e13` |
+| `grep -rl e1592142` across `/home/d3kos`, `/opt/d3kos`, `/etc` | **no match — it is on disk nowhere** |
+| `~/.signalk/serverState/` | **empty** |
+| `~/.signalk/defaults.json` | **does not exist** |
+| `~/.signalk/settings.json` → `vessel.uuid` | `urn:mrn:signalk:uuid:af7d4be0-fb1d-4164-976d-de373c1c0331` — **a different UUID, which Signal K is ignoring** |
+
+So the live vessel UUID is **not persisted**. It is either generated at runtime each start, or
+derived from something else (plausibly `machine-id`, which the script already regenerates).
+
+**Consequence: the Signal K vessel UUID is removed from BUG-39's scope.** Either it is
+runtime-random, in which case a clone never duplicates it, or it is derived from `machine-id`, in
+which case regenerating `machine-id` already fixes it. The script must **not** search for it and
+must **not** edit any Signal K file.
+
+`Uncertainty flag: I could not distinguish "runtime-random" from "derived from machine-id" without
+restarting Signal K, which is barred by the no-Pi-changes hold. Either answer leads to the same
+action (do nothing), so this does not block implementation.`
+
+**Separate finding, logged not fixed:** `settings.json` configures a vessel UUID that Signal K is
+not using. That is a real config defect — the declared identity and the served identity disagree —
+but it is not BUG-39 and gets its own entry.
 
 ### Q39.4 — How is the script triggered on first boot, and how does it avoid running twice?
 **A:** A systemd oneshot unit ordered before the d3kOS services, guarded by a sentinel file. Contract:

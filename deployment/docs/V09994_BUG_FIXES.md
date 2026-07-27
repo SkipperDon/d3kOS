@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.12.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-27 S108 | **Status:** IN PROGRESS
+**Version:** 1.13.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-27 S108 | **Status:** IN PROGRESS
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -1680,3 +1680,40 @@ neither data nor a container. Together these are a second, independent root caus
 - [ ] Regenerate filesystem UUIDs on the clone (`tune2fs -U random`, `fatlabel`/`mlabel`) or accept and document
 - [ ] Verify the boat wifi profile and the `10.42.0.1/24` camera AP exist on the card
 - [ ] Acceptance: both Pis online simultaneously, each appearing as a distinct device in the CRM
+
+
+---
+
+## BUG-40 — Signal K Runs With a Different Vessel UUID Than `settings.json` Declares
+
+**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** LOW-MEDIUM (identity/config integrity)
+**Found while resolving Q39.3 for BUG-39. It removes the SK UUID from BUG-39's scope.**
+
+### Evidence (lab Pi, Signal K v2.23.0)
+| Check | Result |
+|---|---|
+| Live API `/signalk/v1/api/vessels/self/uuid` | `urn:mrn:signalk:uuid:e1592142-4955-4b4d-a085-40fa674e0e13` |
+| `~/.signalk/settings.json` → `vessel.uuid` | `urn:mrn:signalk:uuid:af7d4be0-fb1d-4164-976d-de373c1c0331` |
+| `grep -rl e1592142` over `/home/d3kos`, `/opt/d3kos`, `/etc` | **no match** |
+| `~/.signalk/serverState/` | empty |
+| `~/.signalk/defaults.json` | does not exist |
+
+The configured vessel identity is **ignored**, and the identity actually in use is **not persisted
+anywhere on disk**.
+
+### Consequences
+- The vessel's declared identity is not the one published on `vessels.self` to any consumer.
+- **Positive side effect:** because it is not persisted, a cloned card does not duplicate it —
+  which is why the SK UUID was struck from BUG-39.
+
+### Not yet diagnosed
+Whether Signal K v2 moved vessel identity to `defaults.json` (absent here) and silently ignores the
+legacy `settings.json` `vessel` block, or whether the value is derived from something stable such as
+`machine-id`. `Uncertainty flag: distinguishing these requires restarting Signal K and comparing the
+UUID before and after — barred by the no-Pi-changes hold in force at S108.`
+
+### Fix steps
+- [ ] Restart Signal K on a non-production Pi and check whether the UUID changes → runtime-random vs derived
+- [ ] Establish where SK v2.23 expects vessel identity (`defaults.json` vs `settings.json`)
+- [ ] Set the vessel identity in the location SK actually reads, and confirm the API reports it
+- [ ] Decide whether the boat and lab should carry distinct vessel UUIDs (relates to BUG-39)

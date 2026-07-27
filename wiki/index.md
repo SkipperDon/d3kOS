@@ -37,4 +37,4 @@
 ## Questions
 - [[questions/bug-06-pwa-tier-display]] · BUG-06: PWA tier shows T1 after BUG-04 fix — blocked pending operator confirmation
 - [[questions/session-log-gap-s56-s61]] · Sessions S56–S61 have no SESSION_LOG.md entries
-- [[questions/2026-07-27-v0994-tier3-spec-questions]] · v0.9.9.4 Tier-3 specs BUG-35…BUG-39 — 17 questions, 15 answered by Tier 1, **2 ⛔ NEED OPERATOR** (Q39.1 `installation_id` per-device or per-owner; Q39.2 does a new `device_token` orphan device history)
+- [[questions/2026-07-27-v0994-tier3-spec-questions]] · v0.9.9.4 Tier-3 specs BUG-35…BUG-39 — 17 questions, **all answered** (Q39.1 `installation_id` = per-owner → preserve `license.json`; Q39.2 boat gets a new `device_token`; Q39.3 resolved by investigation → SK vessel UUID is not persisted, removed from scope)
