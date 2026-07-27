@@ -1,6 +1,55 @@
 # v0.9.9.4 — On-Boat Analysis Plan & Confirmed Expectations
 
-**Version:** 1.0.0 | **Created:** 2026-07-24 S106 | **Status:** PLAN — awaiting on-boat investigation
+**Version:** 1.1.0 | **Created:** 2026-07-24 S106 | **Updated:** 2026-07-27 S107 | **Status:** **PHASE A EXECUTED** — evidence gathered on-boat; Phase B (lab) ready
+
+> ## PHASE A RESULTS — 2026-07-27 (S107)
+>
+> Executed on the boat Pi (`172.20.10.8`), engine running, Garmin connected mid-session by the
+> operator. Full evidence in `V09994_BUG_FIXES.md` BUG-28…BUG-34 and `SESSION_LOG.md` S107.
+> **No fix was written or deployed** — Phase A discipline held.
+>
+> **Two code defects explain four bugs:**
+> - **BUG-29** — dashboard subscribes `propulsion.0.*`; Signal K publishes `propulsion.port.*`
+>   (`propulsion` keys = `['port']`). Cascades into **BUG-16** (`_d3kEngData` permanently null →
+>   Gemini receives "fuel 0%" for every gauge = the E2 violation) and **BUG-24** (`rpmHz > 3` never
+>   true). Blast radius 6 live files. **Present in the latest source — a redeploy will not fix it.**
+> - **BUG-30** — depth gauge reads `belowKeel`; Signal K publishes `belowTransducer`.
+>
+> **§3 expectations — both confirmed:**
+> - **E1 CONFIRMED.** Garmin depth IS live: `environment.depth.belowTransducer` = 0.99 m,
+>   `$source: can0.0`, PGN 128267. The "no depth sounder present" candidate is definitively dead.
+> - **E2 CONFIRMED as violated,** with the mechanism now known (BUG-29 + BUG-34).
+>
+> **§5 confound RESOLVED differently than expected:** o-charts SENC data IS installed
+> (`oeuSENC-CAac-2026-1-1-base-avnav`, `oeuSENC-CAgl-2026-1-1-base-avnav`) — the blank chart is a
+> licence/expiry issue, not missing chart data. **But BUG-19/BUG-20 still could not be judged**, for a
+> new reason: **BUG-32** — AIS never reaches Signal K at all (rtl_ais pushes to TCP 10110, which
+> Signal K itself occupies as its NMEA0183 *output*; 20 s listen = 0 AIVDM; `ais` provider
+> `enabled:false`). Fix BUG-32 **before** evaluating the overlays.
+>
+> **§6 prerequisites:**
+> - **P1 — RESOLVED** (S106-cont: manuals converted). S107 adds that BUG-34's thresholds are generic
+>   JS literals that contradict those sourced values (idle oil ≥4 psi vs `crit:20` → false alarms;
+>   battery has no upper bound → 15.5 V overcharge reads "Normal").
+> - **P2 — still AWAITING OPERATOR.** BUG-22 confirmed NOT a bug (gate works as designed); the
+>   fresh-user vs re-triggerable question is unanswered.
+> - **P3 — superseded.** Chart data is present; the licence is the issue, and BUG-32 now blocks first.
+> - **P4 — partially resolved.** BUG-19's real blocker is BUG-32, not subscription. BUG-21 is partly a
+>   **config** defect (`audio_alarm:false`, `detection_interval:300` = 5 min), not purely "never built".
+>
+> **Also closed as NOT bugs:** BUG-25 (live Gemini query succeeded on the boat, `tokens:290`) and
+> BUG-22. **BUG-23's S105 diagnosis corrected** (watchdog `inactive/dead` is normal — `.timer` is
+> active; STT is Vosk, not Faster-Whisper).
+>
+> **New Phase A blocker not anticipated by this plan:** **BUG-28** — the boat Pi runs **v0.9.2.2**
+> (build 2026-03-23) and never received the S96/S105 fixes, so BUG-15/26/27 are *not* fixed on the
+> boat. Cause: `deployment/v0.9.4/pi_source/` froze 2026-04-08 while `deployment/d3kOS/dashboard/`
+> advanced to 2026-07-23 — the two-source-sync rule is violated. **Any future Phase C deploy must
+> verify which tree it is shipping and stamp the version.**
+>
+> **Still requires the operator:** identify **src 64** physically (real device, serial
+> `N20210700100`, sending frozen engine data + false 0% fuel on a confirmed-full tank); confirm the
+> actual tank capacity; confirm the **lab Pi version** on return (lab Pi unreachable from the boat).
 **Companion to:** `V09994_BUG_FIXES.md` (holistic bug tracker) + `PROJECT_CHECKLIST.md` PART 17
 **Author model:** Tier 1 (Opus) — requirements + investigation plan only. No fix implemented in this document.
 

@@ -1,5 +1,17 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.9.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-24 S106 | **Status:** IN PROGRESS
+**Version:** 1.10.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-27 S107 | **Status:** IN PROGRESS
+
+> **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
+> Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
+> Seven new defects logged as **BUG-28 … BUG-34**. Three findings override earlier records:
+> - **The boat Pi runs d3kOS v0.9.2.2 (build 2026-03-23).** The S96 and S105 fixes are NOT on it.
+>   **BUG-15, BUG-26 and BUG-27 are therefore NOT fixed on the boat** despite being marked
+>   `[x] FIXED`/`COMPLETE` — those deploys went to the lab Pi (`192.168.1.237`). See BUG-28.
+> - **E1 CONFIRMED and BUG-18 root cause replaced.** Garmin depth IS on the bus and IS in Signal K
+>   (`environment.depth.belowTransducer` = 0.99 m, `$source: can0.0`, PGN 128267 @ ~1 Hz). The
+>   dashboard subscribes to `environment.depth.belowKeel`, which Signal K never populates. See BUG-30.
+> - **BUG-25 and BUG-22 are NOT bugs.** Gemini answered a live query on the boat; internet egress
+>   works. The wizard gate behaves as designed. See those entries.
 
 > **S106 corrections & plan (2026-07-24):** On-boat analysis plan authored at
 > `V09994_ONBOAT_ANALYSIS_PLAN.md` (per-bug expected behavior + investigation steps; fix in lab
@@ -1198,3 +1210,282 @@ screen. Fix = raise the two operator-named helm elements to helm-distance sizes.
 - **Process:** AAO §23/§25 atomic spec (`deployment/docs/atomic-specs/BUG-27.md`) — Tier 3 (Haiku) implemented failing-test-first; Tier 1 (Opus) verified diff scope + CSS override probe (PASS); operator authorized Pi deploy.
 - **Backup/rollback:** `/opt/d3kos/services/dashboard/static/css/d3kos.css.bak.20260723`
 - **No service restart** (Flask serves static from disk per request).
+- **⚠ S107 CORRECTION:** this fix is **NOT present on the boat Pi** — `.sb-vessel` is still `18px`
+  there and no `.bak.20260723` exists. The 1 m legibility confirmation cannot have been made on the
+  boat screen. Status downgraded from COMPLETE to **DEPLOYED TO LAB PI ONLY**. See BUG-28.
+
+---
+
+## BUG-28 — Boat Pi Running v0.9.2.2; Two Deploy Sources Diverged (S96/S105 Fixes Absent)
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27 (on-boat evidence)
+**Severity:** HIGH — invalidates on-boat validation of any bug marked fixed after 2026-04-12
+**Reported:** S107 on-boat, during Phase A investigation
+
+### Symptom
+Bugs marked `[x] FIXED` in PART 17 still reproduce on the boat. The operator's expectation was that
+the boat Pi is a copy of the lab Pi and therefore carries the latest code. It does not.
+
+### Evidence (boat Pi `172.20.10.8`, 2026-07-27)
+```
+/opt/d3kos/config/version.txt → d3kOS Version 0.9.2.2, Release Date March 23, 2026
+```
+| S105 fix | Expected | Actual on boat Pi | File mtime |
+|---|---|---|---|
+| BUG-27 `.sb-vessel` | 28px | **18px** | Apr 12 |
+| BUG-15 `_lastSogKts` | present | **0 occurrences** | Apr 8 21:21 |
+| BUG-26 `AI_BRIDGE` | present | **0 occurrences** | Apr 12 |
+| S105 `.bak.20260723` backups | 3 files | **none exist** | — |
+
+`~/.signalk/settings.json` mtime is **2026-03-12**, so the S96 BUG-12 AIS fix (2026-07-11) is also
+absent — which is why `ais` is `enabled: false` again (see BUG-32). The Pi itself is healthy and
+running: data files were written at 15:01 on 2026-07-27; exports exist from 2026-04-15 and 2026-04-22.
+Only the **deployed code** is frozen at April vintage.
+
+### Root cause — two-source divergence
+`concepts/two-source-sync-rule` (d3kOS/dashboard/ + v0.9.4/pi_source/ must stay in sync) is **violated**:
+```
+deployment/d3kOS/dashboard/static/js/instruments.js
+  → 4420050  2026-07-23  BUG-15: gate COG updates when SOG < 0.5 kn    ✓ has fix
+deployment/v0.9.4/pi_source/instruments.js
+  → 9800728  2026-04-08  S40: M14 verified — fix JS syntax error…       ✗ frozen
+```
+`diff` between the two trees → **DIVERGED**. The boat Pi's `instruments.js` (Apr 8 21:21, zero
+`_lastSogKts`) matches the frozen `pi_source` tree, not the updated `d3kOS/dashboard` tree.
+
+`Uncertainty flag:` two explanations remain consistent with the evidence and are not yet
+distinguished — (a) the boat image was built from the stale `pi_source` tree, or (b) the boat was
+imaged from the lab Pi before 2026-07-23. Either way the divergence above is real and is a defect.
+
+### Affected files
+- `deployment/v0.9.4/pi_source/` (entire tree — last touched 2026-04-08)
+- `deployment/d3kOS/dashboard/` (current)
+- Boat Pi `/opt/d3kos/` (v0.9.2.2)
+
+### Fix steps
+- [ ] **Confirm the version on the lab Pi (`192.168.1.237`) — operator-requested, deferred to lab session.** Lab Pi is unreachable from the boat hotspot (100% packet loss, SSH timeout).
+- [ ] Decide the single canonical deploy source; reconcile the two trees
+- [ ] Re-verify BUG-15, BUG-26, BUG-27 on the boat after a real release reaches it
+- [ ] Add a version/commit stamp check to the release process so a stale copy is detectable
+
+### ⚠ Critical note
+Re-copying the latest version to the boat will **NOT** fix the engine gauges, depth gauge, BUG-16 or
+BUG-24 — those defects (BUG-29, BUG-30) exist in the latest source too.
+
+---
+
+## BUG-29 — Dashboard Subscribes to `propulsion.0.*`; Signal K Publishes `propulsion.port.*`
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27
+**Severity:** HIGH — breaks every engine gauge; root cause of BUG-24 and a root cause of BUG-16
+**Present in:** latest repo source AND the boat Pi (not a stale-copy artifact)
+
+### Evidence
+```
+curl .../vessels/self/propulsion  →  keys: ['port']
+propulsion.port.revolutions = 0   $source: can0.64   pgn 127488   (live)
+
+instruments.js subscribes:            Signal K actually publishes:
+  propulsion.0.revolutions        →     propulsion.port.revolutions          ✗
+  propulsion.0.coolantTemperature →     (nothing under .0.)                  ✗
+  propulsion.0.oilPressure        →     (nothing under .0.)                  ✗
+  propulsion.0.trimTabPosition    →     propulsion.port.drive.trimState      ✗ (leaf differs too)
+  tanks.fuel.0.currentLevel       →     tanks.fuel.0.currentLevel            ✓ MATCHES
+  electrical.batteries.0.voltage  →     (electrical tree empty — no source)
+```
+Repo counts (both trees): `propulsion.0.` ×8, `propulsion.port.` ×**0**.
+
+### Root cause
+The Signal K N2K mapper converts engine instance 0 to the name **`port`**, not the numeric `0`. The
+dashboard was written against the numeric form and has never matched real NMEA 2000 hardware output.
+Fuel is the single gauge that works precisely because that one path happens to coincide.
+
+`Assumption:` the instance→name mapping (`0` → `port`) is Signal K N2K mapper behaviour, verified
+empirically here against SK 2.23.0 with live Garmin + gateway traffic. Whether it is configurable
+was NOT determined — check before choosing between editing 6 files vs. a mapper setting.
+
+### Cascade
+`window._d3kEngData` is populated **only** by those handlers, so it is permanently
+`{coolant:null, oil:null, rpm:null, bat:null, fuel:0}`. This causes:
+- **BUG-16** — every gauge tap renders `—` cards and sends Gemini the prompt
+  *"Current readings: fuel 0%"* regardless of which gauge was tapped → identical generic text (E2 violation)
+- **BUG-24** — `boatlog-engine.js` gates on `rpmHz > RPM_THRESHOLD_HZ (3)`; `rpm_hz` never leaves 0,
+  so the engine is never "running" and no ENGINE entry can ever be written
+
+### Affected files (blast radius — 6 live files)
+- `deployment/d3kOS/dashboard/static/js/instruments.js`
+- `deployment/d3kOS/dashboard/static/js/boatlog-engine.js`
+- `deployment/d3kOS/dashboard/templates/engine-monitor.html`
+- `deployment/d3kOS/dashboard/templates/helm-assistant.html`
+- `deployment/v0.9.4/pi_source/instruments.js`
+- `deployment/v0.9.4/pi_source/engine-monitor.html`
+
+### Fix steps
+- [ ] Confirm whether the SK instance→name mapping is configurable (cheaper than 6 file edits)
+- [ ] Failing test first: assert the handler fires for the real SK path
+- [ ] Prefer a tolerant subscription (accept both `propulsion.0.*` and `propulsion.port.*`) so a
+      future single/twin-engine change does not break it again
+- [ ] Re-verify BUG-16 and BUG-24 after the fix
+
+---
+
+## BUG-30 — Depth Gauge Reads `belowKeel`; Signal K Publishes `belowTransducer` (Replaces BUG-18 Root Cause)
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Supersedes the BUG-18 root-cause candidates**
+**Severity:** HIGH — safety-relevant instrument
+
+### Evidence — E1 confirmed, depth IS present
+With the Garmin connected (operator action, S107 on-boat):
+```
+environment.depth.belowTransducer = 0.99 m   $source: can0.0   pgn 128267   LIVE
+Garmin src 0 on bus: 128267 ×20 /20s, plus 129025/129026/129029 ×420, 130310/130312 ×50
+```
+Dashboard subscribes to `environment.depth.belowKeel` (repo: `belowKeel` ×2, `belowTransducer` ×0).
+No keel/transducer offset is configured in Signal K, so `belowKeel` is never derived.
+
+### Root cause
+Same class as BUG-29 — path mismatch. The sounder exists, the data arrives, the gauge is bound to a
+path nothing publishes. **The S106 candidate "no depth sounder present" is definitively wrong; E1 is correct.**
+
+### Fix steps
+- [ ] Either configure the transducer→keel offset in Signal K so `belowKeel` is derived, **or**
+      subscribe to `belowTransducer` — operator decision, since `belowKeel` is the safer displayed value
+- [ ] If reading `belowTransducer` directly, label the gauge accordingly (depth below transducer ≠ below keel)
+- [ ] Failing test first; re-verify BUG-18 on-boat
+
+---
+
+## BUG-31 — Unidentified NMEA 2000 Device at src 64 Broadcasting Frozen Engine + False Fuel Data
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** HIGH — false instrument data
+**Requires physical identification on the boat**
+
+### Evidence
+```
+candump can0 (20 s):  canid 09F20040  PGN 127488  src 64   ×201  (10 Hz)
+raw payload, identical in every frame:   00 00 00 96 05 00 FF FF
+  engine instance 00 | speed 0000 = 0 RPM | boost 0596 ×100Pa = 143,000 Pa | trim 00 | rsvd FFFF
+                      canid 19F21140  PGN 127505  src 64   ×8    (~0.4 Hz)
+tanks.fuel.0.currentLevel = 0 (ratio)   capacity = 1.16 m³ ≈ 306 US gal
+```
+Device identity from PGN 126996: `modelId "Pangoo"`, mfr 1998, product 1002, serial
+`N20210700100`, cert Level B, LEN 2, class *Internetwork device*, function 132 (A/D converter).
+
+### Analysis
+- The payload is **byte-identical across all captured frames** — a real analog sender would show jitter
+- `boostPressure` is a real encoded value (not the 0xFFFF "not available" marker) on an engine with
+  **no turbo or supercharger** (MerCruiser 454 Mag MPI)
+- **Operator confirmed the fuel tank is FULL; src 64 reports 0%.** Because `tanks.fuel.0.currentLevel`
+  is the one path that matches (BUG-29), the gauge faithfully displays this false 0%
+- Signal K binds the engine gauges to src 64's zeros, **not** to the CX5106 (src 106)
+- `Uncertainty flag:` the removed lab simulator script documents the same source address 64 (`0x40`).
+  **This was checked and ruled out** — no simulator files, units, or processes exist on the boat Pi.
+  The address match is a coincidence (64 is a common default). src 64 is a real device.
+- `[UNVERIFIED INFERENCE — not confirmed by documentation]` src 64 may be the original CX5106 that
+  S98 declared defective. A WebSearch did **not** confirm Pangoo as the CX5106's manufacturer.
+
+### Fix steps
+- [ ] **Operator: physically locate and identify the src 64 device on the boat** (second gateway box?)
+- [ ] Determine whether it is wired to the fuel/engine senders, and disconnect or reconfigure it
+- [ ] Re-verify fuel % and engine PGNs with only one gateway on the bus
+- [ ] If it is the original CX5106, correct the S98 record — two replacement units may have been unnecessary
+
+### Related
+Blocks trustworthy validation of BUG-14, BUG-16, BUG-17, BUG-24.
+
+---
+
+## BUG-32 — AIS Never Reaches Signal K: rtl_ais Sends to TCP 10110, Which Signal K Itself Occupies
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** HIGH — safety (no AIS targets)
+**Replaces the BUG-19 root-cause candidates**
+
+### Evidence
+```
+ss -tlnp        → LISTEN *:10110  users:(("node",pid=2152,fd=18))     ← Signal K itself
+rtl_ais journal → "AIS data will be sent to 127.0.0.1 port 10110"    ← rtl_ais is a CLIENT
+nc localhost 10110 (20 s) → 0 AIVDM/AIVDO sentences; only $GPGGA/$GPRMC/$GPZDA/$GPGSV
+SK vessels API  → 1 entry (self only) — ZERO AIS targets
+settings.json   → pipedProvider "ais": enabled = false
+```
+Hardware is fine: RTL2838 present on USB, `rtl_ais` running, tuned to 162.000 MHz, internal AIS
+decoder enabled, dongle serial `myAIS`.
+
+### Root cause
+Two distinct faults:
+1. **Port conflict / wrong topology.** Signal K holds TCP 10110 as its **NMEA0183 output** server.
+   `rtl_ais` is configured to *push* AIS to that same port as a client, so AIS is written into an
+   output socket and discarded. The `ais` provider is likewise configured as a *client* to 10110 —
+   if enabled it would read Signal K's own GPS output back (a loop), not AIS.
+2. **Regression.** `ais` is `enabled: false`; `settings.json` mtime is 2026-03-12, so the S96 BUG-12
+   fix (2026-07-11) was never applied to this Pi (see BUG-28).
+
+### Fix steps
+- [ ] Give `rtl_ais` a dedicated port (not 10110) **or** run it as a listener and point the SK provider at it
+- [ ] Re-enable the `ais` pipedProvider and confirm it persists across restart
+- [ ] Confirm AIVDM sentences arrive and `vessels.*` targets appear before judging BUG-19/BUG-20 overlays
+- [ ] Guard against boot-order races between Signal K and rtl_ais
+
+---
+
+## BUG-33 — Hazard Alerting Disabled and Far Too Slow in forward-watch Config
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** HIGH — safety
+**Refines BUG-21 (not "never built" — partly a config defect)**
+
+### Evidence
+`~/.signalk/plugin-config-data/signalk-forward-watch.json`:
+```json
+{ "camera_ip": "10.42.0.100", "detection_interval": 300, "alert_cooldown": 30,
+  "audio_alarm": false, "confidence_threshold": 0.4, "enabled": true }
+```
+- **`audio_alarm: false`** — the audible warning path is switched off in config
+- **`detection_interval: 300`** — 300 s = **5 minutes** between detection passes; useless for a
+  kayaker, swimmer or deadhead at close range
+- Signal K `notifications` tree is **absent entirely** (top-level keys: environment, navigation,
+  propulsion, tanks, uuid) — no hazard notifications are being published
+- Cameras ARE reachable: `ping 10.42.0.100` 0% loss; startup scan found 4 RTSP hosts
+  (`10.42.0.63/.100/.133/.181`). Pi is the subnet gateway (`eth0 10.42.0.1/24`)
+- **Zero** forward-watch/detection lines in the last 200 Signal K journal entries
+
+### Fix steps
+- [ ] Set `audio_alarm: true`; verify the audio path end-to-end (ALSA device, per VOICE_AUDIO_FIX.md)
+- [ ] Reduce `detection_interval` to a value appropriate for collision avoidance; document the CPU trade-off
+- [ ] Confirm detections are published to `notifications.*` and that a consumer renders them at the helm
+- [ ] Re-verify BUG-20 and BUG-21 afterwards
+- [ ] **Security:** `camera_pass` is stored in plaintext and embedded in the RTSP URL — move to a secret store
+
+---
+
+## BUG-34 — Gauge Tap Dialog: Hardcoded Alarm String and Generic Thresholds Not Sourced From Boat Documentation
+
+**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** MEDIUM-HIGH (E2 violation + safety gap)
+**Refines BUG-16 — these are code defects independent of the BUG-29 path mismatch**
+
+### Evidence — `overlays.js` (boat Pi)
+1. **`showCrit()` is entirely hardcoded** (fabricated reading):
+```js
+ticker.textContent = '⛔ CRITICAL — OIL PRESSURE 8 PSI — TAKE ACTION NOW';
+```
+2. **Thresholds are generic JS literals, not from this boat's documentation:**
+```js
+{ coolant:{adv:88,alrt:98,crit:105}, oil:{adv:30,alrt:25,crit:20}, bat:{adv:12.4,alrt:12.0,crit:11.5} }
+```
+Compare the S106-sourced MerCruiser 454 Mag MPI values
+(`MERCRUISER_454_MAG_MPI_SM_AI.md`): oil **≥30 psi @2000 rpm / ≥4 psi at idle**; thermostat
+**160 °F (71 °C)**; alternator **13.9–14.7 V**. Consequences:
+   - A normal **idle** oil pressure (manual floor 4 psi) is flagged **"Critical"** by `crit:20` → false alarms
+   - Battery has **no upper bound** — a 15.5 V overcharging alternator renders as **"✓ Normal"** (safety gap)
+3. **`_diagBuildCards()` builds only Coolant / Oil / RPM / Battery** — no fuel or depth card, although
+   `_diagCellLabel()` maps `cellFuel` and `cellDepth`. Tapping those gauges yields a dialog with no matching card.
+4. **Tier gate is NOT the cause** — `license.json` shows `tier: T3`; the `tier < 2` branch is not taken.
+   The S106 root-cause candidate "tier gate shows upgrade screen" is **ruled out**.
+5. `openDiag()` posts to a hardcoded `http://localhost:8097/gemini/chat` — works only from a browser
+   running on the Pi; would fail from the PWA/phone.
+
+### Fix steps
+- [ ] Replace `showCrit()`'s hardcoded string with the live value + gauge identity
+- [ ] Source thresholds from the boat/engine documentation (per E2), not JS literals; add battery upper bound
+- [ ] Add fuel and depth cards, or stop offering those gauges a diagnostic dialog
+- [ ] Replace the hardcoded localhost Gemini URL with a relative/configurable endpoint
+- [ ] Acceptance test: each gauge tap must show **that** gauge's live value + documented range + advice on the actual reading

@@ -1207,3 +1207,25 @@ Tier 3 implementations of three on-boat validation bugs. TDD + atomic specs + Ti
 | `deployment/docs/V09994_ONBOAT_ANALYSIS_PLAN.md` | **[NEW — S106 2026-07-24]** On-boat analysis plan + operator-confirmed expectations for the 15 outstanding v0.9.9.4 bugs. Records the 3-phase workflow (BOAT investigate → LAB fix → BOAT deploy). Per-bug: expected behavior (acceptance criteria), on-boat observation/SSH checks, root-cause candidates, capture-for-lab. Confirms E1 (depth = Garmin via N2K) and E2 (gauge tap = live value + boat-documented tolerance + advice). Flags o-charts-expired confound for BUG-19/20 and open prerequisites P1/P2/P4. No code, no deploy. |
 
 ---
+
+### S106-cont 2026-07-24 — AI-Friendly Manual Conversions
+
+| File / Change | Description |
+|---------------|-------------|
+| `deployment/docs/MONTEREY_246_265_286_OM_AI.md` | **[NEW — S106 2026-07-24, commit 9dcdb4a]** AI-friendly conversion of the 126-page Monterey 246/265/286 Cruiser owner's manual. 65 diagrams rendered + described in text (incl. all 4 hull wiring diagrams + M-16 detailed AC/DC schematic with wire colors); all tables transcribed (troubleshooting, storage, checklists, float plan); spatial locator frame for "where is X" queries. All 3 models, 265 tagged. For d3kOS RAG ingestion. |
+| `deployment/docs/MERCRUISER_454_MAG_MPI_SM_AI.md` | **[NEW — S106 2026-07-24, commit 9dcdb4a]** AI-friendly operational-set conversion of the 1056-page MerCruiser MCM 454 Mag MPI (7.4L) service manual. 9 sections: specs/tolerances (BUG-16), fluid capacities, charging/alternator voltage 13.9–14.7V (BUG-17), BIA wiring color code + instrument & EFI engine wiring diagrams (BUG-14), sender resistance tables, maintenance schedule, troubleshooting, wiring index. Shop-rebuild sections (~800 pp) intentionally out of scope. |
+
+---
+
+### S107 2026-07-27 — On-Boat Phase A Validation: Root Causes Found, BUG-28…BUG-34 Logged
+
+| File / Change | Description |
+|---------------|-------------|
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED v1.9.0 → v1.10.0 — S107 2026-07-27]** Seven new defects logged from live on-boat SSH investigation (engine running, Garmin connected): **BUG-28** boat Pi runs v0.9.2.2 and never received the S96/S105 fixes — `deployment/v0.9.4/pi_source/` froze 2026-04-08 while `deployment/d3kOS/dashboard/` advanced to 2026-07-23, violating the two-source-sync rule; **BUG-29** dashboard subscribes `propulsion.0.*` but Signal K publishes `propulsion.port.*` (6 live files affected; cascades into BUG-16 and BUG-24); **BUG-30** depth gauge reads `belowKeel` but Signal K publishes `belowTransducer` (replaces the BUG-18 root cause); **BUG-31** unidentified N2K device at src 64 broadcasting a frozen `00 00 00 96 05 00 FF FF` frame at 10 Hz plus false 0% fuel on a confirmed-full tank; **BUG-32** AIS never reaches Signal K because rtl_ais pushes to TCP 10110 which Signal K itself occupies as its NMEA0183 output (0 AIVDM in 20 s; `ais` provider `enabled:false`); **BUG-33** `audio_alarm:false` + `detection_interval:300` (5 min) in forward-watch config; **BUG-34** `showCrit()` hardcodes a fabricated "OIL PRESSURE 8 PSI" string and `THR` thresholds are generic literals contradicting the S106-sourced MerCruiser values (no battery upper bound = safety gap). Also: BUG-15/26/27 corrected to lab-only deploy; BUG-22 and BUG-25 closed as NOT bugs with live evidence; BUG-23's S105 diagnosis corrected (watchdog timer behaviour is normal; STT is Vosk not Faster-Whisper). |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.6 → v3.7 — S107 2026-07-27]** PART 17: S107 header evidence block, 7 new BUG rows, 7 status corrections, and an observations note (Pi clock jumped at boot — journal shows Jul 20 for services started Jul 27; 543 dropped can0 RX frames; plaintext camera credentials). |
+| `deployment/docs/V09994_ONBOAT_ANALYSIS_PLAN.md` | **[UPDATED v1.0.0 → v1.1.0 — S107 2026-07-27]** Phase A marked EXECUTED. Records results against every §4 expectation, confirms **E1** (Garmin depth live at 0.99 m via PGN 128267 — the "no depth sounder" candidate is definitively dead) and **E2** (violated, mechanism now known), and resolves the §5 confound differently than planned: o-charts SENC data IS installed (`oeuSENC-CAac`/`CAgl`) so the blank chart is a licence issue — but BUG-19/BUG-20 still cannot be judged because BUG-32 means AIS never reaches Signal K at all. §6 prerequisites updated (P1 resolved, P3 superseded, P4 partially resolved). |
+
+**Pi deployed:** No — all Pi access this session was read-only. No Release Package Manifest required.
+**Key architectural finding for future work:** re-copying the latest release to the boat will **NOT** fix the engine gauges, depth gauge, BUG-16 or BUG-24 — BUG-29 and BUG-30 exist in the latest source. They require a code fix. Any future Phase C deploy must verify which tree it ships and stamp the version so a stale copy is detectable.
+
+---
