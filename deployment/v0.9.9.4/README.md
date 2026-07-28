@@ -61,7 +61,7 @@ Paths are mirrored in full rather than flattened. The old flat layout is what ma
 
 `*.env` (5 files: dashboard, ai-bridge, fleet, gemini-nav, d3kos-config) ·
 `/opt/d3kos/config/` (api-keys.json, license.json, device-token.json) ·
-`/opt/d3kos/data/` · `__pycache__` · `.pytest_cache` · `*.bak*` · `.ota-backup` · `*.db` · `*.log`
+`/opt/d3kos/data/` · `__pycache__` · `.pytest_cache` · `*.bak*` · `.ota-backup` · `*.db` · `*.log` · **runtime caches** (`*/cache/*`, `*cache*.json` — e.g. `gemini-nav/cache/response_cache.json`, which changes every time the Pi answers a query and would otherwise show as permanent drift)
 
 Because these are excluded, a checkout of this tree is **not** a bootable system. It is source of
 record, not an image. The bootable artifact is the SD card image.
@@ -77,7 +77,17 @@ cd deployment/v0.9.9.4
 ```
 
 Exit codes: `0` no drift · `1` drift found · `2` Pi unreachable.
-Baseline validated at seeding: **204/204 match, 0 drift**.
+Baseline validated at seeding: 204/204. After the S108-cont deploy: **203/203 match, 0 drift**
+(one runtime cache removed from tracking; BUG-39's two files intentionally excluded — see below).
+
+**⚠ Known limitation:** this compares the **Pi** against `MANIFEST.md5`. It does **not** compare the
+**repo** against the manifest. If you edit the repo without deploying, the Pi still matches the
+manifest and this reports NO DRIFT — which does *not* mean the Pi is current. Regenerate
+`MANIFEST.md5` as part of every deploy so the two stay meaningful together.
+
+**Not tracked (deliberately undeployed):** `opt/d3kos/services/identity/regenerate-identity.sh` and
+`etc/systemd/system/d3kos-identity-regen.service` (BUG-39) are held pending an operator ruling —
+enabling that unit on the master would wipe its own identity.
 
 ---
 
