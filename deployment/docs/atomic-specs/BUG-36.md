@@ -2,6 +2,13 @@
 
 **Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
 **Created:** 2026-07-27 (S108) by Tier 1 (Opus 5)
+**Revised 2026-07-27 after Tier-3 execution — two Tier-1 spec defects corrected:**
+(1) the line count said SIX; the itemised content is EIGHT (comment + declaration + blank +
+five assignments). (2) the `propulsion.0.revolutions` anchor was quoted from the read-only
+*reference* file, not the *target* — the target computes inline and has no `const _rpm`.
+Combined with the zero-deletions rule this made the spec unsatisfiable as literally written.
+Tier 3 identified both and resolved them correctly; the escalation it should have raised per
+ESCALATE-IF would have deadlocked on Tier 1's own error.
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-36 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** `wiki/questions/2026-07-27-v0994-tier3-spec-questions.md` — **read Q0.1–Q0.5 and Q36.1–Q36.4 before coding**
 **Depends on:** nothing. **Blocks:** BUG-16 acceptance (with BUG-38).
@@ -42,7 +49,9 @@ FILE TO EDIT (exactly one)
 READ-ONLY REFERENCE (copy FROM this, never write to it)
   deployment/v0.9.4/pi_source/instruments.js        ← the v0.9.9.2 original
 
-CHANGE — add SIX lines. Add nothing else. Delete nothing.
+CHANGE — add EIGHT lines. Add nothing else. Delete nothing.
+  (comment + declaration + the blank separator after it + five assignments.
+   The blank line reproduces pi_source's formatting — keep it.)
 
   (1) DECLARATION — insert immediately BEFORE the line `/* ── CELL STATE ── */`
       (currently ~line 26 of the canonical file), reproducing the original exactly:
@@ -64,8 +73,13 @@ CHANGE — add SIX lines. Add nothing else. Delete nothing.
         add   :  window._d3kEngData.oil_psi = psi;
 
       handler 'propulsion.0.revolutions'
-        after :  const _rpm = Math.round(v * 60);
-        add   :  window._d3kEngData.rpm = _rpm;
+        NOTE: the TARGET file has no `const _rpm` line — it computes inline inside
+        _setVal(). Introducing `const _rpm` would require EDITING the existing
+        _setVal line, which the zero-deletions rule forbids. So add the value
+        directly as the handler's first statement:
+        add   :  window._d3kEngData.rpm = Math.round(v * 60);
+        (This duplicates the Math.round call. That is correct and intended here —
+         the zero-deletions constraint takes precedence over avoiding it.)
 
       handler 'tanks.fuel.0.currentLevel'
         after :  const pct = Math.round(v * 100);
@@ -159,7 +173,7 @@ FAILING TEST FIRST (TDD — write it, RUN IT, watch it fail, then fix)
 
 DONE WHEN
   • The test FAILED before your edit and PASSES after.
-  • git diff shows exactly SIX added lines in instruments.js and ZERO deletions.
+  • git diff shows exactly EIGHT added lines in instruments.js and ZERO deletions.
   • git diff shows no other file changed except the new test file.
 
 ESCALATE-IF  (emit the 🔺 block — do not guess)
@@ -174,7 +188,7 @@ ESCALATE-IF  (emit the 🔺 block — do not guess)
 
 PRE-FLIGHT SELF-CHECK (answer from this spec; if you cannot, escalate)
   1. Which file do I edit?        → canonical instruments.js only
-  2. How many lines do I add?     → exactly 6; deletions: 0
+  2. How many lines do I add?     → exactly 8; deletions: 0
   3. Fuel: fraction or percent?   → fraction (v), never pct
   4. What must survive untouched? → _lastSogKts, window.SK_HANDLERS, all display logic
   5. Do I fix propulsion.0.*?     → no, that is BUG-29
@@ -190,7 +204,7 @@ RETURN TO TIER 1
 
 ## Tier-1 verification pass (§25.8 — run on Tier 3's return)
 
-1. `git diff` = exactly 6 insertions, 0 deletions in `instruments.js`.
+1. `git diff` = exactly 8 insertions, 0 deletions in `instruments.js`.
 2. `_lastSogKts` still present at 3 sites; `window.SK_HANDLERS` still present.
 3. Test genuinely failed first — require the pre-fix terminal output, not a claim.
 4. `fuel_pct` stores the fraction. A percentage here is a silent 100× error — check explicitly.

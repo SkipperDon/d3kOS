@@ -14,7 +14,7 @@ echo "── BUG-36 Tier-1 verification ─────────────�
 stat_line=$(git diff --numstat -- "$F" | head -1)
 ins=$(echo "$stat_line" | cut -f1); del=$(echo "$stat_line" | cut -f2)
 ins=${ins:-0}; del=${del:-0}
-[ "$ins" = "6" ] && chk "diff = 6 insertions" PASS || chk "diff = 6 insertions" FAIL "got $ins"
+[ "$ins" = "8" ] && chk "diff = 8 insertions (comment+decl+blank+5)" PASS || chk "diff = 8 insertions (comment+decl+blank+5)" FAIL "got $ins"
 [ "$del" = "0" ] && chk "diff = 0 deletions"  PASS || chk "diff = 0 deletions"  FAIL "got $del — handler bodies may have been replaced"
 
 # 2. no other file in the canonical tree was touched

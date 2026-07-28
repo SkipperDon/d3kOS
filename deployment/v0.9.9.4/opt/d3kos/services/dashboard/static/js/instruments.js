@@ -22,6 +22,9 @@ const THR = {
   fuel:    { adv: 0.25, alrt: 0.15, crit: 0.10 },  // fraction, below = alarm
 };
 
+/* ── LIVE ENGINE DATA CACHE (populated by SK handlers, read by openDiag) ── */
+window._d3kEngData = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null };
+
 /* ── CELL STATE ── */
 function _setCellState(id, state) {
   const el = document.getElementById(id);
@@ -162,6 +165,7 @@ const SK_HANDLERS = {
 
   'propulsion.0.coolantTemperature': (v) => {
     const c = v - 273.15, disp = c.toFixed(0);
+    window._d3kEngData.coolant_c = c;
     _setVal('cellCoolant', disp + '°');
     const state = _evalAbove(c, THR.coolant);
     _setCellState('cellCoolant', state);
@@ -179,6 +183,7 @@ const SK_HANDLERS = {
 
   'propulsion.0.oilPressure': (v) => {
     const psi = Math.round(v * 0.000145038);
+    window._d3kEngData.oil_psi = psi;
     _setVal('cellOil', psi.toString());
     const state = _evalBelow(psi, THR.oil);
     _setCellState('cellOil', state);
@@ -194,6 +199,7 @@ const SK_HANDLERS = {
   },
 
   'propulsion.0.revolutions': (v) => {
+    window._d3kEngData.rpm = Math.round(v * 60);
     _setVal('cellRpm', Math.round(v * 60).toString());
     _setUnit('cellRpm', 'rev / min');
   },
@@ -206,6 +212,7 @@ const SK_HANDLERS = {
 
   'tanks.fuel.0.currentLevel': (v) => {
     const pct = Math.round(v * 100);
+    window._d3kEngData.fuel_pct = v;
     const litres = Math.round(v * FUEL_CAP_L);
     const state = _evalBelow(v, THR.fuel);
     _setVal('cellFuel', pct + '%');
@@ -220,6 +227,7 @@ const SK_HANDLERS = {
   },
 
   'electrical.batteries.0.voltage': (v) => {
+    window._d3kEngData.bat_v = parseFloat(v.toFixed(1));
     _setVal('cellBat', v.toFixed(1));
     const state = _evalBelow(v, THR.bat);
     _setCellState('cellBat', state);
