@@ -58,6 +58,53 @@ def get_current_version():
     return 'unknown'
 
 
+def write_version_file(new_version, release=None):
+    """Rewrite version.txt preserving every field.
+
+    Updates 'd3kOS Version' and 'Build' from new_version. Takes
+    'Release Date' and 'Status' from the release manifest when it
+    supplies them, otherwise PRESERVES the existing values. Never
+    invents a date. BUG-35.
+    """
+    release = release or {}
+    fields = {
+        'd3kOS Version': None,
+        'Release Date':  None,
+        'Status':        None,
+        'Build':         None,
+    }
+    # read whatever is currently there
+    try:
+        for line in VERSION_FILE.read_text().splitlines():
+            line = line.strip()
+            if line.startswith('d3kOS Version'):
+                fields['d3kOS Version'] = line.replace('d3kOS Version', '').strip()
+            elif line.startswith('Release Date:'):
+                fields['Release Date'] = line.replace('Release Date:', '').strip()
+            elif line.startswith('Status:'):
+                fields['Status'] = line.replace('Status:', '').strip()
+            elif line.startswith('Build:'):
+                fields['Build'] = line.replace('Build:', '').strip()
+    except Exception:
+        pass                      # missing/unreadable file -> fall through to defaults
+
+    fields['d3kOS Version'] = str(new_version)
+    fields['Build'] = 'v' + str(new_version)
+    if release.get('release_date'):
+        fields['Release Date'] = str(release['release_date'])
+    if release.get('status'):
+        fields['Status'] = str(release['status'])
+    if not fields['Release Date']:
+        fields['Release Date'] = 'unknown'
+    if not fields['Status']:
+        fields['Status'] = 'unknown'
+
+    VERSION_FILE.write_text(
+        "d3kOS Version {}\nRelease Date: {}\nStatus: {}\nBuild: {}\n".format(
+            fields['d3kOS Version'], fields['Release Date'],
+            fields['Status'], fields['Build']))
+
+
 def fetch_latest_release(base_url, api_key, device_token):
     """
     Ask AtMyBoat.com version-registry.php for the latest available release.
@@ -274,7 +321,7 @@ def run_upgrade(base_url, api_key, device_token):
 
         # 7. Update version.txt
         try:
-            VERSION_FILE.write_text(f'd3kOS Version {latest_ver}\n')
+            write_version_file(latest_ver, release)     # BUG-35: preserve all four fields
         except Exception as e:
             errors.append(f'Could not update version.txt: {e}')
 
