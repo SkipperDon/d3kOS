@@ -31,7 +31,7 @@ diagnostic card renders `—` and the Gemini prompt says *"no live readings avai
 which gauge was tapped. **Empirically confirmed** by loading the current file in jsdom and firing all
 five engine handlers: `window._d3kEngData` is `undefined`.
 
-**This is a pure restoration.** Six lines were lost; six lines go back. Nothing else changes.
+**This is a pure restoration.** The lost block goes back verbatim — eight added lines, zero deletions. Nothing else changes.
 
 ---
 
@@ -136,9 +136,12 @@ FAILING TEST FIRST (TDD — write it, RUN IT, watch it fail, then fix)
     // 1 — cache exists and is all-null before any data arrives
     let w = load(FILE);
     assert.ok(w._d3kEngData, 'window._d3kEngData must exist on load');
-    assert.deepStrictEqual(w._d3kEngData,
-      { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null },
-      'cache must initialise all-null');
+    // NOTE: build the expected object INSIDE the jsdom realm. A plain Node object
+    // literal has a different Object.prototype, so deepStrictEqual fails on
+    // prototype identity across realms even when the values match. (Found by
+    // Tier 3 during execution; corrected here.)
+    w.eval('window._expected = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null };');
+    assert.deepStrictEqual(w._d3kEngData, w._expected, 'cache must initialise all-null');
 
     // 2 — each handler populates its key with the right unit conversion
     w.SK_HANDLERS['propulsion.0.coolantTemperature'](368.15);   // K   -> 95 C
