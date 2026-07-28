@@ -1,0 +1,14 @@
+[Unit]
+Description=d3kOS first-boot identity regeneration (BUG-39)
+After=local-fs.target
+Before=d3kos-dashboard.service d3kos-ai-bridge.service signalk.service
+
+ConditionPathExists=!/opt/d3kos/config/.identity-regenerated
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/d3kos/services/identity/regenerate-identity.sh
+
+[Install]
+WantedBy=multi-user.target
