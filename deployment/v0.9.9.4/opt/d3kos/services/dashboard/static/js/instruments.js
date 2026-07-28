@@ -242,6 +242,17 @@ const SK_HANDLERS = {
     _setUnit('cellBat', state ? 'V · ' + state : 'V · ' + (v > 13.0 ? 'charging' : 'normal'));
   },
 };
+
+// ── ENGINE PATH ALIASES — BUG-29 ──
+// Signal K publishes engine data under propulsion.0.* or propulsion.port.* depending on
+// how canboat decodes the instance field. Both forms must work.
+SK_HANDLERS['propulsion.port.revolutions'] = SK_HANDLERS['propulsion.0.revolutions'];
+SK_HANDLERS['propulsion.port.oilPressure'] = SK_HANDLERS['propulsion.0.oilPressure'];
+SK_HANDLERS['propulsion.port.temperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
+SK_HANDLERS['propulsion.0.temperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
+SK_HANDLERS['propulsion.port.drive.trimState'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
+SK_HANDLERS['propulsion.0.drive.trimState'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
+
 window.SK_HANDLERS = SK_HANDLERS;  // test seam — harmless reference
 
 /* ── NULL PATH MAP (path → cell id) ── */
@@ -252,9 +263,15 @@ const _NULL_CELLS = {
   'environment.depth.belowKeel':      'cellDepth',
   'environment.depth.belowTransducer': 'cellDepth',
   'propulsion.0.coolantTemperature':  'cellCoolant',
+  'propulsion.port.temperature':      'cellCoolant',
+  'propulsion.0.temperature':         'cellCoolant',
   'propulsion.0.oilPressure':         'cellOil',
+  'propulsion.port.oilPressure':      'cellOil',
   'propulsion.0.revolutions':         'cellRpm',
+  'propulsion.port.revolutions':      'cellRpm',
   'propulsion.0.trimTabPosition':     'cellTrim',
+  'propulsion.port.drive.trimState':  'cellTrim',
+  'propulsion.0.drive.trimState':     'cellTrim',
   'tanks.fuel.0.currentLevel':        'cellFuel',
   'electrical.batteries.0.voltage':   'cellBat',
 };

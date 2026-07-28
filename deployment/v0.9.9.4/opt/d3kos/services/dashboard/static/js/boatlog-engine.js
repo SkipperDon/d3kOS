@@ -168,6 +168,12 @@
     }
   };
 
+  /* ── ENGINE PATH ALIASES — BUG-29 ── */
+  _SK['propulsion.port.revolutions'] = _SK['propulsion.0.revolutions'];
+  _SK['propulsion.port.oilPressure'] = _SK['propulsion.0.oilPressure'];
+  _SK['propulsion.port.temperature'] = _SK['propulsion.0.coolantTemperature'];
+  _SK['propulsion.0.temperature'] = _SK['propulsion.0.coolantTemperature'];
+
   /* ── WebSocket connection ── */
   function _connect() {
     try {
@@ -182,8 +188,12 @@
         context: 'vessels.self',
         subscribe: [
           { path: 'propulsion.0.revolutions',        period: 1000  },
+          { path: 'propulsion.port.revolutions',     period: 1000  },
           { path: 'propulsion.0.oilPressure',        period: 2000  },
+          { path: 'propulsion.port.oilPressure',     period: 2000  },
           { path: 'propulsion.0.coolantTemperature', period: 2000  },
+          { path: 'propulsion.port.temperature',     period: 2000  },
+          { path: 'propulsion.0.temperature',        period: 2000  },
           { path: 'electrical.batteries.0.voltage',  period: 5000  },
           { path: 'tanks.fuel.0.currentLevel',       period: 10000 }
         ]

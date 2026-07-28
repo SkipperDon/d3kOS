@@ -461,6 +461,14 @@ const SK_HANDLERS = {
   },
 };
 
+/* ── ENGINE PATH ALIASES — BUG-29 ── */
+SK_HANDLERS['propulsion.port.revolutions'] = SK_HANDLERS['propulsion.0.revolutions'];
+SK_HANDLERS['propulsion.port.oilPressure'] = SK_HANDLERS['propulsion.0.oilPressure'];
+SK_HANDLERS['propulsion.port.temperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
+SK_HANDLERS['propulsion.0.temperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
+SK_HANDLERS['propulsion.port.drive.trimState'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
+SK_HANDLERS['propulsion.0.drive.trimState'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
+
 /* ── SIGNAL K CONNECTION ── */
 const SK_WS = 'ws://localhost:8099/signalk/v1/stream';
 let _ws = null, _reconnectTimer = null;
@@ -483,11 +491,17 @@ function openSK() {
       context: 'vessels.self',
       subscribe: [
         { path: 'propulsion.0.revolutions',           period: 1000  },
+        { path: 'propulsion.port.revolutions',        period: 1000  },
         { path: 'propulsion.0.coolantTemperature',    period: 2000  },
+        { path: 'propulsion.port.temperature',        period: 2000  },
+        { path: 'propulsion.0.temperature',           period: 2000  },
         { path: 'propulsion.0.oilPressure',           period: 2000  },
+        { path: 'propulsion.port.oilPressure',        period: 2000  },
         { path: 'electrical.batteries.0.voltage',     period: 5000  },
         { path: 'tanks.fuel.0.currentLevel',          period: 10000 },
         { path: 'propulsion.0.trimTabPosition',       period: 2000  },
+        { path: 'propulsion.port.drive.trimState',    period: 2000  },
+        { path: 'propulsion.0.drive.trimState',       period: 2000  },
         { path: 'tanks.freshWater.0.currentLevel',    period: 15000 },
         { path: 'tanks.blackWater.0.currentLevel',    period: 15000 },
       ],

@@ -305,8 +305,12 @@ function openSK() {
       context: 'vessels.self',
       subscribe: [
         { path: 'propulsion.0.revolutions',         period: 2000  },
+        { path: 'propulsion.port.revolutions',      period: 2000  },
         { path: 'propulsion.0.coolantTemperature',  period: 3000  },
+        { path: 'propulsion.port.temperature',      period: 3000  },
+        { path: 'propulsion.0.temperature',         period: 3000  },
         { path: 'propulsion.0.oilPressure',         period: 3000  },
+        { path: 'propulsion.port.oilPressure',      period: 3000  },
         { path: 'electrical.batteries.0.voltage',   period: 5000  },
         { path: 'tanks.fuel.0.currentLevel',        period: 10000 },
       ],
@@ -320,9 +324,16 @@ function openSK() {
       for (const kv of (upd.values || [])) {
         if (kv.value === null || kv.value === undefined) continue;
         switch (kv.path) {
-          case 'propulsion.0.revolutions':        live.rpm      = Math.round(kv.value * 60); break;
-          case 'propulsion.0.coolantTemperature': live.coolant  = kv.value - 273.15; break;
-          case 'propulsion.0.oilPressure':        live.oil      = Math.round(kv.value * 0.000145038); break;
+          case 'propulsion.0.revolutions':
+          case 'propulsion.port.revolutions':
+            live.rpm = Math.round(kv.value * 60); break;
+          case 'propulsion.0.coolantTemperature':
+          case 'propulsion.port.temperature':
+          case 'propulsion.0.temperature':
+            live.coolant = kv.value - 273.15; break;
+          case 'propulsion.0.oilPressure':
+          case 'propulsion.port.oilPressure':
+            live.oil = Math.round(kv.value * 0.000145038); break;
           case 'electrical.batteries.0.voltage':  live.voltage  = kv.value; break;
           case 'tanks.fuel.0.currentLevel':       live.fuel     = kv.value; break;
         }
