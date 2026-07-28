@@ -610,5 +610,77 @@ def serve_doc(name):
         return (f.read(), 200, {'Content-Type': 'text/plain; charset=utf-8'})
 
 
+@app.route('/config/tier')
+def config_tier():
+    """Tier for M14 engine diagnostic gate. T0/T1 blocked, T2/T3 allowed."""
+    try:
+        import json
+        lic = json.loads(Path('/opt/d3kos/config/license.json').read_text())
+        t = lic.get('tier', 'T0')
+        n = int(str(t).replace('T', '')) if t else 0
+        return jsonify({'tier': n, 'tier_str': 'T' + str(n)})
+    except Exception:
+        return jsonify({'tier': 0, 'tier_str': 'T0'})
+
+@app.route('/anchor/set', methods=['POST'])
+def anchor_set():
+    """Get current vessel position from SK, tell ai_bridge to set anchor."""
+    try:
+        data = request.get_json(silent=True) or {}
+        radius_m = float(data.get('radius_m', 25.0))
+        r = requests.get('http://localhost:8099/signalk/v1/api/vessels/self/navigation/position', timeout=3)
+        pos = r.json().get('value', {})
+        lat = float(pos['latitude'])
+        lon = float(pos['longitude'])
+        result = requests.post('http://localhost:3002/anchor/set',
+                               json={'lat': lat, 'lon': lon, 'radius_m': radius_m},
+                               timeout=5)
+        return jsonify(result.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/anchor/state')
+def anchor_state():
+    try:
+        r = requests.get('http://localhost:3002/anchor/state', timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/anchor/dismiss', methods=['POST'])
+def anchor_dismiss_proxy():
+    try:
+        r = requests.post('http://localhost:3002/anchor/dismiss', timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/anchor/clear', methods=['POST'])
+def anchor_clear_proxy():
+    try:
+        r = requests.post('http://localhost:3002/anchor/clear', timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/anchor/advice')
+def anchor_advice_proxy():
+    try:
+        r = requests.get('http://localhost:3002/anchor/advice', timeout=60)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/helm/mute', methods=['POST'])
+def helm_mute_proxy():
+    """Proxy HELM mute toggle to ai_bridge (same origin via Flask:3000 avoids CORS)."""
+    try:
+        r = requests.post('http://localhost:3002/helm/mute',
+                          json=request.get_json(), timeout=3)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=False)
