@@ -244,6 +244,38 @@ the script's header comment so nobody adds it later.
 
 ---
 
+## BUG-29 / BUG-30 — added 2026-07-27 (S108-cont), answered at authoring time
+
+### Q29.1 — Is Signal K's engine instance→name mapping configurable? (S107 left this open)
+**A: NO.** `@signalk/n2k-signalk/dist/utils.js` `skEngineId()` is a hardcoded ternary:
+returns the numeric instance if canboat decodes a number, else `'port'`/`'starboard'` from the enum.
+No setting exists. Patching node_modules is not an option — npm install wipes it. **Therefore the fix
+is client-side, and because the path depends on how canboat decodes the field, it must accept BOTH
+forms.**
+
+### Q29.2 — Is a blind `propulsion.0.` → `propulsion.port.` replace sufficient?
+**A: NO — it fixes only two of four.** Two paths have a wrong LEAF as well:
+coolant is published as `.temperature` (not `.coolantTemperature`) and trim as `.drive.trimState`
+(not `.trimTabPosition`). Use the explicit alias table in the spec.
+
+### Q29.3 — Is `electrical.batteries.0.voltage` the same class of defect? (flagged in PART 17)
+**A: NO — it is correct.** `pgns/127508.js` builds `electrical.batteries.<raw instance>.voltage` with
+no port/starboard mapping. Same for `tanks.fuel.<raw instance>.currentLevel` in `pgns/127505.js`.
+Leave both alone. **This closes the open question in the PART 17 S108 critical-path block.**
+
+### Q30.1 — keel offset vs subscribe-to-belowTransducer-and-relabel? (operator ruling was pending)
+**A: the question had a false premise — there is a third and better answer.** `pgns/128267.js` shows
+Signal K **already computes `belowKeel`** whenever PGN 128267 carries a **negative** offset. So
+setting a negative keel offset on the Garmin makes the existing code work, with the safest value and
+**zero code change**. The code task is reduced to a clearly-labelled fallback for when no offset is
+configured. Configuration is the primary fix; the code is the safety net.
+
+### Q30.2 — Should the client compute belowKeel from a hardcoded offset?
+**A: NO, never.** That invents safety-critical data. Depth under the keel drives grounding decisions.
+Signal K derives it correctly when the sounder supplies the offset; the client must not guess one.
+
+---
+
 ## OPEN — added by Tier 3 (append below; do not edit above this line)
 
 *(none yet)*
