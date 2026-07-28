@@ -368,33 +368,14 @@
       <div class="diag-head-ico">&#128295;</div>
       <div>
         <div class="diag-head-over">AI ENGINE DIAGNOSTIC</div>
-        <div class="diag-head-title">Coolant Temperature High</div>
+        <div class="diag-head-title" id="diagTitle">Coolant Temperature High</div>
       </div>
     </div>
     <div class="diag-body">
-      <div class="diag-grid">
-        <div class="dc bad">
-          <div class="dc-lbl">Coolant Temp</div>
-          <div class="dc-val">92&deg;</div>
-          <div class="dc-note">&#9888; Advisory &rsaquo; 88&deg;C</div>
-        </div>
-        <div class="dc">
-          <div class="dc-lbl">Oil Pressure</div>
-          <div class="dc-val">52</div>
-          <div class="dc-note">&#10003; Normal 45&ndash;65</div>
-        </div>
-        <div class="dc">
-          <div class="dc-lbl">RPM</div>
-          <div class="dc-val">2250</div>
-          <div class="dc-note">&#10003; Cruise range</div>
-        </div>
-      </div>
+      <div class="diag-grid" id="diagGrid"></div>
       <div class="diag-ai">
         <div class="diag-ai-lbl">&#129302; AI ANALYSIS &mdash; GEMINI 2.5 FLASH</div>
-        <div class="diag-ai-txt">
-          Coolant at <b>92&deg;C</b> is above normal cruise range (75&ndash;88&deg;C) but below critical shutdown (105&deg;C). Oil pressure normal &mdash; rules out major internal failure. Most likely cause: <b>partial raw water cooling restriction</b> &mdash; debris on intake screen or early impeller wear.<br><br>
-          Recommendation: <b>Reduce to 1800 RPM</b> and monitor for 5 minutes. If temperature stabilises, continue at reduced speed to Kingston. If it climbs above <b>98&deg;C</b>, anchor and shut down engine immediately.
-        </div>
+        <div class="diag-ai-txt" id="diagAiTxt">Tap an engine gauge to run a diagnostic.</div>
       </div>
       <div class="diag-btns">
         <button class="diag-btn64 db-primary" onclick="closeDiag();toast('Reducing RPM &mdash; monitoring coolant temp')">REDUCE TO 1800 RPM</button>
