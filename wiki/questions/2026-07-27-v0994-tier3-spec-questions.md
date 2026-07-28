@@ -1,10 +1,10 @@
-# Question Queue — v0.9.9.4 Tier-3 Implementation Specs (BUG-35 … BUG-39)
+# Question Queue — v0.9.9.4 Tier-3 Implementation Specs (BUG-29, BUG-30, BUG-35 … BUG-39)
 
 **Protocol:** AAO §24 Question Queue · **Filed:** 2026-07-27 (S108) by Tier 1 (Opus)
-**Purpose:** Every clarification a Tier-3 implementer would hit while working BUG-35 … BUG-39,
+**Purpose:** Every clarification a Tier-3 implementer would hit while working BUG-29, BUG-30 and BUG-35 … BUG-39,
 answered up front so implementation is not blocked. Tier 3 **appends** new questions here rather
 than assuming.
-**Specs:** `deployment/docs/atomic-specs/BUG-35.md` … `BUG-39.md`
+**Specs:** `deployment/docs/atomic-specs/BUG-29.md`, `BUG-30.md`, `BUG-35.md` … `BUG-39.md`
 
 ---
 
