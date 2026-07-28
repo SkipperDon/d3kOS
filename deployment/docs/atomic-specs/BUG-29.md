@@ -97,8 +97,10 @@ PER-FILE PATTERN — each file dispatches differently, read before editing
           const handler = SK_HANDLERS[path];
       So aliasing requires NO subscription change. After the SK_HANDLERS object
       literal closes, add alias keys pointing at the SAME function references —
-      do not duplicate handler bodies. Do the same for PATH_TO_CELL and, if the
-      path appears there, _NULL_CELLS, so a null value still blanks the cell.
+      do not duplicate handler bodies. Do the same for _NULL_CELLS (line 240) so
+      a null value on an aliased path still blanks the cell.
+      NOTE: _NULL_CELLS is the ONLY path->cell map in this file. There is no
+      PATH_TO_CELL map — do not go looking for one.
 
   (2) boatlog-engine.js — explicit `?subscribe=none` plus a subscribe list, and
       dispatch via the `_SK` object. TWO changes: add the alias keys to `_SK`

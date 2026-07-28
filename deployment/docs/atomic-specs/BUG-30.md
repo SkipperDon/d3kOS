@@ -69,8 +69,9 @@ WHAT TO BUILD — a preference-ordered fallback with an honest label
   belowKeel value has ever been seen, and when it is displayed the unit label
   MUST say so.
 
-  (1) Add one module-level state variable next to the other state vars
-      (near _lastSogKts, ~line 121):
+  (1) Add one module-level state variable immediately after the existing
+      `let _lastSogKts = null;` (line 124, under the /* ── SIGNAL K HANDLERS ── */
+      comment, just before `const SK_HANDLERS = {` at line 126):
 
         let _depthSource = null;   // 'keel' | 'transducer' | null — BUG-30
 
@@ -91,13 +92,13 @@ WHAT TO BUILD — a preference-ordered fallback with an honest label
         'environment.depth.belowKeel':       (v) => _renderDepth(v, 'keel'),
         'environment.depth.belowTransducer': (v) => _renderDepth(v, 'transducer'),
 
-  (3) Add the new path to _NULL_CELLS (~line 244) so a null value still blanks
-      the cell:
+  (3) Add the new path to _NULL_CELLS (the map starts at line 240; the existing
+      belowKeel entry is line 244) so a null value still blanks the cell:
 
         'environment.depth.belowTransducer': 'cellDepth',
 
-  (4) Add the new path to PATH_TO_CELL alongside the existing belowKeel entry,
-      matching how that map is used for the other cells.
+      NOTE: _NULL_CELLS is the ONLY path->cell map in this file. There is no
+      PATH_TO_CELL map — do not go looking for one.
 
 CONSTRAINT BOUNDARIES (do NOT)
   • Do NOT remove the belowKeel handler or subscription. It is the PREFERRED
