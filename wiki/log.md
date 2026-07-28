@@ -69,3 +69,9 @@
 - Wiki pages updated: none (no new entities — base project external, no Pi architecture changes)
 - Contradictions flagged: none
 - Open questions: VHF radio audio tap accessibility (blocking Phase 1); Pi memory headroom for Faster-Whisper base model; ALSA card index collision check
+
+## [2026-07-27] fix+governance | S108 — lab Pi = master; canonical tree seeded from the Pi; BUG-35…BUG-40 logged; 5 bugs specced, implemented and verified
+- Files changed: `deployment/v0.9.9.4/` (NEW — 204 files + README + MANIFEST.md5 + 6 tools); `deployment/docs/atomic-specs/BUG-35|36|37|38|39.md` (NEW); `tests/` (5 NEW); `PROJECT_CHECKLIST.md`; `deployment/docs/V09994_BUG_FIXES.md`; `deployment/docs/DEPLOYMENT_INDEX.md`; Pi `/opt/d3kos/config/version.txt`
+- Wiki pages updated: `index.md` (question-queue pointer); `questions/2026-07-27-v0994-tier3-spec-questions.md` (NEW — 17 Q&A)
+- Contradictions flagged: **`concepts/two-source-sync-rule` is invalidated.** The two trees were never peers — `deployment/v0.9.4/pi_source/` IS the v0.9.9.2 release tree, and `deployment/d3kOS/dashboard/` is a separate lineage that never held the v0.9.9.2 features (md5-proven). The "add every new page to BOTH dirs" instruction is what produced BUG-36 and BUG-37. Superseded by a single canonical tree plus `check-drift.sh`. S107's inverted reading also invalidated BUG-28/29/30 and DEP20 as written.
+- Open questions: BUG-30 approach (keel offset vs `belowTransducer` + relabel) — operator ruling needed, grounding-risk dimension; BUG-29 whether Signal K's engine instance→name mapping is configurable; BUG-40 whether the SK vessel UUID is runtime-random or machine-id-derived; whether the boat Pi is also v0.9.9.2-era.

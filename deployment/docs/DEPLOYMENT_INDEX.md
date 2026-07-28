@@ -7,6 +7,29 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — Atomic Specs, Tier-3 Implementations, Verification Tooling (S108 2026-07-27)
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/atomic-specs/BUG-35.md` | **[NEW — S108]** OTA must preserve all four `version.txt` fields. Two module copies, read-modify-write helper, never invents a date. |
+| `deployment/docs/atomic-specs/BUG-36.md` | **[NEW — S108]** Restore the M14 `_d3kEngData` cache lost by the S105 deploy. Revised after execution — two Tier-1 spec defects corrected. |
+| `deployment/docs/atomic-specs/BUG-37.md` | **[NEW — S108]** Port the seven missing v0.9.9.2 Flask routes verbatim. |
+| `deployment/docs/atomic-specs/BUG-38.md` | **[NEW — S108]** Add the three diag DOM IDs; remove fabricated demo readings. |
+| `deployment/docs/atomic-specs/BUG-39.md` | **[NEW — S108]** First-boot identity regeneration for cloned cards. Complete after operator answers on `installation_id` / `device_token`. |
+| `wiki/questions/2026-07-27-v0994-tier3-spec-questions.md` | **[NEW — S108]** AAO §24 Question Queue — 17 anticipated Tier-3 questions, all answered (2 by operator, 1 by investigation). Tier 3 appends rather than assuming. |
+| `deployment/v0.9.9.4/tools/check-drift.sh` | **[NEW — S108]** Compares a Pi against `MANIFEST.md5`. **Run before any clone or release.** Exit 0/1/2. |
+| `deployment/v0.9.9.4/tools/verify-bug35.sh` … `verify-bug39.sh` | **[NEW — S108]** Per-bug Tier-1 §25.8 verifiers. Objective ACCEPT/REJECT, each calibrated against the known-bad pre-fix state. |
+| `tests/bug36-engine-data-cache.test.js` | **[NEW — S108]** jsdom harness, no server. Fires all five engine handlers; traps the fuel fraction-vs-percentage 100× error. |
+| `tests/bug38-diag-panel-ids.test.js` | **[NEW — S108]** jsdom parse of the Jinja template; three IDs resolve, classes survive, no fabricated readings remain. |
+| `tests/test_bug37_routes.py` | **[NEW — S108]** `ast`-based route registration contract. Nothing executed. |
+| `tests/test_bug35_version_file.py` | **[NEW — S108]** pytest, parametrised over BOTH OTA copies, `VERSION_FILE` redirected to `tmp_path`. |
+| `tests/test_bug39_identity_regen.py` | **[NEW — S108]** 16 static tests. Never executes the identity script. |
+
+**Fixed in repo this session (NOT deployed):** BUG-35, BUG-36, BUG-37, BUG-38, BUG-39.
+**Pi change this session:** `/opt/d3kos/config/version.txt` only — see the S108 Release Package Manifest in SESSION_LOG.md.
+
+---
+
 ## ⚠ CANONICAL SOURCE TREE — v0.9.9.4 (S108 2026-07-27)
 
 | Path | Description |
