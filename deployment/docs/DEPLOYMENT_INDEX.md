@@ -7,6 +7,19 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — BUG-29 / BUG-30 Specs + Seven Verified Tier-3 Fixes (S108-cont 2026-07-27)
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/atomic-specs/BUG-29.md` | **[NEW — S108-cont]** Additive engine-path aliasing across 4 files. Records that `skEngineId()` is a hardcoded ternary (mapping NOT configurable) and that two paths need a **leaf** correction, not just an instance change. |
+| `deployment/docs/atomic-specs/BUG-30.md` | **[NEW — S108-cont]** Depth fallback. Documents that the **primary fix is a negative keel offset on the sounder**, not code — SK already derives `belowKeel` from PGN 128267. |
+| `deployment/v0.9.9.4/tools/verify-bug29.sh` … `verify-bug39.sh` | **[NEW — S108-cont]** Seven per-bug Tier-1 §25.8 verifiers, each calibrated against its known-bad pre-fix state. |
+
+**FIXED IN REPO, NOT DEPLOYED:** BUG-29, 30, 35, 36, 37, 38, 39 — seven bugs, all independently verified, zero regressions.
+**Known tooling gap:** `check-drift.sh` compares the Pi against `MANIFEST.md5`, not the repo against it. The repo is 8 files ahead of both and the tool still reports NO DRIFT.
+
+---
+
 ## v0.9.9.4 — Atomic Specs, Tier-3 Implementations, Verification Tooling (S108 2026-07-27)
 
 | File | Description |
