@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.13.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-27 S108 | **Status:** IN PROGRESS
+**Version:** 1.14.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-28 S109 | **Status:** IN PROGRESS
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -421,7 +421,17 @@ Research starts from what d3kOS currently does — and builds the generic framew
 
 ## BUG-12 — AIS targets not showing in dashboard; Signal K AIS provider disabled
 
-**Status:** `[x]` FIXED — 2026-07-11 S96
+**Status:** `[ ]` **REOPENED S109 2026-07-28 — the `[x] FIXED` claim was FALSE.** Superseded by **BUG-32**. The fix recorded below is present on no Pi in service, and the approach itself was never valid.
+
+> **CORRECTION — S109 2026-07-28.** This entry carried `[x] FIXED — 2026-07-11 S96` for 17 days. Two independent faults:
+>
+> 1. **Not present anywhere.** The S96 change was written to whichever card was in the boat on 2026-07-11; that card is out of service. S107 read the boat Pi's `~/.signalk/settings.json` at mtime **2026-03-12** with `ais` `enabled: false`, and S109 read the lab Pi (master) live as `enabled: false`. See **BUG-28**.
+> 2. **The fix itself was invalid.** Signal K holds TCP 10110 as its own NMEA0183 **output** server — `ss -lntp` → `LISTEN *:10110 users:(("node",…))`, confirmed on the lab Pi 2026-07-28. The `ais` pipedProvider is a TCP **client** to that same port, so enabling it makes Signal K read its own GPS output back in a loop. It can never carry AIS. `rtl_ais` pushing to the same port is discarded for the same reason.
+>
+> **Do NOT re-apply the fix recorded below.** It is retained as a historical record. The real fix is **BUG-32** — give `rtl_ais` a dedicated port and point the provider at that — which is unbuilt.
+>
+> Verification method note: the false status arose from treating a *deploy record* as evidence of *current state*. Any claim about what is on a Pi must cite a live read or the most recent on-boat evidence.
+
 **Logged:** 2026-07-11 S96 (on-boat, Don at Port Colborne area, Pi IP 172.20.10.8)
 **Platform:** Pi (d3kOS dashboard)
 
@@ -1276,7 +1286,7 @@ BUG-24 — those defects (BUG-29, BUG-30) exist in the latest source too.
 
 ## BUG-29 — Dashboard Subscribes to `propulsion.0.*`; Signal K Publishes `propulsion.port.*`
 
-**Status:** `[ ]` OPEN — logged S107 2026-07-27
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S107 2026-07-27 | Tier 3 + Tier-1 §25.8 ACCEPT 13/13 | **NOT on the boat Pi** — unproven against live Signal K data
 **Severity:** HIGH — breaks every engine gauge; root cause of BUG-24 and a root cause of BUG-16
 **Present in:** latest repo source AND the boat Pi (not a stale-copy artifact)
 
@@ -1331,7 +1341,7 @@ was NOT determined — check before choosing between editing 6 files vs. a mappe
 
 ## BUG-30 — Depth Gauge Reads `belowKeel`; Signal K Publishes `belowTransducer` (Replaces BUG-18 Root Cause)
 
-**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Supersedes the BUG-18 root-cause candidates**
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S107 2026-07-27 | ACCEPT 16/16 | **NOT on the boat Pi** — and the PRIMARY fix (a negative keel offset on the Garmin) is still NOT set | **Supersedes the BUG-18 root-cause candidates**
 **Severity:** HIGH — safety-relevant instrument
 
 ### Evidence — E1 confirmed, depth IS present
@@ -1494,7 +1504,7 @@ Compare the S106-sourced MerCruiser 454 Mag MPI values
 
 ## BUG-35 — OTA Upgrade Destroys Three of the Four Fields in `version.txt`
 
-**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** LOW-MEDIUM (silent metadata loss; no outage)
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 12/12 | **NOT on the boat Pi** — latent; no OTA has ever run so the fix is unexercised | **Severity:** LOW-MEDIUM (silent metadata loss; no outage)
 **Discovered** while correcting the lab Pi's stale version label in S108. **Latent — has never fired.**
 
 ### Symptom
@@ -1582,7 +1592,7 @@ release process, recorded against BUG-28. Do not conflate the two.
 
 ## BUG-36 — S105 Deploy Regressed `instruments.js`: the M14 Engine-Data Cache Was Silently Removed
 
-**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** HIGH (feature loss, shipped by a "fix")
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 13/13 | **NOT on the boat Pi** — served `instruments.js` verified `_d3kEngData` ×6 post-deploy | **Severity:** HIGH (feature loss, shipped by a "fix")
 **Caused by:** the S105 BUG-15 deploy on 2026-07-23 10:12
 
 ### Evidence
@@ -1611,7 +1621,7 @@ the M14 AI Engine Diagnostic renders empty cards for every gauge.
 
 ## BUG-37 — Dashboard `app.py` Is Missing All Seven v0.9.9.2 Routes
 
-**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** HIGH
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 9/9 | **NOT on the boat Pi** — health-checked: `/config/tier` 200 `{"tier":3}` (404 before), `/anchor/state` + `/anchor/advice` 200 | **Severity:** HIGH
 
 ### Evidence
 Lab Pi `app.py` md5 `34211e37…` = `deployment/d3kOS/dashboard/app.py`. The v0.9.9.2 tree
@@ -1636,7 +1646,7 @@ Lab Pi `app.py` md5 `34211e37…` = `deployment/d3kOS/dashboard/app.py`. The v0.
 
 ## BUG-38 — `overlays.js` Writes to Three DOM IDs That `index.html` Never Defines
 
-**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** MEDIUM-HIGH
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 15/15 | **NOT on the boat Pi** — health-checked: diagTitle/diagGrid/diagAiTxt present in the rendered page | **Severity:** MEDIUM-HIGH
 **Present in the v0.9.9.2 release itself — not a deployment gap**
 
 ### Evidence
@@ -1661,7 +1671,7 @@ neither data nor a container. Together these are a second, independent root caus
 
 ## BUG-39 — Cloning the Master Duplicates Six Identity Values Across Two Pis
 
-**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** HIGH (blocks the boat clone)
+**Status:** `[~]` **DEPLOYED TO LAB PI 2026-07-27 S108-cont — unit installed DISABLED, master GUARDED** | ACCEPT 23/23 | **NOT on the boat Pi** — Phase B (clone-procedure wiring) NOT started | **Severity:** HIGH (blocks the boat clone)
 **Must be resolved before the master card is cloned to the boat**
 
 ### The duplicated identities (read from the lab Pi)

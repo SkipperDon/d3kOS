@@ -6,6 +6,22 @@
 This is the master index of all solution documents, feature deployments, and architectural records for d3kOS. If something was built, fixed, or deployed, it must have an entry here.
 
 ---
+## v0.9.9.4 — Bug-Status Audit and Correction (S109 2026-07-28)
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED v1.13.0 → v1.14.0 — S109]** **BUG-12 REOPENED** — the `[x] FIXED S96` status was false on two counts: the fix is on no Pi in service (boat `settings.json` mtime 2026-03-12 per S107; lab Pi master read live as `enabled: false`), and the approach itself was invalid (Signal K holds TCP 10110 as its own NMEA0183 output, so enabling the `ais` **client** provider on that port loops SK's GPS back rather than carrying AIS). Superseded by BUG-32; correction block added with an explicit "do NOT re-apply". Seven deployed bugs (29/30/35/36/37/38/39) moved from `[ ] OPEN` to `[~] FIXED + DEPLOYED TO LAB PI`, each carrying its §25.8 ACCEPT count and an explicit **NOT on the boat Pi**. |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.14 → v3.15 — S109]** PART 17: BUG-12 row reopened with a condensed correction; six rows corrected from "FIXED IN REPO — NOT DEPLOYED" to "DEPLOYED TO LAB PI". `grep -c "NOT DEPLOYED"` in PART 17 → 0. The v3.14 header already claimed all seven were deployed while every row below it still said otherwise. |
+| `deployment/docs/DEPLOYMENT_INDEX.md` | **[UPDATED — S109]** The S108-cont block's "FIXED IN REPO, NOT DEPLOYED" line corrected — third file carrying the same stale claim. |
+
+**Deploy verified independently on the lab Pi**, not taken from the log: `_d3kEngData` ×6, `propulsion.port` ×9, `belowTransducer` ×2 in the served `instruments.js`; `/config/tier` present in `app.py`; `diagTitle` present in `index.html`.
+
+**Root cause of the false statuses:** the S108-cont deploy happened *after* the session-close sequence had already run, so Steps 2 and 3 were never re-run against it.
+
+**Pi deployed:** No — all Pi access this session was read-only. No Release Package Manifest required.
+
+---
+
 
 ## v0.9.9.4 — BUG-29 / BUG-30 Specs + Seven Verified Tier-3 Fixes (S108-cont 2026-07-27)
 
@@ -15,7 +31,7 @@ This is the master index of all solution documents, feature deployments, and arc
 | `deployment/docs/atomic-specs/BUG-30.md` | **[NEW — S108-cont]** Depth fallback. Documents that the **primary fix is a negative keel offset on the sounder**, not code — SK already derives `belowKeel` from PGN 128267. |
 | `deployment/v0.9.9.4/tools/verify-bug29.sh` … `verify-bug39.sh` | **[NEW — S108-cont]** Seven per-bug Tier-1 §25.8 verifiers, each calibrated against its known-bad pre-fix state. |
 
-**FIXED IN REPO, NOT DEPLOYED:** BUG-29, 30, 35, 36, 37, 38, 39 — seven bugs, all independently verified, zero regressions.
+**DEPLOYED TO THE LAB PI 2026-07-27 (corrected S109 2026-07-28):** BUG-29, 30, 35, 36, 37, 38, 39 — seven bugs, all independently verified, zero regressions. **NOT on the boat Pi.** The original wording here ("FIXED IN REPO, NOT DEPLOYED") was written before the operator authorised the deploy later the same session and was stale for 1 day.
 **Known tooling gap:** `check-drift.sh` compares the Pi against `MANIFEST.md5`, not the repo against it. The repo is 8 files ahead of both and the tool still reports NO DRIFT.
 
 ---
