@@ -23,6 +23,7 @@ c2038e48cd96796ede65f82aff17b849  etc/systemd/system/d3kos-fleet-push.service
 b4585f516b33bf0257cd71891e8d0512  etc/systemd/system/d3kos-gemini.service
 2c14be4872dd5fbb4d910a604e4fe2f9  etc/systemd/system/d3kos-health.service
 ab582fe31a66031166f18313909fea06  etc/systemd/system/d3kos-history.service
+0d6e802e744f8ee84f076a97311b5e90  etc/systemd/system/d3kos-identity-regen.service
 3c4b27796aa688cb308aa3335465a194  etc/systemd/system/d3kos-issue-detector.service
 73c21d4daf3ee7a5a5d9595fb4e036d0  etc/systemd/system/d3kos-keyboard-api.service
 9a31f88fc3a42357fe6b732f2fb1de29  etc/systemd/system/d3kos-license-api.service
@@ -133,6 +134,7 @@ fe38b1309237290a83945c1534e5c0ae  opt/d3kos/services/fleet/fleet_push_service.py
 7359b44781f5f7df6bf987775455a322  opt/d3kos/services/gemini-nav/gemini_proxy.py
 86dec57235aff47afa4879a9a621ab0f  opt/d3kos/services/gemini-nav/templates/chat.html
 e2fe8dcd98549cfd508cab69f2c5edba  opt/d3kos/services/gemini-nav/tests/test_gemini_proxy.py
+f02aba0427cc0f1884542ef0335acce4  opt/d3kos/services/identity/regenerate-identity.sh
 3391cc7b57dd0a4a4b1e7e99c3f78b26  opt/d3kos/services/license/license-api.py
 d8c40698b031f8488dbc532771d89651  opt/d3kos/services/live/live_session.py
 ca7c8a68fbd3dec39babdb86fc977878  opt/d3kos/services/manuals/auto-search.py

@@ -77,17 +77,26 @@ cd deployment/v0.9.9.4
 ```
 
 Exit codes: `0` no drift · `1` drift found · `2` Pi unreachable.
-Baseline validated at seeding: 204/204. After the S108-cont deploy: **203/203 match, 0 drift**
-(one runtime cache removed from tracking; BUG-39's two files intentionally excluded — see below).
+Baseline validated at seeding: 204/204. After the S108-cont deploy: **205/205 match, 0 drift** (one runtime cache removed from tracking; BUG-39's two files now deployed and tracked).
 
 **⚠ Known limitation:** this compares the **Pi** against `MANIFEST.md5`. It does **not** compare the
 **repo** against the manifest. If you edit the repo without deploying, the Pi still matches the
 manifest and this reports NO DRIFT — which does *not* mean the Pi is current. Regenerate
 `MANIFEST.md5` as part of every deploy so the two stay meaningful together.
 
-**Not tracked (deliberately undeployed):** `opt/d3kos/services/identity/regenerate-identity.sh` and
-`etc/systemd/system/d3kos-identity-regen.service` (BUG-39) are held pending an operator ruling —
-enabling that unit on the master would wipe its own identity.
+**⚠ BUG-39 identity regeneration — the master is guarded, the clone must NOT be.**
+`regenerate-identity.sh` and `d3kos-identity-regen.service` are deployed but the unit is
+**disabled**, and `/opt/d3kos/config/.identity-regenerated` exists on the master so it can never
+fire here. Three independent guards: systemd reports `ConditionResult=no`, the script's sentinel
+check is its first logic, and the unit is not enabled.
+
+**CLONE PROCEDURE — REQUIRED STEP.** After writing this card to a new SD card, on the COPY:
+```bash
+sudo rm /opt/d3kos/config/.identity-regenerated
+sudo systemctl enable d3kos-identity-regen
+```
+Skip that and the clone keeps the master's `device_token`, `machine-id` and SSH host keys, and the
+two Pis collide in the atmyboat.com fleet database — which is the whole of BUG-39.
 
 ---
 
