@@ -2,6 +2,14 @@
 
 **Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
 **Created:** 2026-07-27 (S108-cont) by Tier 1 (Opus 5)
+**Revised after Tier-3 execution — two Tier-1 spec defects corrected:**
+(1) the embedded test asserted alarm states `/Critical|Alert|Advisory/i`, but `_evalBelow()` in *this*
+file returns `'crit' | 'alrt' | 'adv'` (they are CSS class names consumed by `_setCellState`). The
+capitalised forms come from `_stateAbove()` in **overlays.js** — a different function in a different
+file. (2) the jsdom stub contained only `#cellDepth`, but `_setCellState` calls `updateAlertDots()`,
+which dereferences `#rowEngine`, `#rowNav`, `#engineAlert`, `#navAlert` and `#ticker`, and
+`_setCellState` also assigns `openDiag`. As written the test could not run at all. Tier 3 found and
+corrected both; the corrections are folded in below.
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-30 · `PROJECT_CHECKLIST.md` PART 17
 **Replaces the BUG-18 root cause.** **Depends on:** nothing.
 
@@ -138,7 +146,12 @@ FAILING TEST FIRST (TDD — write it, RUN IT, watch it fail, then fix)
       const dom = new JSDOM(
         '<!doctype html><html><body>' +
         '<div id="cellDepth"><div class="ic-v"></div><div class="ic-u"></div></div>' +
+        // _setCellState -> updateAlertDots() dereferences these; without them the
+        // handler throws before any assertion runs.
+        '<div id="rowEngine" class="hidden"></div><div id="rowNav" class="hidden"></div>' +
+        '<div id="engineAlert"></div><div id="navAlert"></div><div id="ticker"></div>' +
         '</body></html>', { runScripts: 'outside-only', virtualConsole: vc });
+      dom.window.openDiag = () => {};      // _setCellState assigns this as an onclick
       dom.window.eval(fs.readFileSync(F, 'utf8'));
       return dom.window;
     }
@@ -176,12 +189,14 @@ FAILING TEST FIRST (TDD — write it, RUN IT, watch it fail, then fix)
     assert.ok(!/TRANSDUCER/.test(unit(w)));
 
     // 5 — REGRESSION: shallow-water alarm still fires on both sources
+    //     _evalBelow() returns 'crit' | 'alrt' | 'adv' — lowercase CSS class names.
+    //     Do NOT expect 'Critical'/'Alert'/'Advisory'; those come from overlays.js.
     w = load();
     w.SK_HANDLERS['environment.depth.belowKeel'](0.5);
-    assert.ok(/Critical|Alert|Advisory/i.test(unit(w)), 'keel alarm state must still render');
+    assert.ok(/crit|alrt|adv/i.test(unit(w)), 'keel alarm state must still render');
     w = load();
     w.SK_HANDLERS['environment.depth.belowTransducer'](0.5);
-    assert.ok(/Critical|Alert|Advisory/i.test(unit(w)), 'transducer alarm state must still render');
+    assert.ok(/crit|alrt|adv/i.test(unit(w)), 'transducer alarm state must still render');
 
     console.log('BUG-30: ALL ASSERTIONS PASSED');
 

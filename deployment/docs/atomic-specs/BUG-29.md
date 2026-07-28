@@ -158,8 +158,14 @@ FAILING TEST FIRST (TDD — write it, RUN IT, watch it fail, then fix)
 
     // ---- 1. instruments.js: alias keys must share handler IDENTITY ----
     const vc = new VirtualConsole(); vc.on('jsdomError', () => {});
-    const dom = new JSDOM('<!doctype html><html><body></body></html>',
-                          { runScripts: 'outside-only', virtualConsole: vc });
+    // NOTE: _setCellState -> updateAlertDots() dereferences #rowEngine, #rowNav,
+    // #engineAlert, #navAlert and #ticker, and _setCellState assigns openDiag.
+    // A bare <body> stub makes any alarm-state handler throw. (Found on BUG-30.)
+    const dom = new JSDOM('<!doctype html><html><body>' +
+      '<div id="rowEngine" class="hidden"></div><div id="rowNav" class="hidden"></div>' +
+      '<div id="engineAlert"></div><div id="navAlert"></div><div id="ticker"></div>' +
+      '</body></html>', { runScripts: 'outside-only', virtualConsole: vc });
+    dom.window.openDiag = () => {};
     dom.window.eval(fs.readFileSync(B + 'static/js/instruments.js', 'utf8'));
     const H = dom.window.SK_HANDLERS;
     for (const [orig, aliases] of Object.entries(ALIASES)) {

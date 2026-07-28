@@ -122,6 +122,18 @@ function _brg(lat1, lon1, lat2, lon2) {
 /* ── SIGNAL K HANDLERS ── */
 let _gpsLat = null, _gpsLon = null;  // shared for waypoint distance calc
 let _lastSogKts = null;
+let _depthSource = null;  // 'keel' | 'transducer' | null — BUG-30
+
+function _renderDepth(v, source) {
+  // belowKeel always wins; never let a transducer value overwrite it
+  if (source === 'transducer' && _depthSource === 'keel') return;
+  _depthSource = source;
+  _setVal('cellDepth', v.toFixed(1));
+  const state = _evalBelow(v, THR.depth);
+  _setCellState('cellDepth', state);
+  const unit = source === 'keel' ? 'metres' : 'm · UNDER TRANSDUCER';
+  _setUnit('cellDepth', state ? unit + ' · ' + state : unit);
+}
 
 const SK_HANDLERS = {
   'navigation.speedOverGround': (v) => {
@@ -156,12 +168,8 @@ const SK_HANDLERS = {
     if (prp) prp.textContent = ls + ' · ' + lo;
   },
 
-  'environment.depth.belowKeel': (v) => {
-    _setVal('cellDepth', v.toFixed(1));
-    const state = _evalBelow(v, THR.depth);
-    _setCellState('cellDepth', state);
-    _setUnit('cellDepth', state ? 'metres · ' + state : 'metres');
-  },
+  'environment.depth.belowKeel': (v) => _renderDepth(v, 'keel'),
+  'environment.depth.belowTransducer': (v) => _renderDepth(v, 'transducer'),
 
   'propulsion.0.coolantTemperature': (v) => {
     const c = v - 273.15, disp = c.toFixed(0);
@@ -242,6 +250,7 @@ const _NULL_CELLS = {
   'navigation.courseOverGroundTrue':  'cellCourse',
   'navigation.position':              'cellPos',
   'environment.depth.belowKeel':      'cellDepth',
+  'environment.depth.belowTransducer': 'cellDepth',
   'propulsion.0.coolantTemperature':  'cellCoolant',
   'propulsion.0.oilPressure':         'cellOil',
   'propulsion.0.revolutions':         'cellRpm',
