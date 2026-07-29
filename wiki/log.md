@@ -91,6 +91,12 @@
 - Wiki pages updated: none
 - Contradictions flagged: none
 - Open questions: none. Source authority: MerCruiser 454 SM AI doc (S106) for all threshold values.
+## [2026-07-29] spec+fix | S110 — BUG-13 atomic spec authored; Haiku implemented; §25.8 verified
+- Files changed: `deployment/docs/atomic-specs/BUG-13.md` (NEW); `static/js/instruments.js` (Changes A+B+C); `tests/bug13-speed-gauge.test.cjs` (NEW); `PROJECT_CHECKLIST.md` v3.17; `V09994_BUG_FIXES.md` (BUG-13 status updated)
+- Wiki pages updated: `wiki/log.md` (this entry)
+- Contradictions flagged: none
+- Open questions: Issue 1 (flicker) root cause assumed to be multi-source SK interleaving — requires on-boat throttle change to confirm; if debounce insufficient, SK subscription-level source filtering is the next step (BUG-13v2)
+
 ## [2026-07-29] fix+governance | S110 — BUG-41 + BUG-34 fixed and deployed to lab Pi; session close
 - Files changed: `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py`; `static/js/instruments.js`; `static/js/overlays.js`; `deployment/docs/atomic-specs/BUG-41.md` (NEW); `deployment/docs/atomic-specs/BUG-34.md` (NEW); `tests/test_bug41_settings_route.py` (NEW); `tests/bug34-diag-panel.test.cjs` (NEW); `PROJECT_CHECKLIST.md` v3.15→v3.16; `deployment/docs/V09994_BUG_FIXES.md` (BUG-34 updated, BUG-41 added); `deployment/docs/DEPLOYMENT_INDEX.md` (S110 section); `SESSION_LOG.md` (S110 entry); MEMORY.md (trimmed 24.5KB→13.3KB)
 - Wiki pages updated: `wiki/log.md` (this entry)

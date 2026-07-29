@@ -123,6 +123,8 @@ function _brg(lat1, lon1, lat2, lon2) {
 /* ── SIGNAL K HANDLERS ── */
 let _gpsLat = null, _gpsLon = null;  // shared for waypoint distance calc
 let _lastSogKts = null;
+let _sogPending    = null;   // BUG-13: coalesced value waiting to display
+let _sogDisplayTimer = null; // BUG-13: 250 ms coalesce timer handle
 let _depthSource = null;  // 'keel' | 'transducer' | null — BUG-30
 
 function _renderDepth(v, source) {
@@ -140,12 +142,17 @@ function _renderDepth(v, source) {
 const SK_HANDLERS = {
   'navigation.speedOverGround': (v) => {
     const kts = (v * 1.944).toFixed(1);
-    _lastSogKts = parseFloat(kts);
-    _setVal('cellSpeed', kts);
-    _setUnit('cellSpeed', 'kts · SOG');
-    // Expose for position report
-    const pr = document.querySelector('#posRpt .pr-big');
-    if (pr) pr.textContent = kts + ' kts';
+    _lastSogKts = parseFloat(kts);       // immediate — COG guard depends on this
+    _sogPending = kts;                   // BUG-13: stage for coalesced display
+    if (!_sogDisplayTimer) {             // BUG-13: start timer only if not already running
+      _sogDisplayTimer = setTimeout(() => {
+        _sogDisplayTimer = null;
+        _setVal('cellSpeed', _sogPending);
+        _setUnit('cellSpeed', 'kts · SOG');
+        const pr = document.querySelector('#posRpt .pr-big');
+        if (pr) pr.textContent = _sogPending + ' kts';
+      }, 250);
+    }
   },
 
   'navigation.courseOverGroundTrue': (v) => {
@@ -549,8 +556,11 @@ function updateAlertDots() {
 function openCtx(e, name) {
   e.preventDefault();
   e.stopPropagation();
-  const m = document.getElementById('ctx');
-  document.getElementById('ctxTtl').textContent = name;
+  const m    = document.getElementById('ctx');
+  const cell = e.target.closest('.ic');
+  const valEl = cell && cell.querySelector('.ic-v');
+  const live  = valEl && valEl.textContent !== '---' ? valEl.textContent : '';
+  document.getElementById('ctxTtl').textContent = live ? name + ' — ' + live : name;
   m.style.left = Math.min(e.clientX, window.innerWidth - 230) + 'px';
   m.style.top  = Math.max(e.clientY - 180, 60) + 'px';
   m.classList.add('show');

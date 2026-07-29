@@ -502,9 +502,36 @@ BUG-11 research should consider this failure mode as a test case.
 
 ## BUG-13 — Speed gauge flickers between steady-state and current speed during throttle transitions; long-press opens options panel that obscures readout
 
-**Status:** `[ ]` OPEN — investigation required
-**Logged:** 2026-07-11 S97 (reported on-boat by Don)
+**Status:** `[~]` FIXED (lab) — Issue 1 requires on-boat validation (throttle change needed to confirm debounce resolves flicker); Issue 2 resolved (context menu title shows live value)
+**Logged:** 2026-07-11 S97 (reported on-boat by Don) | **Fixed:** 2026-07-29 S110
 **Platform:** Pi (d3kOS dashboard — speed gauge tile)
+
+### Fix Applied (S110 — 2026-07-29)
+
+Root cause confirmed from source code investigation:
+
+**Issue 1 — Flicker:** `navigation.speedOverGround` handler called `_setVal('cellSpeed', kts)` on
+every WebSocket message. Signal K publishes SOG from all bus sources — Garmin (src 0, live GPS)
+and Pangoo (src 64, lagged/cached). During throttle changes the two sources interleave, causing
+the display to alternate between them every ~100–200 ms.
+
+**Fix:** Added 250 ms display coalesce timer (`_sogPending` + `_sogDisplayTimer` state vars).
+`_lastSogKts` is still set immediately (COG suppression at line 152 unaffected). Multiple
+updates within one 250 ms window collapse to a single render of the last received value.
+`[ASSUMED]` root cause is multi-source interleaving; if on-boat flicker persists, escalate
+to SK subscription-level source filtering.
+
+**Issue 2 — Context menu:** `openCtx(e, name)` set `ctxTtl.textContent = name` only — no live
+value visible when menu covered the tile.
+
+**Fix:** Added `e.target.closest('.ic')` traversal + `.ic-v` read before setting the title.
+Title now shows `"Speed SOG — 8.2"` when the cell is populated, `"Speed SOG"` when `'---'`.
+Applies to all tiles universally (not speed-only).
+
+**File changed:** `static/js/instruments.js` — Changes A (2 new state vars) + B (SOG handler debounce) + C (openCtx live value)
+**Tests:** `tests/bug13-speed-gauge.test.cjs` — 5 tests; 2 + 4 failed before fix, all 5 pass after.
+**Atomic spec:** `deployment/docs/atomic-specs/BUG-13.md`
+**Deployed to lab Pi:** pending (deploy batch with Group B/C)
 
 ### Symptom
 
