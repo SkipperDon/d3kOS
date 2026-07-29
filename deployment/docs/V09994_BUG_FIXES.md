@@ -1434,8 +1434,24 @@ Blocks trustworthy validation of BUG-14, BUG-16, BUG-17, BUG-24.
 
 ## BUG-32 — AIS Never Reaches Signal K: rtl_ais Sends to TCP 10110, Which Signal K Itself Occupies
 
-**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** HIGH — safety (no AIS targets)
+**Status:** `[~]` FIXED (lab) — on-boat validation required (RTL-SDR dongle absent on lab Pi; confirmed topology correct from SK logs) | **Fixed:** 2026-07-29 S110 | **Severity:** HIGH — safety (no AIS targets)
 **Replaces the BUG-19 root-cause candidates**
+
+### Fix Applied (S110 — 2026-07-29)
+
+Root cause confirmed: SK's `TcpProvider` is CLIENT-ONLY — no server/listen mode exists regardless of config (`"server": true`, removing `host` both confirmed ineffective). Correct topology requires `rtl_ais` as TCP server.
+
+**Fix:**
+- `rtl-ais.service`: `-h 127.0.0.1 -P 10110` → `-T -P 10108` (`-T` = rtl_ais TCP server mode, listens on 10108; `-h` ignored)
+- `settings.json` ais provider: `host: "127.0.0.1"`, `port: 10108` (number), `enabled: true` — SK connects to rtl_ais's listener
+- Boot order: `rtl-ais.service` has `After=signalk.service`; SK starts first and retries connection until rtl_ais is up
+
+**Lab verification:** SK logs show `TcpProvider:connect ECONNREFUSED 127.0.0.1:10108` (correct — connecting to 10108 not 10110; rtl_ais absent because no dongle on lab Pi). UUID stable at `af7d4be0`.
+
+**On-boat validation required:** rtl_ais must start successfully (dongle present), SK must connect to 127.0.0.1:10108, AIVDM sentences must arrive, `vessels.*` API must return AIS targets.
+
+**Files changed:** `etc/systemd/system/rtl-ais.service`, `home/d3kos/.signalk/settings.json`. Commits: `13716ac` (initial fix), `89e8ea0` (topology correction).
+**Atomic spec:** `deployment/docs/atomic-specs/BUG-32.md` (Note: spec was written before -T flag was discovered; deployed fix differs from spec — spec updated to reflect actual fix).
 
 ### Evidence
 ```
@@ -1729,8 +1745,20 @@ neither data nor a container. Together these are a second, independent root caus
 
 ## BUG-40 — Signal K Runs With a Different Vessel UUID Than `settings.json` Declares
 
-**Status:** `[ ]` OPEN — logged S108 2026-07-27 | **Severity:** LOW-MEDIUM (identity/config integrity)
+**Status:** `[x]` FIXED + DEPLOYED to lab Pi — 2026-07-29 S110 | **Severity:** LOW-MEDIUM (identity/config integrity)
 **Found while resolving Q39.3 for BUG-39. It removes the SK UUID from BUG-39's scope.**
+
+### Fix Applied (S110 — 2026-07-29)
+
+Diagnostic confirmed: SK UUID is **runtime-random** — changed from `e1592142` to `2569c03f` after restart (confirmed live on lab Pi). SK v2.23 ignores `vessel.uuid` in `settings.json`; it expects vessel identity in `defaults.json` (which was absent).
+
+**Fix:** Created `~/.signalk/defaults.json`:
+```json
+{"vessels": {"self": {"uuid": "urn:mrn:signalk:uuid:af7d4be0-fb1d-4164-976d-de373c1c0331", "name": "d3kOS Vessel"}}}
+```
+UUID `af7d4be0` taken from `settings.json` vessel block (the configured intent). Verified stable across two restarts on lab Pi. Commit `13716ac`.
+
+**Boat Pi note:** boat Pi may have a different `settings.json` vessel.uuid — verify during next on-boat session before deploying `defaults.json` there.
 
 ### Evidence (lab Pi, Signal K v2.23.0)
 | Check | Result |

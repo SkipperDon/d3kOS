@@ -91,6 +91,12 @@
 - Wiki pages updated: none
 - Contradictions flagged: none
 - Open questions: none. Source authority: MerCruiser 454 SM AI doc (S106) for all threshold values.
+## [2026-07-29] fix | S110 — BUG-32 + BUG-40 (Group B) fixed and deployed to lab Pi
+- Files changed: `etc/systemd/system/rtl-ais.service` (NEW in canonical tree; `-T -P 10108`); `home/d3kos/.signalk/settings.json` (NEW; ais provider port 10108, enabled:true, host points to rtl_ais server); `home/d3kos/.signalk/defaults.json` (NEW; vessel uuid af7d4be0); `deployment/docs/atomic-specs/BUG-32.md` (NEW); `PROJECT_CHECKLIST.md` v3.18; `V09994_BUG_FIXES.md` (BUG-32 + BUG-40 status). Commits `13716ac`, `89e8ea0`.
+- Wiki pages updated: `wiki/log.md` (this entry)
+- Contradictions flagged: **SK TcpProvider has no server mode** — `"server": true` and removing `host` both confirmed ineffective (ECONNREFUSED loop, not a listener). The correct fix is `rtl_ais -T` (rtl_ais becomes TCP server). BUG-32 spec was written before this was discovered; spec updated to reflect actual fix. **SK v2.23 ignores vessel.uuid in settings.json** — confirmed by restart test (UUID changed); fix is defaults.json, not settings.json vessel block.
+- Open questions: BUG-32 on-boat validation required (dongle absent on lab Pi; can only confirm data flows on the boat). Boat Pi settings.json vessel.uuid may differ from lab — verify before deploying defaults.json to boat Pi.
+
 ## [2026-07-29] spec+fix | S110 — BUG-13 atomic spec authored; Haiku implemented; §25.8 verified
 - Files changed: `deployment/docs/atomic-specs/BUG-13.md` (NEW); `static/js/instruments.js` (Changes A+B+C); `tests/bug13-speed-gauge.test.cjs` (NEW); `PROJECT_CHECKLIST.md` v3.17; `V09994_BUG_FIXES.md` (BUG-13 status updated)
 - Wiki pages updated: `wiki/log.md` (this entry)
