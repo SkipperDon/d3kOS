@@ -421,7 +421,7 @@ Research starts from what d3kOS currently does — and builds the generic framew
 
 ## BUG-12 — AIS targets not showing in dashboard; Signal K AIS provider disabled
 
-**Status:** `[ ]` **REOPENED S109 2026-07-28 — the `[x] FIXED` claim was FALSE.** Superseded by **BUG-32**. The fix recorded below is present on no Pi in service, and the approach itself was never valid.
+**Status:** `[x]` **SUPERSEDED BY BUG-32 — CLOSED S111 2026-07-29.** The S96 fix recorded below was invalid — SK TCP 10110 is SK's own NMEA0183 output; the ais pipedProvider as a client to that port looped SK's GPS back. Real fix: BUG-32 — rtl_ais as TCP server on 10108, SK ais provider as client (fixed S110-cont, lab Pi; on-boat validation pending). Historical record below retained — do not apply.
 
 > **CORRECTION — S109 2026-07-28.** This entry carried `[x] FIXED — 2026-07-11 S96` for 17 days. Two independent faults:
 >
@@ -1074,7 +1074,7 @@ Cameras functioning. Kayakers, deadhead log, ducks, geese, and swimmers were obs
 
 ## BUG-22 — Setup Wizard Bypassed on Fresh Load
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[x]` NOT A BUG — CLOSED S111 2026-07-29. S107 confirmed on-boat: `vessel.env` exists at `/opt/d3kos/services/dashboard/config/vessel.env`; wizard gate behaves as designed. B-01/B-02 test failures occurred on a configured system (vessel.env populated from a prior session) — not a routing defect.
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (d3kOS dashboard — entry point routing)
 **Checklist:** B-01 (failed), B-02 (failed)
