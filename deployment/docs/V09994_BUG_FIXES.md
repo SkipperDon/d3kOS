@@ -1491,6 +1491,7 @@ Two distinct faults:
 ## BUG-33 — Hazard Alerting Disabled and Far Too Slow in forward-watch Config
 
 **Status:** `[~]` CONFIG FIXED on lab Pi — on-boat validation required — S110 2026-07-29 | **Severity:** HIGH — safety
+**Atomic spec:** `deployment/docs/atomic-specs/BUG-33.md` (retroactive — §25 workflow was not followed; documented as UAC in S110 metrics)
 **Refines BUG-21 (not "never built" — a config defect confirmed in S110)**
 
 ### S110 Fix Summary (2026-07-29)
