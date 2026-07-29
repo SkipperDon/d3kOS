@@ -91,3 +91,8 @@
 - Wiki pages updated: none
 - Contradictions flagged: none
 - Open questions: none. Source authority: MerCruiser 454 SM AI doc (S106) for all threshold values.
+## [2026-07-29] fix+governance | S110 — BUG-41 + BUG-34 fixed and deployed to lab Pi; session close
+- Files changed: `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py`; `static/js/instruments.js`; `static/js/overlays.js`; `deployment/docs/atomic-specs/BUG-41.md` (NEW); `deployment/docs/atomic-specs/BUG-34.md` (NEW); `tests/test_bug41_settings_route.py` (NEW); `tests/bug34-diag-panel.test.cjs` (NEW); `PROJECT_CHECKLIST.md` v3.15→v3.16; `deployment/docs/V09994_BUG_FIXES.md` (BUG-34 updated, BUG-41 added); `deployment/docs/DEPLOYMENT_INDEX.md` (S110 section); `SESSION_LOG.md` (S110 entry); MEMORY.md (trimmed 24.5KB→13.3KB)
+- Wiki pages updated: `wiki/log.md` (this entry)
+- Contradictions flagged: none
+- Open questions: BUG-41 Flask client tests (tests 1+2) need Flask on Pi to run fully; BUG-34 pre-fix failing run not recorded by Haiku; jest.config.cjs has `export default` in a .cjs file (pre-existing, unresolved); oil-pressure kPa/Pa scaling still open.

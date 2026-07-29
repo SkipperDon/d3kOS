@@ -1469,8 +1469,14 @@ Two distinct faults:
 
 ## BUG-34 — Gauge Tap Dialog: Hardcoded Alarm String and Generic Thresholds Not Sourced From Boat Documentation
 
-**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** MEDIUM-HIGH (E2 violation + safety gap)
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S110 2026-07-29** — logged S107 2026-07-27 | §25.8 ACCEPT 9/9 | **NOT on the boat Pi** | **Severity:** MEDIUM-HIGH (E2 violation + safety gap)
 **Refines BUG-16 — these are code defects independent of the BUG-29 path mismatch**
+
+### S110 Fix Summary (2026-07-29)
+- `instruments.js`: `THR.oil.crit` 20→4 (MerCruiser 454 idle minimum ≥4 psi per S106 manual); `THR.bat_hi` added `{adv:14.8, alrt:15.2, crit:15.6}` for overcharge; `window._d3kEngData.depth_m` added and written in `_renderDepth`.
+- `overlays.js`: `showCrit()` ticker de-fabricated (no longer hardcodes "8 PSI"); `openDiag()` URL `'http://localhost:8097/...'` → `'http://' + window.location.hostname + ':8097/...'`; fallback THR updated to include bat_hi/oil.crit:4/depth/fuel; battery card checks overcharge via `_stateAbove(eng.bat_v, thr.bat_hi)` with guard; Fuel + Depth cards added to `_diagBuildCards`.
+- Atomic spec: `deployment/docs/atomic-specs/BUG-34.md`. Tests: `tests/bug34-diag-panel.test.cjs` (9/9 pass). Commit: `b6870d9`.
+- Verified post-deploy: all 5 changes confirmed present in served files on lab Pi.
 
 ### Evidence — `overlays.js` (boat Pi)
 1. **`showCrit()` is entirely hardcoded** (fabricated reading):
@@ -1727,3 +1733,21 @@ UUID before and after — barred by the no-Pi-changes hold in force at S108.`
 - [ ] Establish where SK v2.23 expects vessel identity (`defaults.json` vs `settings.json`)
 - [ ] Set the vessel identity in the location SK actually reads, and confirm the API reports it
 - [ ] Decide whether the boat and lab should carry distinct vessel UUIDs (relates to BUG-39)
+
+---
+
+## BUG-41 — `/settings` Returns HTTP 500: `tier_num` and `device_token` Never Passed to Template
+
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S110 2026-07-29** — logged S108-cont 2026-07-27 | §25.8 ACCEPT | **NOT on the boat Pi** | **Severity:** MEDIUM (blocks Settings page entirely; crash on load)
+**Another casualty of the lineage split — same root cause as BUG-36/BUG-37**
+
+### Evidence
+`settings.html` (d3kOS-lineage) uses `{% if tier_num >= 1 and device_token %}` (line 509) and `{{ device_token }}` (line 521). The deployed `app.py` (d3kOS-lineage) passed only five variables: `avnav_port`, `gemini_port`, `signalk_port`, `vessel_name`, `home_port`. Both `tier_num` and `device_token` were absent → Jinja2 raised `UndefinedError: 'tier_num' is undefined` on every GET `/settings` → HTTP 500. Pre-existing since 2026-04-13 (settings.html mtime). The S108-cont deploy left both files byte-identical — it did not cause this bug.
+
+### S110 Fix Summary (2026-07-29)
+- `app.py` `settings()`: added two try/except blocks before `render_template`. Pattern copied verbatim from `config_tier()` (line 613) and `api_recovery_key()` (line 364) in the same file.
+- `tier_num`: reads `license.json` → `lic.get('tier', 'T0')` → `int(str(t).replace('T',''))`. Default on exception: `0`.
+- `device_token`: reads `device-token.json` → `.get('device_token', '')`. Default on exception: `''`.
+- No other variables added or removed. `settings.html` untouched.
+- Atomic spec: `deployment/docs/atomic-specs/BUG-41.md`. Tests: `tests/test_bug41_settings_route.py` (3 tests; test 3 static check passes; tests 1–2 need Flask on Pi). Commit: `b6870d9`.
+- Verified post-deploy: `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/settings` → **200**.

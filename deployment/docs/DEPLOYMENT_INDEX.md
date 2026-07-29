@@ -1295,3 +1295,17 @@ Tier 3 implementations of three on-boat validation bugs. TDD + atomic specs + Ti
 **Key architectural finding for future work:** re-copying the latest release to the boat will **NOT** fix the engine gauges, depth gauge, BUG-16 or BUG-24 — BUG-29 and BUG-30 exist in the latest source. They require a code fix. Any future Phase C deploy must verify which tree it ships and stamp the version so a stale copy is detectable.
 
 ---
+
+---
+
+### S110 2026-07-29 — BUG-41 + BUG-34 Fixes, Deployed to Lab Pi
+
+| File / Change | Description |
+|---------------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py` | **[UPDATED — S110 2026-07-29]** BUG-41: settings() route now passes tier_num (from license.json, default 0) and device_token (from device-token.json, default '') to render_template. Fixes Jinja2 UndefinedError → HTTP 500 on GET /settings. Deployed to lab Pi. Commit b6870d9. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/instruments.js` | **[UPDATED — S110 2026-07-29]** BUG-34: THR.oil.crit 20→4 (MerCruiser 454 idle minimum ≥4 psi, sourced S106); THR.bat_hi added {adv:14.8,alrt:15.2,crit:15.6} for overcharge detection; depth_m:null added to _d3kEngData global; _renderDepth writes window._d3kEngData.depth_m. Deployed to lab Pi. Commit b6870d9. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/overlays.js` | **[UPDATED — S110 2026-07-29]** BUG-34: showCrit() ticker no longer hardcodes fabricated "OIL PRESSURE 8 PSI" reading; openDiag() URL changed from hardcoded localhost:8097 to window.location.hostname (portable — works from PWA/phone); fallback THR block updated with bat_hi + oil.crit:4 + depth + fuel; battery card checks overcharge via _stateAbove + guard; Fuel and Depth cards added to _diagBuildCards. Deployed to lab Pi. Commit b6870d9. |
+| `deployment/docs/atomic-specs/BUG-41.md` | **[NEW — S110 2026-07-29]** Tier-1 (Opus 5) atomic spec for BUG-41. One file (app.py), 3 TDD tests, §25.8 verify criteria. Constraint: settings.html is correct — only app.py needed changing. |
+| `deployment/docs/atomic-specs/BUG-34.md` | **[NEW — S110 2026-07-29]** Tier-1 (Opus 5) atomic spec for BUG-34. Two files (instruments.js + overlays.js), 5 defects, 9 TDD tests (6 static + 3 jsdom), §25.8 verify criteria. All threshold values sourced from MerCruiser 454 Mag MPI SM AI doc (S106). |
+| `tests/test_bug41_settings_route.py` | **[NEW — S110 2026-07-29]** BUG-41 pytest tests (3 tests). test_app_py_passes_tier_num_and_device_token (static check) passes on workstation. Flask client tests pass on Pi. Authored by Haiku (Tier 3). |
+| `tests/bug34-diag-panel.test.cjs` | **[NEW — S110 2026-07-29]** BUG-34 tests (9/9 pass). CommonJS format, run via `node tests/bug34-diag-panel.test.cjs`. Deviation from spec (.js spec'd; .cjs delivered) — accepted; jest.config.cjs is broken. Authored by Haiku (Tier 3). |
