@@ -1,0 +1,14 @@
+  [Unit]
+  Description=RTL-SDR AIS Receiver
+  After=network.target signalk.service
+  Wants=signalk.service
+
+  [Service]
+  Type=simple
+  User=d3kos
+  ExecStart=/usr/bin/rtl_ais -h 127.0.0.1 -P 10108 -n
+  Restart=always
+  RestartSec=10
+
+  [Install]
+  WantedBy=multi-user.target
