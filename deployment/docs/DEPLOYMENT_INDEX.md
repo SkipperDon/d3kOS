@@ -1309,3 +1309,27 @@ Tier 3 implementations of three on-boat validation bugs. TDD + atomic specs + Ti
 | `deployment/docs/atomic-specs/BUG-34.md` | **[NEW — S110 2026-07-29]** Tier-1 (Opus 5) atomic spec for BUG-34. Two files (instruments.js + overlays.js), 5 defects, 9 TDD tests (6 static + 3 jsdom), §25.8 verify criteria. All threshold values sourced from MerCruiser 454 Mag MPI SM AI doc (S106). |
 | `tests/test_bug41_settings_route.py` | **[NEW — S110 2026-07-29]** BUG-41 pytest tests (3 tests). test_app_py_passes_tier_num_and_device_token (static check) passes on workstation. Flask client tests pass on Pi. Authored by Haiku (Tier 3). |
 | `tests/bug34-diag-panel.test.cjs` | **[NEW — S110 2026-07-29]** BUG-34 tests (9/9 pass). CommonJS format, run via `node tests/bug34-diag-panel.test.cjs`. Deviation from spec (.js spec'd; .cjs delivered) — accepted; jest.config.cjs is broken. Authored by Haiku (Tier 3). |
+
+---
+
+### S110-cont 2026-07-29 — Group A (BUG-13), Group B (BUG-32 + BUG-40), Group C (BUG-33 + BUG-21)
+
+Post-compaction continuation of S110. Three bug groups specced, implemented, and deployed to lab Pi.
+**§25 workflow deviation:** Groups B and C deployed without Haiku handoff. BUG-33 retroactive spec written per operator instruction.
+
+| File / Change | Description |
+|---------------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/instruments.js` | **[UPDATED — S110-cont 2026-07-29]** BUG-13: `_sogPending` + `_sogDisplayTimer` state vars added; SOG handler replaced with 250 ms coalesce (display debounce; `_lastSogKts` still set immediately for COG guard). `openCtx()`: reads `.ic-v` text for live value — title becomes "Name — value" or "Name" if no live data. Deployed to lab Pi. Commit `d901290`. |
+| `deployment/v0.9.9.4/etc/systemd/system/rtl-ais.service` | **[NEW — S110-cont 2026-07-29]** BUG-32: rtl_ais TCP server mode. `ExecStart=/usr/bin/rtl_ais -T -P 10108 -n`. Key finding: `-T` makes rtl_ais the TCP server; SK connects as client. Canonical tree copy; deployed to lab Pi. Commits `13716ac`, `89e8ea0`. |
+| `deployment/v0.9.9.4/home/d3kos/.signalk/settings.json` | **[NEW — S110-cont 2026-07-29]** BUG-32: ais pipedProvider updated — port `"10110"` (string) → `10108` (number); `host: "127.0.0.1"` retained (SK as client); `enabled: false` → `true`. Key finding: SK TcpProvider has no server mode. Canonical tree copy; deployed to lab Pi. Commits `13716ac`, `89e8ea0`. |
+| `deployment/v0.9.9.4/home/d3kos/.signalk/defaults.json` | **[NEW — S110-cont 2026-07-29]** BUG-40: stable vessel UUID `urn:mrn:signalk:uuid:af7d4be0-fb1d-4164-976d-de373c1c0331`. Key finding: SK v2.23 ignores `vessel.uuid` in `settings.json`; `defaults.json` is the correct mechanism. UUID confirmed stable across 2 restarts. Commit `13716ac`. |
+| `deployment/docs/atomic-specs/BUG-13.md` | **[NEW — S110-cont 2026-07-29]** Tier-1 (Opus 5) atomic spec. 3 changes (state vars, SOG handler replacement, openCtx live value), 5 TDD tests, §25.8 verify criteria. |
+| `deployment/docs/atomic-specs/BUG-32.md` | **[NEW — S110-cont 2026-07-29]** Tier-1 (Opus 5) atomic spec. Note: spec was written before `-T` flag discovery; contains topology correction note. Two files (rtl-ais.service + settings.json). |
+| `deployment/docs/atomic-specs/BUG-33.md` | **[NEW — S110-cont 2026-07-29]** Retroactive spec (§25 workflow not followed — deviation acknowledged). Credentials [REDACTED]. Documents config change applied directly on Pi. No test file (credentials file excluded from canonical tree). |
+| `tests/bug13-speed-gauge.test.cjs` | **[NEW — S110-cont 2026-07-29]** BUG-13 tests (5/5 pass after fix). Tests 2/3/4 fail before fix → pass after; tests 1/5 regression guards. Authored by Haiku (Tier 3). |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.19 — S110-cont 2026-07-29]** BUG-13 `[~]` FIXED lab; BUG-32 `[~]` FIXED lab; BUG-40 `[x]` FIXED+DEPLOYED lab; BUG-33 `[~]` CONFIG FIXED lab; BUG-21 `[~]` RESOLVED by BUG-33. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S110-cont 2026-07-29]** BUG-13/32/40/33/21 status and fix records added. BUG-32 topology correction note. BUG-33 retroactive spec pointer. BUG-21 S110 resolution note (pipeline IS built). |
+| `Helm-OS/wiki/log.md` | **[UPDATED — S110-cont 2026-07-29]** 4 entries: BUG-13 spec+fix; BUG-32+40 fix (SK TcpProvider contradiction flagged); Group C fix (BUG-21 "not built" contradiction flagged); BUG-33 retro spec. |
+
+**Pi changes not in canonical tree:**
+- `/home/d3kos/.signalk/plugin-config-data/signalk-forward-watch.json` — BUG-33: `detection_interval` 300→10, `audio_alarm` false→true (file contains credentials — never commit)
