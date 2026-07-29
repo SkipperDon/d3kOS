@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.4.1"
+  },
+  "dependencies": {
+    "jsdom": "^29.1.1"
+  }
+}

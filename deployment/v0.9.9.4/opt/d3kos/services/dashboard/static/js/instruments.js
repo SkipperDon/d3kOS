@@ -16,14 +16,15 @@ const SK_RECONNECT = 5000;  // WebSocket reconnect delay
 /* ── ALERT THRESHOLDS (spec Section 23) ── */
 const THR = {
   coolant: { adv: 88,   alrt: 98,   crit: 105  },  // °C, above = alarm
-  oil:     { adv: 30,   alrt: 25,   crit: 20   },  // PSI, below = alarm
+  oil:     { adv: 30,   alrt: 25,   crit: 4    },  // PSI, below = alarm; ≥4 psi min idle per MerCruiser 454
   bat:     { adv: 12.4, alrt: 12.0, crit: 11.5 },  // V, below = alarm
+  bat_hi:  { adv: 14.8, alrt: 15.2, crit: 15.6 },  // V, above = overcharge alarm; normal charging 13.9–14.7 V
   depth:   { adv: 3,    alrt: 2,    crit: 1    },  // m, below = alarm
   fuel:    { adv: 0.25, alrt: 0.15, crit: 0.10 },  // fraction, below = alarm
 };
 
 /* ── LIVE ENGINE DATA CACHE (populated by SK handlers, read by openDiag) ── */
-window._d3kEngData = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null };
+window._d3kEngData = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null, depth_m:null };
 
 /* ── CELL STATE ── */
 function _setCellState(id, state) {
@@ -128,6 +129,7 @@ function _renderDepth(v, source) {
   // belowKeel always wins; never let a transducer value overwrite it
   if (source === 'transducer' && _depthSource === 'keel') return;
   _depthSource = source;
+  window._d3kEngData.depth_m = parseFloat(v.toFixed(1));  // BUG-34
   _setVal('cellDepth', v.toFixed(1));
   const state = _evalBelow(v, THR.depth);
   _setCellState('cellDepth', state);

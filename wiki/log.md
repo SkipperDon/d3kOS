@@ -81,3 +81,13 @@
 - Wiki pages updated: `questions/2026-07-27-v0994-tier3-spec-questions.md` (Q29.1-3, Q30.1-2 added and answered)
 - Contradictions flagged: **Signal K's engine instance mapping is NOT configurable** — `skEngineId()` is a hardcoded ternary in `@signalk/n2k-signalk/dist/utils.js`, closing the open S107 question. It returns the numeric instance OR `'port'` depending on how canboat decodes the field, so the path is unstable and the fix must accept both. **Two of four engine paths have a wrong LEAF as well as a wrong instance** (`.temperature`, `.drive.trimState`). **`electrical.batteries.0.voltage` and `tanks.fuel.0.currentLevel` are CORRECT** — earlier suspicion closed. **BUG-30's framing was wrong:** SK already derives `belowKeel` from a negative PGN 128267 offset, so the primary fix is sounder configuration, not code.
 - Open questions: oil-pressure Pa vs kPa scaling (`pgns/127489.js` returns an unconverted value from a variable named `kpa`) — post-deploy check against the analogue gauge; `check-drift.sh` compares Pi-vs-manifest, not repo-vs-manifest, and reports NO DRIFT while the repo is 8 files ahead.
+## [2026-07-29] spec | S110 — BUG-41 atomic spec authored
+- Files changed: `deployment/docs/atomic-specs/BUG-41.md` (NEW)
+- Wiki pages updated: none
+- Contradictions flagged: none
+- Open questions: none — all information derived directly from the target file (`app.py` + `settings.html`). The spec is a one-file, three-test, straightforward pass.
+## [2026-07-29] spec | S110 — BUG-34 atomic spec authored
+- Files changed: `deployment/docs/atomic-specs/BUG-34.md` (NEW)
+- Wiki pages updated: none
+- Contradictions flagged: none
+- Open questions: none. Source authority: MerCruiser 454 SM AI doc (S106) for all threshold values.

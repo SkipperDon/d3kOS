@@ -72,7 +72,7 @@ async function openDiag(triggeredCell) {
     'Diagnose the most likely cause in 2-3 sentences. Give one immediate action.';
 
   try {
-    const r = await fetch('http://localhost:8097/gemini/chat', {
+    const r = await fetch('http://' + window.location.hostname + ':8097/gemini/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ message: prompt })
@@ -103,14 +103,23 @@ function _diagReadingsSummary(eng) {
 }
 
 function _diagBuildCards(eng) {
-  const thr = typeof THR !== 'undefined' ? THR : {coolant:{adv:88,alrt:98,crit:105},oil:{adv:30,alrt:25,crit:20},bat:{adv:12.4,alrt:12.0,crit:11.5}};
+  const thr = typeof THR !== 'undefined' ? THR : {
+    coolant: {adv:88,  alrt:98,  crit:105},
+    oil:     {adv:30,  alrt:25,  crit:4},
+    bat:     {adv:12.4,alrt:12.0,crit:11.5},
+    bat_hi:  {adv:14.8,alrt:15.2,crit:15.6},
+    depth:   {adv:3,   alrt:2,   crit:1},
+    fuel:    {adv:0.25,alrt:0.15,crit:0.10},
+  };
   function _stateAbove(v, t) { if (v==null) return null; if (v>=t.crit) return 'Critical'; if (v>=t.alrt) return 'Alert'; if (v>=t.adv) return 'Advisory'; return null; }
   function _stateBelow(v, t) { if (v==null) return null; if (v<=t.crit) return 'Critical'; if (v<=t.alrt) return 'Alert'; if (v<=t.adv) return 'Advisory'; return null; }
   const cards = [
     { lbl:'Coolant', val: eng.coolant_c!=null ? eng.coolant_c.toFixed(0)+'°C':'—', st: _stateAbove(eng.coolant_c, thr.coolant) },
     { lbl:'Oil Pressure', val: eng.oil_psi!=null ? eng.oil_psi+' PSI':'—', st: _stateBelow(eng.oil_psi, thr.oil) },
     { lbl:'RPM', val: eng.rpm!=null ? eng.rpm:'—', st: null },
-    { lbl:'Battery', val: eng.bat_v!=null ? eng.bat_v+'V':'—', st: _stateBelow(eng.bat_v, thr.bat) },
+    { lbl:'Battery', val: eng.bat_v!=null ? eng.bat_v+'V':'—', st: _stateBelow(eng.bat_v, thr.bat) || (thr.bat_hi ? _stateAbove(eng.bat_v, thr.bat_hi) : null) },
+    { lbl:'Fuel',    val: eng.fuel_pct!=null ? Math.round(eng.fuel_pct*100)+'%':'—', st: _stateBelow(eng.fuel_pct, thr.fuel) },
+    { lbl:'Depth',   val: eng.depth_m!=null  ? eng.depth_m.toFixed(1)+' m':'—',     st: _stateBelow(eng.depth_m,  thr.depth) },
   ];
   return cards.map(c => '<div class="dc' + (c.st ? ' bad' : '') + '"><div class="dc-lbl">' + c.lbl + '</div><div class="dc-val">' + c.val + '</div><div class="dc-note">' + (c.st ? '&#9888; ' + c.st : '&#10003; Normal') + '</div></div>').join('');
 }
@@ -120,7 +129,7 @@ function showCrit() {
   document.getElementById('critSc').classList.add('show');
   const ticker = document.getElementById('ticker');
   if (ticker) {
-    ticker.textContent = '⛔ CRITICAL — OIL PRESSURE 8 PSI — TAKE ACTION NOW';
+    ticker.textContent = '⛔ CRITICAL ENGINE ALARM — SHUT DOWN ENGINE IMMEDIATELY';
     ticker.classList.add('hot');
   }
 }
