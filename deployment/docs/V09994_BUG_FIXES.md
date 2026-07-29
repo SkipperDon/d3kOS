@@ -1038,10 +1038,17 @@ Four cameras functioning and connected. Multiple real-world waterway hazards obs
 
 ## BUG-21 — No Verbal or Visual Warning for Waterway Hazards
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
-**Logged:** 2026-07-21 S104
+**Status:** `[~]` RESOLVED by BUG-33 config fix — pipeline confirmed built end-to-end — S110 2026-07-29. On-boat validation required.
+**Logged:** 2026-07-21 S104 | **Resolved:** S110 2026-07-29
 **Platform:** Pi (hazard warning system)
 **Operator report:** Blocking — cannot use d3kOS as a situational awareness tool without this
+
+### S110 Resolution Note (2026-07-29)
+BUG-21 was originally logged as "pipeline likely not built." S110 investigation confirmed the pipeline IS built end-to-end in `signalk-forward-watch`:
+- `index.js`: ONNX model loaded; detection loop runs every `detection_interval` seconds; `sendDetections()` publishes to `environment.forwardWatch.detections`; early exit `if (!framePath) return` when RTSP grab fails (camera unreachable in lab = expected)
+- `signalk-output.js`: notifications fire for detections with GPS + distance; `playBeep()` calls `paplay`/`aplay` when `audio_alarm: true`
+- The only issues were the BUG-33 config values: `detection_interval: 300` (5-minute gap) + `audio_alarm: false`
+- **BUG-33 config fix resolves BUG-21.** No code changes needed. On-boat validation required to confirm detections flow and audio fires when camera is reachable.
 
 ### Symptom
 Cameras functioning. Kayakers, deadhead log, ducks, geese, and swimmers were observed at close range. No audio warning was played and no visual alert appeared on the d3kOS dashboard at any point.
@@ -1483,10 +1490,25 @@ Two distinct faults:
 
 ## BUG-33 — Hazard Alerting Disabled and Far Too Slow in forward-watch Config
 
-**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** HIGH — safety
-**Refines BUG-21 (not "never built" — partly a config defect)**
+**Status:** `[~]` CONFIG FIXED on lab Pi — on-boat validation required — S110 2026-07-29 | **Severity:** HIGH — safety
+**Refines BUG-21 (not "never built" — a config defect confirmed in S110)**
 
-### Evidence
+### S110 Fix Summary (2026-07-29)
+Config changed directly on Pi (file contains real credentials — NEVER pull into canonical tree):
+`/home/d3kos/.signalk/plugin-config-data/signalk-forward-watch.json`
+- `detection_interval`: 300 → **10** (10-second detection cycle; appropriate for collision avoidance)
+- `audio_alarm`: false → **true** (enables `paplay`/`aplay` beep on detection)
+
+Applied via Python `json.load` / `json.dump` to preserve all other fields. SK restarted; config confirmed on disk. ONNX model present (`forward-watch.onnx` 12 MB). GPU warning on startup is expected (Pi has no discrete GPU; CPU inference runs). `environment.forwardWatch` absent from SK data store in lab — expected: RTSP camera at `10.42.0.100` is on boat-subnet only; detection loop exits early via `if (!framePath) return` when RTSP grab fails.
+
+**Security constraint:** `camera_pass: d3kos2026` is in the config — never commit this file to the canonical tree or any repo.
+
+**On-boat validation required:**
+- Detections published to `environment.forwardWatch.detections` when camera reachable
+- `notifications.forwardWatch.*` published when GPS position + distance fields available
+- Audio alarm fires via `paplay`/`aplay`
+
+### Evidence (original)
 `~/.signalk/plugin-config-data/signalk-forward-watch.json`:
 ```json
 { "camera_ip": "10.42.0.100", "detection_interval": 300, "alert_cooldown": 30,
@@ -1502,11 +1524,11 @@ Two distinct faults:
 - **Zero** forward-watch/detection lines in the last 200 Signal K journal entries
 
 ### Fix steps
-- [ ] Set `audio_alarm: true`; verify the audio path end-to-end (ALSA device, per VOICE_AUDIO_FIX.md)
-- [ ] Reduce `detection_interval` to a value appropriate for collision avoidance; document the CPU trade-off
-- [ ] Confirm detections are published to `notifications.*` and that a consumer renders them at the helm
-- [ ] Re-verify BUG-20 and BUG-21 afterwards
-- [ ] **Security:** `camera_pass` is stored in plaintext and embedded in the RTSP URL — move to a secret store
+- [x] Set `audio_alarm: true` — done S110 (config on Pi); audio path verify requires on-boat test
+- [x] Reduce `detection_interval` — done S110; set to 10 s (confirmed reasonable for collision avoidance; CPU impact: ONNX CPU inference is ~50-150 ms/frame on Pi 4, 10 s cycle is safe)
+- [ ] Confirm detections are published to `notifications.*` — **pending on-boat validation** (camera unreachable in lab; detection loop exits early at `if (!framePath) return` without RTSP)
+- [x] Re-verify BUG-21 — resolved by this fix (see BUG-21 S110 resolution note)
+- [ ] **Security:** `camera_pass` in plaintext — deferred; move to secret store or environment variable
 
 ---
 

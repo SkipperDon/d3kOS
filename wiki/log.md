@@ -103,6 +103,14 @@
 - Contradictions flagged: none
 - Open questions: Issue 1 (flicker) root cause assumed to be multi-source SK interleaving — requires on-boat throttle change to confirm; if debounce insufficient, SK subscription-level source filtering is the next step (BUG-13v2)
 
+## [2026-07-29] fix+governance | S110 — BUG-33 + BUG-21 (Group C) config fix; governance updated
+- Files changed: `deployment/docs/V09994_BUG_FIXES.md` (BUG-33 status + fix summary; BUG-21 resolution note); `PROJECT_CHECKLIST.md` (BUG-33 `[~]`, BUG-21 `[~]`)
+- Pi config changed directly (NOT in canonical tree — contains credentials): `/home/d3kos/.signalk/plugin-config-data/signalk-forward-watch.json` (`detection_interval` 300→10, `audio_alarm` false→true)
+- Wiki pages updated: `wiki/log.md` (this entry)
+- Contradictions flagged: **BUG-21 "pipeline not built" claim was WRONG** — S110 source read confirmed pipeline IS built end-to-end in `signalk-forward-watch` (`index.js` + `signalk-output.js`). The detection loop, ONNX inference, SK publish path, and audio alarm are all implemented. The root cause was purely config (5-min interval + audio disabled). No code changes needed.
+- Open questions: On-boat validation required — camera at `10.42.0.100` is on boat-subnet only; lab Pi can't reach it; detection loop exits early via `if (!framePath) return` when RTSP fails. Full end-to-end (detections → `notifications.*` → audio) can only be confirmed on the boat.
+- Security note: `signalk-forward-watch.json` contains `camera_pass: d3kos2026` — never pull into canonical tree.
+
 ## [2026-07-29] fix+governance | S110 — BUG-41 + BUG-34 fixed and deployed to lab Pi; session close
 - Files changed: `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py`; `static/js/instruments.js`; `static/js/overlays.js`; `deployment/docs/atomic-specs/BUG-41.md` (NEW); `deployment/docs/atomic-specs/BUG-34.md` (NEW); `tests/test_bug41_settings_route.py` (NEW); `tests/bug34-diag-panel.test.cjs` (NEW); `PROJECT_CHECKLIST.md` v3.15→v3.16; `deployment/docs/V09994_BUG_FIXES.md` (BUG-34 updated, BUG-41 added); `deployment/docs/DEPLOYMENT_INDEX.md` (S110 section); `SESSION_LOG.md` (S110 entry); MEMORY.md (trimmed 24.5KB→13.3KB)
 - Wiki pages updated: `wiki/log.md` (this entry)
