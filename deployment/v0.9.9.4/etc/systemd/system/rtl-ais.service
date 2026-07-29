@@ -6,7 +6,7 @@
   [Service]
   Type=simple
   User=d3kos
-  ExecStart=/usr/bin/rtl_ais -h 127.0.0.1 -P 10108 -n
+  ExecStart=/usr/bin/rtl_ais -T -P 10108 -n
   Restart=always
   RestartSec=10
 

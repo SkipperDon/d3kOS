@@ -55,6 +55,7 @@
             "subOptions": {
               "validateChecksum": true,
               "type": "tcp",
+              "host": "127.0.0.1",
               "port": 10108,
               "sentenceEvent": "nmea0183"
             }
