@@ -1333,3 +1333,16 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 
 **Pi changes not in canonical tree:**
 - `/home/d3kos/.signalk/plugin-config-data/signalk-forward-watch.json` — BUG-33: `detection_interval` 300→10, `audio_alarm` false→true (file contains credentials — never commit)
+
+### S111 — 2026-07-29
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/runbooks/HAIKU_ONBOAT_VALIDATION.md` | NEW — Self-contained runbook for Haiku (Tier 3) to validate lab clone on boat Pi: identity regen, avnav fix, camera config, all S108–S110 fix validation, day observation, structured report template |
+| `PROJECT_CHECKLIST.md` | v3.19 — BUG-12 closed (superseded by BUG-32), BUG-22 closed (not a bug) |
+| `deployment/docs/V09994_BUG_FIXES.md` | BUG-12 and BUG-22 status lines updated to closed |
+
+**GitHub Issues — SkipperDon/d3kOS:**
+- 10 custom labels created (fixed-lab, needs-boat-validation, hardware-blocked, not-a-bug, superseded, Group-A through Group-E)
+- 33 issues created (BUG-08 through BUG-41, excluding BUG-10)
+- 5 issues closed (BUG-12 superseded, BUG-18 superseded, BUG-22 not-a-bug, BUG-25 not-a-bug, BUG-40 fully fixed)
