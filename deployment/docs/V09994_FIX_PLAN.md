@@ -526,6 +526,33 @@ Format:
 
 ---
 
+### [2026-07-31] S114 — BUG-46 FIXED + TDD-VERIFIED; BUG-48 LOGGED
+- Done: **BUG-46 fixed.** Signal K WebSocket now derives its host from the page
+  in all three places it appears:
+  `instruments.js:9`, `boatlog-engine.js:15`, `helm-assistant.html:299` →
+  `'ws://' + window.location.hostname + ':8099/signalk/v1/stream'`.
+  Deployed to lab Pi; served JS no longer contains `ws://localhost:8099`.
+- Verified TDD with `tests/bug46-remote-host-signalk.spec.ts`:
+  - Pre-fix, against the Pi's real IP with **no tunnel**: **3/3 FAIL** —
+    `#cellDepth .ic-v` `Received: "---"`.
+  - Post-fix: **3/3 PASS**.
+  - The test refuses to run against `localhost`, because a tunnel hides the bug.
+- **Confirmation that matters:** the BUG-43 suite now passes **8/8 against
+  `http://192.168.1.237:3000` with no SSH tunnel**. The tunnel workaround
+  recorded in the previous entry is obsolete.
+- **BUG-48 logged (HIGH, NOT fixed)** — the audit found ~17 MORE hardcoded
+  `localhost` URLs: Gemini, cameras, AvNav, ai-bridge, boatlog API, upload API,
+  manuals API, weather, anchor-watch SSE, and the AvNav iframe in index.html.
+  Gauges now work remotely; **everything else on the dashboard still does not.**
+  Recommend one shared `d3kUrl(port, path)` helper rather than another
+  file-at-a-time pass — this is the third time this class has resurfaced
+  (BUG-34 → BUG-46 → BUG-48).
+- Scope note: BUG-46 was logged naming 2 files; the audit found a third SK
+  socket in `helm-assistant.html`. Included, since it is the same defect. The
+  non-Signal-K URLs were deliberately NOT touched — logged as BUG-48 instead of
+  silently widening scope.
+- Not done: BUG-47 and BUG-48 not fixed. No Ollama work started.
+
 ### [2026-07-31] S114 — BUG-43 TDD-VERIFIED (8/8) + TWO NEW BUGS FOUND
 - Done: Browser deps resolved **without root** — `apt-get download` +
   `dpkg-deb -x` into `~/.local/pw-libs`, then

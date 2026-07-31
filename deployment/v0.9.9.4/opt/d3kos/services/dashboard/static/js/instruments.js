@@ -6,7 +6,10 @@
  */
 
 /* ── CONFIG ── */
-const SK_WS_URL    = 'ws://localhost:8099/signalk/v1/stream';
+// BUG-46: must be derived from the page host. 'localhost' is resolved by the
+// BROWSER, so on a phone/tablet/laptop it points at that device's loopback and
+// the socket never opens — every gauge stays "---". Same pattern as BUG-34.
+const SK_WS_URL    = 'ws://' + window.location.hostname + ':8099/signalk/v1/stream';
 const AVNAV_API    = 'http://localhost:8080/viewer/avnav_navi.php';
 const _BRIDGE_URL  = 'http://localhost:3002'; // prefixed to avoid conflict with ai-bridge.js
 const FUEL_CAP_L   = 150;   // TODO: expose in vessel.env when settings page covers it

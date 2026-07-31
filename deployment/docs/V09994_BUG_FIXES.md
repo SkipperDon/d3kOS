@@ -2163,7 +2163,10 @@ All six gauge cells are affected: cellCoolant (°C vs °F), cellOil (PSI vs kPa)
 
 ## BUG-46 — Dashboard Signal K WebSocket Hardcoded to `localhost`; No Live Data on Any Remote Browser
 
-**Status:** `[ ]` OPEN — logged S114 2026-07-31
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S114 2026-07-31** — TDD-verified (3/3 fail pre-fix, 3/3 pass post-fix, same test file, no tunnel) | **NOT on the boat Pi**
+**Test:** `tests/bug46-remote-host-signalk.spec.ts` — refuses to run against localhost, because a tunnel hides the defect
+**Fixed in:** `instruments.js:9`, `boatlog-engine.js:15`, `helm-assistant.html:299` — all three now use `'ws://' + window.location.hostname + ':8099/...'`
+**Side effect:** the BUG-43 suite now passes 8/8 against the Pi's real IP with no SSH tunnel.
 **Logged:** 2026-07-31 S114 (found while building the BUG-43 Playwright test)
 **Platform:** Pi (d3kOS dashboard — all gauges)
 **Severity:** HIGH — every gauge is dead on any device except the Pi's own screen
@@ -2261,3 +2264,63 @@ Audit the remaining `propulsion.0.*` handlers for the same gap.
 Identical class — dashboard subscribing to a path Signal K does not publish.
 BUG-29's alias fix was incomplete. This is the sixth instance of this defect
 class, which is why the contract test in Batch 3 of `V09994_FIX_PLAN.md` matters.
+
+---
+
+## BUG-48 — Every Other Service URL in the Dashboard Is Also Hardcoded to `localhost`
+
+**Status:** `[ ]` OPEN — logged S114 2026-07-31
+**Logged:** 2026-07-31 S114 (audit performed while fixing BUG-46)
+**Platform:** Pi (d3kOS dashboard — all non-Signal-K services)
+**Severity:** HIGH — most of the dashboard is non-functional on any remote device
+
+### Symptom
+BUG-46 fixed the Signal K WebSocket, so gauges now work from a phone or laptop.
+Everything else on the dashboard still does not: AI navigation, cameras, AvNav,
+anchor watch, document upload, manuals, and the weather panel all fail silently
+when the dashboard is opened from any device other than the Pi's own screen.
+
+### Root Cause
+The same defect as BUG-46, repeated across ~17 more call sites. `localhost` is
+resolved by the browser, so on a remote device it points at that device's own
+loopback.
+
+| File | Line | Hardcoded URL | Service |
+|---|---|---|---|
+| `static/js/helm.js` | 15 | `http://localhost:3001/ask` | Gemini |
+| `static/js/instruments.js` | 10 | `http://localhost:8080/viewer/avnav_navi.php` | AvNav |
+| `static/js/instruments.js` | 11 | `http://localhost:3002` | ai-bridge |
+| `static/js/instruments.js` | 513 | `http://localhost/weather.html` | weather |
+| `static/js/boatlog-engine.js` | 16 | `http://localhost:8095` | boatlog API |
+| `static/js/cameras.js` | 7 | `http://localhost:8084` | cameras |
+| `static/js/ai-bridge.js` | 7 | `http://localhost:3002` | ai-bridge |
+| `static/js/panel-toggle.js` | 49, 116, 124 | `http://localhost:8080`, `:<port>`, `:8084` | AvNav / cameras |
+| `templates/anchor-watch.html` | 203, 399 | `http://localhost:3002` + SSE stream | ai-bridge |
+| `templates/ai-navigation.html` | 233 | `http://localhost:3001/ask` | Gemini |
+| `templates/upload-documents.html` | 187 | `http://localhost:8081/upload/manual` | upload API |
+| `templates/manage-documents.html` | 172, 246 | `http://localhost:8083/manuals/...` | manuals API |
+| `templates/helm-assistant.html` | 645 | `http://localhost:3001/ask` | Gemini |
+| `templates/marine-vision.html` | 476 | `http://localhost:8084` | cameras |
+| `templates/index.html` | 191 | `src="http://localhost:{{ avnav_port }}"` | AvNav iframe |
+
+### Fix (proposed — NOT yet applied)
+Apply the established portable pattern used by BUG-34 and BUG-46:
+```js
+'http://' + window.location.hostname + ':<port>/...'
+```
+Better: introduce one shared helper (e.g. `d3kUrl(port, path)`) in a single file
+and route every call site through it, so this class of defect cannot recur
+one-file-at-a-time. That is a larger refactor and should be specced properly.
+
+`templates/index.html:191` is server-rendered Jinja and may be fixable more
+cleanly at the template layer — confirm before changing.
+
+### Why this matters beyond the dashboard
+This is very likely a blocker for the v0.9.4 PWA. A phone app that can render
+gauges but cannot reach cameras, AI navigation, anchor watch or AvNav is not a
+usable product.
+
+### Relation to BUG-34 and BUG-46
+Third and largest instance of the same class. BUG-34 fixed the Gemini URL in
+`overlays.js`; BUG-46 fixed the Signal K socket. Neither swept the codebase,
+which is why this kept resurfacing.
