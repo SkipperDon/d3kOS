@@ -283,6 +283,11 @@ SK_HANDLERS['propulsion.port.temperature'] = SK_HANDLERS['propulsion.0.coolantTe
 SK_HANDLERS['propulsion.0.temperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
 SK_HANDLERS['propulsion.port.drive.trimState'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
 SK_HANDLERS['propulsion.0.drive.trimState'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
+// BUG-47: the BUG-29 block above missed these two. Signal K maps N2K PGN 127489
+// to propulsion.<instance>.coolantTemperature — with a 'port' instance that path
+// had no handler, so coolant deltas were silently discarded.
+SK_HANDLERS['propulsion.port.coolantTemperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
+SK_HANDLERS['propulsion.port.trimTabPosition'] = SK_HANDLERS['propulsion.0.trimTabPosition'];
 
 window.SK_HANDLERS = SK_HANDLERS;  // test seam — harmless reference
 

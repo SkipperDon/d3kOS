@@ -2219,7 +2219,11 @@ The Signal K socket was missed.
 
 ## BUG-47 — No Handler for `propulsion.port.coolantTemperature`; Coolant Gauge May Never Populate
 
-**Status:** `[ ]` OPEN — logged S114 2026-07-31
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S114 2026-07-31** — TDD-verified (3/3 fail pre-fix, 3/3 pass post-fix) | **NOT on the boat Pi**
+**Test:** `tests/bug47-propulsion-alias-gap.spec.ts` — computes the required aliases from the live
+page, so a NEW propulsion.0.* handler added without its port alias also fails.
+**Audit found TWO gaps, not one:** `propulsion.port.coolantTemperature` AND
+`propulsion.port.trimTabPosition`. Both aliased.
 **Logged:** 2026-07-31 S114 (found while building the BUG-43 Playwright test)
 **Platform:** Pi (d3kOS dashboard — coolant gauge)
 **Severity:** MEDIUM-HIGH — silent gauge failure, same class as BUG-29
