@@ -526,6 +526,28 @@ Format:
 
 ---
 
+### [2026-07-31] S114 — BUG-47 FIXED; BUG-48 SPEC WRITTEN FOR TIER 3
+- Done: **BUG-47 fixed.** Audit found TWO missing aliases, not the one logged:
+  `propulsion.port.coolantTemperature` AND `propulsion.port.trimTabPosition`.
+  Both added to the BUG-29 alias block. Deployed to lab Pi. Commit `c8ef88a`.
+- Verified TDD `tests/bug47-propulsion-alias-gap.spec.ts`: 3/3 FAIL pre-fix
+  (test names the missing aliases; trim read `---`), 3/3 PASS post-fix.
+  The alias test computes what is required from the live page, so a NEW
+  `propulsion.0.*` handler added without its port alias fails the suite.
+- **Full regression: 14/14** across BUG-43 (8) + BUG-46 (3) + BUG-47 (3),
+  run against the Pi's real IP with no SSH tunnel.
+- Done: **BUG-48 atomic spec written** — `atomic-specs/BUG-48.md` plus
+  `atomic-specs/BUG-48-TIER3-DISPATCH.md` (the verbatim Tier 3 prompt).
+  All 18 call-site anchors verified against the repo after the BUG-46/47 commits.
+  Spec includes the guard test that makes this defect class non-recurring.
+- **Why only one spec was written:** an atomic spec must state the exact fix.
+  BUG-48 is the only remaining item that is fully diagnosed. BUG-08/09/16/18/19/
+  20/23a/24 are all `OPEN` with root cause unknown — writing specs for those
+  would be Tier 1 guessing and Tier 3 faithfully implementing the guess.
+  **Diagnosis must come before specs for those eight.**
+- Not done: BUG-48 not implemented (dispatched to Tier 3, not yet run).
+  No diagnosis started on the remaining eight.
+
 ### [2026-07-31] S114 — BUG-46 FIXED + TDD-VERIFIED; BUG-48 LOGGED
 - Done: **BUG-46 fixed.** Signal K WebSocket now derives its host from the page
   in all three places it appears:
