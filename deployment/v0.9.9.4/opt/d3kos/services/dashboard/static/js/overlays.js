@@ -132,6 +132,12 @@ function showCrit() {
     ticker.textContent = '⛔ CRITICAL ENGINE ALARM — SHUT DOWN ENGINE IMMEDIATELY';
     ticker.classList.add('hot');
   }
+  // BUG-44: trigger voice alarm via ai-bridge TTS
+  fetch('http://' + window.location.hostname + ':3002/webhook/alert', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ message: 'Critical engine alarm. Oil pressure critically low. Shut down engine immediately.', severity: 'critical' })
+  }).catch(function() {});  // fire-and-forget; TTS failure does not block UI
 }
 
 function closeCrit() {
@@ -141,6 +147,8 @@ function closeCrit() {
     ticker.classList.remove('hot');
     ticker.textContent = TICKS[0];
   }
+  // BUG-42: set latch so showCrit() cannot re-fire until oil recovers above critical
+  if (typeof window._oilCritAcknowledged !== 'undefined') window._oilCritAcknowledged = true;
 }
 
 /* ── POSITION REPORT ── */

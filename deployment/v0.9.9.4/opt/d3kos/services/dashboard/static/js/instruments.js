@@ -126,6 +126,8 @@ let _lastSogKts = null;
 let _sogPending    = null;   // BUG-13: coalesced value waiting to display
 let _sogDisplayTimer = null; // BUG-13: 250 ms coalesce timer handle
 let _depthSource = null;  // 'keel' | 'transducer' | null — BUG-30
+let _skFirstConnectAt = null;  // BUG-45: timestamp of WebSocket onopen, gates 30s startup debounce
+window._oilCritAcknowledged = false;  // BUG-42: set true by closeCrit(), prevents re-fire
 
 function _renderDepth(v, source) {
   // belowKeel always wins; never let a transducer value overwrite it
@@ -207,11 +209,18 @@ const SK_HANDLERS = {
     _setUnit('cellOil', state ? 'PSI · ' + state : 'PSI · normal');
     if (state === 'crit') {
       _setAlertTicker('⛔ CRITICAL — OIL PRESSURE ' + psi + ' PSI — TAKE ACTION NOW');
-      if (typeof showCrit === 'function') showCrit();
+      // BUG-45: only fire after 30s boot debounce (startup spike from Pangoo)
+      // BUG-42: only fire if operator has not already dismissed this alarm
+      const debounced = _skFirstConnectAt && (Date.now() - _skFirstConnectAt >= 30000);
+      if (debounced && !window._oilCritAcknowledged) {
+        if (typeof showCrit === 'function') showCrit();
+      }
     } else if (state) {
       _setAlertTicker('⚠ ' + state.toUpperCase() + ' — OIL PRESSURE ' + psi + ' PSI');
+      window._oilCritAcknowledged = false;  // reset latch when pressure recovers to advisory
     } else {
       _clearAlertTicker('OIL PRESSURE');
+      window._oilCritAcknowledged = false;  // reset latch when pressure returns to normal
     }
   },
 
@@ -316,6 +325,8 @@ function _connectSK() {
 
   _skWs.onopen = () => {
     clearTimeout(_skReconnectTimer);
+    if (!_skFirstConnectAt) _skFirstConnectAt = Date.now();  // BUG-45: record first connect only
+    window._oilCritAcknowledged = false;  // BUG-42: reset latch on reconnect
     if (_skOfflineMsg) {
       _skOfflineMsg = false;
       const el = document.getElementById('ticker');
