@@ -128,17 +128,22 @@ let _sogDisplayTimer = null; // BUG-13: 250 ms coalesce timer handle
 let _depthSource = null;  // 'keel' | 'transducer' | null — BUG-30
 let _skFirstConnectAt = null;  // BUG-45: timestamp of WebSocket onopen, gates 30s startup debounce
 window._oilCritAcknowledged = false;  // BUG-42: set true by closeCrit(), prevents re-fire
+let _unitPrefs = { temp: 'F', depth: 'ft' };  // BUG-43: default imperial — loaded from localStorage in _init()
 
 function _renderDepth(v, source) {
   // belowKeel always wins; never let a transducer value overwrite it
   if (source === 'transducer' && _depthSource === 'keel') return;
   _depthSource = source;
-  window._d3kEngData.depth_m = parseFloat(v.toFixed(1));  // BUG-34
-  _setVal('cellDepth', v.toFixed(1));
-  const state = _evalBelow(v, THR.depth);
+  window._d3kEngData.depth_m = parseFloat(v.toFixed(1));  // BUG-34: always store metres
+  // BUG-43: display in user's preferred unit
+  const dispVal  = _unitPrefs.depth === 'ft' ? (v * 3.28084).toFixed(1) : v.toFixed(1);
+  const dispUnit = _unitPrefs.depth === 'ft'
+    ? (source === 'keel' ? 'feet' : 'ft · UNDER TRANSDUCER')
+    : (source === 'keel' ? 'metres' : 'm · UNDER TRANSDUCER');
+  _setVal('cellDepth', dispVal);
+  const state = _evalBelow(v, THR.depth);  // threshold in metres always
   _setCellState('cellDepth', state);
-  const unit = source === 'keel' ? 'metres' : 'm · UNDER TRANSDUCER';
-  _setUnit('cellDepth', state ? unit + ' · ' + state : unit);
+  _setUnit('cellDepth', state ? dispUnit + ' · ' + state : dispUnit);
 }
 
 const SK_HANDLERS = {
@@ -183,18 +188,23 @@ const SK_HANDLERS = {
   'environment.depth.belowTransducer': (v) => _renderDepth(v, 'transducer'),
 
   'propulsion.0.coolantTemperature': (v) => {
-    const c = v - 273.15, disp = c.toFixed(0);
+    const c = v - 273.15;
     window._d3kEngData.coolant_c = c;
+    // BUG-43: apply user unit preference
+    const disp = _unitPrefs.temp === 'F'
+      ? Math.round(c * 9 / 5 + 32).toString()
+      : c.toFixed(0);
+    const unitSuffix = _unitPrefs.temp === 'F' ? '°F' : '°C';
     _setVal('cellCoolant', disp + '°');
-    const state = _evalAbove(c, THR.coolant);
+    const state = _evalAbove(c, THR.coolant);  // threshold always in °C
     _setCellState('cellCoolant', state);
-    _setUnit('cellCoolant', state ? 'C · ' + state + ' ↑ tap for AI' : 'C · normal');
+    _setUnit('cellCoolant', state ? unitSuffix + ' · ' + state + ' ↑ tap for AI' : unitSuffix + ' · normal');
     if (state === 'crit') {
-      _setAlertTicker('⛔ CRITICAL — COOLANT ' + disp + '°C — REDUCE RPM NOW');
+      _setAlertTicker('⛔ CRITICAL — COOLANT ' + disp + unitSuffix + ' — REDUCE RPM NOW');
     } else if (state === 'alrt') {
-      _setAlertTicker('⚠ ALERT — COOLANT ' + disp + '°C — REDUCE SPEED');
+      _setAlertTicker('⚠ ALERT — COOLANT ' + disp + unitSuffix + ' — REDUCE SPEED');
     } else if (state === 'adv') {
-      _setAlertTicker('⚠ ADVISORY — COOLANT ' + disp + '°C — MONITOR');
+      _setAlertTicker('⚠ ADVISORY — COOLANT ' + disp + unitSuffix + ' — MONITOR');
     } else {
       _clearAlertTicker('COOLANT');
     }
@@ -582,6 +592,12 @@ function hideCtx() { document.getElementById('ctx').classList.remove('show'); }
 
 /* ── INIT ── */
 function _init() {
+  // BUG-43: load persisted unit preferences from settings page
+  try {
+    const saved = JSON.parse(localStorage.getItem('d3kUnitPrefs') || '{}');
+    if (saved.temp  === 'C' || saved.temp  === 'F')  _unitPrefs.temp  = saved.temp;
+    if (saved.depth === 'm' || saved.depth === 'ft') _unitPrefs.depth = saved.depth;
+  } catch (_) {}
   showRow('both');
   _markAllDash();       // clear demo values — SK will fill in once connected
   _connectSK();

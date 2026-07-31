@@ -142,7 +142,7 @@
           </div>
         </div>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="showToast('&#10003; Display settings saved')">&#128190; Save Display Settings</button>
+          <button class="btn btn-primary" onclick="saveDisplaySettings()">&#128190; Save Display Settings</button>
         </div>
       </div>
 
@@ -1031,6 +1031,22 @@
       .then(r => r.json())
       .then(d => showToast(d.ok ? '\u2713 Vessel settings saved' : '\u2717 ' + d.error))
       .catch(() => showToast('\u2717 Save failed \u2014 check connection'));
+    }
+
+    function saveDisplaySettings() {
+      // BUG-43: Read the Measurement System toggle \u2014 this is the primary unit control
+      // Unchecked = Imperial (\u00b0F, feet), Checked = Metric (\u00b0C, metres)
+      const isMetric = document.getElementById('met-tog').checked;
+      const prefs = {
+        temp:  isMetric ? 'C' : 'F',
+        depth: isMetric ? 'm' : 'ft'
+      };
+      try {
+        localStorage.setItem('d3kUnitPrefs', JSON.stringify(prefs));
+        showToast('\u2713 Display settings saved \u2014 reload dashboard to apply');
+      } catch (_) {
+        showToast('\u2717 Could not save settings \u2014 storage unavailable');
+      }
     }
 
   </script>

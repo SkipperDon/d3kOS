@@ -2112,7 +2112,8 @@ The connection is simply never made. `showCrit()` does not POST to `/webhook/ale
 
 ## BUG-43 — Settings Unit Selection (Imperial/Metric) Has No Effect on Dashboard Gauges
 
-**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat, operator set imperial, gauges showed metric
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S114 2026-07-31** — TDD-verified with Playwright (8/8 pass post-fix, 7/8 fail pre-fix against the same test file) | **Reported:** On-boat, operator set imperial, gauges showed metric | **NOT on the boat Pi**
+**Test:** `tests/bug43-unit-persistence.spec.ts` — asserts rendered DOM, incl. that depth/coolant thresholds still evaluate raw SI while displaying imperial
 **Severity:** MEDIUM (operator expectation violated — settings page implies unit control that does not exist)
 
 ### Symptom
@@ -2157,3 +2158,106 @@ All six gauge cells are affected: cellCoolant (°C vs °F), cellOil (PSI vs kPa)
 ### Impact
 - Non-blocking for navigation but creates operator confusion
 - Discovered during on-boat S112 validation session 2026-07-31
+
+---
+
+## BUG-46 — Dashboard Signal K WebSocket Hardcoded to `localhost`; No Live Data on Any Remote Browser
+
+**Status:** `[ ]` OPEN — logged S114 2026-07-31
+**Logged:** 2026-07-31 S114 (found while building the BUG-43 Playwright test)
+**Platform:** Pi (d3kOS dashboard — all gauges)
+**Severity:** HIGH — every gauge is dead on any device except the Pi's own screen
+
+### Symptom
+Opening the d3kOS dashboard from a phone, tablet, or laptop shows every instrument
+cell stuck at `---` forever. No engine data, no depth, no speed, no position.
+The page loads and renders; only live data is missing. On the Pi's own touchscreen
+everything works, which is why this was never noticed.
+
+### Root Cause
+```
+deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/instruments.js:9
+const SK_WS_URL = 'ws://localhost:8099/signalk/v1/stream';
+```
+`localhost` is resolved by the **browser**, not the server. On a remote device it
+points at that device's own loopback, where no Signal K server exists. The socket
+never opens, `_markAllDash()` leaves every cell dashed, and nothing recovers.
+
+Same defect in a second file:
+```
+static/js/boatlog-engine.js:15
+var SK_URL = 'ws://localhost:8099/signalk/v1/stream';
+```
+
+### Evidence (S114)
+Playwright loaded `http://192.168.1.237:3000` from the workstation. Deltas were
+injected into the Pi's Signal K and confirmed present via the REST API, but every
+dashboard cell stayed `---`. Injection was proven working; the dashboard simply
+was not connected to Signal K.
+
+### Fix (proposed — NOT yet applied)
+Derive the host from the page, as was already done for the Gemini URL in BUG-34:
+```js
+const SK_WS_URL = 'ws://' + window.location.hostname + ':8099/signalk/v1/stream';
+```
+Apply the same change to `boatlog-engine.js`.
+
+### Impact on other work
+- This is almost certainly a blocker for the v0.9.4 PWA — the phone app cannot
+  show live instruments while this exists.
+- Any test harness driving the dashboard from another machine needs an SSH tunnel
+  for port 8099 until this is fixed.
+
+### Relation to BUG-34
+Same class of defect. BUG-34 fixed a hardcoded Gemini URL by making it portable.
+The Signal K socket was missed.
+
+---
+
+## BUG-47 — No Handler for `propulsion.port.coolantTemperature`; Coolant Gauge May Never Populate
+
+**Status:** `[ ]` OPEN — logged S114 2026-07-31
+**Logged:** 2026-07-31 S114 (found while building the BUG-43 Playwright test)
+**Platform:** Pi (d3kOS dashboard — coolant gauge)
+**Severity:** MEDIUM-HIGH — silent gauge failure, same class as BUG-29
+
+### Symptom
+The coolant temperature gauge may never display a value even when Signal K is
+publishing coolant data, because the dashboard does not subscribe to the path
+Signal K actually produces.
+
+### Root Cause
+`instruments.js` defines a handler for `propulsion.0.coolantTemperature` and the
+BUG-29 alias block adds:
+```
+propulsion.port.revolutions      -> propulsion.0.revolutions
+propulsion.port.oilPressure      -> propulsion.0.oilPressure
+propulsion.port.temperature      -> propulsion.0.coolantTemperature
+propulsion.port.drive.trimState  -> propulsion.0.trimTabPosition
+```
+**`propulsion.port.coolantTemperature` is absent from that list.** Signal K maps
+NMEA 2000 PGN 127489 (Engine Parameters, Dynamic) to
+`propulsion.<instance>.coolantTemperature` — so with a `port` instance the
+published path has no handler and the delta is silently discarded.
+
+### Evidence (S114)
+Injecting `propulsion.port.coolantTemperature` produced no DOM change. Injecting
+`propulsion.port.temperature` (the alias that exists) worked.
+
+### Why this was not caught on the boat
+The CX5106 has been absent from the N2K bus since S112, so no coolant data has
+ever reached Signal K on the boat. The gauge appeared dead for a hardware reason,
+masking this software defect underneath it. **It will still be dead after the
+CX5106 is restored unless this is fixed.**
+
+### Fix (proposed — NOT yet applied)
+Add to the alias block in `instruments.js`:
+```js
+SK_HANDLERS['propulsion.port.coolantTemperature'] = SK_HANDLERS['propulsion.0.coolantTemperature'];
+```
+Audit the remaining `propulsion.0.*` handlers for the same gap.
+
+### Relation to BUG-29
+Identical class — dashboard subscribing to a path Signal K does not publish.
+BUG-29's alias fix was incomplete. This is the sixth instance of this defect
+class, which is why the contract test in Batch 3 of `V09994_FIX_PLAN.md` matters.
