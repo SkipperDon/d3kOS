@@ -896,7 +896,7 @@ The current `openDiag()` sends a generic Gemini prompt with the readings. It doe
 
 ## BUG-17 — Battery Voltage Not Displaying on d3kOS Dashboard
 
-**Status:** `[ ]` OPEN — logged S101 2026-07-20
+**Status:** `[~]` UPDATED S113 2026-07-31 — cell removed from dashboard; dedicated hardware required
 **Logged:** 2026-07-20 S101 (on-boat, Monterey 265 SEL)
 **Platform:** Pi (d3kOS dashboard — battery/electrical display)
 
@@ -909,26 +909,44 @@ curl -s http://localhost:8099/signalk/v1/api/vessels/self/electrical/
 → Empty response (no JSON data)
 ```
 
-### Root Cause
-No battery voltage source present on the NMEA 2000 bus. The CX5106 is the intended source for battery/alternator voltage via PGN 127489 (Engine Parameters Dynamic). CX5106 is on the bus (heartbeat confirmed) but not yet broadcasting data PGNs — see BUG-14.
+### Root Cause — FULLY INVESTIGATED S113 2026-07-31
 
-### Two-part dependency
-1. **BUG-14 must be resolved first** — CX5106 must be continuously broadcasting before any PGN 127489 data appears
-2. **Battery input wire** — CX5106 may require a separate battery voltage input wire connected to its BAT+ terminal in addition to the sender wires. This has not been verified on Don's installation.
+Three sources investigated and eliminated:
 
-### Signal K Path
+**1. CX5106 — CONFIRMED CANNOT provide battery voltage**
+The CX5106 reads resistance-based analog senders only (0–190 Ω / 240–33 Ω ranges).
+Battery voltage is a direct DC voltage measurement — the device has no voltage input terminal.
+The prior hypothesis about a "BAT+ terminal" was incorrect.
+Source: iMarinex CX5106 product specification (confirmed S113 via WebSearch).
+
+**2. signalk-rpi-monitor — CONFIRMED does not publish electrical data**
+Plugin is running and publishing: CPU/GPU temperature, CPU utilisation, memory usage, SD card usage.
+No power supply or battery voltage data. Pi 5 hardware (hwmon1/rpi_volt) exposes only an
+under-voltage alarm flag (0/1) — not an actual voltage measurement.
+Confirmed S113 via live SK API query: `environment.rpi.*` tree contains no electrical data.
+
+**3. Garmin chartplotter — NOT an acceptable solution**
+Garmin can publish PGN 127508 (Battery Status) but requires the chartplotter to be powered on.
+Independent battery monitoring when Garmin is off is a hard requirement.
+
+### Hardware Required
+Dedicated battery monitor needed. Two viable options:
+- **Victron SmartShunt 500A** + VE.Direct USB cable → SK plugin `signalk-victron-ble` (~$130 CAD)
+- **INA219 I2C module** → wired to Pi GPIO + SK plugin `signalk-raspberry-pi-ina219` (~$8 CAD)
+Both provide voltage + current at all times (engine on or off).
+
+### Interim Action — S113 2026-07-31
+Battery cell (`cellBat`) removed from dashboard `index.html`. The cell was showing `—`
+permanently with no data source. All JS handlers preserved — cell will be restored once
+hardware is in place.
+
+### Signal K Path (when hardware is installed)
 ```
-/vessels/self/electrical/batteries/0/voltage
+electrical.batteries.0.voltage   ← existing handler in instruments.js, correct
 ```
-
-### Investigation Required
-- [ ] Confirm CX5106 has a battery voltage input terminal (check CX5106 wiring diagram)
-- [ ] Confirm which wire on Don's boat connects to CX5106 BAT+ terminal (if it exists)
-- [ ] After BUG-14 resolved: verify PGN 127489 appears in candump with battery voltage field populated
-- [ ] Verify d3kOS dashboard battery tile reads from correct Signal K path
 
 ### Relation to BUG-14
-Cannot be fixed independently — resolving BUG-14 (CX5106 continuous data) is a prerequisite.
+Independent of BUG-14 — even when CX5106 is fully operational, it cannot provide battery voltage.
 
 ---
 
