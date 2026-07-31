@@ -1827,5 +1827,315 @@ UUID before and after — barred by the no-Pi-changes hold in force at S108.`
 - `tier_num`: reads `license.json` → `lic.get('tier', 'T0')` → `int(str(t).replace('T',''))`. Default on exception: `0`.
 - `device_token`: reads `device-token.json` → `.get('device_token', '')`. Default on exception: `''`.
 - No other variables added or removed. `settings.html` untouched.
+
+---
+
+## BUG-42 — Oil Pressure Alert Cannot Be Dismissed After Engine Shutdown
+
+**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat, during docked testing
+**Severity:** MEDIUM (alert fires correctly but blocks UI; operator cannot continue using dashboard)
+
+### Symptom
+1. Engine running — no alert
+2. Operator shuts off engine
+3. Oil pressure drops → dashboard alert triggers ✅ **This is correct behavior**
+4. Alert displays on screen **BUT operator cannot dismiss it**
+5. Alert persists — operator unable to interact with dashboard
+
+### When It Happens
+- Occurs during normal operation when engine shuts down
+- Alarm notification appears (visual/audio or both)
+- Operator seeks to acknowledge/dismiss the alert but no UI control exists or is non-functional
+
+### Root Cause Candidates (to investigate)
+1. **Notification handler without dismiss logic** — `overlays.js` or `instruments.js` triggers alarm but does not wire up an acknowledge/dismiss button
+2. **UI control missing** — Alert displays but no "OK", "Dismiss", or "Acknowledge" button on the UI
+3. **Button exists but not wired** — HTML button present but not connected to a handler that clears the alarm state
+4. **Alarm state persists in memory** — Even if operator taps the control, the in-memory `_d3kEngData.oil_crit` or notification state does not get reset
+
+### Files to Investigate
+- `instruments.js` — oil pressure handler and alarm state management
+- `overlays.js` — alert rendering and dismissal
+- `dashboard.html` or `index.html` — UI structure for alarm display
+- Notification state in `app.py` or Flask backend (if persisted server-side)
+
+### Reproduction Steps (verify next time on boat)
+1. Start engine (oil pressure should show nominal: 30-50 PSI or similar)
+2. Shut off engine
+3. Wait for oil pressure alert to appear
+4. Attempt to dismiss: look for button/tap/gesture to clear
+5. Note whether alert can be dismissed
+6. If not, check browser console for JS errors (`F12` → Console tab)
+
+### Expected Behavior
+- Alert triggers when oil pressure drops below threshold ✅ (working)
+- Alert displays prominently (visual + optional audio) ✅ (working)
+- Operator can dismiss/acknowledge alert with single tap or gesture ❌ (broken)
+- Alert clears from screen after dismiss ❌ (broken)
+- Dashboard returns to normal interactive state ❌ (blocked by stuck alert)
+
+### Impact on Validation
+- This bug was discovered **during on-boat validation of BUG-29/30/32**
+- Does not block those validations but indicates incomplete alert handling system
+- Related to M14 gauge tap functionality (see BUG-34 diagnostic panel)
+- May affect other critical alerts (temperature, fuel, battery) when those sources become available
+
+### Root Cause (S112 2026-07-31 — Diagnosed via Signal K API + code inspection)
+
+**Signal K Layer:** ✅ WORKING CORRECTLY
+- Oil pressure notification exists: `notifications.propulsion.port.lowOilPressure`
+- Status: `canAcknowledge: true`, `canClear: false` (correct for engine alarms)
+- Notification system properly configured to accept acknowledgment
+
+**Dashboard Layer:** ❌ BROKEN — No Dismissal Mechanism
+
+```
+showCrit() [overlays.js:128]
+├─ document.getElementById('critSc').classList.add('show')
+├─ ticker.textContent = '⛔ CRITICAL ENGINE ALARM — SHUT DOWN ENGINE IMMEDIATELY'
+├─ ticker.classList.add('hot')
+└─ ❌ NO CODE TO HIDE IT — alert is STUCK
+
+closeCrit() [overlays.js:137]
+├─ document.getElementById('critSc').classList.remove('show')  ✅ Would fix it
+├─ ticker.classList.remove('hot')
+└─ BUT closeCrit() ONLY CALLED FROM:
+   ├─ nav.js:165 → closeMenu() chain (not from alert dismiss)
+   ├─ nav.js:158 → if (e.key === 'c') (user presses 'c' key)
+   └─ ❌ NO UI BUTTON WIRED TO closeCrit()
+   └─ ❌ NO AUTO-DISMISS WHEN OIL PRESSURE RECOVERS
+```
+
+### Call Chain Analysis
+
+**When alert fires:**
+1. Engine shuts off → oil pressure drops to 0 Pa
+2. `instruments.js:210` detects critical condition
+3. Calls: `if (typeof showCrit === 'function') showCrit();`
+4. `showCrit()` adds 'show' class to `#critSc` overlay
+5. Overlay appears on screen with "⛔ CRITICAL ENGINE ALARM"
+
+**When alert should dismiss:**
+- ❌ NOT when user taps screen (no button)
+- ❌ NOT when oil pressure recovers (no listener)
+- ✅ ONLY if user presses Escape key or closes a menu
+- User is **stuck** until accidental menu close
+
+### Files Involved
+
+| File | Function | Line | Issue |
+|------|----------|------|-------|
+| `overlays.js` | `showCrit()` | 128-135 | Shows alert, never dismisses |
+| `overlays.js` | `closeCrit()` | 137-145 | Exists but unreachable from UI |
+| `instruments.js` | Oil pressure handler | 210 | Calls `showCrit()` correctly |
+| `nav.js` | Menu close chain | 165 | Only place `closeCrit()` is called |
+| `index.html` | Critical screen overlay | ? | `<div id="critSc">` — no dismiss button |
+
+### Evidence (S112 Signal K Query)
+
+```json
+{
+  "propulsion": {
+    "port": {
+      "lowOilPressure": {
+        "state": "normal",
+        "status": {
+          "canAcknowledge": true,
+          "canClear": false,
+          "acknowledged": false
+        }
+      }
+    }
+  }
+}
+```
+
+**What this means:** 
+- Signal K is set up correctly to receive acknowledgments
+- Dashboard is not sending acknowledgments
+- Dashboard is not even providing a UI to do so
+
+### Fix Options
+
+**Option A (Recommended):** Add dismiss button
+1. Add dismiss/acknowledge button to `#critSc` overlay in `index.html`
+2. Wire it to call `closeCrit()` on click
+3. Also call `closeCrit()` when oil pressure recovers (add listener to instruments.js:210)
+
+**Option B:** Auto-dismiss on recovery
+1. After calling `showCrit()`, add a listener for oil pressure to recover
+2. When oil pressure > threshold, call `closeCrit()` automatically
+3. Avoids need for manual button
+
+**Option C:** Both
+1. Add manual dismiss button (Option A)
+2. Add auto-dismiss on recovery (Option B)
+3. Gives operator both choices
+
+### Severity Assessment
+- **User Impact:** HIGH — alert blocks dashboard use until operator accidentally dismisses it
+- **Safety Impact:** MEDIUM — operator may shut down engine correctly, but alert prevents further navigation
+- **Frequency:** Always occurs when engine shuts down (oil pressure will drop)
+- **Workaround:** Press Escape key or close a menu to dismiss
+
+### Next Steps
+1. Implement one of the fix options above (recommend Option C)
+2. Add TDD test: engine shutdown → alert shows → dismiss button works → alert hides
+3. Test on boat with engine running → shut down → verify single-tap dismissal
+4. Confirm auto-dismiss works when operator restarts engine (oil pressure recovers)
+5. Verify other critical alerts (temperature, fuel) don't have same issue
 - Atomic spec: `deployment/docs/atomic-specs/BUG-41.md`. Tests: `tests/test_bug41_settings_route.py` (3 tests; test 3 static check passes; tests 1–2 need Flask on Pi). Commit: `b6870d9`.
 - Verified post-deploy: `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/settings` → **200**.
+
+---
+
+## BUG-45 — False Critical Engine Alerts on Pi Boot When Engine Is Off
+
+**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat — oil pressure, coolant, and fuel firing CRITICAL alerts immediately after Pi reboot with engine off
+**Severity:** HIGH (creates alert fatigue — operator learns to ignore alarms, defeating the safety purpose)
+
+### Symptom
+1. Engine is OFF
+2. Operator reboots Pi
+3. Pi boots, dashboard loads, Signal K connects to N2K bus
+4. **Within seconds: oil pressure CRITICAL, coolant CRITICAL, fuel ADVISORY/CRITICAL alerts fire**
+5. All alerts are false — engine is not running
+
+### Root Cause — Two Compounding Problems
+
+**Problem 1 — No "engine running" gate**
+The dashboard has no check for whether the engine is actually running before evaluating oil pressure and coolant temperature alarms. These two readings are only meaningful when `RPM > 0`. When engine is off:
+- Oil pressure = 0 PSI → threshold ≤4 PSI crit → `showCrit()` fires immediately ← correct physically, wrong operationally
+- Coolant temp = whatever Pangoo reports → may exceed 105°C crit threshold ← sensor data unreliable at startup
+
+**Problem 2 — Pangoo startup values are unreliable**
+From live raw CAN capture (S112), PGN 127489 from Pangoo (src 64) reports **temperature = 393K (120°C)** immediately at boot, even with engine off. The MerCruiser 454 critical threshold is 105°C. This fires the coolant critical alert falsely. The value stabilises to ~37°C (ambient) after ~25 seconds, but the dashboard has already triggered.
+
+**Root cause chain:**
+```
+Pi boots → SK gets N2K data → Pangoo sends: oil=0Pa, temp=393K, fuel=0%
+→ Dashboard WS receives all three → no engine-running gate → all three evaluate as CRITICAL
+→ showCrit() + alertTicker fire → user sees 3 false alarms
+```
+
+### Files to Fix
+- `instruments.js` — add engine-running gate: oil and coolant critical alerts must check `window._d3kEngData.rpm > 0` before firing `showCrit()` or `_setAlertTicker` at CRIT level
+- `instruments.js` — add startup debounce: suppress all engine critical alerts for first 30 seconds of WebSocket connection (gives Pangoo time to settle)
+- Consider: fuel alert is valid regardless of RPM but may need hysteresis (require 3 consecutive readings below threshold before firing)
+
+### Expected Behaviour
+- Pi boots → engine OFF → no critical alerts fire (oil=0 and temp are expected for a cold engine at rest)
+- Engine starts → RPM > 0 → oil pressure monitoring activates
+- Oil pressure drops below threshold while RPM > 0 → CRITICAL fires → correct
+
+### Related Bugs
+- **BUG-42** — alert cannot be dismissed (already broken; this bug makes it worse — false alerts stack)
+- **BUG-44** — no voice on critical alert (voice would also fire falsely on boot)
+- **BUG-31** — Pangoo src 64 frozen/unreliable values — root hardware issue
+
+---
+
+## BUG-44 — Critical Engine Alert Fires No Voice Warning (TTS Not Called from showCrit)
+
+**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat — oil pressure critical alert appeared on screen with no voice announcement
+**Severity:** HIGH (operator may not see the visual alert in time; voice is the backup safety channel)
+
+### Symptom
+1. Engine shuts off — oil pressure drops to 0 PSI
+2. Critical alert screen (`#critSc`) appears on dashboard ✅
+3. Ticker updates to "⛔ CRITICAL ENGINE ALARM — SHUT DOWN ENGINE IMMEDIATELY" ✅
+4. **No voice warning is spoken** ❌
+5. If operator is not looking at the screen, the alert is missed entirely
+
+### Root Cause
+`showCrit()` in `overlays.js` (line 128) updates the DOM and ticker but **never calls the TTS system**:
+
+```js
+function showCrit() {
+  document.getElementById('critSc').classList.add('show');
+  const ticker = document.getElementById('ticker');
+  if (ticker) {
+    ticker.textContent = '⛔ CRITICAL ENGINE ALARM — SHUT DOWN ENGINE IMMEDIATELY';
+    ticker.classList.add('hot');
+  }
+  // ← NO TTS CALL HERE
+}
+```
+
+The TTS infrastructure fully exists and is designed for this use case. `ai_bridge.py` (port 3002) has:
+- `tts.speak_urgent(message, repeat=2)` for critical severity
+- `POST /webhook/alert` endpoint — accepts `{"message": str, "severity": "info|warning|critical"}`
+- `espeak-ng` as the TTS engine, already confirmed working on Pi
+
+The connection is simply never made. `showCrit()` does not POST to `/webhook/alert`.
+
+### Files to Fix
+- `overlays.js` — `showCrit()` must POST to `http://localhost:3002/webhook/alert` with `severity: 'critical'`
+- The fetch should be fire-and-forget (no `await`) so it does not block the DOM update
+- Must respect the mute state — check `tts-mute.json` or use the mute flag before speaking
+
+### Expected Behavior
+- Engine critical alert fires → voice speaks: *"Critical engine alert. Oil pressure critical. Shut down engine immediately."* (spoken twice per `repeat=2` for critical severity)
+- Alert repeats if pressure remains critical on next SK update AND the acknowledgement latch (BUG-42 fix) has not yet been set
+- Muted state (helm mute button) must suppress voice — not bypass it
+
+### Affected Alerts (same pattern likely)
+`showCrit()` is only called for oil pressure (from `instruments.js:210`). However the same pattern — no TTS — likely applies to the advisory ticker (`_setAlertTicker`) for coolant and other non-critical states. Those should use `severity: 'warning'` (spoken once).
+
+### Related Bugs
+- **BUG-42** — critical screen cannot be dismissed (acknowledgement latch missing) — fix BUG-42 first; BUG-44 voice should fire once then be gated by the same latch
+- **BUG-23** — voice note STT failing (separate voice pipeline — does not affect TTS output direction)
+
+### Impact
+- Discovered during on-boat S112 validation 2026-07-31
+- Safety-relevant: operator may miss critical engine condition if screen not visible
+
+---
+
+## BUG-43 — Settings Unit Selection (Imperial/Metric) Has No Effect on Dashboard Gauges
+
+**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat, operator set imperial, gauges showed metric
+**Severity:** MEDIUM (operator expectation violated — settings page implies unit control that does not exist)
+
+### Symptom
+1. Operator opens d3kOS Settings → Units & Display section
+2. Operator selects Imperial (°F, PSI, gal, ft) via the Measurement System toggle or individual unit dropdowns
+3. Operator taps "Save Display Settings"
+4. Toast appears: "✓ Display settings saved"
+5. Dashboard engine gauges continue to display metric values — no change
+
+### Root Cause
+The "Save Display Settings" button in `settings.html` fires **only a toast notification** — no backend save, no localStorage write, no unit preference applied anywhere:
+
+```html
+<button class="btn btn-primary" onclick="showToast('&#10003; Display settings saved')">
+  &#128190; Save Display Settings
+</button>
+```
+
+The `instruments.js` file has **hardcoded unit conversions** with no unit-preference check:
+- Oil pressure: always Pa → PSI (`v * 0.000145038`) — coincidentally imperial
+- Coolant temperature: always K → °C (`temp_k - 273.15`) — metric
+- Speed: always m/s → knots (via SK native) — nautical
+- Depth: always metres — metric
+
+There is no `app.py` POST endpoint for unit settings. There is no localStorage read in `instruments.js` at startup. The dropdowns and toggle in `settings.html` are purely cosmetic — they retain no state and apply nothing.
+
+### Files to Fix
+- `templates/settings.html` — save button needs real save logic (POST to Flask or localStorage)
+- `app.py` — needs POST `/api/settings/units` endpoint OR frontend-only localStorage approach
+- `instruments.js` — all unit conversion functions need to check saved preference at render time
+- `vessel.env` — candidate location to persist unit preference server-side
+
+### Expected Behavior
+- User selects Imperial → temperature shows °F, pressure shows PSI, depth shows feet
+- User selects Metric → temperature shows °C, pressure shows kPa, depth shows metres
+- Setting persists across page refresh and Pi restart
+- Gauge thresholds adjust to selected unit (e.g. oil pressure advisory shown in PSI not Pa)
+
+### Scope of Change
+All six gauge cells are affected: cellCoolant (°C vs °F), cellOil (PSI vs kPa), cellDepth (m vs ft), cellFuel (L vs gal), cellBat (V — unit-agnostic), cellSpeed (kts vs mph). Alert ticker messages also need unit-aware formatting.
+
+### Impact
+- Non-blocking for navigation but creates operator confusion
+- Discovered during on-boat S112 validation session 2026-07-31
