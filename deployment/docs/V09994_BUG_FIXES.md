@@ -1850,7 +1850,7 @@ UUID before and after — barred by the no-Pi-changes hold in force at S108.`
 
 ## BUG-42 — Oil Pressure Alert Cannot Be Dismissed After Engine Shutdown
 
-**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat, during docked testing
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S113 2026-07-31** — §25.8 Tier 1 PASS | **Reported:** On-boat, during docked testing | **NOT on the boat Pi**
 **Severity:** MEDIUM (alert fires correctly but blocks UI; operator cannot continue using dashboard)
 
 ### Symptom
@@ -2009,7 +2009,7 @@ closeCrit() [overlays.js:137]
 
 ## BUG-45 — False Critical Engine Alerts on Pi Boot When Engine Is Off
 
-**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat — oil pressure, coolant, and fuel firing CRITICAL alerts immediately after Pi reboot with engine off
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S113 2026-07-31** — §25.8 Tier 1 PASS | **Reported:** On-boat — oil pressure, coolant, and fuel firing CRITICAL alerts immediately after Pi reboot with engine off | **NOT on the boat Pi**
 **Severity:** HIGH (creates alert fatigue — operator learns to ignore alarms, defeating the safety purpose)
 
 ### Symptom
@@ -2055,7 +2055,7 @@ Pi boots → SK gets N2K data → Pangoo sends: oil=0Pa, temp=393K, fuel=0%
 
 ## BUG-44 — Critical Engine Alert Fires No Voice Warning (TTS Not Called from showCrit)
 
-**Status:** `[ ]` **OPEN — logged S112 2026-07-31** | **Reported:** On-boat — oil pressure critical alert appeared on screen with no voice announcement
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S113 2026-07-31** — §25.8 Tier 1 PASS | **Reported:** On-boat — oil pressure critical alert appeared on screen with no voice announcement | **NOT on the boat Pi**
 **Severity:** HIGH (operator may not see the visual alert in time; voice is the backup safety channel)
 
 ### Symptom
