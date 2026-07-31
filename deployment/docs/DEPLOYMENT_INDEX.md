@@ -6,6 +6,27 @@
 This is the master index of all solution documents, feature deployments, and architectural records for d3kOS. If something was built, fixed, or deployed, it must have an entry here.
 
 ---
+
+## v0.9.9.4 — BUG-42/44/45 Tier-3 Implementation (S113 2026-07-31)
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/instruments.js` | **[UPDATED — S113]** BUG-42 + BUG-45: Added `_skFirstConnectAt` module var (30s boot debounce gate); added `_oilCritAcknowledged` latch var; replaced `propulsion.0.oilPressure` handler with gates (debounce, latch, recovery resets). Changes: +13 lines, -1 line (handler body expanded). |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/overlays.js` | **[UPDATED — S113]** BUG-44 + BUG-42: Replaced `showCrit()` to add TTS fetch to `ai-bridge :3002/webhook/alert` (critical severity message, fire-and-forget); replaced `closeCrit()` to set acknowledgement latch. Changes: +8 lines. |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.22 → v3.23 — S113]** PART 17: BUG-42, BUG-44, BUG-45 rows marked `[~] IN PROGRESS — Tier 3 implementation complete, awaiting Tier 1 verification (§25.8)`. |
+| `SESSION_LOG.md` | **[UPDATED — S113]** Session S113 entry added with full specification compliance verification, all PHASE 0/1/2 checks, git diff, decision log. |
+
+**Status:** Tier 3 (Haiku) implementation complete. All four edits made exactly per atomic spec. All pre-flight + post-edit verification checks passed (5/5). Code awaiting Tier 1 (Sonnet) §25.8 verification before merge/deploy. No Pi deployment. Changes remain in working tree.
+
+**Key gates implemented:**
+- BUG-45 (false boot alerts): 30-second startup debounce before critical alert fires
+- BUG-42 (no dismiss): acknowledgement latch prevents re-fire until oil pressure recovers to normal
+- BUG-44 (no voice): TTS fetch wired from `showCrit()` to `ai-bridge /webhook/alert` with critical message
+
+**No Pi deployed.** Release Package Manifest not required.
+
+---
+
 ## v0.9.9.4 — Bug-Status Audit and Correction (S109 2026-07-28)
 
 | File | Description |
