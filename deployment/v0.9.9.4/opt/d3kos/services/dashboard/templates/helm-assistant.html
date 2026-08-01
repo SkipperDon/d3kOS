@@ -706,6 +706,9 @@ window.addEventListener('beforeunload', () => {
   if (_ws) try { _ws.close(); } catch (_) {}
 });
 </script>
-<script src="/js/keyboard-fix.js"></script>
+<!-- BUG-08: was /js/keyboard-fix.js — an nginx path. Flask serves static from
+     /static/, so on localhost:3000 (the URL the kiosk runs) this 404'd and the
+     script never loaded. -->
+<script src="{{ url_for('static', filename='js/keyboard-fix.js') }}"></script>
 </body>
 </html>

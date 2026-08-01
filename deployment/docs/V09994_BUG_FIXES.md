@@ -83,7 +83,62 @@ Changing one does NOT affect the other.
 
 ## BUG-08 — Helm Assistant on-screen keyboard shows but immediately hides; typing does not work
 
-**Status:** `[~]` IN PROGRESS — investigation complete, fix attempt in progress
+**Status:** `[~]` **WIRING FIXED + DEPLOYED TO LAB PI S116 2026-08-01 — awaiting operator touch confirmation on the Pi. NOT on the boat Pi.**
+
+### ⚠ ROOT CAUSE CORRECTED S116 — the earlier analysis was against the wrong page
+
+Everything below under "Root Cause Analysis" was investigated against
+`/var/www/html/helm.html`, served by **nginx on :80**. **That is not the page the kiosk runs.**
+The kiosk target is `http://localhost:3000/` — the **Flask dashboard** — whose
+`templates/helm-assistant.html` loaded the script as:
+
+```html
+<script src="/js/keyboard-fix.js"></script>   <!-- absolute nginx path -->
+```
+
+Flask serves static from `/static/`, so on `:3000` that returned **404**.
+**`keyboard-fix.js` had never loaded on the live page at all.** Measured S116:
+
+| URL | Flask :3000 (kiosk) | nginx :80 (old page) |
+|---|---|---|
+| `/js/keyboard-fix.js` | **404** | 200 |
+| `/static/js/keyboard-fix.js` | **404** (file absent) | n/a |
+| `POST /keyboard/show` | **404 — no route** | 200, proxied to `127.0.0.1:8087` |
+
+A **second blocker** sat behind the first: `keyboard-fix.js` POSTs to origin-relative
+`/keyboard/show`. nginx proxies `/keyboard/` to the keyboard API on **127.0.0.1:8087**, but Flask
+had no such route — so even a loaded script could not have reached the API.
+
+The v2.1 blur/`_recentlyShown` timing work was therefore never exercised on the live page. It may
+or may not be sufficient; that is now **testable for the first time**.
+
+### FIX APPLIED S116 (4 files)
+1. **`static/js/keyboard-fix.js`** (new, v2.2) — the script now exists in the Flask static tree.
+2. **`templates/helm-assistant.html`** — `src` switched to
+   `{{ url_for('static', filename='js/keyboard-fix.js') }}`.
+3. **`app.py`** — added a `/keyboard/<action>` proxy route (`show`/`hide` only) forwarding to
+   `127.0.0.1:8087`. Kept origin-relative on the client so the hardcoded-localhost defect class
+   from BUG-46/48 is not reintroduced.
+4. **v2.2 same-machine guard** — since BUG-46 the dashboard is reachable from a phone or laptop.
+   squeekboard exists only on the Pi's own display, so without a guard a remote tap would raise a
+   keyboard **at the helm**. The script now no-ops unless the page host is localhost/127.0.0.1.
+
+### Verified S116 — 5/5 `tests/bug08-keyboard-fix-wiring.spec.ts`
+- `/static/js/keyboard-fix.js` → **200** (was 404)
+- `helm-assistant` emits `src="/static/js/keyboard-fix.js"`; the old `/js/` path must not return
+- `POST /keyboard/show` and `/keyboard/hide` → **200 `{"ok":true}`** (was 404) — squeekboard invoked
+- `POST /keyboard/bogus` → 404
+- **A touch on the textarea from a REMOTE host sends no `/keyboard/*` call** — guard holds
+
+### ⚠ WHAT IS NOT PROVEN — operator action required
+These tests cover the **plumbing**, which is what was broken. They **cannot** prove that
+squeekboard visually appears and accepts keystrokes — that is real touch-input behaviour on the
+Pi's own display, involving `zwp_text_input_v3` registration that a headless browser cannot
+reproduce. **Operator must tap the Helm Assistant textarea on the Pi touchscreen and confirm the
+keyboard appears AND types.** If it appears but cannot type, the v2.1 blur/timing analysis below
+becomes live again — and is now actually reachable.
+
+### Original analysis (retained — but note it targets the nginx page, not the live one)
 
 ### Symptoms (reported by Don 2026-04-21)
 1. Tapping the textarea in Helm Assistant (helm.html) — keyboard does not appear (or flashes briefly)
