@@ -584,6 +584,17 @@ implementer** — ~8 s versus 10+ min, at a cost that rounds to zero at this vol
 Run the call FROM the Pi (`deployment/docs/atomic-specs/` pattern) so the API key
 in `/opt/d3kos/config/api-keys.json` never leaves the Pi.
 
+**S114 update — operator context:** the workstation was upgraded to **64 GB RAM
+but retained the ORIGINAL GPU**. `gemma4:latest` was also tested and is likewise
+`size_vram=0` — three models, all CPU. Leading hypothesis: Ollama detects no
+*usable* GPU (compute capability too low, or AMD/integrated without ROCm) and
+falls back to CPU for everything; 64 GB RAM is why the 17.5 GB model loads at all.
+`[UNVERIFIED — GPU model not identified]`. **To confirm on that machine:** the GPU
+model; the `ollama serve` startup log (it prints the detected GPU or
+"no compatible GPUs were discovered"); and which process owns port 11434 — the
+Ollama GUI app may be a separate install from the network-exposed server.
+**Owner: operator. Not fixable from this side.**
+
 **Also stale in CLAUDE.md:** `qwen3-coder:30b` is named as the Ollama model and is
 not installed. Installed: `devstral:24b`, `gemma4`, `gemma4:31b-cloud`, `llama3`,
 `deepseek-coder:6.7b`.

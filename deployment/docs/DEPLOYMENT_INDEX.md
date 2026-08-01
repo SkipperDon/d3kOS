@@ -1367,3 +1367,29 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 - 10 custom labels created (fixed-lab, needs-boat-validation, hardware-blocked, not-a-bug, superseded, Group-A through Group-E)
 - 33 issues created (BUG-08 through BUG-41, excluding BUG-10)
 - 5 issues closed (BUG-12 superseded, BUG-18 superseded, BUG-22 not-a-bug, BUG-25 not-a-bug, BUG-40 fully fixed)
+
+### S114 — 2026-07-31
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/V09994_FIX_PLAN.md` | **NEW** — Single source of truth for bug-fix work state. Survives conversation compaction; read this instead of SESSION_LOG.md (20 KB vs 460 KB). Contains the measured root cause of three failed boat trips, the 7-batch dependency plan, the operator's lab→clone→one-trip model, the cost model, and an append-only progress log. |
+| `deployment/tools/lab-sim/labsim.py` | **NEW** — Signal K scenario injector. 9 scenarios mapped to BUG-13/15/30/42/43/44/45. Injects synthetic deltas so the dashboard cannot tell the lab Pi from the real boat. **Never installed on the Pi** — streamed over SSH stdin so it cannot clone onto a boat card. All values tagged `$source=LAB-SIM`. |
+| `deployment/tools/lab-sim/run.sh` | **NEW** — LAB-SIM runner. `./run.sh <scenario>`; `PI=172.20.10.8 ./run.sh <scenario>` for the boat Pi. |
+| `deployment/docs/atomic-specs/BUG-48.md` | **NEW** — Tier 1 atomic spec for BUG-48. Full call-site table, the three special cases (no-port URL, preserved port variable, template literal), and the guard test. |
+| `deployment/docs/atomic-specs/BUG-48-TIER3-DISPATCH.md` | **NEW** — Verbatim Tier 3 dispatch prompt + the three failure modes Tier 1 checks on return. |
+| `tests/bug43-unit-persistence.spec.ts` | **NEW** — 8 Playwright tests, DOM assertions. Includes threshold-integrity tests proving depth/coolant alarms still fire on raw SI while displaying imperial. |
+| `tests/bug46-remote-host-signalk.spec.ts` | **NEW** — 3 tests. Refuses to run against localhost, because an SSH tunnel masks the defect. |
+| `tests/bug47-propulsion-alias-gap.spec.ts` | **NEW** — 3 tests. Computes required `propulsion.port.*` aliases from the live page, so a new handler added without its alias fails. |
+| `tests/bug48-no-hardcoded-localhost.spec.ts` | **NEW** — 19 tests across 9 served JS files and 10 pages. Fails on ANY hardcoded localhost URL. |
+| `.../dashboard/static/js/instruments.js` | **UPDATED** — BUG-43 (`_unitPrefs`, localStorage load, °F/ft conversion), BUG-46 (`SK_WS_URL` page-derived), BUG-47 (2 aliases), BUG-48 (AVNAV_API, _BRIDGE_URL, weather). |
+| `.../dashboard/templates/settings.html` | **UPDATED** — BUG-43 (`saveDisplaySettings()` wired), BUG-48 (`avnavUrl`, camera/AvNav buttons, CAM_API). |
+| `.../dashboard/templates/index.html` | **UPDATED** — BUG-48: AvNav iframe `src` now set from JS (Jinja supplies only the port; a server-rendered `localhost` was blank on every remote device). |
+| `.../dashboard/static/js/` — helm, boatlog-engine, cameras, ai-bridge, panel-toggle, nav | **UPDATED** — BUG-46 / BUG-48 host derivation. |
+| `.../dashboard/templates/` — anchor-watch, ai-navigation, boat-log, engine-monitor, helm-assistant, manage-documents, marine-vision, upload-documents | **UPDATED** — BUG-48 host derivation. `engine-monitor.html` also carried a second hardcoded SK WebSocket (BUG-46 class). |
+| `.../dashboard/templates/helm.js`, `.../templates/ai-bridge.js` | **DELETED** — dead stale duplicates (March), unreferenced; `index.html` loads these from `static/js/`, and Flask never serves `.js` from `templates/`. Removed from repo and lab Pi. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **UPDATED** — BUG-43/46/47/48 status; BUG-46/47/48 logged (now 42 entries). |
+| `PROJECT_CHECKLIST.md` | **UPDATED v3.25** — BUG-43 status; BUG-46/47/48 rows added. |
+
+**Bugs fixed this session (lab Pi only — NOT on the boat Pi):** BUG-43, BUG-46, BUG-47, BUG-48. Regression 33/33.
+
+**Infrastructure blocker (not a d3kOS defect):** Ollama on `192.168.1.36` reports `size_vram=0` for `devstral:24b`, `deepseek-coder:6.7b` AND `gemma4:latest` — CPU-only for every model tested. Tier 3 was run on Gemini `2.5-flash-lite` instead (7.4–8.4 s vs >10 min). Detail in `V09994_FIX_PLAN.md`.
