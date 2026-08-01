@@ -169,7 +169,7 @@ async function loadDocs() {
   document.getElementById('summaryCard').style.display = 'none';
 
   try {
-    const resp = await fetch('http://localhost:8083/manuals/list', { signal: AbortSignal.timeout(8000) });
+    const resp = await fetch('http://' + window.location.hostname + ':8083/manuals/list', { signal: AbortSignal.timeout(8000) });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     const docs = data.manuals || data || [];
@@ -243,7 +243,7 @@ async function doDelete() {
 
   try {
     const resp = await fetch(
-      `http://localhost:8083/manuals/delete/${encodeURIComponent(filename)}`,
+      `http://${window.location.hostname}:8083/manuals/delete/${encodeURIComponent(filename)}`,
       { method: 'DELETE', signal: AbortSignal.timeout(8000) }
     );
     if (resp.ok) {

@@ -313,7 +313,7 @@
    API: boatlog-export-api.py at localhost:8095
 */
 
-var BOATLOG_API   = 'http://localhost:8095';
+var BOATLOG_API   = 'http://' + window.location.hostname + ':8095';
 var mediaRecorder = null;
 var audioChunks   = [];
 var recTimerID    = null;
@@ -474,7 +474,7 @@ function startRecord() {
     setRecState('error', 'BROWSER NOT SUPPORTED'); return;
   }
   // Pause HELM voice service so it does not process speech during recording
-  fetch('http://localhost:8101/api/voice/pause', { method: 'POST' }).catch(function(){});
+  fetch('http://' + window.location.hostname + ':8101/api/voice/pause', { method: 'POST' }).catch(function(){});
 
   // Detect best supported MIME type for Pi Chromium ARM64
   var mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg', 'audio/mp4'];
@@ -494,7 +494,7 @@ function startRecord() {
         var blobType = (activeMimeType.split(';')[0]) || 'audio/webm';
         var blob = new Blob(audioChunks, { type: blobType });
         stream.getTracks().forEach(function(t) { t.stop(); });
-        fetch('http://localhost:8101/api/voice/resume', { method: 'POST' }).catch(function(){});
+        fetch('http://' + window.location.hostname + ':8101/api/voice/resume', { method: 'POST' }).catch(function(){});
         submitVoiceNote(blob, blobType);
       };
 
@@ -510,7 +510,7 @@ function startRecord() {
       document.getElementById('bl-transcript').classList.remove('show');
     })
     .catch(function(err) {
-      fetch('http://localhost:8101/api/voice/resume', { method: 'POST' }).catch(function(){});
+      fetch('http://' + window.location.hostname + ':8101/api/voice/resume', { method: 'POST' }).catch(function(){});
       setRecState('error', 'MICROPHONE UNAVAILABLE');
       console.error('Mic error:', err);
     });

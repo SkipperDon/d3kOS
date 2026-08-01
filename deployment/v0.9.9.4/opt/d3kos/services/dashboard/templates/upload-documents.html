@@ -184,7 +184,7 @@ async function doUpload() {
   fd.append('type', typeInput.value);
 
   try {
-    const resp = await fetch('http://localhost:8081/upload/manual', {
+    const resp = await fetch('http://' + window.location.hostname + ':8081/upload/manual', {
       method: 'POST',
       body: fd,
     });

@@ -10,8 +10,8 @@
 // BROWSER, so on a phone/tablet/laptop it points at that device's loopback and
 // the socket never opens — every gauge stays "---". Same pattern as BUG-34.
 const SK_WS_URL    = 'ws://' + window.location.hostname + ':8099/signalk/v1/stream';
-const AVNAV_API    = 'http://localhost:8080/viewer/avnav_navi.php';
-const _BRIDGE_URL  = 'http://localhost:3002'; // prefixed to avoid conflict with ai-bridge.js
+const AVNAV_API    = 'http://' + window.location.hostname + ':8080/viewer/avnav_navi.php';
+const _BRIDGE_URL  = 'http://' + window.location.hostname + ':3002'; // prefixed to avoid conflict with ai-bridge.js
 const FUEL_CAP_L   = 150;   // TODO: expose in vessel.env when settings page covers it
 const WP_POLL_MS   = 15000; // waypoint cell refresh interval
 const SK_RECONNECT = 5000;  // WebSocket reconnect delay
@@ -518,7 +518,7 @@ function _wxFsStart() {
 
   /* Load weather.html full-screen — it has its own radar + conditions layout */
   const fsFrame = document.getElementById('wxFsFrame');
-  if (fsFrame) fsFrame.src = 'http://localhost/weather.html';
+  if (fsFrame) fsFrame.src = 'http://' + window.location.hostname + '/weather.html';
 
   /* Sync day/night button to current theme */
   _wxFsSyncDayNight();

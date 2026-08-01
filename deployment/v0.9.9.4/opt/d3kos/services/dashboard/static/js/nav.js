@@ -138,7 +138,7 @@ function closeMenu() { document.getElementById('menuBack').classList.remove('ope
 /* ── WINDOWED MODE TOGGLE (keyboard-api.py :8087) ── */
 function toggleWindowedMode() {
   closeMenu();
-  fetch('http://localhost:8087/window/toggle', { method: 'POST' })
+  fetch('http://' + window.location.hostname + ':8087/window/toggle', { method: 'POST' })
     .then(r => r.json())
     .then(d => toast(d.windowed ? 'Windowed Mode' : 'Fullscreen Mode'))
     .catch(() => toast('Window toggle unavailable'));

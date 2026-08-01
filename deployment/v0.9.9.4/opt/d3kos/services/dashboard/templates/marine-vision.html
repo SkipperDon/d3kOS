@@ -473,8 +473,8 @@ autoTheme();
 setInterval(autoTheme, 60000);
 
 /* ── STATE ── */
-var CAM_API    = 'http://localhost:8084';
-var FISH_API   = 'http://localhost:8086';
+var CAM_API    = 'http://' + window.location.hostname + ':8084';
+var FISH_API   = 'http://' + window.location.hostname + ':8086';
 var FEED_MS    = 125;   /* ~8 fps single feed */
 var GRID_MS    = 1500;  /* ~0.67 fps grid tiles — 4 cameras × 1500ms = sustainable Pi load */
 var isRecording = false;

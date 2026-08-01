@@ -230,7 +230,7 @@ async function sendMsg() {
   _setStatus('THINKING…');
 
   try {
-    const resp = await fetch('http://localhost:3001/ask', {
+    const resp = await fetch('http://' + window.location.hostname + ':3001/ask', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ message: text }),

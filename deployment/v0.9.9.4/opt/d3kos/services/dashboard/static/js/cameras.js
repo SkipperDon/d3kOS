@@ -4,7 +4,7 @@
  * + display_in_grid 2×2 grid. Polls /camera/frame/<slot_id> at 500ms.
  */
 
-const CAM_API   = 'http://localhost:8084';
+const CAM_API   = 'http://' + window.location.hostname + ':8084';
 const CAM_FPS   = 500;   // ms between frame refreshes
 
 let _camIntervals = [];

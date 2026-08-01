@@ -293,7 +293,7 @@
         </div>
 
         <div class="btn-group" style="margin-top:14px;">
-          <button class="btn" onclick="window.open('http://localhost:8084','_blank')">&#128249; Open Marine Vision</button>
+          <button class="btn" onclick="window.open('http://' + window.location.hostname + ':8084','_blank')">&#128249; Open Marine Vision</button>
         </div>
       </div>
 
@@ -370,7 +370,7 @@
             <div class="doc-title">Free Chart Sources</div>
             <div class="doc-desc">NOAA ENC (USA/Great Lakes), LINZ (NZ/Pacific), RIS (Europe inland), Marinha (Brazil). All load in AvNav.</div>
           </button>
-          <button class="doc-btn" onclick="window.open('http://localhost:8080','_blank')">
+          <button class="doc-btn" onclick="window.open('http://' + window.location.hostname + ':8080','_blank')">
             <div class="doc-icon">&#129517;</div>
             <div class="doc-title">How to Use AvNav</div>
             <div class="doc-desc">Waypoints, route planning, anchor alarm, AIS overlay, voyage GPX export. Opens at localhost:8080.</div>
@@ -628,7 +628,7 @@
 
   <script>
     window.D3K_CONFIG = {
-      avnavUrl:    'http://localhost:{{ avnav_port }}',
+      avnavUrl:    'http://' + window.location.hostname + ':{{ avnav_port }}',  // BUG-48
       geminiPort:  '{{ gemini_port }}',
       signalkPort: '{{ signalk_port }}',
     };
@@ -791,7 +791,7 @@
 
     /* ── CAMERA SETUP WIZARD (section 6) ── */
 
-    const CAM_API  = 'http://localhost:8084';
+    const CAM_API  = 'http://' + window.location.hostname + ':8084';
     const SLOT_SUGGESTIONS = ['Bow','Helm','Port','Starboard','Stern','Anchor','Cockpit','Engine Room'];
 
     function _rolePreset(name) {

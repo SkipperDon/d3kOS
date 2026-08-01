@@ -187,10 +187,20 @@
   <div id="main">
     <div id="chart">
       <!-- Session 2: live AvNav iframe -->
+      <!-- BUG-48: src is set from JS, not Jinja. A server-rendered 'localhost'
+           is resolved by the BROWSER, so the chart panel was blank on every
+           device except the Pi's own screen. Jinja supplies the port; the host
+           must come from the page. -->
       <iframe id="avnav-frame"
-              src="http://localhost:{{ avnav_port }}"
+              data-port="{{ avnav_port }}"
               style="width:100%;height:100%;border:none;display:block;"
               title="AvNav Chart Viewer"></iframe>
+      <script>
+        (function () {
+          var f = document.getElementById('avnav-frame');
+          if (f) f.src = 'http://' + window.location.hostname + ':' + f.dataset.port;
+        })();
+      </script>
 
       <!-- Route AI strip &mdash; Phase 5 AI Bridge ids -->
       <div class="rw gone" id="rw">

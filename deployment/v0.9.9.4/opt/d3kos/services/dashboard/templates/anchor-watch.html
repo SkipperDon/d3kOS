@@ -200,7 +200,7 @@ var _state = { active:false, alarm:false, anchor_lat:null, anchor_lon:null,
 var _pollTimer = null;
 
 /* ── AI Bridge ── */
-const AI_BRIDGE = 'http://localhost:3002';
+const AI_BRIDGE = 'http://' + window.location.hostname + ':3002';
 
 /* ── Canvas ── */
 var _canvas = document.getElementById('aw-canvas');
@@ -396,7 +396,7 @@ function _resetUI() {
 }
 
 /* ── SSE from ai_bridge ── */
-var _sse = new EventSource('http://localhost:3002/stream');
+var _sse = new EventSource('http://' + window.location.hostname + ':3002/stream');
 _sse.addEventListener('anchor_alert', function(e) {
   var d = JSON.parse(e.data);
   if (d.alarm) {

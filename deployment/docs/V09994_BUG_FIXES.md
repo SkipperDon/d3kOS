@@ -2273,7 +2273,18 @@ class, which is why the contract test in Batch 3 of `V09994_FIX_PLAN.md` matters
 
 ## BUG-48 — Every Other Service URL in the Dashboard Is Also Hardcoded to `localhost`
 
-**Status:** `[ ]` OPEN — logged S114 2026-07-31
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S114 2026-07-31** — implemented by Tier 3 (Gemini 2.5-flash-lite), verified by Tier 1 §25.8 | **NOT on the boat Pi**
+**Test:** `tests/bug48-no-hardcoded-localhost.spec.ts` — 19 tests, guards 9 served JS files
+and 10 pages. Fails on ANY hardcoded localhost URL, so this defect class cannot return.
+**Final count: 30 call sites across 18 files** (not the 17 first estimated — the initial
+audit was truncated by a `head -30` and under-reported. Corrected by a full re-audit.)
+**Round 1:** 18 sites. **Round 2:** 10 more. **Round 3:** 2 more found by the guard test —
+`settings.html` `avnavUrl` (object property, missed by an `=`-anchored grep) and the
+`index.html` AvNav iframe, which was wrongly declared out of scope and IS a real defect;
+its `src` is now set from JS since Jinja cannot know the client's hostname.
+**Deliberately unchanged:** `app.py` (server-side Python — `localhost` correctly means the
+Pi) and operator-facing documentation copy that mentions localhost.
+**Regression:** 33/33 across BUG-43 + BUG-46 + BUG-47 + BUG-48.
 **Logged:** 2026-07-31 S114 (audit performed while fixing BUG-46)
 **Platform:** Pi (d3kOS dashboard — all non-Signal-K services)
 **Severity:** HIGH — most of the dashboard is non-functional on any remote device

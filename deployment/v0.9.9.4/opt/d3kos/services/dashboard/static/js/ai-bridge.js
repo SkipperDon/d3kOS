@@ -4,7 +4,7 @@
  * Handles route widget, arrival briefing, anchor watch alerts
  */
 
-const AI_BRIDGE = 'http://localhost:3002';
+const AI_BRIDGE = 'http://' + window.location.hostname + ':3002';
 
 let _bridgeSource = null;
 

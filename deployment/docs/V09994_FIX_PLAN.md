@@ -526,6 +526,68 @@ Format:
 
 ---
 
+### [2026-07-31] S114 — BUG-48 FIXED via Gemini as Tier 3; OLLAMA GPU BLOCKER LOGGED
+- Done: **BUG-48 fixed** — 30 hardcoded `localhost` call sites across 18 files now
+  derive the host from the page. Deployed to lab Pi. **33/33 regression** across
+  BUG-43 (8) + BUG-46 (3) + BUG-47 (3) + BUG-48 (19).
+- Guard test `tests/bug48-no-hardcoded-localhost.spec.ts` covers 9 served JS files
+  and 10 pages, so this defect class (BUG-34 -> 46 -> 48) cannot silently return.
+- **MY ERROR, corrected:** the first audit was piped through `head -30` and I
+  treated the truncated output as complete. The spec I wrote was therefore
+  incomplete — it listed 17 sites when there were 30. A second filter (requiring
+  `=` before the URL) then missed an object-property assignment. Both found only
+  because the guard test ran. **Lesson: never cap an audit and call it coverage.**
+- **Scope correction:** `index.html`'s AvNav iframe was declared out of scope as
+  "server-rendered Jinja". That was wrong — it renders to a literal
+  `http://localhost:8080` and the chart panel was blank on every remote device.
+  Fixed: Jinja supplies the port, JS sets the host.
+- Deliberately unchanged: `app.py` (server-side, `localhost` correctly = the Pi)
+  and operator-facing copy mentioning localhost.
+- Flagged, not actioned: `templates/helm.js` and `templates/ai-bridge.js` are
+  unreferenced March-dated duplicates of the `static/js/` versions. Flask serves
+  JS from `static/`, so they appear dead. **Deletion needs operator approval.**
+
+#### TIER 3 TOOLING — what actually happened
+| Implementer | Wall clock | Cost | Outcome |
+|---|---|---|---|
+| Ollama `devstral:24b` | >10 min, killed | $0 | never returned |
+| Ollama `deepseek-coder:6.7b` | killed | $0 | never returned |
+| **Gemini `2.5-flash-lite`** | **7.4-8.4 s** | **~5,400 tokens total** | **28/28 edits correct** |
+
+Gemini got all three flagged traps right first time: the no-port weather URL, the
+preserved `port` variable, and the template literal needing
+`${window.location.hostname}` rather than concatenation.
+
+**Tier 1 verification caught one false positive in its OWN checker** — substring
+matching flagged two genuinely distinct lines (6-space vs 8-space indentation) as
+ambiguous. Fixed to line-exact matching. Gemini's output had been correct.
+
+#### INFRASTRUCTURE BLOCKER — Ollama is not using the GPU
+**Status:** OPEN. Not a d3kOS defect, so NOT logged in `V09994_BUG_FIXES.md`.
+Recorded here because it slows every future Tier 3 session.
+
+Measured on `192.168.1.36` (Ollama 0.32.0) on 2026-07-31:
+```
+devstral:24b        : total 17.5 GB | size_vram 0.0 GB | CPU ONLY
+deepseek-coder:6.7b : total 12.7 GB | size_vram 0.0 GB | CPU ONLY
+```
+`size_vram = 0` on BOTH models — zero layers offloaded. The operator confirms the
+GPU is free and idle, so this is **not** contention and **not** a model-size
+issue (my initial "too big for VRAM" guess was wrong — the small model behaves
+identically). Ollama is built or launched without a working GPU runtime.
+
+**Impact:** every local Tier 3 dispatch is CPU-bound. The "Tier 3 = local Ollama,
+$0" rule in CLAUDE.md assumed a fast local box; that assumption is currently false.
+
+**Until it is fixed, Gemini `2.5-flash-lite` is the recommended Tier 3
+implementer** — ~8 s versus 10+ min, at a cost that rounds to zero at this volume.
+Run the call FROM the Pi (`deployment/docs/atomic-specs/` pattern) so the API key
+in `/opt/d3kos/config/api-keys.json` never leaves the Pi.
+
+**Also stale in CLAUDE.md:** `qwen3-coder:30b` is named as the Ollama model and is
+not installed. Installed: `devstral:24b`, `gemma4`, `gemma4:31b-cloud`, `llama3`,
+`deepseek-coder:6.7b`.
+
 ### [2026-07-31] S114 — BUG-47 FIXED; BUG-48 SPEC WRITTEN FOR TIER 3
 - Done: **BUG-47 fixed.** Audit found TWO missing aliases, not the one logged:
   `propulsion.port.coolantTemperature` AND `propulsion.port.trimTabPosition`.

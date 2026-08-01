@@ -12,7 +12,7 @@
  */
 
 const HELM_LANG  = document.documentElement.lang || 'en-GB';
-const GEMINI_URL = 'http://localhost:3001/ask';
+const GEMINI_URL = 'http://' + window.location.hostname + ':3001/ask';
 
 let _helmOn    = false;
 let _helmTimer = null;

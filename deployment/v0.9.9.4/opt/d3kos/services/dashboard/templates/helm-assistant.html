@@ -642,7 +642,7 @@ async function sendMessage() {
 
     /* Step 2 — Gemini proxy (Gemini → Ollama fallback built in at :3001) */
     try {
-      const gemRes  = await fetch('http://localhost:3001/ask', {
+      const gemRes  = await fetch('http://' + window.location.hostname + ':3001/ask', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ message: text }),

@@ -13,7 +13,7 @@
   'use strict';
 
   var SK_URL           = 'ws://' + window.location.hostname + ':8099/signalk/v1/stream';  // BUG-46
-  var API_URL          = 'http://localhost:8095';
+  var API_URL          = 'http://' + window.location.hostname + ':8095';
   var LS_KEY           = 'd3kos-boatlog-entries';
   var RPM_THRESHOLD_HZ = 3;                    /* 3 Hz = 180 RPM — engine considered running */
   var SNAPSHOT_MS      = 30 * 60 * 1000;       /* 30-minute running snapshot interval */

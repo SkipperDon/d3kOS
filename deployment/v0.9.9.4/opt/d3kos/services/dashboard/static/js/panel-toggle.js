@@ -46,7 +46,7 @@ function showAvNav() {
   const frame = document.getElementById('avnav-frame');
   if (frame && !frame.src) {
     const cfg = window.D3K_CONFIG || {};
-    frame.src = cfg.avnavUrl || 'http://localhost:8080';
+    frame.src = cfg.avnavUrl || 'http://' + window.location.hostname + ':8080';
   }
   showScreen('avnav');
 }
@@ -113,7 +113,7 @@ function showPlaceholder(title, phase) {
 function openAI() {
   const cfg  = window.D3K_CONFIG || {};
   const port = cfg.geminiPort || '3001';
-  window.open('http://localhost:' + port, '_blank');
+  window.open('http://' + window.location.hostname + ':' + port, '_blank');
 }
 
 /**
@@ -121,6 +121,6 @@ function openAI() {
  * Camera system runs at port 8084 (camera_stream_manager.py — v0.9.2).
  */
 function openCameras() {
-  window.open('http://localhost:8084', '_blank');
+  window.open('http://' + window.location.hostname + ':8084', '_blank');
 }
 
