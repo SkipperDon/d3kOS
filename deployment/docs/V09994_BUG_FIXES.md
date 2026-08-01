@@ -2339,3 +2339,106 @@ usable product.
 Third and largest instance of the same class. BUG-34 fixed the Gemini URL in
 `overlays.js`; BUG-46 fixed the Signal K socket. Neither swept the codebase,
 which is why this kept resurfacing.
+
+---
+
+## BUG-49 — Header Brand Broken: Wordmark Invisible in Day Mode, Logo Broken in Both Modes
+
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S115 2026-08-01** — TDD-verified 3/3 fail pre-fix, 3/3 pass post-fix | **NOT on the boat Pi**
+**Test:** `tests/bug49-header-brand.spec.ts` — asserts the asset returns 200 AND computed contrast ≥4.5:1 in BOTH themes.
+**Measured pre-fix:** logo 404; day contrast **1.09:1** (`rgb(28,37,28)` on `rgb(0,50,0)`) — worse than the 1.37:1 hand-calculation, and night failed too, which the hand-calc missed.
+**Fix:** restored `static/images/amboat-logo.png` (from `features/boot-splash/theme/`, md5 `92c88112`) and set an explicit `color:#FFFFFF` on `.sb-brand`. `--ink2`/`--ink3` tokens untouched per the S54 rule.
+⚠ **The logo is 512×512 square** — at `height:28px` it renders as a 28×28 icon with NO words. The "wordmark" the operator saw was the broken image's alt text. **If a visible wordmark is wanted, that is a separate design change** (add a text element beside the logo) — NOT done, awaiting operator decision.
+**Logged:** 2026-08-01 S115
+**Platform:** Pi (d3kOS dashboard — status bar / header brand, top-left)
+**Severity:** MEDIUM-HIGH — **AODA contrast violation** (Issue 1) + broken asset (Issue 2)
+
+### Symptom — as reported by the operator
+
+Top-left corner of the dashboard, the AtMyBoat logo and the wordmark "AtMyBoat d3kOS".
+
+**Issue 1 — Wordmark invisible in DAY mode.**
+The words are not visible in day mode. They ARE visible in night mode. The day-mode
+text appears to be a **blue** colour against the day background; it should be a
+contrasting colour (operator suggests white).
+
+**Issue 2 — Logo image broken in BOTH day and night mode.**
+The logo itself renders broken (missing/failed asset) regardless of theme.
+
+### Root Cause — INVESTIGATED S115 2026-08-01. **Both issues are ONE defect.**
+
+`templates/index.html:62`
+```html
+<img class="sb-brand" src="/static/images/amboat-logo.png" alt="AtMyBoat d3kOS" style="height:28px;width:auto;">
+```
+
+**The asset does not exist.** `static/images/` is absent from the canonical tree
+AND from the lab Pi. Live read: `/static/images/amboat-logo.png` → **HTTP 404**;
+`/opt/d3kos/services/dashboard/static/images/` → *No such file or directory*.
+
+**Therefore the "wordmark" the operator sees is not a wordmark at all — it is the
+`alt` text of the broken image.** The browser falls back to rendering
+`alt="AtMyBoat d3kOS"` in place of the missing logo. That single fact explains
+both reported symptoms:
+
+- **Issue 2** (logo broken in both modes) = the 404.
+- **Issue 1** (words invisible in day mode only) = the alt text inherits `--ink`,
+  which has no contrast against the status-bar background in day mode.
+
+**Measured contrast** — `#sb` background is `--bar`, which is dark green in BOTH
+themes (`#003200` day, `#001A00` night). `.sb-brand` sets no `color`, so the alt
+text inherits `--ink`:
+
+| Mode | Text `--ink` | Bar `--bar` | Ratio | WCAG AA (4.5:1) |
+|---|---|---|---|---|
+| **Day** | `#040C04` near-black | `#003200` | **1.37:1** | ❌ **FAIL — effectively invisible** |
+| Night | `#D6EDD6` pale | `#001A00` | 14.76:1 | ✅ PASS |
+
+1.37:1 is why it disappears in day mode. The operator read it as "blue"; it is in
+fact near-black on dark green.
+
+**Restoring the image fixes both symptoms**, because there would be no alt text to
+render. But the contrast defect must ALSO be fixed — alt text must stay readable
+if the asset ever fails again, and day mode is the bright-sunlight helm case.
+
+### Asset recovery — two identical copies exist in the repo
+| Path | Size | md5 |
+|---|---|---|
+| `deployment/features/boot-splash/theme/amboat-logo.png` | 65,885 | `92c88112…` |
+| `deployment/d3kOS/dashboard/static/images/amboat-logo.png` | 65,885 | `92c88112…` |
+
+Byte-identical. **Use the boot-splash copy** — `deployment/d3kOS/dashboard/` is a
+SUPERSEDED read-only reference tree. (`assets/atmyboat-logo-transparent.png` is a
+different, 1.4 MB file — far too large for a 28 px header.)
+
+### Proposed fix (NOT yet applied — awaiting operator approval)
+1. Create `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/images/` and
+   copy `amboat-logo.png` into it.
+2. Add an explicit accessible colour to `.sb-brand` so the alt text is legible in
+   both themes. White gives **14.42:1 day / 18.30:1 night** — both far above 4.5:1.
+   Targeted selector only; **do NOT touch `--ink2`/`--ink3` tokens** (S54 rule).
+3. Playwright test: assert the logo asset returns 200 AND the computed contrast
+   passes 4.5:1 in both themes.
+
+### Why this matters beyond cosmetics
+Issue 1 is an **AODA / WCAG 2.0 AA violation**. The project standard is a hard
+minimum 4.5:1 contrast on all colour pairs. Text that is invisible against its
+background fails that outright, and the helm is a bright-sunlight environment
+where day mode is the mode that matters most.
+
+### Constraint on any fix
+`d3kos.css` `--ink2` / `--ink3` opacity tokens already fail WCAG. **Never edit
+those tokens** — use targeted selector overrides only. (Standing rule, S54.)
+
+### Investigation Steps
+- [ ] Identify the header brand markup and its CSS selector(s)
+- [ ] Determine the day-mode and night-mode colour values actually applied
+- [ ] Measure the day-mode contrast ratio against the day background
+- [ ] Locate the logo asset path and confirm whether the file exists and is served
+- [ ] Confirm whether this is repo state or Pi-only drift (live read, per S109 rule)
+
+### Fix Steps
+- [ ] Issue 1 — set a day-mode wordmark colour meeting ≥4.5:1 contrast
+- [ ] Issue 2 — repair or replace the broken logo asset
+- [ ] Playwright test asserting computed colour contrast in BOTH themes and that the logo asset returns 200
+- [ ] Deploy to lab Pi and verify

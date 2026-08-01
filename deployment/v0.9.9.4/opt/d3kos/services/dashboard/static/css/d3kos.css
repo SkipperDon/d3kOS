@@ -178,6 +178,12 @@ html, body {
 }
 .sb-brand {
   height: 28px; width: auto; flex-shrink: 0;
+  /* BUG-49: explicit colour so the alt text stays legible if the asset 404s.
+     .sb-brand set no colour, so fallback text inherited --ink: near-black
+     #040C04 on the dark-green --bar #003200 in day mode = 1.37:1, effectively
+     invisible. White gives 14.42:1 day / 18.30:1 night, both well over WCAG AA
+     4.5:1. Targeted selector — the --ink2/--ink3 tokens are NOT touched. */
+  color: #FFFFFF;
 }
 .sb-sep { width: 1px; height: 22px; background: rgba(255,255,255,.18); flex-shrink: 0; }
 .sb-vessel {
