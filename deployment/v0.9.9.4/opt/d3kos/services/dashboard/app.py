@@ -653,27 +653,6 @@ def anchor_set():
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
 
-#  ── BUG-08: on-screen keyboard proxy ──────────────────────────────────────
-#  keyboard-fix.js POSTs to origin-relative /keyboard/show and /keyboard/hide.
-#  nginx (:80) proxies those to the keyboard API on 127.0.0.1:8087, but the Flask
-#  dashboard (:3000) — which is what the kiosk actually runs — had no such routes,
-#  so the calls 404'd. Keeping the fetch origin-relative avoids reintroducing the
-#  hardcoded-localhost class of defect fixed in BUG-46/48.
-#  The API binds to 127.0.0.1 only; squeekboard lives on the Pi's own display.
-KEYBOARD_API = 'http://127.0.0.1:8087'
-
-
-@app.route('/keyboard/<action>', methods=['POST'])
-def keyboard_proxy(action):
-    if action not in ('show', 'hide'):
-        return jsonify({'ok': False, 'error': 'unknown action'}), 404
-    try:
-        r = requests.post(f'{KEYBOARD_API}/keyboard/{action}', timeout=3)
-        return jsonify(r.json()), r.status_code
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 502
-
-
 @app.route('/anchor/state')
 def anchor_state():
     try:

@@ -38,8 +38,6 @@ chromium \
   --disable-translate \
   --disable-features=TranslateUI,OverlayScrollbar \
   --ozone-platform=wayland \
-  --enable-wayland-ime \
-  --wayland-text-input-version=3 \
   --touch-events=enabled \
   --enable-pinch \
   --pull-to-refresh=0 \
