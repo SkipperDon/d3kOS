@@ -2450,6 +2450,13 @@ which is why this kept resurfacing.
 **Test:** `tests/bug49-header-brand.spec.ts` — asserts the asset returns 200 AND computed contrast ≥4.5:1 in BOTH themes.
 **Measured pre-fix:** logo 404; day contrast **1.09:1** (`rgb(28,37,28)` on `rgb(0,50,0)`) — worse than the 1.37:1 hand-calculation, and night failed too, which the hand-calc missed.
 **Fix:** restored `static/images/amboat-logo.png` (from `features/boot-splash/theme/`, md5 `92c88112`) and set an explicit `color:#FFFFFF` on `.sb-brand`. `--ink2`/`--ink3` tokens untouched per the S54 rule.
+**Sizing — operator decision S115:** the restored logo rendered at 28px, which the operator judged
+too small and asked for 4×. 4× is 112px, which is 2.3× the 48px status bar and would have cost
+64px of chart height. Options were presented; **operator chose 64px with the bar grown 48→72px**
+(2.3× the original, −24px chart height). Verified live: bar 72px, logo 64×64, no overflow.
+Only `#sb` consumes `--sb-h`; sub-pages use `#status-bar`, independently hardcoded at 48px and
+unaffected.
+
 ⚠ **The logo is 512×512 square** — at `height:28px` it renders as a 28×28 icon with NO words. The "wordmark" the operator saw was the broken image's alt text. **If a visible wordmark is wanted, that is a separate design change** (add a text element beside the logo) — NOT done, awaiting operator decision.
 **Logged:** 2026-08-01 S115
 **Platform:** Pi (d3kOS dashboard — status bar / header brand, top-left)

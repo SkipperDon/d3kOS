@@ -105,7 +105,11 @@
   --e4: 0 20px 60px rgba(0,0,0,.22);
 
   /* Layout — the non-negotiables */
-  --sb-h:      48px;
+  --sb-h:      72px;   /* BUG-49: 48 -> 72 so the brand logo can render at 64px
+                          (operator: "4x" was 112px, which is 2.3x the old bar and
+                          would cost 64px of chart height; 64px agreed instead).
+                          Only #sb consumes this token. Sub-pages use #status-bar,
+                          which is independently hardcoded at 48px and unaffected. */
   --row-h:     160px;
   --bot-h:     104px;
   --helm-rise: 24px;
@@ -177,7 +181,7 @@ html, body {
   position: relative; z-index: 300;
 }
 .sb-brand {
-  height: 28px; width: auto; flex-shrink: 0;
+  height: 64px; width: auto; flex-shrink: 0;   /* BUG-49: 28 -> 64, matches the inline style */
   /* BUG-49: explicit colour so the alt text stays legible if the asset 404s.
      .sb-brand set no colour, so fallback text inherited --ink: near-black
      #040C04 on the dark-green --bar #003200 in day mode = 1.37:1, effectively
