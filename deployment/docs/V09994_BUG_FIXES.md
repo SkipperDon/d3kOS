@@ -999,6 +999,48 @@ Unknown — investigation required. Candidates in order of likelihood:
 **Status:** `[ ]` OPEN — logged S104 2026-07-21
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (AvNav chart display)
+
+### Root Cause — FOUND S115 2026-08-01 (live read, AvNav source + status API)
+
+**AvNav has never asked Signal K for AIS.** It is a single missing attribute.
+
+`/usr/lib/avnav/server/handler/signalkhandler.py:663`
+```python
+P_AIS = WorkerParameter('fetchAis', type=T_BOOLEAN, default=False,
+                        description='fetch AIS data from signalK')
+```
+
+The boat/lab config is:
+```xml
+<AVNSignalKHandler uuid="..." migrated="True" port="8099" decodeData="true"/>
+```
+**No `fetchAis` attribute** → defaults to `False` → line 284 sets
+`aisFetchPeriod = 0` → line 1013 marks AIS `disabled` → line 1209
+(`if aisFetchPeriod > 0`) never calls `fetchAisData()`.
+
+**Confirmed live** on the lab Pi via AvNav's own status API:
+```
+handler: SignalKHandler
+   main       NMEA       connected at http://localhost:8099/signalk/v1/api/
+   ais        INACTIVE   disabled          <-- here
+   websocket  NMEA       connected at ws://localhost:8099/signalk/v1/stream
+```
+The Signal K connection is healthy. Only the AIS fetch is switched off.
+
+### Proposed fix (NOT applied — needs operator approval)
+Add `fetchAis="true"` (and optionally `aisQueryPeriod`, default 10 s) to the
+`AVNSignalKHandler` element in `avnav_server.xml`, then restart AvNav.
+This is a config change to the master card — it clones to the boat.
+
+### ⚠ BUG-19 and BUG-20 ARE THE SAME DEFECT
+`signalk-forward-watch` does NOT emit AIS, NMEA 0183 or NMEA 2000. Its
+`plugin/opencpn-output.js` writes each detection into Signal K as a **fake vessel**
+under `vessels.urn:mrn:imo:mmsi:80000000X` with `navigation.position`, `name`
+(e.g. `FW-BOAT (87%)`), COG and SOG=0.
+
+Those fake vessels live in the **same Signal K vessel tree** as real AIS targets,
+so they arrive through the **same `fetchAisData()` path**. Enabling `fetchAis`
+should therefore fix BUG-19 **and** BUG-20 together. Validate both in one test.
 **Checklist:** A-06 (pass with caveat — "have not seen anything broadcasting")
 
 ### Symptom
@@ -1029,6 +1071,48 @@ AIS is confirmed working in Signal K (rtl_ais running, AIS pipedProvider enabled
 **Status:** `[ ]` OPEN — logged S104 2026-07-21
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (camera detection → AvNav integration)
+
+### Root Cause — FOUND S115 2026-08-01 (live read, AvNav source + status API)
+
+**AvNav has never asked Signal K for AIS.** It is a single missing attribute.
+
+`/usr/lib/avnav/server/handler/signalkhandler.py:663`
+```python
+P_AIS = WorkerParameter('fetchAis', type=T_BOOLEAN, default=False,
+                        description='fetch AIS data from signalK')
+```
+
+The boat/lab config is:
+```xml
+<AVNSignalKHandler uuid="..." migrated="True" port="8099" decodeData="true"/>
+```
+**No `fetchAis` attribute** → defaults to `False` → line 284 sets
+`aisFetchPeriod = 0` → line 1013 marks AIS `disabled` → line 1209
+(`if aisFetchPeriod > 0`) never calls `fetchAisData()`.
+
+**Confirmed live** on the lab Pi via AvNav's own status API:
+```
+handler: SignalKHandler
+   main       NMEA       connected at http://localhost:8099/signalk/v1/api/
+   ais        INACTIVE   disabled          <-- here
+   websocket  NMEA       connected at ws://localhost:8099/signalk/v1/stream
+```
+The Signal K connection is healthy. Only the AIS fetch is switched off.
+
+### Proposed fix (NOT applied — needs operator approval)
+Add `fetchAis="true"` (and optionally `aisQueryPeriod`, default 10 s) to the
+`AVNSignalKHandler` element in `avnav_server.xml`, then restart AvNav.
+This is a config change to the master card — it clones to the boat.
+
+### ⚠ BUG-19 and BUG-20 ARE THE SAME DEFECT
+`signalk-forward-watch` does NOT emit AIS, NMEA 0183 or NMEA 2000. Its
+`plugin/opencpn-output.js` writes each detection into Signal K as a **fake vessel**
+under `vessels.urn:mrn:imo:mmsi:80000000X` with `navigation.position`, `name`
+(e.g. `FW-BOAT (87%)`), COG and SOG=0.
+
+Those fake vessels live in the **same Signal K vessel tree** as real AIS targets,
+so they arrive through the **same `fetchAisData()` path**. Enabling `fetchAis`
+should therefore fix BUG-19 **and** BUG-20 together. Validate both in one test.
 **Checklist:** G-10 (failed — no bounding boxes); operator report
 
 ### Symptom
