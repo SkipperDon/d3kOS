@@ -996,7 +996,16 @@ Unknown — investigation required. Candidates in order of likelihood:
 
 ## BUG-19 — AIS Targets Not Visible on AvNav Map
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S115 2026-08-01** — root cause found and fix proven end-to-end | **NOT on the boat Pi**
+**Fix:** added `fetchAis="true" aisQueryPeriod="5"` to `<AVNSignalKHandler>` in `/var/lib/avnav/avnav_server.xml`; restarted avnav.
+**Before:** AvNav status `ais INACTIVE disabled`. **After:** `ais NMEA read 2 targets`.
+**End-to-end proof (S115):** injected two vessels into Signal K — one shaped exactly like a
+`signalk-forward-watch` detection (`mmsi:800000002`, `FW-BOAT (87%)`) and one ordinary
+AIS-style target (`mmsi:316001234`). AvNav's AIS API returned BOTH with correct position,
+name and course. Test vessels cleared afterwards via a Signal K restart.
+⚠ `avnav_server.xml` is a **Pi-only config** at `/var/lib/avnav/` — it is NOT in the canonical
+repo tree, so it is not version-controlled. It travels with the SD-card clone. Backup on the
+lab Pi: `avnav_server.xml.pre-bug19-20260731_223321.bak`.
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (AvNav chart display)
 
@@ -1068,7 +1077,16 @@ AIS is confirmed working in Signal K (rtl_ais running, AIS pipedProvider enabled
 
 ## BUG-20 — Camera Hazard Detections Not Appearing on AvNav Map
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S115 2026-08-01** — root cause found and fix proven end-to-end | **NOT on the boat Pi**
+**Fix:** added `fetchAis="true" aisQueryPeriod="5"` to `<AVNSignalKHandler>` in `/var/lib/avnav/avnav_server.xml`; restarted avnav.
+**Before:** AvNav status `ais INACTIVE disabled`. **After:** `ais NMEA read 2 targets`.
+**End-to-end proof (S115):** injected two vessels into Signal K — one shaped exactly like a
+`signalk-forward-watch` detection (`mmsi:800000002`, `FW-BOAT (87%)`) and one ordinary
+AIS-style target (`mmsi:316001234`). AvNav's AIS API returned BOTH with correct position,
+name and course. Test vessels cleared afterwards via a Signal K restart.
+⚠ `avnav_server.xml` is a **Pi-only config** at `/var/lib/avnav/` — it is NOT in the canonical
+repo tree, so it is not version-controlled. It travels with the SD-card clone. Backup on the
+lab Pi: `avnav_server.xml.pre-bug19-20260731_223321.bak`.
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (camera detection → AvNav integration)
 
