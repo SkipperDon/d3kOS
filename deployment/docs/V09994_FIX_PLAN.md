@@ -599,6 +599,35 @@ Ollama GUI app may be a separate install from the network-exposed server.
 not installed. Installed: `devstral:24b`, `gemma4`, `gemma4:31b-cloud`, `llama3`,
 `deepseek-coder:6.7b`.
 
+### [2026-08-01] S115 — BUG-49 + BUG-19 + BUG-20 FIXED; GitHub sync run
+- **BUG-49** (header brand) logged, diagnosed, fixed, TDD-verified 3/3, deployed.
+  Both reported symptoms were ONE defect: the logo asset 404'd, so the browser
+  rendered the img's alt text — that "wordmark" was never a text element. The alt
+  text measured **1.09:1** against the status bar in day mode. Asset restored +
+  explicit `color:#FFFFFF`. Logo later enlarged 28→64px with `--sb-h` 48→72px
+  (operator asked for 4×/112px; options presented, 64px chosen for a quarter of
+  the layout cost).
+- **BUG-19 + BUG-20 FIXED BY ONE ATTRIBUTE.** AvNav's `fetchAis` defaults to
+  `false`; `avnav_server.xml` never set it, so `fetchAisData()` was never called
+  while the Signal K link looked perfectly healthy. Added
+  `fetchAis="true" aisQueryPeriod="5"`. Status `ais INACTIVE disabled` →
+  `ais NMEA read 2 targets`. Proven end-to-end with injected vessels (one
+  forward-watch-shaped, one AIS-shaped); AvNav rendered both.
+- **`signalk-forward-watch` investigated** — lab runs 0.2.3, which IS npm latest.
+  It emits no AIS/0183/N2K; `plugin/opencpn-output.js` writes detections as fake
+  SK vessels (mmsi 800000001–800000006, one per class, so two objects of a class
+  overwrite each other). N2K delivery would need `sk-to-nmea2000` + `AISv2`,
+  installed but NOT enabled — operator decision.
+- **Step 8 GitHub sync executed** (first run of the new close step, operator-
+  approved): created #43 (BUG-49), added `fixed-lab` + evidence comments to
+  #13 (BUG-19) and #14 (BUG-20). 36 BUG issues tracked.
+- ⚠ **`avnav_server.xml` is NOT version-controlled** — Pi-only at `/var/lib/avnav/`.
+  Travels with the clone; a repo rebuild silently reverts it. Same exposure class
+  as BUG-33's config. **Worth deciding whether Pi-only configs get mirrored.**
+- Regression **36/36** throughout.
+- Not done: BUG-08, 09, 16, 18, 23a, 24 remain. BUG-16/18/24 are the LAB-SIM
+  verification batch and may close with no code.
+
 ### [2026-07-31] S114 — BUG-47 FIXED; BUG-48 SPEC WRITTEN FOR TIER 3
 - Done: **BUG-47 fixed.** Audit found TWO missing aliases, not the one logged:
   `propulsion.port.coolantTemperature` AND `propulsion.port.trimTabPosition`.
