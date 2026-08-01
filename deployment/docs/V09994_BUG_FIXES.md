@@ -1242,6 +1242,70 @@ On fresh browser load (or cleared cookies/localStorage), the system should redir
 **Platform:** Pi (Boat Log — voice note feature)
 **Checklist:** H-03 (failed)
 
+### BUG-23a ROOT CAUSE — FOUND S116 2026-08-01 (live read on the lab Pi)
+
+**The watchdog is not the bug. It is correctly reporting a real, ongoing fault.**
+
+`d3kos-voice.service` is **active and running**, but with **1 thread and no `arecord` child**.
+The Vosk listener thread dies the instant it starts, and the main loop respawns it immediately —
+forever.
+
+`/opt/d3kos/services/voice/voice-assistant-hybrid.py:355-366`
+```python
+while True:
+    if self._mic_locked:
+        time.sleep(0.5); continue
+    if not listener_thread.is_alive():
+        print("▶  Resuming wake word detection...", flush=True)
+        listener_thread = threading.Thread(target=wake_word_listener, daemon=True)
+        listener_thread.start()
+        print("🎤 Listening for wake words...", flush=True)
+```
+**There is no sleep, no backoff and no failure limit on the restart path.**
+
+`/opt/d3kos/services/voice/wake_word_vosk.py:117-123`
+```python
+self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL)   # <-- error discarded
+```
+The `arecord` failure reason is **thrown away**, which is why this was never diagnosable from logs.
+
+#### Measured impact on the lab Pi (S116)
+| | |
+|---|---|
+| Voice service CPU, continuous, doing nothing useful | **6.3%** |
+| Log lines written in 60 s | **1,812** (~30/s) |
+| Total journal lines accumulated for this unit | **449,642** |
+| Threads (expected 2+) | **1** |
+| `arecord` children | **0** |
+
+#### Why the thread dies HERE — environmental, lab only
+`arecord -l` on the lab Pi returns an **empty capture list** — there is no microphone. The device
+is also **hardcoded**: `wake_word_vosk.py:82` falls back to `plughw:0,0`, and card 0 on this Pi is
+`vc4hdmi0` (HDMI **playback**, no capture). `wake_word_porcupine.py:41` hardcodes
+`plughw:S330,0` separately.
+
+#### THREE distinct defects — the first two are REAL CODE BUGS on every platform
+1. **No backoff in the respawn loop** — spins ~30×/s indefinitely. Burns CPU and floods the journal.
+   On a boat this is continuous **SD-card write wear**. Possibly a contributor to the 79–87% CPU
+   recorded during the S112 cruise.
+2. **`stderr=subprocess.DEVNULL` hides the cause** — the ALSA error never reaches the log.
+3. **No microphone on the lab Pi** (environmental) plus a **hardcoded capture device** — this is
+   what triggers 1 and 2 here. **On the boat a mic exists, so BUG-23a may not reproduce there —
+   but defects 1 and 2 will fire the moment the mic drops out (USB dropout, brownout).**
+
+#### Proposed fix (NOT applied — awaiting operator approval)
+- Exponential backoff on respawn (1 s → 2 s → 5 s → 30 s cap) with a consecutive-failure counter.
+- Capture `arecord` stderr; log the real reason **once**, not per attempt.
+- Probe for a capture device at startup; if none, log once and enter a **degraded/idle** state
+  instead of looping — do not pretend to listen.
+- Stop hardcoding the device; select it from `arecord -l` and fail loudly if absent.
+- Watchdog: treat "no capture hardware" as a distinct state, not a restart trigger.
+
+⚠ **Unrelated to BUG-23b.** Transcription still cannot work regardless — there is no local STT
+engine installed (Faster-Whisper is v0.9.9.5 item D13). BUG-23b was moved to the v0.9.9.5 backlog
+in S114.
+
 ### Symptom
 Tapping the voice record button, speaking a sentence, then tapping stop does not produce a VOICE entry in the Boat Log list. H-03 failed on-boat.
 
