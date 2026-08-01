@@ -37,6 +37,9 @@ class VoskWakeWordDetector:
         self.wake_words = [w.lower() for w in wake_words]
         self.sample_rate = sample_rate
         self.mic_device = mic_device
+        # BUG-23a: last audio-capture failure reason, so the caller can report
+        # WHY the listener died instead of silently respawning it forever.
+        self.last_error = None
         self.process = None  # Store arecord process
         self.running = False  # Control flag for listen loop
         self.model = None
@@ -115,13 +118,32 @@ class VoskWakeWordDetector:
         ]
 
         try:
-            # Start recording process
+            # BUG-23a: stderr was subprocess.DEVNULL, which discarded the real ALSA
+            # failure reason. With no capture device arecord dies instantly, read()
+            # below returns 0 bytes, listen() returns, and the caller respawns this
+            # thread — forever, ~30x/second, with no clue in the log as to why.
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.PIPE
             )
 
+            # BUG-23a: confirm arecord actually survived startup before claiming to
+            # be listening. Anything under ~0.3s means it failed to open the device.
+            time.sleep(0.3)
+            if self.process.poll() is not None:
+                try:
+                    err = (self.process.stderr.read() or b'').decode('utf-8', 'replace').strip()
+                except Exception:
+                    err = ''
+                self.last_error = err.splitlines()[-1] if err else \
+                    f'arecord exited {self.process.returncode} with no message'
+                print(f"[Vosk Wake Word] ✗ audio capture FAILED on {self.mic_device}: "
+                      f"{self.last_error}", flush=True)
+                self.running = False
+                return
+
+            self.last_error = None
             print(f"[Vosk Wake Word] 🎤 Listening for wake words: {', '.join(self.wake_words)}", flush=True)
 
             # Process audio in chunks

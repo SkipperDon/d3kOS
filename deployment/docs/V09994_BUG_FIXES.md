@@ -1294,7 +1294,48 @@ is also **hardcoded**: `wake_word_vosk.py:82` falls back to `plughw:0,0`, and ca
    what triggers 1 and 2 here. **On the boat a mic exists, so BUG-23a may not reproduce there —
    but defects 1 and 2 will fire the moment the mic drops out (USB dropout, brownout).**
 
-#### Proposed fix (NOT applied — awaiting operator approval)
+#### FIX APPLIED + DEPLOYED TO LAB PI — S116 2026-08-01 (operator-approved)
+
+| Metric (steady state, 60 s) | Before | After |
+|---|---|---|
+| Voice service CPU | **39%** | **0.03%** |
+| Log lines written | **~2,536** | **4** |
+| Watchdog result | `failed` every tick | clean exit |
+
+**1. Respawn backoff** — `voice-assistant-hybrid.py`. Ladder 1→2→5→15→30 s with a
+consecutive-failure counter. A listener that lives <2 s counts as a failure; a longer-lived one
+resets the counter. Backoff is honoured via a deadline (not a blocking sleep) so the `_mic_locked`
+check stays responsive. Per-attempt logging stops after 5 failures, with a DEGRADED message stating
+the real cause, then a heartbeat every ~20 attempts so a persistent fault stays visible.
+
+**2. `arecord` stderr captured** — `wake_word_vosk.py`. Was `subprocess.DEVNULL`. Now `PIPE`, with a
+0.3 s liveness check: if the process already exited, the real message is stored on
+`detector.last_error` and logged once. The log finally shows the actual cause:
+`arecord: main:850: audio open error: No such file or directory`.
+
+**3. Watchdog no-capture-hardware guard** — `/opt/d3kos/scripts/voice-watchdog.sh`. If
+`arecord -l` lists no card, it logs once and exits 0. Previously it restarted the voice service on
+every timer tick, which **reset the new backoff and caused a fresh log burst each time** — the
+watchdog was fighting the fix. A missing microphone cannot be restarted into existence.
+
+**4. Honest startup message** — the final device fallback said "Using default mic: plughw:0,0" when
+no capture device existed at all. It now states plainly that voice INPUT is unavailable and that TTS
+is unaffected.
+
+⚠ **Deliberately NOT changed:** the fallback still returns a device rather than `None`. Returning
+`None` sets `all_ok = False` in `check_dependencies()`, which aborts startup — and **this same
+service provides the TTS for critical engine alerts (BUG-44)**. A missing microphone must never
+silence the alarms. Degraded-but-running is the correct posture; the backoff makes it cheap.
+
+**Device auto-detection already existed** (`detect_microphone()`, line 57) and its generic fallback
+parses any card from `arecord -l`, so **an ordinary USB mic will be picked up** — it does not need
+to be the Anker S330. Operator is fitting a USB mic to the lab Pi, after which voice becomes
+desk-testable like everything else.
+
+**Version-control gap closed:** `voice-watchdog.sh` was Pi-only, outside the canonical tree. It is
+now mirrored at `deployment/v0.9.9.4/opt/d3kos/scripts/voice-watchdog.sh` (verified in sync).
+
+#### Original proposed fix (superseded by the above)
 - Exponential backoff on respawn (1 s → 2 s → 5 s → 30 s cap) with a consecutive-failure counter.
 - Capture `arecord` stderr; log the real reason **once**, not per attempt.
 - Probe for a capture device at startup; if none, log once and enter a **degraded/idle** state

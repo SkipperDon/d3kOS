@@ -83,8 +83,17 @@ class HybridVoiceAssistant:
         except Exception as e:
             print(f"  ⚠ Mic detection error: {e}", flush=True)
 
-        # Final fallback
-        print(f"  ⚠ Using default mic: plughw:0,0", flush=True)
+        # BUG-23a: be honest here. `arecord -l` listed no capture device at all, so
+        # plughw:0,0 is a guess that will fail on every open. Say so plainly instead
+        # of claiming to be "using" a mic that does not exist.
+        #
+        # Deliberately still returns a device rather than None: returning None sets
+        # all_ok = False in check_dependencies(), which aborts startup — and THIS
+        # service also provides the TTS used for critical engine alerts (BUG-44).
+        # A missing microphone must not silence the alarms. Degraded-but-running is
+        # correct; the respawn backoff keeps it cheap.
+        print(f"  ⚠ NO capture device found by 'arecord -l'. Voice INPUT is unavailable.", flush=True)
+        print(f"  ⚠ Falling back to plughw:0,0 (will fail). TTS output is unaffected.", flush=True)
         return "plughw:0,0"
 
     def check_dependencies(self):
@@ -351,6 +360,20 @@ class HybridVoiceAssistant:
             listener_thread = threading.Thread(target=wake_word_listener, daemon=True)
             listener_thread.start()
 
+            # ── BUG-23a: respawn backoff ────────────────────────────────────────
+            # This loop previously respawned the listener with no sleep, no backoff
+            # and no failure limit. With no capture device the thread dies instantly,
+            # so it spun ~30x/second forever: 6.3% CPU for no work, ~1,800 log lines
+            # a minute, 449,642 journal lines accumulated on the lab Pi. On a boat
+            # that is continuous SD-card write wear.
+            _BACKOFF = (1, 2, 5, 15, 30)   # seconds; the final value repeats
+            _QUIET_AFTER = 5               # stop per-attempt logging beyond this
+            _fails = 0
+            _next_try = 0.0
+            _died_at = None
+            _degraded = False
+            _started_at = time.time()
+
             # Main loop - check for detected wake words
             while True:
                 # If mic is externally locked (boatlog recording), idle until released
@@ -360,10 +383,47 @@ class HybridVoiceAssistant:
 
                 # Restart listener if it exited (after command or after external unlock)
                 if not listener_thread.is_alive():
-                    print("▶  Resuming wake word detection...", flush=True)
+                    now = time.time()
+
+                    # Classify the death once, on the first tick we notice it.
+                    if _died_at is None:
+                        _died_at = now
+                        # A listener that lived <2s never really started — that is a
+                        # failure, not a normal exit after handling a command.
+                        if _died_at - _started_at < 2.0:
+                            _fails += 1
+                            _next_try = now + _BACKOFF[min(_fails - 1, len(_BACKOFF) - 1)]
+                            if _fails == _QUIET_AFTER and not _degraded:
+                                reason = getattr(self.wake_word_detector, 'last_error', None) \
+                                         or 'unknown — no error captured'
+                                print(f"⚠  Wake word detection DEGRADED after {_fails} rapid "
+                                      f"failures. Cause: {reason}", flush=True)
+                                print(f"⚠  Backing off to {_BACKOFF[-1]}s between attempts. Voice "
+                                      f"commands are unavailable until audio capture recovers. "
+                                      f"Further attempts will not be logged.", flush=True)
+                                _degraded = True
+                        else:
+                            _fails = 0
+                            _degraded = False
+
+                    # Honour the backoff without blocking the mic-lock check.
+                    if now < _next_try:
+                        time.sleep(0.25)
+                        continue
+
+                    if _fails < _QUIET_AFTER:
+                        print("▶  Resuming wake word detection...", flush=True)
                     listener_thread = threading.Thread(target=wake_word_listener, daemon=True)
+                    _started_at = time.time()
+                    _died_at = None
                     listener_thread.start()
-                    print("🎤 Listening for wake words...", flush=True)
+                    if _fails < _QUIET_AFTER:
+                        print("🎤 Listening for wake words...", flush=True)
+                    elif _degraded and _fails % 20 == 0:
+                        # Heartbeat roughly every 10 minutes at the 30s backoff, so a
+                        # persistent fault stays visible without flooding the journal.
+                        reason = getattr(self.wake_word_detector, 'last_error', None) or 'unknown'
+                        print(f"⚠  Wake word still degraded ({_fails} failures): {reason}", flush=True)
 
                 if self.detected_wake_word:
                     wake_word = self.detected_wake_word
