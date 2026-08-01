@@ -138,6 +138,55 @@ reproduce. **Operator must tap the Helm Assistant textarea on the Pi touchscreen
 keyboard appears AND types.** If it appears but cannot type, the v2.1 blur/timing analysis below
 becomes live again — and is now actually reachable.
 
+### ⚠ CORRECTION TO MY OWN S116 DIAGNOSIS — the script WAS loading
+
+The "never loaded" claim above is **WRONG** and is recorded as a recovery event.
+
+nginx `location /` **proxy_passes to 127.0.0.1:3000**. The kiosk launches
+`chromium --app=http://localhost/` — port **80** — so the operator sees the Flask dashboard
+*through nginx*. On :80, `/js/keyboard-fix.js` is served by nginx from `/var/www/html/js/` and
+returns **200**. I measured port 3000 directly instead of the kiosk's real origin, and stated
+"the script never loaded" as fact.
+
+What the S116 change actually achieved (still net-positive, but not a load fix):
+- direct `:3000` access now works (it genuinely was 404 there)
+- Flask has its own `/keyboard/*` routes (nginx already proxied these on :80, so redundant for the
+  kiosk but correct for direct access)
+- **v2.2 same-machine guard is genuinely new and valuable** — post-BUG-46 a remote tap would
+  otherwise raise the keyboard at the helm
+
+### SYMPTOM 2 ROOT CAUSE — CONFIRMED S116, operator-verified on the touchscreen
+
+Operator confirms: **the keyboard appears, but typing produces nothing in the input.** The D-Bus
+show path works; the keystrokes have nowhere to go.
+
+**Chromium is launched without Wayland IME support.** Live read of the running process
+(Chromium 144.0.7559.109, Debian trixie) shows `--ozone-platform=wayland` present but **neither**
+`--enable-wayland-ime` **nor** `--wayland-text-input-version=3`. Without those, Chromium never
+registers a `zwp_text_input_v3` client, so squeekboard has no text-input target — it renders and
+swallows every key.
+
+Source (researched S116, not inferred):
+- <https://issues.chromium.org/issues/40113488> — Ozone-wayland text_input_v3 support
+- <https://github.com/swaywm/sway/issues/8276> — the flags are
+  `--enable-wayland-ime --wayland-text-input-version=3`; **labwc is reported working**, unlike sway
+- <https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland> — same flag set for Wayland IME
+
+This also explains why the v2.1 `el.blur()`/`el.focus()` trick could never work: it tries to force
+re-registration of a protocol **Chromium was never told to speak**.
+
+### Proposed fix — NOT applied, needs operator approval (HIGH risk)
+Add to `/home/d3kos/.config/autostart/d3kos-browser.desktop`:
+```
+--enable-wayland-ime --wayland-text-input-version=3
+```
+⚠ **This changes the kiosk browser launch line.** If it is wrong the helm display may not come up,
+and it only takes effect after a session restart or reboot. Needs a tested rollback and should be
+done while the operator can see the screen.
+
+Possible bonus: with text-input-v3 active, Chromium may raise the keyboard itself on focus, making
+the `/keyboard/show` D-Bus hack redundant. Do not remove it until that is proven.
+
 ### Original analysis (retained — but note it targets the nginx page, not the live one)
 
 ### Symptoms (reported by Don 2026-04-21)
