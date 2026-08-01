@@ -1393,3 +1393,19 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 **Bugs fixed this session (lab Pi only — NOT on the boat Pi):** BUG-43, BUG-46, BUG-47, BUG-48. Regression 33/33.
 
 **Infrastructure blocker (not a d3kOS defect):** Ollama on `192.168.1.36` reports `size_vram=0` for `devstral:24b`, `deepseek-coder:6.7b` AND `gemma4:latest` — CPU-only for every model tested. Tier 3 was run on Gemini `2.5-flash-lite` instead (7.4–8.4 s vs >10 min). Detail in `V09994_FIX_PLAN.md`.
+
+### S115 — 2026-08-01
+
+| File | Description |
+|------|-------------|
+| `.../dashboard/static/images/amboat-logo.png` | **NEW (restored)** — BUG-49. The `<img>` in `index.html` referenced this path but it existed in neither the canonical tree nor the Pi; live read returned 404, so the browser rendered the alt text instead. Restored from `features/boot-splash/theme/` (md5 `92c88112`, 512×512). |
+| `.../dashboard/static/css/d3kos.css` | **UPDATED** — BUG-49: explicit `color:#FFFFFF` on `.sb-brand` (alt-text contrast was 1.09:1, WCAG AA fail); `.sb-brand` height 28→64px; `--sb-h` 48→72px. `--ink2`/`--ink3` tokens untouched per the S54 rule. |
+| `.../dashboard/templates/index.html` | **UPDATED** — BUG-49: logo inline height 28→64px. |
+| `tests/bug49-header-brand.spec.ts` | **NEW** — 3 tests: logo asset returns 200; computed WCAG contrast ≥4.5:1 in BOTH day and night. |
+| `/var/lib/avnav/avnav_server.xml` (Pi only) | **UPDATED** — BUG-19 + BUG-20: added `fetchAis="true" aisQueryPeriod="5"` to `<AVNSignalKHandler>`. ⚠ **NOT in the canonical repo tree** — Pi-only config, not version-controlled. Backup: `avnav_server.xml.pre-bug19-20260731_223321.bak`. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **UPDATED** — BUG-49 logged and closed; BUG-19 + BUG-20 root cause and fix recorded (43 entries). |
+| `PROJECT_CHECKLIST.md` | **UPDATED v3.26** — BUG-49 row added and closed; BUG-19/20 marked fixed. |
+
+**Bugs fixed this session (lab Pi only — NOT on the boat Pi):** BUG-49, BUG-19, BUG-20. Regression 36/36.
+
+**Investigation result — `signalk-forward-watch`:** lab Pi runs **0.2.3, which is the npm latest** (published 2026-04-21). Nothing to upgrade. Detection output traced: `plugin/opencpn-output.js` writes each detection into Signal K as a **fake vessel** (`mmsi:800000001`–`800000006`, one per class: ship/boat/debris/buoy/kayak/log) with position, `name` like `FW-BOAT (87%)`, COG and SOG=0. It emits **no AIS, no NMEA 0183, no NMEA 2000**. To reach a chartplotter on the N2K bus you would need `sk-to-nmea2000` with option `AISv2` — **installed but NOT enabled**; that is an operator decision, since it broadcasts invented targets onto a shared safety bus and only six MMSIs exist (two objects of one class would overwrite each other).
