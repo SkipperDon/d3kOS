@@ -719,7 +719,7 @@ BUG-11 (generic device health detection) would have caught this failure automati
 
 ## BUG-15 — Course Heading Flashes Different Directions on d3kOS Dashboard While Boat Is Stationary
 
-**Status:** `[ ]` OPEN — investigation required
+**Status:** `[~]` **FIXED IN LAB — S107; this entry CORRECTED S114 2026-07-31.** It previously read `[ ]` OPEN, which contradicted `PROJECT_CHECKLIST.md` and was **wrong**. Verified S114 against the served file on the lab Pi: `instruments.js:169` holds the guard `if (_lastSogKts !== null && _lastSogKts < 0.5) return;` — COG is not updated below 0.5 kt. **NOT on the boat Pi**; on-boat validation still required. **Note:** likely the same underlying defect as BUG-13 (no smoothing/deadband on a noisy low-speed signal) — validate the two together.
 **Logged:** 2026-07-13 S98 (on-boat, reported by Don)
 **Platform:** Pi (d3kOS dashboard — COG display)
 

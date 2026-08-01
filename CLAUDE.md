@@ -337,11 +337,40 @@ MARINE_VISION_CAMERA_OVERHAUL.md) was affected by work done this session,
 update it to reflect current state. Version bump the document header.
 Skip and state which docs were not affected if not applicable.
 
-**Step 8 — Git Commit**
+**Step 8 — GitHub Issue Sync** (added S114 2026-07-31)
+Sync `github.com/SkipperDon/d3kOS` Issues with this session's bug work.
+This is the ONLY externally-visible step in the close sequence — it publishes to
+a public repo. **State what will be created or changed and get explicit operator
+approval before running it.** Never do it silently.
+
+For every bug touched this session:
+- **New BUG-XX logged** → create an issue. Title `BUG-XX: <symptom>`. Body must
+  carry status, severity, symptom, root cause, fix, and verification evidence.
+- **Status changed** → update labels and add a comment explaining the change.
+- **Closed** → close the issue with the reason.
+
+Labels already defined — do not invent new ones: `bug`, `enhancement`,
+`fixed-lab`, `needs-boat-validation`, `hardware-blocked`, `not-a-bug`,
+`superseded`, `Group-A` … `Group-E`.
+
+**Before changing any label, verify against the CODE, not the paperwork.**
+There are now three records of bug state — `V09994_BUG_FIXES.md`,
+`PROJECT_CHECKLIST.md` PART 17, and GitHub Issues — and in S114 the first two
+were found to **contradict each other** on BUG-15. The bug file said OPEN; the
+checklist said FIXED; the deployed code proved the checklist right. Acting on the
+wrong one produced a wrong GitHub edit that had to be reverted.
+
+Rule: when the records disagree, **read the served file on the Pi and correct the
+stale record**. A live read outranks every document.
+
+Sync gaps are a real failure mode: GitHub went three sessions without an update
+and silently carried two wrong labels.
+
+**Step 9 — Git Commit**
 Stage and commit all session changes with a clear commit message.
 Never push — local only. See Git Policy above.
 
-**Step 9 — Chat Summary**
+**Step 10 — Chat Summary**
 Present a concise summary in chat covering:
 - What was accomplished
 - What was deferred or blocked
