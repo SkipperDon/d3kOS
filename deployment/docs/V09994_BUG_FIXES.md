@@ -807,7 +807,16 @@ Alternative: implement a low-pass filter on COG that attenuates rapid changes wh
 
 ## BUG-16 — Engine Gauge Tap Dialog Shows Hardcoded/Simulated Data; Does Not Read Live Signal K Values or Compare Against Actual Tolerances
 
-**Status:** `[ ]` OPEN — logged only. No investigation or fix attempted.
+**Status:** `[x]` **CLOSED S116 2026-08-01 — RESOLVED BY BUG-34/BUG-36, verified with LAB-SIM.**
+`openDiag()` in `overlays.js` now builds its cards from `window._d3kEngData` — the **live** Signal K
+cache restored by BUG-36 — and sends the live readings to Gemini. Nothing is hardcoded.
+**Verified S116** by injecting distinctive healthy values that a hardcoded dialog could not reproduce:
+oil 47 PSI, RPM 2350, coolant 77 °C, battery 13.7 V. The live cache held exactly those, and the
+rendered `#diagGrid` contained `47` and `2350`. The specific on-boat symptom — an oil alarm shown
+while the gauge read normally — was also disproved: at 47 PSI (above adv 30 / alrt 25 / crit 4)
+`#cellOil` carries no alarm class. Test: `tests/bug16-18-24-labsim-verification.spec.ts`.
+⚠ Note: the preliminary root cause below cited `deployment/v0.9.4/pi_source/overlays.js`, which is a
+SUPERSEDED read-only tree. The live file is `deployment/v0.9.9.4/.../static/js/overlays.js`.
 **Platform:** Pi (d3kOS dashboard — engine gauges)
 **Reported:** 2026-07-15 S100 — on-boat testing
 
@@ -952,7 +961,13 @@ Independent of BUG-14 — even when CX5106 is fully operational, it cannot provi
 
 ## BUG-18 — Depth Gauge Not Registering on d3kOS Dashboard
 
-**Status:** `[ ]` OPEN — logged S103 2026-07-20
+**Status:** `[x]` **CLOSED S116 2026-08-01 — RESOLVED BY BUG-30, verified with LAB-SIM.**
+Root cause was candidate 3 ("Signal K receiving but d3kOS reading wrong path"): the dashboard read
+`environment.depth.belowKeel` while Signal K publishes `belowTransducer`. Fixed under BUG-30.
+**Verified S116** by injecting depth into Signal K and asserting the rendered DOM:
+`#cellDepth .ic-v` shows `3.8`, and tracks a change 0.9 → 3.8. Test:
+`tests/bug16-18-24-labsim-verification.spec.ts`. No further work — this entry is superseded by BUG-30.
+**Logged:** 2026-07-20 S103
 **Logged:** 2026-07-20 S103
 **Platform:** Pi (d3kOS dashboard — depth display)
 
@@ -1251,7 +1266,30 @@ Tapping the voice record button, speaking a sentence, then tapping stop does not
 
 ## BUG-24 — Boat Log Engine Auto-Capture Not Working
 
-**Status:** `[ ]` OPEN — logged S104 2026-07-21
+**Status:** `[~]` **RE-DIAGNOSED S116 2026-08-01 — original hypothesis DISPROVED. Still open; fix path now clear.**
+
+**The logic works.** Verified S116 with LAB-SIM: with the Boat Log page open, injecting RPM 0 →
+2200 wrote an `event:"start"` engine entry to `localStorage('d3kos-boatlog-entries')` exactly as
+designed. So candidates 1 (blocked by BUG-14 / no RPM), 3 (threshold logic) and 4 (write path) are
+all **disproved** — it captures correctly when it is running.
+
+**The real root cause is architectural.** `boatlog-engine.js` is loaded by **`boat-log.html` ONLY**
+— zero references in `index.html` (verified S116, and asserted by a regression test). It is a
+client-side script, so engine auto-capture only runs **while the Boat Log page is open in a
+browser**. At the helm the dashboard is on screen, so engine start/stop is never observed and
+nothing is ever recorded. That is why H-04 failed on-boat after 30+ minutes of running.
+
+**Fix options (needs an operator decision — this is a design change, not a patch):**
+- **(a) Quick:** also load `boatlog-engine.js` from `index.html`. ⚠ `localStorage` is shared per
+  origin, so with both pages open two instances would double-record. Needs a single-instance guard.
+- **(b) Correct:** move engine capture to a **server-side service** that subscribes to Signal K and
+  writes to the Boat Log independently of any browser. Engine logging should not depend on which
+  page happens to be displayed. This is the option that actually matches the feature's intent.
+
+**Recommendation: (b).** Also note `boatlog-engine.js` subscribes to `propulsion.port.temperature`
+but **not** `propulsion.port.coolantTemperature` — the same alias gap fixed in the dashboard under
+BUG-47. Worth correcting in the same change.
+**Logged:** 2026-07-21 S104
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (Boat Log — engine auto-capture)
 **Checklist:** H-04 (failed)
