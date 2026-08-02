@@ -412,7 +412,21 @@ Both endpoints confirmed Active, 0 failures in Stripe Dashboard post-fix.
 
 ## BUG-09 — AvNav data corruption after power loss; self-healing audit for all critical services
 
-**Status:** `[ ]` OPEN — research required. Logged 2026-07-10 S94. No fix attempted yet.
+**Status:** `[x]` **NOT A BUG — CLOSED S117 2026-08-02 by operator decision on the evidence below.**
+No AvNav corruption has ever been observed, captured or reproduced. Every investigation of the
+symptom found a different, real, non-corruption cause — both of them already identified and one
+already fixed (S96). The record's "confirmed root cause" was an unverified inference from a
+symptom report and should never have been written as fact.
+
+**What the symptom actually was (S96, on the boat):** (1) a serial port conflict flooding the logs
+— **fixed**; (2) a blank chart screen caused by an **expired o-charts licence**, with the chart
+files intact on disk — a renewal (OB-O05), not a defect.
+
+**Part 2 of this bug — the system-wide self-healing audit — is not a defect either.** It is a
+hardening idea that was bundled into a bug record. It does not belong in the bug tracker. If it is
+wanted it should be raised as a v0.9.9.5 discussion item, the same way BUG-11 and BUG-23b were
+handled. **Operator decision — not moved automatically.**
+
 **Platform:** Pi (primary); all d3kOS services (secondary audit scope)
 
 ---
