@@ -442,6 +442,15 @@ PUT http://localhost:3000/signalk/v1/api/vessels/self/notifications/vhf/<alert-i
 
 **Complexity:** ~20 lines of Python. Highest-value, lowest-cost enhancement. Can ship with Phase 1.
 
+> **⚠ Phase 3 has a SECOND consumer — BUG-23b (moved here S117 2026-08-02).**
+> Boat Log **voice notes cannot be transcribed** for exactly the same reason the VHF audio cannot:
+> **there is no speech-to-text engine installed on the Pi at all.** Recording works; nothing turns
+> speech into text. This is an absence, not a defect — which is why BUG-23b was moved out of the
+> v0.9.9.4 bug tracker. Installing Faster-Whisper for Phase 3 below **also unblocks Boat Log voice
+> notes**, so scope Phase 3 with both consumers in mind rather than as VHF-only.
+> (BUG-23**a** — the voice service respawn hot loop, 39% CPU — was a real defect and was **fixed in
+> S116**. It is unrelated to this.)
+
 ### Phase 3 — Faster-Whisper STT Transcription
 
 Runs Faster-Whisper (CTranslate2-based) locally on the Pi CPU after each classified-speech MP3 is written. Not real-time — async post-processing only.
@@ -565,6 +574,64 @@ AvNav, Signal K (`~/.signalk/`), the Flask APIs, the SQLite databases, and the C
 
 ---
 
+## 15. Universal Device Health Framework — Is Any Connected Device Actually Working?
+
+**Status:** `[RESEARCH]` — moved here from **BUG-11** by operator decision, S117 2026-08-02.
+Logged originally 2026-07-10 S95. No root cause, no design, never started.
+
+**The problem in one line:** connect an AIS receiver, GPS, microphone or speaker of any make, and
+d3kOS cannot tell the owner whether it is working. A broken device and a working device produce the
+same experience — silence, no error, no feedback.
+
+**Governing constraint — this is what makes it hard.** The solution **cannot be brand-specific**.
+d3kOS ships worldwide; the make and model of connected hardware is unknown in advance. The correct
+question is not *"what devices does Don use?"* but *"how does d3kOS reliably detect, verify and
+monitor any device of this type?"* No whitelist, no lookup table of known hardware.
+
+**Two failure classes, both must be covered:**
+- **Class A — compatibility failure at connect time.** The device uses a protocol variant, baud
+  rate, physical interface or data format d3kOS does not handle. Plugged in, system sees nothing,
+  user sees nothing, no error surfaced.
+- **Class B — silent operational failure at runtime.** The device was recognised at boot and later
+  stopped producing valid data — cable fault, power brownout, RF signal loss, USB
+  disconnect/reconnect. No runtime detection of this exists today.
+
+### ⚠ Scope boundary against BUG-50 — read before starting
+
+**BUG-50 stays in v0.9.9.4 and must NOT be folded into this item.** Logged S117, it is the
+concrete, proven, bounded defect: the Settings page shows **GPS, AIS, OpenPlotter and AvNav as
+green when they are dead**, because those rows are wired to the Signal K *server's* liveness rather
+than to any actual data. Verified live — GPS shows green while `navigation/position` returns 404,
+AIS shows green while Signal K holds zero targets.
+
+| | BUG-50 (stays in v0.9.9.4) | D15 (this item) |
+|---|---|---|
+| Scope | GPS, AIS, OpenPlotter, AvNav indicators | The generic framework, **plus microphone and speaker** |
+| State | Root cause proven, fix bounded | No root cause, no design |
+| Blocking? | No — fix it now | No — research |
+
+Fixing BUG-50 produces the **working reference implementation** that this framework can then
+generalise. Do this item *after* BUG-50, not instead of it.
+
+**Historical proof the problem is real:** throughout BUG-32 — when AIS was being discarded entirely
+because `rtl_ais` was pushing into a port Signal K owns as its own output — the Settings page
+displayed AIS as healthy. The owner had no way to know.
+
+**Open discussion questions:**
+- Is "data arrived recently" a sufficient universal health signal, or does each category need its
+  own definition of alive?
+- How is "no AIS targets because nothing is in range" distinguished from "receiver is dead"? These
+  are genuinely different and a two-state indicator cannot express both — the honest answer may be
+  three states including **UNKNOWN**.
+- Microphone and speaker have no data stream to watch. Do they need active probing (a test tone, a
+  capture sample), and is that acceptable to run automatically at the helm?
+- Should this surface as a Settings page section, a dashboard indicator, or a notification?
+
+**What would trigger moving to PROJECT_CHECKLIST.md:**
+- BUG-50 fixed first, then Don approving a generic framework built on that pattern.
+
+---
+
 ## Prioritization Discussion (not decided — for Don's review)
 
 | # | Item | Complexity | Dependency | Value |
@@ -586,6 +653,7 @@ AvNav, Signal K (`~/.signalk/`), the Flask APIs, the SQLite databases, and the C
 | 12c | Unclean-shutdown hardening (D14) — read-only charts only | Low (1 mount change) | None | Protects 1.4 GB of charts |
 | 13 | pypilot integration | Very High | SafeHelm Phase 2 sea trial | Automation |
 | 14 | Unclean-shutdown hardening (D14) — full self-healing audit | High | An actual corruption event being captured | Unproven — no corruption ever observed |
+| 15 | Universal device health framework (D15, ex BUG-11) | High | **BUG-50 fixed first** — it is the reference implementation | Owner can tell if their AIS/GPS/mic/speaker works |
 
 ---
 

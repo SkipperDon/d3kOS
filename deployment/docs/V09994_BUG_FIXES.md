@@ -592,7 +592,19 @@ Concept: a single `d3kos-selfheal.service` that runs `ExecStartPre` before all o
 
 ## BUG-11 — No universal method to verify any brand of AIS, GPS, microphone, or speaker is working when connected to d3kOS
 
-**Status:** `[ ]` OPEN — research required. Logged 2026-07-10 S95. Updated S95.
+**Status:** `[–]` **MOVED TO v0.9.9.5 — S117 2026-08-02 (operator decision).**
+Not a defect — an unbuilt capability with no root cause and no design, logged S95 and never started.
+→ `V09995_DISCUSSION_PLAN.md` **§15 — Universal Device Health Framework**, and
+`PROJECT_CHECKLIST.md` PART 20 row **D15**.
+
+⚠ **BUG-50 STAYS in v0.9.9.4 and must NOT be folded into D15.** BUG-50 is the proven, bounded piece
+of this problem: the Settings page reports **GPS, AIS, OpenPlotter and AvNav as green while they are
+dead** — verified live S117 (GPS green while `navigation/position` returns 404; AIS green while
+Signal K holds zero targets). Fixing BUG-50 produces the working reference implementation that D15
+generalises. **D15 additionally covers microphone and speaker**, which have no data stream to watch
+and may need active probing. **Do not re-enter this in the bug tracker.**
+
+The original research material below is retained — it was carried into D15 rather than discarded.
 **Platform:** Pi (all hardware integration points)
 
 ### Symptom
@@ -1641,8 +1653,18 @@ now mirrored at `deployment/v0.9.9.4/opt/d3kos/scripts/voice-watchdog.sh` (verif
 - Watchdog: treat "no capture hardware" as a distinct state, not a restart trigger.
 
 ⚠ **Unrelated to BUG-23b.** Transcription still cannot work regardless — there is no local STT
-engine installed (Faster-Whisper is v0.9.9.5 item D13). BUG-23b was moved to the v0.9.9.5 backlog
-in S114.
+engine installed at all.
+
+**BUG-23b — MOVE COMPLETED S117 2026-08-02 (operator decision).** It is an **absence, not a
+defect**: recording works, nothing converts speech to text. → `V09995_DISCUSSION_PLAN.md` **§13
+(D13) Phase 3**, where Faster-Whisper is already planned.
+
+⚠ **Correction to the earlier note here:** it claimed BUG-23b "was moved to the v0.9.9.5 backlog in
+S114." **That move was declared but never actually executed** — no reference to BUG-23b existed
+anywhere in `V09995_DISCUSSION_PLAN.md`, and the checklist row still read as open. The *capability*
+(Faster-Whisper) was in the plan, but framed as VHF-radio transcription only, so nobody connected it
+to Boat Log voice notes. S117 added the cross-reference to D13 Phase 3 naming Boat Log as the second
+consumer. **No duplicate backlog item was created.**
 
 ### Symptom
 Tapping the voice record button, speaking a sentence, then tapping stop does not produce a VOICE entry in the Boat Log list. H-03 failed on-boat.
