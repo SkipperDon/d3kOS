@@ -422,10 +422,13 @@ symptom report and should never have been written as fact.
 — **fixed**; (2) a blank chart screen caused by an **expired o-charts licence**, with the chart
 files intact on disk — a renewal (OB-O05), not a defect.
 
-**Part 2 of this bug — the system-wide self-healing audit — is not a defect either.** It is a
-hardening idea that was bundled into a bug record. It does not belong in the bug tracker. If it is
-wanted it should be raised as a v0.9.9.5 discussion item, the same way BUG-11 and BUG-23b were
-handled. **Operator decision — not moved automatically.**
+**Part 2 of this bug — the system-wide self-healing audit — was not a defect either.** It was a
+hardening idea bundled into a bug record. **MOVED to the v0.9.9.5 backlog by operator decision
+S117 2026-08-02** → `V09995_DISCUSSION_PLAN.md` **§14 — Unclean-Shutdown Hardening**, and
+`PROJECT_CHECKLIST.md` PART 20 row **D14**. All the S117 live-read findings below (filesystem,
+AvNav's own config self-healing, the write surface, the unconfigured hardware watchdog, the absence
+of hold-up power) were carried across so they do not have to be re-derived. **Do not re-enter this
+in the bug tracker** — it returns only if an actual corruption event is observed and captured.
 
 **Platform:** Pi (primary); all d3kOS services (secondary audit scope)
 

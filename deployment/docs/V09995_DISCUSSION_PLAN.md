@@ -509,6 +509,62 @@ Pipes transcription text through Argos Translate (fully offline, CPU neural MT) 
 
 ---
 
+## 14. Unclean-Shutdown Hardening — System-Wide Self-Healing Audit
+
+**Status:** `[RESEARCH]` — moved here from BUG-09 Part 2 by operator decision, S117 2026-08-02.
+
+**Origin — read this before doing any work on it.** This was the second half of BUG-09, which was
+**closed as NOT A BUG** in S117. BUG-09's first half claimed power loss corrupts AvNav data. That
+claim was never verified — it was recorded in S94 from an operator observation of a *symptom* and
+carried forward as fact for a month. **No AvNav corruption has ever been observed, captured or
+reproduced.** Every actual investigation found a different, real cause:
+- **S96 (on the boat):** `AVNUsbSerialReader` reopening `/dev/ttyACM0` at every baud rate while
+  gpsd held the port exclusively for Signal K — a log-flooding error loop that made AvNav *look*
+  broken. AvNav was never down. **Fixed S96.**
+- **S96 (on the boat):** blank charts caused by the **o-charts licence expiring 2026-04-01**, with
+  the 1.3 GB of chart files intact on disk. A renewal (OB-O05), not a defect.
+
+This item is therefore **hardening against a risk that is real in principle but has never been
+demonstrated here.** It is not a defect and must not be re-entered in the bug tracker.
+
+**⛔ Operator instruction S117 — do NOT build a watchdog for this.** A watchdog restarts a dead or
+hung service; unclean-shutdown damage is to data at rest, so it would fail repeatedly. **BUG-23a
+(fixed S116) is the worked example** — a watchdog hot-looping on a fault it could not repair, at
+**39% CPU** and **~2,536 log lines/minute**.
+
+**What was established S117 by live reads of the lab Pi (do not re-derive):**
+- Root filesystem is **ext4 on the SD card** (`/dev/mmcblk0p2`, `defaults,noatime`, 117 GB, 22%
+  used). ext4's default journalling protects filesystem *metadata*, not file *contents* — a file
+  mid-write at power-off can be left torn while the filesystem itself checks out clean. SD cards
+  add independent exposure: the flash translation layer can lose an entire block on power loss.
+- **AvNav already self-heals its own config.** `/usr/lib/avnav/server/avnav_manager.py:249` —
+  `getFallbackName()` returns `<cfg>.ok` (or `.initial`) and `getInvalidName()` quarantines a bad
+  file as `.invalid-<UTC timestamp>`. **Do not build config repair for AvNav.**
+- **AvNav's live write surface is tiny** — 14 files in 24 h (logs, GPS tracks, the `.ok` copy).
+  `ochartsng` is 1.4 GB of the 1.4 GB total and is effectively static; only its logs change.
+- `/dev/watchdog` and `/dev/watchdog0` exist but `RuntimeWatchdogSec` is **not** configured. That
+  addresses the Pi **hanging** — a different failure from data damage.
+- **No UPS, supercapacitor, or power-fail shutdown service exists.** Hold-up power is the only
+  measure that actually prevents an unclean shutdown. Hardware; no product researched, and none
+  should be named without research per the Hardware Claim Protocol.
+
+**Scope if pursued — every service that writes persistent state:**
+AvNav, Signal K (`~/.signalk/`), the Flask APIs, the SQLite databases, and the ChromaDB RAG store.
+
+**Open discussion questions:**
+- Is this worth doing at all, given no corruption has ever been demonstrated on this system?
+- Should the 1.4 GB of static charts simply be made read-only, so the largest asset cannot be
+  damaged regardless? (Highest value, lowest risk, independent of everything else here.)
+- Is hold-up power the honest answer, making all software mitigation secondary?
+- Should the unconfigured hardware watchdog be enabled on its own merits — for **hangs**, clearly
+  labelled as unrelated to this item?
+
+**What would trigger moving to PROJECT_CHECKLIST.md:**
+- An actual instance of corruption being observed and captured on either Pi, **or**
+- Don deciding the read-only-charts change is worth doing on its own merits.
+
+---
+
 ## Prioritization Discussion (not decided — for Don's review)
 
 | # | Item | Complexity | Dependency | Value |
@@ -527,7 +583,9 @@ Pipes transcription text through Argos Translate (fully offline, CPU neural MT) 
 | 11b | 360° Vision: NCS2 cameras + satellite + cellular | High | Hardware selection + model source | Safety + awareness |
 | 12 | VHF Communication Suite (D13) — Phase 1+2 | Low (~4h) | Radio audio tap confirmed | Safety + situational awareness |
 | 12b | VHF Communication Suite (D13) — Phase 3+4 (STT + Translation) | Medium (~6h) | Pi memory confirmed + Phase 1 live | Safety + international ops |
+| 12c | Unclean-shutdown hardening (D14) — read-only charts only | Low (1 mount change) | None | Protects 1.4 GB of charts |
 | 13 | pypilot integration | Very High | SafeHelm Phase 2 sea trial | Automation |
+| 14 | Unclean-shutdown hardening (D14) — full self-healing audit | High | An actual corruption event being captured | Unproven — no corruption ever observed |
 
 ---
 
