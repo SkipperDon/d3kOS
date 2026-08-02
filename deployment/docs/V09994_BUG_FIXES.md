@@ -415,6 +415,96 @@ Both endpoints confirmed Active, 0 failures in Stripe Dashboard post-fix.
 **Status:** `[ ]` OPEN — research required. Logged 2026-07-10 S94. No fix attempted yet.
 **Platform:** Pi (primary); all d3kOS services (secondary audit scope)
 
+---
+
+## ⛔ OPERATOR INSTRUCTION — S117 2026-08-02: DO NOT BUILD A WATCHDOG FOR THIS
+
+**A watchdog is not the solution to BUG-09 and must not be proposed or built for it.**
+
+A watchdog restarts a service that is dead or hung. Power-cut damage is to data at rest.
+Restarting AvNav against damaged files fails again — and this project already has a worked
+example of that going wrong: **BUG-23a**, fixed S116, where a watchdog hot-looped on a fault it
+could not repair, burning **39% CPU** and writing **~2,536 log lines per minute**. Do not
+recreate that on the navigation system.
+
+---
+
+## ⚠ THE "CONFIRMED ROOT CAUSE" BELOW IS NOT CONFIRMED — READ BEFORE DESIGNING ANYTHING (S117 2026-08-02)
+
+The Symptom and Known Root Cause sections below state as established fact that power loss
+corrupts AvNav data. **That was never verified.** It was recorded in S94 from an operator
+observation of the symptom, and has been carried forward unchallenged ever since.
+
+**Every time this symptom has actually been investigated, the cause turned out NOT to be
+corruption.**
+
+### S96 (2026-07-11) — investigated ON THE BOAT, found two real non-corruption causes
+
+The session goal was literally *"AvNav file looks corrupt"*. It was not corrupt. Two separate
+faults were found, both of which make AvNav **look** broken:
+
+1. **Serial port conflict — FIXED S96.** `AVNUsbSerialReader` was repeatedly opening
+   `/dev/ttyACM0` (the u-blox GPS) at every baud rate in turn, while gpsd already held that port
+   exclusively for Signal K. A perpetual error loop that flooded the logs and wasted resources.
+   AvNav was never actually down — `AVNSignalKHandler` was supplying GPS from Signal K on :8099
+   the whole time, and the router log showed live navigation (tracking waypoint "Marker" at
+   lat 42.895). **Fix applied to the boat's `/var/lib/avnav/avnav_server.xml`:**
+   ```xml
+   <UsbDevice usbid="1-1.4:1.0" type="ignore"/>
+   ```
+   Verified: `STATUS[1-1.4:1.0] INACTIVE, /dev/ttyACM0 configured to be ignored`. Survived reboot.
+   ⚠ **This rule is on the BOAT ONLY.** Verified S117: on the lab Pi every `UsbDevice` line in
+   `AVNUsbSerialReader` is commented out and `allowUnknown="true"` — the fix is absent. Same
+   version-control exposure as the BUG-19/20 fix: `avnav_server.xml` is not in the repo.
+
+2. **Blank chart screen — NOT a software fault at all.** o-charts Canada licences (CAac + CAgl)
+   expired **2026-04-01**. Chart files were **intact on disk** (1.3 GB); ochartsng simply refuses
+   to decrypt them without a valid licence — `"active": false`, `"errors": 741/741`,
+   `"numValidCharts": 0`. Requires a subscription renewal, tracked as **OB-O05 (still blocking)**.
+   Nothing to repair, nothing to code.
+
+**S96's own session log recorded that this bug's scope needed revising** — *"BUG-09 scope update
+needed… the AvNav-specific issue was not file corruption but license expiry."* **That update was
+never made.** The unrevised premise then very nearly caused a corruption-repair system to be
+designed in S117 for a problem that may not exist. Same failure as BUG-08: a premise written once,
+never re-tested, then built upon.
+
+### Further corrections established S117 by live read of the lab Pi
+
+- **R1 — the data path in this record is WRONG.** It says `/home/d3kos/.avnav/`. **That directory
+  does not exist.** AvNav runs as `ExecStart=/usr/bin/avnav -q -b /var/lib/avnav`, and
+  `/var/lib/avnav` holds 1.4 GB. Anything designed against the recorded path would have protected
+  an empty directory.
+- **R2 — ANSWERED: yes, AvNav already self-heals its own config.** Verified in AvNav's source,
+  `/usr/lib/avnav/server/avnav_manager.py:249`: `getFallbackName()` returns `<cfg>.ok` (or
+  `.initial`), and `getInvalidName()` renames a bad config to `.invalid-<UTC timestamp>`. On the Pi
+  now: `avnav_server.xml.ok`, rewritten after each successful start. **Config corruption is already
+  handled by AvNav. Do not build a config repair step.**
+- **The live write surface is tiny.** In 24 h only **14 files** changed — log files, GPS tracks,
+  and the `.ok` config copy. Of the 1.4 GB, `ochartsng` is 1.4 GB and effectively static; only its
+  logs changed. `tracks` 3.4 MB, `log` 576 KB; routes/user/settings under 60 KB combined.
+- **Filesystem exposure:** single ext4 root on the SD card (`/dev/mmcblk0p2`, `defaults,noatime`,
+  117 G, 22% used). ext4's default journalling protects filesystem *metadata*, not file *contents* —
+  a file mid-write at power-off can be left torn while the filesystem itself checks out clean. SD
+  cards add independent risk (the flash translation layer can lose a whole block on power loss).
+- **Hardware watchdog exists and is unconfigured** — `/dev/watchdog` and `/dev/watchdog0` are
+  present; `RuntimeWatchdogSec` is not set in `/etc/systemd/system.conf`. This addresses the Pi
+  **hanging**, which is a different failure from corruption. Noted for completeness; per the
+  operator instruction above it is not a BUG-09 fix.
+- **No UPS, supercapacitor, or power-fail shutdown service exists.** The only measure that actually
+  prevents an unclean shutdown is giving the Pi enough hold-up power to shut down properly. That is
+  hardware and is not specified here — no product has been researched.
+- **The lab Pi cannot currently reproduce either S96 condition:** it has no u-blox on USB and its
+  ochartsng also returns `{"data": []}` — zero charts.
+
+### What is genuinely still unknown
+R3, R4 and R5 remain unanswered, and **no instance of actual AvNav file corruption has ever been
+observed, captured, or reproduced.** Before any repair mechanism is specified, someone must
+establish that files are in fact being damaged, and which ones. Until then the honest status of
+this bug is: **symptom reported; every investigation to date found a different cause.**
+
+---
+
 ### Symptom
 AvNav chart navigation software becomes corrupted after unexpected power loss on the boat.
 Root cause confirmed by operator: loss of boat electrical power (not a software crash) causes
