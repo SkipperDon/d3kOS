@@ -44,7 +44,6 @@
           <div class="si"><div class="si-name">AIS Receiver</div><div class="si-val" id="si-ais">&#8212;</div><div class="si-sub">via Signal K</div></div>
           <div class="si"><div class="si-name">Gemini AI</div><div class="si-val" id="si-gemini">&#8212;</div><div class="si-sub">localhost:3001</div></div>
           <div class="si"><div class="si-name">Ollama (LAN)</div><div class="si-val" id="si-ollama">&#8212;</div><div class="si-sub">192.168.1.36:11434</div></div>
-          <div class="si"><div class="si-name">OpenPlotter</div><div class="si-val" id="si-openplotter">&#8212;</div><div class="si-sub">localhost:8081 &middot; infra</div></div>
           <div class="si"><div class="si-name">Internet</div><div class="si-val" id="si-internet">&#8212;</div><div class="si-sub">Weather + AI</div></div>
         </div>
         <div class="btn-group">
@@ -706,13 +705,13 @@
         .then(r => r.json())
         .then(d => {
           setSI('si-internet',  d.internet, d.internet ? '● CONNECTED' : '○ OFFLINE');
-          setSI('si-avnav',     d.avnav,    d.avnav    ? '● LIVE'      : '○ DOWN');
+          setSI('si-avnav', d.avnav,
+                d.avnav ? (d.avnav_charts === 0 ? '● UP — NO CHARTS' : '● LIVE') : '○ DOWN');
           setSI('si-gemini',    d.gemini,   d.gemini   ? '● ONLINE'    : '○ DOWN');
           setSI('si-signalk',   d.signalk,  d.signalk  ? '● LIVE'      : '○ DOWN');
           setSI('si-ollama',    d.ollama,   d.ollama   ? '● READY'     : '○ DOWN');
-          setSI('si-openplotter', true, '● RUNNING');     /* infra — always up */
-          setSI('si-gps',  d.signalk, d.signalk ? '● VIA SK'  : '○ NO SK');
-          setSI('si-ais',  d.signalk, d.signalk ? '● VIA SK'  : '○ NO SK');
+          setSI('si-gps', d.gps, d.gps ? '● LIVE FIX' : '○ NO FIX');
+          setAIS('si-ais', d.ais);
 
           /* Port table */
           setPT('pt-avnav',    d.avnav);
@@ -729,6 +728,27 @@
       if (!el) return;
       el.textContent = label;
       el.className = 'si-val ' + (ok ? 'ok' : 'off');
+    }
+
+    /* AIS is three-state on purpose. "No targets" is normal at sea so it must not
+       read as a fault, but it cannot claim the receiver is healthy either --
+       Signal K cannot tell "nothing in range" from "receiver dead". */
+    function setAIS(id, state) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (state === 'receiving') {
+        el.textContent = '● RECEIVING';
+        el.className = 'si-val ok';
+        el.style.color = '';
+      } else if (state === 'no_targets') {
+        el.textContent = '◐ NO TARGETS';
+        el.className = 'si-val';
+        el.style.color = 'var(--warn,#FFA500)';
+      } else {
+        el.textContent = '○ NO DATA';
+        el.className = 'si-val off';
+        el.style.color = '';
+      }
     }
 
     function setPT(id, ok, upText, downText) {

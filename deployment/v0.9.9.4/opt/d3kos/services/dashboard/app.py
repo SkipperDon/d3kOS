@@ -22,6 +22,7 @@ import shutil
 import socket
 import subprocess
 from pathlib import Path
+import datetime
 from dotenv import load_dotenv
 
 _cfg_dir = os.path.join(os.path.dirname(__file__), 'config')
@@ -88,12 +89,130 @@ def check_internet() -> bool:
 
 
 def check_service(port: str) -> bool:
-    """Return True if a local service answers on the given port."""
+    """Return True if a local service answers without a server error.
+
+    BUG-50 defect 4: the previous version caught only RequestException, so a
+    service returning HTTP 500 was reported as up.
+
+    A 2xx-only rule is WRONG here and was corrected during S117 validation:
+    ai-bridge on :3002 returns 404 on "/" while answering 200 on /anchor/state,
+    so 2xx-only reported a healthy service as down. 4xx means the server is
+    there and answered; only 5xx means it is broken.
+    """
     try:
-        requests.get(f'http://localhost:{port}', timeout=2)
-        return True
+        r = requests.get(f'http://localhost:{port}', timeout=2)
+        return r.status_code < 500
     except requests.RequestException:
         return False
+
+
+def _sk_age_seconds(timestamp):
+    """Age in seconds of a Signal K ISO-8601 timestamp, or None if unparseable."""
+    if not timestamp:
+        return None
+    try:
+        if str(timestamp).endswith('Z'):
+            timestamp = str(timestamp)[:-1] + '+00:00'
+        dt = datetime.datetime.fromisoformat(str(timestamp))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        return (datetime.datetime.now(datetime.timezone.utc) - dt).total_seconds()
+    except (ValueError, TypeError):
+        return None
+
+
+def check_gps():
+    """True only if Signal K holds a position that is BOTH present and fresh (<=10s).
+
+    BUG-50 defect 1: presence of a running Signal K server says nothing about
+    whether a GPS exists. Stale data must read False.
+    """
+    try:
+        r = requests.get(
+            f'http://localhost:{SIGNALK_PORT}/signalk/v1/api/vessels/self/navigation/position',
+            timeout=3)
+        if r.status_code == 200:
+            data = r.json()
+            value = data.get('value') if isinstance(data, dict) else None
+            if isinstance(value, dict) and value.get('latitude') is not None \
+                    and value.get('longitude') is not None:
+                age = _sk_age_seconds(data.get('timestamp'))
+                return age is not None and age <= 10
+    except (requests.RequestException, ValueError, AttributeError, TypeError):
+        pass
+    return False
+
+
+def check_ais():
+    """Three-state AIS health: 'receiving' | 'no_targets' | 'no_data'.
+
+    'no_targets' is neither healthy nor a fault: nothing in range is normal at
+    sea, and Signal K cannot distinguish that from a dead receiver. Never green.
+    """
+    try:
+        r = requests.get(f'http://localhost:{SIGNALK_PORT}/signalk/v1/api/vessels/', timeout=3)
+        if r.status_code != 200:
+            return 'no_data'
+        vessels = r.json()
+        if not isinstance(vessels, dict):
+            return 'no_data'
+
+        self_id = ''
+        try:
+            sr = requests.get(f'http://localhost:{SIGNALK_PORT}/signalk/v1/api/self', timeout=3)
+            if sr.status_code == 200:
+                # /api/self returns "vessels.urn:mrn:..." but the vessel KEYS carry
+                # no "vessels." prefix. An exact match therefore never fires, and own
+                # ship gets counted as an AIS target the moment it has a GPS fix.
+                self_id = sr.text.strip().strip('"')
+                if self_id.startswith('vessels.'):
+                    self_id = self_id[len('vessels.'):]
+        except (requests.RequestException, ValueError):
+            pass
+
+        for vessel_id, vessel in vessels.items():
+            if self_id and (vessel_id == self_id or self_id.endswith(vessel_id)):
+                continue
+            if not isinstance(vessel, dict):
+                continue
+            pos = (vessel.get('navigation') or {}).get('position') or {}
+            age = _sk_age_seconds(pos.get('timestamp')) if isinstance(pos, dict) else None
+            if age is not None and age <= 300:
+                return 'receiving'
+        return 'no_targets'
+    except (requests.RequestException, ValueError, AttributeError, TypeError):
+        return 'no_data'
+
+
+def check_avnav():
+    """(healthy, chart_count) from AvNav's OWN status API.
+
+    BUG-50 defect 3: a bare port probe passes with an expired chart licence and
+    zero charts loaded -- the exact OB-O05 state.
+    """
+    try:
+        r = requests.get(
+            f'http://localhost:{AVNAV_PORT}/viewer/avnav_navi.php?request=status',
+            timeout=3)
+        if r.status_code != 200:
+            return False, None
+        data = r.json()
+        if not isinstance(data, dict) or not isinstance(data.get('handler'), list):
+            return False, None
+        chart_count = 0
+        for handler in data['handler']:
+            if not isinstance(handler, dict) or handler.get('name') != 'ChartHandler':
+                continue
+            items = (handler.get('info') or {}).get('items') or []
+            for item in items:
+                text = str((item or {}).get('info', ''))
+                parts = text.replace(',', ' ').split()
+                for i, part in enumerate(parts):
+                    if part.startswith('chart') and i > 0 and parts[i - 1].isdigit():
+                        chart_count += int(parts[i - 1])
+        return True, chart_count
+    except (requests.RequestException, ValueError, AttributeError, TypeError):
+        return False, None
 
 
 def check_ollama() -> bool:
@@ -283,13 +402,17 @@ def status():
     Checks: internet, AvNav (:8080), Gemini proxy (:3001),
             AI Bridge (:3002), Signal K (:8099), Ollama (LAN 192.168.1.36:11434).
     """
+    avnav_ok, avnav_charts = check_avnav()
     return jsonify({
-        'internet':  check_internet(),
-        'avnav':     check_service(AVNAV_PORT),    # localhost:8080
-        'gemini':    check_service(GEMINI_PORT),   # localhost:3001
-        'ai_bridge': check_service('3002'),        # localhost:3002 (Phase 5)
-        'signalk':   check_service(SIGNALK_PORT),  # localhost:8099
-        'ollama':    check_ollama(),               # 192.168.1.36:11434
+        'internet':     check_internet(),
+        'avnav':        avnav_ok,                     # AvNav's own status API
+        'avnav_charts': avnav_charts,                 # surfaces blank charts (OB-O05)
+        'gemini':       check_service(GEMINI_PORT),   # localhost:3001
+        'ai_bridge':    check_service('3002'),        # localhost:3002 (Phase 5)
+        'signalk':      check_service(SIGNALK_PORT),  # localhost:8099
+        'ollama':       check_ollama(),               # 192.168.1.36:11434
+        'gps':          check_gps(),                  # real position + 10s freshness
+        'ais':          check_ais(),                  # receiving|no_targets|no_data
     })
 
 

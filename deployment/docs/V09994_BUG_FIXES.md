@@ -3018,7 +3018,33 @@ those tokens** — use targeted selector overrides only. (Standing rule, S54.)
 
 ## BUG-50 — Settings "System Status" reports GPS, AIS, OpenPlotter and AvNav as healthy when they are not
 
-**Status:** `[ ]` OPEN — logged S117 2026-08-02. Root cause **identified and proven live**; no fix attempted.
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI S117 2026-08-02 — TDD-verified 7/10 failing pre-fix → 10/10 pass. NOT on the boat Pi.**
+
+**Fix:** `/status` now reports GPS and AIS from *data* rather than from server liveness.
+`gps` is true only with a position present AND a timestamp ≤10 s old. `ais` is three-state
+(`receiving` / `no_targets` / `no_data`) — never a green light for an ambiguous condition.
+The always-green OpenPlotter row is deleted. AvNav is checked via its own status API and the
+chart count is surfaced so blank charts are visible. `check_service()` no longer reports a
+broken service as up.
+
+**The two decisive validations:**
+- **Freshness, not presence.** With the GPS feed stopped, Signal K *still holds the last
+  position* — it never expires stale data. A presence-only check would report GPS healthy
+  forever after the GPS died. `gps` correctly returned to `false`.
+- **Self-vessel exclusion.** With own ship holding a fresh position and zero other vessels,
+  `ais` returned `no_targets`, not `receiving`. Without this, any boat with a GPS fix would
+  have reported a false `receiving` with no AIS receiver at all.
+
+**Tier 3:** Gemini 2.5-flash-lite, 3 rounds, ~11,800 tokens. Round 1 rejected (7 defects),
+round 2 accepted with 3 Tier 1 corrections, round 3 discarded as a severe regression.
+**One Tier 1 spec defect** — a `2xx-only` rule for `check_service` — was caught by validation,
+not review: ai-bridge 404s on `/` while answering 200 on `/anchor/state`, so 2xx-only reported
+a live service as dead. Corrected to `< 500`.
+
+Full detail, including the Tier 3 round-by-round verdict and all 10 acceptance checks:
+`deployment/docs/atomic-specs/BUG-50.md`. Test: `tests/bug50-status-truthfulness.spec.ts`.
+
+**Original diagnosis follows.**
 **Platform:** Pi — dashboard Settings page
 **Severity:** HIGH — this is a safety-relevant false negative. A missing indicator tells the operator nothing; a **green** indicator tells them something false. At the helm, "AIS ● VIA SK" reads as "my AIS is working."
 **Reported by:** operator, S117, while reviewing the open bug list — *"in the setting page at the top should indicate if ais gps etc are working."*
