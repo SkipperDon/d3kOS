@@ -7,6 +7,32 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — BUG-08 FIXED: the fix was the defect (S117 2026-08-02)
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/helm-assistant.html` | **[UPDATED — S117]** BUG-08: **deleted line 709** — `<script src="/js/keyboard-fix.js"></script>`. 711 → 710 lines. One deletion, nothing added. md5 `069cf629…` → `1f83498e…`. **Deployed to the lab Pi and operator-confirmed working on the touchscreen.** |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S117]** BUG-08 → `[x]` FIXED. New S117 root-cause section with the `/ai-navigation` vs `/helm-assistant` comparison table; both disproved premises flagged "do not rebuild on either"; the S116 analysis retained and marked superseded. |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.26 → v3.27 — S117]** PART 17 BUG-08 row → `[x]` FIXED + operator-confirmed. |
+
+**Root cause: `keyboard-fix.js` was itself the defect.** `/ai-navigation` does **not** load it and types fine. `/helm-assistant` did load it and could not. Both are Flask templates on the same Pi, same nginx, same Chromium, same compositor — that script was the only material difference in the input path. It blurs/refocuses on every tap and force-shows squeekboard over D-Bus, **deliberately bypassing `zwp_text_input_v3`**, which is the protocol that delivers keystrokes. Keyboard drawn; nothing connected behind it.
+
+⚠ **Two premises DISPROVED — do not rebuild on either:**
+1. `opt/d3kos/services/system/keyboard-api.py` lines 5–6 claim *"Chromium does not trigger zwp_text_input_v3 on real touch events when labwc mouseEmulation='no'."* **This is FALSE.** `/ai-navigation` disproves it on that Pi every time it is used. It was written once, never tested, then read as documentation by five subsequent sessions, each of which built another fix on top of it.
+2. v2.1's "page-load auto-focus breaks typing" is **backwards** — the working page auto-focuses.
+
+⚠ **The counter-example was already in the bug file.** `V09994_BUG_FIXES.md` line 197, dated 2026-04-21: *"What Was Confirmed Working — AI Assistant page — keyboard works correctly."* Recorded as supporting colour, never used as the control. Three months unexamined.
+
+**Process rule added to memory (`feedback_diff_against_what_works.md`):** when something is broken, find the nearest thing in the same system that works and diff them **before** theorising. Cost here: four greps and a diff, after five sessions of fixes.
+
+**Deliberately NOT changed** (no BUG-XX entry exists — operator instruction): `helm.html`, `ai-assistant.html`, `settings.html`, `marine-vision.html` all still load `keyboard-fix.js`; `keyboard-fix.js` itself; `keyboard-api.py` and `d3kos-keyboard-api.service` (still serving `/window/*` for the fullscreen toggle); squeekboard; Chromium launch flags. No reboot.
+
+**Pi deployed:** Yes — lab Pi `192.168.1.237` only. **NOT on the boat Pi.** Release Package Manifest in SESSION_LOG.md S117.
+
+**Known defect found, not fixed (out of scope):** `tests/bug29-engine-path-aliases.test.js` cannot run as named — it uses `require()` while `package.json` sets `"type": "module"`. Sibling tests correctly use `.cjs`. Any prior "all green" count that invoked this file directly was overstated.
+
+---
+
 ## v0.9.9.4 — BUG-42/44/45 Tier-3 Implementation (S113 2026-07-31)
 
 | File | Description |

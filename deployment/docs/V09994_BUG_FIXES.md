@@ -83,9 +83,95 @@ Changing one does NOT affect the other.
 
 ## BUG-08 — Helm Assistant on-screen keyboard shows but immediately hides; typing does not work
 
-**Status:** `[~]` **WIRING FIXED + DEPLOYED TO LAB PI S116 2026-08-01 — awaiting operator touch confirmation on the Pi. NOT on the boat Pi.**
+**Status:** `[x]` **FIXED + DEPLOYED TO LAB PI S117 2026-08-02 — OPERATOR-CONFIRMED WORKING on the touchscreen ("it works"). NOT on the boat Pi.**
+
+---
+
+## ✅ ACTUAL ROOT CAUSE AND FIX — S117 2026-08-02
+
+**`keyboard-fix.js` was itself the defect.** The page that loads it cannot type. The page that
+does not load it types fine. Removing it fixed the bug.
+
+**The fix, in full:** deleted line 709 of
+`opt/d3kos/services/dashboard/templates/helm-assistant.html` —
+`<script src="/js/keyboard-fix.js"></script>`. 711 → 710 lines. One deletion, nothing added,
+no other file touched. Repo and Pi md5 `069cf629…` → `1f83498e…`, identical on both.
+
+### How it was found — the controlled comparison nobody ran
+
+The operator observed that the **AI** menu button opens a page where the keyboard appears **and
+types**. Both pages are Flask templates on the same server, same origin, same nginx, same
+Chromium, same compositor. Diffing their input paths leaves exactly one material difference:
+
+| | `/ai-navigation` — **works** | `/helm-assistant` — **was broken** |
+|---|---|---|
+| `keyboard-fix.js` | **not loaded — one inline `<script>` only** | **loaded** (line 709) |
+| `blur()` then `focus()` on tap | never | `keyboard-fix.js:67–68` |
+| D-Bus `/keyboard/show` force-show | never called | every tap |
+| Auto-focus on page load | **yes** (line 287) | no |
+| Element | `<input type="text">` | `<textarea>` |
+
+`ai-navigation.html` does nothing special. It puts an input on the page and lets Chromium work.
+Tap → Chromium activates `zwp_text_input_v3` normally → squeekboard rises **through the protocol**
+→ it is therefore connected to the field → typing works.
+
+### ⚠ TWO PREMISES DISPROVED — do not rebuild on either
+
+1. **`keyboard-api.py` docstring lines 5–6:** *"Bypasses zwp_text_input_v3 which Chromium does not
+   trigger on real touch events when labwc mouseEmulation='no'."* — **FALSE.** `/ai-navigation`
+   triggers it on that exact Pi, that exact compositor, every time it is used. This sentence was
+   written once, never tested, and then read as documentation by every later session. Five fixes
+   were built on top of it.
+2. **v2.1's premise** — that page-load auto-focus is what breaks typing — is **backwards.** The
+   working page auto-focuses; the broken one did not.
+
+Bypassing `zwp_text_input_v3` while force-showing squeekboard over D-Bus produces the exact
+reported symptom: **the keyboard appears and typing does nothing.** It is drawn on screen with
+nothing connected to the back of it. Every fix from v2.0 through the S116 Wayland IME flags tried
+to persuade Chromium to enable text-input-v3 while the show path deliberately bypassed it.
+
+### ⚠ THE ANSWER WAS IN THIS FILE THE WHOLE TIME
+
+Line 197 below, under **"What Was Confirmed Working"**, dated 2026-04-21:
+*"AI Assistant page (ai-assistant.html) — keyboard works correctly."*
+The working counter-example was recorded in the original bug report. It was filed as a supporting
+observation rather than treated as the diagnostic key, and no session diffed the two pages.
+
+**Process lesson:** when something is broken, find the nearest thing that works and diff them
+before theorising. Cost of doing so here: four greps and a diff.
+
+### Verification S117
+| Check | Result |
+|---|---|
+| `diff` vs backup | `709d708` — one deletion only |
+| Pi md5 vs repo md5 | `1f83498e…` — identical |
+| `keyboard-fix` refs in Pi template | 0 |
+| `/helm-assistant` via Flask **:3000** | 200 · keyboard-fix 0 · `msg-input` present |
+| `/helm-assistant` via nginx **:80** (kiosk origin) | 200 · keyboard-fix 0 · `msg-input` present |
+| `/ai-navigation` control | 200 — unaffected |
+| `tests/bug48-no-hardcoded-localhost.spec.ts` | 19/19 pass |
+| `tests/bug29-engine-path-aliases.test.js` | ALL ASSERTIONS PASSED |
+| **Operator touch test on the Pi screen** | **PASS — "it works"** |
+
+Both origins were measured deliberately; testing only `:3000` is what produced the wrong S116
+diagnosis recorded below.
+
+### Deliberately NOT done (no BUG-XX entry exists — operator instruction S117)
+- `helm.html`, `ai-assistant.html`, `settings.html`, `marine-vision.html` still load
+  `keyboard-fix.js`. **Not reported as broken, so not touched.** If one is found broken it gets
+  logged first like anything else.
+- `keyboard-fix.js` left on disk; `keyboard-api.py` and `d3kos-keyboard-api.service` left running
+  — the service also provides `/window/*` for the fullscreen toggle and is not keyboard-only.
+- squeekboard left running. No compositor change, no launch-flag change, no reboot.
+
+### Rollback
+- Pi: `cp /opt/d3kos/services/dashboard/templates/helm-assistant.html.pre-bug08-20260802_095322.bak <target>` then `sudo systemctl restart d3kos-dashboard`
+- Repo: `.aao-backups/20260802_095322_S117/deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/helm-assistant.html.bak`
+
+---
 
 ### ⚠ ROOT CAUSE CORRECTED S116 — the earlier analysis was against the wrong page
+*(retained for history — superseded by the S117 section above)*
 
 Everything below under "Root Cause Analysis" was investigated against
 `/var/www/html/helm.html`, served by **nginx on :80**. **That is not the page the kiosk runs.**
