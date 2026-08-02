@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:5000';
+const BASE = process.env.BASE_URL ?? 'http://192.168.1.237:3000';
 
 test('BUG-27: helm status bar vessel name is >= 28px', async ({ page }) => {
   await page.goto(BASE + '/');

@@ -5,6 +5,12 @@ APP_PATH = 'deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py'
 def load_app():
     spec = importlib.util.spec_from_file_location('dashboard_app', APP_PATH)
     mod = importlib.util.module_from_spec(spec)
+    # Register BEFORE exec_module. app.py calls Flask(__name__), and Flask resolves
+    # its root_path (and therefore templates/) by looking the module up in
+    # sys.modules to read its __file__. Without this the lookup fails, Flask falls
+    # back to the CWD, and every render raises TemplateNotFound -> 500 — which
+    # looks exactly like the BUG-41 defect this test exists to detect. (BUG-51)
+    sys.modules['dashboard_app'] = mod
     spec.loader.exec_module(mod)
     return mod.app
 

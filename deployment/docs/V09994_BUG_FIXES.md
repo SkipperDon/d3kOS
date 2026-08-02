@@ -3154,3 +3154,177 @@ truth is genuinely unknown, the indicator must say **UNKNOWN**, not green.
 - [ ] `check_service()` non-2xx handling corrected
 - [ ] Deploy to lab Pi and verify against a known-absent GPS/AIS state
 - [ ] On-boat validation with real GPS fix and real AIS targets
+
+---
+
+## BUG-51 — The test harness cannot distinguish a partial run from a complete one
+
+**Status:** `[~]` **ITEMS 1–5 DONE — S117 2026-08-02. Every test file in the project now executes.
+BUG-52 and BUG-53 carry the two real failures this uncovered.**
+
+### What items 1–5 delivered
+| # | Item | Result |
+|---|---|---|
+| 1 | `tests/run-all.sh` — the single runner | Playwright + Node + pytest, one honest total, per-category breakdown. **Exits non-zero if anything fails OR if any known file could not be executed.** |
+| 2 | Loud preflight | Aborts with exit 2 and a rebuild hint if Chromium cannot launch or the base URL does not answer. **"Environment broken" can no longer look like "tests passing."** Sets `LD_LIBRARY_PATH` correctly so the fault cannot recur silently. |
+| 3 | Three `localhost:5000` defaults corrected | `bug15`, `bug26`, `bug27` now default to the Pi. **4 of those 6 tests passed immediately** — they had never run. |
+| 4 | Four `.test.js` → `.test.cjs` | All four now execute. `bug29` and `bug38` pass. `bug30` and `bug36` **fail on real assertions** → **BUG-52**. |
+| 5 | `flask` available to pytest | Installed user-level to `~/.local` (system Python is PEP-668 managed; `python3-venv` unavailable, no passwordless sudo). Also fixed a **test defect** in `test_bug41_settings_route.py`: it never registered the module in `sys.modules` before `exec_module`, so `Flask(__name__)` could not resolve `root_path` and every render raised `TemplateNotFound` → 500 — *which looks exactly like the BUG-41 defect the test exists to detect*. Now 3/3 pass. |
+
+### A fifth fault found while building the runner — flaky tests from shared state
+`bug16-18-24-labsim-verification` **failed in a full parallel run and passed 6/6 twice in isolation.**
+Several specs inject state into Signal K, which is **shared global state on the Pi**; run
+concurrently they collide. Our own standard requires deterministic tests. The runner therefore
+forces `--workers=1`. A runner that reports flaky results is not an honest runner.
+
+### Baseline before this work vs after
+| | Before | After |
+|---|---|---|
+| Files that could not execute | **4** (silently) | 0 |
+| Tests that could never run | **6** (wrong host) + 28 (no browser) | 0 |
+| Python tests erroring at setup | 2 | 0 |
+| A command that runs everything | **none** | `./tests/run-all.sh` |
+| Failures visible to the operator | subset only | **all of them** |
+
+The two remaining failures (**BUG-52**, **BUG-53**) are now *visible*, which is the point. They were
+always there.
+
+### VERIFIED BASELINE — `./tests/run-all.sh`, serial, S117 2026-08-02
+```
+playwright ........... 56 passed, 2 failed, 0 skipped
+node ................. 4 files passed, 2 files failed
+pytest ............... 38 passed across files, 0 files with failures
+NOT GREEN.
+```
+**94 individual tests pass; 0 files are unexecutable; 0 skipped.** The runner correctly reports
+**NOT GREEN**, because two real defects are open:
+- 2 Playwright failures → **BUG-53** (`bug26` asserts the localhost literal BUG-48 removed)
+- 2 Node file failures → **BUG-52** (`bug30`, `bug36` — possible regression of two FIXED bugs)
+
+**Serial execution confirmed to remove the flakiness:** parallel gave 55 passed / 3 failed with
+`bug16` failing spuriously; serial gives 56 / 2, and `bug16` passes.
+
+⚠ **Do not "fix" the NOT GREEN by relaxing the runner.** It is telling the truth. It goes green when
+BUG-52 and BUG-53 are resolved, and not before. That is the entire purpose of BUG-51.
+**Platform:** Development environment (WSL) — affects every verification claim ever made in this project
+**Severity:** HIGH — this is a **verification integrity** defect. It does not break the product; it breaks our ability to know whether the product works.
+
+### Symptom
+Session logs report suite results as "33/33", "36/36", "47/47 green". **Those were real counts of
+real subsets, reported as if they were the whole suite.** No single command runs all the tests, so
+each session ran whatever happened to work and reported that number. A broken environment was
+indistinguishable from a passing suite.
+
+### Four independent faults, found S117
+
+**1. Chromium could not launch at all.**
+`chromium_headless_shell-1228` failed with `libnspr4.so: cannot open shared object file`.
+**28 browser tests failed with `browserType.launch` / `page.goto ERR_ABORTED`, which reads as an
+ordinary test failure rather than an environment fault.** Request-only specs pass regardless, which
+is how it stayed hidden. Root cause: the `LD_LIBRARY_PATH` recorded in MEMORY.md omitted the
+`root/` level. Correct path: `$HOME/.local/pw-libs/root/usr/lib/x86_64-linux-gnu`.
+
+**2. Three spec files default to a host that does not exist.**
+`bug15-cog-flashing`, `bug26-anchor-watch-origin`, `bug27-status-bar-legibility` all use
+`process.env.BASE_URL ?? 'http://localhost:5000'` — the Flask **dev-server** default. Nothing has
+ever served that here. The working specs default to `http://192.168.1.237:3000`. **These 6 tests
+could never run unless someone set `BASE_URL` by hand.** With the correct URL, 4 of the 6 pass.
+
+**3. Four Node test files cannot execute.**
+`bug29-engine-path-aliases.test.js`, `bug30-depth-fallback.test.js`, `bug36-engine-data-cache.test.js`,
+`bug38-diag-panel-ids.test.js` use `require()` while `package.json` sets `"type": "module"`.
+Siblings correctly use `.cjs`. `npx playwright test` with no filter **aborts on them**, so a
+full-suite run cannot even complete.
+
+**4. `flask` is not installed in the Python test environment.**
+`tests/test_bug41_settings_route.py` — 2 of 3 tests error at setup with `ModuleNotFoundError:
+No module named 'flask'` because it imports `app.py` directly.
+
+### What was hidden behind fault 3 — the serious part
+Two tests are **genuinely failing** with real assertions, invisible because their files could not run:
+```
+bug30-depth-fallback     AssertionError: transducer depth must render
+bug36-engine-data-cache  AssertionError: cache must initialise all-null
+```
+**BUG-30 and BUG-36 are both marked FIXED + DEPLOYED.** Tracked separately as **BUG-52**.
+
+`bug26`'s assertions are stale — it demands `const AI_BRIDGE = 'http://localhost:3002'`, the exact
+hardcoded localhost **BUG-48 deliberately removed**, and navigates to `/anchor-watch.html` which
+404s (real route `/anchor-watch`). Tracked separately as **BUG-53**.
+
+### Fix — operator-authorised S117, items 1–5
+1. `tests/run-all.sh` — one runner for Playwright + Node + pytest, one honest total, per-category
+   breakdown. **Non-zero exit if anything fails OR if any known test file was not executed.**
+2. **Preflight that fails loudly** — abort with a clear message if Chromium cannot launch or the
+   base URL does not answer. This is the guard that makes the class non-recurring: "environment
+   broken" must never again look like "tests passing".
+3. Correct the three `localhost:5000` defaults.
+4. Rename the four `.test.js` → `.test.cjs`.
+5. Make `flask` available to the Python tests.
+
+### Root cause
+No single entry point for the suite. Every session ran a subset and reported it as the whole. The
+counts were honest arithmetic on a dishonest denominator.
+
+---
+
+## BUG-52 — bug30 and bug36 assertions fail; BUG-30 and BUG-36 are marked FIXED
+
+**Status:** `[ ]` **OPEN — logged S117 2026-08-02. Deferred to next session by operator decision.**
+**Platform:** Pi dashboard (`instruments.js`) and/or the tests themselves
+**Severity:** HIGH — either two shipped fixes have regressed, or two tests have been lying.
+
+### Symptom
+With the module-system fault (BUG-51 fault 3) worked around, both files execute and **fail on real
+assertions**:
+```
+tests/bug30-depth-fallback.test.js     AssertionError: transducer depth must render
+tests/bug36-engine-data-cache.test.js  AssertionError: cache must initialise all-null
+```
+Both were invisible because the files could not run at all.
+
+### Why this matters
+- **BUG-30** (depth reads `belowKeel`, Signal K publishes `belowTransducer`) — `[~]` FIXED +
+  DEPLOYED lab Pi S108-cont, §25.8 ACCEPT 16/16. Also cited as the resolution that **closed BUG-18**.
+- **BUG-36** (S105 deploy silently removed the M14 `_d3kEngData` cache) — `[~]` FIXED + DEPLOYED
+  lab Pi S108-cont, §25.8 ACCEPT 13/13. Also cited as part of what **closed BUG-16**.
+
+If these are real regressions, **BUG-18 and BUG-16 may have been closed on false evidence.**
+
+### Two candidate explanations — do not assume which
+1. **Stale tests.** Written against a jsdom fixture or file structure that has since changed
+   (`instruments.js` has been edited repeatedly since S108 — BUG-42/43/45/46/47).
+2. **Real regression.** A later deploy overwrote the S108-cont fixes, exactly as the S105 deploy
+   did to BUG-36 in the first place. That is a documented failure mode in this project.
+
+### Investigation steps
+- [ ] Read the served `instruments.js` on the lab Pi — does `belowTransducer` handling still exist?
+      Does `_d3kEngData` still initialise all-null? **Live read, not the repo.**
+- [ ] Compare against the S108-cont verified state (`verify-bug30.sh`, and the BUG-36 md5 history)
+- [ ] If the code is correct → the tests are stale; repair them
+- [ ] If the code is wrong → a regression; re-open BUG-30/BUG-36 **and re-examine BUG-16/BUG-18**
+
+---
+
+## BUG-53 — BUG-26's test asserts the hardcoded localhost that BUG-48 removed
+
+**Status:** `[ ]` **OPEN — logged S117 2026-08-02. Deferred to next session by operator decision.**
+**Platform:** Test suite
+**Severity:** LOW — the code is correct; the test is stale.
+
+### Symptom
+`tests/bug26-anchor-watch-origin.spec.ts` fails on two counts, both test defects:
+1. It navigates to `/anchor-watch.html`, which returns **404**. The real Flask route is
+   `/anchor-watch` (200).
+2. It asserts `expect(content).toContain("const AI_BRIDGE = 'http://localhost:3002'")` — the exact
+   hardcoded localhost that **BUG-48 deliberately removed**. The served page now correctly has
+   `AI_BRIDGE = 'http://' + window.location.hostname + ':3002'`, with 6 references, all correct.
+
+### Root cause
+A later fix (BUG-48) superseded the approach an earlier fix (BUG-26) took, and BUG-26's test was
+never updated. The test now enforces the defect.
+
+### Fix
+- [ ] Point the test at `/anchor-watch`
+- [ ] Assert the `window.location.hostname` form, not the localhost literal
+- [ ] Confirm the test would still catch a regression to bare `/anchor/*` calls on :3000

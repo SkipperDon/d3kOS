@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:5000';
+const BASE = process.env.BASE_URL ?? 'http://192.168.1.237:3000';
 
 test.describe('BUG-26: Anchor Watch Set Anchor origin fix', () => {
   test('Anchor Set endpoint called on :3002 (AI_BRIDGE) not :3000 (dashboard)', async ({ page, context }) => {

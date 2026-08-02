@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:5000';
+const BASE = process.env.BASE_URL ?? 'http://192.168.1.237:3000';
 
 test.describe('BUG-15: COG flashing when stationary', () => {
   test('Scenario A: COG held when stationary (SOG < 0.5 kn)', async ({ page }) => {
