@@ -3328,3 +3328,62 @@ never updated. The test now enforces the defect.
 - [ ] Point the test at `/anchor-watch`
 - [ ] Assert the `window.location.hostname` form, not the localhost literal
 - [ ] Confirm the test would still catch a regression to bare `/anchor/*` calls on :3000
+
+---
+
+## BUG-54 — Cloud export has failed silently every ~10 minutes since 2026-02-20
+
+**Status:** `[ ]` **OPEN — logged S117 2026-08-02. Root cause UNKNOWN. Found incidentally while auditing what changed on the lab Pi.**
+**Platform:** Pi — `d3kos-export-manager` (`/opt/d3kos/services/export/export-manager.py`)
+**Severity:** MEDIUM pending triage — see the open question below, which could make it NOT A BUG on the lab Pi.
+
+### Symptom
+`/opt/d3kos/data/exports/failed_exports/` holds **148 failed export payloads**. The oldest is
+`q_20260220_164416_failed.json` — **2026-02-20, over five months ago.** Thirteen were produced on
+2026-08-02 alone, roughly one every 10 minutes to an hour.
+
+**Nothing surfaces this.** No alert, no dashboard indicator, no entry in any bug record until now. It
+was found only by listing files changed on the Pi today.
+
+### What is established
+- **Generation succeeds.** The journal logs `Export generated and queued: export_20260802_111702.json`
+  followed by `POST /export/generate 200`.
+- **Delivery fails, and logs nothing.** The payload is moved to `failed_exports/` with **no error
+  recorded anywhere** — not in the journal, not in `/opt/d3kos/logs/`, not inside the payload itself.
+  The failed file contains only the export data; **there is no failure reason field.**
+- `d3kos-export-manager` is `active` and `enabled`. It is not crashing.
+- Payload carries `installation_id`, `format_version: 1.0`, and 13 categories: engine_benchmark,
+  boatlog, marine_vision_captures, marine_vision_snapshots, qr_codes, settings, system_alerts,
+  onboarding, telemetry, gps, engine, system_health, version.
+
+### ⚠ Triage question that must be answered FIRST
+**Is the lab Pi supposed to be exporting to the cloud at all?**
+This is a development device. If it was never paired for cloud sync, these failures may be entirely
+expected here and the real questions become (a) why does a device that cannot sync keep queueing
+exports every few minutes, and (b) **would this fail the same way on the boat**, where the data
+genuinely matters?
+
+Do not assume it is a defect, and do not assume it is benign. **Check the boat Pi's
+`failed_exports/` directory before concluding anything** — if the boat is also accumulating them,
+five months of vessel telemetry, boat-log entries and engine history have never reached the cloud.
+
+### Why this is worth taking seriously regardless of the answer
+1. **A silent failure with no reason recorded is the same defect class as BUG-50** — the system is
+   unable to tell its owner that something is not working. There is no indicator for export health
+   anywhere in the UI.
+2. Five months of accumulation with nobody noticing is itself the finding.
+3. If it affects the boat, the Fix My Pi / fleet / Find My Boat features that depend on this sync
+   have been receiving nothing.
+
+### Investigation steps
+- [ ] **Check the boat Pi's `failed_exports/` count** — this determines severity entirely
+- [ ] Establish whether the lab Pi is cloud-paired, and whether it should be
+- [ ] Find the delivery code path and determine why the reason is discarded — **a failure that
+      records no reason cannot be diagnosed**; fixing that comes before fixing the failure
+- [ ] Determine the actual error (auth, endpoint, payload size, network egress)
+- [ ] Decide whether export health belongs in the Settings status panel alongside the BUG-50 work
+- [ ] Consider whether 148 stale payloads should be retried or discarded
+
+### Not investigated further this session
+Found at session close while answering "what was deployed to the Pi today". Logged per the standing
+rule; no fix attempted, no files touched.

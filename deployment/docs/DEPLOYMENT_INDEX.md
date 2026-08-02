@@ -7,6 +7,30 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — BUG-50 FIXED + BUG-51 test-harness integrity (S117 2026-08-02)
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py` | **[UPDATED — S117]** BUG-50: `check_service()` now treats a server error as down (`<500`, **not** 2xx-only — that spec rule was wrong and caught in validation); new `_sk_age_seconds()`, `check_gps()` (position **+ ≤10 s freshness**), `check_ais()` (three-state), `check_avnav()` (own status API + chart count); `/status` gains `gps`, `ais`, `avnav_charts`. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/settings.html` | **[UPDATED — S117]** BUG-50: always-green OpenPlotter row deleted; `si-gps` reads `d.gps`; new three-state `setAIS()`; AvNav label surfaces zero charts. |
+| `deployment/v0.9.9.4/var/lib/avnav/avnav_server.xml` | **[NEW — S117]** Third Pi-only config brought under version control. Carries the BUG-19/20 AIS fix. |
+| `deployment/v0.9.9.4/var/lib/avnav/README.md` | **[NEW — S117]** Records which settings are **portable** (`fetchAis`) vs **machine-specific** (SK uuid, any `usbid`). ⚠ `usbid` is a **physical port path**: `1-1.4:1.0` is the u-blox on the boat and an SD card reader on the lab Pi. |
+| `deployment/docs/atomic-specs/BUG-50.md` | **[NEW — S117]** Spec + Tier 3 round-by-round verdict + all 10 acceptance checks. |
+| `deployment/tools/tier3-dispatch/bug50_dispatch.py`, `bug50_dispatch2.py` | **[NEW — S117]** Gemini dispatchers, run FROM the Pi so the key never leaves it. |
+| `tests/run-all.sh` | **[NEW — S117]** **THE test runner.** Playwright + Node + pytest, one honest total. **Non-zero exit if anything fails OR any known file could not be executed.** Loud preflight aborts if the browser cannot launch. `--workers=1` forced. |
+| `tests/bug50-status-truthfulness.spec.ts` | **[NEW — S117]** 10 tests, 7 failing pre-fix. |
+| `tests/bug15/26/27-*.spec.ts` | **[UPDATED — S117]** Default host corrected from `localhost:5000` (never served) to the Pi. |
+| `tests/bug29/30/36/38-*.test.js → .test.cjs` | **[RENAMED — S117]** Were unrunnable under `"type":"module"`. |
+| `tests/test_bug41_settings_route.py` | **[UPDATED — S117]** Test defect: module not registered in `sys.modules`, so Flask could not resolve `templates/` → every render 500, mimicking the bug it tests. |
+
+**Deployed to the lab Pi:** `app.py`, `templates/settings.html`, `templates/helm-assistant.html` — three files, all md5-identical to the repo. **NOT on the boat Pi.** Manifest in SESSION_LOG.md S117.
+
+**Test baseline established: 94 pass, 0 unexecutable, 0 skipped.** Runner correctly reports NOT GREEN — BUG-52/53 are open. **Do not silence it to get green.**
+
+**New bugs logged:** BUG-50 (fixed), BUG-51 (items 1–5 done), BUG-52, BUG-53, BUG-54 (all open/deferred).
+
+---
+
 ## v0.9.9.4 — BUG-08 FIXED: the fix was the defect (S117 2026-08-02)
 
 | File | Description |
