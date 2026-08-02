@@ -2884,3 +2884,118 @@ those tokens** — use targeted selector overrides only. (Standing rule, S54.)
 - [ ] Issue 2 — repair or replace the broken logo asset
 - [ ] Playwright test asserting computed colour contrast in BOTH themes and that the logo asset returns 200
 - [ ] Deploy to lab Pi and verify
+
+---
+
+## BUG-50 — Settings "System Status" reports GPS, AIS, OpenPlotter and AvNav as healthy when they are not
+
+**Status:** `[ ]` OPEN — logged S117 2026-08-02. Root cause **identified and proven live**; no fix attempted.
+**Platform:** Pi — dashboard Settings page
+**Severity:** HIGH — this is a safety-relevant false negative. A missing indicator tells the operator nothing; a **green** indicator tells them something false. At the helm, "AIS ● VIA SK" reads as "my AIS is working."
+**Reported by:** operator, S117, while reviewing the open bug list — *"in the setting page at the top should indicate if ais gps etc are working."*
+
+### Symptom
+Settings → Section 1 "📡 System Status — Live" shows eight indicators, four of which do not
+measure what their label claims. They can only ever show green (or, for GPS/AIS, green whenever
+the Signal K *service* is running), regardless of whether the underlying capability works.
+
+**The design intent is correct — the rows, labels and sub-labels are all right. The checks behind
+them were never written.**
+
+### Proven live on the lab Pi, 2026-08-02
+
+| Settings displays | Actual measured truth |
+|---|---|
+| GPS **● VIA SK** (green) | **No GPS position exists.** `/signalk/v1/api/vessels/self/navigation/position` → **404**, the path is not present |
+| AIS Receiver **● VIA SK** (green) | **Zero AIS targets.** `/signalk/v1/api/vessels/` returns exactly **1** vessel — own ship |
+| OpenPlotter **● RUNNING** (green) | **Never checked at all** — hardcoded |
+| AvNav Charts **● LIVE** (green) | Only proves *something answers on port 8080* |
+
+`/status` on the Pi at the time of writing:
+`{"ai_bridge":true,"avnav":true,"gemini":true,"internet":true,"ollama":false,"signalk":true}`
+— note that **GPS and AIS are not fields in this response at all.**
+
+### Root cause — four distinct defects in one section
+
+**1. GPS and AIS are wired to the Signal K server's liveness, not to their own data.**
+`templates/settings.html`, `loadStatus()`:
+```js
+setSI('si-gps',  d.signalk, d.signalk ? '● VIA SK' : '○ NO SK');
+setSI('si-ais',  d.signalk, d.signalk ? '● VIA SK' : '○ NO SK');
+```
+Both read `d.signalk`. Signal K running ⇒ both green. Neither queries a position, a fix quality,
+a satellite count, an AIS target, or a data timestamp. `/status` in `app.py` never gathers any.
+
+**2. OpenPlotter is hardcoded green and can never report a fault.**
+```js
+setSI('si-openplotter', true, '● RUNNING');     /* infra — always up */
+```
+No check of any kind. The comment "always up" is an assumption written as a fact.
+
+**3. AvNav's check proves a web server answers, not that AvNav works.**
+`check_service(AVNAV_PORT)` → `requests.get('http://localhost:8080', timeout=2)`. AvNav shows
+**● LIVE** while charts are blank (expired o-charts — OB-O05, currently blocking) or while AIS
+fetching is switched off inside AvNav — which is exactly the state BUG-19/BUG-20 described. During
+that period AvNav's **own** status API reported `ais INACTIVE disabled` while this page showed LIVE.
+
+**4. `check_service()` treats any HTTP response as healthy.** It catches only `RequestException`,
+so a service returning **500** is reported as up. A broken service and a working one are
+indistinguishable to this check.
+
+### Why this matters — it has already misled, historically
+
+**BUG-32** established that AIS never reached Signal K at all: `rtl_ais` was pushing into TCP 10110,
+which Signal K itself occupies as its NMEA0183 **output**, so every AIS message was discarded.
+**Throughout that entire period this page displayed AIS as green.** That is not hypothetical — it
+is what the code does and what the operator would have seen.
+
+This is the concrete, provable instance of the general failure described in **BUG-11**
+(*"A device that is incompatible, misconfigured, or silently failing produces the same user
+experience as a working device"*). BUG-50 is worse than the case BUG-11 describes: the failing
+device does not merely look the same as a working one, it looks **actively healthy**.
+
+### Relationship to BUG-11 — deliberately separate
+- **BUG-11** is open-ended research: a brand-agnostic health framework covering AIS, GPS,
+  microphone and speaker, with no root cause established and no design.
+- **BUG-50** is a specific, measured defect in existing shipped code with a known root cause and a
+  bounded fix. It does not need the framework and should not wait for it.
+Fixing BUG-50 produces the working reference that BUG-11's framework can later generalise.
+
+### Scope — operator-set S117
+**GPS, AIS, OpenPlotter and AvNav only.** Microphone and speaker indicators were explicitly
+excluded and remain part of BUG-11.
+
+### Proposed fix — NOT applied, needs an atomic spec
+Check for **data**, not for a **running process**:
+- **GPS** — read `navigation.position` from Signal K; require lat/lon present AND a `timestamp`
+  within a freshness window. Absent path or stale timestamp ⇒ not healthy. Consider surfacing
+  fix quality / satellite count if `navigation.gnss.*` is available.
+- **AIS** — count entries under `vessels/` excluding own ship, with a last-update timestamp.
+  Zero targets is legitimately ambiguous (no vessels in range vs receiver dead), so the honest
+  states are three, not two: **RECEIVING** (targets seen recently), **NO TARGETS** (receiver alive,
+  nothing in range), **NO DATA / UNKNOWN**. Distinguishing the first two needs a receiver-liveness
+  signal separate from target count — design decision required.
+- **OpenPlotter** — actually probe port 8081, or remove the row. A row that cannot fail is worse
+  than no row.
+- **AvNav** — probe AvNav's own status API rather than the bare port, so blank charts and disabled
+  AIS fetching are visible.
+- **`check_service()`** — treat non-2xx as down, not up.
+
+⚠ **Do not report a tri-state as a binary.** "Green or red" is what created this bug. Where the
+truth is genuinely unknown, the indicator must say **UNKNOWN**, not green.
+
+### Affected files
+| File | Role |
+|---|---|
+| `opt/d3kos/services/dashboard/app.py` | `/status` route (~line 279) and `check_service()` (~line 90) — must gather GPS/AIS data, not just port liveness |
+| `opt/d3kos/services/dashboard/templates/settings.html` | Section 1 status grid (~lines 37–55) and `loadStatus()` / `setSI()` (~lines 696–740) |
+
+### Fix status
+- [ ] Atomic spec authored
+- [ ] Failing test written first (TDD) — must assert green is NOT shown when Signal K is up but GPS/AIS data is absent
+- [ ] `/status` extended with real GPS and AIS checks
+- [ ] OpenPlotter hardcoded `true` removed
+- [ ] AvNav check upgraded beyond a bare port probe
+- [ ] `check_service()` non-2xx handling corrected
+- [ ] Deploy to lab Pi and verify against a known-absent GPS/AIS state
+- [ ] On-boat validation with real GPS fix and real AIS targets
