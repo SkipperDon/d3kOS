@@ -38,3 +38,6 @@ ssh
 
 # AAO backup files (AAO Methodology Section 18 — never commit backup files)
 .aao-backups/
+
+# Playwright output — regenerated on every test run
+test-results/

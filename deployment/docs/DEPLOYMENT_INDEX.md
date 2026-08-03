@@ -7,6 +7,34 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — BUG-54 Part 1 + BUG-55 FIXED, BUG-52 closed (S118 2026-08-03)
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/etc/systemd/system/d3kos-export-manager.service` | **[UPDATED — S118]** BUG-54 Part 1: `Environment=PYTHONUNBUFFERED=1`. Under systemd stdout is a **socket, not a TTY**, so CPython block-buffers `print()` at 8 KB — every one of `export_worker.py`'s failure diagnostics was trapped for five months. `export-manager.py` uses `logging`→stderr (line-buffered), which is why *its* lines were always visible. **No application code changed.** |
+| `deployment/v0.9.9.4/tools/verify-bug54.sh` | **[NEW — S118]** 3 tests, 2 failing pre-fix. Asserts the unit declares the variable **and that the RUNNING process has it** — an edited-but-never-reloaded unit cannot pass. |
+| `deployment/v0.9.9.4/tools/verify-bug55.sh` | **[NEW — S118]** 4 tests. Guards: no staging URL in the canonical tree or live on the Pi; `fleet-push.env` carries production **and** the full theme path; code default agrees with the env file. Excludes itself from its own scan — it self-failed on first run by matching its own grep pattern. |
+| `.../opt/d3kos/services/` — `ai/alert_watcher.py`, `alert_watcher.py`, `ota_upgrade.py`, `cloud-agent/ota_upgrade.py`, `diagnostic/diagnostic_agent.py`, `cloud_agent.py`, `cloud-agent/cloud_agent.py`, `export/export_worker.py`, `export/export-manager.py` | **[UPDATED — S118]** BUG-55 Category A — 9 **latent** fallback defaults `config.get('amboat_base_url', '<staging>')`. These resolved to production only because `cloud-config.json` set the key; a missing key would have **silently switched environments** with no error and no log line. `export-manager.py:41` also fixes the misleading startup log that read `Central API URL: …/staging` while posting to production. |
+| `.../opt/d3kos/services/agents/agents/update_agent.py` | **[UPDATED — S118]** BUG-55 Category B — `VERSION_URL` was hardcoded to staging, so **OTA version checks were hitting the test site.** |
+| `.../opt/d3kos/services/fleet/fleet_push_service.py` | **[UPDATED — S118]** BUG-55 ×2 **plus a second defect found inside it**: the code default omitted the `/wp-content/themes/twentytwenty-child/` segment that `fleet-push.env` carried, so it **404'd in either environment**. Host and path fixed together. |
+| `.../var/www/html/app.js` | **[UPDATED — S118]** BUG-55 ×4 — PWA `API_BASE`, `data-export.php`, `data-delete.php`. Operator decision: everything to production, PWA included. |
+| `.../etc/systemd/system/d3kos-diagnostic.service` | **[UPDATED — S118]** BUG-55 — `Documentation=` URL. |
+| `/opt/d3kos/services/fleet/config/fleet-push.env` (Pi only) | **[UPDATED — S118]** BUG-55. ⚠ **NOT in the canonical repo tree** — Pi-only config, same exposure class as `avnav_server.xml` (BUG-33). Survives an SD clone; **silently reverts on a rebuild from the repo.** Backup `fleet-push.env.pre-bug55.bak`. Guard test 3 in `verify-bug55.sh` exists to catch this. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S118]** BUG-52 closed NOT A BUG; BUG-28's stale critical note corrected; BUG-54 rewritten with the corrected diagnosis; BUG-55 logged and closed (45 entries). |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.30 — S118]** BUG-52 closed; BUG-54 updated; BUG-55 row added (48 rows). |
+| `.gitignore` | **[UPDATED — S118]** `test-results/` — Playwright output, regenerated every run. |
+
+**Bugs closed/fixed this session (lab Pi only — NOT on the boat Pi):** BUG-52 (closed, not a bug), BUG-54 Part 1, BUG-55.
+**Still open:** BUG-54 Part 2 — the nginx HTTP 400 itself. Operator declined the external probe to atmyboat.com, so it was **not** closed on a guess.
+
+⚠ **S117's BUG-54 diagnosis was wrong and is corrected in the bug file.** "No error recorded anywhere / no failure reason field" is **false** — every `export_queue.json` entry carries `last_error` and always did. It was never one five-month failure but **four in sequence**: 110× a placeholder hostname `d3kos-cloud-api.example.com` that was never replaced, 63× the current nginx 400, 7× file-not-found, 6× HTTP 401, 3× other.
+
+⚠ **BUG-28's "critical note" sat wrong for seven sessions** — it claimed a boat deploy would not fix the engine or depth gauges, but BUG-29 and BUG-30 were both fixed later the same day it was written. Corrected with a dated table; original preserved as superseded.
+
+**Tier 3 finding — gemma4 is usable, MEMORY.md was wrong.** Reachable and correct on a constrained exact-replacement edit in 13.6 s, **but only with `"think": false`** — it is a *thinking* model, and with thinking on it consumed a 300-token budget and returned an **empty string**, indistinguishable from a hang. That almost certainly explains S114's "never returned inside 10 min". Still **CPU-only** (`size_vram: 0`), ~**7.0 tok/s**. ⚠ A whole-file dispatch produced **broken bash** — the standing BUG-36 rule (exact `old`/`new` replacements, never whole files) is correct and was violated here.
+
+---
+
 ## v0.9.9.4 — BUG-50 FIXED + BUG-51 test-harness integrity (S117 2026-08-02)
 
 | File | Description |
