@@ -933,7 +933,11 @@ Two separate fixes expected:
 
 ## BUG-14 — CX5106 NMEA 2000 Engine Gateway Not Transmitting Data — Device Not Visible on NMEA 2000 Bus
 
-**Status:** `[~]` IN PROGRESS — replacement unit on bus, tachometer signal connection pending
+**Status:** `[x]` **CLOSED S118 2026-08-03 — operator confirms the tach wire is now PERMANENTLY
+CLIPPED.** This supersedes the S112 finding that CX5106 src 106 was absent from the bus because the
+blue Pole 3 RPM-gauge wire had never been permanently connected.
+⚠ **Not yet re-verified on the N2K bus.** Confirm src 106 appears in Signal K on the next boat
+visit — closing the wiring task is not the same as observing the data.
 **Logged:** 2026-07-13 S98 (on-boat, Monterey 265 SEL, Pi IP 172.20.10.8)
 **Updated:** 2026-07-20 S101 — new unit confirmed on NMEA 2000 bus
 **Platform:** Pi (NMEA 2000 network, CX5106 integration)
@@ -1214,7 +1218,10 @@ The current `openDiag()` sends a generic Gemini prompt with the readings. It doe
 
 ## BUG-17 — Battery Voltage Not Displaying on d3kOS Dashboard
 
-**Status:** `[~]` UPDATED S113 2026-07-31 — cell removed from dashboard; dedicated hardware required
+**Status:** `[x]` **CLOSED S118 2026-08-03 — NOT IN SCOPE.** Operator decision: battery
+monitoring is no longer part of this build. The dashboard cell was already removed S113 and no
+sensing hardware will be fitted for v0.9.9.4. If battery monitoring returns it is a NEW feature
+request, not this defect.
 **Logged:** 2026-07-20 S101 (on-boat, Monterey 265 SEL)
 **Platform:** Pi (d3kOS dashboard — battery/electrical display)
 
@@ -2002,7 +2009,11 @@ path nothing publishes. **The S106 candidate "no depth sounder present" is defin
 
 ## BUG-31 — Unidentified NMEA 2000 Device at src 64 Broadcasting Frozen Engine + False Fuel Data
 
-**Status:** `[ ]` OPEN — logged S107 2026-07-27 | **Severity:** HIGH — false instrument data
+**Status:** `[–]` **REMOVED S118 2026-08-03 — operator decision, not being pursued.**
+Was: an unidentified N2K device at src 64 broadcasting frozen engine data and a false 0% fuel level
+on a confirmed-full tank. Later identified as the **Pangoo** unit (PGN 126996, S112). Closed without
+remediation. ⚠ If the false 0% fuel reading resurfaces during boat testing, raise a **NEW** bug
+rather than reopening this one.
 **Requires physical identification on the boat**
 
 ### Evidence
