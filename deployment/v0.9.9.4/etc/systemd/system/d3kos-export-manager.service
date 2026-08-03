@@ -14,5 +14,12 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 
+# BUG-54: stdout here is a socket, not a TTY, so CPython block-buffers print() at
+# 8 KB. export_worker.py reports every delivery failure via print(), so those lines
+# sat in the buffer and never reached the journal — which is why five months of
+# export failures looked like they were "logged nowhere". export-manager.py's
+# logging calls go to stderr (line-buffered) and were visible the whole time.
+Environment=PYTHONUNBUFFERED=1
+
 [Install]
 WantedBy=multi-user.target

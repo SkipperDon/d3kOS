@@ -601,7 +601,7 @@ def run():
         time.sleep(60)
 
     api_key       = config['amboat_api_key']
-    base_url      = config.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/')
+    base_url      = config.get('amboat_base_url', 'https://atmyboat.com').rstrip('/')
     poll_interval = int(config.get('poll_interval_seconds', 30))
 
     device_token = get_device_token()

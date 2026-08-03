@@ -30,7 +30,7 @@ LICENSE_FILE       = Path('/opt/d3kos/config/license.json')
 
 
 class ExportWorker:
-    def __init__(self, central_api_url='https://atmyboat.com/staging'):
+    def __init__(self, central_api_url='https://atmyboat.com'):
         self.central_api_url = central_api_url
         self.queue = ExportQueue()
         self.stop_event = Event()

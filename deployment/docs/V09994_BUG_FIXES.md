@@ -1894,9 +1894,28 @@ imaged from the lab Pi before 2026-07-23. Either way the divergence above is rea
 - [ ] Re-verify BUG-15, BUG-26, BUG-27 on the boat after a real release reaches it
 - [ ] Add a version/commit stamp check to the release process so a stale copy is detectable
 
-### ⚠ Critical note
-Re-copying the latest version to the boat will **NOT** fix the engine gauges, depth gauge, BUG-16 or
-BUG-24 — those defects (BUG-29, BUG-30) exist in the latest source too.
+### ⚠ Critical note — CORRECTED S118 2026-08-03 (the original was true when written, and is now false)
+
+**Superseded text (S107 2026-07-27):** *"Re-copying the latest version to the boat will NOT fix the
+engine gauges, depth gauge, BUG-16 or BUG-24 — those defects (BUG-29, BUG-30) exist in the latest
+source too."*
+
+That was accurate on 2026-07-27. **BUG-29 and BUG-30 were both fixed later the same day** in
+S108-cont, so three of the four items it names no longer hold. Current position:
+
+| Item named in the old note | Status now | Will a boat deploy fix it? |
+|---|---|---|
+| Engine gauges (**BUG-29**) | `[~]` FIXED lab S108-cont, §25.8 ACCEPT 13/13 | **YES** — the fix is in the canonical tree |
+| Depth gauge (**BUG-30**) | `[~]` FIXED lab S108-cont, §25.8 ACCEPT 16/16 | **PARTLY** — code ships, but the primary fix is **configuration**: a keel offset must be set on the Garmin on the boat. Deploy alone is not sufficient. |
+| **BUG-16** (gauge tap dialog) | `[x]` CLOSED S116 — resolved by BUG-34/36 | **YES** |
+| **BUG-24** (Boat Log engine auto-capture) | `[~]` still unfixed — architectural | **NO** — `boatlog-engine.js` loads on `boat-log.html` only; needs a server-side service, which is an undecided design item |
+
+**The one claim that survives:** a boat deploy does not fix everything, and **BUG-24 specifically will
+still reproduce.** Depth also needs the on-boat Garmin keel-offset step.
+
+⚠ Lesson recorded: this note sat wrong for seven sessions and would have set false expectations for
+the next boat trip. **A "critical note" that names other bugs by number goes stale the moment those
+bugs move.** Prefer pointers to the bug's own status line over restating it.
 
 ---
 
@@ -3270,39 +3289,72 @@ counts were honest arithmetic on a dishonest denominator.
 
 ## BUG-52 — bug30 and bug36 assertions fail; BUG-30 and BUG-36 are marked FIXED
 
-**Status:** `[ ]` **OPEN — logged S117 2026-08-02. Deferred to next session by operator decision.**
-**Platform:** Pi dashboard (`instruments.js`) and/or the tests themselves
-**Severity:** HIGH — either two shipped fixes have regressed, or two tests have been lying.
+**Status:** `[x]` **CLOSED — NOT A BUG — S118 2026-08-03 by operator decision. Diagnosed: the code
+is correct in both cases; both test expectations are stale, superseded by later fixes.
+Remaining depth behaviour to be verified on the boat.**
+**Platform:** Test suite (not the dashboard)
+**Severity:** Downgraded HIGH → LOW on diagnosis. No regression occurred.
 
 ### Symptom
 With the module-system fault (BUG-51 fault 3) worked around, both files execute and **fail on real
 assertions**:
 ```
-tests/bug30-depth-fallback.test.js     AssertionError: transducer depth must render
-tests/bug36-engine-data-cache.test.js  AssertionError: cache must initialise all-null
+tests/bug30-depth-fallback.test.cjs    AssertionError: transducer depth must render  ('13.8' !== '4.2')
+tests/bug36-engine-data-cache.test.cjs AssertionError: cache must initialise all-null (extra key depth_m)
 ```
 Both were invisible because the files could not run at all.
 
-### Why this matters
-- **BUG-30** (depth reads `belowKeel`, Signal K publishes `belowTransducer`) — `[~]` FIXED +
-  DEPLOYED lab Pi S108-cont, §25.8 ACCEPT 16/16. Also cited as the resolution that **closed BUG-18**.
-- **BUG-36** (S105 deploy silently removed the M14 `_d3kEngData` cache) — `[~]` FIXED + DEPLOYED
-  lab Pi S108-cont, §25.8 ACCEPT 13/13. Also cited as part of what **closed BUG-16**.
+### Why this mattered
+- **BUG-30** (depth reads `belowKeel`, Signal K publishes `belowTransducer`) — also cited as the
+  resolution that **closed BUG-18**.
+- **BUG-36** (S105 deploy silently removed the M14 `_d3kEngData` cache) — also cited as part of
+  what **closed BUG-16**.
 
-If these are real regressions, **BUG-18 and BUG-16 may have been closed on false evidence.**
+Had these been real regressions, BUG-18 and BUG-16 would have been closed on false evidence.
+**They were not. Both closures stand.**
 
-### Two candidate explanations — do not assume which
-1. **Stale tests.** Written against a jsdom fixture or file structure that has since changed
-   (`instruments.js` has been edited repeatedly since S108 — BUG-42/43/45/46/47).
-2. **Real regression.** A later deploy overwrote the S108-cont fixes, exactly as the S105 deploy
-   did to BUG-36 in the first place. That is a documented failure mode in this project.
+### Root cause — candidate 1 (stale tests) CONFIRMED, candidate 2 (regression) RULED OUT
+Neither test touches hardware. Both are JSDOM harnesses that call `SK_HANDLERS` directly with
+hardcoded values — no Signal K, no N2K bus, no Garmin, no depth sounder in the path. The failures
+are therefore not attributable to absent lab hardware, and not to anything on the Pi.
 
-### Investigation steps
-- [ ] Read the served `instruments.js` on the lab Pi — does `belowTransducer` handling still exist?
-      Does `_d3kEngData` still initialise all-null? **Live read, not the repo.**
-- [ ] Compare against the S108-cont verified state (`verify-bug30.sh`, and the BUG-36 md5 history)
-- [ ] If the code is correct → the tests are stale; repair them
-- [ ] If the code is wrong → a regression; re-open BUG-30/BUG-36 **and re-examine BUG-16/BUG-18**
+**`bug36`** — asserts via `deepStrictEqual` that the cache has exactly five keys. `instruments.js:30`
+has six:
+```js
+window._d3kEngData = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null, depth_m:null };
+```
+`depth_m` was added deliberately by **BUG-34 (S110 2026-07-29)** — `instruments.js:140`,
+`// BUG-34: always store metres`. The test was written S108, two days earlier. **Code correct.**
+
+**`bug30`** — injects 4.2 metres, expects the string `"4.2"`, receives `"13.8"`.
+4.2 × 3.28084 = 13.78 → 13.8 ft. `instruments.js:134` sets `let _unitPrefs = { temp: 'F', depth: 'ft' }`
+— imperial default, added by **BUG-43 (S114 2026-07-31)** per the operator's stated unit preference.
+The conversion is at `instruments.js:142`. The test was written S108, six sessions before unit
+conversion existed, and assumes metric. **Code correct.**
+
+Same defect class as **BUG-53**: a later fix intentionally changed behaviour an earlier test had
+frozen. Three such stale expectations are now known (`bug30`, `bug36`, `bug26`).
+
+### ⚠ Carried forward — assertions that have never executed
+`bug30` aborts at line 35, so **assertions 3, 4 and 5 never ran.** Those are the safety-critical ones:
+
+- 3 — `belowTransducer` must NOT overwrite an existing `belowKeel` value (overwriting would
+  **overstate clearance**)
+- 4 — `belowKeel` arriving later must take over from a transducer reading
+- 5 — the shallow-water alarm must still fire on both sources
+
+This behaviour is **unverified — not proven broken, and not proven working.** Per operator decision
+S118, it will be **verified on the boat** against the real Garmin depth source rather than by
+repairing the JSDOM fixture. Until that is done, no claim should be made that depth-source priority
+is proven.
+
+### Consequence for the test runner — read before touching `run-all.sh`
+The two stale test files were **not** modified when this bug was closed. `./tests/run-all.sh` will
+therefore continue to report **2 node file failures and NOT GREEN**. That is now a *known and
+accepted* red, not an unknown one. ⚠ **Do not silence the runner, relax the assertions, or delete
+the files to obtain green** — that is the exact failure mode BUG-51 exists to prevent. The correct
+resolution is to update the two expectations (metric→imperial, five keys→six) once the boat
+verification above has confirmed the intended behaviour.
 
 ---
 
@@ -3333,9 +3385,96 @@ never updated. The test now enforces the defect.
 
 ## BUG-54 — Cloud export has failed silently every ~10 minutes since 2026-02-20
 
-**Status:** `[ ]` **OPEN — logged S117 2026-08-02. Root cause UNKNOWN. Found incidentally while auditing what changed on the lab Pi.**
-**Platform:** Pi — `d3kos-export-manager` (`/opt/d3kos/services/export/export-manager.py`)
-**Severity:** MEDIUM pending triage — see the open question below, which could make it NOT A BUG on the lab Pi.
+**Status:** `[~]` **PART 1 FIXED + DEPLOYED LAB PI S118 2026-08-03 — TDD 2/3 fail pre-fix → 3/3 pass,
+end-to-end proven in the journal. PART 2 (the HTTP 400 itself) still OPEN — needs an external probe
+to atmyboat.com, which requires operator approval. NOT on boat Pi.**
+**Platform:** Pi — `d3kos-export-manager`; worker at `/opt/d3kos/services/export/export_worker.py`
+**Severity:** Part 1 MEDIUM (fixed). Part 2 pending — severity still gated on the boat-Pi check.
+
+---
+
+### ⚠ S118 CORRECTION — the original diagnosis in this record was WRONG
+
+The S117 entry stated: *"Delivery fails, and logs nothing… no error recorded anywhere… there is no
+failure reason field."* **That is false.** Every queue entry in
+`/opt/d3kos/data/exports/export_queue.json` carries a `last_error` field, and it has been recording
+the exact reason the entire time. Nothing was ever missing from the data — it simply never reached
+the journal or any UI. **The fix that follows is about visibility, not about adding a reason field
+that already existed.**
+
+### This was never one failure — it is FOUR, in sequence
+Distinct `last_error` values across the 187 failed + 2 pending queue entries:
+
+| Count | Recorded error | Reading |
+|---|---|---|
+| 110 | `HTTPSConnectionPool(host='d3kos-cloud-api.example.com', port=443)` | **A placeholder hostname was live in config.** `example.com` was never replaced. This is the original Feb–Mar failure. |
+| 63 | `HTTP 400: <html>…400 Bad Request…nginx…` | **The current failure.** |
+| 7 | `Export file not found: /opt/d3kos/data/exports/exports/export_…` | Note the doubled `exports/exports/` path segment — likely a second, separate defect |
+| 6 | `HTTP 401: {"success":false,"error":"Invalid API key."}` | PHP *was* reached and rejected the key |
+| 2 | `Expecting value: line 1 column 1 (char 0)` | non-JSON response body |
+| 1 | `HTTPSConnectionPool(host='atmyboat.com') Max retries` | transient network |
+
+The 401s prove the endpoint exists and PHP is reachable. The current 400 returns **nginx's own HTML
+error page**, not PHP JSON, so nginx is rejecting the request before PHP runs.
+
+### PART 1 — ROOT CAUSE OF THE INVISIBILITY (fixed S118)
+`export_worker.py` reports every delivery step with `print()`. Under systemd, stdout is a **socket,
+not a TTY**, so CPython **block-buffers it at 8 KB**. The worker's `Processing export`,
+`Uploading to…`, `✗ Export upload failed…` and `Archived failed export…` lines sat in that buffer
+and never reached the journal.
+
+`export-manager.py` uses the `logging` module, which writes to **stderr — line-buffered** — which is
+exactly why its lines were always visible while the worker's never were. That asymmetry is what made
+the failures look unlogged.
+
+Verified on the Pi before the fix: `systemctl cat` showed **no** `PYTHONUNBUFFERED`, and
+`/proc/<pid>/fd/1` was `socket:[7155]`.
+
+**Fix:** one line in `/etc/systemd/system/d3kos-export-manager.service`:
+```
+Environment=PYTHONUNBUFFERED=1
+```
+No application code changed. Repo copy and Pi copy are md5-identical (`b155ec6e…`).
+
+**Test:** `deployment/v0.9.9.4/tools/verify-bug54.sh` — asserts the unit declares the variable, that
+the **running process** actually has it (catches an edited-but-never-reloaded unit), and that the
+service is active. **2/3 failed pre-fix, 3/3 pass post-fix.**
+
+**End-to-end evidence — journal, immediately after the fix:**
+```
+Processing export: q_20260803_075645
+Uploading to https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/data-ingress.php
+Archived failed export: /opt/d3kos/data/exports/failed_exports/q_20260803_075645_failed.json
+✗ Export upload failed: HTTP 400: <html>
+```
+
+### PART 2 — THE HTTP 400 ITSELF (still open)
+Ruled out by direct inspection:
+- **Malformed headers** — `device_token` (36 ch) and `amboat_api_key` (39 ch) are both pure
+  printable ASCII with no whitespace. Not a bad-header 400.
+- **Missing config** — `cloud-config.json` and `device-token.json` both exist and parse.
+- **Body size** — failed payloads are ~50 KB; nginx returns 413, not 400, for oversize bodies.
+
+`Uncertainty flag:` the remaining candidates (a WAF/ImunifyAV rule, an nginx request restriction, or
+a payload-shape rejection) **cannot be distinguished without sending a request to atmyboat.com.**
+That is an external call to the live production site and requires explicit operator approval. Do not
+guess the cause — the four-era history above shows this bug has already been misdiagnosed once.
+
+### ⚠ NEW FINDING — the lab Pi posts to PRODUCTION, not staging
+`cloud-config.json` sets `amboat_base_url = https://atmyboat.com`. The code default in
+`export_worker.py` is `https://atmyboat.com/staging`, and the service still *logs* the staging URL at
+startup — but the actual POST goes to **production**. A development Pi is configured to write
+telemetry into the live AtMyBoat database. **Operator decision required: should it be, or should the
+lab point at staging?** This may also make the 400 moot on this device.
+
+### Still to do
+- [ ] **Check the boat Pi's `failed_exports/` count** — still unanswered; still sets true severity
+- [ ] Operator decision: lab Pi → staging or production?
+- [ ] Approval for one diagnostic request to atmyboat.com to identify the 400
+- [ ] Investigate the doubled `exports/exports/` path in the 7 "file not found" errors
+- [ ] Decide whether export health belongs in the Settings status panel (BUG-50 class defect —
+      nothing in the UI surfaces this even now that the journal does)
+- [ ] Decide whether the 152 archived payloads should be retried or discarded
 
 ### Symptom
 `/opt/d3kos/data/exports/failed_exports/` holds **148 failed export payloads**. The oldest is
@@ -3387,3 +3526,108 @@ five months of vessel telemetry, boat-log entries and engine history have never 
 ### Not investigated further this session
 Found at session close while answering "what was deployed to the Pi today". Logged per the standing
 rule; no fix attempted, no files touched.
+
+---
+
+## BUG-55 — 17 code sites still point at atmyboat.com/staging; operator states all should be production
+
+**Status:** `[~]` **FIXED + DEPLOYED LAB PI S118 2026-08-03 — all 17 sites repointed to production
+plus the fleet path defect; guard test 4/4 pass; zero staging references remain in the canonical
+tree or on the lab Pi. NOT on boat Pi.**
+**Operator decision (S118):** *"it should all be pointing to production not staging at this point"*,
+reaffirmed — the PWA included. The CLARIFICATION GATE below was answered: **everything, PWA
+included.** The `app.js` `API_BASE`, `data-export.php` and `data-delete.php` URLs were repointed.
+
+### What was changed
+- **17 occurrences** of `atmyboat.com/staging` → `atmyboat.com` across **13 version-controlled files**
+  (9 Category A fallbacks + Category B's `update_agent.py`, `fleet_push_service.py` ×2, `app.js` ×4,
+  and `d3kos-diagnostic.service`'s `Documentation=` line).
+- **Fleet path defect fixed at the same time:** `fleet_push_service.py` ×2 now carry the full
+  `/wp-content/themes/twentytwenty-child/mobile/fleet-ingest.php` path, matching `fleet-push.env`.
+- **`fleet-push.env`** corrected on the Pi. ⚠ **This file is Pi-only and NOT version-controlled** —
+  same exposure class as `avnav_server.xml` (BUG-33). It travels with an SD clone but a rebuild from
+  the repo silently reverts it. Guard test 3 exists specifically to catch that.
+- Services restarted: `d3kos-export-manager`, `d3kos-cloud-agent`, `d3kos-alert-watcher`,
+  `d3kos-fleet-push`, `d3kos-agents`. `d3kos-diagnostic` was already inactive and was not started.
+  `app.js` is statically served — no restart needed.
+- **All 13 files verified md5-identical between repo and Pi after deploy.**
+
+### Side effect — a misleading log line is now correct
+`export-manager.py:41`'s constant was why the service logged `Central API URL:
+https://atmyboat.com/staging` while actually POSTing to production. It now logs
+`Central API URL: https://atmyboat.com`. Observed during BUG-54; fixed here.
+
+### Test
+`deployment/v0.9.9.4/tools/verify-bug55.sh` — **4/4 pass.** Asserts: no staging URL in the canonical
+tree; none live on the Pi; `fleet-push.env` carries production **and** the full theme path; and the
+code default agrees with the env file. The script excludes itself from its own scan — it necessarily
+names the forbidden string in its grep patterns, and self-failed on the first run until fixed.
+
+### ⚠ NOT done — out of scope for this session
+**No HostPapa live file was touched.** If a separate copy of the PWA is served from
+`atmyboat.com/staging/app/`, repointing the Pi's `app.js` does not move it. Relocating or updating
+the hosted PWA is a live-site modification requiring its own approval and an FTP deploy.
+
+### ⚠ This does NOT fix BUG-54
+BUG-54's HTTP 400 was **already** going to production (`cloud-config.json` set the key). Repointing
+the defaults changed nothing about that failure. **BUG-54 Part 2 remains open.**
+
+### Superseded — original S118 logging entry follows
+**Platform:** Pi services (`/opt/d3kos/services/`), the PWA (`var/www/html/app.js`), and one config file
+**Severity:** MIXED — see the two categories. Category B is live-wrong today; Category A is latent.
+**Origin:** Found while diagnosing BUG-54, after the operator stated: *"it should all be pointing to
+production not staging at this point."*
+
+### Category A — staging as a FALLBACK DEFAULT (latent, 9 sites)
+Pattern: `config.get('amboat_base_url', 'https://atmyboat.com/staging')`. These resolve to
+**production today**, because `cloud-config.json` sets `amboat_base_url = https://atmyboat.com`. They
+are only a trap: if that config key is ever missing, unreadable, or reset by a rebuild, the device
+**silently starts talking to staging** with no error and no log line.
+
+| File | Line |
+|---|---|
+| `opt/d3kos/services/ai/alert_watcher.py` | 320 |
+| `opt/d3kos/services/alert_watcher.py` | 379 |
+| `opt/d3kos/services/ota_upgrade.py` | 395 |
+| `opt/d3kos/services/cloud-agent/ota_upgrade.py` | 406 |
+| `opt/d3kos/services/diagnostic/diagnostic_agent.py` | 174 |
+| `opt/d3kos/services/cloud_agent.py` | 689 |
+| `opt/d3kos/services/cloud-agent/cloud_agent.py` | 604 |
+| `opt/d3kos/services/export/export_worker.py` | 33 (`__init__` default) |
+| `opt/d3kos/services/export/export-manager.py` | 41 (`CENTRAL_API_URL` constant) |
+
+Note `export-manager.py:41` is why the service **logs** `Central API URL: https://atmyboat.com/staging`
+at startup while actually POSTing to production — a misleading log line, observed during BUG-54.
+
+### Category B — HARDCODED staging with no config override (live-wrong now, 5 sites)
+These are talking to staging **right now**. `cloud-config.json` does not override them.
+
+| File | Line | What it does |
+|---|---|---|
+| `opt/d3kos/services/agents/agents/update_agent.py` | 47 | `VERSION_URL` — **OTA version checks hit staging** |
+| `opt/d3kos/services/fleet/config/fleet-push.env` | 1 | `FLEET_INGEST_URL` — fleet telemetry to staging |
+| `opt/d3kos/services/fleet/fleet_push_service.py` | 40 | fleet ingest default → staging |
+| `var/www/html/app.js` | 10 | `API_BASE` — **the whole PWA** |
+| `var/www/html/app.js` | 2652, 2697 | `data-export.php`, `data-delete.php` |
+
+### ⚠ A second defect found inside Category B
+`fleet_push_service.py:40` defaults to `…/staging/mobile/fleet-ingest.php` — **missing the
+`/wp-content/themes/twentytwenty-child/` path segment** that `fleet-push.env:1` includes. The two
+disagree, so the code default is a 404 regardless of which environment it points at. Fix the path at
+the same time as the host, not separately.
+
+### ⚠ CLARIFICATION GATE — contradiction, do not resolve by assumption
+`MOBILE_APP_STRATEGY_BRIEF.md` and MEMORY.md both record the documented architecture as
+**"PWA hosted at `atmyboat.com/staging/app/`"**. If the PWA is *served from* staging, repointing its
+`API_BASE` at production makes a page served from staging call production endpoints. That is a
+deliberate architectural decision, not a find-and-replace. **Operator must confirm whether the PWA
+itself has moved to production, or only the Pi-side services should repoint.**
+
+### Fix steps (none executed)
+- [ ] Operator decision on the PWA question above
+- [ ] Category A: change the 9 fallback defaults to production (no behaviour change today; removes the trap)
+- [ ] Category B (Pi-side): `update_agent.py`, `fleet-push.env`, `fleet_push_service.py` → production, **and fix the fleet path segment**
+- [ ] Category B (PWA): only after the decision above
+- [ ] `export-manager.py:41` — also corrects the misleading startup log line
+- [ ] Re-run `tools/check-drift.sh`; keep repo and Pi md5-identical
+- [ ] Consider: should `amboat_base_url` be the single source of truth, with **no** hardcoded fallback at all, so a missing key fails loudly instead of silently using the wrong environment?

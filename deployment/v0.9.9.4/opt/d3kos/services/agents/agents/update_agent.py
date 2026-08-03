@@ -44,7 +44,7 @@ log = logging.getLogger('update_agent')
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-VERSION_URL   = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile/version.php'
+VERSION_URL   = 'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/version.php'
 LICENSE_FILE  = Path('/opt/d3kos/config/license.json')
 CLOUD_CONFIG  = Path('/opt/d3kos/config/cloud-config.json')
 NOTICE_FILE   = Path('/opt/d3kos/data/update-notice.json')

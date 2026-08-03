@@ -12,7 +12,7 @@ fleet.json schema:
   { "fleet_id": N, "fleet_code": "ABC123", "role": "owner|member" }
 
 Environment (from /opt/d3kos/services/fleet/config/fleet-push.env):
-  FLEET_INGEST_URL=https://atmyboat.com/staging/mobile/fleet-ingest.php
+  FLEET_INGEST_URL=https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/fleet-ingest.php
   AMBOAT_API_KEY=<key>
   SIGNALK_URL=http://localhost:8099
   PREDICTIVE_STATUS_URL=http://localhost:8106/predictive/status
@@ -37,7 +37,7 @@ if _ENV.is_file():
     load_dotenv(_ENV)
 
 FLEET_INGEST_URL  = os.environ.get('FLEET_INGEST_URL',
-                                   'https://atmyboat.com/staging/mobile/fleet-ingest.php')
+                                   'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/fleet-ingest.php')
 AMBOAT_API_KEY    = os.environ.get('AMBOAT_API_KEY', '')
 SIGNALK_URL       = os.environ.get('SIGNALK_URL',   'http://localhost:8099')
 PREDICTIVE_URL    = os.environ.get('PREDICTIVE_STATUS_URL', 'http://localhost:8106/predictive/status')

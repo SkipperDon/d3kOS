@@ -171,7 +171,7 @@ def bundle(tmp_dir: str, timestamp: str) -> Path:
 
 def upload(archive: Path, ticket_id: int, config: dict, device_token: str) -> bool:
     """POST multipart bundle to HostPapa. Returns True on success."""
-    base_url = config.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/')
+    base_url = config.get('amboat_base_url', 'https://atmyboat.com').rstrip('/')
     url      = f"{base_url}/wp-content/themes/twentytwenty-child/mobile/diagnostic-upload.php"
     api_key  = config['amboat_api_key']
 

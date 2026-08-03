@@ -317,7 +317,7 @@ def run():
                     device_token = get_device_token()
 
                 if cloud_cfg and device_token:
-                    base_url = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com/staging').rstrip('/')
+                    base_url = cloud_cfg.get('amboat_base_url', 'https://atmyboat.com').rstrip('/')
                     api_key  = cloud_cfg.get('amboat_api_key', '')
                     for alert in notify_queue:
                         notify_cloud_alert(

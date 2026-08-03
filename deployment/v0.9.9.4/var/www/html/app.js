@@ -1,13 +1,13 @@
 /**
  * d3kOS PWA — Application Logic
  * Vanilla JS SPA. No frameworks, no build step.
- * Runs on GitHub Pages, talks to atmyboat.com/staging PHP endpoints.
+ * Runs on GitHub Pages, talks to atmyboat.com PHP endpoints.
  */
 
 'use strict';
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const API_BASE     = 'https://atmyboat.com/staging/wp-content/themes/twentytwenty-child/mobile';
+const API_BASE     = 'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile';
 
 // Normalize tier — DB may store "3" (integer) or "T3" (string). Always return "T0"…"T3".
 function normalizeTier(raw) {
@@ -2649,7 +2649,7 @@ screens.settings = function renderSettings() {
     exportBtn.textContent = 'Preparing…';
     try {
       const token = localStorage.getItem('app_token') || '';
-      const res = await fetch('https://atmyboat.com/staging/app/data-export.php', {
+      const res = await fetch('https://atmyboat.com/app/data-export.php', {
         headers: { 'Authorization': 'Bearer ' + token },
       });
       if (!res.ok) throw new Error('Export failed');
@@ -2694,7 +2694,7 @@ screens.settings = function renderSettings() {
     deleteAccountBtn.textContent = 'Deleting…';
     try {
       const token = localStorage.getItem('app_token') || '';
-      const res = await fetch('https://atmyboat.com/staging/app/data-delete.php', {
+      const res = await fetch('https://atmyboat.com/app/data-delete.php', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: true }),

@@ -1,7 +1,7 @@
 [Unit]
 Description=d3kOS Remote Diagnostic Collection Agent
 After=network.target
-Documentation=https://atmyboat.com/staging
+Documentation=https://atmyboat.com
 
 [Service]
 Type=oneshot

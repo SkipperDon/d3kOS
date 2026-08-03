@@ -38,7 +38,7 @@ app = Flask(__name__)
 LICENSE_FILE = '/opt/d3kos/config/license.json'
 EXPORT_DIR = '/opt/d3kos/data/exports/exports'
 PORT = 8094
-CENTRAL_API_URL = "https://atmyboat.com/staging"
+CENTRAL_API_URL = "https://atmyboat.com"
 
 # Logging
 logging.basicConfig(
