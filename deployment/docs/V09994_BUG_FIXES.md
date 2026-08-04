@@ -938,8 +938,18 @@ CLIPPED.** This supersedes the S112 finding that CX5106 src 106 was absent from 
 blue Pole 3 RPM-gauge wire had never been permanently connected.
 ⚠ **Not yet re-verified on the N2K bus.** Confirm src 106 appears in Signal K on the next boat
 visit — closing the wiring task is not the same as observing the data.
+⚠ **S119 2026-08-04 ON-BOAT VERIFICATION FAILED.** With ignition on and engine RUNNING (operator
+confirmed, tach wire permanently clipped): src 106 present on bus, but sending **heartbeat PGN
+126993 only (1 frame / 60 s) — zero data PGNs** (no 127488/127489/127505) over 60 s of candump.
+Device power, CAN transmitter, cable, and bus all proven good by the heartbeat. Same signature on
+both units — the S98 "defective unit" diagnosis was almost certainly wrong. Remaining unknowns are
+on the sensor-input/DIP side. No published CX5106 manual exists (Matsutec/iMarinex/Premier Cable
+checked S119); the paper leaflet in the box is the only DIP-switch authority. Garmin (src 0) also
+absent from the bus during the capture — plotter state unconfirmed. **Operator to decide whether to
+reopen.** Reopen decision pending; checkbox left as closed S118.
 **Logged:** 2026-07-13 S98 (on-boat, Monterey 265 SEL, Pi IP 172.20.10.8)
-**Updated:** 2026-07-20 S101 — new unit confirmed on NMEA 2000 bus
+**Updated:** 2026-07-20 S101 — new unit confirmed on NMEA 2000 bus; 2026-08-04 S119 — closure
+verification failed (heartbeat only, engine running)
 **Platform:** Pi (NMEA 2000 network, CX5106 integration)
 
 ### S101 Update — 2026-07-20 (On-boat, engine running)
