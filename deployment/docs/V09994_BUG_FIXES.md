@@ -3652,3 +3652,41 @@ itself has moved to production, or only the Pi-side services should repoint.**
 - [ ] `export-manager.py:41` — also corrects the misleading startup log line
 - [ ] Re-run `tools/check-drift.sh`; keep repo and Pi md5-identical
 - [ ] Consider: should `amboat_base_url` be the single source of truth, with **no** hardcoded fallback at all, so a missing key fails loudly instead of silently using the wrong environment?
+
+---
+
+## BUG-56 — Admin Console HTTP 400 Bad Request; HostPapa database API endpoint failing
+
+**Status:** `[ ]` OPEN — logged 2026-08-11 S120
+
+**Platform:** HostPapa (atmyboat.com live site)
+
+**Severity:** MEDIUM — Admin Console is a critical system; database connectivity is broken.
+
+### Symptoms
+
+- Admin Console (CRM VM at 192.168.236.5) unable to retrieve data or post to database
+- HTTP 400 Bad Request returned by HostPapa API endpoint
+- Error URL: `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/api-admin.php`
+
+### Root Cause
+
+Unknown — candidates to investigate:
+1. **Malformed request headers** — Admin Console VM sending incorrect Content-Type, User-Agent, or authentication headers
+2. **Missing or invalid request body** — POST payload missing required fields or invalid JSON/form-data
+3. **PHP endpoint error** — `api-admin.php` returning 400 before processing (check nginx error logs and PHP error logs on HostPapa)
+4. **HostPapa nginx configuration** — request size limits, allowed methods, or other constraints rejecting the request
+5. **Authentication failure** — Bearer token, API key, or CORS headers invalid or missing
+6. **Database connection credentials** — credentials in `api-admin.php` or `atmyboat-config.php` incorrect or expired (related to BUG-54/55 environmental configuration)
+
+### Next Steps
+
+1. **Admin Console side:** capture and log the exact request being sent (headers, body, method, authentication)
+2. **HostPapa side:** check nginx error log (`/var/log/nginx/error.log`) and PHP error log (`/var/log/php-errors.log`) for the timestamp of the 400 response
+3. **Cross-reference:** compare `api-admin.php` endpoint against the working `support-request.php` endpoint (which succeeded in S119)
+4. **Check recent changes:** determine if this started after BUG-55's staging→production migration or a prior HostPapa change
+
+### Related Bugs
+
+- **BUG-55:** Staging vs. production URL migration (may have displaced the correct endpoint)
+- **BUG-54:** HTTP 400 on cloud export (similar error; different endpoint)
