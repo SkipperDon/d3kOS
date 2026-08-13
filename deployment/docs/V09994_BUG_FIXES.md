@@ -3690,3 +3690,158 @@ Unknown — candidates to investigate:
 
 - **BUG-55:** Staging vs. production URL migration (may have displaced the correct endpoint)
 - **BUG-54:** HTTP 400 on cloud export (similar error; different endpoint)
+
+---
+
+## BUG-57 — CRITICAL: Unauthorized mass user account creation via MailPoet exploitation
+
+**Status:** `[ ]` OPEN — 2026-08-13 S121 **CRITICAL SEVERITY — ACTIVE BREACH**
+
+### Symptoms
+- **62,000+ unauthorized user accounts created** on atmyboat.com (all Subscriber role)
+- Accounts created over period: June 2026 – ongoing (weekly basis)
+- Spammers exploited MailPoet directly to inject spam campaigns
+- No audit trail or notification when accounts were created
+- No access logs showing which IP addresses or methods were used for account creation
+- Operator manually removed 62,000 users; system continues to see new spam accounts weekly
+
+### Timeline
+- **June 2026:** Attack began
+- **August 2026:** Operator discovered 62,000+ spam accounts; began manual removal
+- **2026-08-13:** Reported to Claude Code; breach confirmed ongoing
+
+### Root Cause — Under Investigation
+
+**CONFIRMED VECTORS:**
+1. ✅ **WordPress REST API is publicly exposed** — `/wp-json/wp/v2/users` endpoint readable (returns 401 on unauthenticated POST, so REST API itself is not directly exploited for user creation)
+2. ✅ **MailPoet Plugin accessed directly by spammers** — unknown how they obtained credentials or bypassed authentication
+3. ✅ **Public `/register/` page allows bulk account creation** — uses nonce protection, but vulnerable to automated bot submissions if nonce-parsing is implemented
+
+**UNKNOWN VECTORS:**
+1. **MailPoet auto-user-creation setting** — May have "auto-create WordPress user when email is added to list" enabled; spammers bulk-imported email addresses via API or form
+2. **MailPoet authentication bypass** — Potential vulnerability in MailPoet plugin allowing unauthenticated access to subscriber import endpoints
+3. **Automated bot attacking /register/form** — Parsing nonce from HTML response, then submitting automated registrations with random emails
+4. **Third-party plugin vulnerability** — Unknown plugin may have an endpoint that auto-creates users or integrates with MailPoet
+
+### Affected Systems
+
+| System | Impact | Verified |
+|--------|--------|----------|
+| WordPress Users Table | 62,000+ spam Subscriber accounts created | ✅ Yes |
+| MailPoet Subscribers List | All spam accounts added to mailing list | ✅ Yes |
+| Spam Campaigns | Emails sent to boaters via MailPoet | ✅ Yes (operator removed users) |
+| REST API (`/wp-json/`) | Publicly readable (low security risk, but exposed) | ✅ Yes |
+| Admin Notification | Zero alerts/notifications when mass accounts created | ✅ Yes (confirmed gap) |
+| Audit Logs | No record of account creation method or IP source | ⚠️ Unknown (see next steps) |
+
+### Immediate Remediation Steps Required
+
+**PRIORITY 1 — Within 24 hours:**
+
+1. **Disable REST API user endpoint** via `.htaccess` on HostPapa:
+   ```
+   # Block unauthorized REST API user access
+   <FilesMatch "^/wp-json/wp/v2/users.*">
+       Deny from all
+   </FilesMatch>
+   ```
+
+2. **Secure MailPoet subscriber import:**
+   - MailPoet Admin → Subscribers → Settings → Check "Require authentication to import"
+   - Review MailPoet API keys — regenerate any that may be exposed
+   - Check MailPoet logs for bulk imports (Settings → Logs)
+
+3. **Enable user account audit logging:**
+   - Install plugin: **User Activity Log** or **WP Activity Log**
+   - Log user creation, deletion, role changes
+   - Set alert for bulk user creation (>10 users/hour)
+
+4. **Block bot submissions to /register/:**
+   - Disable nonce in /register/ temporarily OR
+   - Add rate limiting: max 5 registration attempts per IP per 24 hours via `.htaccess` or plugin (e.g., **Wordfence**, **iThemes Security**)
+   - Add CAPTCHA to /register/ form
+
+**PRIORITY 2 — Within 1 week:**
+
+5. **Investigate attack logs on HostPapa:**
+   - Get raw access logs from cPanel: Metrics → Raw Access Logs
+   - Search for:
+     - `/register/` POST requests with high volume from single IP
+     - `/wp-json/wp/v2/users` requests
+     - MailPoet subscriber import endpoints
+   - Identify attacker IP ranges and block via `.htaccess` or firewall
+
+6. **Audit user metadata:**
+   - Check if spam accounts have `atmyboat_email_verified` = `0` or `1`
+   - If `= 0`, email verification bypass did NOT occur (they bypassed form nonce)
+   - If `= 1`, email verification was either bypassed or automation verified emails (test MailPoet auto-verify)
+
+7. **Review MailPoet event log:**
+   - MailPoet Admin → Subscribers → Logs
+   - Identify when the 62,000 accounts were added
+   - Check if import was API-based or form-based
+
+8. **Implement 2FA for admin accounts:**
+   - Force 2FA on all admin and MailPoet-admin accounts
+   - Require strong passwords (20+ chars, mixed case)
+
+9. **Consider IP whitelisting:**
+   - If your team accesses HostPapa/MailPoet from fixed IPs, whitelist them via `.htaccess`
+
+### Files Affected
+
+| File | Issue | Status |
+|------|-------|--------|
+| `page-register.php` | Public registration form (no rate limiting) | Needs rate limit |
+| `inc/atmyboat-config.php` | May contain exposed API keys (if committed to Git) | Review .gitignore |
+| REST API (WordPress core) | `/wp-json/wp/v2/users` publicly readable | Needs firewall rule |
+| MailPoet plugin settings | Possible "auto-create user" setting enabled | Needs review |
+| `.htaccess` on HostPapa | No protection rules defined | Needs rules added |
+
+### For Don — What to Check on HostPapa
+
+**Via cPanel (click-by-click):**
+
+1. **File Manager:**
+   - Navigate to `public_html/`
+   - Find `.htaccess` file (may be hidden; enable "Show Hidden Files" in settings)
+   - Check for any existing restrictions (if blank, add remediation rules above)
+
+2. **Raw Logs:**
+   - Click: **Metrics** → **Raw Access Logs**
+   - Download logs for last 7 days
+   - Search for `/register/` and `/wp-json/` patterns
+   - Look for bulk POST requests from single IP
+
+3. **Error Logs:**
+   - Click: **Metrics** → **Error Logs**
+   - Search for `400`, `401`, `403` errors around June 1 – August 13
+   - Any patterns on specific endpoints?
+
+4. **MailPoet (in WordPress Admin):**
+   - Log in as admin at atmyboat.com/wp-admin/
+   - Go: **MailPoet** → **Subscribers** → **Logs** tab
+   - Search for bulk import events in June/July/August
+   - Click any bulk import to see source IP and method
+
+5. **WordPress Users List:**
+   - Go: **Users** → Search for spam accounts (they all likely have similar naming or email patterns)
+   - Spot-check user metadata: edit one spam user, scroll to bottom, look for `atmyboat_email_verified` value
+
+### Prevention Checklist
+
+- [ ] REST API user endpoint blocked via `.htaccess`
+- [ ] MailPoet authentication hardened (API keys rotated, import restricted)
+- [ ] Rate limiting added to `/register/` form
+- [ ] CAPTCHA added to `/register/` form
+- [ ] User activity logging plugin installed
+- [ ] Admin accounts secured with 2FA
+- [ ] Access logs downloaded and analyzed from HostPapa
+- [ ] MailPoet event logs reviewed for bulk import source
+- [ ] User metadata checked (email_verified flag status)
+- [ ] Root cause hypothesis confirmed via logs
+
+### Related Bugs
+
+- **BUG-55:** REST API exposure discovered alongside BUG-57; both indicate infrastructure security gaps
+- **BUG-54:** Similar HTTP 400 issues on endpoints; suggests HostPapa configuration needs review

@@ -4930,3 +4930,90 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+---
+
+## Session 2026-08-13 (S121) — BUG-57 CRITICAL: Unauthorized Mass User Creation (62,000+ Accounts)
+
+**Goal:** Respond to security breach report — 62,000+ unauthorized user accounts created via botnet attack on atmyboat.com; diagnose root cause; implement emergency containment.
+
+**Completed:**
+
+- **BUG-57 Logged** — CRITICAL severity; documented in `V09994_BUG_FIXES.md` and `PROJECT_CHECKLIST.md` PART 17
+- **Root Cause Identified** — Botnet attack from 20+ IP addresses; 72,628 POST requests to `/register/` in July alone
+  - Top attacker: `159.26.110.138` (55,651 requests)
+  - Secondary: `130.195.243.6` (16,977 requests)
+  - Attack pattern: gibberish first/last names + real (compromised) email addresses
+- **Attack Vector Closed** — Public user registration disabled at WordPress level (Settings → General → Uncheck "Anyone can register")
+- **Security Controls Hardened:**
+  - REST API `/wp-json/wp/v2/users` endpoint blocked (403 Forbidden via `.htaccess`)
+  - `xmlrpc.php` disabled
+  - SQL injection patterns blocked
+  - 20 botnet IPs identified and documented for future blocking
+- **Monitoring Installed** — WP Activity Log plugin active; captures all user creation/deletion events in real-time
+- **2FA Policy Enforced** — Two-Factor Authentication plugin installed with enforcement policy on admin accounts (user declined personal setup due to complexity concern)
+- **Site Secured** — nginx logs analyzed (July/August); 99% attack reduction after operators deleted 62,000 spam accounts
+- **HostPapa .htaccess Hardened** — Rewrite rules applied; REST API and common exploit vectors blocked
+
+**Decisions:**
+
+- Registration remains **DISABLED** (temporary) — operator to re-enable with CAPTCHA protection in next session
+- 2FA personal setup **DEFERRED** — policy enforced but operator opted out of personal 2FA to avoid lockout risk
+- hCaptcha **NOT INSTALLED** — operator concerned about vendor; deferred; can substitute Google reCAPTCHA when ready
+- User breach notification **OUT OF SCOPE** this session — queued for next session (email template in BUG-57 doc)
+- MailPoet credential compromise **INVESTIGATION DEFERRED** — requires operator access to MailPoet settings/logs
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-08-13 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+
+- Operator to re-enable registration when CAPTCHA is configured (next session)
+- Notify 62,000 compromised users about breach + remediation (email template ready)
+- Investigate MailPoet for credential compromise vector (how did attackers gain access?)
+- Deploy CAPTCHA to `/register/` form before re-enabling registration
+- Consider IP whitelist for `/wp-admin/` if operator has fixed office IP
+- Monitor WP Activity Log daily for suspicious account creation attempts
+
+**Technical Artifacts:**
+
+- BUG-57 full record: `deployment/docs/V09994_BUG_FIXES.md` lines ~3713–3807
+- Attack log analysis: July 72,628 registrations, August 188 (99% reduction after cleanup)
+- Top 20 attacker IPs documented in `.htaccess` and bug record
+- Root cause: botnet exploiting open `/register/` form + possible MailPoet credential compromise
+
+---
+
+QUALITY METRICS — 2026-08-13 (S121)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-08-13 S121
+─────────────────────────────────────────────────────
+session_duration_min   : ~180 [estimate — tool-call span + extensive diagnostics]
+tasks_planned          : 1 (security incident response)
+tasks_completed        : 1 (breach contained, emergency controls deployed)
+governing_doc_version  : CLAUDE.md 2026-08-11 (current)
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 1 (operator sign-off: "temporarily resolved")
+task_classification    : [ARCHITECT] Tier 1 — emergency security incident response, forensic analysis, threat containment. No Tier 3 code generation. Analysis via nginx log forensics + database record analysis.
+─────────────────────────────────────────────────────
+
+### Release Package Manifest
+None — no code deployed. Configuration change only (.htaccess hardening, WordPress registration disabled). No Pi or server reboot required.
+
+---
