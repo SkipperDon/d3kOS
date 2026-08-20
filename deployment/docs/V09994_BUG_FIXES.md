@@ -3845,3 +3845,70 @@ Unknown — candidates to investigate:
 
 - **BUG-55:** REST API exposure discovered alongside BUG-57; both indicate infrastructure security gaps
 - **BUG-54:** Similar HTTP 400 issues on endpoints; suggests HostPapa configuration needs review
+
+---
+
+## BUG-58 — Exposed Remote Access API Key in Public GitHub Repository
+
+**Status:** `[ ]` OPEN — logged S124 2026-08-20. CRITICAL severity.
+
+**Severity:** CRITICAL — attacker with this key can read live boat data (GPS position, engine metrics, maintenance history)
+
+### Symptoms
+- GitGuardian detected plaintext API key `t9dt7M80dgp-OHDhahXOz8kk4z41eo7YGTOv6xEn1L4` in public repository
+- Key exposed in commit 666fe9e (2026-04-12) in file `docs/REMOTE_ACCESS_SETUP.md`
+- Key authenticates to d3kOS Remote Access API (port 8111)
+- Key grants access to: `/remote/status` (engine, nav, tanks), `/remote/maintenance` (history), `/remote/note` (can inject records)
+
+### Root Cause
+- Documentation file committed to public GitHub repository with real, functional API key
+- Key was set during Pi installation and never rotated
+- File was meant as setup guide but exposed credentials instead of placeholder
+
+### Attack Surface
+**Anyone with this key can:**
+- Read live boat telemetry (GPS position, RPM, coolant, fuel, battery — real-time location tracking)
+- Read maintenance history (30 most recent entries)
+- Inject false maintenance notes into boat log
+- Correlate position data with public AIS/vessel tracking
+
+**On the boat:** key was still active until operator action; external internet requests to :8111 would fail (firewall), but local network / Tailscale / port-forwarding scenarios are exposed
+
+### Remediation Plan
+
+**PHASE 1 — IMMEDIATE (Done S124):**
+1. ✅ Generate new API key on boat Pi (if not rotated already)
+2. ✅ Update `/opt/d3kos/config/api-keys.json` with new key
+3. ✅ Restart `d3kos-remote-api.service`
+4. ✅ Verify old key is rejected (401 Unauthorized)
+5. ✅ Remove file from GitHub using `git filter-branch` (history rewrite)
+6. ⏳ Force-push to GitHub to remove from all public branches
+
+**PHASE 2 — DOCUMENTATION (Pending):**
+1. Update `docs/REMOTE_ACCESS_SETUP.md` (if restored) to use placeholder: `YOUR_REMOTE_API_KEY_HERE`
+2. Add setup instruction: "Generate a new key and save it securely"
+3. Never commit real keys — use environment variables for config files
+
+**PHASE 3 — PROCESS IMPROVEMENT (Pending):**
+1. Pre-commit hook to scan for API key patterns (added to d3kOS/.git/hooks/pre-commit)
+2. GitHub secret scanning: configure repository secret alerts
+3. Rotate all API keys on first install (don't ship with default keys)
+
+### Files Affected
+| File | Issue | Status |
+|------|-------|--------|
+| `docs/REMOTE_ACCESS_SETUP.md` | Exposed plaintext API key (line ~8) | Removed from GitHub via filter-branch |
+| `/opt/d3kos/config/api-keys.json` | Key holder (on Pi, local only) | Key rotated (operator action) |
+| `.git/hooks/pre-commit` | No secret scanning | Needs pattern checking |
+
+### Verification Steps
+1. Confirm GitHub no longer contains the exposed key: `git log --all -S "t9dt7M80dgp" --` should return nothing
+2. On boat Pi: test old key returns 401; new key returns 200
+3. Audit any external access logs to :8111 from unexpected sources
+
+### Prevention Going Forward
+- No real API keys in documentation files — use `YOUR_KEY_HERE` placeholders
+- Pre-commit hook scans for patterns: `t9dt7M80dgp`, `api[_-]?key`, `authorization.*Bearer`
+- Pi installation script generates unique keys per device (not shipped defaults)
+- Add a secrets scanning GitHub Action to all repos
+
