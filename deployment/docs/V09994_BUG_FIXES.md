@@ -3912,3 +3912,106 @@ Unknown — candidates to investigate:
 - Pi installation script generates unique keys per device (not shipped defaults)
 - Add a secrets scanning GitHub Action to all repos
 
+
+---
+
+## BUG-59 — Regenerate API Keys & Design Secure Key Management System
+
+**Status:** `[ ]` OPEN — logged S124 2026-08-20. MEDIUM severity.
+
+### Symptoms
+- Both boat Pi and lab Pi have the same exposed Remote Access API key (`t9dt7M80dgp-OHDhahXOz8kk4z41eo7YGTOv6xEn1L4`)
+- No systematic process for key rotation
+- Documentation contains hardcoded API keys as examples instead of placeholders
+- No pre-commit hooks to prevent credentials from being committed
+- No GitHub secrets scanning configured
+
+### Root Cause
+- BUG-58: API keys were used as concrete examples in documentation instead of abstract placeholders
+- Installation process generates keys but doesn't provide a rotation mechanism
+- No policy or process for periodic key rotation or incident-based re-keying
+- Developers not trained to use placeholders in examples
+
+### Attack Surface
+**If keys are compromised:**
+- Attacker can read real-time boat position, engine metrics, fuel level (GPS location tracking)
+- Attacker can read boat's maintenance history
+- Attacker can inject false maintenance records
+- Attacker can monitor vessel movements and predict schedules
+
+### Remediation Plan
+
+**PHASE 1 — IMMEDIATE KEY REGENERATION (Upon Pi power-on)**
+1. Boat Pi: SSH in, generate new key via `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`
+2. Lab Pi: Same process
+3. Update `/opt/d3kos/config/api-keys.json` with new key on each Pi
+4. Restart `d3kos-remote-api.service` on each Pi
+5. Verify old key returns 401 Unauthorized; new key returns 200
+
+**PHASE 2 — SECURE KEY MANAGEMENT SYSTEM (Sprint scope)**
+1. **Pre-commit hook** (`.git/hooks/pre-commit`)
+   - Scan staged files for patterns: `sk_live_`, `sk_test_`, `sk-ant-`, `api_key=`, `SECRET_KEY`, `PASSWORD=`
+   - Reject commit if found (exit code 1)
+   - Whitelist known false positives (e.g., documentation about format)
+
+2. **GitHub Secrets Scanning**
+   - Enable on all repos: Settings → Security & Analysis → Secret scanning
+   - Configure custom patterns for d3kOS keys (pattern: `d3k[A-Za-z0-9]{30,}`)
+
+3. **Installation Script**
+   - Modify `install-d3kos.sh` to generate unique keys per device
+   - Remove hardcoded defaults from any config template
+   - Document key storage path and access method
+
+4. **Documentation Standards**
+   - All API key examples use placeholders: `YOUR_API_KEY_HERE`, `YOUR_REMOTE_KEY`, `[API_KEY]`
+   - Add note: "Replace with your actual key from `/opt/d3kos/config/api-keys.json` on the Pi"
+   - Never include real keys in README, examples, or tutorials
+
+5. **Environment-based Configuration**
+   - Move sensitive config to environment variables (`.env`, `cloud-config.json`)
+   - Add these files to `.gitignore`
+   - Document setup: "Copy `.env.template` to `.env`, fill in your keys"
+
+6. **Key Rotation Policy**
+   - Rotate keys annually (scheduled)
+   - Rotate immediately on any breach or suspected compromise
+   - Maintain audit log of key changes (timestamp, reason, old/new key hash)
+   - Communicate rotation to all users (PIN, email)
+
+7. **API Key Versioning**
+   - Support multiple active keys (new key + old key for 7 days during rotation)
+   - Allow users to revoke old keys manually
+   - Track which client app/device is using which key
+
+### Files Affected
+| File | Action | Status |
+|------|--------|--------|
+| `.git/hooks/pre-commit` | Create secret scanning hook | Pending |
+| `doc/REMOTE_ACCESS_SETUP.md` | Replace real key with placeholder | Pending |
+| `deployment/docs/INSTALLATION.md` | Add key regeneration steps | Pending |
+| `install-d3kos.sh` | Generate unique key per device | Pending |
+| `.env.template` | Create secure config template | Pending |
+| `.gitignore` | Add `.env`, config files | Pending |
+
+### Testing
+
+**Unit Tests:**
+- `test_key_generation.py` — verify key uniqueness and format
+- `test_pre_commit_hook.sh` — attempt to commit mock API keys, verify rejection
+- `test_key_rotation.py` — rotate key, verify old key rejected, new key accepted
+
+**Integration Tests:**
+- Both Pis boot with new keys
+- Remote Access API works with new keys
+- Old key returns 401 on both Pis
+- New clients can authenticate with new keys
+
+### Prevention Going Forward
+
+1. **Code Review Rule:** Reviewers check for any hardcoded credentials before merge
+2. **CI/CD Gate:** Secrets scanning runs on every PR; fails if credentials detected
+3. **Team Training:** All developers briefed on placeholder usage in docs/examples
+4. **Security Policy:** Document in CLAUDE.md or governance files
+5. **Audit:** Monthly scan of repos and deployment configs for leaked secrets
+
