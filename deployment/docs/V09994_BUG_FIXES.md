@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.15.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-22 S126 | **Status:** IN PROGRESS — 4 new critical security bugs logged (BUG-61 reopened, BUG-62/63/64)
+**Version:** 1.16.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-22 S127 | **Status:** IN PROGRESS — BUG-65/66 logged; BUG-63 root cause CONFIRMED in code; BUG-62 flagged for re-verification (possible misdiagnosis)
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -4221,8 +4221,33 @@ Then verify: `https://atmyboat.com/staging/` loads with full CSS/JS/images, and 
 ## BUG-62 — wp-admin Directory Exposed Without Authentication
 
 **Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — active security vulnerability.**
+**⚠ RE-VERIFICATION REQUIRED — S127 2026-08-22. This may be a MISDIAGNOSIS. Do not act on it until confirmed by a live read.**
 
-### Symptoms
+### ⚠ S127 Review Note — the evidence does not support the conclusion
+
+The finding was logged from `https://atmyboat.com/staging/staging/wp-admin/` — which is
+the **known-broken double-`/staging/` path from BUG-61**. That URL returns 404 because the
+path is wrong, not because a directory is unprotected. **A 404 from a broken URL is not an
+exposed admin directory**, and the symptom list below then infers enumeration, brute force
+and version detection from that single 404 without any of them being observed.
+
+Nothing here was verified against a live authenticated read. This is the same failure mode
+the standing rule in CLAUDE.md Step 8 was written for: *"Before changing any label, verify
+against the CODE, not the paperwork."*
+
+**To resolve, test the REAL paths (operator, in a browser):**
+1. `https://atmyboat.com/wp-admin/` → must redirect to `wp-login.php` when logged out
+2. `https://atmyboat.com/staging/wp-admin/` (single `staging`) → same expectation
+3. `https://atmyboat.com/wp-admin/includes/` → expect 403 or 404, never a file listing
+
+If all three behave correctly, **close this as NOT A BUG**. WordPress guards `/wp-admin/`
+by default; an unguarded one would be the exception, not the assumption. If any returns a
+directory listing or an unauthenticated admin page, the bug is real and CRITICAL stands.
+
+Note the operator *was* able to log into wp-admin normally in S127, which is consistent
+with the guard being present and working.
+
+### Symptoms (as logged S126 — unverified, see review note above)
 - `https://atmyboat.com/staging/staging/wp-admin/` returns 404 (due to BUG-61 path doubling), but the directory structure exists and is reachable
 - wp-admin directory lacks authentication guard — an attacker can:
   - Enumerate directory contents (`/plugins/`, `/themes/`, `/includes/`)
@@ -4278,7 +4303,53 @@ WordPress staging environment has no `.htaccess` rule or authentication middlewa
 3. Subscriber role can access MailPoet, view subscriber lists, create campaigns
 4. Spam emails sent to site's entire mailing list within minutes
 
+### ✅ ROOT CAUSE CONFIRMED IN CODE — S127 2026-08-22
+
+**File:** `deployment/features/auth-pages/php/page-register.php` (502 lines)
+
+`/register/` is a **custom WordPress page template that calls `wp_create_user()` directly
+at line 88.** It does not use WordPress's registration system at all.
+
+**Consequence — the obvious fix would not have worked:** unticking
+**Settings → General → "Anyone can register"** (`users_can_register`) has **no effect on
+this form**, because the form never consults that setting. Anyone who "disabled
+registration" in wp-admin and moved on would have left the hole fully open while believing
+it closed. This is the single most important fact in this entry.
+
+**What the form has:** a nonce — `wp_verify_nonce(...,'atmyboat_register_action')` at
+line 55.
+**What the nonce is worth against this attack: nothing.** It stops cross-site posting. It
+does not stop a bot that GETs `/register/` first, scrapes the nonce out of the HTML, and
+posts it back. That is three lines of script.
+
+**What the form does NOT have** (grep-confirmed, S127): no CAPTCHA, no honeypot, no rate
+limit, no username format check, no email-domain check.
+
+**Why the accounts pile up despite email verification:** line 104 sets
+`atmyboat_email_verified = '0'` and line 108 issues a verify token, and per the project's
+auth pattern that meta key gates **login**. So the ~62k bot accounts (BUG-57) are almost
+certainly unverified shells that cannot log in — **but `wp_create_user()` has already run,
+so the row exists in `wp_users` regardless.** Verification gates login; it does not gate
+account creation. That user table is what MailPoet reads to build its audience, which is
+the link from BUG-57 to BUG-60 and to the spam campaigns in this bug.
+
+Line 102 sets `atmyboat_tier = 'T0'` on every new account.
+
+**Interim containment applied S127 (operator):** `/register/` page set to **Draft**, so the
+template never renders and the POST handler never executes; `users_can_register` unticked
+(closes the second door at `/wp-login.php?action=register`); comment moderation enabled
+(BUG-60 Phase 1). ⚠ Draft status is a stopgap, not a fix — the vulnerable template is still
+on disk and one status change away from live.
+
+**Permanent fix:** replace this template per
+`deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 — registration requires a
+server-issued code from an operator-approved d3kOS device. **Do not re-publish
+`/register/` until that form ships.**
+
 ### Root Causes
+0. **CONFIRMED — `page-register.php:88` calls `wp_create_user()` directly**, bypassing
+   `users_can_register` entirely. See the block above. The six items below are contributing
+   weaknesses in that same form.
 1. **No username format validation** — accepts `user123`, `testbot`, `xxx_yyy_zzz` (should require name-like format)
 2. **No email domain whitelist** — accepts any domain including temporary email services
 3. **No real-name field** — registration does not require first/last name
@@ -4390,3 +4461,153 @@ WordPress staging environment has no `.htaccess` rule or authentication middlewa
 
 ---
 
+## BUG-65 — `license.json` is unsigned and world-readable: any user can self-elevate to Tier 3
+
+**Status:** `[!]` **LOGGED S127 2026-08-22. HIGH severity — licensing bypass. Found during the BUG-63 registration-architecture review, not by a user report.**
+
+### Symptom
+Editing one line of a plain text file on the Pi grants every paid feature:
+
+```
+sudo nano /opt/d3kos/config/license.json
+# change  "tier": 0   ->   "tier": 3
+```
+
+Tier 2 (voice assistant, camera, AI analysis, predictive maintenance) and Tier 3 (unlimited
+resets, fleet management, multi-boat) all unlock. Nothing detects it and nothing reverses it.
+
+### Root Cause
+Three compounding facts, all verified in code S127:
+
+1. **The file is unsigned and mode 644.** Created at `opt/d3kos/scripts/first-boot-setup.sh:128-147`.
+   No signature, no HMAC, no checksum — nothing binds the contents to anything.
+2. **Tier is read and trusted verbatim.** `tier_service.py:21,29,128-160` reads `license.json`
+   and returns the FEATURE_MATRIX gate directly. `app.py:412-417` and `:479-480` do the same,
+   equally unguarded.
+3. **Tier is only ever pushed DOWN from the server, never verified UP.** `export_worker.py:204-218`
+   (`_sync_tier_from_response`) writes whatever the server returned into `license.json`, and
+   `cloud_agent.py:292-300` / `:405-425` do likewise. There is no path where the Pi asks
+   "is my claimed tier real?" and no path where the server checks what the Pi claims.
+
+This is architecturally intended, not an oversight — MASTER_SYSTEM_SPEC §9.2 (L6429-6435)
+states: *"No Phone-Home: All tier detection is local (no cloud checks) … No license key
+validation servers."* Tier detection is a **local filesystem test** (L3298-3311): if
+`/opt/opencpn` exists → Tier 2. Creating an empty directory is enough.
+
+⚠ **§9.2 is itself now stale and contradicts the rest of the spec** — §8.3 central database
+sync, telemetry export category #9, fleet management and `version-heartbeat.php` all phone
+home continuously today. That contradiction should be resolved in MASTER_SYSTEM_SPEC
+independently of this bug.
+
+### Impact
+- **Revenue:** Tier 2 is $9.99/month and Tier 3 $99.99/year (MASTER_SYSTEM_SPEC §6.3.4). Both are bypassed by a text edit.
+- **Low exploit skill:** no tooling, no network, no reverse engineering. One file, one number.
+- **Not remotely detectable today:** the server accepts the tier the Pi reports.
+- **Does NOT affect forum registration.** The registration design in `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 gates on **operator approval**, not on tier, specifically because tier is not trustworthy. Recorded there in §5 as a known out-of-scope item.
+
+### Fix Options (not yet chosen — needs an operator decision)
+1. **Server-signed licence.** Server issues `license.json` signed with a private key; the Pi verifies with an embedded public key. Strongest, but requires the licence server that §9.2 explicitly rules out — so it is a **policy change**, not just an implementation.
+2. **Server-side enforcement of paid features only.** Leave the local file alone; make the server refuse Tier 2/3 *cloud* operations unless its own record says the device is entitled. Cheaper, and it protects the features that actually cost money. Local-only features stay spoofable.
+3. **Accept the risk, document it.** Consistent with the open-source posture of §9.2. Legitimate if the paid value is in the cloud services rather than the on-device code.
+
+**Recommendation: option 2.** It closes the commercial exposure without contradicting the
+offline-first design principle, and the server-side device registry needed for it is the
+same one BUG-66 and the registration spec both require.
+
+### Verification
+- [ ] Reproduce: edit `tier` to 3 on the lab Pi, restart `tier_service`, confirm T3 features unlock
+- [ ] Confirm the server accepts a fabricated tier in the next export/heartbeat
+- [ ] After fix: fabricated tier must not unlock server-side Tier 2/3 operations
+
+### Files
+`opt/d3kos/scripts/first-boot-setup.sh:128-147` · `tier_service.py:21,29,128-160` ·
+`app.py:412-417,479-480` · `export_worker.py:204-218` · `cloud_agent.py:292-300,405-425` ·
+`doc/MASTER_SYSTEM_SPEC.md` §6.3.1 L3295-3311, §9.2 L6411-6435
+
+---
+
+## BUG-66 — One fleet-wide API key in cleartext on every Pi authenticates all 12 server endpoints
+
+**Status:** `[!]` **LOGGED S127 2026-08-22. CRITICAL severity if the shipped image carries a live key — see the UNVERIFIED flag. Found during the BUG-63 registration-architecture review.**
+
+### Symptom
+Every Pi→HostPapa call is authenticated by **one shared static secret common to the entire
+fleet**, stored in cleartext at `/opt/d3kos/config/cloud-config.json` on every device.
+There is **no per-device credential anywhere in the codebase** — a repo-wide grep for
+`hmac|signature|sign(` returns only Stripe webhook code and an unrelated `error_signature`
+log field.
+
+### Root Cause
+The canonical auth check, `deployment/features/autonomous-agents/php/version-heartbeat.php:30-42`:
+
+```php
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) { 401 }
+if (empty($device_token)) { 400 }
+```
+
+The `device_token` is required to be **non-empty** and is otherwise **never checked against
+any record**. Line 82 then does `INSERT INTO amboat_devices … ON DUPLICATE KEY UPDATE`, so
+**any UUID presented alongside the shared key silently self-registers as a new device**
+(confirmed in SESSION_LOG.md:2112 — the heartbeat was deliberately changed from UPDATE-only
+to UPSERT).
+
+`AMBOAT_API_KEY` is documented as fleet-wide in `deployment/docs/ARCH_CREDENTIAL_MAP.md:19-38`
+("Shared secret authenticating Pi-to-HostPapa API calls") — one value in every Pi's
+`cloud-config.json` and in one server `config.php`.
+
+### Affected Endpoints (12, all header-auth only)
+`version-heartbeat.php:31` · `fleet-create.php:34` · `fleet-join.php:33` ·
+`fleet-status.php:33` · `fleet-map.php:49` · `fleet-analytics.php:53` · `fleet-leave.php:29` ·
+`failure-report.php:26` · `fix-confirmed.php:26` · `community-markers-write.php:47` ·
+`community-position.php:47` · `config-backup.php:45`
+
+Only `config-backup.php:112-127` checks the device exists (`SELECT id FROM amboat_devices … `
+→ 403 "Device not registered") — but an earlier heartbeat creates that row for free, so it
+enforces ordering, not authentication.
+
+### Impact
+Anyone holding the key can, for **any** `device_token`:
+- register arbitrary fake devices
+- read and write fleet membership, analytics and map data
+- read and write community position markers — **live vessel positions**
+- submit false failure reports and fix confirmations
+- read and write config backups
+
+### ⚠ UNVERIFIED — the question that sets the severity
+**Does the shipped `.img` contain a live `AMBOAT_API_KEY`, or a placeholder?**
+
+`[UNVERIFIED INFERENCE — image contents not inspected]` The repo copy at
+`deployment/v0.9.4/pi_source/cloud-config.json:2` is a template. If the built image ships a
+**live** key, then publishing the image on GitHub Releases (MASTER_SYSTEM_SPEC §12.1 — public,
+anonymous download) **publishes the fleet key to the world**, and every endpoint above is open
+to anyone who downloads d3kOS. That is the same failure class as BUG-58 (key committed to a
+public repo) at fleet scale.
+
+**Check before anything else is decided:** mount the most recent `.img` and inspect
+`/opt/d3kos/config/cloud-config.json`. This single check decides whether this is CRITICAL and
+urgent or HIGH and architectural.
+
+### Fix Direction
+1. **Immediately, if the image carries a live key:** rotate it, and remove it from the image build so first boot fetches or generates credentials instead.
+2. **Per-device credentials.** Replace the shared bearer with the same Ed25519 device keypair proposed in `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 §2 — one enrolment, one public key per device, every request signed. Solves this bug and the registration anchor with one mechanism.
+3. **Stop trusting `device_token` from the request body.** Derive the identity from the verified signature, never from a client-supplied field.
+4. **Remove the blind UPSERT** at `version-heartbeat.php:82` — an unknown device must be rejected or queued, never auto-created.
+
+### Relationship to Other Bugs
+- **BUG-58** — same class (key exposure), previously a documentation leak; this is systemic.
+- **BUG-59** — Phase 2 key-management design should absorb this; per-device keys are the answer to both.
+- **BUG-65** — same absent trust boundary, seen from the licensing side.
+- **Registration spec v2.0.0** — §3.1 explains why the current identity chain cannot anchor trust; this bug is the evidence.
+
+### Verification
+- [ ] Inspect the shipped `.img` for a live key (decides severity)
+- [ ] Confirm an arbitrary UUID + the key self-registers a device row on a test endpoint
+- [ ] After fix: an unsigned or wrongly-signed request must be rejected on all 12 endpoints
+
+### Files
+`deployment/features/autonomous-agents/php/version-heartbeat.php:30-42,64-91` ·
+the 11 other endpoints listed above ·
+`deployment/v0.9.4/pi_source/cloud-config.json:2` ·
+`deployment/docs/ARCH_CREDENTIAL_MAP.md:19-38` · `SESSION_LOG.md:2112`
+
+---

@@ -7,6 +7,37 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — Device-Tied Forum Registration Spec v2.0.0 + BUG-65/66 logged (S127 2026-08-22)
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` | **[NEW v2.0.0 — S127]** Design for device-gated forum registration on atmyboat.com, replacing the open `/register/` form behind BUG-57/63. Four stages: **ENROL** (Pi sends an Ed25519 public key) → **APPROVE** (operator, wp-admin) → **ISSUE** (server generates a 10-char code for an approved device) → **REDEEM** (code + legal name + alias + email + password). Operator decisions D1–D6 recorded in §1. §10 carries a **defect log of nine errors in v1.0.0** so they cannot be reintroduced. |
+
+**The trust anchor is operator approval, not cryptography — and §3.1 says so explicitly.** MASTER_SYSTEM_SPEC §12.1 distributes the image as a free anonymous public download, so it holds no per-copy secret; an attacker never needs to download it and can simply invent a UUID and a keypair. Signatures prove *"key K signed this"*, never *"K is a real d3kOS"*. Any future revision that claims cryptography alone stops bot creation is repeating **defect V2**.
+
+⚠ **v1.0.0 was not implementable.** It handed the server `SHA256(secret_key)` and asked it to verify an `HMAC-SHA256(payload, secret_key)`. HMAC is symmetric; the hash of a key verifies nothing — the document even contained a literal `?` where the key belonged (line 204). Replaced with **Ed25519** (libsodium is bundled in PHP core ≥ 7.2, so no extension install on HostPapa — `[VERIFY BEFORE BUILD]`).
+
+⚠ **Codes are server-issued and server-clocked, deliberately.** Pi-stamped expiry would have failed on this hardware: PART 17 records the boat Pi's journal showing "Jul 20 18:09" for services `ps` reported as started 2026-07-27. A code from a Pi with a bad RTC would be rejected as "expired" the instant a user tried it, with nothing in the UI to explain why. Server-clocking removes that failure class. It also cut the code from **109–141 characters to 10** (v1.0.0's length arithmetic was simply wrong) and stopped `device_token` being published inside every QR URL.
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED v1.15.0 → v1.16.0 — S127]** BUG-65 and BUG-66 entries appended; BUG-62 re-verification block added; BUG-63 confirmed root cause added. 61 `## BUG-` entries. |
+| `PROJECT_CHECKLIST.md` | **[UPDATED v3.30 → v3.31 — S127]** PART 17: BUG-65 + BUG-66 rows added, BUG-62 + BUG-63 rows rewritten. 58 rows. |
+
+**BUG-63 root cause CONFIRMED IN CODE:** `deployment/features/auth-pages/php/page-register.php:88` calls `wp_create_user()` **directly** — a custom page template that never consults WordPress's `users_can_register`. ⚠ **Unticking "Anyone can register" would therefore have done nothing**, leaving the hole fully open while appearing closed. The form's nonce is worthless here (a bot GETs the page and scrapes it). Line 104's `atmyboat_email_verified='0'` gates **login, not creation**, so the `wp_users` row exists regardless — which is the mechanical link BUG-57 → BUG-60 → BUG-63. Contained S127 by setting `/register/` to Draft; **the vulnerable template is still on disk, one status change from live.**
+
+**BUG-65 (HIGH)** — `license.json` is unsigned and mode 644; `"tier": 0` → `"tier": 3` unlocks every paid feature. Tier is read verbatim and only ever pushed *down* from the server, never verified *up*. Architecturally intended per §9.2 "No license key validation servers".
+
+**BUG-66 (CRITICAL, conditional)** — one fleet-wide `AMBOAT_API_KEY` in cleartext on every Pi authenticates all 12 Pi→HostPapa endpoints, including `community-position.php` (live vessel positions); `version-heartbeat.php:82` upserts any UUID presented with it. `[UNVERIFIED]` **Does the shipped `.img` carry a live key?** If so, publishing the image publishes the fleet key — BUG-58 at fleet scale. Check the image before deciding anything else.
+
+**BUG-62 flagged RE-VERIFICATION REQUIRED** — logged S126 from the known-broken `/staging/staging/wp-admin/` double path. A 404 from a wrong URL is not an exposed directory. Not closed on this session's reading alone; three real URLs to test are in the entry.
+
+⚠ **MASTER_SYSTEM_SPEC §9.2 is stale** — "No phone-home / no telemetry / no license validation servers" contradicts §8.3 central sync, telemetry category #9, fleet management and `version-heartbeat`, all of which phone home today. BUG-65's fix options depend on how this is resolved.
+
+**Nothing deployed. No code files touched. No Pi accessed.** Specification and bug tracking only.
+
+---
+
 ## v0.9.9.4 — BUG-54 Part 1 + BUG-55 FIXED, BUG-52 closed (S118 2026-08-03)
 
 | File | Description |
