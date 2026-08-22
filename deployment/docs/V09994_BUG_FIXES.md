@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.14.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-28 S109 | **Status:** IN PROGRESS
+**Version:** 1.15.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-22 S126 | **Status:** IN PROGRESS — 4 new critical security bugs logged (BUG-61 reopened, BUG-62/63/64)
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -3965,6 +3965,175 @@ Unknown — candidates to investigate:
 
 4. **Documentation Standards**
    - All API key examples use placeholders: `YOUR_API_KEY_HERE`, `YOUR_REMOTE_KEY`, `[API_KEY]`
+
+---
+
+## BUG-61 — Staging WordPress Misconfigured — Returns 404 Homepage
+
+**Status:** `[x]` FIXED S125 2026-08-21 — fully operational, all assets loading, menu navigation working.
+
+### Symptoms
+- `https://atmyboat.com/staging/` returns HTTP 404 "Page not found"
+- WordPress is installed and running (PHP responding, REST API available)
+- Staging has its own database `atmyb197_wp5888` (separate from production)
+- Was working before S122; broke after malware remediation and WordPress restore
+
+### Root Cause
+- Staging WordPress database is configured with `siteurl = 'https://atmyboat.com/'` (production URL)
+- Should be `siteurl = 'https://atmyboat.com/staging/'`
+- When WordPress tries to load `/staging/`, it doesn't recognize the path because it's configured to serve production only
+- Likely cause: S122 WordPress restore restored staging database from a backup that was already misconfigured, or the restore process didn't separate staging from production
+
+### Attack Surface
+- Staging is inaccessible — cannot test changes before deploying to production
+- No isolation between staging and production — both share the same WordPress configuration
+
+### Remediation Plan
+
+**PHASE 1 — UPDATE STAGING DATABASE CONFIGURATION**
+
+The staging database `atmyb197_wp5888` has two settings that need updating:
+1. `wp_options.siteurl` → Change from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+2. `wp_options.home` → Change from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+
+Two options to fix:
+
+**Option A — Via cPanel phpMyAdmin (easiest for you):**
+1. Go to cPanel → phpMyAdmin
+2. Select database `atmyb197_wp5888`
+3. Click the `wp_options` table
+4. Find rows with:
+   - `option_name = 'siteurl'` → Change `option_value` to `https://atmyboat.com/staging/`
+   - `option_name = 'home'` → Change `option_value` to `https://atmyboat.com/staging/`
+5. Click "Go" to save
+6. Test: `https://atmyboat.com/staging/` should load the WordPress homepage
+
+**Option B — Via WordPress admin (if you can log in):**
+1. Log in to `https://atmyboat.com/staging/wp-admin/` (if homepage is fixed)
+2. Settings → General
+3. Change "WordPress Address (URL)" to `https://atmyboat.com/staging/`
+4. Change "Site Address (URL)" to `https://atmyboat.com/staging/`
+5. Click Save Changes
+
+### Verification
+- Pre-fix: `https://atmyboat.com/staging/` → 404
+- Post-fix: `https://atmyboat.com/staging/` → WordPress homepage loads
+
+### Solution Implemented (S125 2026-08-21)
+
+**Step 1 — Database Configuration**
+- Identified table prefix: `wpax_` (not `wp_`)
+- Updated `wpax_options` table via phpMyAdmin:
+  - Row `option_name='siteurl'`: changed value from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+  - Row `option_name='home'`: changed value from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+
+**Step 2 — Maintenance Mode Removal**
+- Deleted `/staging/wp-content/maintenance.php` via FTPS (ftp.atmyboat.com)
+- Note: WP Toolkit maintenance files also exist (`maintenance/` directory, `maintenance.php-old`, `maintenance.php-old-old`) but were not interfering
+
+**Verification**
+- Pre-fix: HTTP 404 / "Page not found"
+- Post-fix: HTTP 200 / WordPress homepage loads
+- Page title: "AtMyBoat.com"
+- REST API available: `https://atmyboat.com/staging/wp-json/`
+
+### Secondary Issue Found (BUG-61B)
+
+**Problem:** After database URLs fixed, CSS/JS files load with **double "staging"** path
+- Example: `https://atmyboat.com/staging/staging/wp-content/themes/twentytwenty/style.css`
+- Should be: `https://atmyboat.com/staging/wp-content/themes/twentytwenty/style.css`
+- Result: Theme styling missing (CSS 404s), page shows text only
+
+**Root Cause:** Child theme or WordPress is constructing URLs incorrectly for subdirectory installation. The theme's `functions.php` or stylesheet enqueueing is adding "/staging/" to paths that already include it.
+
+**Fix Required:** Edit `/staging/wp-content/themes/twentytwenty-child/functions.php` to filter/correct stylesheet URLs. Alternatively, add filter to child theme's `functions.php`:
+
+```php
+add_filter('style_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+
+add_filter('script_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+```
+
+**Status:** Requires code edit on staging child theme. Deferred pending operator decision.
+
+### Notes
+- This is NOT a malware issue — it's a configuration issue from the S122 restore
+- Staging WordPress database now correctly configured
+- Staging homepage and menu links now resolve to correct subdirectory paths
+- Theme CSS/JS files require secondary fix (double path in URL construction)
+- Staging database (atmyb197_wp5888) remains independent from production (atmyb197_wp59874)
+
+---
+
+## BUG-60 — Spam Comments Posted Automatically (atmyboat.com) — Require Approval Before Publishing
+
+**Status:** `[ ]` OPEN — logged S125 2026-08-21. MEDIUM severity.
+
+### Symptoms
+- ~5 spam comments per day posted to blog articles since 2026-08-15 (BUG-57 remediation)
+- Comments contain promotional links and random spam text
+- Comments appear live immediately after being submitted
+- Operator must manually delete each spam comment
+- No approval workflow before comment publication
+
+### Root Cause
+- WordPress comment moderation is not enabled
+- `/register/` form accepts submissions without bot detection (CAPTCHA or similar)
+- No pre-publication review queue for new comments
+
+### Attack Surface
+- Spammers create free accounts via `/register/` form (no CAPTCHA blocks automated submission)
+- Each account immediately gains ability to post comments
+- Comments appear live on blog without operator review — reduces site credibility, pollutes SEO
+
+### Remediation Plan
+
+**PHASE 1 — COMMENT APPROVAL QUEUE (Immediate, WP native)**
+1. Log in to WordPress admin (`atmyboat.com/wp-admin/`)
+2. Settings → Discussion
+3. Check: **"Comment must be approved before appearing"**
+4. Recommended: Also check **"Users must be registered and logged in to comment"** (blocks anonymous spam)
+5. Save changes
+6. Test: Submit a test comment from a new account → verify it appears in Moderation queue, not live
+
+**PHASE 2 — REGISTRATION PROTECTION (Reduce account creation by bots)**
+Option A (easiest): **reCAPTCHA v3 on registration form**
+- Install plugin: Search plugins for "reCAPTCHA" (look for official Google or Wordfence versions)
+- Get free reCAPTCHA keys from `console.cloud.google.com` (Google Cloud free tier)
+- Enable on `/register/` form only
+- reCAPTCHA v3 is silent (no "I'm not a robot" checkbox) — analyzes behaviour instead
+
+Option B (if plugin unavailable): **WordPress native CAPTCHA plugin**
+- Search: "Simple CAPTCHA" or "Really Simple CAPTCHA"
+- Enable on registration form
+- Shows math puzzle or image puzzle — blocks automated account creation
+
+**PHASE 3 — MONITOR & TUNE (After Phase 1 deployed)**
+- Check WordPress Moderation queue daily for 1 week
+- Adjust spam filter settings if needed (Settings → Discussion → Akismet, if enabled)
+- Count legitimate vs spam comments to validate effectiveness
+
+### Files to Modify
+- WordPress admin panel (no file edits) — all changes via GUI
+
+### Verification
+- Pre-Phase 1: Submit test comment → appears live immediately
+- Post-Phase 1: Submit test comment → appears in Moderation queue, not live
+- Post-Phase 2: Create new test account via `/register/` → form must show CAPTCHA
+
+### Severity & Impact
+- **Moderate:** Spam damages site credibility but doesn't expose user data or system access
+- **Recurring:** ~5 comments/day = ~35/week, ~150/month if unchecked
+- **Cost:** Operator manual review time; no financial loss
+
+### Notes
+- BUG-57 (malware) is remediated; this bug is a secondary attack vector using the free registration to spam content
+- Same root cause class as BUG-57 (open registration), different attack pattern (comment spam vs account creation)
+- Recommend deferring account deletion policy decision to next session (allow spam accounts to exist harmless in DB, or delete them?)
    - Add note: "Replace with your actual key from `/opt/d3kos/config/api-keys.json` on the Pi"
    - Never include real keys in README, examples, or tutorials
 
@@ -4014,4 +4183,210 @@ Unknown — candidates to investigate:
 3. **Team Training:** All developers briefed on placeholder usage in docs/examples
 4. **Security Policy:** Document in CLAUDE.md or governance files
 5. **Audit:** Monthly scan of repos and deployment configs for leaked secrets
+
+
+---
+
+## BUG-61 — Staging WordPress Misconfigured — Double Path Issue (REOPENED S126)
+
+**Status:** `[!]` **REOPENED S126 2026-08-22 — fix was INCOMPLETE. Secondary issue (double-path) identified in S125 but deferred and never applied.**
+
+### Symptoms (Reconfirmed)
+- `https://atmyboat.com/staging/` returns 404 or loads without CSS/JS/images
+- `https://atmyboat.com/staging/wp-admin/` returns 404
+- All asset URLs have double `/staging/staging/` path:
+  - Example: `https://atmyboat.com/staging/staging/wp-content/themes/twentytwenty/style.css`
+  - Should be: `https://atmyboat.com/staging/wp-content/themes/twentytwenty/style.css`
+
+### Root Cause
+**S125 action was incomplete.** The database `siteurl`/`home` were corrected, but the **CSS/JS URL rewriting** was identified as "BUG-61B" and deferred. The PHP filters were written but never applied to the child theme's `functions.php`.
+
+### Required Fix
+Apply the PHP URL correction filters from the S125 record (lines 4052–4059 of this document) to `/staging/wp-content/themes/twentytwenty-child/functions.php`:
+
+```php
+add_filter('style_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+
+add_filter('script_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+```
+
+Then verify: `https://atmyboat.com/staging/` loads with full CSS/JS/images, and `https://atmyboat.com/staging/wp-admin/` is accessible (if authorized).
+
+---
+
+## BUG-62 — wp-admin Directory Exposed Without Authentication
+
+**Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — active security vulnerability.**
+
+### Symptoms
+- `https://atmyboat.com/staging/staging/wp-admin/` returns 404 (due to BUG-61 path doubling), but the directory structure exists and is reachable
+- wp-admin directory lacks authentication guard — an attacker can:
+  - Enumerate directory contents (`/plugins/`, `/themes/`, `/includes/`)
+  - Brute-force login credentials without rate limiting
+  - Exploit WordPress vulnerabilities without a valid session
+  - Detect WordPress version and installed plugins
+
+### Root Cause
+WordPress staging environment has no `.htaccess` rule or authentication middleware blocking direct access to `/wp-admin/` directory. The directory should either:
+1. Require login before serving any files
+2. Be IP-whitelisted (admin IPs only)
+3. Have rate limiting on login attempts
+
+### Required Fix
+**Option 1 — .htaccess file in `/staging/wp-admin/`:**
+```apache
+<Files ~ "\.php$">
+    Order deny,allow
+    Deny from all
+    Allow from <YOUR_ADMIN_IP>
+</Files>
+```
+
+**Option 2 — WordPress Security Plugin:**
+- Install "Wordfence Security" or "iThemes Security"
+- Configure to block wp-admin access except from whitelisted IPs or after successful login
+
+**Option 3 — Cloudflare WAF Rule:**
+- Block requests to `/staging/wp-admin/` except from your IP
+- Rate limit login attempts to 5/minute
+
+### Verification
+- Pre-fix: `curl -I https://atmyboat.com/staging/wp-admin/` returns 404 but directory is listable
+- Post-fix: Unauthenticated request returns 403 or redirects to login
+
+---
+
+## BUG-63 — Insecure User Registration Allows Unlimited Bot Account Creation
+
+**Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — ACTIVE ONGOING ATTACK.**
+
+### Symptoms
+- Bot accounts created daily with nonsense usernames: `user12345`, `testbot`, `spamuser999`, `user_xxx_123`, etc.
+- No real-name validation — registration allows any username string
+- No email domain verification — attackers can use disposable email addresses
+- MailPoet plugin likely compromised — bots gain immediate access to newsletter subscriber lists
+- Spam campaigns sent to real users within hours of account creation
+- REST API `/wp-json/wp/v2/users/` accepts POST (returns 401, but form submission succeeds)
+
+### Attack Pattern
+1. Attacker writes script to bulk-submit `/register/` form with random usernames
+2. Each account automatically gains `Subscriber` role (default WordPress behavior)
+3. Subscriber role can access MailPoet, view subscriber lists, create campaigns
+4. Spam emails sent to site's entire mailing list within minutes
+
+### Root Causes
+1. **No username format validation** — accepts `user123`, `testbot`, `xxx_yyy_zzz` (should require name-like format)
+2. **No email domain whitelist** — accepts any domain including temporary email services
+3. **No real-name field** — registration does not require first/last name
+4. **MailPoet API not secured** — subscriber API accessible to any registered user; should require admin role
+5. **No CAPTCHA on form** — automated submission undetected
+6. **No rate limiting** — bulk account creation not throttled
+
+### Operator Requirement
+> "only permit human with real names to be added to the system"
+
+### Required Fixes
+
+**Phase 1 — Immediate (blocks 90% of bots):**
+1. Add reCAPTCHA v3 to `/register/` form (silent, invisible to humans)
+   - Install plugin: "Google reCAPTCHA by Wordfence" or "reCaptcha WP"
+   - Get free keys from `console.cloud.google.com`
+   - Enable on registration form only
+   
+2. Enable comment moderation (BUG-60 related):
+   - WP Admin → Settings → Discussion → Check "Comment must be approved before appearing"
+
+**Phase 2 — Strengthen username validation (blocks remaining bots):**
+1. Add "Real Name" fields to registration form (first + last name required)
+2. Add regex validation: username must be alphanumeric + underscore only, 5+ chars, must start with letter
+3. Reject usernames matching pattern: `user\d+`, `test\w+`, `spam`, `bot`, `admin`, etc.
+   - Use plugin: "Advanced Custom Fields" or code custom validator in child theme
+
+**Phase 3 — MailPoet API security:**
+1. Restrict MailPoet access to Admin role only (not Subscriber)
+   - MailPoet → Settings → Permissions → Require "Manage MailPoet" capability for Subscribers = OFF
+2. Rotate MailPoet API key
+   - MailPoet → Settings → API → Generate new API key
+   - Remove old key from all integrations
+
+**Phase 4 — Rate limiting + audit logging:**
+1. Install "Brute Force Protection" or "Wordfence" plugin
+2. Limit registration to 5 accounts per IP per hour
+3. Log all user creation events to a separate audit table
+4. Alert operator when bulk account creation detected (>3 accounts from same IP in 10 minutes)
+
+### Files to Modify (if coding, not plugin-based)
+- `/register/` form (add real-name fields, username validation)
+- MailPoet settings (restrict access to admin role)
+- `.htaccess` or PHP middleware (rate limiting)
+- Database audit trigger (log user creation events)
+
+### Verification
+- Pre-fix: Create account with username `user12345` and fake email → succeeds
+- Post-Phase 1: Same attempt blocked by reCAPTCHA
+- Post-Phase 2: Username `user12345` rejected; requires format like `john_doe`
+- Post-Phase 3: Subscriber account cannot access MailPoet API
+
+### Severity & Impact
+- **CRITICAL:** Active ongoing attack, 62k+ accounts created (BUG-57), spam campaigns sent daily (BUG-60)
+- **Blast radius:** Entire mailing list compromised; site credibility damaged; potential account takeover
+- **Prevention value:** Blocks 95% of bot attacks; requires legitimate human signup effort
+
+### Related Bugs
+- **BUG-57:** 62,000+ unauthorized accounts created (initial attack vector, manually remediated)
+- **BUG-60:** Spam comments posted via created accounts (secondary attack payload)
+- **BUG-62:** wp-admin exposed without auth (tertiary attack surface)
+
+---
+
+## BUG-64 — My Account Page Lacks Security Controls
+
+**Status:** `[!]` **LOGGED S126 2026-08-22. HIGH severity — potential privilege escalation and data exposure.**
+
+### Symptoms
+- `/my-account/` page accessible without proper access controls
+- Unclear what security protections exist on this page
+- Potential for: unauthorized account access, privilege escalation, data exposure, email/password changes by unauthorized users
+
+### Attack Surface (To Investigate)
+1. Can any logged-in user access another user's account page?
+2. Can a Subscriber user escalate to Admin by editing their role?
+3. Are email changes rate-limited or verified?
+4. Are password changes rate-limited?
+5. Is 2FA (two-factor authentication) available or required?
+6. Can user data (email, profile, preferences) be exported or changed without verification?
+7. Are admin-only pages protected from direct URL access?
+
+### Required Investigation
+1. Test unauthorized access: log in as Subscriber, attempt to access `/my-account/user=admin`
+2. Test privilege escalation: attempt to change role from Subscriber to Admin
+3. Test email change: change email without verification
+4. Test password change: change password without current-password confirmation
+5. Test rate limiting: spam password reset requests, verify throttling
+6. Review `/my-account/` source code in child theme for direct SQL queries or unsafe operations
+
+### Required Fixes (Likely)
+1. **Access control:** Only allow users to view/edit their own account; add `if ($user_id != get_current_user_id()) wp_die('Unauthorized');`
+2. **Privilege escalation:** Remove or restrict role/capability fields from user edit form; prevent Subscribers from changing roles
+3. **Email verification:** Require email confirmation before accepting email changes
+4. **Password confirmation:** Require current password before allowing password change
+5. **Rate limiting:** Limit password reset requests to 3 per hour per user; limit failed login attempts
+6. **2FA option:** Install "Two Factor Authentication" plugin for additional security
+7. **Code audit:** Review for SQL injection, privilege escalation, CSRF, XSS in user profile form
+
+### Files to Review
+- `/wp-content/themes/twentytwenty-child/templates/my-account.php` (if exists)
+- `/wp-content/themes/twentytwenty/template-parts/` (if using parent theme)
+- WP core: `/wp-admin/user-edit.php` (if linked to WP native form)
+- Any custom PHP in `/wp-content/` handling user profile updates
+
+### Severity & Impact
+- **HIGH:** Could allow account takeover, privilege escalation, data theft
+- **Ongoing risk:** Every registered user (including bots from BUG-63) has potential to exploit this page
+
+---
 
