@@ -3845,3 +3845,97 @@ Unknown — candidates to investigate:
 
 - **BUG-55:** REST API exposure discovered alongside BUG-57; both indicate infrastructure security gaps
 - **BUG-54:** Similar HTTP 400 issues on endpoints; suggests HostPapa configuration needs review
+
+---
+
+## BUG-58 — HIGH: Exposed Remote Access API key in public GitHub repository
+
+**Logged:** S129 2026-08-23
+**Status:** PARTIALLY CLOSED — history cleaned; boat Pi key rotation pending
+**Severity:** HIGH
+**Platform:** GitHub (SkipperDon/d3kOS public-release branch)
+
+### Symptom
+Real Remote Access API key `t9dt7M80dgp-OHDhahXOz8kk4z41eo7YGTOv6xEn1L4` was publicly visible in the `SkipperDon/d3kOS` GitHub repository on the `public-release` branch. Found at 4 locations in `doc/REMOTE_ACCESS_SETUP.md` (lines 24, 44, 101, 106) and persisted in git history across 3+ commits. Additionally, 4 sensitive internal documentation files were present on the public branch.
+
+### Root Cause
+The key was pasted directly into a documentation file as a configuration example and committed without any credential-scanning gate. The `public-release` branch had no pre-commit hook to block real keys. The repo was then made public for marketing/transparency purposes with the key still in all historical commits.
+
+### Affected Files / Paths
+- `doc/REMOTE_ACCESS_SETUP.md` — key at 4 lines in latest commit AND in git history
+- `SESSION_LOG.md` — internal dev journal; full session history exposed on public branch
+- `deployment/docs/V09994_BUG_FIXES.md` — complete security vulnerability catalog exposed
+- `deployment/docs/ARCH_CREDENTIAL_MAP.md` — system credential map exposed
+- `deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` — internal spec with security detail exposed
+
+### Fix Applied (S129 2026-08-23)
+1. Temp clone: `git clone --single-branch --branch public-release /home/boatiq/Helm-OS /tmp/helm-os-clean`
+2. `git filter-repo --replace-text <(echo "t9dt7M80dgp-OHDhahXOz8kk4z41eo7YGTOv6xEn1L4==>YOUR_REMOTE_API_KEY_HERE")` — key redacted across all 835 commits
+3. Simultaneously removed 4 sensitive files via `--path X --path Y --invert-paths` — reduced public-release history to 789 commits
+4. `git fetch /tmp/helm-os-clean public-release:public-release --force` — updated original repo
+5. `git push origin public-release --force` — pushed cleaned history to GitHub (operator ran directly)
+6. Repo visibility: confirmed PUBLIC via `gh repo view`; `public-release` is default branch
+
+### Verification
+- `git log --oneline -S "t9dt7M80dgp" origin/public-release` → 0 results
+- `gh repo view SkipperDon/d3kOS --json visibility` → `{"visibility":"PUBLIC"}`
+- `git ls-tree public-release SESSION_LOG.md` → object not found (correct — removed)
+
+### Remaining Work
+- **Boat Pi key rotation:** `172.20.10.8:/opt/d3kos/config/cloud-config.json` still contains the exposed key. Must be updated on next hotspot visit. New key must be generated and deployed to both the Pi AND the atmyboat.com WordPress `cloud-agent-config` option.
+- **Key generation:** new key should be generated via the existing key management mechanism (or manually via `openssl rand -base64 32`).
+
+### Related Bugs
+- **BUG-59:** Absence of pre-commit hooks allowed this key to be committed without warning
+- **BUG-57:** Ongoing security context — atmyboat.com infrastructure needs holistic hardening
+
+---
+
+## BUG-59 — MEDIUM: No pre-commit credential scanning in d3kOS and atmyboat-forum repos
+
+**Logged:** S129 2026-08-23
+**Status:** CLOSED
+**Severity:** MEDIUM
+**Platform:** Both git repos (d3kOS / Helm-OS and atmyboat-forum)
+
+### Symptom
+Neither repository had a `.git/hooks/pre-commit` file. Real API keys could be staged and committed with no warning or block. BUG-58 occurred because of this absence.
+
+### Root Cause
+Pre-commit hooks were never installed. The existing `.gitignore` covers config files with raw keys (`api-keys.json`, `cloud-credentials.json`) but does not protect against a key being accidentally pasted into a documentation or code file.
+
+### Fix Applied (S129 2026-08-23)
+Pre-commit hook installed at:
+- `/home/boatiq/Helm-OS/.git/hooks/pre-commit` (chmod 755)
+- `/home/boatiq/atmyboat-forum/.git/hooks/pre-commit` (chmod 755)
+
+Both hooks are identical. They scan every staged file for these patterns:
+- `amboat_[a-zA-Z0-9]{20,}` — AMBOAT API key format
+- `AIza[0-9A-Za-z_-]{35}` — Google/Gemini API key format
+- `sk_live_[a-zA-Z0-9]{20,}` — Stripe live secret key
+- `pk_live_[a-zA-Z0-9]{20,}` — Stripe live publishable key
+- `sk-ant-api[a-zA-Z0-9_-]{40,}` — Anthropic API key
+- `-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY` — Private key material
+
+Allowed-through (whitelisted): `YOUR_[A-Z_]+`, `REDACTED`, `placeholder`, `example`, `[key]`, `...`
+
+Key implementation detail: uses `grep -nEe "$PATTERN"` (not `-nE "$PATTERN"`) — the `-e` flag is required so that patterns beginning with `--` (like `-----BEGIN`) are not parsed as grep option flags.
+
+### Verification
+```bash
+# Test 1 — real key blocked (example using a dead/rotated key matching amboat_[a-zA-Z0-9]{20,})
+echo "amboat_[REDACTED-DEAD-KEY-32CHARS]" > /tmp/test-key.txt
+git -C /home/boatiq/Helm-OS add /tmp/test-key.txt && git commit  # → exit 1 ⛔
+
+# Test 2 — placeholder allowed
+echo "YOUR_API_KEY_HERE" > /tmp/test-placeholder.txt
+git -C /home/boatiq/Helm-OS add /tmp/test-placeholder.txt && git commit  # → exit 0 ✓
+```
+
+### Remaining Work / Limitations
+- Hooks live in `.git/hooks/` which is NOT tracked by git. If either repo is re-cloned, the hooks will be absent and must be re-installed manually.
+- The hooks do not scan binary files or files already in git history — they only protect against NEW commits.
+- A `HOOKS_INSTALL.md` or CI-level check would provide more durable protection — deferred to v0.9.9.5.
+
+### Related Bugs
+- **BUG-58:** The direct incident this hook prevents from recurring

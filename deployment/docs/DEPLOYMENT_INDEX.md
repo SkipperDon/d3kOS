@@ -1487,3 +1487,20 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 **Bugs fixed this session (lab Pi only — NOT on the boat Pi):** BUG-49, BUG-19, BUG-20. Regression 36/36.
 
 **Investigation result — `signalk-forward-watch`:** lab Pi runs **0.2.3, which is the npm latest** (published 2026-04-21). Nothing to upgrade. Detection output traced: `plugin/opencpn-output.js` writes each detection into Signal K as a **fake vessel** (`mmsi:800000001`–`800000006`, one per class: ship/boat/debris/buoy/kayak/log) with position, `name` like `FW-BOAT (87%)`, COG and SOG=0. It emits **no AIS, no NMEA 0183, no NMEA 2000**. To reach a chartplotter on the N2K bus you would need `sk-to-nmea2000` with option `AISv2` — **installed but NOT enabled**; that is an operator decision, since it broadcasts invented targets onto a shared safety bus and only six MMSIs exist (two objects of one class would overwrite each other).
+
+### S129 — 2026-08-23
+
+| File | Description |
+|------|-------------|
+| `doc/REMOTE_ACCESS_SETUP.md` (public-release branch) | **MODIFIED** — BUG-58. Real API key redacted from all 835→789 commits via `git filter-repo --replace-text`; replaced with `YOUR_REMOTE_API_KEY_HERE`. File retained; content otherwise unchanged. |
+| `SESSION_LOG.md`, `deployment/docs/V09994_BUG_FIXES.md`, `deployment/docs/ARCH_CREDENTIAL_MAP.md`, `deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` (public-release branch) | **REMOVED from public-release branch history** — BUG-58. Internal development records not appropriate for a public marketing branch. Still present on `main`. |
+| `.git/hooks/pre-commit` (d3kOS repo) | **NEW** — BUG-59. Credential scanner; blocks commits containing real AMBOAT/Gemini/Stripe/Anthropic API keys or private key material. Not tracked in git. Must be re-installed on re-clone. |
+| `.git/hooks/pre-commit` (atmyboat-forum repo) | **NEW** — BUG-59. Identical credential scanner for the atmyboat-forum repo. Not tracked in git. |
+| `atmyboat-forum/SESSION_LOG.md` (all 104 commits) | **MODIFIED** — dead AMBOAT API key `amboat_af3d268defe4b9ad16392a8425a12fec` redacted to `[REDACTED-OLD-API-KEY]` across all commits via `git filter-repo`. |
+| `deployment/docs/V09994_BUG_FIXES.md` (main) | **UPDATED** — BUG-58 and BUG-59 sections appended (45 → 47 bug entries). |
+| `PROJECT_CHECKLIST.md` | **UPDATED** — BUG-58 and BUG-59 rows added to PART 17 (47 entries). |
+
+**Bugs fixed this session:** BUG-58 (partially — boat Pi key rotation pending), BUG-59 (fully closed).
+
+**Security action — SkipperDon/d3kOS:** public-release branch history rewritten; repo confirmed PUBLIC with clean history. `gh repo view` verification: visibility=PUBLIC, defaultBranch=public-release.
+
