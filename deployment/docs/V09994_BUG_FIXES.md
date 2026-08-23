@@ -4613,7 +4613,7 @@ the 11 other endpoints listed above ·
 ---
 ## BUG-67 — Sustained wp-login.php Brute Force — Primary Attacker Not IP-Blocked
 
-**Status:** `[!]` LOGGED S128 2026-08-23. HIGH severity — ongoing automated attack; each blocked request still executes PHP.
+**Status:** `[~]` ALL 9 IPs BLOCKED S128 2026-08-23. Operator added all 9 IPs to Wordfence permanent blocklist same session. Monitoring required — new attacker IPs will appear from the same botnet.
 
 **Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
 
@@ -4693,7 +4693,7 @@ The scheduled caller passes the authentication token as a GET query parameter (`
 
 ## BUG-69 — Admin Username `admin` Publicly Enumerable via Forum URLs + 2FA Disabled
 
-**Status:** `[!]` LOGGED S128 2026-08-23. HIGH severity — username confirmed by attacker-accessible URLs, 2FA confirmed OFF (operator verified this session). Combined with BUG-67, the admin account is under active targeted attack.
+**Status:** `[~]` 2FA ACTIVATED S128 2026-08-23. Wordfence Login Security TOTP enrolled on admin account (operator action this session). Step 1 complete. Step 2 pending: rename admin username to a non-guessable value.
 
 **Source:** Wordfence Live Traffic log analysis, 2026-08-23 session. 2FA status confirmed by operator.
 
