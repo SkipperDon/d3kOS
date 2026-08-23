@@ -4650,7 +4650,7 @@ Wordfence Live Traffic log 2026-08-23 · Wordfence → Firewall → Blocking (op
 
 ## BUG-68 — offline-check.php Authentication Token Sent in URL Query String
 
-**Status:** `[x]` FIXED + CLOSED S128 2026-08-23. All three remediation steps complete: (1) `offline-check.php` `$_GET['token']` → `$_POST['token']` — committed c18b63b, deployed to HostPapa production via cPanel File Manager. (2) AMBOAT_API_KEY rotated — `mobile/config.php` on HostPapa production updated; old token `amboat_ecb10f6e7411dbb1b055d5d1e84259e8` is dead. (3) cPanel cron updated to POST with new token. REMAINING: Update `/opt/d3kos/config/cloud-config.json` on lab Pi and boat Pi with new token (no urgency — Pi→HostPapa calls will fail silently until updated; no security risk from delay).
+**Status:** `[x]` FIXED + CLOSED S128 2026-08-23. All three remediation steps complete: (1) `offline-check.php` `$_GET['token']` → `$_POST['token']` — committed c18b63b, deployed to HostPapa production via cPanel File Manager. (2) AMBOAT_API_KEY rotated — `mobile/config.php` on HostPapa production updated; old token `amboat_ecb10f6e7411dbb1b055d5d1e84259e8` is dead. (3) cPanel cron updated to POST with new token. Lab Pi `/opt/d3kos/config/cloud-config.json` updated S128 2026-08-23. REMAINING: Boat Pi `cloud-config.json` — update next visit to hotspot (`172.20.10.8`).
 
 **Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
 
