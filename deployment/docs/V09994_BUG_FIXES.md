@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.16.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-22 S127 | **Status:** IN PROGRESS — BUG-65/66 logged; BUG-63 root cause CONFIRMED in code; BUG-62 flagged for re-verification (possible misdiagnosis)
+**Version:** 1.17.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-23 S128 | **Status:** IN PROGRESS — BUG-67/68/69 logged from Wordfence traffic analysis (sustained brute force, token-in-URL, admin username enumeration + 2FA off)
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -4609,5 +4609,133 @@ urgent or HIGH and architectural.
 the 11 other endpoints listed above ·
 `deployment/v0.9.4/pi_source/cloud-config.json:2` ·
 `deployment/docs/ARCH_CREDENTIAL_MAP.md:19-38` · `SESSION_LOG.md:2112`
+
+---
+## BUG-67 — Sustained wp-login.php Brute Force — Primary Attacker Not IP-Blocked
+
+**Status:** `[!]` LOGGED S128 2026-08-23. HIGH severity — ongoing automated attack; each blocked request still executes PHP.
+
+**Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
+
+### Symptoms
+- `91.92.243.239` (Netherlands / Frantech Solutions / bulletproof hosting) hit `/wp-login.php` every ~3 minutes from at least 3:07 AM to 7:30 AM on 2026-08-23 — approximately 88 requests over 4+ hours.
+- All requests return ~10,389 bytes (Wordfence block page — the login form is NOT being served, but PHP executes for every blocked request).
+- User-Agent: `Mozilla/5.0` only — characteristic of attack scripts using minimal UA strings.
+- Eight secondary IPs made single wp-login.php attempts in the same window: `72.60.116.29`, `3.97.46.140`, `66.97.34.83`, `194.185.38.105`, `217.160.147.228`, `193.231.3.48`, `120.138.27.176`, `167.172.26.225` — all returning 2,917 bytes (lighter Wordfence response; may indicate different block tier).
+
+### Root Cause
+Wordfence extended protection is active and blocking (confirmed by operator this session — `/wp-config.php.bak` confirmed 404; `/register` confirmed 404; extended protection confirmed). However, no permanent IP block has been applied to `91.92.243.239`, so Wordfence's lockout mechanism re-evaluates it on every request rather than short-circuiting at `.htaccess`. The result is ~88 PHP executions in 4 hours that could be zero with a permanent IP block.
+
+### Impact
+- Server load from unnecessary PHP executions on every blocked attempt.
+- Sustained attack pattern suggests automated tooling with retry logic — will continue indefinitely without a permanent block.
+- Combined with BUG-69 (admin username `admin` publicly known + 2FA off), the brute force risk is elevated.
+
+### Fix Direction
+1. **Immediate (operator action in Wordfence UI):** Wordfence → Firewall → Blocking → Add `91.92.243.239` to the permanent blocked IP list. Reason: "Sustained brute force 2026-08-23."
+2. **Also block secondary IPs:** `72.60.116.29`, `3.97.46.140`, `66.97.34.83`, `194.185.38.105`, `217.160.147.228`, `193.231.3.48`, `120.138.27.176`, `167.172.26.225`.
+3. **Review Wordfence lockout threshold:** Wordfence → All Options → Brute Force Protection → "Lock out after how many login failures" — reduce if currently above 5.
+4. **Enable 2FA** (see BUG-69) — makes a successful brute force useless even if the password is guessed.
+
+### Verification
+- [ ] `91.92.243.239` added to Wordfence permanent block list
+- [ ] Wordfence Live Traffic shows 0 new requests from that IP
+- [ ] 8 secondary IPs added to blocklist
+- [ ] BUG-69 (2FA) resolved as the complementary control
+
+### Files
+Wordfence Live Traffic log 2026-08-23 · Wordfence → Firewall → Blocking (operator UI action)
+
+---
+
+## BUG-68 — offline-check.php Authentication Token Sent in URL Query String
+
+**Status:** `[!]` LOGGED S128 2026-08-23. HIGH severity — token has been written to Wordfence logs, web server access logs, and the current session log. Rotation required.
+
+**Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
+
+### Symptoms
+`/wp-content/themes/twentytwenty-child/mobile/offline-check.php` is called every hour on the hour (4:00 AM, 5:00 AM, 6:00 AM, 7:00 AM observed) by a scheduled job:
+- Caller IP: `66.102.137.24` (Google infrastructure range — likely a HostPapa cPanel cron or a Google Cloud scheduled function)
+- User-Agent: `Wget/1.19.5 (linux-gnu)`
+- Full URL: `/wp-content/themes/twentytwenty-child/mobile/offline-check.php?token='amboat_ecb10f6e7411dbb1b055d5d1e84259e8'`
+- Response: 24 bytes (check returns a short OK/FAIL response — the call is functioning)
+
+The token `amboat_ecb10f6e7411dbb1b055d5d1e84259e8` is now present in:
+- HostPapa web server access logs
+- Wordfence Live Traffic database
+- The current session's Wordfence log export (shared with Claude Code this session — noted for the record; no action taken on the token by Claude Code)
+
+### Root Cause
+The scheduled caller passes the authentication token as a GET query parameter (`?token=`). HTTP GET parameters appear in full in every server log, proxy log, CDN log, and browser history. This is a standard web security error — authentication secrets must travel in the request body (POST) or in an Authorization/custom header, never in the URL.
+
+### Impact
+- The token is now logged in at least two persistent log systems on HostPapa.
+- If HostPapa's log files are ever accessed by a third party (support ticket, log rotation error, shared hosting neighbour), the token is exposed.
+- The token must be considered compromised and rotated regardless of whether any attack has occurred.
+
+### Fix Direction
+1. **Immediately — rotate the token.** Generate a new token, update `offline-check.php` and the caller script/cron with the new value. The old token must be invalidated.
+2. **Change the caller to POST.** Update the Wget (or cURL) cron command to: `wget --post-data="token=NEW_TOKEN" https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/offline-check.php`
+3. **Update offline-check.php to read from POST.** Change `$_GET['token']` to `$_POST['token']` (or read an `Authorization` header). Reject GET requests.
+4. **Locate the cron definition.** Check HostPapa cPanel → Cron Jobs for the Wget command, or inspect any Google Cloud Function / Cloud Scheduler job that calls this endpoint.
+
+### Verification
+- [ ] Old token `amboat_ecb10f6e7411dbb1b055d5d1e84259e8` no longer accepted by the endpoint (return 401 or 403)
+- [ ] New token generated and deployed
+- [ ] Caller updated to POST — Wordfence Live Traffic shows no further GET requests with token in URL
+- [ ] 24-byte OK response still returned on hourly call (functionality preserved)
+
+### Files
+`/wp-content/themes/twentytwenty-child/mobile/offline-check.php` (HostPapa live) · caller cron definition (HostPapa cPanel → Cron Jobs or Google Cloud Scheduler)
+
+---
+
+## BUG-69 — Admin Username `admin` Publicly Enumerable via Forum URLs + 2FA Disabled
+
+**Status:** `[!]` LOGGED S128 2026-08-23. HIGH severity — username confirmed by attacker-accessible URLs, 2FA confirmed OFF (operator verified this session). Combined with BUG-67, the admin account is under active targeted attack.
+
+**Source:** Wordfence Live Traffic log analysis, 2026-08-23 session. 2FA status confirmed by operator.
+
+### Symptoms
+Forum profile URLs directly reveal the WordPress admin account's login username:
+- `/forum/users/admin/topics/page/2/` — visited by `114.119.129.254` (PetalBot / China)
+- `/forum/users/admin/engagements/page/2/` — visited by `101.42.231.118` (China)
+- `/forum/users/admin/engagements/page/3/` — visited by `43.138.19.77` (China)
+
+These IPs can confirm: the admin login username is `admin`. This is also the most commonly attempted username in every WordPress brute force tool's default wordlist.
+
+Simultaneously, `91.92.243.239` is making ~88 automated login attempts per 4-hour window (BUG-67). With the username known and no second factor, the attack only needs to guess the password.
+
+**2FA status confirmed OFF** by operator on 2026-08-23. Wordfence Login Security → Two-Factor Authentication is not configured on the admin account.
+
+### Root Cause
+1. WordPress/bbPress constructs forum profile URLs using the login username, making it publicly enumerable without any authentication.
+2. No second authentication factor is configured on the admin account, so a successful password guess grants immediate full site access.
+
+### Impact
+- Attacker has username (`admin`), a confirmed attack tool targeting this site (BUG-67), and no second factor to overcome.
+- A successful login grants full WordPress admin access: can publish content, install plugins, modify theme files, export user data, reset passwords of all 62,000 accounts.
+- With 62,000 accounts in `wp_users` (BUG-57 context), a full admin compromise is a GDPR/privacy incident.
+
+### Fix Direction
+**Step 1 — Immediate (operator action, ~5 minutes):**
+Enable Wordfence Login Security → Two-Factor Authentication on the admin account. Use any TOTP app (Google Authenticator, Authy, 1Password). This closes the active risk — even a correctly guessed password cannot log in without the TOTP code.
+
+**Step 2 — Soon (operator action, ~15 minutes):**
+Rename the `admin` account to a non-guessable username.
+In wp-admin → Users → find the admin account → change the username (requires a plugin such as "Username Changer" as WordPress does not allow username edits natively, or: create a new admin user with a different username, migrate content, delete the `admin` account).
+
+**Step 3 — Complementary:**
+Resolve BUG-67 (IP block the persistent attacker) — these two bugs share a threat chain and should be fixed together.
+
+### Verification
+- [ ] Wordfence Login Security → 2FA enabled and TOTP app enrolled on admin account
+- [ ] Test login: password alone must be rejected; password + TOTP code must succeed
+- [ ] Admin username renamed (if Step 2 is applied): `/forum/users/admin/` returns 404; new profile URL uses the new username
+- [ ] BUG-67 primary attacker IP-blocked
+
+### Files
+Wordfence Login Security (operator UI) · wp-admin → Users (operator UI) · `wp_users` table (admin account row)
 
 ---
