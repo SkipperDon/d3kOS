@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.17.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-23 S128 | **Status:** IN PROGRESS — BUG-67/68/69 logged from Wordfence traffic analysis (sustained brute force, token-in-URL, admin username enumeration + 2FA off)
+**Version:** 1.18.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-08-23 S128 | **Status:** IN PROGRESS — BUG-68 PHP fix deployed; BUG-67 IPs blocked; BUG-69 2FA activated. BUG-68 cron update + token rotation still pending.
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -4650,7 +4650,7 @@ Wordfence Live Traffic log 2026-08-23 · Wordfence → Firewall → Blocking (op
 
 ## BUG-68 — offline-check.php Authentication Token Sent in URL Query String
 
-**Status:** `[!]` LOGGED S128 2026-08-23. HIGH severity — token has been written to Wordfence logs, web server access logs, and the current session log. Rotation required.
+**Status:** `[~]` PHP FIX DEPLOYED S128 2026-08-23 — `offline-check.php` updated (`$_GET['token']` → `$_POST['token']`), committed locally (commit c18b63b), and uploaded to HostPapa production via cPanel File Manager. PENDING: (1) Update cPanel cron command to POST. (2) Rotate AMBOAT_API_KEY (coordinate with BUG-66).
 
 **Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
 
