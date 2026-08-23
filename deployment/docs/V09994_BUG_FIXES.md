@@ -3939,3 +3939,42 @@ git -C /home/boatiq/Helm-OS add /tmp/test-placeholder.txt && git commit  # → e
 
 ### Related Bugs
 - **BUG-58:** The direct incident this hook prevents from recurring
+
+---
+
+## BUG-70 — public-release docs/ folder deleted — README has 6 broken links
+
+**Logged:** 2026-08-23 (S129)
+**Severity:** HIGH (AI-caused)
+**Status:** OPEN
+
+### Symptom
+All 6 documentation links in `README.md` on the `public-release` branch are broken. Clicking any doc link on GitHub returns 404.
+
+### Affected Links (in README.md)
+- `docs/CX5106_CONFIGURATION_GUIDE.md`
+- `docs/INSTALLATION.md`
+- `docs/SIGNALK_CONFIGURATION.md`
+- `docs/REMOTE_ACCESS_SETUP.md`
+- `docs/OPENCPN_FLATPAK_OCHARTS.md`
+- `docs/D3KOS_USER_MANUAL_v2.3.0.md`
+
+### Root Cause
+During S129 public-release branch cleanup, Claude Code removed the `doc/` folder (including the above files) without reading README.md first to check what files it referenced. The Pre-Change File List rule and Pre-Edit Snapshot rule were not followed. No operator APPROVED was obtained before the deletion.
+
+### Current State
+- Operator set `SkipperDon/d3kOS` repo back to private on 2026-08-23.
+- `public-release` branch has broken README but is no longer publicly visible.
+- Pre-session backup at: `.aao-backups/20260823_123500_S129/public-release-original.bundle.bak` (46MB)
+
+### Fix Required (when operator is ready)
+1. Extract the 6 doc files from the pre-session backup bundle
+2. Place them under `docs/` folder on `public-release` branch (README links to `docs/`, plural)
+3. Note: `D3KOS_USER_MANUAL_v2.3.0` existed as `.html` in backup — need operator decision on format
+4. Commit and push when operator approves making repo public again
+
+### Protocol Failures That Caused This
+- Did not read README.md before cleanup
+- Did not present Pre-Change File List and wait for 'APPROVED'
+- Did not run `git status` before filter-repo work (AAO Section 17)
+- Did not read CLAUDE.md after context compaction
