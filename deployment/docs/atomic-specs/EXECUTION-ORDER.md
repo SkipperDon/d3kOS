@@ -42,7 +42,7 @@ No dependencies. Do this first: everything after it is untrustworthy otherwise.
       ⚠ **Needs a Pre-Change File List and explicit `APPROVED`** — governance files.
       ⚠ Do 0.1's `.pyc` purge **before** 0.3, or the verifier reports 5 permanent false "missing" and
       the operator learns to ignore its output.
-- [ ] **0.2 — `BUG-28.md` Step 2** — bring 4 unsourced production scripts under version control,
+- [x] **0.2 — `BUG-28.md` Step 2** ✓ S133 2026-08-24 — bring 4 unsourced production scripts under version control,
       **byte-identical, no edits, own commit**: `create-image.sh`, `sanitize.sh`, `tier-manager.sh`,
       `detect-opencpn.sh`.
       ⚠ **Prerequisite of 2.1 and 1.4.** Both specs say so. Do it once, here.
