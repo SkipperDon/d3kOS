@@ -4960,3 +4960,281 @@ dashboard before assuming financial exposure.`
 - **BUG-71, BUG-72** — the same HostPapa state-tracking gap
 
 ---
+
+## BUG-74 — `MASTER_SYSTEM_SPEC` §8.4.2 P5 names a credential file that does not exist; the real one is world-readable
+
+**Logged:** 2026-08-24 (S131) · **Platform:** Pi + spec · **Severity:** MEDIUM (HIGH as a contributing cause of BUG-66)
+
+### Symptom
+§8.4.2 P5 specifies `/opt/d3kos/config/cloud-credentials.json` as *the* credential source for the
+Pi→website pipeline, including a `cloud-credentials.json.example` template. Live read of the lab Pi:
+
+```
+cloud-config.json        644 d3kos:d3kos  312 bytes   <- the file that actually exists
+cloud-credentials.json   ABSENT                       <- the file the spec requires
+```
+
+Any spec, script, or Tier 3 dispatch written from §8.4.2 literally targets a non-existent path.
+
+### Compounding defect
+`cloud-config.json` is mode **644 — world-readable**, and it carries the fleet-wide `AMBOAT_API_KEY`
+(BUG-66). Same defect class as `license.json` at 644 (BUG-65). §8.4.2 P5 also states the file "must be
+in `.gitignore`" — verify that covers the real filename, not just the specified one.
+
+### Fix Required
+1. Correct §8.4.2 P5 to `cloud-config.json` (done S131).
+2. Change mode to `600` and confirm ownership.
+3. Confirm `.gitignore` covers `cloud-config.json`.
+4. Fold into the BUG-66 per-device credential work — do not fix in isolation.
+
+### Related
+BUG-66 (the key this file holds), BUG-65 (same 644 class), BUG-78 (this file ships in the image)
+
+---
+
+## BUG-75 — `MASTER_SYSTEM_SPEC` §8.4.2 P1 specifies a data-ingress URL that returns 404
+
+**Logged:** 2026-08-24 (S131) · **Platform:** HostPapa + spec · **Severity:** MEDIUM
+
+### Symptom
+§8.4.2 P1 states the "Required" endpoint is `https://atmyboat.com/mobile/data-ingress.php`. Probed:
+
+```
+/mobile/data-ingress.php                                        -> 404
+/wp-content/themes/twentytwenty-child/mobile/data-ingress.php   -> 405   (correct: POST-only)
+```
+
+There is no `/mobile/` alias. The spec's required URL does not resolve; only the full child-theme path
+does. `ARCH_SERVICE_MAP.md` has the correct path — the two documents disagree.
+
+### Why it matters
+BUG-54 records 110 export failures against a placeholder hostname and 63 against an nginx HTTP 400.
+Anything built to §8.4.2 P1 would add a third failure mode. `Uncertainty flag: I have NOT established
+that BUG-54's 400 is related to this. Do not merge the two diagnoses without evidence.`
+
+### Fix Required
+1. Correct §8.4.2 P1 to the full theme path (done S131).
+2. Audit every Pi-side and Node-RED destination URL against the probe results, not against the spec.
+3. Decide whether a `/mobile/` rewrite alias *should* exist — if the short path is wanted, that is a
+   deliberate `.htaccess` change on HostPapa, not a doc edit. **Operator decision.**
+
+### Related
+BUG-54 (export failures), BUG-55 (staging→production repointing), BUG-76
+
+---
+
+## BUG-76 — Five endpoints specified as REQUIRED in §8.4.4 are all 404, and three documents name them three different ways
+
+**Logged:** 2026-08-24 (S131) · **Platform:** HostPapa + spec · **Severity:** HIGH — blocks the entire community/telemetry pipeline, which the operator has placed in v0.9.9.4 scope
+
+### Symptom
+§8.4.4 lists five PHP endpoints as required in the child theme's `mobile/` directory. All five probed:
+
+```
+community-markers-post.php  -> 404      telemetry-push.php      -> 404
+community-markers-get.php   -> 404      community-benchmark.php -> 404
+community-position.php      -> 404
+```
+
+**None is deployed.** §8.4.3 additionally records three Node-RED flows as "Disabled — URL placeholder",
+and the repo's only `flows.json` lives under `deployment/v0.9.2/pi_source/`, not the v0.9.9.4 tree.
+
+### The naming conflict
+| §8.4.4 (spec) | `ARCH_SERVICE_MAP.md` | Repo (`features/v0941-plan/php/`) |
+|---|---|---|
+| `community-markers-post.php` | `community/markers.php` | `community-markers-write.php` |
+| `community-markers-get.php` | — | `community-get.php` |
+| `telemetry-push.php` | `telemetry/push.php` | — |
+| `community-position.php` | `community/position.php` | `community-position.php` |
+| `community-benchmark.php` | `community/benchmark.php` | — |
+
+Three schemes for one set of endpoints. **No single document can be trusted as the deployment target.**
+One name must be chosen and the other two corrected.
+
+### Fix Required
+1. **Operator/Tier 1 decision:** pick the canonical naming scheme. Recommend the flat
+   `community-*.php` form already used by the repo files, since those are the artifacts that exist.
+2. Correct the two non-canonical documents.
+3. Bring the repo PHP into a server-side canonical tree (none exists — see BUG-72).
+4. Deploy, then re-probe for a correct 401/405 on each.
+5. Only then enable the Node-RED flows (§8.4.3), and only with the API key injected from config, never
+   hardcoded in the flow.
+
+### Related
+BUG-72 (no server-side canonical tree), BUG-75, BUG-66 (these endpoints authenticate with the fleet key)
+
+---
+
+## BUG-77 — `detectTier()` can never return Tier 1, yet Tier 1 is a defined tier and the registration design gates on it
+
+**Logged:** 2026-08-24 (S131) · **Platform:** Pi + spec · **Severity:** HIGH — blocks the device-tied registration design
+
+### Symptom
+§6.3.1's `detectTier()` has exactly three outcomes:
+
+```
+/opt/opencpn exists                      -> tier 2
+/opt/d3kos/config/subscription.key exists -> tier 3
+otherwise                                 -> tier 0
+```
+
+**There is no Tier 1 branch.** But §6.3.2 defines Tier 1 as a free tier carrying mobile app, QR
+pairing, cloud sync, data export, push notifications and remote monitoring — and
+`D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 decision **D1** gates forum accounts on
+*"Tier 1 or higher"*. **A gate on a value the detection logic cannot produce.**
+
+### Live corroboration (lab Pi)
+```
+/opt/opencpn            EXISTS      -> detectTier() would return 2
+subscription.key        ABSENT      -> the only documented path to tier 3
+license.json            "tier": "T3"  mode 644 root:root
+```
+The Pi claims T3 with no subscription key present, and the file is trusted verbatim (BUG-65). Note also
+the deployed value is the **string `"T3"`**, not the integer the spec shows, and the file carries six
+fields §6.3.1 never mentions.
+
+### Resolution — OPERATOR DECISION S131: Option (a)
+`detectTier()` returns **1 when the device has a `device_token` that is paired and server-approved.**
+Rationale: it makes Tier 1 mean something *checkable against the server* rather than something asserted
+by a world-readable local file, and it folds device pairing and forum registration into one event — the
+open question raised at `D3KOS_DEVICE_REGISTRATION_SPEC.md` §12.2.
+
+Consequences to carry into the specs:
+- Tier 1 becomes the first **server-verified** tier. Tier 0 stays purely local.
+- The approval queue (registration spec §3) becomes the authority for Tier 1, so the trust anchor is
+  the same human decision for both registration and tier — one mechanism, not two.
+- Tier 2/3 remain filesystem/subscription tests for now; **BUG-65 still applies to them** and is not
+  closed by this.
+
+### Fix Required
+1. Amend §6.3.1 with the Tier 1 branch (done S131).
+2. Reconcile the deployed `license.json` schema with the spec (`"T3"` vs `3`, extra fields).
+3. Implement the paired-and-approved check as part of the BUG-66 per-device credential work.
+4. Test: an unpaired device must never report Tier 1.
+
+### Related
+BUG-65, BUG-66, BUG-63, `D3KOS_DEVICE_REGISTRATION_SPEC.md` D1 and §12.2
+
+---
+
+## BUG-78 — CRITICAL: the image build script does not strip `/opt/d3kos/config/`, so the public image ships live credentials
+
+**Logged:** 2026-08-24 (S131) · **Platform:** Image build / distribution · **Severity:** **CRITICAL** — this is the delivery mechanism for BUG-66 at fleet scale
+
+### Symptom
+§12.1's `create-image.sh` cleanup step removes exactly three things:
+
+```
+rm -rf /var/log/*      rm -rf /tmp/*      rm -rf ~/.bash_history
+```
+
+**`/opt/d3kos/config/` is never touched.** Live read of the lab Pi shows what would therefore be baked
+into any image built from a configured card:
+
+| File | Mode | Contents |
+|---|---|---|
+| `cloud-config.json` | **644** | fleet-wide `AMBOAT_API_KEY` (BUG-66) |
+| `api-keys.json` | 600 | Gemini / provider keys |
+| `license.json` | **644** | tier claim (BUG-65) |
+| `device-token.json` | 664 | device identity |
+
+§12.1 hosts the result on **GitHub Releases — public, anonymous download**, with a published SHA-256.
+
+### Impact
+Publishing an image built from a configured master card **publishes every credential on that card**.
+This is the same failure class as BUG-58 (one key in one public doc), except it distributes the
+**fleet-wide** key to every downloader, and the key authenticates 12 server endpoints. It also means
+every d3kOS install would share one `device_token`, which is what BUG-39 exists to prevent.
+
+`Uncertainty flag: no d3kOS .img has been inspected this session. Whether a released image ALREADY
+carries live credentials is UNVERIFIED and is the single most important thing to check.`
+
+### Fix Required
+1. **Operator first:** inspect the most recent released `.img` (mount it, read `/opt/d3kos/config/`).
+   If a live key is present, **rotate immediately and unpublish** — this outranks every other item.
+2. Add an explicit credential-strip step to `create-image.sh`: delete `cloud-config.json`,
+   `api-keys.json`, `license.json`, `device-token.json`, `device-signing.key`, and any `*.bak` of them.
+3. Add a **build-time assertion that fails the build** if any of those files exist in the image root —
+   a checklist step is not sufficient; this must be mechanically enforced.
+4. Ensure first-boot generates all of them fresh, reusing the BUG-39 `.identity-regenerated` sentinel
+   pattern so the master image cannot carry identity.
+5. Amend §12.1 (done S131).
+
+### Related
+BUG-66 (the key), BUG-65 (license.json), BUG-39 (identity duplication), BUG-58 (same class, smaller
+blast radius), BUG-74, `D3KOS_DEVICE_REGISTRATION_SPEC.md` §2.1 (keys must never be baked into the image)
+
+---
+
+## BUG-79 — §9.2 "No Phone-Home" is false, and §9 specifies almost no security architecture
+
+**Logged:** 2026-08-24 (S131) · **Platform:** Spec · **Severity:** MEDIUM (root cause of BUG-65/66)
+
+### Symptom — the false claim
+§9.2 states: *"All tier detection is local (no cloud checks) · No telemetry or analytics · No license
+key validation servers."* Every clause is contradicted **by the same document**:
+
+| §9.2 claim | Contradicted by |
+|---|---|
+| no cloud checks | §8.3 central database sync; §8.4 full Pi↔website pipeline |
+| no telemetry | §8.3.1 category #9 — comprehensive telemetry & analytics export |
+| no license validation servers | Stripe subscription webhooks (§6.3.4); fleet management; `version-heartbeat` |
+
+Anyone designing to §9.2 designs for a system that does not exist. **This is the direct cause of the
+BUG-65/66 design gap** — and of the S127 incident where a security scheme was revised three times
+before the spec was read.
+
+### Symptom — the deeper problem
+§9 is **67 lines total** (L6369–6437) for the entire "Security & Licensing" section of a 7,189-line
+specification. It contains no authentication model, no credential lifecycle, no key rotation, no
+per-device identity, no threat model, and no data-protection requirements. There is almost no security
+architecture to violate, which is why BUG-65 and BUG-66 are *architecturally intended* rather than
+oversights.
+
+### Fix Required
+1. Correct §9.2's false claims and state what the system actually does (done S131).
+2. **Do NOT author a full security architecture as a doc edit.** It is a design task requiring operator
+   decisions on offline-first vs server enforcement. §9 now points to
+   `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 as the live design of record, and to BUG-65/66/78.
+3. Fold the resulting design back into §9 once BUG-65/66 are decided — **as a release-gate deliverable.**
+
+### Related
+BUG-65, BUG-66, BUG-77, BUG-78, `D3KOS_DEVICE_REGISTRATION_SPEC.md` §10 (flagged §9.2 as stale first)
+
+---
+
+## BUG-80 — §12.2 publishes WiFi credentials for an access point the same document marks NOT SUPPORTED
+
+**Logged:** 2026-08-24 (S131) · **Platform:** Spec / public docs · **Severity:** MEDIUM
+
+### Symptom
+§12.2 step 9 instructs every new user: *"Connect to WiFi `d3kOS` (password: `<REDACTED — see spec §12.2>`)"*.
+
+The DEFAULT CREDENTIALS table on page 1 of the **same document** lists that AP struck through and
+marked **"❌ NOT SUPPORTED"**. So the flashing guide tells users to join a network the spec says does
+not exist, using a password the spec publishes.
+
+### Why this is not merely cosmetic
+The same credential pair is live in `docs/INSTALLATION.md` on the `d3kOS` repo `main` branch, alongside
+the SSH/desktop default account and its documented password (redacted here; see
+`docs/INSTALLATION.md`) plus passwordless sudo. If that repo is made public again,
+anyone within WiFi range of a default install has a documented path to root. **That is a product
+decision, not a doc edit** — recorded here so it is not lost.
+
+
+
+### OPERATOR EXEMPTION — S131 2026-08-24
+
+**The default password is an accepted exception.** Operator decision, recorded so no future session re-raises it as a credential violation. The `d3kos` default account password and the WiFi AP password are exempt from the "no real credentials in the repo" rule and from the pre-commit scanner's intent.
+
+**What remains open in this entry is NOT the credential — it is the contradiction:** §12.2 step 9 directs users to join an access point that the DEFAULT CREDENTIALS table on page 1 of the same document marks "❌ NOT SUPPORTED". One of the two is wrong, and a new user following the flashing guide is sent to a network that may not exist. That is a correctness defect regardless of the credential exemption.
+
+### Fix Required
+1. Reconcile §12.2 step 9 with the page-1 table — establish which is correct (done S131: flagged `[VERIFY]`, not silently deleted).
+2. Establish what first-boot network access actually is, and document that instead.
+3. ~~Operator decision on default credentials~~ — **CLOSED by the S131 exemption above.** No action.
+
+### Related
+BUG-78 (image ships credentials), BUG-58/59 (credential exposure class)
+
+---

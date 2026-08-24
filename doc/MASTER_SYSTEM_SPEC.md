@@ -1,6 +1,6 @@
 #  d3kOS MASTER SYSTEM SPECIFICATION
 
-**Version**: 3.9 **Date**: March 24, 2026 **Status**: APPROVED - v0.9.4.1 Integration Specification added **Previous Version**: 3.8 (February 26, 2026)
+**Version**: 4.0 **Date**: August 24, 2026 **Status**: APPROVED - conflict corrections + Tier 1 definition (S131) **Previous Version**: 3.9 (March 24, 2026)
 
 
 ## DOCUMENT CONTROL
@@ -27,6 +27,7 @@
 | 3.6 | 2026-02-20 | d3kOS Team | **Session A Implementation for v0.9.1.2**: Updated system version from 1.0.3 to 0.9.1.2, set tier from 2 to 3 for testing mode with all features enabled, implemented complete timezone auto-detection system (GPS→Internet→UTC with timezonefinder library), created timezone API service on port 8098 with nginx proxy (/api/timezone), enabled and verified voice assistant service with Vosk wake word detection (helm/advisor/counsel), Anker S330 microphone at plughw:2,0. All Session A changes verified, tested, and documented in doc/SESSION\_A\_FOUNDATION\_COMPLETE.md. Foundation ready for Sessions B/C/D. |
 | 3.7 | 2026-02-22 | d3kOS Team | **CRITICAL UPDATE - OS Version Corrected**: Updated all OS references from Bookworm to Trixie (Debian 13), kernel from 6.1.x to 6.12.x, window manager from Openbox to Labwc (Wayland compositor). **Phi-2 LLM REMOVED** (Feb 16, 2026): Removed due to 60-180s response time (unusable on boat helm), freed 1.7GB storage. Replaced with OpenRouter (gpt-3.5-turbo, 6-8s) for online queries + rule-based system (13 patterns, 0.17s) for offline simple queries. Updated Node-RED from 3.x to v4.1.4. Documented actual system state: d3kOS v0.9.1.2, Tier 3, 22+ services running. Complete architecture audit performed, architecture.md v3.0 created. |
 | 3.8 | 2026-02-26 | d3kOS Team | **Bug Fix**: Added `sysstat` package to Appendix B Software Dependencies. Signal K's rpi-monitor plugin requires `mpstat` command for CPU core utilization monitoring. Missing package caused recurring "mpstat: not found" errors every 30 seconds in Signal K logs. Reported by Holger (Linz/Danube) during field testing. Fix: `sudo apt install sysstat`. Also documented UART GPIO configuration for Moitessier HAT GPS/AIS and MCP2515 oscillator frequency configuration (12MHz vs 16MHz). |
+| 4.0 | 2026-08-24 | S131 | **Conflict corrections + Tier 1 defined.** Eight defects corrected, each logged as a BUG and cross-referenced. **§6.3.1** — added the missing Tier 1 branch; `detectTier()` previously could return only 0/2/3 while §6.3.2 defined Tier 1 and the registration spec gated on it (**BUG-77**, operator decision: Option (a), Tier 1 = paired + server-approved; Tier 3 now tested first). **§8.4.2 P1** — required data-ingress URL returned 404; corrected to the full child-theme path (**BUG-75**). **§8.4.2 P2/P5** — `cloud-credentials.json` never existed; corrected to `cloud-config.json`, mode 600 mandated (**BUG-74**). **§8.4.4** — recorded that all five "required" community endpoints return 404, and documented the three-way naming conflict blocking any build (**BUG-76**). **§9.2** — "No Phone-Home" was false in all three clauses and contradicted by §8.3/§8.3.1/§8.4/§6.3.4; replaced with what the system actually does, and flagged that §9 is not a security architecture (**BUG-79**). **§12.1** — `create-image.sh` never stripped `/opt/d3kos/config/`, so the public image shipped the fleet-wide API key; added a mandatory strip step plus a build-time assertion that FAILS the build (**BUG-78, CRITICAL**). **§12.2** — flagged the contradiction between step 9 and the page-1 credentials table (**BUG-80**). |
 | 3.9 | 2026-03-24 | d3kOS Team | **v0.9.4.1 Integration Specification added** — Added Section 8.4: Pi ↔ Website ↔ App full data pipeline integration. Defines all connection gaps between independently-built systems: export_worker Pi-side wiring (URL, auth headers, command pickup, alert triggers), Node-RED community flow activation, website community API endpoints (5 new endpoints), Chart Room + Find My Boat data display, command queue round-trip, and integration test plan (6 tests). All items blocked on v0.9.3 live push. |
 
 
@@ -3294,22 +3295,59 @@ Uptime: 3 days, 14 hours
 
 **Tier Detection Logic**:
 
+⚠ **CORRECTED v4.0 (2026-08-24, S131) — BUG-77.** The prior logic had **no Tier 1 branch**: it could
+only ever return 0, 2 or 3. Tier 1 is a defined tier in §6.3.2 and
+`deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` decision **D1** gates forum accounts on
+"Tier 1 or higher" — a gate on a value the function could not produce. **Operator decision S131:
+Option (a)** — Tier 1 is granted when the device is *paired and server-approved*.
+
 ```
-function detectTier() \{  
-  // Tier 2: OpenCPN or other paid apps installed  
-  if (fs.existsSync('/opt/opencpn')) \{  
-    return \{ tier: 2, reason: 'OpenCPN installed' \};  
-  \}  
-    
-  // Tier 3: Valid subscription key (future)  
-  if (fs.existsSync('/opt/d3kos/config/subscription.key')) \{  
-    return \{ tier: 3, reason: 'Active subscription' \};  
-  \}  
-    
-  // Tier 0: Default (opensource)  
-  return \{ tier: 0, reason: 'Default free tier' \};  
-\}
+function detectTier() {
+  // Tier 3: valid subscription key
+  if (fs.existsSync('/opt/d3kos/config/subscription.key')) {
+    return { tier: 3, reason: 'Active subscription' };
+  }
+
+  // Tier 2: OpenCPN or other paid apps installed
+  if (fs.existsSync('/opt/opencpn')) {
+    return { tier: 2, reason: 'OpenCPN installed' };
+  }
+
+  // Tier 1: device_token is PAIRED and SERVER-APPROVED  (added v4.0 - BUG-77)
+  // This is the first SERVER-VERIFIED tier. It is not a local filesystem test:
+  // the authority is the approval queue in D3KOS_DEVICE_REGISTRATION_SPEC.md §3.
+  // A device that is enrolled but still 'pending' is NOT Tier 1.
+  if (deviceIsPairedAndApproved()) {          // cached; see below
+    return { tier: 1, reason: 'Device paired and operator-approved' };
+  }
+
+  // Tier 0: Default (opensource, purely local)
+  return { tier: 0, reason: 'Default free tier' };
+}
 ```
+
+**Tier 1 rules (v4.0):**
+
+- **Server-verified, not self-asserted.** `deviceIsPairedAndApproved()` checks approval status via the
+  authenticated Pi→server channel (`GET /wp-json/amboat-device/v1/status`,
+  `D3KOS_DEVICE_REGISTRATION_SPEC.md` §7.1). It MUST NOT trust `license.json`.
+- **Offline behaviour:** the last known approval is cached with its timestamp. If the server is
+  unreachable, the cached result stands — d3kOS is offline-first and must not lose paid function at sea.
+  Cache staleness is logged, never used to downgrade silently.
+- **One trust anchor for two purposes.** Because Tier 1 and forum registration both resolve to operator
+  approval, one human decision governs both. This closes the open question at
+  `D3KOS_DEVICE_REGISTRATION_SPEC.md` §12.2.
+- **Ordering matters.** Tier 3 is now tested first so a subscribed device is never mis-reported as
+  Tier 2 by the OpenCPN test.
+
+⚠ **Tier 2 and Tier 3 remain filesystem tests and are still trivially forgeable — see BUG-65.**
+Creating an empty `/opt/opencpn` grants Tier 2; creating `subscription.key` grants Tier 3. Option (a)
+does **not** close BUG-65; it only makes Tier 1 trustworthy.
+
+⚠ **Deployed schema diverges from the example above — BUG-77.** The lab Pi's `license.json` holds
+`"tier": "T3"` (a **string**, not the integer shown), mode **644 root:root**, plus six fields this
+section does not document (`subscription_status`, `subscription_expires_at`, `testing_mode`,
+`upgrade_method`, `upgraded_at`, `version_installed_at`). Reconciling the schema is tracked in BUG-77.
 
 #### 6.3.2 Feature Restrictions & Update Capabilities
 
@@ -6250,13 +6288,27 @@ Community Map (/community)
 
 **P1 — Endpoint URL correction**
 - Current: `https://d3kos-cloud-api.example.com/api/v1/data/import` (placeholder — never connected)
-- Required: `https://atmyboat.com/mobile/data-ingress.php`
-- Config source: `/opt/d3kos/config/cloud-credentials.json`
+- Required: `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/data-ingress.php`
+- Config source: `/opt/d3kos/config/cloud-config.json`
+
+⚠ **CORRECTED v4.0 (2026-08-24, S131) — BUG-75.** The previously specified URL
+`https://atmyboat.com/mobile/data-ingress.php` **returns HTTP 404 — there is no `/mobile/` alias.**
+Verified by live probe: the short path returns 404, the full child-theme path returns 405 (correct,
+POST-only). `ARCH_SERVICE_MAP.md` always had the correct path; this section did not.
+Anything built to the old value would have failed. **If a short `/mobile/` alias is wanted, that is a
+deliberate `.htaccess` change on HostPapa — operator decision, tracked in BUG-75.**
+`Uncertainty flag: it is NOT established that BUG-54's nginx HTTP 400 relates to this. Do not merge
+the two diagnoses without evidence.`
 
 **P2 — Authentication header correction**
 - Current: `Authorization: Bearer <installation_id>` (incorrect — installation_id is not the API key)
 - Required: `Authorization: Bearer <atmyboat_api_key>` + `X-Device-Token: <device_uuid>`
-- Both values from `/opt/d3kos/config/cloud-credentials.json`
+- Both values from `/opt/d3kos/config/cloud-config.json`  ⚠ *filename corrected v4.0 — BUG-74*
+
+⚠ **This shared bearer token is the subject of BUG-66 (CRITICAL, v0.9.9.4 release gate).** One
+fleet-wide static secret authenticates 12 server endpoints on every Pi. It is scheduled for replacement
+by the per-device Ed25519 credential in `D3KOS_DEVICE_REGISTRATION_SPEC.md` §2 — one mechanism serving
+both device auth and registration. **Do not build new endpoints against the shared key.**
 
 **P3 — Command pickup loop**
 - `data-ingress.php` returns `{ "pending_commands": [ { "id": 1, "command": "restart_service", "payload": {...} } ] }` in every response
@@ -6270,12 +6322,19 @@ Community Map (/community)
 - Required: critical alert types (anchor_drag, engine_overtemp, low_fuel, low_battery) must call `export_queue.add()` immediately — do not wait for timer
 - Alert hook added to the alert detection service; export_worker picks it up on its next 30-second loop
 
-**P5 — cloud-credentials.json**
-- File: `/opt/d3kos/config/cloud-credentials.json`
+**P5 — cloud-config.json**  ⚠ *renamed v4.0 (2026-08-24, S131) — BUG-74*
+- File: `/opt/d3kos/config/cloud-config.json`
 - Contents: `{ "atmyboat_api_key": "<key from AtMyBoat.com account>", "device_uuid": "<auto-generated UUID>" }`
 - UUID auto-generated on first run if not present — stored permanently thereafter
-- File must be in `.gitignore` — never committed
-- Template `cloud-credentials.json.example` committed with placeholder values
+- **Mode `0600`.** Live read S131 found it at **644 — world-readable** on the lab Pi. Same defect class
+  as `license.json` (BUG-65). Any local user can read the fleet key.
+- File must be in `.gitignore` — never committed. **Verify the ignore rule names the real file.**
+- **MUST be stripped from the distribution image — see §12.1 and BUG-78.**
+- Template `cloud-config.json.example` committed with placeholder values
+
+⚠ **`cloud-credentials.json` does not exist and never did.** This section specified it for five months;
+the file the system actually uses is `cloud-config.json`. Any script written from the old text targeted
+a non-existent path. Tracked in BUG-74.
 
 ---
 
@@ -6285,12 +6344,13 @@ Three flows deployed to Pi but disabled (waiting for live endpoints):
 
 | Flow | Node-RED trigger | Destination | Status |
 |------|-----------------|-------------|--------|
-| Telemetry push | Engine benchmark schedule | `POST /mobile/data-ingress.php` | Disabled — URL placeholder |
-| Community benchmark | Performance comparison schedule | `POST /mobile/data-ingress.php` | Disabled — URL placeholder |
-| Community position | GPS update interval | `POST /mobile/data-ingress.php` | Disabled — URL placeholder |
+| Telemetry push | Engine benchmark schedule | `POST /wp-content/themes/twentytwenty-child/mobile/data-ingress.php` | Disabled — URL placeholder |
+| Community benchmark | Performance comparison schedule | `POST /wp-content/themes/twentytwenty-child/mobile/data-ingress.php` | Disabled — URL placeholder |
+| Community position | GPS update interval | `POST /wp-content/themes/twentytwenty-child/mobile/data-ingress.php` | Disabled — URL placeholder |
 
 **Required changes:**
-1. Replace placeholder URL in "Post to Community DB" HTTP Request nodes → `https://atmyboat.com/mobile/data-ingress.php`
+1. Replace placeholder URL in "Post to Community DB" HTTP Request nodes → `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/data-ingress.php`
+   ⚠ *corrected v4.0 (S131) — BUG-75. The short `/mobile/` path returns 404; there is no alias.*
 2. Wire API key from `cloud-credentials.json` via environment injection node (not hardcoded in flow)
 3. Enable all three flows
 4. End-to-end test: enable community sharing in Settings → verify dot appears on /community map within one interval
@@ -6299,7 +6359,27 @@ Three flows deployed to Pi but disabled (waiting for live endpoints):
 
 #### 8.4.4 Website-Side Community API Endpoints (v0.9.4.1)
 
-Five new PHP endpoints required in `mobile/` directory of the child theme:
+⚠ **STATUS v4.0 (2026-08-24, S131) — BUG-76: ALL FIVE RETURN 404. NONE IS DEPLOYED.** Verified by live
+probe of production. §8.4.3's three Node-RED flows therefore remain non-functional regardless of their
+enabled state.
+
+⚠ **NAMING CONFLICT — three documents, three schemes for the same endpoints (BUG-76).** No document is
+currently a trustworthy deployment target:
+
+| This section (§8.4.4) | `ARCH_SERVICE_MAP.md` | Repo (`deployment/features/v0941-plan/php/`) |
+|---|---|---|
+| `community-markers-post.php` | `community/markers.php` | `community-markers-write.php` |
+| `community-markers-get.php` | — | `community-get.php` |
+| `telemetry-push.php` | `telemetry/push.php` | — |
+| `community-position.php` | `community/position.php` | `community-position.php` |
+| `community-benchmark.php` | `community/benchmark.php` | — |
+
+**A canonical naming decision is required before any of these is built.** Recommendation: adopt the flat
+`community-*.php` / `telemetry-*.php` form used in this section, since it matches the repo most closely,
+then correct `ARCH_SERVICE_MAP.md`. Pending that decision the table below is a *design intent*, not a
+deployment target.
+
+Five new PHP endpoints required in the `mobile/` directory of the child theme:
 
 | File | Method | Purpose |
 |------|--------|---------|
@@ -6426,13 +6506,35 @@ The Chart Room (`/dashboard`) must display synced Pi data for T1+ users.
 
 - Enable/disable services based on tier
 
-**No Phone-Home**:
+**Server Communication — CORRECTED v4.0 (2026-08-24, S131), BUG-79**
 
-- All tier detection is local (no cloud checks)
+⚠ The previous text read: *"No Phone-Home — all tier detection is local (no cloud checks) · No telemetry
+or analytics · No license key validation servers."* **All three clauses were false, and were
+contradicted by this same document.** They are replaced below. The old text is preserved here because
+it was load-bearing: designing to it produced the BUG-65 and BUG-66 security gaps, and in S127 a
+security scheme was revised three times before anyone read this section.
 
-- No telemetry or analytics
+What the system actually does:
 
-- No license key validation servers
+- **Tier 0** detection is local. **Tier 1 is server-verified** (§6.3.1, BUG-77). **Tier 2/3** are local
+  filesystem tests and are forgeable (BUG-65).
+- **Telemetry exists and is extensive** — §8.3.1 category #9 (system performance, user interaction, AI
+  metrics, device environment, business intelligence), Tier 1+ with user consent.
+- **The Pi phones home routinely** — §8.3 central database sync, §8.4 the full Pi↔website↔app pipeline,
+  `version-heartbeat`, fleet management, `config-backup`, failure reporting.
+- **License validation is server-side for payments** — Stripe subscription webhooks (§6.3.4).
+
+**Offline-first is still a hard requirement**, and it is not in conflict with the above: the Pi must
+retain full local function with no internet. What must never happen is *losing* function because a
+server was unreachable. Tier 1's cached-approval rule in §6.3.1 is the pattern to follow.
+
+⚠ **This section does not constitute a security architecture.** Section 9 is ~70 lines of a 7,189-line
+specification and defines no authentication model, credential lifecycle, key rotation, per-device
+identity, threat model, or data-protection requirement. **Design of record:**
+`deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 (Ed25519 per-device identity; trust anchor =
+operator approval, not cryptography). **Open security defects gating v0.9.9.4: BUG-65, BUG-66
+(CRITICAL), BUG-78 (CRITICAL), BUG-74, BUG-77, BUG-79.** Folding the resulting architecture back into
+this section is a release-gate deliverable.
 
 
 ## 10. PERFORMANCE REQUIREMENTS
@@ -6734,6 +6836,23 @@ rm -rf /var/log/\*
 rm -rf /tmp/\*  
 rm -rf ~/.bash\_history  
   
+\# ---- CREDENTIAL STRIP - ADDED v4.0 (2026-08-24, S131) - BUG-78 ----  
+\# MANDATORY. Without this the image ships every credential on the master card.  
+rm -f /opt/d3kos/config/cloud-config.json  
+rm -f /opt/d3kos/config/api-keys.json  
+rm -f /opt/d3kos/config/license.json  
+rm -f /opt/d3kos/config/device-token.json  
+rm -f /opt/d3kos/config/device-signing.key  
+rm -f /opt/d3kos/config/subscription.key  
+rm -f /opt/d3kos/config/\*.bak  
+  
+\# ---- BUILD-TIME ASSERTION - the build MUST fail, not warn ----  
+for f in cloud-config.json api-keys.json license.json device-token.json device-signing.key; do  
+  if \[ -e "/opt/d3kos/config/$f" \]; then  
+    echo "FATAL: $f present in image - refusing to build" \>&2; exit 1  
+  fi  
+done  
+  
 \# Shrink filesystem  
 ./shrink-filesystem.sh  
   
@@ -6747,9 +6866,27 @@ gzip -9 /mnt/usb/d3kos-v1.0.3.img
 sha256sum /mnt/usb/d3kos-v1.0.3.img.gz \> /mnt/usb/d3kos-v1.0.3.img.gz.sha256
 ```
 
+⚠ **CRITICAL — BUG-78 (added v4.0, 2026-08-24, S131).** Before v4.0 this script cleaned only
+`/var/log`, `/tmp` and `~/.bash_history`. **`/opt/d3kos/config/` was never touched**, so an image built
+from a configured card baked in `cloud-config.json` (mode 644, holding the **fleet-wide**
+`AMBOAT_API_KEY` that authenticates 12 endpoints), `api-keys.json`, `license.json` and
+`device-token.json`. Combined with public anonymous hosting below, **publishing an image published
+every credential on the master card** — the same failure class as BUG-58 but at fleet scale, and it
+would give every install one shared `device_token`, exactly what BUG-39 exists to prevent.
+
+Two rules follow, and neither is optional:
+1. **First boot generates all credentials and identity.** Nothing secret is ever baked in. Use the
+   BUG-39 `.identity-regenerated` sentinel so the master image cannot carry identity.
+2. **The build fails, loudly, if any secret is present.** A checklist step is not sufficient — S129
+   demonstrated that a documented manual step gets skipped under pressure.
+
+⚠ **UNVERIFIED and top priority:** no released `.img` has been inspected. **Mount the latest release,
+read `/opt/d3kos/config/`; if a live key is present, rotate it and unpublish the release before any
+other work.**
+
 **Image Hosting**:
 
-- Platform: GitHub Releases
+- Platform: GitHub Releases — **public, anonymous download. Assume everything in the image is public.**
 
 - File: `d3kos-v1.0.3.img.gz` (~4GB compressed)
 
@@ -6779,7 +6916,12 @@ sha256sum /mnt/usb/d3kos-v1.0.3.img.gz \> /mnt/usb/d3kos-v1.0.3.img.gz.sha256
 
 8. Power on → Wait for first boot (2-3 minutes)
 
-9. Connect to WiFi "d3kOS" (password: d3kos-2026)
+9. Connect to WiFi "d3kOS" (password: see DEFAULT CREDENTIALS table, page 1)
+   ⚠ **`[VERIFY]` — CONTRADICTION, BUG-80 (flagged v4.0, 2026-08-24, S131).** The DEFAULT CREDENTIALS
+   table on page 1 marks this access point struck-through and **"❌ NOT SUPPORTED"**, while this step
+   instructs every new user to join it. One of the two is wrong and a new user may be directed to a
+   network that does not exist. **Not silently deleted** — establish which is correct, then fix both.
+   *Note: the default password itself is an accepted operator exception (S131) and is not a defect.*
 
 10. Open browser → `http://d3kos.local` or `http://10.42.0.1`
 
