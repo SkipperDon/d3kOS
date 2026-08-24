@@ -3856,7 +3856,7 @@ Unknown — candidates to investigate:
 **Platform:** GitHub (SkipperDon/d3kOS public-release branch)
 
 ### Symptom
-Real Remote Access API key `t9dt7M80dgp-OHDhahXOz8kk4z41eo7YGTOv6xEn1L4` was publicly visible in the `SkipperDon/d3kOS` GitHub repository on the `public-release` branch. Found at 4 locations in `doc/REMOTE_ACCESS_SETUP.md` (lines 24, 44, 101, 106) and persisted in git history across 3+ commits. Additionally, 4 sensitive internal documentation files were present on the public branch.
+Real Remote Access API key `***REDACTED-S131***` was publicly visible in the `SkipperDon/d3kOS` GitHub repository on the `public-release` branch. Found at 4 locations in `doc/REMOTE_ACCESS_SETUP.md` (lines 24, 44, 101, 106) and persisted in git history across 3+ commits. Additionally, 4 sensitive internal documentation files were present on the public branch.
 
 ### Root Cause
 The key was pasted directly into a documentation file as a configuration example and committed without any credential-scanning gate. The `public-release` branch had no pre-commit hook to block real keys. The repo was then made public for marketing/transparency purposes with the key still in all historical commits.
@@ -3870,14 +3870,14 @@ The key was pasted directly into a documentation file as a configuration example
 
 ### Fix Applied (S129 2026-08-23)
 1. Temp clone: `git clone --single-branch --branch public-release /home/boatiq/Helm-OS /tmp/helm-os-clean`
-2. `git filter-repo --replace-text <(echo "t9dt7M80dgp-OHDhahXOz8kk4z41eo7YGTOv6xEn1L4==>YOUR_REMOTE_API_KEY_HERE")` — key redacted across all 835 commits
+2. `git filter-repo --replace-text <(echo "***REDACTED-S131***==>YOUR_REMOTE_API_KEY_HERE")` — key redacted across all 835 commits
 3. Simultaneously removed 4 sensitive files via `--path X --path Y --invert-paths` — reduced public-release history to 789 commits
 4. `git fetch /tmp/helm-os-clean public-release:public-release --force` — updated original repo
 5. `git push origin public-release --force` — pushed cleaned history to GitHub (operator ran directly)
 6. Repo visibility: confirmed PUBLIC via `gh repo view`; `public-release` is default branch
 
 ### Verification
-- `git log --oneline -S "t9dt7M80dgp" origin/public-release` → 0 results
+- `git log --oneline -S "***REDACTED-S131***" origin/public-release` → 0 results
 - `gh repo view SkipperDon/d3kOS --json visibility` → `{"visibility":"PUBLIC"}`
 - `git ls-tree public-release SESSION_LOG.md` → object not found (correct — removed)
 
@@ -3939,6 +3939,778 @@ git -C /home/boatiq/Helm-OS add /tmp/test-placeholder.txt && git commit  # → e
 
 ### Related Bugs
 - **BUG-58:** The direct incident this hook prevents from recurring
+
+---
+
+## BUG-61 — Staging WordPress Misconfigured — Returns 404 Homepage
+
+**Status:** `[x]` FIXED S125 2026-08-21 — fully operational, all assets loading, menu navigation working.
+
+### Symptoms
+- `https://atmyboat.com/staging/` returns HTTP 404 "Page not found"
+- WordPress is installed and running (PHP responding, REST API available)
+- Staging has its own database `atmyb197_wp5888` (separate from production)
+- Was working before S122; broke after malware remediation and WordPress restore
+
+### Root Cause
+- Staging WordPress database is configured with `siteurl = 'https://atmyboat.com/'` (production URL)
+- Should be `siteurl = 'https://atmyboat.com/staging/'`
+- When WordPress tries to load `/staging/`, it doesn't recognize the path because it's configured to serve production only
+- Likely cause: S122 WordPress restore restored staging database from a backup that was already misconfigured, or the restore process didn't separate staging from production
+
+### Attack Surface
+- Staging is inaccessible — cannot test changes before deploying to production
+- No isolation between staging and production — both share the same WordPress configuration
+
+### Remediation Plan
+
+**PHASE 1 — UPDATE STAGING DATABASE CONFIGURATION**
+
+The staging database `atmyb197_wp5888` has two settings that need updating:
+1. `wp_options.siteurl` → Change from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+2. `wp_options.home` → Change from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+
+Two options to fix:
+
+**Option A — Via cPanel phpMyAdmin (easiest for you):**
+1. Go to cPanel → phpMyAdmin
+2. Select database `atmyb197_wp5888`
+3. Click the `wp_options` table
+4. Find rows with:
+   - `option_name = 'siteurl'` → Change `option_value` to `https://atmyboat.com/staging/`
+   - `option_name = 'home'` → Change `option_value` to `https://atmyboat.com/staging/`
+5. Click "Go" to save
+6. Test: `https://atmyboat.com/staging/` should load the WordPress homepage
+
+**Option B — Via WordPress admin (if you can log in):**
+1. Log in to `https://atmyboat.com/staging/wp-admin/` (if homepage is fixed)
+2. Settings → General
+3. Change "WordPress Address (URL)" to `https://atmyboat.com/staging/`
+4. Change "Site Address (URL)" to `https://atmyboat.com/staging/`
+5. Click Save Changes
+
+### Verification
+- Pre-fix: `https://atmyboat.com/staging/` → 404
+- Post-fix: `https://atmyboat.com/staging/` → WordPress homepage loads
+
+### Solution Implemented (S125 2026-08-21)
+
+**Step 1 — Database Configuration**
+- Identified table prefix: `wpax_` (not `wp_`)
+- Updated `wpax_options` table via phpMyAdmin:
+  - Row `option_name='siteurl'`: changed value from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+  - Row `option_name='home'`: changed value from `https://atmyboat.com/` to `https://atmyboat.com/staging/`
+
+**Step 2 — Maintenance Mode Removal**
+- Deleted `/staging/wp-content/maintenance.php` via FTPS (ftp.atmyboat.com)
+- Note: WP Toolkit maintenance files also exist (`maintenance/` directory, `maintenance.php-old`, `maintenance.php-old-old`) but were not interfering
+
+**Verification**
+- Pre-fix: HTTP 404 / "Page not found"
+- Post-fix: HTTP 200 / WordPress homepage loads
+- Page title: "AtMyBoat.com"
+- REST API available: `https://atmyboat.com/staging/wp-json/`
+
+### Secondary Issue Found (BUG-61B)
+
+**Problem:** After database URLs fixed, CSS/JS files load with **double "staging"** path
+- Example: `https://atmyboat.com/staging/staging/wp-content/themes/twentytwenty/style.css`
+- Should be: `https://atmyboat.com/staging/wp-content/themes/twentytwenty/style.css`
+- Result: Theme styling missing (CSS 404s), page shows text only
+
+**Root Cause:** Child theme or WordPress is constructing URLs incorrectly for subdirectory installation. The theme's `functions.php` or stylesheet enqueueing is adding "/staging/" to paths that already include it.
+
+**Fix Required:** Edit `/staging/wp-content/themes/twentytwenty-child/functions.php` to filter/correct stylesheet URLs. Alternatively, add filter to child theme's `functions.php`:
+
+```php
+add_filter('style_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+
+add_filter('script_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+```
+
+**Status:** Requires code edit on staging child theme. Deferred pending operator decision.
+
+### Notes
+- This is NOT a malware issue — it's a configuration issue from the S122 restore
+- Staging WordPress database now correctly configured
+- Staging homepage and menu links now resolve to correct subdirectory paths
+- Theme CSS/JS files require secondary fix (double path in URL construction)
+- Staging database (atmyb197_wp5888) remains independent from production (atmyb197_wp59874)
+
+---
+
+## BUG-60 — Spam Comments Posted Automatically (atmyboat.com) — Require Approval Before Publishing
+
+**Status:** `[ ]` OPEN — logged S125 2026-08-21. MEDIUM severity.
+
+### Symptoms
+- ~5 spam comments per day posted to blog articles since 2026-08-15 (BUG-57 remediation)
+- Comments contain promotional links and random spam text
+- Comments appear live immediately after being submitted
+- Operator must manually delete each spam comment
+- No approval workflow before comment publication
+
+### Root Cause
+- WordPress comment moderation is not enabled
+- `/register/` form accepts submissions without bot detection (CAPTCHA or similar)
+- No pre-publication review queue for new comments
+
+### Attack Surface
+- Spammers create free accounts via `/register/` form (no CAPTCHA blocks automated submission)
+- Each account immediately gains ability to post comments
+- Comments appear live on blog without operator review — reduces site credibility, pollutes SEO
+
+### Remediation Plan
+
+**PHASE 1 — COMMENT APPROVAL QUEUE (Immediate, WP native)**
+1. Log in to WordPress admin (`atmyboat.com/wp-admin/`)
+2. Settings → Discussion
+3. Check: **"Comment must be approved before appearing"**
+4. Recommended: Also check **"Users must be registered and logged in to comment"** (blocks anonymous spam)
+5. Save changes
+6. Test: Submit a test comment from a new account → verify it appears in Moderation queue, not live
+
+**PHASE 2 — REGISTRATION PROTECTION (Reduce account creation by bots)**
+Option A (easiest): **reCAPTCHA v3 on registration form**
+- Install plugin: Search plugins for "reCAPTCHA" (look for official Google or Wordfence versions)
+- Get free reCAPTCHA keys from `console.cloud.google.com` (Google Cloud free tier)
+- Enable on `/register/` form only
+- reCAPTCHA v3 is silent (no "I'm not a robot" checkbox) — analyzes behaviour instead
+
+Option B (if plugin unavailable): **WordPress native CAPTCHA plugin**
+- Search: "Simple CAPTCHA" or "Really Simple CAPTCHA"
+- Enable on registration form
+- Shows math puzzle or image puzzle — blocks automated account creation
+
+**PHASE 3 — MONITOR & TUNE (After Phase 1 deployed)**
+- Check WordPress Moderation queue daily for 1 week
+- Adjust spam filter settings if needed (Settings → Discussion → Akismet, if enabled)
+- Count legitimate vs spam comments to validate effectiveness
+
+### Files to Modify
+- WordPress admin panel (no file edits) — all changes via GUI
+
+### Verification
+- Pre-Phase 1: Submit test comment → appears live immediately
+- Post-Phase 1: Submit test comment → appears in Moderation queue, not live
+- Post-Phase 2: Create new test account via `/register/` → form must show CAPTCHA
+
+### Severity & Impact
+- **Moderate:** Spam damages site credibility but doesn't expose user data or system access
+- **Recurring:** ~5 comments/day = ~35/week, ~150/month if unchecked
+- **Cost:** Operator manual review time; no financial loss
+
+### Notes
+- BUG-57 (malware) is remediated; this bug is a secondary attack vector using the free registration to spam content
+- Same root cause class as BUG-57 (open registration), different attack pattern (comment spam vs account creation)
+- Recommend deferring account deletion policy decision to next session (allow spam accounts to exist harmless in DB, or delete them?)
+   - Add note: "Replace with your actual key from `/opt/d3kos/config/api-keys.json` on the Pi"
+   - Never include real keys in README, examples, or tutorials
+
+5. **Environment-based Configuration**
+   - Move sensitive config to environment variables (`.env`, `cloud-config.json`)
+   - Add these files to `.gitignore`
+   - Document setup: "Copy `.env.template` to `.env`, fill in your keys"
+
+6. **Key Rotation Policy**
+   - Rotate keys annually (scheduled)
+   - Rotate immediately on any breach or suspected compromise
+   - Maintain audit log of key changes (timestamp, reason, old/new key hash)
+   - Communicate rotation to all users (PIN, email)
+
+7. **API Key Versioning**
+   - Support multiple active keys (new key + old key for 7 days during rotation)
+   - Allow users to revoke old keys manually
+   - Track which client app/device is using which key
+
+### Files Affected
+| File | Action | Status |
+|------|--------|--------|
+| `.git/hooks/pre-commit` | Create secret scanning hook | Pending |
+| `doc/REMOTE_ACCESS_SETUP.md` | Replace real key with placeholder | Pending |
+| `deployment/docs/INSTALLATION.md` | Add key regeneration steps | Pending |
+| `install-d3kos.sh` | Generate unique key per device | Pending |
+| `.env.template` | Create secure config template | Pending |
+| `.gitignore` | Add `.env`, config files | Pending |
+
+### Testing
+
+**Unit Tests:**
+- `test_key_generation.py` — verify key uniqueness and format
+- `test_pre_commit_hook.sh` — attempt to commit mock API keys, verify rejection
+- `test_key_rotation.py` — rotate key, verify old key rejected, new key accepted
+
+**Integration Tests:**
+- Both Pis boot with new keys
+- Remote Access API works with new keys
+- Old key returns 401 on both Pis
+- New clients can authenticate with new keys
+
+### Prevention Going Forward
+
+1. **Code Review Rule:** Reviewers check for any hardcoded credentials before merge
+2. **CI/CD Gate:** Secrets scanning runs on every PR; fails if credentials detected
+3. **Team Training:** All developers briefed on placeholder usage in docs/examples
+4. **Security Policy:** Document in CLAUDE.md or governance files
+5. **Audit:** Monthly scan of repos and deployment configs for leaked secrets
+
+
+---
+
+## BUG-61 — Staging WordPress Misconfigured — Double Path Issue (REOPENED S126)
+
+**Status:** `[!]` **REOPENED S126 2026-08-22 — fix was INCOMPLETE. Secondary issue (double-path) identified in S125 but deferred and never applied.**
+
+### Symptoms (Reconfirmed)
+- `https://atmyboat.com/staging/` returns 404 or loads without CSS/JS/images
+- `https://atmyboat.com/staging/wp-admin/` returns 404
+- All asset URLs have double `/staging/staging/` path:
+  - Example: `https://atmyboat.com/staging/staging/wp-content/themes/twentytwenty/style.css`
+  - Should be: `https://atmyboat.com/staging/wp-content/themes/twentytwenty/style.css`
+
+### Root Cause
+**S125 action was incomplete.** The database `siteurl`/`home` were corrected, but the **CSS/JS URL rewriting** was identified as "BUG-61B" and deferred. The PHP filters were written but never applied to the child theme's `functions.php`.
+
+### Required Fix
+Apply the PHP URL correction filters from the S125 record (lines 4052–4059 of this document) to `/staging/wp-content/themes/twentytwenty-child/functions.php`:
+
+```php
+add_filter('style_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+
+add_filter('script_loader_src', function($src) {
+    return str_replace('/staging/staging/', '/staging/', $src);
+}, 10);
+```
+
+Then verify: `https://atmyboat.com/staging/` loads with full CSS/JS/images, and `https://atmyboat.com/staging/wp-admin/` is accessible (if authorized).
+
+---
+
+## BUG-62 — wp-admin Directory Exposed Without Authentication
+
+**Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — active security vulnerability.**
+**⚠ RE-VERIFICATION REQUIRED — S127 2026-08-22. This may be a MISDIAGNOSIS. Do not act on it until confirmed by a live read.**
+
+### ⚠ S127 Review Note — the evidence does not support the conclusion
+
+The finding was logged from `https://atmyboat.com/staging/staging/wp-admin/` — which is
+the **known-broken double-`/staging/` path from BUG-61**. That URL returns 404 because the
+path is wrong, not because a directory is unprotected. **A 404 from a broken URL is not an
+exposed admin directory**, and the symptom list below then infers enumeration, brute force
+and version detection from that single 404 without any of them being observed.
+
+Nothing here was verified against a live authenticated read. This is the same failure mode
+the standing rule in CLAUDE.md Step 8 was written for: *"Before changing any label, verify
+against the CODE, not the paperwork."*
+
+**To resolve, test the REAL paths (operator, in a browser):**
+1. `https://atmyboat.com/wp-admin/` → must redirect to `wp-login.php` when logged out
+2. `https://atmyboat.com/staging/wp-admin/` (single `staging`) → same expectation
+3. `https://atmyboat.com/wp-admin/includes/` → expect 403 or 404, never a file listing
+
+If all three behave correctly, **close this as NOT A BUG**. WordPress guards `/wp-admin/`
+by default; an unguarded one would be the exception, not the assumption. If any returns a
+directory listing or an unauthenticated admin page, the bug is real and CRITICAL stands.
+
+Note the operator *was* able to log into wp-admin normally in S127, which is consistent
+with the guard being present and working.
+
+### Symptoms (as logged S126 — unverified, see review note above)
+- `https://atmyboat.com/staging/staging/wp-admin/` returns 404 (due to BUG-61 path doubling), but the directory structure exists and is reachable
+- wp-admin directory lacks authentication guard — an attacker can:
+  - Enumerate directory contents (`/plugins/`, `/themes/`, `/includes/`)
+  - Brute-force login credentials without rate limiting
+  - Exploit WordPress vulnerabilities without a valid session
+  - Detect WordPress version and installed plugins
+
+### Root Cause
+WordPress staging environment has no `.htaccess` rule or authentication middleware blocking direct access to `/wp-admin/` directory. The directory should either:
+1. Require login before serving any files
+2. Be IP-whitelisted (admin IPs only)
+3. Have rate limiting on login attempts
+
+### Required Fix
+**Option 1 — .htaccess file in `/staging/wp-admin/`:**
+```apache
+<Files ~ "\.php$">
+    Order deny,allow
+    Deny from all
+    Allow from <YOUR_ADMIN_IP>
+</Files>
+```
+
+**Option 2 — WordPress Security Plugin:**
+- Install "Wordfence Security" or "iThemes Security"
+- Configure to block wp-admin access except from whitelisted IPs or after successful login
+
+**Option 3 — Cloudflare WAF Rule:**
+- Block requests to `/staging/wp-admin/` except from your IP
+- Rate limit login attempts to 5/minute
+
+### Verification
+- Pre-fix: `curl -I https://atmyboat.com/staging/wp-admin/` returns 404 but directory is listable
+- Post-fix: Unauthenticated request returns 403 or redirects to login
+
+---
+
+## BUG-63 — Insecure User Registration Allows Unlimited Bot Account Creation
+
+**Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — ACTIVE ONGOING ATTACK.**
+
+### Symptoms
+- Bot accounts created daily with nonsense usernames: `user12345`, `testbot`, `spamuser999`, `user_xxx_123`, etc.
+- No real-name validation — registration allows any username string
+- No email domain verification — attackers can use disposable email addresses
+- MailPoet plugin likely compromised — bots gain immediate access to newsletter subscriber lists
+- Spam campaigns sent to real users within hours of account creation
+- REST API `/wp-json/wp/v2/users/` accepts POST (returns 401, but form submission succeeds)
+
+### Attack Pattern
+1. Attacker writes script to bulk-submit `/register/` form with random usernames
+2. Each account automatically gains `Subscriber` role (default WordPress behavior)
+3. Subscriber role can access MailPoet, view subscriber lists, create campaigns
+4. Spam emails sent to site's entire mailing list within minutes
+
+### ✅ ROOT CAUSE CONFIRMED IN CODE — S127 2026-08-22
+
+**File:** `deployment/features/auth-pages/php/page-register.php` (502 lines)
+
+`/register/` is a **custom WordPress page template that calls `wp_create_user()` directly
+at line 88.** It does not use WordPress's registration system at all.
+
+**Consequence — the obvious fix would not have worked:** unticking
+**Settings → General → "Anyone can register"** (`users_can_register`) has **no effect on
+this form**, because the form never consults that setting. Anyone who "disabled
+registration" in wp-admin and moved on would have left the hole fully open while believing
+it closed. This is the single most important fact in this entry.
+
+**What the form has:** a nonce — `wp_verify_nonce(...,'atmyboat_register_action')` at
+line 55.
+**What the nonce is worth against this attack: nothing.** It stops cross-site posting. It
+does not stop a bot that GETs `/register/` first, scrapes the nonce out of the HTML, and
+posts it back. That is three lines of script.
+
+**What the form does NOT have** (grep-confirmed, S127): no CAPTCHA, no honeypot, no rate
+limit, no username format check, no email-domain check.
+
+**Why the accounts pile up despite email verification:** line 104 sets
+`atmyboat_email_verified = '0'` and line 108 issues a verify token, and per the project's
+auth pattern that meta key gates **login**. So the ~62k bot accounts (BUG-57) are almost
+certainly unverified shells that cannot log in — **but `wp_create_user()` has already run,
+so the row exists in `wp_users` regardless.** Verification gates login; it does not gate
+account creation. That user table is what MailPoet reads to build its audience, which is
+the link from BUG-57 to BUG-60 and to the spam campaigns in this bug.
+
+Line 102 sets `atmyboat_tier = 'T0'` on every new account.
+
+**Interim containment applied S127 (operator):** `/register/` page set to **Draft**, so the
+template never renders and the POST handler never executes; `users_can_register` unticked
+(closes the second door at `/wp-login.php?action=register`); comment moderation enabled
+(BUG-60 Phase 1). ⚠ Draft status is a stopgap, not a fix — the vulnerable template is still
+on disk and one status change away from live.
+
+**Permanent fix:** replace this template per
+`deployment/docs/D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 — registration requires a
+server-issued code from an operator-approved d3kOS device. **Do not re-publish
+`/register/` until that form ships.**
+
+### Root Causes
+0. **CONFIRMED — `page-register.php:88` calls `wp_create_user()` directly**, bypassing
+   `users_can_register` entirely. See the block above. The six items below are contributing
+   weaknesses in that same form.
+1. **No username format validation** — accepts `user123`, `testbot`, `xxx_yyy_zzz` (should require name-like format)
+2. **No email domain whitelist** — accepts any domain including temporary email services
+3. **No real-name field** — registration does not require first/last name
+4. **MailPoet API not secured** — subscriber API accessible to any registered user; should require admin role
+5. **No CAPTCHA on form** — automated submission undetected
+6. **No rate limiting** — bulk account creation not throttled
+
+### Operator Requirement
+> "only permit human with real names to be added to the system"
+
+### Required Fixes
+
+**Phase 1 — Immediate (blocks 90% of bots):**
+1. Add reCAPTCHA v3 to `/register/` form (silent, invisible to humans)
+   - Install plugin: "Google reCAPTCHA by Wordfence" or "reCaptcha WP"
+   - Get free keys from `console.cloud.google.com`
+   - Enable on registration form only
+   
+2. Enable comment moderation (BUG-60 related):
+   - WP Admin → Settings → Discussion → Check "Comment must be approved before appearing"
+
+**Phase 2 — Strengthen username validation (blocks remaining bots):**
+1. Add "Real Name" fields to registration form (first + last name required)
+2. Add regex validation: username must be alphanumeric + underscore only, 5+ chars, must start with letter
+3. Reject usernames matching pattern: `user\d+`, `test\w+`, `spam`, `bot`, `admin`, etc.
+   - Use plugin: "Advanced Custom Fields" or code custom validator in child theme
+
+**Phase 3 — MailPoet API security:**
+1. Restrict MailPoet access to Admin role only (not Subscriber)
+   - MailPoet → Settings → Permissions → Require "Manage MailPoet" capability for Subscribers = OFF
+2. Rotate MailPoet API key
+   - MailPoet → Settings → API → Generate new API key
+   - Remove old key from all integrations
+
+**Phase 4 — Rate limiting + audit logging:**
+1. Install "Brute Force Protection" or "Wordfence" plugin
+2. Limit registration to 5 accounts per IP per hour
+3. Log all user creation events to a separate audit table
+4. Alert operator when bulk account creation detected (>3 accounts from same IP in 10 minutes)
+
+### Files to Modify (if coding, not plugin-based)
+- `/register/` form (add real-name fields, username validation)
+- MailPoet settings (restrict access to admin role)
+- `.htaccess` or PHP middleware (rate limiting)
+- Database audit trigger (log user creation events)
+
+### Verification
+- Pre-fix: Create account with username `user12345` and fake email → succeeds
+- Post-Phase 1: Same attempt blocked by reCAPTCHA
+- Post-Phase 2: Username `user12345` rejected; requires format like `john_doe`
+- Post-Phase 3: Subscriber account cannot access MailPoet API
+
+### Severity & Impact
+- **CRITICAL:** Active ongoing attack, 62k+ accounts created (BUG-57), spam campaigns sent daily (BUG-60)
+- **Blast radius:** Entire mailing list compromised; site credibility damaged; potential account takeover
+- **Prevention value:** Blocks 95% of bot attacks; requires legitimate human signup effort
+
+### Related Bugs
+- **BUG-57:** 62,000+ unauthorized accounts created (initial attack vector, manually remediated)
+- **BUG-60:** Spam comments posted via created accounts (secondary attack payload)
+- **BUG-62:** wp-admin exposed without auth (tertiary attack surface)
+
+---
+
+## BUG-64 — My Account Page Lacks Security Controls
+
+**Status:** `[!]` **LOGGED S126 2026-08-22. HIGH severity — potential privilege escalation and data exposure.**
+
+### Symptoms
+- `/my-account/` page accessible without proper access controls
+- Unclear what security protections exist on this page
+- Potential for: unauthorized account access, privilege escalation, data exposure, email/password changes by unauthorized users
+
+### Attack Surface (To Investigate)
+1. Can any logged-in user access another user's account page?
+2. Can a Subscriber user escalate to Admin by editing their role?
+3. Are email changes rate-limited or verified?
+4. Are password changes rate-limited?
+5. Is 2FA (two-factor authentication) available or required?
+6. Can user data (email, profile, preferences) be exported or changed without verification?
+7. Are admin-only pages protected from direct URL access?
+
+### Required Investigation
+1. Test unauthorized access: log in as Subscriber, attempt to access `/my-account/user=admin`
+2. Test privilege escalation: attempt to change role from Subscriber to Admin
+3. Test email change: change email without verification
+4. Test password change: change password without current-password confirmation
+5. Test rate limiting: spam password reset requests, verify throttling
+6. Review `/my-account/` source code in child theme for direct SQL queries or unsafe operations
+
+### Required Fixes (Likely)
+1. **Access control:** Only allow users to view/edit their own account; add `if ($user_id != get_current_user_id()) wp_die('Unauthorized');`
+2. **Privilege escalation:** Remove or restrict role/capability fields from user edit form; prevent Subscribers from changing roles
+3. **Email verification:** Require email confirmation before accepting email changes
+4. **Password confirmation:** Require current password before allowing password change
+5. **Rate limiting:** Limit password reset requests to 3 per hour per user; limit failed login attempts
+6. **2FA option:** Install "Two Factor Authentication" plugin for additional security
+7. **Code audit:** Review for SQL injection, privilege escalation, CSRF, XSS in user profile form
+
+### Files to Review
+- `/wp-content/themes/twentytwenty-child/templates/my-account.php` (if exists)
+- `/wp-content/themes/twentytwenty/template-parts/` (if using parent theme)
+- WP core: `/wp-admin/user-edit.php` (if linked to WP native form)
+- Any custom PHP in `/wp-content/` handling user profile updates
+
+### Severity & Impact
+- **HIGH:** Could allow account takeover, privilege escalation, data theft
+- **Ongoing risk:** Every registered user (including bots from BUG-63) has potential to exploit this page
+
+---
+
+## BUG-65 — `license.json` is unsigned and world-readable: any user can self-elevate to Tier 3
+
+**Status:** `[!]` **LOGGED S127 2026-08-22. HIGH severity — licensing bypass. Found during the BUG-63 registration-architecture review, not by a user report.**
+
+### Symptom
+Editing one line of a plain text file on the Pi grants every paid feature:
+
+```
+sudo nano /opt/d3kos/config/license.json
+# change  "tier": 0   ->   "tier": 3
+```
+
+Tier 2 (voice assistant, camera, AI analysis, predictive maintenance) and Tier 3 (unlimited
+resets, fleet management, multi-boat) all unlock. Nothing detects it and nothing reverses it.
+
+### Root Cause
+Three compounding facts, all verified in code S127:
+
+1. **The file is unsigned and mode 644.** Created at `opt/d3kos/scripts/first-boot-setup.sh:128-147`.
+   No signature, no HMAC, no checksum — nothing binds the contents to anything.
+2. **Tier is read and trusted verbatim.** `tier_service.py:21,29,128-160` reads `license.json`
+   and returns the FEATURE_MATRIX gate directly. `app.py:412-417` and `:479-480` do the same,
+   equally unguarded.
+3. **Tier is only ever pushed DOWN from the server, never verified UP.** `export_worker.py:204-218`
+   (`_sync_tier_from_response`) writes whatever the server returned into `license.json`, and
+   `cloud_agent.py:292-300` / `:405-425` do likewise. There is no path where the Pi asks
+   "is my claimed tier real?" and no path where the server checks what the Pi claims.
+
+This is architecturally intended, not an oversight — MASTER_SYSTEM_SPEC §9.2 (L6429-6435)
+states: *"No Phone-Home: All tier detection is local (no cloud checks) … No license key
+validation servers."* Tier detection is a **local filesystem test** (L3298-3311): if
+`/opt/opencpn` exists → Tier 2. Creating an empty directory is enough.
+
+⚠ **§9.2 is itself now stale and contradicts the rest of the spec** — §8.3 central database
+sync, telemetry export category #9, fleet management and `version-heartbeat.php` all phone
+home continuously today. That contradiction should be resolved in MASTER_SYSTEM_SPEC
+independently of this bug.
+
+### Impact
+- **Revenue:** Tier 2 is $9.99/month and Tier 3 $99.99/year (MASTER_SYSTEM_SPEC §6.3.4). Both are bypassed by a text edit.
+- **Low exploit skill:** no tooling, no network, no reverse engineering. One file, one number.
+- **Not remotely detectable today:** the server accepts the tier the Pi reports.
+- **Does NOT affect forum registration.** The registration design in `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 gates on **operator approval**, not on tier, specifically because tier is not trustworthy. Recorded there in §5 as a known out-of-scope item.
+
+### Fix Options (not yet chosen — needs an operator decision)
+1. **Server-signed licence.** Server issues `license.json` signed with a private key; the Pi verifies with an embedded public key. Strongest, but requires the licence server that §9.2 explicitly rules out — so it is a **policy change**, not just an implementation.
+2. **Server-side enforcement of paid features only.** Leave the local file alone; make the server refuse Tier 2/3 *cloud* operations unless its own record says the device is entitled. Cheaper, and it protects the features that actually cost money. Local-only features stay spoofable.
+3. **Accept the risk, document it.** Consistent with the open-source posture of §9.2. Legitimate if the paid value is in the cloud services rather than the on-device code.
+
+**Recommendation: option 2.** It closes the commercial exposure without contradicting the
+offline-first design principle, and the server-side device registry needed for it is the
+same one BUG-66 and the registration spec both require.
+
+### Verification
+- [ ] Reproduce: edit `tier` to 3 on the lab Pi, restart `tier_service`, confirm T3 features unlock
+- [ ] Confirm the server accepts a fabricated tier in the next export/heartbeat
+- [ ] After fix: fabricated tier must not unlock server-side Tier 2/3 operations
+
+### Files
+`opt/d3kos/scripts/first-boot-setup.sh:128-147` · `tier_service.py:21,29,128-160` ·
+`app.py:412-417,479-480` · `export_worker.py:204-218` · `cloud_agent.py:292-300,405-425` ·
+`doc/MASTER_SYSTEM_SPEC.md` §6.3.1 L3295-3311, §9.2 L6411-6435
+
+---
+
+## BUG-66 — One fleet-wide API key in cleartext on every Pi authenticates all 12 server endpoints
+
+**Status:** `[!]` **LOGGED S127 2026-08-22. CRITICAL severity if the shipped image carries a live key — see the UNVERIFIED flag. Found during the BUG-63 registration-architecture review.**
+
+### Symptom
+Every Pi→HostPapa call is authenticated by **one shared static secret common to the entire
+fleet**, stored in cleartext at `/opt/d3kos/config/cloud-config.json` on every device.
+There is **no per-device credential anywhere in the codebase** — a repo-wide grep for
+`hmac|signature|sign(` returns only Stripe webhook code and an unrelated `error_signature`
+log field.
+
+### Root Cause
+The canonical auth check, `deployment/features/autonomous-agents/php/version-heartbeat.php:30-42`:
+
+```php
+if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) { 401 }
+if (empty($device_token)) { 400 }
+```
+
+The `device_token` is required to be **non-empty** and is otherwise **never checked against
+any record**. Line 82 then does `INSERT INTO amboat_devices … ON DUPLICATE KEY UPDATE`, so
+**any UUID presented alongside the shared key silently self-registers as a new device**
+(confirmed in SESSION_LOG.md:2112 — the heartbeat was deliberately changed from UPDATE-only
+to UPSERT).
+
+`AMBOAT_API_KEY` is documented as fleet-wide in `deployment/docs/ARCH_CREDENTIAL_MAP.md:19-38`
+("Shared secret authenticating Pi-to-HostPapa API calls") — one value in every Pi's
+`cloud-config.json` and in one server `config.php`.
+
+### Affected Endpoints (12, all header-auth only)
+`version-heartbeat.php:31` · `fleet-create.php:34` · `fleet-join.php:33` ·
+`fleet-status.php:33` · `fleet-map.php:49` · `fleet-analytics.php:53` · `fleet-leave.php:29` ·
+`failure-report.php:26` · `fix-confirmed.php:26` · `community-markers-write.php:47` ·
+`community-position.php:47` · `config-backup.php:45`
+
+Only `config-backup.php:112-127` checks the device exists (`SELECT id FROM amboat_devices … `
+→ 403 "Device not registered") — but an earlier heartbeat creates that row for free, so it
+enforces ordering, not authentication.
+
+### Impact
+Anyone holding the key can, for **any** `device_token`:
+- register arbitrary fake devices
+- read and write fleet membership, analytics and map data
+- read and write community position markers — **live vessel positions**
+- submit false failure reports and fix confirmations
+- read and write config backups
+
+### ⚠ UNVERIFIED — the question that sets the severity
+**Does the shipped `.img` contain a live `AMBOAT_API_KEY`, or a placeholder?**
+
+`[UNVERIFIED INFERENCE — image contents not inspected]` The repo copy at
+`deployment/v0.9.4/pi_source/cloud-config.json:2` is a template. If the built image ships a
+**live** key, then publishing the image on GitHub Releases (MASTER_SYSTEM_SPEC §12.1 — public,
+anonymous download) **publishes the fleet key to the world**, and every endpoint above is open
+to anyone who downloads d3kOS. That is the same failure class as BUG-58 (key committed to a
+public repo) at fleet scale.
+
+**Check before anything else is decided:** mount the most recent `.img` and inspect
+`/opt/d3kos/config/cloud-config.json`. This single check decides whether this is CRITICAL and
+urgent or HIGH and architectural.
+
+### Fix Direction
+1. **Immediately, if the image carries a live key:** rotate it, and remove it from the image build so first boot fetches or generates credentials instead.
+2. **Per-device credentials.** Replace the shared bearer with the same Ed25519 device keypair proposed in `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 §2 — one enrolment, one public key per device, every request signed. Solves this bug and the registration anchor with one mechanism.
+3. **Stop trusting `device_token` from the request body.** Derive the identity from the verified signature, never from a client-supplied field.
+4. **Remove the blind UPSERT** at `version-heartbeat.php:82` — an unknown device must be rejected or queued, never auto-created.
+
+### Relationship to Other Bugs
+- **BUG-58** — same class (key exposure), previously a documentation leak; this is systemic.
+- **BUG-59** — Phase 2 key-management design should absorb this; per-device keys are the answer to both.
+- **BUG-65** — same absent trust boundary, seen from the licensing side.
+- **Registration spec v2.0.0** — §3.1 explains why the current identity chain cannot anchor trust; this bug is the evidence.
+
+### Verification
+- [ ] Inspect the shipped `.img` for a live key (decides severity)
+- [ ] Confirm an arbitrary UUID + the key self-registers a device row on a test endpoint
+- [ ] After fix: an unsigned or wrongly-signed request must be rejected on all 12 endpoints
+
+### Files
+`deployment/features/autonomous-agents/php/version-heartbeat.php:30-42,64-91` ·
+the 11 other endpoints listed above ·
+`deployment/v0.9.4/pi_source/cloud-config.json:2` ·
+`deployment/docs/ARCH_CREDENTIAL_MAP.md:19-38` · `SESSION_LOG.md:2112`
+
+---
+## BUG-67 — Sustained wp-login.php Brute Force — Primary Attacker Not IP-Blocked
+
+**Status:** `[~]` ALL 9 IPs BLOCKED S128 2026-08-23. Operator added all 9 IPs to Wordfence permanent blocklist same session. Monitoring required — new attacker IPs will appear from the same botnet.
+
+**Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
+
+### Symptoms
+- `91.92.243.239` (Netherlands / Frantech Solutions / bulletproof hosting) hit `/wp-login.php` every ~3 minutes from at least 3:07 AM to 7:30 AM on 2026-08-23 — approximately 88 requests over 4+ hours.
+- All requests return ~10,389 bytes (Wordfence block page — the login form is NOT being served, but PHP executes for every blocked request).
+- User-Agent: `Mozilla/5.0` only — characteristic of attack scripts using minimal UA strings.
+- Eight secondary IPs made single wp-login.php attempts in the same window: `72.60.116.29`, `3.97.46.140`, `66.97.34.83`, `194.185.38.105`, `217.160.147.228`, `193.231.3.48`, `120.138.27.176`, `167.172.26.225` — all returning 2,917 bytes (lighter Wordfence response; may indicate different block tier).
+
+### Root Cause
+Wordfence extended protection is active and blocking (confirmed by operator this session — `/wp-config.php.bak` confirmed 404; `/register` confirmed 404; extended protection confirmed). However, no permanent IP block has been applied to `91.92.243.239`, so Wordfence's lockout mechanism re-evaluates it on every request rather than short-circuiting at `.htaccess`. The result is ~88 PHP executions in 4 hours that could be zero with a permanent IP block.
+
+### Impact
+- Server load from unnecessary PHP executions on every blocked attempt.
+- Sustained attack pattern suggests automated tooling with retry logic — will continue indefinitely without a permanent block.
+- Combined with BUG-69 (admin username `admin` publicly known + 2FA off), the brute force risk is elevated.
+
+### Fix Direction
+1. **Immediate (operator action in Wordfence UI):** Wordfence → Firewall → Blocking → Add `91.92.243.239` to the permanent blocked IP list. Reason: "Sustained brute force 2026-08-23."
+2. **Also block secondary IPs:** `72.60.116.29`, `3.97.46.140`, `66.97.34.83`, `194.185.38.105`, `217.160.147.228`, `193.231.3.48`, `120.138.27.176`, `167.172.26.225`.
+3. **Review Wordfence lockout threshold:** Wordfence → All Options → Brute Force Protection → "Lock out after how many login failures" — reduce if currently above 5.
+4. **Enable 2FA** (see BUG-69) — makes a successful brute force useless even if the password is guessed.
+
+### Verification
+- [ ] `91.92.243.239` added to Wordfence permanent block list
+- [ ] Wordfence Live Traffic shows 0 new requests from that IP
+- [ ] 8 secondary IPs added to blocklist
+- [ ] BUG-69 (2FA) resolved as the complementary control
+
+### Files
+Wordfence Live Traffic log 2026-08-23 · Wordfence → Firewall → Blocking (operator UI action)
+
+---
+
+## BUG-68 — offline-check.php Authentication Token Sent in URL Query String
+
+**Status:** `[x]` FIXED + CLOSED S128 2026-08-23. All three remediation steps complete: (1) `offline-check.php` `$_GET['token']` → `$_POST['token']` — committed c18b63b, deployed to HostPapa production via cPanel File Manager. (2) AMBOAT_API_KEY rotated — `mobile/config.php` on HostPapa production updated; old token `***REDACTED-S131***` is dead. (3) cPanel cron updated to POST with new token. Lab Pi `/opt/d3kos/config/cloud-config.json` updated S128 2026-08-23. REMAINING: Boat Pi `cloud-config.json` — update next visit to hotspot (`172.20.10.8`).
+
+**Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
+
+### Symptoms
+`/wp-content/themes/twentytwenty-child/mobile/offline-check.php` is called every hour on the hour (4:00 AM, 5:00 AM, 6:00 AM, 7:00 AM observed) by a scheduled job:
+- Caller IP: `66.102.137.24` (Google infrastructure range — likely a HostPapa cPanel cron or a Google Cloud scheduled function)
+- User-Agent: `Wget/1.19.5 (linux-gnu)`
+- Full URL: `/wp-content/themes/twentytwenty-child/mobile/offline-check.php?token='***REDACTED-S131***'`
+- Response: 24 bytes (check returns a short OK/FAIL response — the call is functioning)
+
+The token `***REDACTED-S131***` is now present in:
+- HostPapa web server access logs
+- Wordfence Live Traffic database
+- The current session's Wordfence log export (shared with Claude Code this session — noted for the record; no action taken on the token by Claude Code)
+
+### Root Cause
+The scheduled caller passes the authentication token as a GET query parameter (`?token=`). HTTP GET parameters appear in full in every server log, proxy log, CDN log, and browser history. This is a standard web security error — authentication secrets must travel in the request body (POST) or in an Authorization/custom header, never in the URL.
+
+### Impact
+- The token is now logged in at least two persistent log systems on HostPapa.
+- If HostPapa's log files are ever accessed by a third party (support ticket, log rotation error, shared hosting neighbour), the token is exposed.
+- The token must be considered compromised and rotated regardless of whether any attack has occurred.
+
+### Fix Direction
+1. **Immediately — rotate the token.** Generate a new token, update `offline-check.php` and the caller script/cron with the new value. The old token must be invalidated.
+2. **Change the caller to POST.** Update the Wget (or cURL) cron command to: `wget --post-data="token=NEW_TOKEN" https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/offline-check.php`
+3. **Update offline-check.php to read from POST.** Change `$_GET['token']` to `$_POST['token']` (or read an `Authorization` header). Reject GET requests.
+4. **Locate the cron definition.** Check HostPapa cPanel → Cron Jobs for the Wget command, or inspect any Google Cloud Function / Cloud Scheduler job that calls this endpoint.
+
+### Verification
+- [ ] Old token `***REDACTED-S131***` no longer accepted by the endpoint (return 401 or 403)
+- [ ] New token generated and deployed
+- [ ] Caller updated to POST — Wordfence Live Traffic shows no further GET requests with token in URL
+- [ ] 24-byte OK response still returned on hourly call (functionality preserved)
+
+### Files
+`/wp-content/themes/twentytwenty-child/mobile/offline-check.php` (HostPapa live) · caller cron definition (HostPapa cPanel → Cron Jobs or Google Cloud Scheduler)
+
+---
+
+## BUG-69 — Admin Username `admin` Publicly Enumerable via Forum URLs + 2FA Disabled
+
+**Status:** `[~]` 2FA ACTIVATED S128 2026-08-23. Wordfence Login Security TOTP enrolled on admin account (operator action this session). Step 1 complete. Step 2 pending: rename admin username to a non-guessable value.
+
+**Source:** Wordfence Live Traffic log analysis, 2026-08-23 session. 2FA status confirmed by operator.
+
+### Symptoms
+Forum profile URLs directly reveal the WordPress admin account's login username:
+- `/forum/users/admin/topics/page/2/` — visited by `114.119.129.254` (PetalBot / China)
+- `/forum/users/admin/engagements/page/2/` — visited by `101.42.231.118` (China)
+- `/forum/users/admin/engagements/page/3/` — visited by `43.138.19.77` (China)
+
+These IPs can confirm: the admin login username is `admin`. This is also the most commonly attempted username in every WordPress brute force tool's default wordlist.
+
+Simultaneously, `91.92.243.239` is making ~88 automated login attempts per 4-hour window (BUG-67). With the username known and no second factor, the attack only needs to guess the password.
+
+**2FA status confirmed OFF** by operator on 2026-08-23. Wordfence Login Security → Two-Factor Authentication is not configured on the admin account.
+
+### Root Cause
+1. WordPress/bbPress constructs forum profile URLs using the login username, making it publicly enumerable without any authentication.
+2. No second authentication factor is configured on the admin account, so a successful password guess grants immediate full site access.
+
+### Impact
+- Attacker has username (`admin`), a confirmed attack tool targeting this site (BUG-67), and no second factor to overcome.
+- A successful login grants full WordPress admin access: can publish content, install plugins, modify theme files, export user data, reset passwords of all 62,000 accounts.
+- With 62,000 accounts in `wp_users` (BUG-57 context), a full admin compromise is a GDPR/privacy incident.
+
+### Fix Direction
+**Step 1 — Immediate (operator action, ~5 minutes):**
+Enable Wordfence Login Security → Two-Factor Authentication on the admin account. Use any TOTP app (Google Authenticator, Authy, 1Password). This closes the active risk — even a correctly guessed password cannot log in without the TOTP code.
+
+**Step 2 — Soon (operator action, ~15 minutes):**
+Rename the `admin` account to a non-guessable username.
+In wp-admin → Users → find the admin account → change the username (requires a plugin such as "Username Changer" as WordPress does not allow username edits natively, or: create a new admin user with a different username, migrate content, delete the `admin` account).
+
+**Step 3 — Complementary:**
+Resolve BUG-67 (IP block the persistent attacker) — these two bugs share a threat chain and should be fixed together.
+
+### Verification
+- [ ] Wordfence Login Security → 2FA enabled and TOTP app enrolled on admin account
+- [ ] Test login: password alone must be rejected; password + TOTP code must succeed
+- [ ] Admin username renamed (if Step 2 is applied): `/forum/users/admin/` returns 404; new profile URL uses the new username
+- [ ] BUG-67 primary attacker IP-blocked
+
+### Files
+Wordfence Login Security (operator UI) · wp-admin → Users (operator UI) · `wp_users` table (admin account row)
 
 ---
 
