@@ -17,7 +17,7 @@ function load(file) {
 let w = load(FILE);
 assert.ok(w._d3kEngData, 'window._d3kEngData must exist on load');
 // Create expected object in jsdom context to match prototype
-w.eval('window._expected = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null };');
+w.eval('window._expected = { coolant_c:null, oil_psi:null, rpm:null, bat_v:null, fuel_pct:null, depth_m:null };');
 assert.deepStrictEqual(w._d3kEngData, w._expected,
   'cache must initialise all-null');
 
