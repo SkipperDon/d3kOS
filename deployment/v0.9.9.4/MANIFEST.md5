@@ -88,11 +88,10 @@ b255b5ac678914e35de23bf19f056bc8  opt/d3kos/services/ai/signalk_client.py
 c0a5b14ace41f79250b4a95ad6d39775  opt/d3kos/services/ai/upload_api.py
 2e94fe7936307b6b441f04329b71f6be  opt/d3kos/services/alert_watcher.py
 63649152f0fa0368d6e9d3d574e0a93a  opt/d3kos/services/boatlog/boatlog-export-api.py
-c55abac83187b335d37ae7e59cc4204e  opt/d3kos/services/cloud-agent/cloud_agent.py
+54549963f5e50bc4fcdb2d030f6a2a9e  opt/d3kos/services/cloud-agent/cloud_agent.py
 327aecb2e987cbd08f81bff2f0ba3ca1  opt/d3kos/services/cloud-agent/fix_my_pi.py
 94b26b2ff430791f8c8e022be3607562  opt/d3kos/services/cloud-agent/ota_upgrade.py
 421102aa429190064870de6bd3c4db80  opt/d3kos/services/cloud/cloud-link-api.py
-54549963f5e50bc4fcdb2d030f6a2a9e  opt/d3kos/services/cloud_agent.py
 bf1718287a34d6cec41e9f58fe09a10d  opt/d3kos/services/community/anonymiser.py
 0a19d9d173f2a7cff679b3feb745cf9e  opt/d3kos/services/community/community-api.py
 50bab2b0e2ca2f40a8041ed875b60aa0  opt/d3kos/services/config/preferences-api.py
@@ -154,7 +153,6 @@ de8a86c6e7fc9c85191dacec8ded392b  opt/d3kos/services/marine-vision/migrate_camer
 d966adc5e7c6c6b418cd34d52cd8fc03  opt/d3kos/services/marine-vision/notification_manager.py
 a4367ce951a33edcd918f2da838d419d  opt/d3kos/services/network/network-api.py
 4cbbfc30314ae4b61691b45e293dac94  opt/d3kos/services/os_lockdown.py
-f2e4924fe3eae62a7304bce6ba0b750c  opt/d3kos/services/ota_upgrade.py
 bb351a86be91697bb169f1455069257c  opt/d3kos/services/predictive/generate_test_data.py
 2c112ffdf5a7791891f8f198f88a94a2  opt/d3kos/services/predictive/predictive_maintenance.py
 d9b7afd95501d74f5539b864d8a183b1  opt/d3kos/services/predictive/test_predictive.py

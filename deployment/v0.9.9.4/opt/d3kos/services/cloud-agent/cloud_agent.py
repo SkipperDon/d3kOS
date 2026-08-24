@@ -22,9 +22,10 @@ Log:     /opt/d3kos/logs/cloud-agent.log      (rotating, max 5MB × 3 files)
 
 Service: d3kos-cloud-agent
 Author:  d3kOS Team
-Version: 0.9.4-S2
+Version: 0.9.9.3-FI4
 """
 
+import hashlib
 import json
 import os
 import time
@@ -46,6 +47,17 @@ DEVICE_TOKEN_FILE  = Path('/opt/d3kos/config/device-token.json')
 VERSION_FILE       = Path('/opt/d3kos/config/version.txt')
 LOG_DIR            = Path('/opt/d3kos/logs')
 LOG_FILE           = str(LOG_DIR / 'cloud-agent.log')
+
+# ── Config backup (FI4) ───────────────────────────────────────────────────────
+CONFIG_DIR           = Path('/opt/d3kos/config')
+CONFIG_SNAPSHOT_HASH = Path('/opt/d3kos/config/config-snapshot-hash.txt')
+
+CONFIG_BACKUP_FILES = [
+    'cloud-config.json', 'device-token.json', 'license.json',
+    'user-preferences.json', 'ai-config.json', 'slots.json',
+    'hardware.json', 'fleet.json', 'community-prefs.json',
+    'onboarding.json', 'timezone.txt', 'tts-mute.json',
+]
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -135,6 +147,72 @@ def make_headers(api_key, device_token):
         'Authorization': f'Bearer {api_key}',
         'X-Device-Token': device_token,
     }
+
+
+# ── Config backup (FI4) ───────────────────────────────────────────────────────
+
+def _read_config_files():
+    """Read CONFIG_BACKUP_FILES into a dict {filename: text}. Missing files skipped."""
+    data = {}
+    for name in CONFIG_BACKUP_FILES:
+        path = CONFIG_DIR / name
+        try:
+            data[name] = path.read_text()
+        except FileNotFoundError:
+            pass  # optional — skip silently
+        except Exception as e:
+            logger.debug(f'config_snapshot: could not read {name}: {e}')
+    return data
+
+
+def push_config_snapshot(base_url, api_key, device_token):
+    """Push config snapshot to HostPapa config-backup.php.
+    Skips push if config is unchanged since last successful push (hash check).
+    Best-effort — logs on failure, never raises, never blocks command processing."""
+    try:
+        config_data = _read_config_files()
+        if not config_data:
+            logger.debug('config_snapshot: no config files readable, skipping')
+            return
+
+        config_json = json.dumps(config_data, separators=(',', ':'), sort_keys=True)
+        checksum    = hashlib.sha256(config_json.encode()).hexdigest()
+
+        # Skip if config unchanged since last push
+        try:
+            last_hash = CONFIG_SNAPSHOT_HASH.read_text().strip()
+        except FileNotFoundError:
+            last_hash = ''
+
+        if checksum == last_hash:
+            logger.debug('config_snapshot: unchanged, skipping push')
+            return
+
+        url = (f"{base_url}/wp-content/themes/twentytwenty-child"
+               "/mobile/config-backup.php")
+        body = {
+            'config_json': config_json,
+            'version':     get_version(),
+            'checksum':    checksum,
+        }
+
+        r = requests.post(url, json=body,
+                          headers=make_headers(api_key, device_token),
+                          timeout=20)
+
+        if r.status_code == 200 and r.json().get('success'):
+            CONFIG_SNAPSHOT_HASH.write_text(checksum)
+            logger.info(f'config_snapshot: pushed (checksum={checksum[:8]}...)')
+        else:
+            logger.warning(
+                f'config_snapshot: push failed HTTP {r.status_code}: '
+                f'{r.text[:120]}'
+            )
+
+    except requests.exceptions.ConnectionError:
+        logger.debug('config_snapshot: offline, skipping push')
+    except Exception as e:
+        logger.warning(f'config_snapshot: push error (non-fatal): {e}')
 
 
 # ── Command queue ─────────────────────────────────────────────────────────────
@@ -239,6 +317,10 @@ def handle_tier_change(cmd_id, payload, base_url, api_key, device_token):
 def handle_fix_my_pi(cmd_id, base_url, api_key, device_token):
     """Run diagnostics and service repairs. Report results back."""
     try:
+        # Step 0: push config snapshot before diagnostics — ensures latest state
+        # is backed up before any repair actions modify config (FI4)
+        push_config_snapshot(base_url, api_key, device_token)
+
         from fix_my_pi import run_diagnostics
         result = run_diagnostics(base_url)
         status = 'completed' if result.get('ok') else 'failed'
@@ -343,6 +425,9 @@ def handle_pair_confirmed(cmd_id, payload, base_url, api_key, device_token):
             logger.info('pair_confirmed: triggered post-pair export')
         except Exception as e_exp:
             logger.warning(f'pair_confirmed: export trigger failed (non-fatal): {e_exp}')
+
+        # Push config snapshot — ensures HostPapa has current state after pairing (FI4)
+        push_config_snapshot(base_url, api_key, device_token)
 
         result = {'old_tier': old_tier, 'new_tier': tier_str}
         ack_command(base_url, api_key, device_token, cmd_id, 'completed', result)
@@ -590,7 +675,7 @@ def dispatch(cmd, base_url, api_key, device_token):
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 def run():
-    logger.info("d3kOS Cloud Agent starting (v0.9.4 S2)")
+    logger.info("d3kOS Cloud Agent starting (v0.9.9.3-FI4)")
 
     # Config load with retry on missing/invalid config
     while True:
@@ -620,6 +705,10 @@ def run():
             commands = poll_commands(base_url, api_key, device_token)
             for cmd in commands:
                 dispatch(cmd, base_url, api_key, device_token)
+
+            # Push config snapshot if changed since last push (FI4 — hash-gated)
+            push_config_snapshot(base_url, api_key, device_token)
+
         except Exception as e:
             logger.error(f"Main loop error: {e}")
 
