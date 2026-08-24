@@ -4226,7 +4226,24 @@ Then verify: `https://atmyboat.com/staging/` loads with full CSS/JS/images, and 
 
 ## BUG-62 — wp-admin Directory Exposed Without Authentication
 
-**Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — active security vulnerability.**
+**Status:** `[x]` **CLOSED — NOT A BUG — S131 2026-08-24. Confirmed a MISDIAGNOSIS by live probe, using the exact test this entry itself prescribed.** | Prior: `[!]` RE-VERIFICATION REQUIRED S127 | Prior: `[!]` LOGGED S126 as CRITICAL
+
+### CLOSURE EVIDENCE — S131 2026-08-24 (live HTTP probe, production)
+
+The S127 note said: *"Test the real paths (`/wp-admin/`, `/staging/wp-admin/`, `/wp-admin/includes/`) → if they redirect to `wp-login.php` / return 403, close as NOT A BUG."* That test was run:
+
+```
+GET /wp-admin/            -> 302  Location: /wp-login.php?redirect_to=%2Fwp-admin%2F&reauth=1
+GET /wp-admin/includes/   -> 403
+GET /staging/staging/wp-admin/ -> 404   (BUG-61's known-broken double-path URL)
+GET /staging/wp-admin/    -> 000   (no response; staging separately unreachable)
+```
+
+**The authentication guard works.** `/wp-admin/` forces re-authentication; the includes directory is hard-403. The original CRITICAL was logged from `/staging/staging/wp-admin/` — the double-`/staging/` path that BUG-61 records as broken — and a 404 from a wrong URL is not an exposed directory. Enumeration, brute-force and version-detection were all *inferred* from that single 404; none was ever observed.
+
+**Lesson recorded:** a severity rating derived from one unverified observation cost three sessions of CRITICAL-priority attention. The S127 instinct to flag it for re-verification rather than act on it was correct.
+
+⚠ **Not closed by this:** BUG-61 (the double-path defect that produced the false signal) remains REOPENED, and `/staging/wp-admin/` returning no response at all is unexplained — noted under BUG-61, not here.
 **⚠ RE-VERIFICATION REQUIRED — S127 2026-08-22. This may be a MISDIAGNOSIS. Do not act on it until confirmed by a live read.**
 
 ### ⚠ S127 Review Note — the evidence does not support the conclusion
@@ -4533,6 +4550,16 @@ same one BUG-66 and the registration spec both require.
 ---
 
 ## BUG-66 — One fleet-wide API key in cleartext on every Pi authenticates all 12 server endpoints
+
+**Status:** `[!]` **SEVERITY HELD AT CRITICAL — OPERATOR DECISION S131 2026-08-24. Release gate for v0.9.9.4.** The rating is a gate on the DESIGN, not on present exploitability.
+
+### SEVERITY REVIEW — S131 2026-08-24
+
+BUG-72 (logged S131) establishes that `version-heartbeat.php` — the endpoint this entry's analysis rests on — returns **404 in production and is not deployed**. The blind-UPSERT self-registration vector described below is therefore **not currently live and not presently exploitable**.
+
+That fact was put to the operator with two options: hold CRITICAL as a gate on the design, or drop to HIGH on live exposure. **Operator decision: hold CRITICAL.** Rationale: the flaw ships the moment the endpoint deploys, and v0.9.9.4 is gated on security. The design must be fixed **before** BUG-72's deployment, not after.
+
+**Sequencing consequence:** BUG-66's fix is a prerequisite of BUG-72, not a parallel task.
 
 **Status:** `[!]` **LOGGED S127 2026-08-22. CRITICAL severity if the shipped image carries a live key — see the UNVERIFIED flag. Found during the BUG-63 registration-architecture review.**
 
