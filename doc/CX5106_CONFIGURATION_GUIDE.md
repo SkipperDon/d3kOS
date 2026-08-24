@@ -20,7 +20,7 @@ The CX5106 has **8 DIP switches** that control how it operates and what PGNs it 
 
 **Visual Reference:**
 
-![CX5106 DIP Switches](../../assets/images/cx5106_10125.png)
+![CX5106 DIP Switches](../assets/images/cx5106_10125.png)
 
 *Photo showing the actual CX5106 DIP switch locations on the device*
 
@@ -329,7 +329,7 @@ Display clear diagram showing:
 
 **Hardware Reference Photo:**
 
-![CX5106 DIP Switches](../../assets/images/cx5106_10125.png)
+![CX5106 DIP Switches](../assets/images/cx5106_10125.png)
 
 *Use this photo to locate the DIP switches on your CX5106 unit*
 

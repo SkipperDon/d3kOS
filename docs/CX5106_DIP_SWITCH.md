@@ -61,23 +61,47 @@ Isolate the unit from power before opening it. The gateway is normally fed throu
 switch, so turning the ignition off will usually do it — but if you can also pull the fuse or
 disconnect the supply, do that.
 
-Open the enclosure. Inside, on the circuit board, you will find **two separate switch blocks**:
+Open the enclosure. Inside, on the circuit board, you will find **two separate switch blocks**.
+
+### Visual reference — a real unit, opened
+
+![CX5106 opened, showing the 7-position DIP block and the separate 2-position block](../assets/images/cx5106_10125.png)
+
+What to look for in the photograph:
+
+- **The upper blue block** is marked `ON` at the left and `DIP` at the right, with its positions
+  numbered **1 2 3 4 5 6 7** along the bottom. Seven positions.
+- **The lower blue block** is marked `ON` and its positions are numbered **1 2**. Two positions.
+- A green LED sits between them.
+
+Note also what this photograph shows about reading switch states: on the upper block, **position 1
+is set differently from positions 2 to 7** — its white actuator sits toward the `ON` marking while
+the others sit away from it. That is what one switch ON and six switches OFF looks like on real
+hardware, as opposed to in a diagram.
+
+*(The unit photographed is a sample. Do not copy its settings — work out your own from §6 onward.)*
+
+### The same thing as a diagram
 
 ```
-    ┌──────────────────────────────────────┐
-    │                                      │
-    │      ┌──────────────────┐            │   Block A
-    │      │  ON              │            │   SEVEN positions
-    │      │  ▮  ▮  ▮  ▮ ▮ ▮ ▮ │            │   numbered 1 to 7
-    │      │  1  2  3  4 5 6 7 │            │
-    │      └──────────────────┘            │
-    │                                      │
-    │      ┌──────┐                        │   Block B
-    │      │ ▮  ▮ │                        │   TWO positions
-    │      │ 1  2 │                        │   numbered 1 and 2
-    │      └──────┘                        │
-    │                                      │
-    └──────────────────────────────────────┘
+   BLOCK A -- SEVEN positions, numbered 1 to 7
+   Sets ONE thing: the RPM speed ratio
+
+       +-----------------------------+
+       | ON                          |
+       | [#] [ ] [ ] [ ] [ ] [ ] [ ] |
+       |  1   2   3   4   5   6   7  |
+       +-----------------------------+
+
+
+   BLOCK B -- TWO positions, numbered 1 and 2
+   Sets TWO independent things
+
+       +-------------+
+       | ON          |
+       | [#] [ ]     |
+       |  1   2      |
+       +-------------+
 ```
 
 **Stop and count them.** This is your first verification step, and it matters:
@@ -109,13 +133,19 @@ Side B of the leaflet shows dozens of little switch drawings. Reading them corre
 skill, so be sure of this before going further.
 
 ```
-      ┌─────────────────────┐
-      │ ON                  │   ← the word "ON" is printed along one edge
-      │  ▓   ░   ░   ░  ░ ░ ░│   ← the actuators: DARK = pushed toward "ON"
-      │  1   2   3   4  5 6 7│      LIGHT/EMPTY = pushed away from it
-      └─────────────────────┘
-         ↑
-       switch 1 is this end
+       +-----------------------------+
+       | ON                          |   <-- the word "ON" is printed
+       | [#] [ ] [ ] [ ] [ ] [ ] [ ] |       along this edge
+       |  1   2   3   4   5   6   7  |
+       +-----------------------------+
+         ^
+         |
+         +-- switch 1 is this end; the numbers run 1 to 7
+
+   In this guide:   [#] = dark / filled  = switch is ON  (pushed toward "ON")
+                    [ ] = light / empty  = switch is OFF (pushed away from it)
+
+   So the block drawn above reads: switch 1 ON, switches 2 to 7 OFF.
 ```
 
 Three rules:

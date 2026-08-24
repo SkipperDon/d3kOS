@@ -66,7 +66,7 @@ The DIP switches are located on the side of the CX5106 unit. They are clearly la
 
 **Visual Reference:**
 
-![CX5106 DIP Switches](../../assets/images/cx5106_10125.png)
+![CX5106 DIP Switches](../assets/images/cx5106_10125.png)
 
 *Photo showing the actual CX5106 DIP switch locations*
 

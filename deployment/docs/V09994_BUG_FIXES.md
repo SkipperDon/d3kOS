@@ -5302,3 +5302,173 @@ decision, not a doc edit** — recorded here so it is not lost.
 BUG-78 (image ships credentials), BUG-58/59 (credential exposure class)
 
 ---
+
+## BUG-81 — Setup wizard and the public CX5106 guide both instruct an 8-switch DIP layout that does not exist on the hardware
+
+**Logged:** 2026-08-24 (S132) · **Platform:** Pi dashboard (setup wizard) + public GitHub docs
+· **Severity:** **HIGH** — every d3kOS user with a CX5106 is told to configure their gateway
+wrongly, and the incorrect guide is already public on `main` and linked twice from the README
+· **Status:** `[ ]` OPEN — manual-derived truth documented; **no code or public file changed yet**
+
+### Symptom
+
+The setup wizard's Step 5 ("Gateway Configuration") computes and displays CX5106 DIP switch
+settings for the user to copy onto their hardware. The settings it produces do not correspond to
+the device's actual switches. A user who follows the wizard sets their gateway to a configuration
+that cannot be correct, because the switches the wizard describes do not exist.
+
+The same incorrect model is published in `docs/CX5106_CONFIGURATION_GUIDE.md` on the public `main`
+branch, which the README links from two places.
+
+### Root cause
+
+**A fabricated hardware model was written once from inference and carried forward into three
+artifacts and a live wizard without ever being checked against the manufacturer's leaflet — a scan
+of which has been sitting in this repo the whole time at
+`assets/manuals/CX5106_10125_manual.pdf`.**
+
+The actual hardware, read from leaflet sheets `D2026-A` / `D2026-B` and the device label:
+
+- **Block A — 7 positions.** Not seven settings. One binary field holding the **RPM speed ratio**.
+  Switch 1 is the LSB; `ratio = 1 + (sw1x1 + sw2x2 + sw3x4 + sw4x8 + sw5x16 + sw6x32 + sw7x64)`.
+  Verified against all 16 rows the leaflet prints in full (ratios 1–16) and the 125–128 boundary
+  rows. No exceptions.
+- **Block B — 2 positions, physically separate.** Switch 1 = level-sender standard
+  (OFF `0–190 Ω` European / ON `240–33 Ω` American, global to all tank inputs). Switch 2 = engine
+  position (OFF PORT / ON STBD).
+
+What the wizard asserts instead (`setup.html` lines 1237–1248):
+
+```
+/* Row 1 - 8 switches (Engine Configuration)
+ *   SW1-2 : Engine instance  00=single/port  10=starboard
+ *   SW3-4 : RPM sensor type  00=alternator W-terminal
+ *   SW5-6 : Cylinder count   cylinderMap below
+ *   SW7   : Stroke type      0=4-stroke  1=2-stroke
+ *   SW8   : Gear ratio       0=1:1 direct drive
+ *
+ * Row 2 - 2 switches (Regional)
+ *   SW1   : Tank sender  1=North America (240-33Ohm)  0=Europe (0-190Ohm)
+ *   SW2   : Position     0=primary/port  1=starboard
+ */
+```
+
+`buildDIPRow1()` (line 1253) returns an **8-element array for a 7-position switch**. The RPM
+sensor type, stroke type, and gear ratio fields have no counterpart in the hardware. Cylinder
+count is not a switch field at all — cylinders map to a *ratio* via the leaflet's §6.1 lookup
+table, which is then encoded in binary across all seven positions.
+
+**Of the 10 mappings the wizard defines, 2 are correct** — both on Block B (sender standard and
+PORT/STBD). Every claim about Block A is wrong.
+
+### Demonstration
+
+Reference boat: MerCruiser 454 MAG MPI — 8-cylinder, 4-cycle, inboard gasoline.
+
+| | Block A switches |
+|---|---|
+| Leaflet §6.1 → ratio 4 → encode | `ON ON OFF OFF OFF OFF OFF` |
+| Wizard output (`cylinderMap['8'] = [0,1]` on SW5–6) | `OFF OFF OFF OFF OFF ON OFF OFF` |
+
+They agree on **no position**, and the wizard emits one more switch than the device has. Ratio 4 is
+one of the rows the leaflet prints in full, so this is confirmed against the printed table and not
+only against the derived formula.
+
+### Four parts
+
+| Part | Defect | Location |
+|---|---|---|
+| **P1** | Wizard Step 5 computes and displays the 8-switch model | `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/setup.html` lines 1237–1305, 1348–1361 |
+| **P2** | **PUBLIC** — same model published and README-linked twice | `docs/CX5106_CONFIGURATION_GUIDE.md` on `origin/main` (525 lines); README lines 108 and 127 |
+| **P3** | Same model stated in prose | `doc/CX5106_USER_MANUAL.md` line 53 — *"The CX5106 has 8 switches arranged in a row."* |
+| **P4** | Device attributed to Actisense; the label plate carries **no brand** | `setup.html:796` (`<option>`), `setup.html:1328` (heading) |
+
+On **P4**: the plate reads `CX5106  08221` with a CE mark and a recycling mark only. The same
+wizard separately and correctly offers the Actisense **EMU-1** as a different gateway, so the two
+were conflated. `Uncertainty flag: the actual manufacturer is unconfirmed. A prior WebSearch under
+BUG-31 failed to confirm the "Pangoo" branding on a neighbouring N2K device as the CX5106's maker.
+The correct statement is "manufacturer unconfirmed", not "Actisense".`
+
+### Fix path
+
+1. **Publish** `docs/CX5106_DIP_SWITCH.md` (written S132 — teaches a first-time reader to derive
+   and verify the setting from their own leaflet; includes the complete 1–127 ratio table the
+   leaflet abbreviates). This replaces the one-line `hold` placeholder currently at that path on
+   `main`.
+2. **Add README links** to the new document.
+3. **Rewrite wizard Step 5 (P1)** to the ratio model: collect engine type → look up ratio → encode
+   to 7 positions → render Block A and Block B separately. Note the wizard already collects
+   cylinders, cycle/fuel type and tank-sender standard, so no new input fields are needed.
+4. **Correct or retire P2 and P3.** P2 is the priority — it is public and README-linked.
+5. **Remove the Actisense attribution (P4).**
+
+⚠ **P2 and steps 1–2 are PUBLIC-facing changes to `github.com/SkipperDon/d3kOS`. They require
+explicit operator approval in-session before any GitHub change, per the standing deployment rule.**
+
+### Verification evidence
+
+- **PHOTOGRAPHIC CONFIRMATION on this project's own hardware.**
+  `assets/images/cx5106_10125.png` is a photograph of an opened CX5106 and it shows the two-block
+  layout directly: an upper blue block marked `ON` / `DIP` with positions numbered **1 2 3 4 5 6 7**,
+  and a separate lower blue block marked `ON` with positions numbered **1 2**. Seven and two. Not
+  eight in one row.
+  **The wrong guide embeds this photograph.** `docs/CX5106_CONFIGURATION_GUIDE.md` references it at
+  lines 23 and 332 under the heading "Physical DIP Switch Location — Visual Reference", directly
+  beneath text asserting an 8-switch single row. The document has been carrying its own refutation
+  since it was written, and the image links were broken (`../../assets/...`, resolving outside the
+  repository), so the photograph never rendered and the contradiction was never visible to a
+  reader. **Image paths corrected to `../assets/...` S132** in
+  `doc/CX5106_CONFIGURATION_GUIDE.md` (×2) and `doc/CX5106_USER_MANUAL.md` (×1).
+- Leaflet sheets `D2026-A` (spec, wiring, terminal label) and `D2026-B` (§6 RPM speed ratio),
+  supplied by the operator as AVIF images 2026-08-24 and independently cross-checked against
+  `assets/manuals/CX5106_10125_manual.pdf` (same two sheets, higher resolution).
+- Encoding verified against every fully-printed row of the leaflet's table. Predict-and-check
+  performed at ratio 13 (`switches 3,4`) and ratio 125 (`switches 3,4,5,6,7`) — both match.
+- Terminal list independently validated: 4 sensor inputs on the left block + 9 on the right = 13,
+  matching the leaflet's §2.2 statement "Up to 13 sensors can be collected".
+
+### Not yet established
+
+- `Uncertainty flag: whether the wrong ratio contributes to BUG-14` (CX5106 present at source 106,
+  heartbeat PGN 126993 only, zero data PGNs). A wrong ratio would produce a **wrong RPM value**,
+  not the **absence** of data PGNs, and would not explain the missing oil/temperature/fuel PGNs
+  which do not depend on the ratio at all. **Do not record this as BUG-14's root cause.** Setting
+  the ratio correctly is cheap to do while the enclosure is open; re-observe the bus for ≥130 s
+  afterwards.
+- `Uncertainty flag: the direction in which the ratio scales displayed RPM is not documented in the
+  leaflet` and was not determined. The published guide therefore tells the reader to test both
+  directions rather than asserting one.
+- `Uncertainty flag: the S101 record of the fitted unit's switches ("SW1=ON, SW2=OFF, SW3=ON,
+  SW6=ON") cannot be interpreted now that two blocks are known to exist` — it predates that
+  discovery and does not say which block it refers to. If those four are Block A they encode ratio
+  38 against a required 4, but that reading is an assumption. Verify against the physical unit.
+  **The photograph disagrees with that record.** In `assets/images/cx5106_10125.png` only Block A
+  position 1 is set toward `ON`; positions 2–7 all appear set away from it, which would be
+  **ratio 2**, not the ratio 38 the S101 note implies. `Uncertainty flag: this is a reading of a
+  photograph of unknown date at limited resolution, and the unit photographed may not be the fitted
+  unit. It is not a substitute for inspecting the hardware.` Block B's absolute positions cannot be
+  determined from the photograph at all — both of its switches are clearly in the *same* state as
+  each other, but which state is not legible. **Neither Block A ratio 2 nor ratio 38 matches the
+  ratio 4 required for an 8-cylinder 4-cycle engine, so on either reading the fitted unit needs
+  changing.**
+
+### Process note
+
+This is the same failure mode as **BUG-08** (five fixes built on an untested docstring claim) and
+**BUG-78** (a bug logged from `MASTER_SYSTEM_SPEC` §12.1 describing a script that does not exist):
+**a plausible written premise was trusted in place of the primary source.** In this instance the
+primary source was already in the repository.
+
+### Related
+
+BUG-14 (CX5106 no data PGNs), BUG-31 (false 0% fuel — closed; Block B switch 1 is a separate
+mechanism worth checking while the case is open), BUG-08 and BUG-78 (same premise-over-source
+failure mode)
+
+### Documents
+
+- `deployment/docs/CX5106_CONFIGURATION_FROM_MANUAL.md` — internal record: manual-derived truth
+  plus the full artifact audit (S132)
+- `docs/CX5106_DIP_SWITCH.md` — public guide, written S132, **not yet published**
+
+---

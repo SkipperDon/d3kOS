@@ -125,17 +125,26 @@ in this document, and it is the fact that every previous d3kOS document and the 
 wrong (§8).
 
 ```
-         ┌──────────────────────────────┐
-         │                              │
-         │   ┌────────────────┐         │   ← Block A: 7-position DIP
-         │   │ ▮ ▮ ▮ ▮ ▮ ▮ ▮ │         │     ONE binary field = RPM speed ratio
-         │   │ 1 2 3 4 5 6 7 │         │
-         │   └────────────────┘         │
-         │   ┌────┐                     │   ← Block B: 2-position switch
-         │   │▮ ▮ │                     │     independent settings
-         │   │1  2│                     │
-         │   └────┘                     │
-         └──────────────────────────────┘
+   BLOCK A -- 7-position DIP
+   ONE binary field = the RPM speed ratio
+
+       +-----------------------------+
+       | ON                          |
+       | [#] [ ] [ ] [ ] [ ] [ ] [ ] |
+       |  1   2   3   4   5   6   7  |
+       +-----------------------------+
+
+
+   BLOCK B -- 2-position switch
+   Two independent settings
+
+       +-------------+
+       | ON          |
+       | [#] [ ]     |
+       |  1   2      |
+       +-------------+
+
+   [#] = ON (pushed toward the "ON" edge)      [ ] = OFF
 ```
 
 Both blocks are on the PCB and are reached by opening the enclosure. In the leaflet diagram the
