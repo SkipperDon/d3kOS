@@ -3657,7 +3657,7 @@ itself has moved to production, or only the Pi-side services should repoint.**
 
 ## BUG-56 — Admin Console HTTP 400 Bad Request; HostPapa database API endpoint failing
 
-**Status:** `[ ]` OPEN — logged 2026-08-11 S120
+**Status:** `[~]` **ROOT CAUSE FOUND S131 2026-08-24 — the endpoint DOES NOT EXIST. Re-diagnosed from a live production probe; the S120 HTTP 400 no longer reproduces (it is now 404). This is a BUILD task, not a debugging task.** | Prior: `[ ]` OPEN — logged 2026-08-11 S120
 
 **Platform:** HostPapa (atmyboat.com live site)
 
@@ -3669,7 +3669,39 @@ itself has moved to production, or only the Pi-side services should repoint.**
 - HTTP 400 Bad Request returned by HostPapa API endpoint
 - Error URL: `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/api-admin.php`
 
-### Root Cause
+### ROOT CAUSE FOUND — S131 2026-08-24 (live HTTP probe against production)
+
+`api-admin.php` **does not exist on the server.** Probed twice, with a stable control:
+
+```
+GET .../twentytwenty-child/mobile/api-admin.php      -> 404, 404
+control: .../mobile/dashboard-data.php               -> 401, 401  (stable, endpoint present)
+```
+
+The response is **404, not the 400 recorded in S120**. Sibling endpoints in the same directory
+return 401/405, which proves the directory resolves and PHP executes there — so a 404 means the
+file is absent, not misconfigured.
+
+**There is also no source copy anywhere in the repo.** A repo-wide search for `api-admin.php`
+returns nothing. The Admin Console is therefore calling an endpoint that exists neither in
+production nor in version control.
+
+⚠ **The six candidate causes in the section below are all SUPERSEDED.** Every one of them assumed
+the endpoint exists and was rejecting requests; none can apply to a file that is absent. Preserved
+for the record, not for action.
+
+**Corrected remedy — build, not debug:**
+1. Read `crm-proxy.php` on the Admin Console VM (192.168.236.5) to establish the exact contract the
+   console expects — method, headers, payload, response shape.
+2. Write `api-admin.php` to that contract.
+3. Place it in the server-side canonical tree (does not exist yet — see BUG-72/73 and the
+   HostPapa-tree gap) and deploy with operator approval.
+
+**Why it read as 400 in S120 and 404 now:** not established. Either the file was removed between
+S120 and S131, or the 400 came from a different layer (proxy/WAF) and was attributed to the
+endpoint. `Uncertainty flag: I cannot distinguish these without the HostPapa access logs.`
+
+### Root Cause (S120 — SUPERSEDED by the S131 probe above)
 
 Unknown — candidates to investigate:
 1. **Malformed request headers** — Admin Console VM sending incorrect Content-Type, User-Agent, or authentication headers
@@ -4750,3 +4782,154 @@ During S129 public-release branch cleanup, Claude Code removed the `doc/` folder
 - Did not present Pre-Change File List and wait for 'APPROVED'
 - Did not run `git status` before filter-repo work (AAO Section 17)
 - Did not read CLAUDE.md after context compaction
+
+## BUG-71 — `pair-device.php` returns HTTP 500 in production; no source exists in the repo
+
+**Logged:** 2026-08-24 (S131)
+**Platform:** HostPapa (atmyboat.com production)
+**Severity:** **HIGH** — this is step 2 of PWA device pairing. The v0.9.4 PWA cannot bind an
+`app_token` to a `device_token`, so every downstream PWA call is unreachable for a new user.
+
+### Symptom
+
+```
+GET .../twentytwenty-child/mobile/pair-device.php   -> 500, 500   (re-probed, stable)
+control: .../mobile/dashboard-data.php             -> 401, 401   (stable)
+```
+
+The endpoint is deployed and **crashing**. Siblings in the same directory return 401/405 correctly,
+so this is a fault inside `pair-device.php` itself, not the directory, PHP handler, or WAF.
+
+### Root Cause
+
+**Unknown — not investigated.** A 500 cannot be diagnosed from outside; it requires either the PHP
+error log or the file contents. Neither is available: the FTP account supplied in S131
+(`admin@atmyboat.com`) is chrooted to an empty home and cannot read `public_html`.
+
+⚠ **`pair-device.php` has NO source copy anywhere in the repo.** Repo-wide search returns nothing.
+So there is no reference implementation to diff against, and no way to know what it should do beyond
+the one-line description in `ARCH_SERVICE_MAP.md` ("Links app_token to device_token, returns tier
+level", auth = `app_token`).
+
+### Blocking
+
+- Blocks the end-to-end pairing test (register-device -> pair-device -> dashboard-data)
+- Blocks any PWA integration validation for a new device
+- Cannot be fixed without either main cPanel FTP access or the HostPapa PHP error log
+
+### Fix Required
+
+1. **Operator:** provide main cPanel FTP credentials (home = `public_html`) or retrieve the PHP
+   error log entry for a 500 on this endpoint.
+2. Read the deployed file; establish the fault.
+3. Bring the file under version control in the server-side canonical tree **before** editing it —
+   it is currently unsourced production code.
+4. Fix, deploy with explicit approval, re-probe for a correct 401/405 on an unauthenticated GET.
+
+### Related Bugs
+
+- **BUG-73** — same class: documented endpoint with no repo source
+- **BUG-56** — same class: documented endpoint absent from production and repo
+
+---
+
+## BUG-72 — `version-heartbeat.php` was written but never deployed; BUG-66's live severity is overstated
+
+**Logged:** 2026-08-24 (S131)
+**Platform:** HostPapa (atmyboat.com production)
+**Severity:** MEDIUM — a designed endpoint is absent from production, and its absence changes the
+risk assessment of a CRITICAL-rated bug.
+
+### Symptom
+
+```
+GET .../twentytwenty-child/mobile/version-heartbeat.php  -> 404, 404   (re-probed, stable)
+```
+
+Source **does** exist in the repo at
+`deployment/features/autonomous-agents/php/version-heartbeat.php` — so this is written-but-never-
+deployed, not missing-entirely.
+
+### Why this matters beyond the endpoint itself
+
+**BUG-66's severity analysis is built on this file.** BUG-66 states that
+`version-heartbeat.php:30-42` requires `device_token` to be non-empty and nothing else, and that
+line 82's `INSERT … ON DUPLICATE KEY UPDATE` lets any UUID plus the fleet key silently
+self-register a device.
+
+That vector **is not currently live**, because the endpoint is not deployed.
+
+⚠ BUG-66's CRITICAL rating should be re-scored against what is actually deployed rather than what
+is in the repo. The underlying design flaw is real and must still be fixed before this endpoint
+ships — but it is not presently exploitable. **Operator decision: does BUG-66 stay CRITICAL as a
+release gate on the design, or drop to HIGH on the live exposure?**
+
+### Root Cause
+
+There is no canonical tree, manifest, or drift check for the HostPapa side of the system. PHP
+deliverables live scattered across 8 `deployment/features/*/` folders with no record of what was
+deployed where. This endpoint was written (2026-04-08, `autonomous-agents`) and simply never pushed.
+
+### Fix Required
+
+1. Establish the server-side canonical tree + manifest (the structural fix — see Related below).
+2. Fix the BUG-66 design flaws **before** deploying: per-device credential instead of the shared
+   fleet key; derive identity from a verified signature, never a client-supplied field; remove the
+   blind UPSERT.
+3. Deploy with explicit approval. Re-probe for a correct 401 on an unauthenticated GET.
+
+### Related Bugs
+
+- **BUG-66** — the design flaws in this endpoint; severity depends on this entry
+- **BUG-71, BUG-73** — the same HostPapa state-tracking gap, different symptom
+
+---
+
+## BUG-73 — `fix-my-pi-billing.php` absent from both production and the repo; Fix My Pi payments cannot complete
+
+**Logged:** 2026-08-24 (S131)
+**Platform:** HostPapa (atmyboat.com production)
+**Severity:** **HIGH** — a revenue path is documented as built and is not present. A customer can be
+charged with no webhook to queue the work they paid for.
+
+### Symptom
+
+```
+GET .../twentytwenty-child/mobile/fix-my-pi-billing.php  -> 404, 404   (re-probed, stable)
+GET .../twentytwenty-child/mobile/fix-my-pi-app.php      -> 405        (deployed, guard correct)
+```
+
+The **app-facing** half of Fix My Pi is deployed. The **billing webhook** half is not.
+
+`ARCH_SERVICE_MAP.md` documents it as: "Stripe webhook for FMP charges, queues command", auth =
+Stripe webhook secret. Repo-wide search for `fix-my-pi-billing.php` returns **nothing** — it exists
+neither in production nor in version control.
+
+### Consequence
+
+Per `ARCH_SERVICE_MAP.md` the intended flow is
+`fix-my-pi-app.php` (initiate charge) -> Stripe -> `fix-my-pi-billing.php` (webhook) -> queued command.
+
+With the webhook absent, Stripe has nowhere to deliver the payment event, so the command is never
+queued. **Whether a charge can actually be initiated has NOT been tested** — that requires a Stripe
+test-mode transaction, which is an operator action.
+
+`Uncertainty flag: I have not confirmed that fix-my-pi-app.php can initiate a charge at all. If it
+cannot, no customer has been charged and severity is lower. This must be checked in the Stripe
+dashboard before assuming financial exposure.`
+
+### Fix Required
+
+1. **Operator:** check the Stripe dashboard for any FMP charges that were captured with no
+   corresponding queued command. This determines whether the exposure is theoretical or real.
+2. Confirm the intended contract (what the webhook must write, which command it queues).
+3. Write `fix-my-pi-billing.php`, place it in the server-side canonical tree, deploy with approval.
+4. Verify with a Stripe **test-mode** event end-to-end. Never test against live payments.
+
+### Related Bugs
+
+- **BUG-10** — Stripe webhook endpoints pointed at `/staging/` after the Phase 4 live push (closed
+  S74); same class of Stripe-endpoint drift
+- **BUG-71, BUG-72** — the same HostPapa state-tracking gap
+
+---
