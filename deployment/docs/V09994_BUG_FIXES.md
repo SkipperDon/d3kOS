@@ -2286,7 +2286,7 @@ release process, recorded against BUG-28. Do not conflate the two.
 
 ## BUG-36 — S105 Deploy Regressed `instruments.js`: the M14 Engine-Data Cache Was Silently Removed
 
-**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 13/13 | **NOT on the boat Pi** — served `instruments.js` verified `_d3kEngData` ×6 post-deploy | **Severity:** HIGH (feature loss, shipped by a "fix")
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 13/13 | **NOT on the boat Pi** — served `instruments.js` verified `_d3kEngData` ×6 post-deploy | **§25.8 RE-VERIFIED S133 2026-08-24** — stale test expectation corrected (BUG-34 added `depth_m`, test never updated); all assertions now pass; `_lastSogKts` ×3 confirmed, `fuel_pct=v` (fraction) confirmed, `window.SK_HANDLERS` seam confirmed | **Severity:** HIGH (feature loss, shipped by a "fix")
 **Caused by:** the S105 BUG-15 deploy on 2026-07-23 10:12
 
 ### Evidence
@@ -2340,7 +2340,7 @@ Lab Pi `app.py` md5 `34211e37…` = `deployment/d3kOS/dashboard/app.py`. The v0.
 
 ## BUG-38 — `overlays.js` Writes to Three DOM IDs That `index.html` Never Defines
 
-**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 15/15 | **NOT on the boat Pi** — health-checked: diagTitle/diagGrid/diagAiTxt present in the rendered page | **Severity:** MEDIUM-HIGH
+**Status:** `[~]` **FIXED + DEPLOYED TO LAB PI 2026-07-27 S108-cont** — logged S108 2026-07-27 | ACCEPT 15/15 | **NOT on the boat Pi** — health-checked: diagTitle/diagGrid/diagAiTxt present in the rendered page | **§25.8 RE-VERIFIED S133 2026-08-24** — 3 IDs confirmed on correct elements, classes intact, `#diagGrid` empty, `#diagAiTxt` neutral placeholder, fabricated numbers absent, 3 buttons unchanged | **Severity:** MEDIUM-HIGH
 **Present in the v0.9.9.2 release itself — not a deployment gap**
 
 ### Evidence
@@ -2365,7 +2365,7 @@ neither data nor a container. Together these are a second, independent root caus
 
 ## BUG-39 — Cloning the Master Duplicates Six Identity Values Across Two Pis
 
-**Status:** `[~]` **DEPLOYED TO LAB PI 2026-07-27 S108-cont — unit installed DISABLED, master GUARDED** | ACCEPT 23/23 | **NOT on the boat Pi** — Phase B (clone-procedure wiring) NOT started | **Severity:** HIGH (blocks the boat clone)
+**Status:** `[~]` **DEPLOYED TO LAB PI 2026-07-27 S108-cont — unit installed DISABLED, master GUARDED** | ACCEPT 23/23 | **NOT on the boat Pi** — Phase B (clone-procedure wiring) NOT started | **§25.8 RE-VERIFIED S133 2026-08-24** — 16/16 pytest pass; `license.json` confirmed read-only (no write path anywhere in script); `device-token.json` backed up before write, written via python3 only; no `.signalk`, no `tune2fs`/`fatlabel`/`mlabel`; sentinel line 16 (first) / line 168 (last); `bash -n` clean; `chmod +x` set | **Severity:** HIGH (blocks the boat clone)
 **Must be resolved before the master card is cloned to the boat**
 
 ### The duplicated identities (read from the lab Pi)
