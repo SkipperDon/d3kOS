@@ -5117,11 +5117,75 @@ BUG-65, BUG-66, BUG-63, `D3KOS_DEVICE_REGISTRATION_SPEC.md` D1 and §12.2
 
 ---
 
-## BUG-78 — CRITICAL: the image build script does not strip `/opt/d3kos/config/`, so the public image ships live credentials
+## BUG-78 — CRITICAL: the image builder never invokes the sanitizer, and the sanitizer misses every credential file
 
-**Logged:** 2026-08-24 (S131) · **Platform:** Image build / distribution · **Severity:** **CRITICAL** — this is the delivery mechanism for BUG-66 at fleet scale
+**Logged:** 2026-08-24 (S131) · **ROOT CAUSE CORRECTED same session — see below** · **Platform:** Image build / distribution · **Severity:** **CRITICAL** — this is the delivery mechanism for BUG-66 at fleet scale
 
-### Symptom
+
+### ⚠ ROOT CAUSE CORRECTED — S131, before any fix was attempted
+
+The symptom above was derived from §12.1 of `MASTER_SYSTEM_SPEC.md`. **A live read of the Pi shows
+§12.1's script is fictional** — it matches nothing that exists. The real situation is worse in one way
+and better in another, and the fix is different from what the original entry implied.
+
+**Three cleanup scripts exist. None handles credentials. None is wired into the image build.**
+
+| Script | Location | What it actually cleans | Invoked by the builder? |
+|---|---|---|---|
+| `create-image.sh` | **Pi only — absent from the repo** | `apt-get clean`, `journalctl --vacuum-size=50M`, `/tmp/*`, `/var/tmp/*` | it *is* the builder |
+| `sanitize.sh` | **Pi only — absent from the repo** | SSH keys + host keys, chromium cookies/history/sessions, `license.json` reset, onboarding config, Signal K security config | **NO** |
+| `pre-image-cleanup.sh` | **Repo only** | chromium cache | **NO — referenced nowhere in the codebase** |
+
+Verified by grep against the deployed `create-image.sh`: **no call to `sanitize.sh`, `shrink-filesystem.sh`,
+or any `install-*`/`configure-*` script.** It does not even remove `~/.bash_history`, which §12.1 claims.
+
+**So there are three distinct defects, not one:**
+
+**D1 — the sanitizer is never called.** A capable sanitizer exists and the image builder ignores it.
+The image is therefore built from a *fully unsanitized* card: SSH host keys, chromium cookies, the live
+`license.json`, and every credential.
+
+**D2 — `sanitize.sh` misses all five credential/identity files.** Grep count in `sanitize.sh`:
+
+```
+cloud-config       0     <- holds the fleet-wide AMBOAT_API_KEY (BUG-66)
+api-keys           0     <- Gemini / provider keys
+device-token       0     <- device identity (BUG-39)
+device-signing     0     <- future Ed25519 private key (registration spec §2.1)
+subscription.key   0     <- grants Tier 3 by mere existence (BUG-65)
+```
+
+So even wiring D1 would leave the fleet key in the image.
+
+**D3 — `sanitize.sh` STEP 8 re-creates BUG-65.** Its `license.json` rewrite ends with an explicit
+`chmod 644`. The sanitizer hardcodes the world-readable mode. It also writes `"tier": 0` as an
+**integer**, while the live file holds the **string** `"T3"` — confirming the schema divergence in
+BUG-77 and meaning the two representations are not interchangeable in code.
+
+**D4 — the tooling is unsourced.** `create-image.sh` and `sanitize.sh` exist only on the Pi. They are
+production tooling with no version control and no review history — the same class as `pair-device.php`
+(BUG-71). A fix applied on the Pi would be lost on the next reflash.
+
+**What did NOT change:** the impact assessment stands. §12.1 hosts on GitHub Releases (public,
+anonymous), and an image built today ships the fleet-wide key. `Uncertainty flag: no released .img has
+been inspected. Whether one ALREADY carries a live key remains UNVERIFIED and is still the
+highest-priority operator action.`
+
+**Corrected fix path — see `atomic-specs/BUG-78.md`:**
+1. Bring both scripts into the canonical tree first (D4). Nothing is edited on the Pi only.
+2. Extend `sanitize.sh` with a credential-and-identity strip covering all five files (D2), and change
+   its `license.json` mode to 600 (D3).
+3. Wire `sanitize.sh` into `create-image.sh` *before* `dd` (D1), with a hard refusal to proceed if it
+   fails.
+4. Add a build-time assertion that **fails the build** if any secret survives. A checklist step is not
+   sufficient — S129 demonstrated a documented manual step gets skipped under pressure.
+5. First-boot regenerates everything, reusing the BUG-39 `.identity-regenerated` sentinel.
+
+**Lesson recorded:** the original entry was written from the specification. The specification described a
+script that does not exist. `MASTER_SYSTEM_SPEC` §12.1 must be treated as intent, never as ground truth
+— and this is why an atomic spec's anchors are derived from the target file, never from a document.
+
+### Symptom as originally logged (SUPERSEDED by the correction above)
 §12.1's `create-image.sh` cleanup step removes exactly three things:
 
 ```
