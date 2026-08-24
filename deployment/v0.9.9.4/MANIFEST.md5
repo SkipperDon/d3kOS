@@ -47,7 +47,11 @@ dc194353d0e74707cbc60686d6998d01  etc/systemd/system/d3kos-voice.service
 a4e5f0c82ccd2f5cc56e67fd81fae689  etc/systemd/system/rtl-ais.service
 4f8aa61f68d8b4a6963541a0f0a3064d  home/d3kos/.signalk/defaults.json
 21d6aac77b46eae15f17f47fdf8bb0ac  home/d3kos/.signalk/settings.json
+aaa29d59d6cee7ad99747940a5b34b8c  opt/d3kos/scripts/create-image.sh
+21a4e31588be46e1f8446f045680f76b  opt/d3kos/scripts/detect-opencpn.sh
 4703ad1b1b81718e43ab71c885b1c917  opt/d3kos/scripts/launch-d3kos.sh
+b50e23864628447c88780e889ff47b4f  opt/d3kos/scripts/sanitize.sh
+3a334239dcadbacd197d9734ff7a1c2c  opt/d3kos/scripts/tier-manager.sh
 41ccc5bf3b3f49f3c3ce549749ad8e7b  opt/d3kos/scripts/voice-watchdog.sh
 d4417b10006da6479386f0025f1a47e8  opt/d3kos/services/agents/agent_base.py
 7616f88fe43f79bcf5188617eaadfe7a  opt/d3kos/services/agents/agent_scheduler.py
