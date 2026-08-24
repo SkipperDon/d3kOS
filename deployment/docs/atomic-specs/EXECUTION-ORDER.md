@@ -48,7 +48,7 @@ No dependencies. Do this first: everything after it is untrustworthy otherwise.
       ⚠ **Prerequisite of 2.1 and 1.4.** Both specs say so. Do it once, here.
       ⚠ **Never execute `sanitize.sh` on a Pi you are working on** — it deletes
       `~/.ssh/authorized_keys` and severs your own access.
-- [ ] **0.3 — `PHASE0-drift-verifier.md`** — build `tools/release-state.sh`.
+- [x] **0.3 — `PHASE0-drift-verifier.md`** ✓ S133 2026-08-24 — build `tools/release-state.sh`.
       The S131 prototype already produced the answer (216 files, 210 identical, 0 drift). Reproduce it,
       then add `EXTRA_ON_PI` (that check is what would have caught 0.2's four orphan scripts).
       ⚠ From here on, **run this before and after every deploy.** The before-run catches drift since
