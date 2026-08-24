@@ -50,7 +50,7 @@ echo "Connected: $PI_HOST"
 # Only the dirs that mirror Pi filesystem paths — not tools/, README.md, MANIFEST.md5.
 # Exclude .pyc and __pycache__: .gitignore keeps them out of git but they can exist on disk.
 REPO_FILES_REL=$(cd "$ROOT" && find etc home opt var -type f \
-  ! -name "*.pyc" ! -path "*/__pycache__/*" 2>/dev/null | sort)
+  ! -name "*.pyc" ! -path "*/__pycache__/*" ! -name "*.template" 2>/dev/null | sort)
 # Repo md5 for every file (computed once, used in both comparisons)
 declare -A REPO_HASH
 while read -r rp; do
@@ -159,10 +159,35 @@ while IFS= read -r pp; do
 done <<< "$pi_files"
 printf '  extra: %d\n' "$extra_pi"
 
+# ── comparison 4: invariant checks (content, not byte-hash) ─────────────────
+# Per-Pi config files legitimately differ between Pis (see deployment/docs/PI_CONFIG_DELTA.md).
+# These checks assert required values rather than byte-comparing the files.
+sec "COMPARISON 4: INVARIANTS"
+
+invariant_fail=0
+
+# BUG-19/20 fix: avnav_server.xml must have fetchAis="true" and aisQueryPeriod="5"
+# shellcheck disable=SC2086
+avnav_fetchais=$(ssh $SSH_OPTS "$REMOTE" \
+  'grep -c "fetchAis=\"true\"" /var/lib/avnav/avnav_server.xml 2>/dev/null || echo 0' 2>/dev/null)
+# shellcheck disable=SC2086
+avnav_period=$(ssh $SSH_OPTS "$REMOTE" \
+  'grep -c "aisQueryPeriod=\"5\"" /var/lib/avnav/avnav_server.xml 2>/dev/null || echo 0' 2>/dev/null)
+avnav_fetchais="${avnav_fetchais//[^0-9]/}"
+avnav_period="${avnav_period//[^0-9]/}"
+if [ "${avnav_fetchais:-0}" -ge 1 ] && [ "${avnav_period:-0}" -ge 1 ]; then
+  echo "  OK  fetchAis=\"true\" + aisQueryPeriod=\"5\" present (BUG-19/20 fix confirmed)"
+else
+  printf "  ${RED}FAIL${NC} BUG-19/20: avnav_server.xml missing fetchAis or aisQueryPeriod on %s\n" "$PI_HOST"
+  printf '       fetchAis="true" count: %s  aisQueryPeriod="5" count: %s\n' \
+    "${avnav_fetchais:-?}" "${avnav_period:-?}"
+  invariant_fail=$((invariant_fail+1))
+fi
+
 # ── summary ─────────────────────────────────────────────────────────────────
 pi_ver=$(ssh $SSH_OPTS "$REMOTE" 'cat /opt/d3kos/config/version.txt 2>/dev/null | head -1' 2>/dev/null || echo 'unavailable')
 manifest_problems=$((man_stale+man_only+repo_only))
-pi_problems=$((drifted+missing_pi+extra_pi))
+pi_problems=$((drifted+missing_pi+extra_pi+invariant_fail))
 total=$((manifest_problems+pi_problems))
 
 echo
@@ -172,6 +197,7 @@ printf 'repo↔manifest : %d ok, %d stale, %d manifest-only, %d repo-only\n' \
 printf 'repo↔Pi       : %d identical, %d drifted, %d missing\n' \
   "$identical" "$drifted" "$missing_pi"
 printf 'extra on Pi   : %d\n' "$extra_pi"
+printf 'invariants    : %d failed\n' "$invariant_fail"
 printf 'Pi %-15s: version.txt = %s\n' "$PI_HOST" "$pi_ver"
 echo "============================================================"
 

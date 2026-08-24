@@ -172,7 +172,6 @@ b8432c26c8d5378f4aa8b83edd7e1070  opt/d3kos/services/voice/wake_word_porcupine.p
 3bdfea64d7756b3ca46d437a36bae6e4  opt/d3kos/services/voice/wake_word_vosk.py
 60e550d68d696625ae85cbd8725d617a  opt/d3kos/services/watchdog/d3kos_watchdog.py
 2f93caddf4354741254deff13982c6d1  var/lib/avnav/README.md
-44230c86550839f7e08e113e6c720037  var/lib/avnav/avnav_server.xml
 53b2c31e9c0a2695897d0fde79b6b41e  var/www/html/ai-assistant.html
 5e258bdd3d718bd6c6a77c230e55d33d  var/www/html/app.css
 aa77b249bd7b060bb9791b02f6634edc  var/www/html/app.js

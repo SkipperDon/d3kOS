@@ -53,7 +53,7 @@ No dependencies. Do this first: everything after it is untrustworthy otherwise.
       then add `EXTRA_ON_PI` (that check is what would have caught 0.2's four orphan scripts).
       ⚠ From here on, **run this before and after every deploy.** The before-run catches drift since
       last time. A deploy record is not evidence.
-- [ ] **0.4 — `BUG-28.md` Steps 1 and 3** — de-duplicate `cloud_agent.py` and `ota_upgrade.py`;
+- [x] **0.4 — `BUG-28.md` Steps 1 and 3** ✓ S133 2026-08-24 — de-duplicate `cloud_agent.py` and `ota_upgrade.py`;
       operator decision on the two Pi-only configs.
       ⚠ **The 719-line `cloud_agent.py` is a strict SUPERSET of the 630-line one that systemd runs.
       "De-duplicate" reads like "delete the idle one" — doing that destroys the only copy of

@@ -1,5 +1,17 @@
 <?xml version="1.0" ?><!-- configuration for avnav_server on windows
-     we do not have a gpsd and we can only directly use serial readers --><AVNServer>
+     we do not have a gpsd and we can only directly use serial readers -->
+<!-- ============================================================
+     PI CONFIG TEMPLATE — lab Pi (192.168.1.237) baseline
+     BUG-19/20 FIX (mandatory on ALL Pis):
+       AVNSignalKHandler must have fetchAis="true" aisQueryPeriod="5"
+     BOAT PI DELTA (172.20.10.8 only):
+       Boat Pi has an additional UsbDevice ignore rule for the u-blox GPS
+       (usbid varies — identify via lsusb; avnav must not claim it because
+        SignalK owns it). Add inside <AVNUsbSerialReader>:
+         <UsbDevice usbid="1-1.4:1.0" type="ignore"/>
+       Lab Pi does NOT have this rule (no u-blox on lab hardware).
+     See deployment/docs/PI_CONFIG_DELTA.md for the full delta record.
+     ============================================================ --><AVNServer>
 <!-- <AVNSerialReader name="com4reader" port="3" useFeeder="true"/>-->
 <!-- add readers here for com ports that you want to listen on -->
 <!--<AVNSerialReader useFeeder="true" name="com8reader" port="7" baud="38400" minbaud="4800"/>-->
@@ -20,7 +32,7 @@
 	 for my setup with an USB 4 port HUB at the upper USB port
 	 a device at the hubs first port will look like: 1-1.2.1:1.0 ,
 	 at the second 1-1.2.2:1.0 - potentially you must check the logs
-	 The below config uses a predefined device with this ID and 
+	 The below config uses a predefined device with this ID and
 	 room for 4 additional autodetect devices
 	 The serial parameters are the same like for all serial readers
 	 We use autobaud between 4800 and 38400 here
@@ -29,7 +41,7 @@
 <AVNUsbSerialReader maxDevices="5" allowUnknown="true" baud="38400" minbaud="4800">
 	<!-- a serial output device at one particular USB port
              with this filter it will output all NMEA data but no AIS data
-             you can further restrict this by using e.g. $RMC for NMEA RMC sentences 
+             you can further restrict this by using e.g. $RMC for NMEA RMC sentences
 	     in this configuration it additionally has a reader enabled that runs at the same baudrate
 	     use a readerFilter to also apply a filter at the reader-->
 	<!-- <UsbDevice usbid="3-4.3.1:1.0" baud="38400" type="writer" xonxoff="1" timeout="10" filter="$RMC" combined="True" /> -->
@@ -42,6 +54,9 @@
 	<!-- a pure writer that outputs RMB -->
 	<!-- <UsbDevice usbid="3-10.3.1:1.0" baud="4800" minbaud="4800" type="writer" filter="$RMB"/> -->
 	<!--<UsbDevice usbid="3-4.3.2:1.0" baud="38400" minbaud="4800" type="ignore" filter=""/>-->
+	<!-- BOAT PI ONLY — u-blox GPS ignore rule:
+	     <UsbDevice usbid="1-1.4:1.0" type="ignore"/>
+	     (lab Pi omits this — it has no u-blox hardware) -->
 </AVNUsbSerialReader>
 
 
@@ -57,10 +72,11 @@
 	<Command name="sound" command="mpg123 -q" repeat="1"/>
 </AVNCommandHandler>
 <AVNPluginHandler>
-<!-- ##CANBOAT 
+<!-- ##CANBOAT
 	<builtin-canboat enabled="true" allowKeyOverwrite="true" autoSendRMC="30" sourceName="canboatgen"/>
  ##CANBOAT -->
 <system-ochartsng port="8085"/>
 </AVNPluginHandler>
+<!-- BUG-19/20 FIX — fetchAis and aisQueryPeriod MUST be present on every Pi -->
 <AVNSignalKHandler uuid="21d3e644-6ec6-403f-aa8e-8465e1c26d81" migrated="True" port="8099" decodeData="true" fetchAis="true" aisQueryPeriod="5"/>
 </AVNServer>
