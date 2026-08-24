@@ -5385,9 +5385,17 @@ only against the derived formula.
 
 On **P4**: the plate reads `CX5106  08221` with a CE mark and a recycling mark only. The same
 wizard separately and correctly offers the Actisense **EMU-1** as a different gateway, so the two
-were conflated. `Uncertainty flag: the actual manufacturer is unconfirmed. A prior WebSearch under
-BUG-31 failed to confirm the "Pangoo" branding on a neighbouring N2K device as the CX5106's maker.
-The correct statement is "manufacturer unconfirmed", not "Actisense".`
+were conflated. **The maker is already on record: `project_cx5106_status.md` names **Matsutec**,
+established by S119 web research. So the fix is to replace "Actisense" with **Matsutec**, not to
+mark it unknown.** `Uncertainty flag: Matsutec was not re-verified this session and the label plate
+carries no brand, so it cannot be confirmed from the hardware in hand — it is a prior session's
+sourced finding.` Separately, the "Pangoo" branding on a neighbouring N2K device (BUG-31) was
+explicitly **not** confirmed as the CX5106's maker.
+
+**Also from that S119 record — a spec discrepancy worth resolving during the P1 rewrite:** vendor
+spec blurbs quote a speed-ratio range of **1–200**, while the leaflet's own §6.2 heading says
+**1~127** and its 7-position switch can only express 1–128. If some variant really supports 200,
+it cannot do so with seven binary positions. Treat 1–127 as authoritative for this unit.
 
 ### Fix path
 

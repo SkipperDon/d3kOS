@@ -393,10 +393,14 @@ The label plate carries **no brand at all** — only `CX5106  08221`, CE, and a 
 same wizard separately and correctly lists the Actisense **EMU-1** as a different gateway option
 (line 888), so the two are being conflated.
 
-`Uncertainty flag: I have not established who does manufacture the CX5106. A prior WebSearch
-(recorded under BUG-31) failed to confirm the "Pangoo" branding found on a neighbouring N2K
-device as the CX5106's maker. The correct statement today is "manufacturer unconfirmed", not
-"Actisense".`
+**Prior research already answered this.** `project_cx5106_status.md` records **Matsutec** as the
+maker, established by S119 web research while confirming that no CX5106 manual exists online. The
+correction is therefore not "unconfirmed" but "**Matsutec, not Actisense**".
+
+`Uncertainty flag: I did not re-verify the Matsutec attribution this session, and the label plate
+carries no brand, so it cannot be confirmed from the hardware in hand — it is a prior session's
+sourced finding, not a reading of the device.` Separately, the "Pangoo" branding found on a
+neighbouring N2K device (BUG-31) was explicitly **not** confirmed as the CX5106's maker.
 
 ### 8.5 Why this went undetected
 
