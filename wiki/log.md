@@ -144,3 +144,12 @@
   (`poppler-utils` absent) · whether a released `.img` already ships a live fleet key (UNVERIFIED,
   highest priority) · why `version-heartbeat.php`'s UPDATE became an UPSERT · whether WebRTC has ever
   been validated end to end
+
+## [2026-08-24] governance+tooling | S133-cont — Phase 0.2–0.4 complete; fetchAis invariant asserted
+- Files changed: `deployment/v0.9.9.4/opt/d3kos/scripts/` (4 new: create-image.sh, sanitize.sh, tier-manager.sh, detect-opencpn.sh) · `tools/release-state.sh` (new: three-way drift verifier + comparison 4 INVARIANTS) · `opt/d3kos/services/cloud-agent/cloud_agent.py` (promoted 719-line superset) · `opt/d3kos/services/cloud-agent/ota_upgrade.py` (promoted 410-line version with BUG-35 fix) · `var/lib/avnav/avnav_server.xml` → `avnav_server.xml.template` (renamed + annotated) · `opt/d3kos/services/fleet/config/fleet-push.env.template` (new) · `deployment/docs/PI_CONFIG_DELTA.md` (new) · `MANIFEST.md5` (212 entries) · `EXECUTION-ORDER.md` (0.2/0.3/0.4 ticked) · `PROJECT_CHECKLIST.md` (3.37→3.40)
+- Wiki pages updated: none — no entity page covers drift tooling or per-Pi config templates. `[[entities/avnav]]` is the closest relevant entity; adding a note below.
+- Contradictions flagged: none new
+- Open questions: cloud_agent.py promoted but not yet deployed to lab Pi — DRIFTED in verifier; deploy is pending
+
+### Addendum — entities/avnav note
+Per-Pi delta for avnav_server.xml is now formally documented in `deployment/docs/PI_CONFIG_DELTA.md`. The BUG-19/20 fix (`fetchAis="true" aisQueryPeriod="5"`) is machine-asserted by `tools/release-state.sh` comparison 4 on every verifier run. The boat Pi additionally requires a u-blox USB ignore rule (usbid `1-1.4:1.0`) absent from the lab Pi — this is expected and documented.

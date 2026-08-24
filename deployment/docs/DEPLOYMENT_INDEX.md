@@ -1553,3 +1553,21 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 ⚠ **CORRECTION NEEDED IN THIS INDEX:** the entry for `deployment/d3kOS/dashboard/templates/setup.html` (line ~429) describes Step 5 as *"CX5106 Row 1+Row 2 diagrams"* — that is the incorrect 8-switch model. Left as-is this session because the index documents what the code currently does, and the code has not been changed. **It must be corrected as part of the BUG-81 P1 wizard rewrite.**
 
 **No Pi deploy this session — no Release Package Manifest.** **No `git push`, no GitHub API call, nothing published.**
+
+---
+
+### S133 — 2026-08-24 — Phase 0.2–0.4 (repo governance + drift tooling)
+
+| File | Description |
+|---|---|
+| `deployment/v0.9.9.4/opt/d3kos/scripts/create-image.sh` | **[NEW — S133 Phase 0.2]** BUG-78 SD card image builder. Brought under version control byte-identical from lab Pi; was previously an orphan unversioned script. |
+| `deployment/v0.9.9.4/opt/d3kos/scripts/sanitize.sh` | **[NEW — S133 Phase 0.2]** BUG-78 sanitizer — strips credentials, SSH keys, UUIDs before image creation. ⚠ NEVER execute on a working Pi — deletes `~/.ssh/authorized_keys`. Byte-identical from lab Pi. |
+| `deployment/v0.9.9.4/opt/d3kos/scripts/tier-manager.sh` | **[NEW — S133 Phase 0.2]** BUG-77/BUG-65 tier detection and management helper. Byte-identical from lab Pi. |
+| `deployment/v0.9.9.4/opt/d3kos/scripts/detect-opencpn.sh` | **[NEW — S133 Phase 0.2]** BUG-77/BUG-65 OpenCPN Tier 2 filesystem detection. Byte-identical from lab Pi. |
+| `deployment/v0.9.9.4/tools/release-state.sh` | **[NEW — S133 Phase 0.3]** Three-way drift verifier: repo↔MANIFEST.md5↔Pi. Usage: `./tools/release-state.sh` (lab Pi default) or `PI=172.20.10.8 ./tools/release-state.sh` (boat Pi). Four comparisons: manifest currency, byte-identical vs Pi, EXTRA_ON_PI (code dirs only), INVARIANTS (fetchAis BUG-19/20). Exit 0=clean, 1=drift, 2=unreachable. Run before and after every deploy. |
+| `deployment/v0.9.9.4/opt/d3kos/services/cloud-agent/cloud_agent.py` | **[PROMOTED — S133 Phase 0.4]** 719-line superset promoted from idle `services/cloud_agent.py` to canonical path. Adds: `import hashlib`, `CONFIG_BACKUP_FILES`, `_read_config_files()`, `push_config_snapshot()` (68 lines). Version v0.9.9.3-FI4. Shadow at `services/cloud_agent.py` deleted. Not yet deployed to Pi — 1 DRIFTED in verifier. |
+| `deployment/v0.9.9.4/opt/d3kos/services/cloud-agent/ota_upgrade.py` | **[PROMOTED — S133 Phase 0.4]** 410-line version promoted; has BUG-35 `write_version_file(latest_ver, release)` fix and license.json version update. Shadow at `services/ota_upgrade.py` deleted. |
+| `deployment/v0.9.9.4/var/lib/avnav/avnav_server.xml.template` | **[RENAMED+ANNOTATED — S133 Phase 0.4]** Was `avnav_server.xml` (lab Pi baseline). Renamed to `.template` — byte-comparison excluded from verifier; invariant (`fetchAis="true"` + `aisQueryPeriod="5"`) machine-asserted by comparison 4 of `release-state.sh`. Added XML comments documenting boat Pi u-blox delta (usbid `1-1.4:1.0` ignore rule) and BUG-19/20 fix annotation. |
+| `deployment/v0.9.9.4/opt/d3kos/services/fleet/config/fleet-push.env.template` | **[NEW — S133 Phase 0.4]** Template for Pi-only `fleet-push.env`. `AMBOAT_API_KEY=__SET_ON_PI__` placeholder; all other values are real non-secret URLs. Real `.env` is Pi-only, never committed, excluded from verifier by `/config/.*\.env$` rule. |
+| `deployment/docs/PI_CONFIG_DELTA.md` | **[NEW — S133 Phase 0.4]** Per-Pi configuration delta record — documents lab Pi vs boat Pi differences for `avnav_server.xml` and `fleet-push.env`, with verify commands and setup instructions for a new Pi. |
+| `deployment/v0.9.9.4/MANIFEST.md5` | **[UPDATED — S133]** 212 entries. Excludes: `*.pyc`, `__pycache__/`, `*.template`. Represents the deployable canonical tree byte-for-byte. |
