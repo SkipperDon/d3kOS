@@ -3,8 +3,8 @@
 **Defect:** Wizard Step 5 computes and displays an 8-switch DIP layout that does not exist on the
 hardware, and attributes the device to Actisense, which is unsupported.
 **Severity:** HIGH — every d3kOS user with a CX5106 is instructed to configure their gateway wrongly.
-**Scope:** **the wizard only** (P1 and P4). P2 (public GitHub guide) and P3 (`doc/CX5106_USER_MANUAL.md`)
-are deliberately excluded — see §8.
+**Scope:** the wizard (P1, P4) **plus the local guide that specifies it** (§1.5 Step 0 — added after the
+operator identified it). P2 (the **public** `docs/` guide) and P3 remain excluded — see §8.
 **Tier:** Step 2 is Tier 3 (exact replacements). Step 1 is operator/Tier 1 — **it is a hard gate.**
 **Created:** 2026-08-24 (S132-cont) · **Bug record:** `V09994_BUG_FIXES.md` BUG-81
 
@@ -44,6 +44,77 @@ three artifacts for months. This is a tooling gap with a track record.
 found is `assets/manuals/CX5106_10125_manual.pdf`, dated 2026-08-23, which is the same document S132
 worked from. **If a newer revision exists, this spec must be re-checked against it before Step 2 runs** —
 particularly §3's ratio table, which is the part I could not read.
+
+---
+
+## 1.5 STEP 0 — CORRECT THE GUIDE FIRST. It is the wizard's specification.
+
+**Added after the operator identified `doc/CX5106_CONFIGURATION_GUIDE.md` as "the guide".**
+
+This is not merely another document carrying the wrong model. **It is the document the wizard was built
+from**, and it contains a complete, numbered specification of Step 5:
+
+```
+Q1 Number of Engines        Q5 Engine Stroke Type   -> SW7
+Q2 Engine Position          Q6 Gear Ratio           -> SW8
+Q3 RPM Signal Source        Q7 Tank Sensor Standard -> row 2 SW1   (correct)
+Q4 Number of Cylinders -> SW5|SW6      Q8 Engine Position row 2 SW2 (correct)
+```
+
+The wizard's `buildDIPRow1()`, `cylinderMap`, `buildRow1Key()` and `buildWhyText()` are a **faithful
+implementation of Q1–Q6.** The code is not independently wrong; it correctly implements a wrong spec.
+
+⚠ **Therefore: fixing the wizard without fixing this guide guarantees the defect is rebuilt.** The next
+person to touch Step 5 will read the guide, find it contradicts the code, and "restore" the guide's
+model. Correct the specification before the implementation.
+
+### Good news — no GitHub approval needed for this one
+
+| Path | Local | On `origin/main` |
+|---|---|---|
+| `doc/CX5106_CONFIGURATION_GUIDE.md` | **YES** | **no** |
+| `docs/CX5106_CONFIGURATION_GUIDE.md` | no | **YES** ← this is BUG-81 P2, public |
+| `docs/CX5106_DIP_SWITCH.md` | YES | YES |
+
+**`doc/` (singular) is local-only.** It can be corrected immediately under the ordinary Pre-Change File
+List rule. **`docs/` (plural) is the public one** and still requires explicit operator approval.
+
+### The finding that explains why this survived so long
+
+Three consecutive lines of the guide, verbatim:
+
+```
+23:  ![CX5106 DIP Switches](../assets/images/cx5106_10125.png)
+25:  *Photo showing the actual CX5106 DIP switch locations on the device*
+27:  The DIP switches are located on the side of the CX5106 unit and are clearly
+      labeled 1-8 from left to right.
+```
+
+**The guide embeds the photograph that disproves its own central claim, one line above making it.** The
+photo shows a 7-position block plus a separate 2-position block, on the face of the unit with the lid
+removed — not eight in a row, and not "on the side". **Two factual errors in one sentence, refuted by the
+image directly above it.**
+
+⚠ **And here is the root cause of the longevity: S132's only change to this file was fixing the image
+path** (`../../assets/…` → `../assets/…`). From `doc/`, the old path resolved outside the repo, so **the
+image never rendered.** The disproving evidence was cited, present, and invisible for the file's entire
+life.
+
+**Lesson to carry into every future spec: a document that cites evidence is not the same as a document
+whose evidence has been looked at.** Verify the link renders, then verify the artifact says what the prose
+claims. This is the same failure shape as the S114 truncated audit — the check was performed, but on
+nothing.
+
+### Step 0 actions
+
+1. Correct Part 1 (DIP switch logic) to the 7 + 2 block model.
+2. Correct Q4/Q5/Q6 — the cylinder-count, stroke-type and gear-ratio questions map to nothing on this
+   hardware. Replace with the single engine-type → ratio question.
+3. **Keep Q7 and Q8 unchanged** — tank-sender standard and engine position are correct.
+4. Fix the "located on the side… labeled 1-8" sentence.
+5. Add a dated correction note; **preserve the original as superseded**, not deleted — it is the record of
+   what the wizard implements today and reviewers will need it during Step 2.
+6. Cross-link `docs/CX5106_DIP_SWITCH.md` (S132's derivation guide) as the authority.
 
 ---
 
@@ -251,6 +322,9 @@ for ≥130 s** — under that, the 60-second heartbeat is missed and a working d
   their hardware. It is a **public GitHub change requiring explicit operator approval**, so it is not in
   this spec. **It should be sequenced first, not last.**
 - **P3 — `doc/CX5106_USER_MANUAL.md` line 53.**
+- ⚠ **NO LONGER out of scope: `doc/CX5106_CONFIGURATION_GUIDE.md`.** It is the wizard's specification and
+  is now **Step 0** (§1.5). It is local-only, so it needs no GitHub approval — only the ordinary
+  Pre-Change File List.
 - **`docs/CX5106_DIP_SWITCH.md`** — written S132, currently **uncommitted in the working tree**. Publishing
   it is part of the P2 decision.
 - ⚠ **Six files are modified and uncommitted, and `doc/CX5106_CONFIGURATION_GUIDE.md` is open in an editor
