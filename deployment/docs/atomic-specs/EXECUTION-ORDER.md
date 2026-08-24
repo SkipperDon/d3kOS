@@ -37,7 +37,7 @@ Nothing below Phase 0 is worth doing until these are answered.
 
 No dependencies. Do this first: everything after it is untrustworthy otherwise.
 
-- [ ] **0.1 — `PHASE0-record-integrity.md`**
+- [x] **0.1 — `PHASE0-record-integrity.md`** ✓ S133 2026-08-24
       BUG-61 de-dup · BUG-25/26/27 reconciliation · BUG-70 root-cause correction · purge 5 `.pyc`
       ⚠ **Needs a Pre-Change File List and explicit `APPROVED`** — governance files.
       ⚠ Do 0.1's `.pyc` purge **before** 0.3, or the verifier reports 5 permanent false "missing" and

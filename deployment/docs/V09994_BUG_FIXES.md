@@ -1760,7 +1760,7 @@ After running the engine for 30+ minutes, no ENGINE badge entry appeared automat
 
 ## BUG-25 — AI Navigation (Gemini) Cannot Connect On Boat
 
-**Status:** `[~]` DIAGNOSED 2026-07-23 — likely NOT a d3kOS bug. Both Gemini services up + enabled; live model = `gemini-2.5-flash-lite`; key present; `:3001/status` = online. Bad model (`gemini-2.5-flash`) exists only in `.bak`/`.ota-backup`, not live config. Root cause points to **internet egress** (Pi `curl google → 000`). Pending on-boat internet confirmation. Full diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
+**Status:** `[x]` **CLOSED NOT A BUG — S107 verified LIVE on the boat.** `:3001/status` → `{"gemini_key":true,"model":"gemini-2.5-flash-lite","online":true}`; real query `POST /ask` returned `{"response":"...","tokens":290}`. Internet egress hypothesis disproven — egress and AI both work. PART 17 was ahead of this file; closing to match. (Was: `[~]` DIAGNOSED 2026-07-23 — likely not a d3kOS bug, pending on-boat confirmation. Was: `[ ]` OPEN logged S104 2026-07-21.)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (AI Navigation — Gemini integration)
 **Checklist:** J-01 (failed), J-02 (failed), J-03 (failed)
@@ -1792,7 +1792,7 @@ AI Navigation page shows "could not connect." No response to queries. GEMINI bad
 
 ## BUG-26 — Anchor Watch Set Anchor Failing; No Alarm Sound
 
-**Status:** `[x]` FIXED + DEPLOYED TO PI S105 2026-07-23 — pending operator Set Anchor test at helm. Fix: 5 anchor fetches routed to `AI_BRIDGE` (`:3002`) in `anchor-watch.html`; deployed + dashboard restarted (backup `.bak.20260723`). ROOT CAUSE was: anchor endpoints live on ai-bridge (`:3002`, verified: `/anchor/set`=405 POST-only, `/anchor/state`=200); dashboard (`:3000`) serves none (all 404). `anchor-watch.html` fetches bare `/anchor/*` → `:3000` → 404 → Set Anchor never arms (K-02). Fix = point the 5 anchor fetches at `AI_BRIDGE` (`:3002`), matching the file's existing SSE call. Atomic spec: `atomic-specs/BUG-26.md`. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
+**Status:** `[~]` **FIXED IN LAB PI — BOAT STATE UNKNOWN.** Lab Pi tree byte-identical to canonical (S131, 216 files, 0 drift); fix confirmed present in lab. Boat Pi: S107 confirmed `AI_BRIDGE` 0 occurrences — fix NOT on boat. **Verify on next trip:** `grep -c 'AI_BRIDGE' /opt/d3kos/services/dashboard/static/js/anchor-watch.html` → must be ≥5. (Was: `[x]` FIXED + DEPLOYED TO PI S105 2026-07-23 — premature; "TO PI" meant the lab Pi only; boat state was never confirmed.) ROOT CAUSE was: anchor endpoints live on ai-bridge (`:3002`, verified: `/anchor/set`=405 POST-only, `/anchor/state`=200); dashboard (`:3000`) serves none (all 404). `anchor-watch.html` fetches bare `/anchor/*` → `:3000` → 404 → Set Anchor never arms (K-02). Fix = point the 5 anchor fetches at `AI_BRIDGE` (`:3002`), matching the file's existing SSE call. Atomic spec: `atomic-specs/BUG-26.md`. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (Anchor Watch feature)
 **Checklist:** K-02 (failed), K-03 (unknown — no sound observed)
@@ -1821,7 +1821,7 @@ Anchor Watch page loads and shows GPS position (K-01 passed). Tapping "Set Ancho
 
 ## BUG-27 — Status Bar Text Not Readable at 1 Metre — AODA Violation
 
-**Status:** `[x]` COMPLETE — deployed to Pi + operator-confirmed 1 m legibility 2026-07-23
+**Status:** `[~]` **DEPLOYED TO LAB PI ONLY — BOAT STATE UNKNOWN.** Lab Pi tree byte-identical to canonical (S131); CSS change confirmed present. Boat Pi: S107 confirmed `.sb-vessel` still 18px — fix NOT on boat. **Verify on next trip:** `grep 'sb-vessel' /opt/d3kos/services/dashboard/static/css/d3kos.css` → must show 28px. (Was: `[x]` COMPLETE — premature; operator confirmation was on lab Pi screen, not the boat.)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (d3kOS dashboard — status bar CSS)
 **Checklist:** D-09 (failed)
@@ -3974,9 +3974,9 @@ git -C /home/boatiq/Helm-OS add /tmp/test-placeholder.txt && git commit  # → e
 
 ---
 
-## BUG-61 — Staging WordPress Misconfigured — Returns 404 Homepage
+### History — BUG-61 S125 (superseded by REOPENED S126 entry — see below)
 
-**Status:** `[x]` FIXED S125 2026-08-21 — fully operational, all assets loading, menu navigation working.
+**Status (superseded):** `[x]` This was believed FIXED S125 2026-08-21 — fully operational, all assets loading, menu navigation working. **The fix was incomplete — see REOPENED S126 entry for the live status.**
 
 ### Symptoms
 - `https://atmyboat.com/staging/` returns HTTP 404 "Page not found"
@@ -4196,6 +4196,7 @@ Option B (if plugin unavailable): **WordPress native CAPTCHA plugin**
 ## BUG-61 — Staging WordPress Misconfigured — Double Path Issue (REOPENED S126)
 
 **Status:** `[!]` **REOPENED S126 2026-08-22 — fix was INCOMPLETE. Secondary issue (double-path) identified in S125 but deferred and never applied.**
+⚠ **S131 probe (2026-08-24):** `https://atmyboat.com/staging/wp-admin/` returned HTTP `000` — no response at all, not a 404. This is a **different condition** from the double-path defect BUG-61 describes. Staging may be entirely down, not merely misconfigured. Do not assume the same root cause.
 
 ### Symptoms (Reconfirmed)
 - `https://atmyboat.com/staging/` returns 404 or loads without CSS/JS/images
@@ -4776,13 +4777,22 @@ Wordfence Login Security (operator UI) · wp-admin → Users (operator UI) · `w
 ## BUG-70 — public-release docs/ folder deleted — README has 6 broken links
 
 **Logged:** 2026-08-23 (S129)
-**Severity:** HIGH (AI-caused)
-**Status:** OPEN
+**Severity:** LOW (closed)
+**Status:** `[x]` **CLOSED S130 2026-08-23 — commit `e630bfeb` fixed 2 broken links; all 11 README links verified resolving. Original S129 diagnosis was DISPROVED — no `docs/` folder ever existed on `public-release`; there were 2 broken links (not 6), both caused by deliberate 2026-08-20 key-containment deletions that predate S129.**
 
-### Symptom
+### Corrected Root Cause — S130 finding
+S129's diagnosis was wrong on every material point:
+- No `docs/` folder ever existed on `public-release` — the prescribed fix would have created a folder that never existed
+- There were **2** broken links, not 6
+- Both broken links were from deliberate 2026-08-20 deletions (key-containment), not the S129 cleanup
+- S130 investigated, found the 2 links, fixed with commit `e630bfeb`, verified all 11 README links resolving
+
+### Original Diagnosis — S129 (DISPROVED by S130)
+
+### Symptom (S129 — disproved)
 All 6 documentation links in `README.md` on the `public-release` branch are broken. Clicking any doc link on GitHub returns 404.
 
-### Affected Links (in README.md)
+### Affected Links (S129 — disproved; actual broken count was 2)
 - `docs/CX5106_CONFIGURATION_GUIDE.md`
 - `docs/INSTALLATION.md`
 - `docs/SIGNALK_CONFIGURATION.md`
@@ -4790,15 +4800,15 @@ All 6 documentation links in `README.md` on the `public-release` branch are brok
 - `docs/OPENCPN_FLATPAK_OCHARTS.md`
 - `docs/D3KOS_USER_MANUAL_v2.3.0.md`
 
-### Root Cause
+### Root Cause (S129 — disproved)
 During S129 public-release branch cleanup, Claude Code removed the `doc/` folder (including the above files) without reading README.md first to check what files it referenced. The Pre-Change File List rule and Pre-Edit Snapshot rule were not followed. No operator APPROVED was obtained before the deletion.
 
-### Current State
+### Current State (S129 — superseded)
 - Operator set `SkipperDon/d3kOS` repo back to private on 2026-08-23.
 - `public-release` branch has broken README but is no longer publicly visible.
 - Pre-session backup at: `.aao-backups/20260823_123500_S129/public-release-original.bundle.bak` (46MB)
 
-### Fix Required (when operator is ready)
+### Fix Required (S129 — superseded; e630bfeb is the actual fix)
 1. Extract the 6 doc files from the pre-session backup bundle
 2. Place them under `docs/` folder on `public-release` branch (README links to `docs/`, plural)
 3. Note: `D3KOS_USER_MANUAL_v2.3.0` existed as `.html` in backup — need operator decision on format
