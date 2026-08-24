@@ -124,3 +124,23 @@
 - Verification method (recorded because it is reusable): encoding decoded from the leaflet, then **predict-and-check** against printed rows at BOTH ends of the table (ratio 13 → switches 3,4; ratio 125 → switches 3,4,5,6,7) rather than only the easy end; plus an independent structural cross-check — the terminal label's 4 left + 9 right = 13 inputs exactly matches §2.2's separate "up to 13 sensors" statement.
 - Open questions: whether a wrong ratio bears on BUG-14 at all (a ratio error gives a WRONG RPM, not ABSENT data PGNs, and cannot explain missing oil/temp/fuel PGNs — do NOT record it as BUG-14's root cause); the direction in which the ratio scales displayed RPM (undocumented, untested); how to interpret the S101 switch record now that two blocks are known; the actual manufacturer; whether a leaflet §5 exists anywhere (the sheet jumps §4 → §6).
 - Process note: this is the third instance of the **premise-over-source** failure mode after BUG-08 and BUG-78 — a plausible written premise trusted instead of the primary source. Here the primary source was already in the repository at `assets/manuals/CX5106_10125_manual.pdf` the entire time.
+
+## [2026-08-24] spec-authoring | S131 + S132-cont — v0.9.9.4 atomic spec set, governance recovery
+- Files changed: `V09994_BUG_FIXES.md` (BUG-60–69 restored, BUG-71–80 logged, BUG-56/62/66/78
+  re-diagnosed, 10 credentials redacted) · `PROJECT_CHECKLIST.md` (+17 rows, 3.30→3.33) ·
+  `doc/MASTER_SYSTEM_SPEC.md` (3.9→4.0, 11 edits) · `D3KOS_DEVICE_REGISTRATION_SPEC.md` (restored,
+  475 lines) · `deployment/docs/atomic-specs/` (18 new files incl. `EXECUTION-ORDER.md`) ·
+  `SESSION_LOG.md` (S131 + S132-cont entries, written late)
+- Wiki pages updated: none — no entity page exists for the v0.9.9.4 spec set or the CX5106 gateway.
+  **Open gap: `wiki/log.md` was not appended to during either session, only at the end. Standing scope
+  allows it; the discipline was not followed.**
+- Contradictions flagged: `MASTER_SYSTEM_SPEC` section 12.1's build script is fictional (no
+  `sanitize.sh` call exists) · section 9.2's three "No Phone-Home" clauses contradicted by sections
+  8.3/8.4/6.3.4 of the same document · `.gitignore` protects a credential file that has never existed
+  while leaving the real one unprotected · two different READMEs (local 2 links, `origin/main` 1 link)
+  with no record stating which is meant · `detectTier()` structurally unable to return a tier the
+  registration design gates on
+- Open questions: leaflet section 6.1 read only via a derived guide, not the primary source
+  (`poppler-utils` absent) · whether a released `.img` already ships a live fleet key (UNVERIFIED,
+  highest priority) · why `version-heartbeat.php`'s UPDATE became an UPSERT · whether WebRTC has ever
+  been validated end to end

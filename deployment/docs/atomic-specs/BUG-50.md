@@ -2,7 +2,7 @@
 
 **Author:** Tier 1 (Opus), S117 2026-08-02
 **Implementer:** Tier 3 — Gemini 2.5-flash-lite, dispatched FROM the Pi
-**Verifier:** Tier 1, AAO §25.8
+**Verifier:** Tier 1, AAO section 25.8
 **Failing test (must exist and fail before implementation):** `tests/bug50-status-truthfulness.spec.ts`
 — confirmed **7 of 10 failing** against pre-fix code on 2026-08-02.
 
@@ -24,9 +24,9 @@ Four defects:
 
 ## 2. Constraint boundaries — what Tier 3 MUST NOT do
 
-- **Make ONLY the exact string replacements in §4.** Do not reformat, reorder, or regenerate any
+- **Make ONLY the exact string replacements in section 4.** Do not reformat, reorder, or regenerate any
   file. Whole-file regeneration is what caused BUG-36.
-- **Do not touch any file other than the two named in §4.**
+- **Do not touch any file other than the two named in section 4.**
 - **Do not change `check_internet()` or `check_ollama()`.**
 - **Do not add dependencies.** `requests`, `json`, `os`, `Path` are already imported. `datetime` is
   NOT — replacement R0 adds it.
@@ -347,7 +347,7 @@ def check_avnav():
 
 ---
 
-## 5. Acceptance — Tier 1 §25.8 verification
+## 5. Acceptance — Tier 1 section 25.8 verification
 
 | # | Check | Expected |
 |---|---|---|
@@ -378,7 +378,7 @@ def check_avnav():
 
 ---
 
-## 7. Tier 3 outcome and Tier 1 §25.8 verdict — S117 2026-08-02
+## 7. Tier 3 outcome and Tier 1 section 25.8 verdict — S117 2026-08-02
 
 **Model:** `gemini-2.5-flash-lite`, dispatched FROM the Pi so the key never left the device.
 **Three rounds, ~11,800 tokens total, well under one cent.**

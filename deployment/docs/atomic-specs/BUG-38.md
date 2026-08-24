@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-38 (`overlays.js` writes to three DOM IDs `index.html` never defines)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-38 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** `wiki/questions/2026-07-27-v0994-tier3-spec-questions.md` — **read Q0.1–Q0.5 and Q38.1–Q38.3 first**
@@ -36,7 +36,7 @@ are invented numbers shown to a skipper. Same class of defect as BUG-34.
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-38   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-38   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-38 — give the diagnostic panel the three IDs overlays.js needs,
@@ -173,7 +173,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. Exactly three `id=` attributes added; every original `class=` intact.
 2. `#diagGrid` empty; `#diagAiTxt` contains only the placeholder; no invented numbers survive

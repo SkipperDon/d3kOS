@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-37 (dashboard `app.py` is missing all seven v0.9.9.2 routes)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-37 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** `wiki/questions/2026-07-27-v0994-tier3-spec-questions.md` — **read Q0.1–Q0.5 and Q37.1–Q37.5 first**
@@ -32,7 +32,7 @@ This is a **verbatim port**, not a redesign. All required imports are already pr
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-37   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-37   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-37 — port the seven missing v0.9.9.2 Flask routes
@@ -236,7 +236,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. `git diff` = additions only. Any deletion or modified existing line is a fail.
 2. All seven rules present with correct methods; no duplicate rule names; no duplicate function names

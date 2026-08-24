@@ -48,7 +48,7 @@ So files run in production with no repo copy, and files are documented that exis
 3. **Generate `MANIFEST.md5`.**
 4. **Resolve BUG-76's naming conflict — one decision, three documents.**
 
-   | §8.4.4 (spec) | `ARCH_SERVICE_MAP.md` | Repo |
+   | section 8.4.4 (spec) | `ARCH_SERVICE_MAP.md` | Repo |
    |---|---|---|
    | `community-markers-post.php` | `community/markers.php` | `community-markers-write.php` |
    | `telemetry-push.php` | `telemetry/push.php` | — |
@@ -93,7 +93,7 @@ config-backup.php       405     pair-device.php       ← 500 today; MUST become
   non-regression guard.
 
 ⚠ **This is an existence-and-guard test, not a functional test.** Confirming an endpoint rejects an
-anonymous GET says nothing about whether it works when authenticated. Functional round-trips are §4 and
+anonymous GET says nothing about whether it works when authenticated. Functional round-trips are section 4 and
 they need real credentials.
 
 ## 3.1 The extra 23

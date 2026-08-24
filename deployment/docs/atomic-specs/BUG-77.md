@@ -6,7 +6,7 @@ registration design gates on it.
 Option (a).**
 **Tier:** Step 1 is Tier 1/2 (new function). Steps 2–3 are Tier 3 (exact replacements).
 **Created:** 2026-08-24 (S131)
-**Bug record:** `V09994_BUG_FIXES.md` BUG-77 · **Spec updated:** `MASTER_SYSTEM_SPEC` §6.3.1 v4.0
+**Bug record:** `V09994_BUG_FIXES.md` BUG-77 · **Spec updated:** `MASTER_SYSTEM_SPEC` section 6.3.1 v4.0
 
 ---
 
@@ -17,7 +17,7 @@ server-approved.** Tier 1 becomes the first **server-verified** tier; Tier 0 sta
 
 Rationale, recorded so it is not re-litigated: Tier 1 previously meant nothing checkable. Anchoring it
 to the approval queue makes one human decision govern both tier and forum registration — closing the
-open question at `D3KOS_DEVICE_REGISTRATION_SPEC.md` §12.2 — and removes any dependence on a
+open question at `D3KOS_DEVICE_REGISTRATION_SPEC.md` section 12.2 — and removes any dependence on a
 world-readable local file that BUG-65 shows is forgeable.
 
 ⚠ **This does not close BUG-65.** Tier 2 (`/opt/opencpn` exists) and Tier 3 (`subscription.key` exists)
@@ -79,7 +79,7 @@ returning `True` grants Tier 1 to every device, which is worse than the bug bein
 
 ## 4. STEP 2 (Tier 3) — wire it into `detectTier()`, ordering corrected
 
-Per `MASTER_SYSTEM_SPEC` §6.3.1 v4.0: **Tier 3 is now tested first**, so a subscribed device is never
+Per `MASTER_SYSTEM_SPEC` section 6.3.1 v4.0: **Tier 3 is now tested first**, so a subscribed device is never
 mis-reported as Tier 2 by the OpenCPN test. Then Tier 2, then the new Tier 1, then Tier 0.
 
 `detect-tier.sh` / `tier-manager.sh` on the Pi hold the shell implementation.
@@ -120,4 +120,4 @@ a licensing bug for a boat losing features offshore; T8 proves the local file is
 - [ ] All three parse sites agree (T9); `app.py`'s duplication removed
 - [ ] `tier-manager.sh` + `detect-opencpn.sh` under version control before edit
 - [ ] Pi-vs-server `FEATURE_MATRIX` comparison performed; mismatch logged as a new bug if found
-- [ ] `MASTER_SYSTEM_SPEC` §6.3.1 already amended (S131) — confirm code matches spec, not the reverse
+- [ ] `MASTER_SYSTEM_SPEC` section 6.3.1 already amended (S131) — confirm code matches spec, not the reverse

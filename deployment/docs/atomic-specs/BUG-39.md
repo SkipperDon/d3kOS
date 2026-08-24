@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-39 (cloning the master duplicates the Pi's identity)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108) by Tier 1 (Opus 5) · **Revised same session** — operator answered
 Q39.1 and Q39.2, and Q39.3 was resolved by investigation. **This spec is now complete, not partial.**
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-39 · `PROJECT_CHECKLIST.md` PART 17
@@ -43,7 +43,7 @@ scope. (The settings.json mismatch is a separate config defect, logged not fixed
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-39   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-39   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-39 — first-boot identity regeneration for a cloned card
@@ -229,7 +229,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. **`license.json` is never written.** Read the script line by line. A single `>` here silently
    revokes the boat's T3 licence. This is the highest-consequence check in the spec.

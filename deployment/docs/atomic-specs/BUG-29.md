@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-29 (dashboard subscribes engine paths Signal K never publishes)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108-cont) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-29 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** `wiki/questions/2026-07-27-v0994-tier3-spec-questions.md` — read Q0.1–Q0.5
@@ -55,7 +55,7 @@ alias table below is explicit for that reason.
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-29   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-29   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-29 — accept the engine paths Signal K actually publishes
@@ -271,7 +271,7 @@ unit conversion on a guess is how a gauge ends up confidently wrong. It becomes 
 verification item**: with the engine running, compare the displayed oil PSI against the analogue
 gauge. If it reads ~1000× low, log it as a new bug.
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. Alias keys share **function identity** with their originals (`===`), not copies. A copy means a
    future edit to one handler silently diverges from the other.

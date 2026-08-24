@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-32 (AIS Never Reaches Signal K: Port Conflict)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-29 (S110) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-32 · `PROJECT_CHECKLIST.md` PART 17
 **Severity:** HIGH — safety (no AIS targets visible on dashboard)
@@ -89,7 +89,7 @@ The `ais` pipedProvider block (inside `pipedProviders` array):
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-32   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-32   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-32 — AIS never reaches Signal K; rtl_ais and SK ais provider
@@ -168,7 +168,7 @@ CONSTRAINT BOUNDARIES (do NOT)
   • Do NOT modify the rtl-ais.service [Unit], [Install], or any line other than ExecStart.
   • Do NOT modify settings.json outside the ais pipedProvider block.
   • Do NOT add or remove any JSON key other than removing "host" and changing port/enabled.
-  • Do NOT deploy to the Pi (Tier 1 deploys after §25.8 verify).
+  • Do NOT deploy to the Pi (Tier 1 deploys after section 25.8 verify).
 
 INTERFACE CONTRACT
   After Change A:
@@ -248,7 +248,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. Port 10108 confirmed free on lab Pi via `ss -tlnp` (S110) — not in the 8000-range or 10110.
 2. Removing `host` from SK TCP subOptions → server/listen mode. ESCALATE-IF covers the case where this assumption is wrong.

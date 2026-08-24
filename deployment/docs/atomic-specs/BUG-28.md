@@ -119,7 +119,7 @@ is that a config change lived somewhere nobody was tracking.
 | T1 | `find` for `cloud_agent.py` in the tree | exactly **1** |
 | T2 | `d3kos-cloud-agent.service` `WorkingDirectory` still resolves to the surviving file | pass |
 | T3 | Service restarts clean and `systemctl is-active` = active | pass |
-| **T4** | **`grep -c push_config_snapshot` on the surviving file** | **1 — proves promotion, not deletion.** The negative test for the trap in §2 |
+| **T4** | **`grep -c push_config_snapshot` on the surviving file** | **1 — proves promotion, not deletion.** The negative test for the trap in section 2 |
 | T5 | `ota_upgrade.py` count in the tree | exactly 1; BUG-35's `version.txt` fix still present in it |
 | T6 | All four scripts md5-identical repo ↔ Pi | pass |
 | T7 | `release-state.sh` reports `EXTRA_ON_PI = 0` for `/opt/d3kos/scripts/` | pass |
@@ -136,7 +136,7 @@ isn't running", and doing that quietly destroys a feature.
 - [ ] `push_config_snapshot` preserved and logged as built-but-never-wired — **not enabled here**
 - [ ] Four unsourced scripts committed byte-identical; T6 passes
 - [ ] `MANIFEST.md5` regenerated; `release-state.sh` clean
-- [ ] Operator decision recorded on the Pi-only configs (§4)
+- [ ] Operator decision recorded on the Pi-only configs (section 4)
 - [ ] BUG-28 entry updated: **lab half CLOSED on the byte-identical evidence; boat half remains open**
 - [ ] BUG-35 cross-referenced — same defect class, fixed by the same sweep
 
@@ -144,5 +144,5 @@ isn't running", and doing that quietly destroys a feature.
 
 - **The boat Pi.** Still ~20 fixes behind and unreachable from the lab. Only a trip or a clone settles it.
 - **Enabling config snapshot.** Deliberately deferred; needs an endpoint contract check first.
-- **`error_reporting(0)`** and the per-request `ALTER TABLE` in the PHP endpoints — noted in BUG-66 §0.1,
+- **`error_reporting(0)`** and the per-request `ALTER TABLE` in the PHP endpoints — noted in BUG-66 section 0.1,
   logged separately.

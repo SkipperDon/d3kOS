@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-34 (Diag panel: fabricated alarm string, wrong thresholds, missing cards, broken PWA URL)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-29 (S110) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-34 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** none open — all information derived directly from the two target files.
@@ -34,7 +34,7 @@ Five defects in two files, all in the M14 engine diagnostic panel:
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-34   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-34   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-34 — Diag panel: fabricated alarm, wrong thresholds,
@@ -312,7 +312,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. `THR.oil.crit:4` — 4 PSI is the documented MerCruiser 454 minimum at idle. Normal idle (4–15 PSI) no longer triggers Critical.
 2. `THR.bat_hi` added — `_stateAbove(15.5, {adv:14.8, alrt:15.2, crit:15.6})` → 15.5 ≥ 15.2 → 'Alert'. Was null before.

@@ -25,7 +25,7 @@ project has had.
 3. local:  md5sum each, key by the Pi-absolute path ("/" + relative path)
 4. remote: one ssh invocation, read paths on stdin, emit "md5  path" or "MISSING  path"
 5. join on path; classify IDENTICAL / DRIFTED / MISSING_ON_PI
-6. also report EXTRA_ON_PI for the tracked directories (see §3)
+6. also report EXTRA_ON_PI for the tracked directories (see section 3)
 ```
 
 **Why one ssh invocation and not one per file:** 216 round trips at ~30 ms each is ~7 s of pure latency
@@ -102,7 +102,7 @@ The prototype's value came from a single sentence a human could act on.
 | **T2** | **Touch one byte in a repo file, re-run** | **`DRIFTED` = 1, exit non-zero.** The core negative test — a verifier that cannot see one changed byte is decoration |
 | T3 | Point at an unreachable host | `UNREACHABLE`, exit non-zero, **not** "all identical" |
 | T4 | Create an untracked file on the Pi in a tracked dir | `EXTRA_ON_PI` = 1 (R1) |
-| T5 | Corrupt one line of `MANIFEST.md5` | repo↔MANIFEST mismatch reported, **not green** (§2) |
+| T5 | Corrupt one line of `MANIFEST.md5` | repo↔MANIFEST mismatch reported, **not green** (section 2) |
 | T6 | `.bak` / `__pycache__` files present on the Pi | **excluded** from `EXTRA_ON_PI` |
 | T7 | Run twice, no changes | byte-identical output (deterministic; safe for CI diffing) |
 
@@ -114,7 +114,7 @@ reporting success when it learned nothing. T3 is the failure mode that makes too
 ## 6. DEFINITION OF DONE
 
 - [ ] `release-state.sh` reproduces the S131 prototype result on the lab Pi (216/210/0/6)
-- [ ] All three comparisons in §2 reported separately
+- [ ] All three comparisons in section 2 reported separately
 - [ ] T2 and T3 pass
 - [ ] `PI=` override works; documented for the boat trip
 - [ ] `.pyc` noise gone (depends on `PHASE0-record-integrity.md` A0.7 — otherwise 5 permanent false

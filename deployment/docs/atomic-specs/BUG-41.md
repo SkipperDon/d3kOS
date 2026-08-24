@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-41 (`/settings` returns HTTP 500 — `tier_num` and `device_token` never passed)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-29 (S110) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-41 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** none open — all information derived directly from the target file.
@@ -44,7 +44,7 @@ Both patterns already exist in `app.py`:
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-41   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-41   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-41 — /settings returns HTTP 500: tier_num and device_token
@@ -205,7 +205,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. `tier_num` added to `render_template` in `settings()` with safe default 0.
 2. `device_token` added to `render_template` in `settings()` with safe default ''.

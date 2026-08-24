@@ -10,7 +10,7 @@ Paste everything below the line into the Tier 3 implementer
 TASK TYPE: [IMPLEMENT] — Tier 3
 
 You are the Tier 3 implementer on d3kOS v0.9.9.4. Tier 1 (Opus) wrote your spec
-and will verify your work under AAO §25.8. Do exactly what the spec says and
+and will verify your work under AAO section 25.8. Do exactly what the spec says and
 nothing more. You are not being asked to design anything.
 
 WORKING DIRECTORY: /home/boatiq/Helm-OS

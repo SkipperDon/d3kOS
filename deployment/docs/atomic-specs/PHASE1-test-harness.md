@@ -4,7 +4,7 @@
 like a complete one; stale expectations are carried as "accepted red"; and one test asserts a defect that
 was deliberately fixed.
 **Severity:** MEDIUM, but it gates confidence in every other fix in this release.
-**Tier:** Tier 3 (constrained edits) except §4, which is Tier 2 judgement.
+**Tier:** Tier 3 (constrained edits) except section 4, which is Tier 2 judgement.
 **Created:** 2026-08-24 (S131)
 
 ---
@@ -119,7 +119,7 @@ is a test that has been deleted with extra steps.
 |---|---|---|
 | T1 | `run-all.sh` on a clean lab Pi | exit **0** |
 | T2 | Break one assertion in any file | exit non-zero, that file named |
-| T3 | Make a `.test.cjs` file `return` early after 2 of 5 assertions | **FAIL or explicitly report 2/5** — must not report a pass (§3) |
+| T3 | Make a `.test.cjs` file `return` early after 2 of 5 assertions | **FAIL or explicitly report 2/5** — must not report a pass (section 3) |
 | T4 | Rename a test file to a non-dispatched extension | appears in `NOT_RUN`, exit non-zero |
 | T5 | Chromium unavailable | runner aborts with a clear message; does **not** report 0 failures |
 | T6 | `bug26` test with BUG-48's fix present | PASS (BUG-53 fixed) |

@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-13 (Speed Gauge Flicker + Context Menu Obscures Readout)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-29 (S110) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-13 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** none open — two root causes identified directly from the source files.
@@ -91,7 +91,7 @@ function openCtx(e, name) {
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-13   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-13   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-13 — Speed gauge flickers during throttle transitions;
@@ -268,7 +268,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. `_lastSogKts` is set immediately — preserves COG suppression backward compat (line 152).
 2. `_sogPending` coalesces rapid updates — only the most-recent value renders after 250 ms.

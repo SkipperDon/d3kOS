@@ -104,7 +104,7 @@ printable ASCII), missing config, and body size (~50 KB would give 413, not 400)
 The **HostPapa nginx error log** entry for one of these 400s. This cannot be diagnosed from the client
 side — that is what "nginx rejects before PHP" means.
 
-⚠ **New S131 datum, and do not conflate it:** `MASTER_SYSTEM_SPEC` §8.4.2 P1 specified
+⚠ **New S131 datum, and do not conflate it:** `MASTER_SYSTEM_SPEC` section 8.4.2 P1 specified
 `/mobile/data-ingress.php`, which **returns 404** (BUG-75). Anything built to the spec would have failed
 differently. `Uncertainty flag: it is NOT established that BUG-54's 400 relates to the wrong URL. The 400
 came from the full theme path. Do not merge the two diagnoses without log evidence.` **This bug has

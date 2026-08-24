@@ -45,7 +45,7 @@ shared secret, not sloppy comparison.
 
 ## 1. THE DESIGN — one mechanism, two problems
 
-`D3KOS_DEVICE_REGISTRATION_SPEC.md` §2 already specifies Ed25519 per-device identity for *forum
+`D3KOS_DEVICE_REGISTRATION_SPEC.md` section 2 already specifies Ed25519 per-device identity for *forum
 registration*. **Use the same mechanism for device authentication.** One keypair, one verification path,
 solving BUG-66 and BUG-63's trust anchor together. Building two credential systems would be the error.
 
@@ -55,9 +55,9 @@ Pi                                              atmyboat.com
  └─ sign(device_token|ts|nonce|path)             └─ sodium_crypto_sign_verify_detached()
 ```
 
-**What the signature does and does not prove** (registration spec §3.1 — do not lose this):
+**What the signature does and does not prove** (registration spec section 3.1 — do not lose this):
 it proves *"this message came from the holder of key K."* It does **not** prove *"K belongs to a genuine
-d3kOS install"* — the image is a free anonymous public download (`MASTER_SYSTEM_SPEC` §12.1), so no
+d3kOS install"* — the image is a free anonymous public download (`MASTER_SYSTEM_SPEC` section 12.1), so no
 per-copy secret exists. **The trust anchor is the operator approval queue, not cryptography.** Signatures
 stop device *impersonation*; approval stops *illegitimate enrolment*.
 
@@ -68,9 +68,9 @@ stop device *impersonation*; approval stops *illegitimate enrolment*.
 **Deploy order is server-before-Pi.** A Pi enrolling against a server without the tables fails closed,
 which is safe. The reverse is not.
 
-**A1 — the four tables.** Take them verbatim from `D3KOS_DEVICE_REGISTRATION_SPEC.md` §6:
+**A1 — the four tables.** Take them verbatim from `D3KOS_DEVICE_REGISTRATION_SPEC.md` section 6:
 `amboat_device_enrolments`, `amboat_registration_codes`, `amboat_device_accounts`,
-`amboat_registration_audit`. Do not redesign them; §6 already handles code hashing and the atomic claim.
+`amboat_registration_audit`. Do not redesign them; section 6 already handles code hashing and the atomic claim.
 
 **A2 — a shared verifier**, `mobile/device-auth.php`, used by every endpoint:
 
@@ -90,10 +90,10 @@ verify_device_request() ->  device_token | 401
 `$device_token` comes straight from a header and is trusted. After this change the header is only a
 lookup hint; the signature decides.
 
-**A3 — three endpoints** per registration spec §7.1: `enrol` (self-signed, proof of possession, 409 on a
+**A3 — three endpoints** per registration spec section 7.1: `enrol` (self-signed, proof of possession, 409 on a
 known token, **never overwrite an existing key**), `status`, `request-code`.
 
-**A4 — wp-admin approval queue** per §3.2: Approve / Reject / Block, showing device reference, contact
+**A4 — wp-admin approval queue** per section 3.2: Approve / Reject / Block, showing device reference, contact
 email, note, source IP, and whether that IP or email already has approved devices.
 
 **Sequence A1 → A2 → A3 → A4.** Nothing after A2 is meaningful without it.
@@ -114,7 +114,7 @@ Add Ed25519 generation into that script, before the sentinel:
 `/opt/d3kos/config/device-signing.key`, mode **0600**, owner root, POSTing only the public key.
 
 ⚠ **Never bake a key into the image.** One key in the `.img` would be shared by every d3kOS on earth and
-would void the scheme entirely (registration spec §2.1). BUG-78 adds `device-signing.key` to the image
+would void the scheme entirely (registration spec section 2.1). BUG-78 adds `device-signing.key` to the image
 strip list; **BUG-78 must land before any image is built from a card carrying a key.**
 
 **B2 — a signing helper** used by `cloud_agent.py`, `export_worker.py` and `fleet_push_service.py`.
@@ -185,7 +185,7 @@ Phase D breaks that path. This is the one place in this spec most likely to caus
 | T3 | **Unknown `device_token` + valid legacy key** | **401, and NO row created** — this is the BUG-66 regression test |
 | T4 | Tampered signature | 401 |
 | T5 | Replayed nonce | 401 |
-| T6 | Timestamp skewed 6 h | **explicit skew error, not a silent expiry** (registration spec §4.2 — the Pi's RTC is unreliable; PART 17 records the boat Pi's journal 7 days out) |
+| T6 | Timestamp skewed 6 h | **explicit skew error, not a silent expiry** (registration spec section 4.2 — the Pi's RTC is unreliable; PART 17 records the boat Pi's journal 7 days out) |
 | T7 | Re-enrol an existing `device_token` | 409, **public key unchanged** |
 | T8 | Heartbeat from an unknown device (Phase D) | 404 `unknown_device`, no row created |
 | T9 | Legacy-key request during transition | 200 **and an audit log entry written** |
@@ -203,7 +203,7 @@ Phase D breaks that path. This is the one place in this spec most likely to caus
 - [ ] `device-signing.key` mode 0600, generated at first boot, **on BUG-78's strip list**
 - [ ] TURN credentials moved out of a 644 file (BUG-74) — **they are in BUG-66's scope, contrary to the original record**
 - [ ] The S131 finding about why UPDATE became UPSERT is resolved, not assumed
-- [ ] `MASTER_SYSTEM_SPEC` §9 updated to describe the resulting model (BUG-79)
+- [ ] `MASTER_SYSTEM_SPEC` section 9 updated to describe the resulting model (BUG-79)
 
 ## 8. WHAT THIS DOES NOT FIX
 

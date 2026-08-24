@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-35 (OTA upgrade destroys three of the four `version.txt` fields)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108) by Tier 1 (Opus 5)
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-35 · `PROJECT_CHECKLIST.md` PART 17
 **Questions:** `wiki/questions/2026-07-27-v0994-tier3-spec-questions.md` — **read Q0.1–Q0.5 and Q35.1–Q35.3 first**
@@ -39,7 +39,7 @@ which is correct either way.
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-35   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-35   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-35 — OTA must preserve all four version.txt fields
@@ -268,7 +268,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. Both copies patched; the one-line `write_text(f'd3kOS Version …')` gone from both.
 2. No invented date anywhere — grep for `datetime.now`, `strftime`, `today` in the diff. Any hit is a fail.

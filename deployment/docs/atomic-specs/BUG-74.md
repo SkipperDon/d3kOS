@@ -1,6 +1,6 @@
 # ATOMIC SPEC — BUG-74
 
-**Defect:** `MASTER_SYSTEM_SPEC` §8.4.2 P5 specified a credential file that has never existed. The real
+**Defect:** `MASTER_SYSTEM_SPEC` section 8.4.2 P5 specified a credential file that has never existed. The real
 file, `cloud-config.json`, is world-readable, is **not** covered by `.gitignore`, and holds more secrets
 than previously recorded.
 **Severity:** MEDIUM in isolation; HIGH as a contributing cause of BUG-66. **Not** an independent
@@ -15,7 +15,7 @@ release gate, but it is a prerequisite of BUG-66's fix.
 
 Three things were verified live. Two of them were not in the original bug entry.
 
-**(a) The spec named a file that does not exist.** §8.4.2 P5 specified
+**(a) The spec named a file that does not exist.** section 8.4.2 P5 specified
 `/opt/d3kos/config/cloud-credentials.json` for five months, including a `.example` template. Live read
 of the lab Pi: **ABSENT**. The real file is `cloud-config.json`, mode **644**, 312 bytes.
 *Corrected in `MASTER_SYSTEM_SPEC` v4.0, S131.*

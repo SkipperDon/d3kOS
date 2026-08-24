@@ -4,7 +4,7 @@
 **Session:** S114 — 2026-07-31
 **Author:** Opus (Tier 1 architect)
 **Implementer:** Tier 3 (Ollama `devstral:24b`)
-**Verifier:** Opus, AAO §25.8
+**Verifier:** Opus, AAO section 25.8
 **Risk level:** LOW — browser-side URL strings only. No backend, no schema, no
 config. Fully reversible with `git checkout`.
 
@@ -243,7 +243,7 @@ anything touching ports or paths.
 
 ---
 
-## TIER 1 VERIFICATION CHECKLIST (§25.8 — Opus performs, not Tier 3)
+## TIER 1 VERIFICATION CHECKLIST (section 25.8 — Opus performs, not Tier 3)
 
 - [ ] No port number changed anywhere — diff every `:<port>` against the table
 - [ ] No path or query string changed

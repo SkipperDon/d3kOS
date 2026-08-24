@@ -6,7 +6,7 @@ setting was never in the path. No CAPTCHA, no honeypot, no rate limit; the nonce
 is a v0.9.9.4 release gate.
 **Tier:** Step 2 is Tier 3 (one exact insertion). Steps 1 and 3 are Tier 1/2.
 **Created:** 2026-08-24 (S131)
-**Bug record:** `V09994_BUG_FIXES.md` BUG-63 · **Design of record:** `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 §7.3
+**Bug record:** `V09994_BUG_FIXES.md` BUG-63 · **Design of record:** `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0 section 7.3
 
 ---
 
@@ -33,11 +33,11 @@ believed the hole closed while it stayed fully open. That is the most important 
 ## 2. STEP 1 (Tier 1/2) — prerequisite
 
 **BUG-66 Phase A must be complete.** This spec consumes `amboat_registration_codes` and the atomic claim
-in registration spec §6.2. Without it there is no code to redeem.
+in registration spec section 6.2. Without it there is no code to redeem.
 
 **Do not implement a weaker interim gate.** A CAPTCHA-only stopgap would let `/register/` be republished
 while device binding is still absent — and republishing is the thing that must not happen early
-(registration spec §8.3). Draft status is the correct control until the real gate ships.
+(registration spec section 8.3). Draft status is the correct control until the real gate ships.
 
 ---
 
@@ -71,7 +71,7 @@ while device binding is still absent — and republishing is the thing that must
 
 **Constraints for the dispatch — each of these is a real failure mode:**
 
-1. **Claim before create, in a transaction.** Registration spec §6.2: `UPDATE … WHERE code_hash = ? AND
+1. **Claim before create, in a transaction.** Registration spec section 6.2: `UPDATE … WHERE code_hash = ? AND
    status='valid' AND expires_at > NOW()`, proceed **only if `affected_rows === 1`**. Two simultaneous
    submissions must not both succeed.
 2. **On `wp_create_user()` failure, roll the code back to `valid`.** Otherwise a WordPress error burns
@@ -81,9 +81,9 @@ while device binding is still absent — and republishing is the thing that must
 4. **Do not remove the nonce check.** It is not a bot control but it is a valid CSRF control.
 5. **Do not touch lines 90–110.** Names, tier meta, CASL consent and the verify token all stay.
 
-## 3.1 Also required — the §7.3 form fields
+## 3.1 Also required — the section 7.3 form fields
 
-Registration spec §7.3 requires **legal name** (private, `user_meta.atmyboat_legal_name`, admin-visible
+Registration spec section 7.3 requires **legal name** (private, `user_meta.atmyboat_legal_name`, admin-visible
 only) and **display alias** (public `display_name`). Line 84's email-derived username must be replaced by
 the alias.
 
@@ -99,7 +99,7 @@ describe this field as anti-bot.**
 
 ## 4. STEP 3 (Tier 1/2) — migration and republish
 
-Per registration spec §8, in order:
+Per registration spec section 8, in order:
 
 1. Export the ~62k unverified Subscriber rows (`atmyboat_email_verified = '0'`) for the record, **then**
    bulk-delete. Export first — they are BUG-57 evidence.
@@ -112,7 +112,7 @@ stopgap, not a fix. Anyone with wp-admin can re-expose it by accident.
 
 ---
 
-## 5. TDD TESTS — registration spec §9 T8–T15, plus two
+## 5. TDD TESTS — registration spec section 9 T8–T15, plus two
 
 | # | Test | Expect |
 |---|---|---|
@@ -144,7 +144,7 @@ one is dead.
 
 ## 7. WHAT THIS DOES NOT FIX
 
-- **BUG-64** — `/my-account/` security. Registration spec §7.4 explicitly holds it out of scope and warns
+- **BUG-64** — `/my-account/` security. Registration spec section 7.4 explicitly holds it out of scope and warns
   it "must not be assumed done." S131 verified only that `/my-account/` redirects to `/login/`; role
   escalation, email-change verification and rate limiting are **untested**.
 - **BUG-57's MailPoet vector.** This stops new bot accounts. How MailPoet was accessed is unresolved.

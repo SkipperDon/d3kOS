@@ -150,7 +150,7 @@ log "  Credential strip complete"
 
 ### 4.1 Replacement C — invoke the sanitizer, and add a build-time assertion (defects D1 + the S129 lesson)
 
-`old` (exact, single occurrence — this is the real cleanup block, **not** the fictional one in §12.1):
+`old` (exact, single occurrence — this is the real cleanup block, **not** the fictional one in section 12.1):
 ```
 echo "Step 1: Pre-image cleanup..."
 echo "  - Cleaning APT cache..."
@@ -268,8 +268,8 @@ invoke `sanitize.sh` on a Pi you are working on.
 
 ## 7. STEP 6 — spec reconciliation
 
-`MASTER_SYSTEM_SPEC` §12.1 was corrected to v4.0 in S131, but it was corrected against the **fictional**
-script. Once Steps 1–5 land, replace §12.1's build script with the **real** `create-image.sh` contents,
+`MASTER_SYSTEM_SPEC` section 12.1 was corrected to v4.0 in S131, but it was corrected against the **fictional**
+script. Once Steps 1–5 land, replace section 12.1's build script with the **real** `create-image.sh` contents,
 and note that `sanitize.sh` is the sanitisation authority. Otherwise the spec continues to describe
 software that does not exist — which is the defect that produced this bug's original mis-diagnosis.
 
@@ -290,7 +290,7 @@ software that does not exist — which is the defect that produced this bug's or
 - [ ] `verify-bug78.sh` fails pre-fix and passes 6/6 post-fix, **including T6**
 - [ ] `--unattended` question resolved by reading `sanitize.sh`, not assumed
 - [ ] BUG-78 entry updated with the evidence
-- [ ] §12.1 reconciled with the real script (Step 6)
+- [ ] section 12.1 reconciled with the real script (Step 6)
 - [ ] BUG-74 (mode 600 on `cloud-config.json`) done or explicitly sequenced after this
 
 ---

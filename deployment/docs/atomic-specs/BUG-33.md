@@ -1,10 +1,10 @@
 # Atomic Spec — BUG-33 (Hazard Alerting Disabled; 5-Minute Detection Interval)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · documentation only
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · documentation only
 **Created:** 2026-07-29 (S110) by Tier 1 (Opus 5)
-**⚠ RETROACTIVE SPEC** — fix was applied directly on the Pi in S110 without following §25 workflow.
+**⚠ RETROACTIVE SPEC** — fix was applied directly on the Pi in S110 without following section 25 workflow.
 This spec documents the fix as applied. No Haiku handoff occurred. This is a known deviation from
-the §25 process (acknowledged by operator S110). Logged as UAC event in session quality metrics.
+the section 25 process (acknowledged by operator S110). Logged as UAC event in session quality metrics.
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-33 · `PROJECT_CHECKLIST.md` PART 17
 **Severity:** HIGH — safety (5-minute detection interval = zero detections during any normal hazard encounter)
 **Refines:** BUG-21 (pipeline IS built end-to-end; config was the only defect)
@@ -155,7 +155,7 @@ curl -s http://localhost:8099/signalk/v1/api/vessels/self/notifications | python
 
 ---
 
-## Tier-1 verification notes (§25.8 — retroactive)
+## Tier-1 verification notes (section 25.8 — retroactive)
 
 1. `detection_interval: 10` is appropriate — ONNX CPU inference on Pi 4 ≈ 50–150 ms/frame;
    10 s cycle leaves >98% idle time. Lower bound is 5 s per constraint.

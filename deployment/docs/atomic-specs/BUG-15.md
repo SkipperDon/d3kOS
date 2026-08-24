@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-15 (COG heading flashes when stationary)
 
-**Format:** AAO §23.5 / §25 escalation-enabled. Created 2026-07-23 by Tier 1 (Opus).
+**Format:** AAO section 23.5 / section 25 escalation-enabled. Created 2026-07-23 by Tier 1 (Opus).
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-15.
 
 ## Tier-1 finding (verified in repo)
@@ -17,7 +17,7 @@ displayed value. Threshold **0.5 kn** matches the existing precedent at `:353`
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-15  (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-15  (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-15 — COG (course over ground) flashes/oscillates on the
@@ -82,7 +82,7 @@ ESCALATE-IF (emit the 🔺 ESCALATION block — do NOT guess)
                                → CLARIFICATION
   • The fix seems to need a file other than instruments.js
                                → ADVICE (scope)
-  (§25.5.1: if an ESCALATE-IF fires, escalate first — substitute only with Tier-1
+  (section 25.5.1: if an ESCALATE-IF fires, escalate first — substitute only with Tier-1
    approval, and only if it tests the SAME assertion.)
 
 PRE-FLIGHT SELF-CHECK (answer from THIS spec; if you can't, escalate)
@@ -95,7 +95,7 @@ RETURN TO TIER 1
 ═══════════════════════════════════════════════════════════════════════
 ```
 
-## Tier-1 verification (on return — §25.8)
+## Tier-1 verification (on return — section 25.8)
 1. Confirm test failed before / passes after.
 2. `git diff`: exactly the 3 additions; no change to SOG handler output, COG math, or other handlers.
 3. Logic probe: guard is `< 0.5` and only suppresses when `_lastSogKts` is a known number (not on null).

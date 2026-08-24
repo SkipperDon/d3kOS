@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-36 (S105 deploy removed the M14 `_d3kEngData` engine cache)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108) by Tier 1 (Opus 5)
 **Revised 2026-07-27 after Tier-3 execution — two Tier-1 spec defects corrected:**
 (1) the line count said SIX; the itemised content is EIGHT (comment + declaration + blank +
@@ -38,7 +38,7 @@ five engine handlers: `window._d3kEngData` is `undefined`.
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-36   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-36   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-36 — restore the M14 live engine-data cache
@@ -205,7 +205,7 @@ RETURN TO TIER 1
 
 ---
 
-## Tier-1 verification pass (§25.8 — run on Tier 3's return)
+## Tier-1 verification pass (section 25.8 — run on Tier 3's return)
 
 1. `git diff` = exactly 8 insertions, 0 deletions in `instruments.js`.
 2. `_lastSogKts` still present at 3 sites; `window.SK_HANDLERS` still present.

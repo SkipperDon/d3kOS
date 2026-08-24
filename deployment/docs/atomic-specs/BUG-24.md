@@ -2,7 +2,7 @@
 
 **Defect:** Boat Log engine auto-capture never fires. The logic works; it is loaded on the wrong page.
 **Severity:** MEDIUM — a feature that silently does nothing.
-**Tier:** ⚠ **Requires an operator design decision before any implementation.** §2 presents three options.
+**Tier:** ⚠ **Requires an operator design decision before any implementation.** section 2 presents three options.
 **Created:** 2026-08-24 (S131)
 **Bug record:** `V09994_BUG_FIXES.md` BUG-24 (re-diagnosed S116; original hypothesis disproved)
 

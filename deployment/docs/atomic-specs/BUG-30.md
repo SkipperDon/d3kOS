@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-30 (depth gauge subscribes `belowKeel`; Signal K publishes `belowTransducer`)
 
-**Format:** AAO §23.5 Atomic Spec · §25 escalation-enabled · §24 Question Queue
+**Format:** AAO section 23.5 Atomic Spec · section 25 escalation-enabled · section 24 Question Queue
 **Created:** 2026-07-27 (S108-cont) by Tier 1 (Opus 5)
 **Revised after Tier-3 execution — two Tier-1 spec defects corrected:**
 (1) the embedded test asserted alarm states `/Critical|Alert|Advisory/i`, but `_evalBelow()` in *this*
@@ -55,7 +55,7 @@ confused.**
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-30   (AAO §23.5 · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-30   (AAO section 23.5 · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : BUG-30 — depth gauge shows nothing because it only accepts belowKeel
@@ -259,7 +259,7 @@ it tells the skipper the reading is not keel clearance.
 I have not researched the Monterey 265's transducer position. Per the Hardware Claim Protocol I am
 making no claim about either — the measurement and the menu path are operator territory.`
 
-## Tier-1 verification pass (§25.8)
+## Tier-1 verification pass (section 25.8)
 
 1. **The safety assertion is the one that matters:** `belowTransducer` must never overwrite a
    `belowKeel` value, and must never render with a plain `metres` label. Check both directly.

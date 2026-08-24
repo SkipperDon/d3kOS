@@ -3,8 +3,8 @@
 **Defect:** Wizard Step 5 computes and displays an 8-switch DIP layout that does not exist on the
 hardware, and attributes the device to Actisense, which is unsupported.
 **Severity:** HIGH — every d3kOS user with a CX5106 is instructed to configure their gateway wrongly.
-**Scope:** the wizard (P1, P4) **plus the local guide that specifies it** (§1.5 Step 0 — added after the
-operator identified it). P2 (the **public** `docs/` guide) and P3 remain excluded — see §8.
+**Scope:** the wizard (P1, P4) **plus the local guide that specifies it** (section 1.5 Step 0 — added after the
+operator identified it). P2 (the **public** `docs/` guide) and P3 remain excluded — see section 8.
 **Tier:** Step 2 is Tier 3 (exact replacements). Step 1 is operator/Tier 1 — **it is a hard gate.**
 **Created:** 2026-08-24 (S132-cont) · **Bug record:** `V09994_BUG_FIXES.md` BUG-81
 
@@ -29,8 +29,10 @@ has 7 + 2, in two separate blocks.
 ### NOT independently verified — inherited from S132's reading of the leaflet
 
 ⚠ **The ratio-encoding formula** (`ratio = 1 + sw1×1 + sw2×2 + … + sw7×64`, sw1 = LSB).
-⚠ **Leaflet §6.1's engine-type → ratio lookup table.**
 ⚠ **Block B semantics** (sw1 = sender standard, sw2 = PORT/STBD).
+
+**Now resolved:** the engine-to-ratio lookup is transcribed in `docs/CX5106_DIP_SWITCH.md`
+section 6 — see Step 1 below. It is no longer blocked.
 
 **Why I could not verify them:** `assets/manuals/CX5106_10125_manual.pdf` is a **pure image scan** — two
 CCITTFaxDecode images with no text layer — and `pdftoppm` is not installed on this workstation, so it
@@ -43,7 +45,7 @@ three artifacts for months. This is a tooling gap with a track record.
 ⚠ **Operator note:** you mentioned *"a new updated manual for CX5106 was published."* The only manual I
 found is `assets/manuals/CX5106_10125_manual.pdf`, dated 2026-08-23, which is the same document S132
 worked from. **If a newer revision exists, this spec must be re-checked against it before Step 2 runs** —
-particularly §3's ratio table, which is the part I could not read.
+particularly section 3's ratio table, which is the part I could not read.
 
 ---
 
@@ -118,29 +120,75 @@ nothing.
 
 ---
 
-## 2. STEP 1 — HARD GATE: transcribe leaflet §6.1 before writing any code
+## 2. STEP 1 — GATE CLEARED. The lookup exists, and it changes the design.
 
-**The wizard's new job is: engine characteristics → RPM speed ratio → 7-bit encoding.** The encoding is
-arithmetic and safe to implement. **The lookup is not — it must be transcribed from the leaflet.**
+⚠ **Superseded:** an earlier draft of this spec treated the engine-to-ratio lookup as unread and
+blocked on installing `poppler-utils`. **It is already transcribed** — `docs/CX5106_DIP_SWITCH.md`
+section 6 carries all three of the leaflet's lookup tables. Read that, not the PDF.
 
-BUG-81 records exactly one data point: *MerCruiser 454 MAG MPI, 8-cylinder 4-cycle → ratio 4.*
+### The three tables (transcribed from the leaflet by S132)
 
-⚠ **One data point is not a table.** It is tempting to infer `ratio = cylinders ÷ 2` for 4-stroke (8 ÷ 2 =
-4 fits) and `ratio = cylinders` for 2-stroke. **That inference is UNVERIFIED and must not be coded.**
-S101 lost on-boat time to exactly this pattern — general knowledge applied to a device-specific
-parameter, three times, on this same device. And BUG-81's own root cause is *"a fabricated hardware model
-written once from inference."* Repeating that here, in the fix, would be the same error.
+**Inboard gasoline** — ratio is half the cylinder count:
 
-**Required before Step 2:**
-1. Render leaflet sheet **D2026-B §6.1** (needs poppler, or the operator reads it out).
-2. Transcribe the full engine-type → ratio table verbatim into the spec and into a code constant.
-3. **Predict-and-check two rows** the leaflet prints in full, one low and one high — S132 did this at
-   ratio 13 and 125 for the *encoding*; repeat it for the *lookup*.
+| Cylinders | Cycle | Ratio |
+|---|---|---|
+| 4 | 4 | 2 |
+| 6 | 4 | 3 |
+| **8** | **4** | **4** |
+| 10 | 4 | 5 |
+| 12 | 4 | 6 |
 
-**If §6.1 turns out not to be a table but a formula, record the formula and its source line.** Either way
-the source must be cited, not inferred.
+**Outboard** — keyed on **poles**, not cylinders: 4→2, 6→3, 8→4, 10→5, 12→6.
 
----
+**Diesel** — the leaflet's entire rule is `Speed Ratio = Gear Number`. No table. "Gear Number" is
+not defined anywhere in the leaflet.
+
+### THE DESIGN PROBLEM THIS EXPOSES — read before coding
+
+**The wizard's existing inputs are sufficient for only one of the three engine families.**
+
+| Family | Leaflet needs | Wizard collects? |
+|---|---|---|
+| Inboard gasoline | cylinders + cycle | ✅ yes — computable today |
+| **Outboard** | **pole count** | ❌ **no.** Poles are not cylinders, and the figure normally lives in the *service* manual, not the owner's manual |
+| **Diesel** | **"Gear Number"** | ❌ **no.** Undefined term, no table, nothing to look up |
+
+So a `RATIO_BY_ENGINE` map keyed on `cylinders + stroke` — which is what the earlier draft of this
+spec proposed — **is correct for inboard gasoline and silently wrong for every outboard and every
+diesel.** That is the same defect class as BUG-81 itself: a model that fits the reference boat and
+fails everything else.
+
+⚠ **Note on my own earlier caution.** This spec previously forbade inferring `ratio = cylinders ÷ 2`.
+The leaflet's inboard-gasoline table turns out to match that formula exactly — so the inference was
+*right for one family*. The caution was still correct, and this is why: coding it blindly would have
+produced wrong settings for every outboard and diesel on the strength of a pattern that only holds
+for petrol inboards. **Being accidentally right about a third of the cases is not the same as being
+right.**
+
+### Required wizard behaviour
+
+1. **Ask engine family first** — inboard gasoline / outboard / diesel. The wizard currently collects
+   `fuel` and `isTwoStroke` but **not** inboard-vs-outboard. ⚠ **Do not infer outboard from
+   2-stroke.** It correlates and is not equivalent.
+2. **Inboard gasoline** → compute from the table. This is the only automatic path.
+3. **Outboard** → new input: pole count, with a plain-language note that it is usually in the
+   service manual. If unknown → route to (5).
+4. **Diesel** → ask for the gear number if the owner has it; state plainly that the leaflet does not
+   define the term. If unknown → route to (5).
+5. **Unknown → the empirical method, not a guess.** `docs/CX5106_DIP_SWITCH.md` section 10 gives the
+   procedure: start at ratio 2, run at a steady known RPM, compare displayed against the analogue
+   tachometer, adjust by the observed factor, **try both directions**, and confirm at idle *and*
+   cruise. The wizard must present this as a first-class outcome — for outboards and diesels it is
+   the *expected* path, not a failure state.
+
+⚠ **The wizard must never state which direction the ratio scales RPM.** Section 10 step 4 is
+explicit that this depends on internals the leaflet does not document. Any confident statement about
+direction would be a fabricated hardware claim — the exact defect being fixed.
+
+⚠ **One useful diagnostic to surface in the UI**, straight from section 10: a ratio error is a
+*constant factor*, so it is wrong by the same proportion at every engine speed. **If the error
+changes with RPM, the ratio is not the problem — the tachometer signal source is.** This is worth
+showing the user, because it saves them chasing switch settings for a wiring fault.
 
 ## 3. STEP 2 (Tier 3) — the wizard replacements
 
@@ -180,13 +228,21 @@ the source must be cited, not inferred.
    * There is NO engine-instance, RPM-sensor-type, cylinder-count, stroke-type or
    * gear-ratio field on this device. Those were fabricated. See BUG-81.
    * Engine instance / PORT-STBD is Block B switch 2 - see buildDIPRow2. */
-  var RATIO_BY_ENGINE = {
-    /* TRANSCRIBED FROM LEAFLET SECTION 6.1 IN STEP 1 - DO NOT INFER THESE */
-  };
+  /* Three separate lookups - one per engine family. Transcribed from the
+   * leaflet via docs/CX5106_DIP_SWITCH.md section 6.
+   * NOTE: outboard is keyed on POLES, not cylinders. Diesel has no table at
+   * all - the leaflet says only "Speed Ratio = Gear Number" and never defines
+   * the term. Do NOT collapse these into one cylinder-keyed map: that is
+   * correct for petrol inboards and silently wrong for everything else. */
+  var RATIO_INBOARD_GAS = { '4':2, '6':3, '8':4, '10':5, '12':6 };   /* cylinders, 4-cycle */
+  var RATIO_OUTBOARD    = { '4':2, '6':3, '8':4, '10':5, '12':6 };   /* POLES, not cylinders */
 
-  function ratioForEngine(cylinders, isTwoStroke) {
-    var key = String(cylinders) + (isTwoStroke ? '-2c' : '-4c');
-    return RATIO_BY_ENGINE[key] || null;   /* null = unknown, must not guess */
+  function ratioForEngine(family, cylinders, poles, gearNumber) {
+    if (family === 'inboard-gas') return RATIO_INBOARD_GAS[String(cylinders)] || null;
+    if (family === 'outboard')    return RATIO_OUTBOARD[String(poles)]        || null;
+    if (family === 'diesel')      return (gearNumber > 0) ? gearNumber : null;
+    return null;                  /* null = unknown -> route to the empirical
+                                   * method (guide section 10). NEVER guess. */
   }
 
   function encodeRatio(ratio) {
@@ -212,7 +268,7 @@ hardware-configuration screen is worse than an error message, because the user a
 Replace `buildRow1Key(...)` entirely. It must state the ratio and the derivation, not invented fields:
 ```
 Block A (7 switches): RPM speed ratio 4  —  switches 1,2 ON; 3-7 OFF
-Derived from: 8-cylinder 4-cycle → leaflet §6.1
+Derived from: 8-cylinder 4-cycle → leaflet section 6.1
 ```
 **`buildRow2Key()` is correct — leave it exactly as it is.**
 
@@ -237,7 +293,13 @@ together; otherwise leave the IDs and change display text only. **A half-renamed
 ### Replacement E — remove the Actisense attribution (P4)
 
 `old`: `            <option value="cx5106">Actisense CX5106</option>`
-`new`: `            <option value="cx5106">CX5106 (analogue → NMEA 2000 gateway)</option>`
+`new`: `            <option value="cx5106">Matsutec CX5106</option>`
+
+⚠ **Use "Matsutec", not "no brand".** An earlier draft of this spec suggested leaving it unbranded
+because the label plate carries none. **The operator corrected that:** `project_cx5106_status.md`
+already recorded Matsutec from S119 research, so the fix is to replace a wrong maker with the right
+one, not to mark it unknown. The plate being unbranded is a fact about the plate, not about the
+manufacturer.
 
 `old`: `      var ctxTitle = 'Actisense CX5106 &mdash; Complete Configuration';`
 `new`: `      var ctxTitle = 'CX5106 &mdash; Complete Configuration';`
@@ -274,6 +336,11 @@ same Block A** (same engine type → same ratio) and differ only in Block B sw2.
 | T9 | No "Actisense" on any CX5106 element; EMU-1 entries still say Actisense | FAIL | PASS |
 | T10 | No rendered text contains "8 switches" | FAIL | PASS |
 | T11 | All wizard text ≥ 18px (AODA) | PASS | PASS |
+| **T12** | **Outboard selected, pole count unknown** | n/a | **empirical-method instructions shown, NO switch diagram** |
+| **T13** | **Diesel selected, gear number unknown** | n/a | **same** — and the text states the leaflet does not define the term |
+| T14 | Outboard, 8 poles | n/a | ratio 4 — and **not** derived from cylinders |
+| T15 | Diesel, gear number 3 | n/a | ratio 3 |
+| T16 | No rendered text claims a direction for RPM scaling | n/a | PASS |
 
 **T6 is the most important test.** T1–T5 prove the arithmetic; T6 proves the wizard refuses to guess.
 Given this defect was born from a confident guess, the fix must be structurally incapable of one.
@@ -291,11 +358,11 @@ restart; static files do not).
 
 ## 6. DEFINITION OF DONE
 
-- [ ] Leaflet §6.1 transcribed and cited — **Step 1 gate cleared, nothing inferred**
+- [ ] Leaflet section 6.1 transcribed and cited — **Step 1 gate cleared, nothing inferred**
 - [ ] `poppler-utils` installed so the manual is readable by future sessions
 - [ ] Confirmed whether a newer manual revision exists (operator's note)
 - [ ] T1–T11 pass; T6 and T8 verified by injection
-- [ ] Twin-engine path re-tested (§3 behavioural change)
+- [ ] Twin-engine path re-tested (section 3 behavioural change)
 - [ ] Deployed to lab Pi under the standing authorisation; `d3kos-dashboard` restarted
 - [ ] Screenshot of Step 5 reviewed by the operator against the physical device
 - [ ] BUG-81 entry updated: **P1 and P4 closed; P2 and P3 still open**
@@ -323,7 +390,7 @@ for ≥130 s** — under that, the 60-second heartbeat is missed and a working d
   this spec. **It should be sequenced first, not last.**
 - **P3 — `doc/CX5106_USER_MANUAL.md` line 53.**
 - ⚠ **NO LONGER out of scope: `doc/CX5106_CONFIGURATION_GUIDE.md`.** It is the wizard's specification and
-  is now **Step 0** (§1.5). It is local-only, so it needs no GitHub approval — only the ordinary
+  is now **Step 0** (section 1.5). It is local-only, so it needs no GitHub approval — only the ordinary
   Pre-Change File List.
 - **`docs/CX5106_DIP_SWITCH.md`** — written S132, currently **uncommitted in the working tree**. Publishing
   it is part of the P2 decision.

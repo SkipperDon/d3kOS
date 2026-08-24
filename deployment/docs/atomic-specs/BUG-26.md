@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-26 (Anchor Watch "Set Anchor" fails — wrong origin)
 
-**Format:** AAO §23.5 / §25. Created 2026-07-23 by Tier 1 (Opus).
+**Format:** AAO section 23.5 / section 25. Created 2026-07-23 by Tier 1 (Opus).
 **Tracker:** `V09994_BUG_FIXES.md` BUG-26 · Diagnosis: `runbooks/GROUP-A-services.md`
 
 ## Tier-1 finding (confirmed on Pi 192.168.1.237)
@@ -18,7 +18,7 @@ anchor fetches to that same `:3002` base. Backend is fine — this is a frontend
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-26  (AAO §23.5 · §25)
+🔧 ATOMIC SPEC — BUG-26  (AAO section 23.5 · section 25)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE : [IMPLEMENT] — Tier 3
 BUG       : Anchor Watch "Set Anchor" fails — the page calls /anchor/* on the
@@ -53,7 +53,7 @@ CONSTRAINT BOUNDARIES (do NOT)
 FAILING TEST FIRST (TDD)
   Ideal (Playwright, route interception): click #btn-set → assert the outbound request
   URL is http://localhost:3002/anchor/set (BEFORE the fix it is same-origin :3000).
-  KNOWN ENV LIMITATION — PRE-APPROVED SUBSTITUTION (§25.5.1): Playwright browser deps are
+  KNOWN ENV LIMITATION — PRE-APPROVED SUBSTITUTION (section 25.5.1): Playwright browser deps are
   unavailable in the Tier-3 env. If Playwright cannot run, substitute a source check that
   asserts (a) all 5 anchor fetch() calls are prefixed with AI_BRIDGE and (b) NO bare
   fetch('/anchor/ remains — AND create the Playwright test file for later. Document it in
@@ -79,7 +79,7 @@ RETURN TO TIER 1
 ═══════════════════════════════════════════════════════════════════════
 ```
 
-## Tier-1 verification (on return — §25.8)
+## Tier-1 verification (on return — section 25.8)
 1. `git diff`: exactly the `const AI_BRIDGE` addition + 5 URL prefixes; nothing else.
 2. No bare `fetch('/anchor/` remains; SSE line unchanged; no app.py change.
 3. **Cannot verify remotely:** actual arming + alarm audio. On-Pi integration check

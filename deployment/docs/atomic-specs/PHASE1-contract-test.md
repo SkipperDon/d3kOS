@@ -46,7 +46,7 @@ test fails permanently and gets ignored, which is worse than not having it.
 ⚠ **Use LAB-SIM to populate the tree first** (`deployment/tools/lab-sim/run.sh cruise`), so real paths are
 present and the allow-list stays small. LAB-SIM covers all 19 paths and is the reason this is testable at
 all. Note its own history: it was publishing `coolantTemperature` with no handler — **the simulator had
-the BUG-47 bug too.** Assert in both directions (§3).
+the BUG-47 bug too.** Assert in both directions (section 3).
 
 ### C2 — DOM IDs
 Extract every `getElementById` / `querySelector('#…')` target from the served JS; assert each exists in
@@ -111,7 +111,7 @@ A guard test is worthless unless it demonstrably bites. Prove each historical bu
 | T4 | Remove a DOM ID from `index.html` | FAIL naming it (BUG-38) |
 | T5 | Break `/settings` to 500 | FAIL — proves 5xx is not treated as pass (BUG-41) |
 | T6 | Delete the `coolantTemperature` alias | FAIL (BUG-47) — **the bidirectional test** |
-| T7 | Make every extraction regex match nothing | **FAIL, not pass** (§4 last bullet) |
+| T7 | Make every extraction regex match nothing | **FAIL, not pass** (section 4 last bullet) |
 | T8 | Clean system, LAB-SIM `cruise` running | PASS, exit 0 |
 
 **T6 and T7 are the two that matter.** T6 proves it catches an absence rather than only a mismatch. T7

@@ -1,6 +1,6 @@
 # Atomic Spec — BUG-27 (Helm status bar text not readable at 1 m — AODA)
 
-**Format:** AAO §23.5 Atomic Spec, §25 escalation-enabled (see
+**Format:** AAO section 23.5 Atomic Spec, section 25 escalation-enabled (see
 `aao-methodology-repo/docs/TIER_ESCALATION_AND_VERIFICATION_PROTOCOL.md`)
 **Created:** 2026-07-23 by Tier 1 (Opus 4.8). Target sizes accepted by operator.
 **Tracker:** `deployment/docs/V09994_BUG_FIXES.md` BUG-27 · PROJECT_CHECKLIST.md PART 17 · checklist item D-09
@@ -36,7 +36,7 @@ explicitly out of scope.
 ## SPEC (paste this block to the Tier 3 model)
 
 ```
-🔧 ATOMIC SPEC — BUG-27  (AAO §23.5 Atomic Spec · §25 escalation-enabled)
+🔧 ATOMIC SPEC — BUG-27  (AAO section 23.5 Atomic Spec · section 25 escalation-enabled)
 ═══════════════════════════════════════════════════════════════════════
 TASK TYPE      : [IMPLEMENT] — Tier 3
 BUG            : BUG-27 — Helm status bar text not readable at 1 m (AODA)
@@ -137,7 +137,7 @@ If I'm wrong    : <consequence>
 
 ---
 
-## Tier-1 verification pass (run on Tier 3's return — §25.8)
+## Tier-1 verification pass (run on Tier 3's return — section 25.8)
 
 1. Confirm both tests **failed** at 18px/22px before the edit and **pass** at 28/26 after.
 2. `git diff` shows **exactly two** font-size values changed in d3kos.css — `#status-bar` and `.sb-ticker` untouched, no color/layout/token changes.
