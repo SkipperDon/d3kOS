@@ -4552,7 +4552,24 @@ same one BUG-66 and the registration spec both require.
 
 ## BUG-66 — One fleet-wide API key in cleartext on every Pi authenticates all 12 server endpoints
 
-**Status:** `[!]` **SEVERITY HELD AT CRITICAL — OPERATOR DECISION S131 2026-08-24. Release gate for v0.9.9.4.** The rating is a gate on the DESIGN, not on present exploitability.
+**Status:** `[~]` **PHASE A COMPLETE S134 2026-08-25 — PHASES B/C/D PENDING. SEVERITY HELD AT CRITICAL (operator decision S131). Release gate for v0.9.9.4.**
+
+### PHASE A — S134 2026-08-25 — SERVER-SIDE (COMPLETE, AWAITING HOSTPAPA STAGING DEPLOY)
+
+Files created at `deployment/v0.9.9.4-server/`:
+- A1: `sql/device-auth-tables.sql` — 4 tables verbatim from registration spec §6
+- A2: `mobile/device-auth.php` — shared Ed25519 verifier. verify_device_signature() + verify_device_request(). SELECT only — no INSERT/UPSERT. Unknown device_token → 401, never self-registers. WordPress transient nonce cache 600s.
+- A3: `mobile/enrol.php`, `mobile/status.php`, `mobile/request-code.php` — REST endpoints at /wp-json/amboat-device/v1/{enrol,status,request-code}
+- A4: `plugins/d3kos-device-auth/d3kos-device-auth.php` — WordPress plugin, REST registration, dbDelta schema creation, wp-admin approval queue
+- TDD: `tools/verify-bug66-phase-a.sh` — 12/12 PASS (T3 = no INSERT in auth path; T8 = no UPSERT in enrol)
+- Commit: 2f3dd7ea
+
+**⚠ Deploy order: server before Pi. Awaiting operator APPROVED for HostPapa staging.**
+
+### PENDING
+- Phase B (item 2.4): Pi-side Ed25519 keypair in `regenerate-identity.sh`
+- Phase C (item 2.7): migrate 12 existing endpoints — one Tier 3 dispatch each
+- Phase D (item 2.8): remove blind UPSERT from `version-heartbeat.php`
 
 ### SEVERITY REVIEW — S131 2026-08-24
 
@@ -4973,7 +4990,7 @@ dashboard before assuming financial exposure.`
 
 ## BUG-74 — `MASTER_SYSTEM_SPEC` §8.4.2 P5 names a credential file that does not exist; the real one is world-readable
 
-**Logged:** 2026-08-24 (S131) · **Platform:** Pi + spec · **Severity:** MEDIUM (HIGH as a contributing cause of BUG-66)
+**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Platform:** Pi + spec · **Severity:** MEDIUM (HIGH as a contributing cause of BUG-66) · **Status:** `[x]` FIXED — 7/7 PASS incl. T5 (Pi mode 600) + T7 (services active). Commit b909b227.
 
 ### Symptom
 §8.4.2 P5 specifies `/opt/d3kos/config/cloud-credentials.json` as *the* credential source for the
@@ -5129,7 +5146,7 @@ BUG-65, BUG-66, BUG-63, `D3KOS_DEVICE_REGISTRATION_SPEC.md` D1 and §12.2
 
 ## BUG-78 — CRITICAL: the image builder never invokes the sanitizer, and the sanitizer misses every credential file
 
-**Logged:** 2026-08-24 (S131) · **ROOT CAUSE CORRECTED same session — see below** · **Platform:** Image build / distribution · **Severity:** **CRITICAL** — this is the delivery mechanism for BUG-66 at fleet scale
+**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Platform:** Image build / distribution · **Severity:** **CRITICAL** · **Status:** `[x]` FIXED — 6/6 PASS incl. T5 (Pi md5 match). Commit 23bef5ec. ⚠ §12.1 spec reconciliation (Step 6) still pending.
 
 
 ### ⚠ ROOT CAUSE CORRECTED — S131, before any fix was attempted
