@@ -5106,6 +5106,23 @@ BUG-72 (no server-side canonical tree), BUG-75, BUG-66 (these endpoints authenti
 ## BUG-77 — `detectTier()` can never return Tier 1, yet Tier 1 is a defined tier and the registration design gates on it
 
 **Logged:** 2026-08-24 (S131) · **Platform:** Pi + spec · **Severity:** HIGH — blocks the device-tied registration design
+**Status:** `[x]` **FIXED S134-cont 2026-08-25 — 9/9 PASS. Commit 1facb1b2.**
+
+#### Fix summary
+- `tier_service.py`: `device_is_paired_and_approved()` — queries `/wp-json/amboat-device/v1/status`
+  via Ed25519 signed channel; caches at `/opt/d3kos/state/tier1-approval.json` (mode 600);
+  offline-first (cached result stands on server down); fail-closed (no cache + down → False);
+  polls max once per 15 min; `status == 'approved'` is the exact trust anchor (`'pending'` is NOT Tier 1).
+- `tier_service.py`: `detect_tier()` — ordering Tier 3 > Tier 2 > Tier 1 > Tier 0;
+  `license.json` NOT consulted for Tier 1 (T8 trust-anchor: file cannot grant Tier 1 alone).
+- `tier_service.py`: `/tier/status` and `/tier/feature/` use `detect_tier()`.
+- `tier-manager.sh`: ordering fixed — `subscription.key` first, then paid subscription,
+  then OpenCPN, then reads `tier1-approval.json` cache for boot-time Tier 1.
+- `app.py`: two inline `int(str(t).replace('T',''))` sites replaced with `_parse_tier()`
+  (deduplication — same BUG-29 class).
+- TDD: `verify-bug77.sh` 9/9 PASS.
+⚠ NOTED: `data-ingress.php feature_matrix` not in canonical tree — Pi-vs-server matrix comparison
+  deferred until live HostPapa read. Log as new bug if values disagree.
 
 ### Symptom
 §6.3.1's `detectTier()` has exactly three outcomes:

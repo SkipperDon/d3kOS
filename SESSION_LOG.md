@@ -5185,3 +5185,29 @@ Item 2.3 — BUG-66 Phase A (server-side Ed25519 device auth):
 **task_classification:** [IMPLEMENT] Tier 1/2 — Pi-side complement to server-side Phase A
 
 ---
+### S134-cont BUG-77 Addendum — 2026-08-25
+
+**Item completed:** 2.5 — BUG-77 (Tier 1 = server-approved)
+
+**Files changed:**
+- `deployment/v0.9.9.4/opt/d3kos/services/tier/tier_service.py` — device_is_paired_and_approved() +
+  detect_tier() added; /tier/status + /tier/feature/ use detect_tier(); sys.path for device_sign
+- `deployment/v0.9.9.4/opt/d3kos/scripts/tier-manager.sh` — rewritten with corrected ordering
+  (subscription.key first, then paid sub, then OpenCPN, then tier1-approval.json cache)
+- `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py` — two parse sites deduped via
+  _parse_tier(); sys import added
+- `deployment/v0.9.9.4/tools/verify-bug77.sh` — new TDD verifier, 9/9 PASS
+
+**Key decisions:**
+- T2 and T8 are the trust-anchor tests: 'pending' ≠ Tier 1; license.json cannot grant Tier 1.
+- T4 is the offline-first test: cached approval survives server unreachable at sea.
+- NOTED: data-ingress.php FEATURE_MATRIX not in canonical tree — comparison deferred.
+
+**Governance files updated:** SESSION_LOG.md, PROJECT_CHECKLIST.md v3.43, DEPLOYMENT_INDEX.md,
+V09994_BUG_FIXES.md (BUG-77 fixed), EXECUTION-ORDER.md (2.5 marked done)
+
+**Commit:** 1facb1b2
+
+**task_classification:** [IMPLEMENT] Tier 1/2 (Step 1: new function) + Tier 3 (Steps 2/3: exact replacements)
+
+---

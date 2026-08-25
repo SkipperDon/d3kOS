@@ -63,11 +63,12 @@ Operator decision: security first. This runs before Phase 1.
       step 4 generates `device-signing.key` (0600, 32 bytes raw Ed25519) + `device-signing.pub` (0644);
       SIGNING_KEY_FAILED gates sentinel. `device_sign.py` provides `sign_device_request()` and
       `get_public_key_b64()`. Commit e14fb26d.
-- [ ] **2.5 — `BUG-77.md`** — Tier 1 = paired **and** server-approved. Depends on **2.3** (`/status`).
-      ⚠ Until 2.3 exists, `device_is_paired_and_approved()` must return **False**. A stub returning True
-      grants Tier 1 to every device — worse than the bug.
-      ⚠ **Server unreachable must NEVER downgrade.** A tier check that fails closed at sea is a
-      safety-adjacent defect, not a security win.
+- [x] **2.5 — `BUG-77.md`** ✓ DONE S134-cont 2026-08-25 — 9/9 PASS. `device_is_paired_and_approved()` +
+      `detect_tier()` in tier_service.py; offline-first cache (tier1-approval.json mode 600);
+      fail-closed on no-cache+unreachable; license.json cannot grant Tier 1 (T8). tier-manager.sh
+      ordering fixed (subscription.key first). app.py parse sites deduped via _parse_tier(). Commit 1facb1b2.
+      ⚠ NOTED: data-ingress.php FEATURE_MATRIX not in canonical tree — comparison cannot be done
+      without a live HostPapa read. Log as new bug if values disagree.
 - [ ] **2.6 — `BUG-63.md`** — registration-code gate before `page-register.php:88`. Depends on **2.3**.
       ⚠ Claim the code atomically **then** create the user; roll back on failure. `/register/` stays
       Draft until every test passes. T16 (nonce-only POST creates nothing) proves the old path is dead.
