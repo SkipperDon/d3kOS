@@ -48,28 +48,39 @@ if ( $action === 'verify' ) {
 $reg_error   = '';
 $reg_success = false;
 $reg_email   = ''; // kept for the success screen
-$form        = [ 'first_name' => '', 'last_name' => '', 'email' => '' ];
+$form        = [ 'first_name' => '', 'last_name' => '', 'email' => '', 'alias' => '', 'code_input' => '' ];
+
+// BUG-63: device-registration gate helpers — claim code BEFORE creating any user.
+// require_once here so the functions are available for the submission block below.
+require_once __DIR__ . '/device-registration.php';
 
 if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['atmyboat_register_nonce'] ) ) {
 
     if ( ! wp_verify_nonce( wp_unslash( $_POST['atmyboat_register_nonce'] ), 'atmyboat_register_action' ) ) {
         $reg_error = 'Security check failed. Please refresh and try again.';
     } else {
-        $first  = sanitize_text_field( wp_unslash( $_POST['first_name']       ?? '' ) );
-        $last   = sanitize_text_field( wp_unslash( $_POST['last_name']        ?? '' ) );
-        $email  = sanitize_email(      wp_unslash( $_POST['email']            ?? '' ) );
-        $pw     =                      wp_unslash( $_POST['password']         ?? ''   );
-        $pw2    =                      wp_unslash( $_POST['password_confirm'] ?? ''   );
-        $tos    = ! empty( $_POST['accept_tos'] );
-        $casl   = ! empty( $_POST['accept_casl'] );
+        $first      = sanitize_text_field( wp_unslash( $_POST['first_name']       ?? '' ) );
+        $last       = sanitize_text_field( wp_unslash( $_POST['last_name']        ?? '' ) );
+        $alias      = sanitize_user(       wp_unslash( $_POST['alias']            ?? '' ), true );
+        $email      = sanitize_email(      wp_unslash( $_POST['email']            ?? '' ) );
+        $pw         =                      wp_unslash( $_POST['password']         ?? ''   );
+        $pw2        =                      wp_unslash( $_POST['password_confirm'] ?? ''   );
+        $code_input = sanitize_text_field( wp_unslash( $_POST['code_input']       ?? '' ) );
+        $tos        = ! empty( $_POST['accept_tos'] );
+        $casl       = ! empty( $_POST['accept_casl'] );
 
         // Re-populate form on error (never passwords)
-        $form = [ 'first_name' => $first, 'last_name' => $last, 'email' => $email ];
+        $form = [ 'first_name' => $first, 'last_name' => $last, 'email' => $email,
+                  'alias' => $alias, 'code_input' => '' ]; // never echo the code back
 
         if ( empty( $first ) ) {
             $reg_error = 'Please enter your first name.';
         } elseif ( empty( $last ) ) {
             $reg_error = 'Please enter your last name.';
+        } elseif ( empty( $alias ) || strlen( $alias ) < 3 ) {
+            $reg_error = 'Please choose a display name (at least 3 characters).';
+        } elseif ( username_exists( $alias ) ) {
+            $reg_error = 'That display name is already taken. Please choose another.';
         } elseif ( ! is_email( $email ) ) {
             $reg_error = 'Please enter a valid email address.';
         } elseif ( email_exists( $email ) ) {
@@ -80,57 +91,82 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['atmyboat_register_n
             $reg_error = 'Passwords do not match. Please try again.';
         } elseif ( ! $tos ) {
             $reg_error = 'You must accept the Terms of Service and Privacy Policy to create an account.';
+        } elseif ( empty( $code_input ) ) {
+            $reg_error = 'A d3kOS registration code is required. Open the d3kOS app to generate one.';
         } else {
-            // Build username from email local-part — WP requires a unique username
-            $base     = strtolower( sanitize_user( explode( '@', $email )[0], true ) );
-            $username = ( $base !== '' && ! username_exists( $base ) ) ? $base : 'user_' . wp_generate_password( 6, false, false );
+            // ── BUG-63: device-tied registration gate ─────────────────────────
+            // Claim the registration code ATOMICALLY before creating anything.
+            // Order matters: claim, then create. Never check-then-act (race defect V5).
+            $code_hash = hash( 'sha256', strtoupper( strtr( preg_replace( '/\s+/', '', $code_input ), [ 'O' => '0', 'I' => '1' ] ) ) );
+            $claim = amboat_claim_registration_code( $code_input );
 
-            $user_id = wp_create_user( $username, $pw, $email );
-
-            if ( is_wp_error( $user_id ) ) {
-                $reg_error = esc_html( $user_id->get_error_message() );
+            if ( is_wp_error( $claim ) ) {
+                $reg_error = esc_html( $claim->get_error_message() );
+                amboat_registration_audit( 'redeem_fail', null, $claim->get_error_code() );
             } else {
-                // Set names and display name
-                wp_update_user( [
-                    'ID'           => $user_id,
-                    'first_name'   => $first,
-                    'last_name'    => $last,
-                    'display_name' => trim( $first . ' ' . $last ),
-                ] );
+                $device_token = $claim; // device_token returned on successful claim
 
-                // Default tier + consent + email verified flag
-                update_user_meta( $user_id, 'atmyboat_tier',           'T0' );
-                update_user_meta( $user_id, 'atmyboat_casl_consent',   $casl ? '1' : '0' );
-                update_user_meta( $user_id, 'atmyboat_email_verified', '0' );
+                $user_id = wp_create_user( $alias, $pw, $email );
 
-                // Generate 40-character verification token
-                $token = wp_generate_password( 40, false );
-                update_user_meta( $user_id, 'atmyboat_verify_token', $token );
+                if ( is_wp_error( $user_id ) ) {
+                    // T17: roll the code back so the user can retry
+                    amboat_rollback_registration_code( $code_hash );
+                    amboat_registration_audit( 'redeem_fail', null, 'wp_create_user_failed' );
+                    $reg_error = esc_html( $user_id->get_error_message() );
+                } else {
+                    // Bind account to device (D4: exactly one account per device_token)
+                    global $wpdb;
+                    $wpdb->insert(
+                        $wpdb->prefix . 'amboat_device_accounts',
+                        [ 'device_token' => $device_token, 'user_id' => $user_id ],
+                        [ '%s', '%d' ]
+                    );
 
-                // Build verification URL (points back to this page with query args)
-                $verify_url = add_query_arg(
-                    [ 'action' => 'verify', 'token' => $token, 'uid' => $user_id ],
-                    home_url( '/register/' )
-                );
+                    // Set display alias as display name; legal name stored private
+                    wp_update_user( [
+                        'ID'           => $user_id,
+                        'display_name' => $alias,
+                        'nickname'     => $alias,
+                    ] );
 
-                // Send verification email via WordPress / HostPapa mail
-                $subject = 'Verify your AtMyBoat.com account';
-                $body    = "Hi {$first},\n\n"
-                    . "Welcome aboard! Click the link below to verify your email address and activate your AtMyBoat.com account:\n\n"
-                    . "{$verify_url}\n\n"
-                    . "This link is valid for 24 hours.\n\n"
-                    . "If you did not create this account you can safely ignore this email.\n\n"
-                    . "— The AtMyBoat Team\n"
-                    . "atmyboat.com";
+                    // Legal name (first + last) stored as private user_meta — admin-visible only
+                    update_user_meta( $user_id, 'atmyboat_legal_name', trim( $first . ' ' . $last ) );
 
-                wp_mail( $email, $subject, $body, [ 'Content-Type: text/plain; charset=UTF-8' ] );
+                    // Default tier + consent + email verified flag
+                    update_user_meta( $user_id, 'atmyboat_tier',           'T0' );
+                    update_user_meta( $user_id, 'atmyboat_casl_consent',   $casl ? '1' : '0' );
+                    update_user_meta( $user_id, 'atmyboat_email_verified', '0' );
 
-                $reg_email   = $email;
-                $reg_success = true;
-            }
-        }
-    }
-}
+                    // Generate 40-character verification token
+                    $token = wp_generate_password( 40, false );
+                    update_user_meta( $user_id, 'atmyboat_verify_token', $token );
+
+                    // Build verification URL (points back to this page with query args)
+                    $verify_url = add_query_arg(
+                        [ 'action' => 'verify', 'token' => $token, 'uid' => $user_id ],
+                        home_url( '/register/' )
+                    );
+
+                    // Send verification email via WordPress / HostPapa mail
+                    $subject = 'Verify your AtMyBoat.com account';
+                    $body    = "Hi {$first},\n\n"
+                        . "Welcome aboard! Click the link below to verify your email address and activate your AtMyBoat.com account:\n\n"
+                        . "{$verify_url}\n\n"
+                        . "This link is valid for 24 hours.\n\n"
+                        . "If you did not create this account you can safely ignore this email.\n\n"
+                        . "— The AtMyBoat Team\n"
+                        . "atmyboat.com";
+
+                    wp_mail( $email, $subject, $body, [ 'Content-Type: text/plain; charset=UTF-8' ] );
+
+                    amboat_registration_audit( 'account_created', $user_id, $device_token );
+                    $reg_email   = $email;
+                    $reg_success = true;
+                }  // end: wp_create_user success
+            }  // end: code gate else (claim succeeded)
+        }  // end: all-validations-passed else
+    }  // end: nonce-check else
+}  // end: POST check
 
 get_header();
 ?>
