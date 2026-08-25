@@ -1,10 +1,18 @@
 # Secrets & credentials — NEVER commit these
 api-keys.json
+cloud-config.json
 cloud-credentials.json
+device-token.json
+device-signing.key
+subscription.key
 .env
 .env.*
 **/config/api-keys.json
+**/config/cloud-config.json
 **/config/cloud-credentials.json
+**/config/device-token.json
+**/config/device-signing.key
+**/config/subscription.key
 **/config/*.env
 telemetry-buffer.db
 

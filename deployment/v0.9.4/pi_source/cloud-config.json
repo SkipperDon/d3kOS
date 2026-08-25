@@ -1,5 +1,8 @@
 {
   "amboat_api_key": "YOUR_32_CHAR_HEX_KEY_HERE",
   "amboat_base_url": "https://atmyboat.com",
-  "poll_interval_seconds": 30
+  "poll_interval_seconds": 30,
+  "turn_username": "YOUR_TURN_USERNAME_HERE",
+  "turn_credential": "YOUR_TURN_CREDENTIAL_HERE",
+  "device_token": ""
 }
