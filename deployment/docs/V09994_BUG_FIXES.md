@@ -5408,7 +5408,13 @@ BUG-78 (image ships credentials), BUG-58/59 (credential exposure class)
 **Logged:** 2026-08-24 (S132) · **Platform:** Pi dashboard (setup wizard) + public GitHub docs
 · **Severity:** **HIGH** — every d3kOS user with a CX5106 is told to configure their gateway
 wrongly, and the incorrect guide is already public on `main` and linked twice from the README
-· **Status:** `[ ]` OPEN — manual-derived truth documented; **no code or public file changed yet**
+· **Status:** `[~]` PARTIAL — P1 + P4 FIXED S134-cont 2026-08-25; P2/P3 pending operator APPROVED for GitHub push.
+  - **P1 FIXED:** `setup.html` Step 5 rewritten — 7+2 block model, ratio tables, empirical fallback, Matsutec.
+  - **P4 FIXED:** Actisense→Matsutec in dropdown + ctxTitle; "(8 switches)"→"(7 switches)"; "Row 1"→"Block A".
+  - **Step 0 DONE:** `doc/CX5106_CONFIGURATION_GUIDE.md` corrected (local-only); superseded original preserved.
+  - **P2 OPEN:** `docs/CX5106_CONFIGURATION_GUIDE.md` on `origin/main` — needs explicit operator APPROVED.
+  - **P3 OPEN:** `doc/CX5106_USER_MANUAL.md` line 53 — "8 switches in a row" still present.
+  - **Tests T1-T16:** spec §4 tests not run — require lab Pi with wizard loaded. TDD guard before deploy.
 
 ### Symptom
 
