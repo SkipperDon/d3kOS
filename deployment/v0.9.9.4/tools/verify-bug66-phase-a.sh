@@ -124,6 +124,22 @@ else
     check 12 "plugin uses dbDelta for table creation" fail
 fi
 
+# T13 — Phase A gap fix: plugin creates amboat_devices table in dbDelta
+# Without this, the INSERT IGNORE in the approval handler silently fails (table doesn't exist)
+if grep -q 'amboat_devices' "$PLUGIN" 2>/dev/null; then
+    check 13 "plugin creates amboat_devices via dbDelta (Phase A gap fix)" pass
+else
+    check 13 "plugin creates amboat_devices via dbDelta (Phase A gap fix)" fail
+fi
+
+# T14 — Phase A gap fix: approval handler INSERTs into amboat_devices on approve
+# version-heartbeat.php Phase D UPDATE needs a row to exist; without INSERT on approval, 404.
+if grep -q 'INSERT IGNORE INTO amboat_devices' "$PLUGIN" 2>/dev/null; then
+    check 14 "approval handler INSERTs into amboat_devices on approve (Phase A gap fix)" pass
+else
+    check 14 "approval handler INSERTs into amboat_devices on approve (Phase A gap fix)" fail
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 if [ "$FAIL" -gt 0 ]; then

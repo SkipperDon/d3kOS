@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS amboat_device_accounts (
 CREATE TABLE IF NOT EXISTS amboat_registration_audit (
   id           BIGINT AUTO_INCREMENT PRIMARY KEY,
   event        ENUM('enrol','approve','reject','block','code_issued',
-                    'redeem_ok','redeem_fail','rate_limited') NOT NULL,
+                    'redeem_ok','redeem_fail','rate_limited','legacy_key_used') NOT NULL,
   device_token VARCHAR(36)   NULL,
   user_id      BIGINT        NULL,
   ip           VARBINARY(16) NULL,
@@ -56,4 +56,13 @@ CREATE TABLE IF NOT EXISTS amboat_registration_audit (
   INDEX (device_token),
   INDEX (created_at),
   INDEX (event)
+);
+
+-- Phase A gap fix: amboat_devices is the target of version-heartbeat.php Phase D UPDATE.
+-- Plugin dbDelta creates this on activation; reference copy here for manual installs.
+CREATE TABLE IF NOT EXISTS amboat_devices (
+  device_token        VARCHAR(36) NOT NULL PRIMARY KEY,
+  current_version     VARCHAR(20) NULL,
+  version_updated_at  DATETIME    NULL,
+  version_check_count INT         NOT NULL DEFAULT 0
 );

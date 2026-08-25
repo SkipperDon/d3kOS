@@ -107,7 +107,8 @@ function d3kos_create_device_tables(): void {
 
         "CREATE TABLE IF NOT EXISTS amboat_registration_audit (
             id           BIGINT AUTO_INCREMENT NOT NULL,
-            event        ENUM('enrol','approve','reject','block','code_issued','redeem_ok','redeem_fail','rate_limited') NOT NULL,
+            event        ENUM('enrol','approve','reject','block','code_issued','redeem_ok',
+                             'redeem_fail','rate_limited','legacy_key_used') NOT NULL,
             device_token VARCHAR(36)  NULL,
             user_id      BIGINT       NULL,
             ip           VARBINARY(16) NULL,
@@ -117,6 +118,17 @@ function d3kos_create_device_tables(): void {
             INDEX idx_device (device_token),
             INDEX idx_created (created_at),
             INDEX idx_event (event)
+        ) $charset",
+
+        // Phase A gap fix: amboat_devices must exist before the approval handler can INSERT.
+        // version-heartbeat.php Phase D does UPDATE only — it returns 404 if no row exists.
+        // This table is assumed to pre-exist in older installs; dbDelta is idempotent.
+        "CREATE TABLE IF NOT EXISTS amboat_devices (
+            device_token        VARCHAR(36) NOT NULL,
+            current_version     VARCHAR(20) NULL,
+            version_updated_at  DATETIME    NULL,
+            version_check_count INT         NOT NULL DEFAULT 0,
+            PRIMARY KEY (device_token)
         ) $charset",
     ];
 
@@ -166,6 +178,16 @@ function d3kos_render_approval_queue(): void {
                   WHERE device_token = %s",
                 $new_status, get_current_user_id(), $token
             ));
+
+            // Phase A gap fix: INSERT into amboat_devices on approval so that
+            // version-heartbeat.php Phase D UPDATE WHERE device_token = ? finds a row.
+            // Without this, the first heartbeat after approval returns 404.
+            if ($action === 'approve') {
+                $wpdb->query($wpdb->prepare(
+                    "INSERT IGNORE INTO amboat_devices (device_token) VALUES (%s)",
+                    $token
+                ));
+            }
 
             $wpdb->insert('amboat_registration_audit', [
                 'event'        => $action === 'approve' ? 'approve' : ($action === 'block' ? 'block' : 'reject'),

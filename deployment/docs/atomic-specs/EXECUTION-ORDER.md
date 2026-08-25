@@ -99,6 +99,13 @@ Operator decision: security first. This runs before Phase 1.
       section 0 and 4. Do not "fix" it — breaks offline-first.
 - [ ] **2.10 — BUG-72** — deploy `version-heartbeat.php`. **Gated behind 2.7 and 2.8** by the S131
       decision: BUG-66's fix is a prerequisite, not a parallel task.
+      Phase A gap FIXED S134-cont 2026-08-25: `d3kos-device-auth.php` plugin now (a) creates
+      `amboat_devices` in dbDelta, (b) INSERT IGNORE into amboat_devices on approve.
+      `amboat_registration_audit` event enum extended with `legacy_key_used` (Phase C).
+      verify-bug66-phase-a.sh extended to T14 — 14/14 PASS. Commit pending.
+      ⚠ **Deploy still requires explicit operator APPROVED** (HostPapa staging first, then live).
+      ⚠ version-heartbeat.php is in `deployment/features/autonomous-agents/php/` — confirm
+      HostPapa staging path before deploy.
 
 **Phase 2 exit criterion:** BUG-66, 78, 65, 63, 77 closed. That is the release gate.
 
