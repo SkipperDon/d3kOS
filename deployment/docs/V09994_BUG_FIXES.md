@@ -4498,7 +4498,25 @@ server-issued code from an operator-approved d3kOS device. **Do not re-publish
 
 ## BUG-65 — `license.json` is unsigned and world-readable: any user can self-elevate to Tier 3
 
-**Status:** `[!]` **LOGGED S127 2026-08-22. HIGH severity — licensing bypass. Found during the BUG-63 registration-architecture review, not by a user report.**
+**Status:** `[~]` **STEPS 1+2 DONE S134-cont 2026-08-25 — 14/14 PASS. Step 3 (server-side enforcement) DEFERRED — Tier 1/2 architectural gate; required before Phase 2 exits.**
+
+**Step 1 — `first-boot-setup.sh` promoted to canonical tree:**
+- Canonical path: `deployment/v0.9.9.4/opt/d3kos/scripts/first-boot-setup.sh`
+- Fallback branch (lines 148-149): `chown d3kos:d3kos /opt/d3kos/config/license.json` + `chmod 600 /opt/d3kos/config/license.json`
+- STEP 6 re-asserts `chmod 600` after `chown -R` (guards against future regressions)
+- sanitize.sh: confirmed `chmod 600` already present (BUG-78 T8/T9)
+- T3 trap (naive chmod 600 → root:root 600 → d3kos cannot read): guarded by explicit `chown d3kos:d3kos` before mode change (T6 PASS)
+
+**Step 2 — Tier audit fields in `export_worker.py`:**
+- `_build_ingress_payload()` now appends: `tier_claimed` (from license.json), `tier_detected` (opencpn+subscription.key filesystem test), `opencpn_present` (bool), `subscription_key_present` (bool)
+- Handles both int 3 and string "T3" tier forms (reuses _parse_tier logic inline)
+- Server receives the claim + the detected value every export — mismatch is visible for human review
+- **No auto-downgrade path** — flag for human review only; false positive at sea strips paid features
+
+**Verifier:** `deployment/v0.9.9.4/tools/verify-bug65.sh` — 14/14 PASS
+**Commit:** pending (this session)
+
+**FORMERLY: LOGGED S127 2026-08-22. HIGH severity — licensing bypass. Found during the BUG-63 registration-architecture review, not by a user report.**
 
 ### Symptom
 Editing one line of a plain text file on the Pi grants every paid feature:

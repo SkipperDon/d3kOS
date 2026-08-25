@@ -88,12 +88,15 @@ Operator decision: security first. This runs before Phase 1.
       safe to remove now because Phase C auth rejects unknown devices at 401. Commit b94ce203.
       ⚠ Phase A gap: approval handler must INSERT into amboat_devices on approval — without this, approved
       devices get 404 on first heartbeat. BUG-72 deploy gated on this.
-- [ ] **2.9 — `BUG-65.md`** — mode **and ownership** together; tier claim-vs-detected audit; server-side
-      enforcement of paid **cloud** features only.
-      ⚠ `license.json` is `root:root 644` while services run as `d3kos`. **A naive `chmod 600` looks
-      like a security fix and silently disables tier detection for paying customers.** T3 guards this.
-      ⚠ Local tier forgery stays possible **by design** — document it so nobody "fixes" it later and
-      breaks offline-first.
+- [x] **2.9 — `BUG-65.md`** — Steps 1+2 DONE S134-cont 2026-08-25 — 14/14 PASS.
+      Step 1: `first-boot-setup.sh` promoted to canonical tree with `chown d3kos:d3kos` +
+      `chmod 600` on license.json (fallback branch line 148-149) + STEP 6 re-assert after chown -R.
+      sanitize.sh confirmed already fixed (BUG-78 T8). Step 2: `export_worker.py`
+      `_build_ingress_payload()` now appends `tier_claimed`, `tier_detected`, `opencpn_present`,
+      `subscription_key_present`. Verifier: `verify-bug65.sh`. Commit pending.
+      ⚠ Step 3 (server-side enforcement of paid cloud features) is Tier 1/2 gate — deferred.
+      ⚠ Local tier forgery stays possible **by design** — accepted outcome, documented in BUG-65 spec
+      section 0 and 4. Do not "fix" it — breaks offline-first.
 - [ ] **2.10 — BUG-72** — deploy `version-heartbeat.php`. **Gated behind 2.7 and 2.8** by the S131
       decision: BUG-66's fix is a prerequisite, not a parallel task.
 

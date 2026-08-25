@@ -206,6 +206,41 @@ class ExportWorker:
         if boatlog_entries:
             payload['boatlog'] = boatlog_entries
 
+        # BUG-65 Step 2: tier claim-vs-detected audit — makes local forgery visible to the server.
+        # Server should compare tier_claimed vs entitlement record and flag mismatches for review.
+        # Do NOT auto-downgrade — a false positive at sea strips paid features mid-passage.
+        try:
+            with open(LICENSE_FILE) as f:
+                _lic = json.load(f)
+            _claimed_raw = _lic.get('tier', 0)
+            if isinstance(_claimed_raw, str) and _claimed_raw.upper().startswith('T'):
+                try:
+                    tier_claimed = int(_claimed_raw[1:])
+                except ValueError:
+                    tier_claimed = 0
+            else:
+                try:
+                    tier_claimed = int(_claimed_raw)
+                except (ValueError, TypeError):
+                    tier_claimed = 0
+        except Exception:
+            tier_claimed = 0
+
+        opencpn_present          = Path('/opt/opencpn').is_dir()
+        subscription_key_present = Path('/opt/d3kos/config/subscription.key').is_file()
+
+        if opencpn_present and subscription_key_present:
+            tier_detected = 3
+        elif opencpn_present:
+            tier_detected = 2
+        else:
+            tier_detected = 1
+
+        payload['tier_claimed']            = tier_claimed
+        payload['tier_detected']           = tier_detected
+        payload['opencpn_present']         = opencpn_present
+        payload['subscription_key_present'] = subscription_key_present
+
         return payload
 
     def _sync_tier_from_response(self, tier_str):
