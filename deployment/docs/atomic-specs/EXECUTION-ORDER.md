@@ -131,9 +131,13 @@ Operator decision: security first. This runs before Phase 1.
       C3: 5 dashboard routes → assert HTTP ≠404 and ≠5xx (BUG-37/41).
       Reads from `BASE_URL/static/js/instruments.js` (served, not repo). Never localhost. Count guards on all
       regex extraction. Fails with specific path name on violation.
-- [ ] **1.3 — `BUG-81-WIZARD.md` Step 0** — correct `doc/CX5106_CONFIGURATION_GUIDE.md`.
-      **Local-only file, no GitHub approval needed.** It is the wizard's specification: fix the spec
-      before the implementation, or the next person rebuilds the bug.
+- [x] **1.3 — `BUG-81-WIZARD.md` Step 0** ✓ DONE S134-cont 2026-08-25 — corrected `doc/CX5106_CONFIGURATION_GUIDE.md`.
+      Correction notice at top with BUG-81 date. Part 1 rewritten: 7+2 block model (Block A = 7-pos binary ratio,
+      Block B = 2 independent fields). Engine-to-ratio tables: inboard-gas (cylinders), outboard (POLES, not cylinders),
+      diesel (gear number, undefined — empirical if unknown). Q3/Q5/Q6 removed (no such fields on hardware);
+      new Q4 asks engine family first. Q7/Q8 unchanged (correct). "located on side, labeled 1-8" sentence corrected.
+      Superseded original preserved at end of file (reviewers need it for Step 2 `buildDIPRow1` replacements).
+      Cross-links `docs/CX5106_DIP_SWITCH.md` as authority. Manufacturer corrected to Matsutec.
 - [ ] **1.4 — `BUG-81-WIZARD.md` Steps 1–2** — rewrite wizard Step 5 to the ratio model; drop the
       Actisense attribution (use **Matsutec**). Depends on **0.2**.
       ⚠ The lookup is **per engine family** — inboard petrol by cylinders, outboard by **poles**, diesel
