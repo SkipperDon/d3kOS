@@ -113,11 +113,15 @@ Operator decision: security first. This runs before Phase 1.
 
 ## PHASE 1 — Close the remaining defects
 
-- [ ] **1.1 — `PHASE1-test-harness.md`** — do this before anything else in Phase 1. You cannot trust a
-      later fix if the suite cannot tell a partial run from a complete one.
-      ⚠ `bug30`/`bug36` are `.test.cjs`; the node branch records pass/fail **per file, not per
-      assertion**, which is why bug30's depth-priority safety assertions **have never executed.** Add
-      per-assertion visibility first, then find out what those three assertions actually say.
+- [x] **1.1 — `PHASE1-test-harness.md`** — DONE S134-cont 2026-08-25 — commit b6812e37.
+      (a) run-all-tests.sh → deprecated shim; T8 clean.
+      (b) run-all.sh node branch: per-assertion guard — requires 'ALL ASSERTIONS PASSED' sentinel
+      in addition to exit 0; early-exit now reported as EARLY EXIT, not silent pass (T3 PASS).
+      (c) bug26: BUG-53 fixed — inverted assertion; BASE_HOST:3002 not localhost:3002; anchor
+      coverage retained; regression guard: not.toContain('localhost').
+      (d) bug30: stale expectations fixed (BUG-43 imperial) → 13.8 ft / 11.5 ft; safety
+      assertions 3-5 executed and passed for the FIRST TIME.
+      bug36 already passing — no changes needed.
 - [ ] **1.2 — `PHASE1-contract-test.md`** — the highest-value item in Phase 1. Kills the defect class
       that has recurred **six times** (BUG-29/30/37/38/41/47).
       ⚠ T7 (every regex matches nothing → **FAIL, not pass**) is the assertion that stops the test
