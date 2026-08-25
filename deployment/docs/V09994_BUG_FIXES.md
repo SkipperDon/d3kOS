@@ -4311,7 +4311,18 @@ WordPress staging environment has no `.htaccess` rule or authentication middlewa
 
 ## BUG-63 — Insecure User Registration Allows Unlimited Bot Account Creation
 
-**Status:** `[!]` **LOGGED S126 2026-08-22. CRITICAL severity — ACTIVE ONGOING ATTACK.**
+**Status:** `[~]` **PARTIAL FIX S134-cont 2026-08-25. Code gate implemented (Steps 1–2). Step 3 (bulk-delete + republish) BLOCKED — requires explicit operator APPROVED.**
+
+### BUG-63 Fix Progress — S134-cont 2026-08-25
+
+**Phase 1 — Code gate (COMPLETE — commit d9915753):**
+- `device-registration.php`: `amboat_claim_registration_code()` atomic (SELECT FOR UPDATE + UPDATE WHERE status='valid' AND affected_rows=1); `amboat_rollback_registration_code()` T17; `amboat_registration_audit()`.
+- `page-register.php`: `require_once device-registration.php` before POST block; code_input required field; alias replaces email-derived username (display_name + nickname = public alias; atmyboat_legal_name = private user_meta); claim-then-create order (T16 regression test); rollback on wp_create_user failure (T17).
+- `verify-bug63.sh`: 11 tests — 11/11 PASS.
+
+**Phase 2 — Step 3 — HIGH-RISK OPERATOR ACTION (NOT EXECUTED):**
+- Export 62k illegitimate rows, bulk-delete from wp_users, flag legacy users, republish /register/.
+- Requires explicit operator APPROVED. /register/ remains Draft until this is done.
 
 ### Symptoms
 - Bot accounts created daily with nonsense usernames: `user12345`, `testbot`, `spamuser999`, `user_xxx_123`, etc.

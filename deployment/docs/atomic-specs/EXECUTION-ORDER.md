@@ -69,9 +69,12 @@ Operator decision: security first. This runs before Phase 1.
       ordering fixed (subscription.key first). app.py parse sites deduped via _parse_tier(). Commit 1facb1b2.
       ⚠ NOTED: data-ingress.php FEATURE_MATRIX not in canonical tree — comparison cannot be done
       without a live HostPapa read. Log as new bug if values disagree.
-- [ ] **2.6 — `BUG-63.md`** — registration-code gate before `page-register.php:88`. Depends on **2.3**.
-      ⚠ Claim the code atomically **then** create the user; roll back on failure. `/register/` stays
-      Draft until every test passes. T16 (nonce-only POST creates nothing) proves the old path is dead.
+- [x] **2.6 — `BUG-63.md`** ✓ DONE S134-cont 2026-08-25 — 11/11 PASS. device-registration.php: atomic
+      SELECT FOR UPDATE + UPDATE WHERE status='valid'; rollback + audit helpers. page-register.php: alias
+      replaces email-derived username; legal name → private user_meta; code_input required; claim-then-create
+      enforces T16; rollback on wp_create_user failure enforces T17. Commit d9915753.
+      ⚠ Step 3 (bulk-delete 62k rows + republish /register/) is HIGH-RISK — NOT executed. Requires explicit
+      operator APPROVED before proceeding.
 - [ ] **2.7 — `BUG-66.md` Phase C** — migrate the 12 endpoints. **One endpoint per dispatch, not 12.**
       Accept legacy key OR signature during transition, **logging every legacy use**, then remove.
       ⚠ Do not flip 12 endpoints and the whole fleet at once — that is how a boat loses connectivity.

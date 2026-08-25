@@ -5211,3 +5211,40 @@ V09994_BUG_FIXES.md (BUG-77 fixed), EXECUTION-ORDER.md (2.5 marked done)
 **task_classification:** [IMPLEMENT] Tier 1/2 (Step 1: new function) + Tier 3 (Steps 2/3: exact replacements)
 
 ---
+### S134-cont BUG-63 Addendum — 2026-08-25
+
+**Item completed:** 2.6 — BUG-63 (registration-code gate before page-register.php:88)
+
+**Files changed:**
+- `deployment/features/auth-pages/php/device-registration.php` — NEW. amboat_claim_registration_code():
+  atomic SELECT FOR UPDATE + UPDATE WHERE status='valid' + affected_rows=1 check (prevents concurrent
+  double-redemption). amboat_rollback_registration_code(): returns code to 'valid' on wp_create_user
+  failure (T17). amboat_registration_audit(). Crockford Base32 normalisation (O→0, I→1). SHA-256 hash
+  stored; raw code never retained.
+- `deployment/features/auth-pages/php/page-register.php` — EDITED. require_once device-registration.php
+  added before POST block. $code_input and $alias fields added to $form array and POST reads. Validation:
+  alias ≥3 chars + username_exists() check; code_input required. BUG-63 gate: claim-then-create (not
+  check-then-act); rollback on wp_create_user failure; bind device_token → user_id. alias = display_name
+  + nickname (public); legal name → atmyboat_legal_name user_meta (private/admin-visible). amboat_
+  registration_audit('account_created') called on success. Brace structure fixed (2 new else blocks
+  properly closed).
+- `deployment/v0.9.9.4/tools/verify-bug63.sh` — NEW TDD verifier. 11 tests. 11/11 PASS.
+
+**Key decisions:**
+- T16 regression: claim-before-create order means a nonce-only POST (no code_input) hits validation
+  and fails before wp_create_user() is ever reached.
+- T17: if wp_create_user() fails after a successful claim, amboat_rollback_registration_code() resets
+  status to 'valid' so user can retry with the same code.
+- /register/ STAYS DRAFT — Step 3 (export 62k rows, bulk-delete, flag legacy users, republish) is
+  HIGH-RISK irreversible and requires explicit operator APPROVED before execution.
+- Legal name and alias are stored separately by design: alias is the public identity; legal name is
+  admin-visible only (BUG-57 forensic requirement).
+
+**Governance files updated:** SESSION_LOG.md, PROJECT_CHECKLIST.md v3.44, DEPLOYMENT_INDEX.md,
+V09994_BUG_FIXES.md (BUG-63 status [~] partial fix), EXECUTION-ORDER.md (2.6 marked done)
+
+**Commit:** d9915753
+
+**task_classification:** [IMPLEMENT] Tier 3 (PHP implementation) + TDD verifier
+
+---
