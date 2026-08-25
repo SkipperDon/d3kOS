@@ -4945,7 +4945,7 @@ level", auth = `app_token`).
 
 ## BUG-72 — `version-heartbeat.php` was written but never deployed; BUG-66's live severity is overstated
 
-**Logged:** 2026-08-24 (S131)
+**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Status:** `[~]` STAGING DONE — deployed and verified on HostPapa staging; live deploy requires explicit APPROVED.
 **Platform:** HostPapa (atmyboat.com production)
 **Severity:** MEDIUM — a designed endpoint is absent from production, and its absence changes the
 risk assessment of a CRITICAL-rated bug.
