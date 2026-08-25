@@ -12,24 +12,10 @@ the dependencies below are real, and several items make a later item impossible 
 - **Never `git push`.** Ever.
 - Every spec has prerequisite checks that **abort on mismatch**. If a prerequisite fails, stop and report.
   Do not adapt the spec to what you find — the mismatch *is* the finding.
-- Tier 3 = Gemma-4 (`gemma4:31b-cloud`, Ollama Cloud). **Always `"think": false`** or it returns an empty
-  string that looks exactly like a hang. **Exact `old`/`new` replacements only — never whole files.**
-
----
-
-## GATE 0 — OPERATOR ACTIONS THAT BLOCK EVERYTHING
-
-Nothing below Phase 0 is worth doing until these are answered.
-
-| # | Action | Blocks |
-|---|---|---|
-| **G1** | **Inspect the latest released `.img`** — mount it, read `/opt/d3kos/config/`. If a live `AMBOAT_API_KEY` is present, **rotate and unpublish before anything else.** | This is the only item that may *already* be public. Outranks the entire release gate. |
-| G2 | **Main cPanel FTP credentials** (home = `public_html`) | Unblocks 4 of 5 Phase 3 items |
-| G3 | **HostPapa nginx + PHP error logs** | BUG-54 Part 2, BUG-71 |
-| G4 | **Stripe dashboard check** — FMP charges with no queued command | BUG-73 severity; possible customer charged for nothing |
-| G5 | **Install `poppler-utils`** | Makes the CX5106 manual readable by any session |
-| G6 | **BUG-24 decision: Option A, B or C?** (recommend A) | Item 1.5 |
-| G7 | **BUG-57 partial close** — REST user enumeration now returns 403 | Record accuracy |
+- Tier 3 = **Gemini 2.5 Flash Lite** (`gemini-2.5-flash-lite`, Google Gemini API). Key lives in
+  `/opt/d3kos/config/api-keys.json` on the Pi. Dispatch scripts run FROM the Pi (SSH stdin) so the
+  key never leaves the device — see `deployment/tools/tier3-dispatch/` for the pattern.
+  **Exact `old`/`new` replacements only — never whole files.**
 
 ---
 
@@ -65,14 +51,11 @@ No dependencies. Do this first: everything after it is untrustworthy otherwise.
 
 Operator decision: security first. This runs before Phase 1.
 
-- [ ] **2.1 — `BUG-78.md`** (CRITICAL) — wire `sanitize.sh` into `create-image.sh`; add the credential
-      strip; add a **build-time assertion that fails the build**.
-      Depends on **0.2** and **G1**.
-      ⚠ T6 (the negative test — plant a dummy secret, assert `exit 1`) is the only test that proves the
-      guard bites. T1–T5 only prove the text is present.
-- [ ] **2.2 — `BUG-74.md`** — `.gitignore` names the real file; complete the template; mode 600.
-      ⚠ Step 3 (the chmod) is the only part that can break something. Sequence it last and **verify every
-      service that reads the file is still active afterwards.**
+- [~] **2.1 — `BUG-78.md`** (CRITICAL) ✓ code+tests S134 2026-08-25 — wire `sanitize.sh` into
+      `create-image.sh`; credential strip (STEP 7b); build assertion; `--unattended` flag; T1–T4+T6 PASS.
+      ⚠ T5 (Pi md5 match) + deploy + §12.1 spec reconciliation pending Pi connectivity.
+- [~] **2.2 — `BUG-74.md`** ✓ Steps 1+2 S134 2026-08-25 — .gitignore + template done; 5/5 PASS.
+      ⚠ Step 3 (chmod 600 on Pi) pending Pi connectivity — T5 + T7 skip until then.
 - [ ] **2.3 — `BUG-66.md` Phase A** — server side: 4 tables, `device-auth.php`, 3 endpoints, wp-admin
       approval queue. **Tier 1/2 only — this is new-file work; do not dispatch to Tier 3.**
       ⚠ Server before Pi. A Pi enrolling against a server with no tables fails closed, which is safe.
