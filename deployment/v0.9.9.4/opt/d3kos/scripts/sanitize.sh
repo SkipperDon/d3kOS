@@ -50,6 +50,12 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Parse arguments
+UNATTENDED=false
+for arg in "$@"; do
+    [ "$arg" = "--unattended" ] && UNATTENDED=true
+done
+
 # Safety confirmation
 warn ""
 warn "╔════════════════════════════════════════════════════════════╗"
@@ -66,15 +72,17 @@ warn "║                                                            ║"
 warn "║  This is ONLY for creating distribution images!           ║"
 warn "╚════════════════════════════════════════════════════════════╝"
 warn ""
-warn "Type 'SANITIZE' (in uppercase) to confirm: "
-read -r CONFIRM
-
-if [ "$CONFIRM" != "SANITIZE" ]; then
-    error "Confirmation failed. Exiting."
-    exit 1
+if [ "$UNATTENDED" = "false" ]; then
+    warn "Type 'SANITIZE' (in uppercase) to confirm: "
+    read -r CONFIRM
+    if [ "$CONFIRM" != "SANITIZE" ]; then
+        error "Confirmation failed. Exiting."
+        exit 1
+    fi
+    log "Confirmation received. Starting sanitization..."
+else
+    log "Running unattended — confirmation skipped."
 fi
-
-log "Confirmation received. Starting sanitization..."
 
 # ==============================================================================
 # STEP 1: Stop all d3kOS services
@@ -236,6 +244,39 @@ if [ -d "/opt/d3kos/data/backups" ]; then
     rm -rf /opt/d3kos/data/backups/*
 fi
 
+# STEP 7b: Strip credentials and device identity  (BUG-78 D2)
+# ==============================================================================
+# These five files are secrets or per-device identity. If ANY of them survives
+# into a distribution image, publishing the image publishes them. cloud-config.json
+# carries the FLEET-WIDE AMBOAT_API_KEY that authenticates 12 server endpoints
+# (BUG-66); subscription.key grants Tier 3 by mere existence (BUG-65);
+# device-token.json is the identity BUG-39 exists to keep unique per device.
+# All five are regenerated on first boot. Removing them here is safe and required.
+
+log ""
+log "STEP 7b: Stripping credentials and device identity..."
+
+D3K_SECRETS="
+/opt/d3kos/config/cloud-config.json
+/opt/d3kos/config/api-keys.json
+/opt/d3kos/config/device-token.json
+/opt/d3kos/config/device-signing.key
+/opt/d3kos/config/subscription.key
+"
+
+for f in $D3K_SECRETS; do
+    if [ -e "$f" ]; then
+        log "  Removing $(basename "$f")"
+        rm -f "$f"
+    fi
+done
+
+# Backups of secrets are secrets.
+rm -f /opt/d3kos/config/*.bak
+rm -f /opt/d3kos/config/*.pre-*.bak
+
+log "  Credential strip complete"
+
 # ==============================================================================
 # STEP 8: Reset license.json (clear installation ID)
 # ==============================================================================
@@ -268,8 +309,8 @@ if [ -f "$LICENSE_FILE" ]; then
 EOF
 
     chown d3kos:d3kos "$LICENSE_FILE"
-    chmod 644 "$LICENSE_FILE"
-    log "  License file reset to defaults"
+    chmod 600 "$LICENSE_FILE"
+    log "  License file reset to defaults (mode 600 — BUG-78 D3)"
 fi
 
 # ==============================================================================
@@ -339,8 +380,13 @@ fi
 log ""
 warn "STEP 12: Zero free space (optional - reduces image size)..."
 warn "This can take a LONG time (10-30 minutes)!"
-warn "Skip this step? [Y/n]: "
-read -r SKIP_ZERO
+if [ "$UNATTENDED" = "true" ]; then
+    SKIP_ZERO="Y"
+    log "  Skipping free space zeroing (unattended mode)"
+else
+    warn "Skip this step? [Y/n]: "
+    read -r SKIP_ZERO
+fi
 
 if [[ "$SKIP_ZERO" != "n" ]] && [[ "$SKIP_ZERO" != "N" ]]; then
     log "  Skipping free space zeroing"

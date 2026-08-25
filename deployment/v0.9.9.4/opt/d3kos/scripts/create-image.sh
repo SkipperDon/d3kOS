@@ -45,7 +45,45 @@ journalctl --vacuum-size=50M
 echo "  - Removing temporary files..."
 rm -rf /tmp/*
 rm -rf /var/tmp/*
+rm -f /root/.bash_history /home/d3kos/.bash_history
 echo "  - Cleanup complete"
+
+# --- BUG-78 D1: run the sanitizer. It was never invoked before this change. ---
+echo ""
+echo "Step 1b: Sanitizing (SSH keys, license, credentials, identity)..."
+SANITIZE="/opt/d3kos/scripts/sanitize.sh"
+if [ ! -x "$SANITIZE" ]; then
+    echo "FATAL: $SANITIZE missing or not executable — refusing to build an unsanitized image" >&2
+    exit 1
+fi
+if ! "$SANITIZE" --unattended; then
+    echo "FATAL: sanitize.sh failed — refusing to build" >&2
+    exit 1
+fi
+
+# --- BUG-78: build-time assertion. This MUST fail the build, not warn. ---
+# A documented manual checklist step is not sufficient: S129 demonstrated that a
+# documented step gets skipped under pressure. The build itself is the enforcement.
+echo ""
+echo "Step 1c: Verifying no secrets survive..."
+SECRET_FOUND=0
+for f in cloud-config.json api-keys.json device-token.json device-signing.key subscription.key; do
+    if [ -e "/opt/d3kos/config/$f" ]; then
+        echo "  FATAL: /opt/d3kos/config/$f is present in the image" >&2
+        SECRET_FOUND=1
+    fi
+done
+if [ -n "$(ls -A /etc/ssh/ssh_host_*_key 2>/dev/null)" ]; then
+    echo "  FATAL: SSH host keys present in the image" >&2
+    SECRET_FOUND=1
+fi
+if [ "$SECRET_FOUND" -ne 0 ]; then
+    echo "" >&2
+    echo "Build ABORTED: secrets would ship inside the image (BUG-78)." >&2
+    echo "Do not work around this check. Fix sanitize.sh." >&2
+    exit 1
+fi
+echo "  No secrets found — safe to image"
 
 echo ""
 echo "Step 2: Creating image from SD card..."
