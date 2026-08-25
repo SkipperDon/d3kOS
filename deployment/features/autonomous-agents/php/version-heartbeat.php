@@ -38,8 +38,14 @@ if (!$version) {
 }
 
 // ── Database ──────────────────────────────────────────────────────────────────
+// Device tables (amboat_devices) live in the WordPress DB, not the mobile config DB.
+// Use WP_DB_* constants (defined in config.php alongside DB_*).
 
-$db = new mysqli('127.0.0.1', DB_USER, DB_PASS, DB_NAME);
+$wp_db_user = defined('WP_DB_USER') ? WP_DB_USER : DB_USER;
+$wp_db_pass = defined('WP_DB_PASS') ? WP_DB_PASS : DB_PASS;
+$wp_db_name = defined('WP_DB_NAME') ? WP_DB_NAME : DB_NAME;
+
+$db = new mysqli('localhost', $wp_db_user, $wp_db_pass, $wp_db_name);
 if ($db->connect_error) {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'DB connect failed']);

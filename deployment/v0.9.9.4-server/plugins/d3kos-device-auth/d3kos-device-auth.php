@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 
 // Require handler files from the mobile/ directory (child theme path).
 // Phase C will add a require_once to this same device-auth.php from the 12 existing endpoints.
-define('D3KOS_MOBILE_DIR', get_template_directory() . '/mobile');
+define('D3KOS_MOBILE_DIR', get_stylesheet_directory() . '/mobile');
 
 require_once D3KOS_MOBILE_DIR . '/device-auth.php';
 require_once D3KOS_MOBILE_DIR . '/enrol.php';
