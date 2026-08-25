@@ -5046,7 +5046,7 @@ dashboard before assuming financial exposure.`
 
 ## BUG-74 — `MASTER_SYSTEM_SPEC` §8.4.2 P5 names a credential file that does not exist; the real one is world-readable
 
-**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Platform:** Pi + spec · **Severity:** MEDIUM (HIGH as a contributing cause of BUG-66) · **Status:** `[x]` FIXED — 7/7 PASS incl. T5 (Pi mode 600) + T7 (services active). Commit b909b227.
+**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Deployed lab Pi:** S134 2026-08-25 · **Platform:** Pi + spec · **Severity:** MEDIUM (HIGH as a contributing cause of BUG-66) · **Status:** `[x]` FIXED + DEPLOYED LAB PI — 7/7 PASS. `/opt/d3kos/tools/release-state.sh`. Commit b909b227.
 
 ### Symptom
 §8.4.2 P5 specifies `/opt/d3kos/config/cloud-credentials.json` as *the* credential source for the
@@ -5150,8 +5150,8 @@ BUG-72 (no server-side canonical tree), BUG-75, BUG-66 (these endpoints authenti
 
 ## BUG-77 — `detectTier()` can never return Tier 1, yet Tier 1 is a defined tier and the registration design gates on it
 
-**Logged:** 2026-08-24 (S131) · **Platform:** Pi + spec · **Severity:** HIGH — blocks the device-tied registration design
-**Status:** `[x]` **FIXED S134-cont 2026-08-25 — 9/9 PASS. Commit 1facb1b2.**
+**Logged:** 2026-08-24 (S131) · **Deployed lab Pi:** S134 2026-08-25 · **Platform:** Pi + spec · **Severity:** HIGH — blocks the device-tied registration design
+**Status:** `[x]` **FIXED + DEPLOYED LAB PI S134 2026-08-25 — 9/9 PASS. `/opt/d3kos/services/tier/tier_service.py` + `/opt/d3kos/scripts/tier-manager.sh`. Commit 1facb1b2.**
 
 #### Fix summary
 - `tier_service.py`: `device_is_paired_and_approved()` — queries `/wp-json/amboat-device/v1/status`
@@ -5219,7 +5219,7 @@ BUG-65, BUG-66, BUG-63, `D3KOS_DEVICE_REGISTRATION_SPEC.md` D1 and §12.2
 
 ## BUG-78 — CRITICAL: the image builder never invokes the sanitizer, and the sanitizer misses every credential file
 
-**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Platform:** Image build / distribution · **Severity:** **CRITICAL** · **Status:** `[x]` FIXED — 6/6 PASS incl. T5 (Pi md5 match). Commit 23bef5ec. ⚠ §12.1 spec reconciliation (Step 6) still pending.
+**Logged:** 2026-08-24 (S131) · **Fixed:** S134 2026-08-25 · **Deployed lab Pi:** S134 2026-08-25 · **Platform:** Image build / distribution · **Severity:** **CRITICAL** · **Status:** `[x]` FIXED + DEPLOYED LAB PI — 6/6 PASS. `/opt/d3kos/scripts/create-image.sh` + `/opt/d3kos/scripts/sanitize.sh`. Commit 23bef5ec. ⚠ §12.1 spec reconciliation still pending.
 
 
 ### ⚠ ROOT CAUSE CORRECTED — S131, before any fix was attempted
