@@ -59,9 +59,10 @@ Operator decision: security first. This runs before Phase 1.
       Plugin: d3kos-device-auth.php — REST registration + dbDelta table creation. Commit 2f3dd7ea.
       ⚠ Awaiting HostPapa staging deploy and operator APPROVED before server goes live.
       ⚠ Server before Pi. A Pi enrolling against a server with no tables fails closed, which is safe.
-- [ ] **2.4 — `BUG-66.md` Phase B** — Pi side: Ed25519 keypair generated inside
-      `regenerate-identity.sh` before its sentinel; signing helper for the three services.
-      ⚠ **Never bake a key into the image.** One key in the `.img` is shared by every d3kOS on earth.
+- [x] **2.4 — `BUG-66.md` Phase B** ✓ DONE S134 2026-08-25 — 10/10 PASS. `regenerate-identity.sh`
+      step 4 generates `device-signing.key` (0600, 32 bytes raw Ed25519) + `device-signing.pub` (0644);
+      SIGNING_KEY_FAILED gates sentinel. `device_sign.py` provides `sign_device_request()` and
+      `get_public_key_b64()`. Commit e14fb26d.
 - [ ] **2.5 — `BUG-77.md`** — Tier 1 = paired **and** server-approved. Depends on **2.3** (`/status`).
       ⚠ Until 2.3 exists, `device_is_paired_and_approved()` must return **False**. A stub returning True
       grants Tier 1 to every device — worse than the bug.

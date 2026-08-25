@@ -4566,8 +4566,19 @@ Files created at `deployment/v0.9.9.4-server/`:
 
 **⚠ Deploy order: server before Pi. Awaiting operator APPROVED for HostPapa staging.**
 
+### PHASE B COMPLETE — S134-cont 2026-08-25
+
+**Status:** Pi-side Ed25519 keypair generation and signing helper.
+
+#### Deliverables
+- B1: `identity/regenerate-identity.sh` — step 4 added: generates `device-signing.key` (32 bytes raw Ed25519, mode 0600, set at `os.open` time) and `device-signing.pub` (32 bytes, 0644). SIGNING_KEY_FAILED flag gates the sentinel alongside SSH_REGEN_FAILED. Private key bytes never appear in log output (length extracted before print).
+- B2: `services/device_sign.py` — `sign_device_request(path)` returns `{X-Device-Token, X-Timestamp, X-Nonce, X-Signature}`. `get_public_key_b64()` for the /enrol call. FileNotFoundError propagates — not swallowed. Importable by cloud_agent.py, export_worker.py, fleet_push_service.py via existing `sys.path`.
+- TDD: `tools/verify-bug66-phase-b.sh` — 10/10 PASS (T3 = sentinel blocked on SIGNING_KEY_FAILED; T8 = FileNotFoundError not swallowed; T10 = raw key bytes not logged)
+- Commit: e14fb26d
+
+**⚠ Deploy order: server before Pi. Phase A still awaiting operator APPROVED for HostPapa staging.**
+
 ### PENDING
-- Phase B (item 2.4): Pi-side Ed25519 keypair in `regenerate-identity.sh`
 - Phase C (item 2.7): migrate 12 existing endpoints — one Tier 3 dispatch each
 - Phase D (item 2.8): remove blind UPSERT from `version-heartbeat.php`
 

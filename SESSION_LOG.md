@@ -5147,3 +5147,41 @@ Item 2.3 — BUG-66 Phase A (server-side Ed25519 device auth):
 **task_classification:** [ARCHITECT/IMPLEMENT] Tier 1/2 — spec-directed, new-file creation
 
 ---
+### S134-cont Phase B Addendum — 2026-08-25
+
+**Item completed:** 2.4 — BUG-66 Phase B (Pi-side Ed25519 keypair generation + signing helper)
+
+**Files changed:**
+- `deployment/v0.9.9.4/opt/d3kos/services/identity/regenerate-identity.sh` — step 4 added:
+  Ed25519 keypair generation via python3/cryptography. `device-signing.key` (32 bytes raw,
+  mode 0600 set at os.open time — never world-readable even briefly). `device-signing.pub`
+  (32 bytes, 0644). SIGNING_KEY_FAILED gates sentinel alongside SSH_REGEN_FAILED.
+  Private key length extracted before print (priv_raw never appears in a print call).
+- `deployment/v0.9.9.4/opt/d3kos/services/device_sign.py` — new signing helper.
+  sign_device_request(path) returns all 4 required auth headers. get_public_key_b64() for /enrol.
+  FileNotFoundError propagates — missing key surfaces to caller, not swallowed.
+  Importable from cloud_agent.py, export_worker.py, fleet_push_service.py.
+- `deployment/v0.9.9.4/tools/verify-bug66-phase-b.sh` — 10 TDD tests. T3 (SIGNING_KEY_FAILED
+  gates sentinel), T8 (FileNotFoundError not swallowed), T10 (raw key bytes not logged).
+  10/10 PASS. T10 required two iterations: (1) initial pattern too broad — matched filename
+  in log_action; (2) tightened to print.*priv_raw — matched len(priv_raw) in f-string;
+  (3) final fix: extracted priv_len before print so priv_raw no longer appears in print line.
+
+**Governance files updated:**
+- SESSION_LOG.md (this entry)
+- PROJECT_CHECKLIST.md → v3.42 (BUG-66 Phase B COMPLETE)
+- deployment/docs/DEPLOYMENT_INDEX.md (+3 entries for Phase B)
+- deployment/docs/V09994_BUG_FIXES.md (Phase B completion block added)
+- deployment/docs/atomic-specs/EXECUTION-ORDER.md (2.4 marked [x] DONE)
+
+**Commit:** e14fb26d — "BUG-66 Phase B: Pi-side Ed25519 keypair generation and signing helper"
+
+**Pending:**
+- HostPapa staging deploy of Phase A (plugin activation + SQL tables) — requires operator APPROVED
+- Phase C (item 2.7): migrate 12 endpoints — one Tier 3 dispatch each
+- Phase D (item 2.8): remove blind UPSERT from version-heartbeat.php
+- Next in EXECUTION-ORDER.md: item 2.5 (BUG-77.md) or 2.6 (BUG-63.md) — both now unblocked
+
+**task_classification:** [IMPLEMENT] Tier 1/2 — Pi-side complement to server-side Phase A
+
+---
