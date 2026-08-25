@@ -5111,3 +5111,39 @@ task_classification    : [IMPLEMENT] Tier 3 (applied directly by Claude — UAC)
 None — no Pi deploy this session. Lab Pi unreachable throughout.
 
 ---
+## S134 POST-CLOSE ADDENDUM — 2026-08-25 (Phase A continuation after Pi restored)
+
+**Trigger:** Pi came back online. Operator: "Pi is back, continue with 2.3."
+
+**Completed this continuation:**
+
+Item 2.3 — BUG-66 Phase A (server-side Ed25519 device auth):
+- A1: `deployment/v0.9.9.4-server/sql/device-auth-tables.sql` — 4 tables verbatim from registration spec §6
+  (amboat_device_enrolments / registration_codes / device_accounts / registration_audit)
+  code_hash = CHAR(64) SHA256 only; plaintext never persisted.
+- A2: `deployment/v0.9.9.4-server/mobile/device-auth.php` — shared Ed25519 verifier.
+  verify_device_signature(): crypto + nonce + timestamp check, any enrolled status allowed.
+  verify_device_request(): additionally requires status='approved'.
+  BUG-66 core fix: SELECT only, no INSERT — unknown device_token → 401, never self-registers.
+  Replay protection: WordPress transients, 600s. Skew error explicit (Pi RTC unreliable).
+- A3: three REST endpoints registered via `register_rest_route('amboat-device/v1', ...)`:
+  enrol.php: proof-of-possession; 409 on re-enrolment; key never overwritten.
+  status.php: any enrolled device may poll (pending devices need to see their own status).
+  request-code.php: Crockford Base32 10-char code; supersedes prior live code; checks already_registered.
+- A4: `deployment/v0.9.9.4-server/plugins/d3kos-device-auth/d3kos-device-auth.php` —
+  WordPress plugin with REST route registration, dbDelta table creation on activation,
+  wp-admin approval queue (pending device list, IP/email duplicate warnings, Approve/Reject/Block).
+- TDD: `deployment/v0.9.9.4/tools/verify-bug66-phase-a.sh` — 12 tests, 12/12 PASS.
+  T3 (no INSERT in auth path) and T8 (no UPSERT in enrol) are the BUG-66 regression tests.
+
+**Commit:** 2f3dd7ea — "BUG-66 Phase A: server-side Ed25519 device auth (4 tables + 3 endpoints + admin queue)"
+
+**EXECUTION-ORDER.md:** 2.3 marked [x] DONE.
+
+**Pending from this addendum:**
+- HostPapa staging deploy of Phase A (plugin activation + SQL tables) — requires operator APPROVED
+- Phase B (Pi-side keypair generation in regenerate-identity.sh) — next item 2.4
+
+**task_classification:** [ARCHITECT/IMPLEMENT] Tier 1/2 — spec-directed, new-file creation
+
+---

@@ -54,10 +54,11 @@ Operator decision: security first. This runs before Phase 1.
 - [x] **2.1 — `BUG-78.md`** (CRITICAL) ✓ DONE S134 2026-08-25 — 6/6 PASS incl. T5 (Pi md5) + deploy.
       ⚠ §12.1 spec reconciliation still pending (Step 6).
 - [x] **2.2 — `BUG-74.md`** ✓ DONE S134 2026-08-25 — 7/7 PASS incl. T5 (mode 600) + T7 (services active).
-- [ ] **2.3 — `BUG-66.md` Phase A** — server side: 4 tables, `device-auth.php`, 3 endpoints, wp-admin
-      approval queue. **Tier 1/2 only — this is new-file work; do not dispatch to Tier 3.**
+- [x] **2.3 — `BUG-66.md` Phase A** ✓ DONE S134 2026-08-25 — 12/12 PASS. 4 tables (A1), shared verifier
+      device-auth.php (A2), 3 REST endpoints enrol/status/request-code (A3), wp-admin approval queue (A4).
+      Plugin: d3kos-device-auth.php — REST registration + dbDelta table creation. Commit 2f3dd7ea.
+      ⚠ Awaiting HostPapa staging deploy and operator APPROVED before server goes live.
       ⚠ Server before Pi. A Pi enrolling against a server with no tables fails closed, which is safe.
-      The reverse is not.
 - [ ] **2.4 — `BUG-66.md` Phase B** — Pi side: Ed25519 keypair generated inside
       `regenerate-identity.sh` before its sentinel; signing helper for the three services.
       ⚠ **Never bake a key into the image.** One key in the `.img` is shared by every d3kOS on earth.
