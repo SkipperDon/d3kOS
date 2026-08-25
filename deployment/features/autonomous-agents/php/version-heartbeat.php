@@ -62,20 +62,28 @@ if (!in_array('current_version',    $existing_cols)) $db->query("ALTER TABLE amb
 if (!in_array('version_updated_at', $existing_cols)) $db->query("ALTER TABLE amboat_devices ADD COLUMN version_updated_at DATETIME");
 if (!in_array('version_check_count',$existing_cols)) $db->query("ALTER TABLE amboat_devices ADD COLUMN version_check_count INT DEFAULT 0");
 
-// Upsert device row — insert if new, update if exists
-// device_token has UNIQUE constraint so INSERT ... ON DUPLICATE KEY UPDATE is safe
+// Update existing device row. A row is created only by enrolment + approval (Phase A),
+// never by a heartbeat. An unknown device_token was already rejected by verify_device_request()
+// above — but if amboat_devices has no row yet (approval gap), we return 404.
 $stmt = $db->prepare(
-    'INSERT INTO amboat_devices (device_token, current_version, version_updated_at, version_check_count)
-     VALUES (?, ?, NOW(), 1)
-     ON DUPLICATE KEY UPDATE
-         current_version     = VALUES(current_version),
-         version_updated_at  = NOW(),
-         version_check_count = COALESCE(version_check_count, 0) + 1'
+    'UPDATE amboat_devices
+        SET current_version     = ?,
+            version_updated_at  = NOW(),
+            version_check_count = COALESCE(version_check_count, 0) + 1
+      WHERE device_token = ?'
 );
-$stmt->bind_param('ss', $device_token, $version);
+$stmt->bind_param('ss', $version, $device_token);
 $stmt->execute();
-$updated = $db->affected_rows;   // 1 = inserted, 2 = updated, 0 = no change
+$updated = $db->affected_rows;
 $stmt->close();
+
+if ($updated === 0) {
+    $db->close();
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'unknown_device',
+        'detail' => 'Device not found in amboat_devices — enrolment + approval required']);
+    exit;
+}
 
 // Fetch latest active incremental version so Pi knows if it's current
 mysqli_report(MYSQLI_REPORT_OFF);
