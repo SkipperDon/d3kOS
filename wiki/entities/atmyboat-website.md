@@ -1,6 +1,6 @@
 # Entity: AtMyBoat.com Website
 
-*Last updated: S86 2026-05-21 | Sources: MEMORY.md, atmyboat_v093.md*
+*Last updated: S134-cont 2026-08-25 | Sources: MEMORY.md, atmyboat_v093.md*
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Deploy Rules
 
-- FTP root = `public_html` directly. Use relative paths (e.g. `/wp-content/...`), NOT `/home/atmyb197/public_html/wp-content/...`
+- FTP landing IS the web root — no `public_html` subdirectory exists as a separate FTP target. Paths start directly from login: `wp-content/themes/twentytwenty-child/...`, NOT `public_html/wp-content/...` (S134-cont: `public_html/` prefix caused 553 errors)
 - FTP deploy via Python ftplib only — bash breaks `!` in password
 - Don clicks "Push to Live" in cPanel — never Claude
 - UpdraftPlus backup required before any live push
@@ -32,8 +32,8 @@
 ## Database
 
 - DB prefix: `wpax_`
-- DB user: `atmyb197_wp302`
-- MySQL: always `127.0.0.1` not `localhost`
+- DB user: `atmyb197_wp59874` (production). `atmyb197_wp302` is BROKEN as of S134 — do not use.
+- MySQL: `localhost` (socket) — works. S17c rule "always use 127.0.0.1" is STALE and confirmed wrong for production (S134-cont).
 - PHP on HostPapa has mysqli strict exceptions — always call `mysqli_report(MYSQLI_REPORT_OFF)` after connect
 
 ## Auth System (S56/S57)
@@ -75,6 +75,17 @@ Both Stripe webhook endpoints were pointing to `/staging/` since Phase 4 launch 
 | `STRIPE_WEBHOOK_SECRET_SUB` | Subscription webhook |
 
 Credentials in CREDENTIAL_VAULT.md Live Mode section.
+
+## Registration (device-gated — S134-cont 2026-08-25)
+
+- `/register/` now requires a 10-char Crockford Base32 code from an operator-approved d3kOS device
+- Code is SHA-256 hashed, atomically claimed (SELECT FOR UPDATE), consumed once — prevents replay
+- `wp_create_user()` only runs after code is claimed — closes the BUG-63 wp_create_user direct-call vulnerability
+- Form fields: alias (display name, public), legal name (private user_meta), email, password, code_input
+- Page: WordPress ID=339, slug='register', `wpax_posts` table
+- PHP files: `page-register.php` + `device-registration.php` in child theme
+- `device-registration.php` has `if (!defined('ABSPATH')) { exit; }` — WordPress context only
+- Bot detection note: `unticking "Anyone can register"` has ZERO effect — the template calls `wp_create_user()` directly
 
 ## Related
 

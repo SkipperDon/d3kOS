@@ -5292,3 +5292,96 @@ V09994_BUG_FIXES.md (BUG-66 status + Phase C/D blocks), EXECUTION-ORDER.md (2.7+
 **task_classification:** [IMPLEMENT] Tier 3 (constrained endpoint edits + verifiers)
 
 ---
+
+---
+
+### S134-cont BUG-63 Step 3 + Bug Audit Addendum — 2026-08-25
+
+**Items completed:**
+- **BUG-63 Step 3 — CLOSED** — device-gated /register/ now live on atmyboat.com
+- **Bug audit** — verified true status of BUG-23a/24/57/63/73/75/76/79/80
+
+**BUG-63 Step 3 — Files changed:**
+- `deployment/features/auth-pages/php/page-register.php` — UPDATED. Added `alias` (display name) and `code_input` (d3kOS registration code) HTML `<input>` fields — these were in the PHP processing logic (commit d9915753) but missing from the rendered form.
+- `deployment/features/auth-pages/php/device-registration.php` — DEPLOYED to live HostPapa (FTP, d3kos@atmyboat.com).
+- `deploy-bug63-step3.py` — FTP deployment script (committed for audit trail).
+- `deployment/v0.9.9.4-server/tools/cleanup-botnet-accounts.php` — one-shot cleanup tool; 0 unverified subscriber-only accounts registered ≥2026-06-01 found (operator cleared 62k manually Aug 2026); committed for audit trail, immediately deleted from server.
+- `deployment/v0.9.9.4-server/tools/probe-register-page.php` — one-shot probe; confirmed /register/ = ID=339, slug='register', status='draft'; committed + deleted.
+- `deployment/v0.9.9.4-server/tools/republish-register.php` — one-shot; published ID=339 (Draft→publish, 1 row affected in wpax_posts); committed + deleted.
+- `deployment/docs/V09994_BUG_FIXES.md` — BUG-63 status updated to `[x]` FIXED; BUG-23 status header corrected (23a fixed S116, header was stale).
+
+**Deployment verification:**
+- curl of https://atmyboat.com/register/ confirms `name="alias"` and `name="code_input"` present in live HTML.
+- All one-shot scripts deleted from server immediately after use.
+
+**BUG-23 status correction:**
+- BUG-23a was fixed S116 2026-08-01 (CPU 39%→0.03%, logs 2536→4/min). The BUG-23 top-level status header still showed `[~] DIAGNOSED 2026-07-23` — corrected this session to reflect the 23a fix.
+
+**Bug audit findings (post-compaction):**
+- BUG-23a: CONFIRMED FIXED S116 — header was stale ✅
+- BUG-24: GENUINELY OPEN — operator design decision needed (Option A vs B)
+- BUG-57: GENUINELY OPEN — CAPTCHA, MailPoet, user notification outstanding
+- BUG-63: CLOSED THIS SESSION ✅
+- BUG-73: GENUINELY OPEN — file never written
+- BUG-75: PARTIALLY DONE — spec corrected S131; /mobile/ alias decision pending operator
+- BUG-76: GENUINELY OPEN — 5 endpoints not built, naming conflict unresolved
+- BUG-79: DEFERRED — §9 architecture cannot be written until BUG-65 Step 3 closes (would document a transitional state that will change again)
+- BUG-80: PARTIALLY DONE — §12.2 flagged S131, exemption granted; first-boot network reality undetermined
+
+**FTP path clarification (S134-cont):**
+- FTP root IS the web root (no `public_html` prefix). Correct paths: `wp-content/themes/twentytwenty-child/...` directly from FTP login.
+
+**Key decisions:**
+- /register/ republished with device gate: new accounts require server-issued registration code from an operator-approved d3kOS device. Bots cannot register without one.
+- BUG-79 deferral rationale: §9 needs to describe the complete security model. BUG-65 Step 3 (server-side enforcement) is still open — writing §9 now would document a model that includes BUG-65's shared-key vulnerability alongside BUG-66's per-device auth. Once BUG-65 Step 3 closes, §9 can be accurately written.
+
+**Governance files updated:** SESSION_LOG.md, PROJECT_CHECKLIST.md v3.48, DEPLOYMENT_INDEX.md, V09994_BUG_FIXES.md (BUG-63 closed, BUG-23 header corrected), MEMORY.md, wiki/log.md, wiki/entities/atmyboat-website.md
+
+**Commit:** a3914b20
+
+**task_classification:** [IMPLEMENT] Tier 3 (PHP form fields) + governance documentation
+
+```
+SQS BLOCK — S134-cont 2026-08-25 (full session S134 + continuations)
+──────────────────────────────────────────────────────────
+Tasks planned          : 10 (BUG-63/66/65/77/78/74/53/30/81 + audit)
+Tasks completed        : 10 (all planned items complete or advanced)
+Regressions introduced : 0
+UAC events             : 0
+OIC                    : [operator to assess]
+──────────────────────────────────────────────────────────
+```
+
+```
+EXTENDED DATA FIELDS — 2026-08-25
+─────────────────────────────────────────────────────
+session_duration_min   : ~480 (full S134 + two continuations)
+tasks_planned          : 10
+tasks_completed        : 10
+governing_doc_version  : CLAUDE.md 2026-08-25
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+```
+
+```
+### Release Package Manifest — S134-cont BUG-63 Step 3
+- Version: v0.9.9.4 → v0.9.9.4 (no version bump — bug fix deploy)
+- Update type: hotfix
+- Changed files (HostPapa live):
+  | File | Path | Change |
+  |------|------|--------|
+  | page-register.php | wp-content/themes/twentytwenty-child/ | Added alias + code_input HTML form fields |
+  | device-registration.php | wp-content/themes/twentytwenty-child/ | NEW — device registration helpers (BUG-63 code gate) |
+  | cleanup-botnet-accounts.php | mobile/ | DEPLOYED then DELETED (one-shot) |
+  | probe-register-page.php | mobile/ | DEPLOYED then DELETED (one-shot) |
+  | republish-register.php | mobile/ | DEPLOYED then DELETED (one-shot) |
+  | wpax_posts ID=339 | MySQL atmyb197_wp59874 | post_status: draft → publish |
+- Pre-install steps: none
+- Post-install steps: none (template files load on next request)
+- Rollback: FTP restore page-register.php from .aao-backups/ OR set ID=339 back to Draft in wp-admin
+- Health check: curl https://atmyboat.com/register/ | grep 'code_input' — must return non-empty
+- Release notes: Registration is now device-gated. New accounts require a 10-character code from an operator-approved d3kOS device. The old vulnerable form (which called wp_create_user() directly with no code gate) has been replaced. The /register/ page was in Draft since August 2026 (S127 containment); it is now live with the permanent fix.
+```
+

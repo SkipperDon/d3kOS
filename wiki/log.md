@@ -153,3 +153,9 @@
 
 ### Addendum — entities/avnav note
 Per-Pi delta for avnav_server.xml is now formally documented in `deployment/docs/PI_CONFIG_DELTA.md`. The BUG-19/20 fix (`fetchAis="true" aisQueryPeriod="5"`) is machine-asserted by `tools/release-state.sh` comparison 4 on every verifier run. The boat Pi additionally requires a u-blox USB ignore rule (usbid `1-1.4:1.0`) absent from the lab Pi — this is expected and documented.
+
+## [2026-08-25] fix+deployment | S134-cont — BUG-63 Step 3 complete; /register/ live with device gate; BUG-23 header corrected; bug audit
+- Files changed: `page-register.php` (alias+code_input HTML fields added), `device-registration.php` (deployed to live), `deploy-bug63-step3.py` (new), 3×one-shot tools (committed+deleted), `V09994_BUG_FIXES.md` (BUG-63 closed, BUG-23 corrected)
+- Wiki pages updated: `wiki/entities/atmyboat-website.md` (FTP root path clarification, DB user corrected, device-gated registration section added)
+- Contradictions flagged: S17c rule "always 127.0.0.1" is STALE — localhost (socket) works for production DB atmyb197_wp59874; 127.0.0.1 (TCP) does not. Memory file updated. Entity updated.
+- Open questions: BUG-57 CAPTCHA on now-live /register/; BUG-73 billing webhook still absent; BUG-76 5 endpoints 404

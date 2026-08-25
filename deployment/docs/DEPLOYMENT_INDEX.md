@@ -1603,3 +1603,22 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `deployment/v0.9.9.4/opt/d3kos/services/tier/tier_service.py` | **[EDITED — S134-cont BUG-77]** Added device_is_paired_and_approved() (signed /status call, tier1-approval.json cache mode 600, offline-first, fail-closed), detect_tier() (ordering Tier3>Tier2>Tier1>Tier0; license.json NOT consulted for Tier 1). /tier/status and /tier/feature/ now use detect_tier(). sys.path.insert for device_sign import. |
 | `deployment/v0.9.9.4/opt/d3kos/scripts/tier-manager.sh` | **[EDITED — S134-cont BUG-77]** Ordering corrected: subscription.key first (Tier 3), then paid subscription, then OpenCPN (Tier 2), then tier1-approval.json cache (Tier 1). No new network call — tier_service handles server polling at runtime. |
 | `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py` | **[EDITED — S134-cont BUG-77 Step 3]** Two inline int(str(t).replace('T','')) parse sites replaced with _parse_tier() from tier_service (dedup — BUG-29 class). sys added to top-level imports. |
+
+---
+
+### S134-cont (Phase 2) — 2026-08-25 — BUG-63 Step 3: /register/ live with device gate
+
+| File | Description |
+|---|---|
+| `deployment/features/auth-pages/php/page-register.php` | **[UPDATED — S134-cont BUG-63 Step 3]** Added `alias` and `code_input` HTML `<input>` form elements. These were in the PHP processing logic (committed d9915753) but the actual HTML fields were absent — users saw errors with no fields to fill. Deployed to HostPapa live: `wp-content/themes/twentytwenty-child/page-register.php`. |
+| `deployment/features/auth-pages/php/device-registration.php` | **[DEPLOYED — S134-cont BUG-63 Step 3]** Device gate helper (amboat_claim_registration_code, amboat_rollback_registration_code, amboat_registration_audit). Deployed to HostPapa live: `wp-content/themes/twentytwenty-child/device-registration.php`. |
+| `deploy-bug63-step3.py` | **[NEW — S134-cont BUG-63 Step 3]** Python FTP deployment script for the BUG-63 Step 3 payload. Uses ftplib.FTP_TLS, no `public_html` prefix (FTP root IS the web root). Committed for audit trail. |
+| `deployment/v0.9.9.4-server/tools/cleanup-botnet-accounts.php` | **[NEW — S134-cont BUG-63 Step 3, one-shot]** Bulk-deleted unverified subscriber-only accounts registered ≥2026-06-01. Result: 0 candidates (operator manually cleared 62k). Republishes /register/ unconditionally. Committed for audit trail; deployed to server and deleted immediately after run. |
+| `deployment/v0.9.9.4-server/tools/probe-register-page.php` | **[NEW — S134-cont BUG-63 Step 3, one-shot]** Diagnosed /register/ page status — found ID=339 slug='register' and ID=490 slug='register-2', both Draft. Committed for audit trail; deleted from server after use. |
+| `deployment/v0.9.9.4-server/tools/republish-register.php` | **[NEW — S134-cont BUG-63 Step 3, one-shot]** Published ID=339 (Draft→publish, 1 row affected in wpax_posts confirmed). Committed for audit trail; deleted from server after use. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S134-cont]** BUG-63 status closed (Step 3 complete). BUG-23 top-level status header corrected from stale DIAGNOSED 2026-07-23 to reflect BUG-23a fixed S116. |
+
+**FTP path invariant established S134-cont:** HostPapa FTP landing IS the web root. No `public_html` subdirectory. All paths: `wp-content/...` directly, never `public_html/wp-content/...`.
+
+**Key lesson:** An HTML form whose input elements are missing is NOT a registration-form test failure — it is a silent server-side processing failure that looks correct from the FTP deploy log but fails at runtime. Always curl the live page to verify field presence, not just the FTP transfer.
+
