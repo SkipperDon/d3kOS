@@ -1563,7 +1563,7 @@ On fresh browser load (or cleared cookies/localStorage), the system should redir
 
 ## BUG-23 — Boat Log Voice Note Transcription Failing
 
-**Status:** `[~]` DIAGNOSED 2026-07-23 — partial. `boatlog-api` + `voice` services up, but `d3kos-voice-watchdog` **FAILED** (voice assistant running 1 thread, expected 2+); no local STT/whisper service found; mic capture absent at home (on-boat only). Transcription path unconfirmed — possible feature gap (Faster-Whisper STT is v0.9.9.5 D13, not built). Do NOT blind-restart the watchdog — find the 1-thread cause first. Diagnosis: `runbooks/GROUP-A-services.md`. (Was: `[ ]` OPEN logged S104 2026-07-21)
+**Status:** `[~]` PARTIAL — **BUG-23a code defects (spin loop + stderr hidden) FIXED + DEPLOYED LAB PI S116 2026-08-01** (see subsection below). Full voice note transcription (STT / Faster-Whisper) is a v0.9.9.5 D13 feature — not a bug fix. Remaining open item: boat Pi not yet validated (no mic connected to lab Pi — fix was verified by CPU/log metrics). (Was: `[~]` DIAGNOSED 2026-07-23)
 **Logged:** 2026-07-21 S104
 **Platform:** Pi (Boat Log — voice note feature)
 **Checklist:** H-03 (failed)
@@ -4311,7 +4311,7 @@ WordPress staging environment has no `.htaccess` rule or authentication middlewa
 
 ## BUG-63 — Insecure User Registration Allows Unlimited Bot Account Creation
 
-**Status:** `[~]` **PARTIAL FIX S134-cont 2026-08-25. Code gate implemented (Steps 1–2). Step 3 (bulk-delete + republish) BLOCKED — requires explicit operator APPROVED.**
+**Status:** `[x]` **FIXED + DEPLOYED LIVE S134-cont 2026-08-25**
 
 ### BUG-63 Fix Progress — S134-cont 2026-08-25
 
@@ -4320,9 +4320,16 @@ WordPress staging environment has no `.htaccess` rule or authentication middlewa
 - `page-register.php`: `require_once device-registration.php` before POST block; code_input required field; alias replaces email-derived username (display_name + nickname = public alias; atmyboat_legal_name = private user_meta); claim-then-create order (T16 regression test); rollback on wp_create_user failure (T17).
 - `verify-bug63.sh`: 11 tests — 11/11 PASS.
 
-**Phase 2 — Step 3 — HIGH-RISK OPERATOR ACTION (NOT EXECUTED):**
-- Export 62k illegitimate rows, bulk-delete from wp_users, flag legacy users, republish /register/.
-- Requires explicit operator APPROVED. /register/ remains Draft until this is done.
+**Phase 2 — HTML form updated (S134-cont):**
+- `page-register.php`: Added `alias` (display name) and `code_input` (d3kOS registration code) input fields to the HTML form — these were present in the PHP processing logic but missing from the rendered form.
+
+**Phase 3 — Step 3 — Bulk cleanup + republish (COMPLETE — operator APPROVED S134-cont):**
+- Botnet account cleanup: 0 remaining unverified accounts matching attack criteria (operator manually cleared 62k accounts prior; /register/ was in Draft since Aug 2026).
+- `/register/` page (ID=339): status Draft → published.
+- Deployment verified: curl confirms `alias` and `code_input` fields live at https://atmyboat.com/register/.
+- All one-shot scripts deleted from server.
+
+**Registration is now device-gated:** every new account requires a server-issued code from an operator-approved d3kOS device. Bots cannot register without one.
 
 ### Symptoms
 - Bot accounts created daily with nonsense usernames: `user12345`, `testbot`, `spamuser999`, `user_xxx_123`, etc.

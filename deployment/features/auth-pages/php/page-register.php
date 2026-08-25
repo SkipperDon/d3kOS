@@ -475,6 +475,18 @@ get_header();
             </div>
 
             <div class="auth-field">
+                <label class="auth-lbl" for="alias">
+                    Display name <span class="hint">(shown publicly — not your legal name)</span>
+                </label>
+                <input
+                    class="auth-inp" type="text" id="alias" name="alias"
+                    value="<?php echo esc_attr( $form['alias'] ); ?>"
+                    autocomplete="nickname" minlength="3" required aria-required="true"
+                    placeholder="e.g. CapnDon"
+                >
+            </div>
+
+            <div class="auth-field">
                 <label class="auth-lbl" for="email">Email address</label>
                 <input
                     class="auth-inp" type="email" id="email" name="email"
@@ -499,6 +511,21 @@ get_header();
                     class="auth-inp" type="password" id="password_confirm" name="password_confirm"
                     autocomplete="new-password" required aria-required="true"
                 >
+            </div>
+
+            <div class="auth-field">
+                <label class="auth-lbl" for="code_input">
+                    d3kOS registration code <span class="hint">(from your d3kOS app)</span>
+                </label>
+                <input
+                    class="auth-inp" type="text" id="code_input" name="code_input"
+                    autocomplete="off" required aria-required="true"
+                    placeholder="XXXX-XXXX-XX"
+                    style="letter-spacing: 0.1em; font-family: monospace;"
+                >
+                <p class="auth-hint" style="font-size:18px; margin-top:0.4rem; color:#555;">
+                    Open the d3kOS app on your Pi to generate a one-time registration code.
+                </p>
             </div>
 
             <hr class="auth-divider">
