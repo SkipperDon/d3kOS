@@ -8,7 +8,7 @@
  * that this device now has the fix. Auto-closes issues when ≥ 90% of affected
  * devices have confirmed the fix and no new reports appear for 48h.
  *
- * Auth: Bearer amboat_api_key + X-Device-Token
+ * Auth: Ed25519 per-device signature OR legacy Bearer AMBOAT_API_KEY (transition, audited).
  * Method: POST
  * Body (JSON): {device_token, version}
  *
@@ -19,17 +19,10 @@ error_reporting(0);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/device-auth.php';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
-$auth_header  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-$device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
-
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
+// ── Auth — identity is the result of verification, never a client-supplied field ──
+$device_token = verify_device_request();
 
 // ── Parse body ────────────────────────────────────────────────────────────────
 

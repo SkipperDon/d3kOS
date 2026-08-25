@@ -3,7 +3,7 @@
  * d3kOS v0.9.4.1 — Community Markers Write Endpoint
  *
  * POST: Store a new hazard/anchorage/fuel/other marker.
- * Auth: Bearer app_token (PWA) or X-Device-Token + Bearer AMBOAT_API_KEY (Pi)
+ * Auth: Bearer app_token (PWA) or Ed25519 device signature / legacy key (Pi, transition audited)
  *
  * Body (JSON):
  *   { device_token, lat, lon, marker_type, description, severity, expires_hours }
@@ -37,22 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/device-auth.php';
 
 // ── Authentication ─────────────────────────────────────────────────────────────
-// Accept either:
-//   (A) PWA app_token in Authorization: Bearer <app_token>
-//   (B) Pi: Authorization: Bearer <AMBOAT_API_KEY> + X-Device-Token header
-
-$auth_header  = $_SERVER['HTTP_AUTHORIZATION']   ?? ($_SERVER['HTTP_X_AUTHORIZATION'] ?? '');
-$device_token = $_SERVER['HTTP_X_DEVICE_TOKEN']  ?? '';
-
-if (!preg_match('/^Bearer\s+(\S+)$/i', $auth_header, $m)) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
-
-$bearer = $m[1];
+// Mode A — PWA: Authorization: Bearer <app_token>
+// Mode B — Pi: Ed25519 signature (X-Device-Token + X-Timestamp + X-Nonce + X-Signature)
+//              OR legacy Bearer AMBOAT_API_KEY during transition (audited in device-auth.php)
+//
+// Distinguish by X-Device-Token presence: Pis always send it; PWA never does.
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $db = new mysqli('127.0.0.1', DB_USER, DB_PASS, DB_NAME);
@@ -61,22 +53,21 @@ if ($db->connect_error) {
     exit;
 }
 
-// Determine caller identity:
-// Mode A — bearer is an app_token in wpax_usermeta
-// Mode B — bearer is AMBOAT_API_KEY (Pi-facing)
 $resolved_device_token = '';
 
-if (hash_equals(AMBOAT_API_KEY, $bearer)) {
-    // Mode B: Pi-facing
-    if (empty($device_token)) {
+if (!empty($_SERVER['HTTP_X_DEVICE_TOKEN'])) {
+    // Mode B: Pi device auth — exits on failure; identity from verified signature
+    $resolved_device_token = verify_device_request();
+} else {
+    // Mode A: PWA app_token
+    $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['HTTP_X_AUTHORIZATION'] ?? '');
+    if (!preg_match('/^Bearer\s+(\S+)$/i', $auth_header, $m)) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'X-Device-Token required']);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         $db->close();
         exit;
     }
-    $resolved_device_token = $device_token;
-} else {
-    // Mode A: PWA app_token
+    $bearer = $m[1];
     $stmt = $db->prepare(
         "SELECT user_id FROM wpax_usermeta WHERE meta_key='atmyboat_app_token' AND meta_value=? LIMIT 1"
     );
@@ -92,7 +83,6 @@ if (hash_equals(AMBOAT_API_KEY, $bearer)) {
         exit;
     }
 
-    // Use app_token as pseudo-device_token for PWA-sourced markers
     $resolved_device_token = 'pwa_' . substr($bearer, 0, 32);
 }
 

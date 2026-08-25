@@ -1,21 +1,18 @@
 <?php
 /**
  * d3kOS Version Heartbeat Receiver
- * v0.9.8 — S33
+ * v0.9.9.4 — BUG-66 Phase C (S134-cont)
  *
  * Called by AA2 UpdateAgent on every 24h run, whether or not an update
  * was applied. Records the Pi's current version in amboat_devices so the
  * CRM can show fleet-wide version distribution.
  *
- * Auth: Bearer amboat_api_key + X-Device-Token
+ * Auth: Ed25519 per-device signature (X-Device-Token + X-Timestamp + X-Nonce + X-Signature)
+ *       OR legacy Bearer AMBOAT_API_KEY during transition — every legacy use is audited.
  * Method: POST
- * Body (JSON): {version: "0.9.8", checked_at: "2026-04-08 01:00:00"}
+ * Body (JSON): {version: "0.9.9.4", checked_at: "2026-08-25 01:00:00"}
  *
- * Response: {success: true, latest_version: "0.9.8.1", update_available: false}
- * (Pi can use this to confirm what the server considers current — optional use)
- *
- * Side effect: adds current_version + version_updated_at columns to
- * amboat_devices on first call if not present.
+ * Response: {success: true, latest_version: "0.9.9.4", update_available: false}
  *
  * Deploy: wp-content/themes/twentytwenty-child/mobile/version-heartbeat.php
  */
@@ -24,22 +21,10 @@ error_reporting(0);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/device-auth.php';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
-$auth_header  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-$device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
-
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
-if (empty($device_token)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Missing X-Device-Token']);
-    exit;
-}
+// ── Auth — identity is the result of verification, never a client-supplied field ──
+$device_token = verify_device_request();
 
 // ── Parse body ────────────────────────────────────────────────────────────────
 

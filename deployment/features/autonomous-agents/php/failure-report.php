@@ -6,7 +6,7 @@
  * Receives failure reports from Pi FI1 failure_reporter.py (background sync).
  * Stores in amboat_failure_reports and clusters into amboat_issues by error_signature.
  *
- * Auth: Bearer amboat_api_key + X-Device-Token
+ * Auth: Ed25519 per-device signature OR legacy Bearer AMBOAT_API_KEY (transition, audited).
  * Method: POST
  * Body (JSON): {service, error_type, message, error_signature, reported_at}
  *
@@ -18,23 +18,11 @@
 error_reporting(0);
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/config.php';   // defines AMBOAT_API_KEY, DB constants
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/device-auth.php';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
-$auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-$device_token = $_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '';
-
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
-if (empty($device_token)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Missing X-Device-Token']);
-    exit;
-}
+// ── Auth — identity is the result of verification, never a client-supplied field ──
+$device_token = verify_device_request();
 
 // ── Parse body ────────────────────────────────────────────────────────────────
 

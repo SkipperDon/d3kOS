@@ -9,7 +9,7 @@
  *
  * Tier gate: T1, T2, T3 only. T0 Pis have no account — not applicable.
  *
- * Auth:   Authorization: Bearer {amboat_api_key}
+ * Auth:   Ed25519 per-device signature OR legacy Bearer AMBOAT_API_KEY (transition, audited).
  *         X-Device-Token: {device_token}
  * Method: POST
  * Body (JSON):
@@ -38,23 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/device-auth.php';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
-$auth_header  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-$device_token = trim($_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '');
-
-if (!preg_match('/^Bearer\s+(.+)$/i', $auth_header, $m) || !hash_equals(AMBOAT_API_KEY, $m[1])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
-
-if (empty($device_token) || strlen($device_token) > 64) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Missing or invalid X-Device-Token']);
-    exit;
-}
+// ── Auth — identity is the result of verification, never a client-supplied field ──
+$device_token = verify_device_request();
 
 // ── Parse body ────────────────────────────────────────────────────────────────
 

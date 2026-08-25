@@ -5,7 +5,7 @@
  * POST: UPSERT a Pi's current position into amboat_community_positions.
  * One row per device_token — updated_at auto-refreshes on every POST.
  *
- * Auth: Authorization: Bearer <AMBOAT_API_KEY>
+ * Auth: Ed25519 per-device signature OR legacy Bearer AMBOAT_API_KEY (transition, audited).
  *       X-Device-Token: <device_token UUID>
  *
  * Body (JSON):
@@ -40,29 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/device-auth.php';
 
 // ── Authentication — Pi-facing only ──────────────────────────────────────────
-
-$auth_header  = $_SERVER['HTTP_AUTHORIZATION']  ?? ($_SERVER['HTTP_X_AUTHORIZATION'] ?? '');
-$device_token = trim($_SERVER['HTTP_X_DEVICE_TOKEN'] ?? '');
-
-if (!preg_match('/^Bearer\s+(\S+)$/i', $auth_header, $m)) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
-
-if (!hash_equals(AMBOAT_API_KEY, $m[1])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
-}
-
-if (empty($device_token)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'X-Device-Token required']);
-    exit;
-}
+// verify_device_request() handles Ed25519 + legacy key transition; exits on failure.
+$device_token = verify_device_request();
 
 // Basic UUID / token format guard (36 chars max)
 if (strlen($device_token) > 36) {
