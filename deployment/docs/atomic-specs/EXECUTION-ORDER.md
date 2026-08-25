@@ -122,10 +122,15 @@ Operator decision: security first. This runs before Phase 1.
       (d) bug30: stale expectations fixed (BUG-43 imperial) → 13.8 ft / 11.5 ft; safety
       assertions 3-5 executed and passed for the FIRST TIME.
       bug36 already passing — no changes needed.
-- [ ] **1.2 — `PHASE1-contract-test.md`** — the highest-value item in Phase 1. Kills the defect class
-      that has recurred **six times** (BUG-29/30/37/38/41/47).
-      ⚠ T7 (every regex matches nothing → **FAIL, not pass**) is the assertion that stops the test
-      passing by failing to look.
+- [x] **1.2 — `PHASE1-contract-test.md`** ✓ DONE S134-cont 2026-08-25 — `tests/contract-dashboard.spec.ts`.
+      C1: extracts SK paths from served instruments.js → validates each against live SK REST tree (EXPECTED_ABSENT
+      list with mandatory justification per entry). T7 guard: `expect(paths.length).toBeGreaterThan(5)` — zero
+      extractions fail, not pass. Bidirectional: REQUIRED_HANDLED_PATHS guards propulsion.port.* twins (BUG-47).
+      C2: extracts DOM IDs from served instruments.js → asserts each exists in rendered DOM. T7 guard:
+      `expect(ids.length).toBeGreaterThan(3)`.
+      C3: 5 dashboard routes → assert HTTP ≠404 and ≠5xx (BUG-37/41).
+      Reads from `BASE_URL/static/js/instruments.js` (served, not repo). Never localhost. Count guards on all
+      regex extraction. Fails with specific path name on violation.
 - [ ] **1.3 — `BUG-81-WIZARD.md` Step 0** — correct `doc/CX5106_CONFIGURATION_GUIDE.md`.
       **Local-only file, no GitHub approval needed.** It is the wizard's specification: fix the spec
       before the implementation, or the next person rebuilds the bug.
