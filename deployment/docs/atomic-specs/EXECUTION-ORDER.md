@@ -138,13 +138,18 @@ Operator decision: security first. This runs before Phase 1.
       new Q4 asks engine family first. Q7/Q8 unchanged (correct). "located on side, labeled 1-8" sentence corrected.
       Superseded original preserved at end of file (reviewers need it for Step 2 `buildDIPRow1` replacements).
       Cross-links `docs/CX5106_DIP_SWITCH.md` as authority. Manufacturer corrected to Matsutec.
-- [ ] **1.4 — `BUG-81-WIZARD.md` Steps 1–2** — rewrite wizard Step 5 to the ratio model; drop the
-      Actisense attribution (use **Matsutec**). Depends on **0.2**.
-      ⚠ The lookup is **per engine family** — inboard petrol by cylinders, outboard by **poles**, diesel
-      by an undefined "Gear Number". A single cylinder-keyed map is right for petrol inboards and
-      **silently wrong for every outboard and diesel.** For those two, the empirical method is the
-      *expected* path, not a failure state.
-      ⚠ **Never state which direction the ratio scales RPM** — the leaflet does not document it.
+- [x] **1.4 — `BUG-81-WIZARD.md` Steps 1–2** ✓ DONE S134-cont 2026-08-25 — `setup.html` rewritten.
+      Replacement A: `cylinderMap`+`buildDIPRow1` → `RATIO_INBOARD_GAS`+`RATIO_OUTBOARD`+`ratioForEngine()`+
+      `encodeRatio()`+`buildDIPBlockA()`; `buildDIPRow1` retained as backward-compat alias (twin call sites).
+      Replacement B: `buildRow1Key` → states ratio + derivation, not fabricated fields; null-ratio path emits
+      empirical-method instruction.
+      Replacement C: `buildWhyText` → ratio paragraph + constant-factor diagnostic + tank-sender (correct, retained).
+      Replacement D: JS portTitle + 2 static HTML labels: "(8 switches)"→"(7 switches)"; "Row 1"→"Block A".
+      Replacement E: `Actisense CX5106`→`Matsutec CX5106` (dropdown option) + ctxTitle (Actisense removed).
+      Verification: cylinderMap=0 ✓, Actisense CX5106=0 ✓, (8 switches)=0 ✓, Matsutec CX5106=1 ✓, Block A=13 ✓.
+      ⚠ Prerequisite mismatches noted and resolved: P1 expected 1 cylinderMap, found 3 (comment+def+use); P4
+      expected 2 (8 switches), found 3 (extra static HTML). Both resolved in the same commit.
+      ⚠ Tests T1-T16 (SPEC §4) cannot run until lab Pi is available — TDD guard still required before deploy.
 - [ ] **1.5 — `BUG-24.md`** — blocked on **G6**. Recommendation: Option A, modelled on
       `alert_watcher.py`. Option B is the trap: it turns "never captures" into "captures sometimes".
 - [ ] **1.6 — BUG-53** — covered inside 1.1. Invert the assertion; **keep the anchor-alarm coverage.**

@@ -793,7 +793,7 @@
           <label for="s4_gateway">Gateway Model</label>
           <select id="s4_gateway" onchange="saveState()">
             <option value="none">None / Not installed</option>
-            <option value="cx5106">Actisense CX5106</option>
+            <option value="cx5106">Matsutec CX5106</option>
             <option value="emu1">Actisense EMU-1</option>
             <option value="ydab">Yacht Devices YDAB-01</option>
             <option value="garmin">Garmin NMEA 2000</option>
@@ -841,7 +841,7 @@
 
           <!-- PORT / single engine block -->
           <div class="dip-block">
-            <div class="dip-block-title" id="dip-port-title">&#128261; Row 1 &mdash; Engine Configuration (8 switches)</div>
+            <div class="dip-block-title" id="dip-port-title">&#128261; Block A &mdash; Engine Configuration (7 switches)</div>
             <div class="dip-switches" id="dip-port-row1"></div>
             <div class="dip-key" id="dip-port-key1"></div>
             <div style="margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;">
@@ -853,7 +853,7 @@
 
           <!-- STARBOARD engine block (twin only) -->
           <div id="dip-stbd-block" class="dip-block" style="display:none;">
-            <div class="dip-block-title">&#128261; Row 1 &mdash; Starboard Engine (8 switches)</div>
+            <div class="dip-block-title">&#128261; Block A &mdash; Starboard Engine (7 switches)</div>
             <div class="dip-switches" id="dip-stbd-row1"></div>
             <div class="dip-key" id="dip-stbd-key1"></div>
             <div style="margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;">
@@ -1234,26 +1234,58 @@
     saveState();
   }
 
-  /* ── DIP switch renderer (CX5106) ──
-   * Row 1 — 8 switches (Engine Configuration)
-   *   SW1-2 : Engine instance  00=single/port  10=starboard
-   *   SW3-4 : RPM sensor type  00=alternator W-terminal
-   *   SW5-6 : Cylinder count   cylinderMap below
-   *   SW7   : Stroke type      0=4-stroke  1=2-stroke
-   *   SW8   : Gear ratio       0=1:1 direct drive
+  /* ── DIP switch renderer (CX5106) — BUG-81 corrected model ──
+   * Block A — 7 positions, ONE binary field: the RPM speed ratio.
+   * sw1 = LSB.  ratio = 1 + (sw1*1 + sw2*2 + sw3*4 + sw4*8 + sw5*16 + sw6*32 + sw7*64)
+   * Source: CX5106 leaflet sheet D2026-B section 6, verified against every fully
+   * printed row of its table (ratios 1-16 and 125-128).
+   * There is NO engine-instance, RPM-sensor-type, cylinder-count, stroke-type or
+   * gear-ratio field on this device. Those were fabricated. See BUG-81.
+   * Engine instance / PORT-STBD is Block B switch 2 - see buildDIPRow2.
    *
-   * Row 2 — 2 switches (Regional)
-   *   SW1   : Tank sender  1=North America (240-33Ω)  0=Europe (0-190Ω)
-   *   SW2   : Position     0=primary/port  1=starboard
+   * Block B — 2 positions (Regional)
+   *   sw1 : Tank sender  1=North America (240-33Ω)  0=Europe (0-190Ω)
+   *   sw2 : Position     0=primary/port  1=starboard
    */
-  var cylinderMap = {
-    '1':[0,0],'2':[1,0],'3':[0,1],'4':[0,0],'6':[1,0],'8':[0,1],'12':[1,1]
-  };
+  /* Three separate lookups - one per engine family. Transcribed from the
+   * leaflet via docs/CX5106_DIP_SWITCH.md section 6.
+   * NOTE: outboard is keyed on POLES, not cylinders. Diesel has no table at
+   * all - the leaflet says only "Speed Ratio = Gear Number" and never defines
+   * the term. Do NOT collapse these into one cylinder-keyed map: that is
+   * correct for petrol inboards and silently wrong for everything else. */
+  var RATIO_INBOARD_GAS = { '4':2, '6':3, '8':4, '10':5, '12':6 };   /* cylinders, 4-cycle */
+  var RATIO_OUTBOARD    = { '4':2, '6':3, '8':4, '10':5, '12':6 };   /* POLES, not cylinders */
 
+  function ratioForEngine(family, cylinders, poles, gearNumber) {
+    if (family === 'inboard-gas') return RATIO_INBOARD_GAS[String(cylinders)] || null;
+    if (family === 'outboard')    return RATIO_OUTBOARD[String(poles)]        || null;
+    if (family === 'diesel')      return (gearNumber > 0) ? gearNumber : null;
+    return null;                  /* null = unknown -> route to the empirical
+                                   * method (guide section 10). NEVER guess. */
+  }
+
+  function encodeRatio(ratio) {
+    if (!(ratio >= 1 && ratio <= 128)) return null;
+    var n = ratio - 1, out = [];
+    for (var i = 0; i < 7; i++) { out.push((n >> i) & 1); }
+    return out;                             /* 7 elements, sw1 first */
+  }
+
+  function buildDIPBlockA(cylinders, isTwoStroke) {
+    /* Legacy call signature retained for callers that pass (cylinders, isTwoStroke).
+     * Inboard gasoline only - outboard and diesel route to empirical method upstream. */
+    var r = ratioForEngine('inboard-gas', cylinders, null, 0);
+    return r === null ? null : encodeRatio(r);
+  }
+
+  /* buildDIPRow1 retained as alias for backward-compat with twin-engine call sites
+   * at lines 1349 and 1358. Both pass (cylinders, isTwoStroke, instance).
+   * Block A takes no instance argument - instance is on Block B (buildDIPRow2).
+   * BUG-81: for twin engines both gateways get the same Block A; only Block B sw2 differs. */
   function buildDIPRow1(cylinders, isTwoStroke, instance) {
-    var c = cylinderMap[String(cylinders)] || [0,0];
-    var inst = (instance === 1) ? [1,0] : [0,0];
-    return [inst[0], inst[1], 0, 0, c[0], c[1], isTwoStroke ? 1 : 0, 0];
+    var row = buildDIPBlockA(cylinders, isTwoStroke);
+    if (!row) row = [0,0,0,0,0,0,0];       /* unknown ratio: display all-OFF, text explains */
+    return row;
   }
   function buildDIPRow2(tankSender, instance) {
     return [(tankSender === 'north-america') ? 1 : 0, (instance === 1) ? 1 : 0];
@@ -1271,13 +1303,18 @@
   }
 
   function buildRow1Key(cylinders, isTwoStroke, instance) {
-    var inst  = (instance === 1) ? 'Starboard (Instance 2)' : 'Single / Port (Instance 1)';
-    var strk  = isTwoStroke ? '2-stroke' : '4-stroke';
-    return '<strong>SW 1&ndash;2:</strong> ' + inst +
-           ' &bull; <strong>SW 3&ndash;4:</strong> Alternator W-terminal RPM' +
-           ' &bull; <strong>SW 5&ndash;6:</strong> ' + cylinders + ' cylinders' +
-           ' &bull; <strong>SW 7:</strong> ' + strk +
-           ' &bull; <strong>SW 8:</strong> 1:1 gear ratio';
+    /* BUG-81: Block A is one binary ratio field, not 4 independent fields.
+     * The ratio table (inboard-gas only - outboard/diesel need empirical method). */
+    var ratio = RATIO_INBOARD_GAS[String(cylinders)] || null;
+    if (!ratio) {
+      return '<strong>Block A (7 switches):</strong> RPM speed ratio — <em>cannot determine automatically for this engine type. Use the empirical method.</em>';
+    }
+    var bits = encodeRatio(ratio);
+    var onSwitches = bits.map(function(v,i){ return v ? (i+1) : null; }).filter(Boolean);
+    var onStr = onSwitches.length ? 'sw' + onSwitches.join(', sw') + ' ON' : 'all OFF';
+    return '<strong>Block A (7 switches):</strong> RPM speed ratio ' + ratio +
+           ' &mdash; ' + onStr + '; others OFF' +
+           ' &bull; Derived from ' + cylinders + '-cylinder inboard gasoline (leaflet section 6.1)';
   }
   function buildRow2Key(tankSender, instance) {
     var t = (tankSender === 'north-america') ? 'North America 240&ndash;33 &Omega;' : 'Europe 0&ndash;190 &Omega;';
@@ -1286,20 +1323,29 @@
   }
 
   function buildWhyText(cylinders, fuel, tankSender, isTwoStroke, twin) {
-    var fuelLabel = fuel === 'diesel' ? 'diesel' : (isTwoStroke ? '2-stroke outboard' : 'gasoline/4-stroke');
+    /* BUG-81: Block A is one binary field (RPM speed ratio), not 5 independent fields.
+     * SW1-8 / engine-instance / RPM-sensor / cylinder-count / stroke / gear-ratio do not exist.
+     * Only the tank-sender paragraph below is preserved — it was always correct. */
     var tankLabel = (tankSender === 'north-america') ? 'North American (240&ndash;33 &Omega;)' : 'European (0&ndash;190 &Omega;)';
+    var ratio = RATIO_INBOARD_GAS[String(cylinders)] || null;
     var html = '';
-    html += '<p><strong>SW 1&ndash;2 (Engine Instance):</strong> ';
-    html += twin ? 'Set to separate instances so the NMEA 2000 network distinguishes port from starboard engine data.'
-                 : 'Single engine — Instance 1 (OFF/OFF). Each engine on a network must have a unique instance.';
-    html += '</p>';
-    html += '<p><strong>SW 3&ndash;4 (RPM Sensor):</strong> OFF/OFF = Alternator W-terminal signal. ';
-    html += 'This is the most common RPM input for marine engines. Change only if using a dedicated tach signal.</p>';
-    html += '<p><strong>SW 5&ndash;6 (Cylinder Count):</strong> Computed from your ' + cylinders + '-cylinder ' + fuelLabel + ' engine. ';
-    html += 'Affects the RPM pulse multiplication factor.</p>';
-    html += '<p><strong>SW 7 (Stroke Type):</strong> ' + (isTwoStroke ? 'ON — 2-stroke engine.' : 'OFF — 4-stroke engine.') + '</p>';
-    html += '<p><strong>SW 8 (Gear Ratio):</strong> OFF = 1:1 direct drive. Change only if using a reduction gear.</p>';
-    html += '<p><strong>Row 2 SW 1 (Tank Sender):</strong> ' + tankLabel + ' resistance standard. ';
+    html += '<p><strong>Block A (7 switches) — RPM Speed Ratio:</strong> ';
+    if (ratio) {
+      html += 'Ratio ' + ratio + ' derived from ' + cylinders + '-cylinder inboard gasoline engine ';
+      html += '(CX5106 leaflet section 6.1). ';
+      html += 'Block A encodes a single binary number — sw1 is the LSB. ';
+      html += 'There are no separate engine-instance, RPM-source, cylinder-count, stroke, or gear-ratio fields on this device.</p>';
+    } else {
+      html += '<em>Could not determine automatically. Use the empirical method: ';
+      html += 'run at a known steady RPM, start at ratio 2, adjust until displayed matches your analogue tachometer. ';
+      html += 'A ratio error is a constant factor — if the error changes with RPM, the ratio is not the problem.</em></p>';
+    }
+    if (twin) {
+      html += '<p><strong>Block B sw 2 (Port / Starboard):</strong> ';
+      html += 'Port gateway = OFF, Starboard gateway = ON. ';
+      html += 'Both gateways get the same Block A (same engine type = same ratio). Only Block B sw2 differs.</p>';
+    }
+    html += '<p><strong>Block B sw 1 (Tank Sender):</strong> ' + tankLabel + ' resistance standard. ';
     html += 'Ensures correct fuel, fresh water, and waste tank readings. Wrong setting inverts the reading.</p>';
     return html;
   }
@@ -1325,7 +1371,7 @@
       document.getElementById('dip-cx5106-content').style.display = 'block';
 
       /* Context header */
-      var ctxTitle = 'Actisense CX5106 &mdash; Complete Configuration';
+      var ctxTitle = 'CX5106 &mdash; Complete Configuration';
       var ctxSub   = '';
       var parts = [];
       if (engMake || engModel) parts.push([engYear, engMake, engModel].filter(Boolean).join(' '));
@@ -1345,7 +1391,7 @@
 
       /* Port / single */
       var portTitle = document.getElementById('dip-port-title');
-      portTitle.textContent = twinEnabled ? '⚓ Port Engine — Row 1 (8 switches)' : '⚓ Row 1 — Engine Configuration (8 switches)';
+      portTitle.textContent = twinEnabled ? '⚓ Port Engine — Block A (7 switches)' : '⚓ Block A — Engine Configuration (7 switches)';
       renderSwitches('dip-port-row1', buildDIPRow1(cylinders, isTwoStroke, 0));
       renderSwitches('dip-port-row2', buildDIPRow2(tankSender, 0));
       document.getElementById('dip-port-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 0);
