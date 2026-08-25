@@ -15,12 +15,13 @@ CRITICAL: Signal K WebSocket is ws://localhost:8099 — NOT ws://localhost:3000.
 """
 from flask import Flask, render_template, jsonify, request, redirect
 import json
-import requests
 import os
+import sys
 import hashlib
 import shutil
 import socket
 import subprocess
+import requests
 from pathlib import Path
 import datetime
 from dotenv import load_dotenv
@@ -468,9 +469,10 @@ def agents_status():
 def settings():
     """Settings & Help page — placeholder. Full build in Phase 4."""
     try:
+        sys.path.insert(0, '/opt/d3kos/services/tier')
+        from tier_service import _parse_tier
         lic = json.loads(Path('/opt/d3kos/config/license.json').read_text())
-        t = lic.get('tier', 'T0')
-        tier_num = int(str(t).replace('T', '')) if t else 0
+        tier_num = _parse_tier(lic.get('tier', 0))
     except Exception:
         tier_num = 0
     try:
@@ -751,10 +753,10 @@ def serve_doc(name):
 def config_tier():
     """Tier for M14 engine diagnostic gate. T0/T1 blocked, T2/T3 allowed."""
     try:
-        import json
+        sys.path.insert(0, '/opt/d3kos/services/tier')
+        from tier_service import _parse_tier
         lic = json.loads(Path('/opt/d3kos/config/license.json').read_text())
-        t = lic.get('tier', 'T0')
-        n = int(str(t).replace('T', '')) if t else 0
+        n = _parse_tier(lic.get('tier', 0))
         return jsonify({'tier': n, 'tier_str': 'T' + str(n)})
     except Exception:
         return jsonify({'tier': 0, 'tier_str': 'T0'})
