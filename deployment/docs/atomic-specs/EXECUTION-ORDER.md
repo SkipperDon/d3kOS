@@ -152,8 +152,8 @@ Operator decision: security first. This runs before Phase 1.
       ⚠ Tests T1-T16 (SPEC §4) cannot run until lab Pi is available — test file written S134-cont as TDD remediation: `tests/bug81-cx5106-dip.spec.ts`. Must verify GREEN before deploy.
 - [ ] **1.5 — `BUG-24.md`** — blocked on **G6**. Recommendation: Option A, modelled on
       `alert_watcher.py`. Option B is the trap: it turns "never captures" into "captures sometimes".
-- [ ] **1.6 — BUG-53** — covered inside 1.1. Invert the assertion; **keep the anchor-alarm coverage.**
-      An anchor alarm that does not fire is a boat dragging onto rocks at 3 a.m.
+- [x] **1.6 — BUG-53** ✓ DONE inside 1.1 S134-cont 2026-08-25 — assertion inverted in bug26 spec;
+      BASE_HOST:3002 asserted; not.toContain('localhost') regression guard added. Anchor alarm coverage retained.
 
 ---
 
