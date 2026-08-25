@@ -91,11 +91,19 @@ hdr "NODE  (tests/*.test.cjs)"
 NODE_PASS=0; NODE_FAIL=0
 for f in tests/*.test.cjs; do
   [ -e "$f" ] || continue
-  if out=$(timeout 120 node "$f" 2>&1); then
+  out=$(timeout 120 node "$f" 2>&1); node_rc=$?
+  # Per-assertion guard (PHASE1-test-harness.md T3): a .test.cjs that exits 0 but never
+  # prints 'ALL ASSERTIONS PASSED' returned early — assertions at the end never ran.
+  # This catches the class of defect where a return or early exit silently skips safety checks.
+  if [ "$node_rc" -eq 0 ] && echo "$out" | grep -q 'ALL ASSERTIONS PASSED'; then
     printf '  %s✓%s %s\n' "$GRN" "$RST" "$(basename "$f")"; NODE_PASS=$((NODE_PASS+1))
   else
     printf '  %s✗%s %s\n' "$RED" "$RST" "$(basename "$f")"
-    echo "$out" | grep -E 'AssertionError|Error' | head -2 | sed 's/^/      /'
+    if [ "$node_rc" -eq 0 ]; then
+      printf '      %sEARLY EXIT: exited 0 without "ALL ASSERTIONS PASSED" — assertions at end may not have run%s\n' "$RED" "$RST"
+    else
+      echo "$out" | grep -E 'AssertionError|Error' | head -2 | sed 's/^/      /'
+    fi
     NODE_FAIL=$((NODE_FAIL+1)); FAILED=1; FAILURES+=("node: $(basename "$f")")
   fi
 done
