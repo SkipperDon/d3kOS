@@ -5385,3 +5385,19 @@ human_verified         : 0
 - Release notes: Registration is now device-gated. New accounts require a 10-character code from an operator-approved d3kOS device. The old vulnerable form (which called wp_create_user() directly with no code gate) has been replaced. The /register/ page was in Draft since August 2026 (S127 containment); it is now live with the permanent fix.
 ```
 
+
+QUALITY METRICS — 2026-08-25 S134-cont (post-compaction close)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+Notes:
+- One in-session code defect fixed (cleanup script republish block was inside the count>0 conditional; restructured to run unconditionally). This is new-code correction, not a git rollback — REC stays 0.
+- All 3 BUG-63 Step 3 actions (HTML form fix, republish, botnet cleanup) had prior explicit APPROVED from operator.
+
