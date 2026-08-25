@@ -5248,3 +5248,47 @@ V09994_BUG_FIXES.md (BUG-63 status [~] partial fix), EXECUTION-ORDER.md (2.6 mar
 **task_classification:** [IMPLEMENT] Tier 3 (PHP implementation) + TDD verifier
 
 ---
+### S134-cont BUG-66 Phase C+D Addendum — 2026-08-25
+
+**Items completed:** 2.7 — BUG-66 Phase C + 2.8 — BUG-66 Phase D
+
+**Phase C — Files changed:**
+- `deployment/v0.9.9.4-server/mobile/device-auth.php` — EXTENDED. verify_device_request_server()
+  added (reads from $_SERVER; Ed25519 signature → legacy key fallback → 401). verify_device_request()
+  now accepts ?WP_REST_Request = null (backward-compat). Legacy key path: every use logged to
+  amboat_registration_audit event='legacy_key_used'.
+- `deployment/features/autonomous-agents/php/version-heartbeat.php` — MIGRATED (#1 of 6)
+- `deployment/features/autonomous-agents/php/failure-report.php` — MIGRATED (#2 of 6)
+- `deployment/features/autonomous-agents/php/fix-confirmed.php` — MIGRATED (#3 of 6)
+- `deployment/features/v0941-plan/php/community-markers-write.php` — MIGRATED (#4, Pi path;
+  Mode A PWA app_token preserved; Pi path dispatched by X-Device-Token presence)
+- `deployment/features/v0941-plan/php/community-position.php` — MIGRATED (#5 of 6)
+- `deployment/features/fi4-config-backup/php/config-backup.php` — MIGRATED (#6 of 6)
+- `deployment/v0.9.9.4/tools/verify-bug66-phase-c.sh` — NEW TDD verifier. 9/9 PASS.
+
+**Phase C key decisions:**
+- 6 endpoints migrated, not 12: fleet-create/join/status/map/analytics/leave use PWA JWT (grep confirms
+  AMBOAT_API_KEY absent) — out of scope for this replacement.
+- Legacy key path retained in device-auth.php with audit logging — not yet removed; removal gated on
+  all Pis migrating to Ed25519 + audit log showing zero remaining legacy users.
+
+**Phase D — Files changed:**
+- `deployment/features/autonomous-agents/php/version-heartbeat.php` — UPSERT replaced with UPDATE.
+  Origin of UPSERT found: SESSION_LOG S33/S37 (pre-pairing auto-registration). Safe to remove now
+  because Phase C auth rejects unknown devices at 401. 404 unknown_device if affected_rows=0.
+  Misleading 'safe' comment deleted.
+- `deployment/v0.9.9.4/tools/verify-bug66-phase-d.sh` — NEW TDD verifier. 5/5 PASS.
+
+**Phase D key decisions:**
+- Phase A gap noted: approval handler must INSERT into amboat_devices on device approval. Without this,
+  approved devices get 404 on first heartbeat. Not a regression from Phase D — the UPSERT was the old
+  workaround; the gap now surfaces. BUG-72 deploy gated on this being resolved.
+
+**Governance files updated:** SESSION_LOG.md, PROJECT_CHECKLIST.md v3.45, DEPLOYMENT_INDEX.md,
+V09994_BUG_FIXES.md (BUG-66 status + Phase C/D blocks), EXECUTION-ORDER.md (2.7+2.8 marked done)
+
+**Commits:** 5fae9a91 (Phase C), b94ce203 (Phase D)
+
+**task_classification:** [IMPLEMENT] Tier 3 (constrained endpoint edits + verifiers)
+
+---

@@ -75,13 +75,19 @@ Operator decision: security first. This runs before Phase 1.
       enforces T16; rollback on wp_create_user failure enforces T17. Commit d9915753.
       ⚠ Step 3 (bulk-delete 62k rows + republish /register/) is HIGH-RISK — NOT executed. Requires explicit
       operator APPROVED before proceeding.
-- [ ] **2.7 — `BUG-66.md` Phase C** — migrate the 12 endpoints. **One endpoint per dispatch, not 12.**
-      Accept legacy key OR signature during transition, **logging every legacy use**, then remove.
-      ⚠ Do not flip 12 endpoints and the whole fleet at once — that is how a boat loses connectivity.
-- [ ] **2.8 — `BUG-66.md` Phase D** — remove the blind UPSERT.
-      ⚠ **SESSION_LOG records the UPDATE→UPSERT change as deliberate. Find out what needed it before
-      reverting**, or this causes a regression. Delete the "is safe" comment with the statement — it is
-      safe against duplicate rows, not against unauthorised registration.
+- [x] **2.7 — `BUG-66.md` Phase C** ✓ DONE S134-cont 2026-08-25 — 9/9 PASS. verify_device_request_server()
+      added to device-auth.php (plain PHP, reads $_SERVER); verify_device_request() now nullable-arg for
+      backward-compat; legacy key path retained + every use logged to amboat_registration_audit
+      event='legacy_key_used'. 6 Pi→Server endpoints migrated: version-heartbeat, failure-report,
+      fix-confirmed, community-markers-write (Pi path), community-position, config-backup. Commit 5fae9a91.
+      ⚠ OBSERVATION: fleet-create/join/status/map/analytics/leave use PWA JWT — AMBOAT_API_KEY absent;
+      these are out of scope for this replacement (confirmed grep).
+- [x] **2.8 — `BUG-66.md` Phase D** ✓ DONE S134-cont 2026-08-25 — 5/5 PASS. version-heartbeat.php:
+      UPSERT replaced with UPDATE WHERE device_token=?; 404 unknown_device on affected_rows=0; misleading
+      'safe' comment removed. SESSION_LOG S33/S37 origin found: UPSERT added for pre-pairing devices;
+      safe to remove now because Phase C auth rejects unknown devices at 401. Commit b94ce203.
+      ⚠ Phase A gap: approval handler must INSERT into amboat_devices on approval — without this, approved
+      devices get 404 on first heartbeat. BUG-72 deploy gated on this.
 - [ ] **2.9 — `BUG-65.md`** — mode **and ownership** together; tier claim-vs-detected audit; server-side
       enforcement of paid **cloud** features only.
       ⚠ `license.json` is `root:root 644` while services run as `d3kos`. **A naive `chmod 600` looks

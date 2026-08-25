@@ -4563,7 +4563,7 @@ same one BUG-66 and the registration spec both require.
 
 ## BUG-66 — One fleet-wide API key in cleartext on every Pi authenticates all 12 server endpoints
 
-**Status:** `[~]` **PHASE A COMPLETE S134 2026-08-25 — PHASES B/C/D PENDING. SEVERITY HELD AT CRITICAL (operator decision S131). Release gate for v0.9.9.4.**
+**Status:** `[~]` **PHASES A+B+C+D COMPLETE S134-cont 2026-08-25 — AWAITING HOSTPAPA STAGING DEPLOY (Phase A server files). All code changes in canonical tree. SEVERITY HELD AT CRITICAL (operator decision S131). Release gate for v0.9.9.4.**
 
 ### PHASE A — S134 2026-08-25 — SERVER-SIDE (COMPLETE, AWAITING HOSTPAPA STAGING DEPLOY)
 
@@ -4589,9 +4589,25 @@ Files created at `deployment/v0.9.9.4-server/`:
 
 **⚠ Deploy order: server before Pi. Phase A still awaiting operator APPROVED for HostPapa staging.**
 
-### PENDING
-- Phase C (item 2.7): migrate 12 existing endpoints — one Tier 3 dispatch each
-- Phase D (item 2.8): remove blind UPSERT from `version-heartbeat.php`
+### PHASE C COMPLETE — S134-cont 2026-08-25
+
+**6 Pi→Server endpoints migrated** (hash_equals(AMBOAT_API_KEY) → verify_device_request()):
+version-heartbeat.php, failure-report.php, fix-confirmed.php, community-markers-write.php (Pi path),
+community-position.php, config-backup.php. verify_device_request_server() added to device-auth.php
+(plain PHP, reads $_SERVER); verify_device_request() accepts nullable WP_REST_Request (backward-compat).
+Legacy Bearer key path retained in device-auth.php — every use written to amboat_registration_audit
+event='legacy_key_used'. TDD: verify-bug66-phase-c.sh 9/9 PASS. Commit 5fae9a91.
+⚠ fleet-create/join/status/map/analytics/leave use PWA JWT — AMBOAT_API_KEY absent (confirmed grep);
+out of scope for AMBOAT_API_KEY replacement.
+
+### PHASE D COMPLETE — S134-cont 2026-08-25
+
+**version-heartbeat.php UPSERT replaced with UPDATE.** Origin confirmed: SESSION_LOG S33/S37 —
+UPSERT added for pre-pairing auto-registration. Safe to remove now: Phase C auth rejects unknown
+devices at 401 before reaching SQL. UPDATE … WHERE device_token=?; 404 unknown_device if
+affected_rows=0; misleading 'safe' comment deleted with the statement.
+Phase A gap: approval handler must INSERT initial row in amboat_devices on device approval.
+TDD: verify-bug66-phase-d.sh 5/5 PASS. Commit b94ce203.
 
 ### SEVERITY REVIEW — S131 2026-08-24
 
