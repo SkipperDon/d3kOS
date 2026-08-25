@@ -157,9 +157,63 @@ else
     log_action "  license.json not found (expected on first install)"
 fi
 
+# 4. Generate Ed25519 device signing keypair (BUG-66 Phase B)
+# Key is generated on EVERY fresh clone — never baked into the shipped image (BUG-78).
+# Private key is 32 bytes raw, mode 0600, owner root. Never logged.
+# Public key is written separately for the enrolment call (device_sign.get_public_key_b64()).
+log_action "Generating Ed25519 device signing keypair"
+SIGNING_KEY_FAILED=0
+SIGNING_KEY_PATH="/opt/d3kos/config/device-signing.key"
+SIGNING_PUB_PATH="/opt/d3kos/config/device-signing.pub"
+
+if ! python3 -c "from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey" 2>/dev/null; then
+    log_action "ERROR: Python 'cryptography' package not available — cannot generate signing keypair"
+    SIGNING_KEY_FAILED=1
+else
+    python3 << 'PYEOF'
+import os, sys
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
+
+priv_path = '/opt/d3kos/config/device-signing.key'
+pub_path  = '/opt/d3kos/config/device-signing.pub'
+
+try:
+    key     = Ed25519PrivateKey.generate()
+    priv_raw = key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
+    pub_raw  = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+
+    # Mode 0600 set at open time — private key is never world-readable, even briefly.
+    fd = os.open(priv_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'wb') as f:
+        f.write(priv_raw)
+
+    # Public key is not secret; 0644 for readability by unprivileged services.
+    with open(pub_path, 'wb') as f:
+        f.write(pub_raw)
+    os.chmod(pub_path, 0o644)
+
+    priv_len = len(priv_raw)
+    pub_len  = len(pub_raw)
+    print(f"device-signing.key: {priv_len} bytes, mode 0600")
+    print(f"device-signing.pub: {pub_len} bytes, mode 0644")
+    sys.exit(0)
+except Exception as e:
+    print(f"ERROR: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+    if [[ $? -ne 0 ]]; then
+        log_action "ERROR: Ed25519 keypair generation failed"
+        SIGNING_KEY_FAILED=1
+    else
+        log_action "  device-signing.key written (32 bytes, mode 0600)"
+        log_action "  device-signing.pub written (32 bytes, mode 0644)"
+    fi
+fi
+
 # Create sentinel LAST, only if all steps succeeded
-if [[ $SSH_REGEN_FAILED -ne 0 ]]; then
-    log_action "ERROR: SSH key regeneration failed, NOT creating sentinel (re-run to retry)"
+if [[ $SSH_REGEN_FAILED -ne 0 ]] || [[ $SIGNING_KEY_FAILED -ne 0 ]]; then
+    log_action "ERROR: one or more steps failed, NOT creating sentinel (re-run to retry)"
     exit 1
 fi
 
