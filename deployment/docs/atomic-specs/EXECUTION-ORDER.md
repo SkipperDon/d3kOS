@@ -51,11 +51,9 @@ No dependencies. Do this first: everything after it is untrustworthy otherwise.
 
 Operator decision: security first. This runs before Phase 1.
 
-- [~] **2.1 — `BUG-78.md`** (CRITICAL) ✓ code+tests S134 2026-08-25 — wire `sanitize.sh` into
-      `create-image.sh`; credential strip (STEP 7b); build assertion; `--unattended` flag; T1–T4+T6 PASS.
-      ⚠ T5 (Pi md5 match) + deploy + §12.1 spec reconciliation pending Pi connectivity.
-- [~] **2.2 — `BUG-74.md`** ✓ Steps 1+2 S134 2026-08-25 — .gitignore + template done; 5/5 PASS.
-      ⚠ Step 3 (chmod 600 on Pi) pending Pi connectivity — T5 + T7 skip until then.
+- [x] **2.1 — `BUG-78.md`** (CRITICAL) ✓ DONE S134 2026-08-25 — 6/6 PASS incl. T5 (Pi md5) + deploy.
+      ⚠ §12.1 spec reconciliation still pending (Step 6).
+- [x] **2.2 — `BUG-74.md`** ✓ DONE S134 2026-08-25 — 7/7 PASS incl. T5 (mode 600) + T7 (services active).
 - [ ] **2.3 — `BUG-66.md` Phase A** — server side: 4 tables, `device-auth.php`, 3 endpoints, wp-admin
       approval queue. **Tier 1/2 only — this is new-file work; do not dispatch to Tier 3.**
       ⚠ Server before Pi. A Pi enrolling against a server with no tables fails closed, which is safe.
