@@ -313,8 +313,11 @@ recorded from an inference rather than a read.**
 - [x] **5.10 — `BUG-71.md`** — three-line `ABSPATH` guard.
       ⛔ **Do NOT add guards to the other 42 `mobile/*.php` files** — they are standalone endpoints and
       guarding them breaks every Pi→server call.
-- [ ] **5.11 — `BUG-82.md`** — `boatlog-export-api.py` binds `127.0.0.1`; all four :8095 endpoints fail
-      from any remote browser. Also fix the empty `.catch()` handlers that hid it.
+- [x] **5.11 — `BUG-82.md`** ✓ DONE S136 2026-08-28 — §3 answered: kiosk loads `http://localhost/`
+      (touchscreen works; remote browsers broken). Option B chosen: 3 proxy routes in app.py
+      (`/api/boatlog/status`, `/voice-note`, `/export`). `BOATLOG_API = ''` in boat-log.html.
+      `refreshStatus()` checks `r.ok` → visible 'unavailable (HTTP 503)' when service down.
+      T1 PASS (78 entries from remote). T5 PASS (visible error shown). Lab Pi deployed.
 - [x] **5.12 — `BUG-83.md`** — de-duplicate `alert_watcher.py`. ⛔ **Promote, do not prune** — the root
       copy is the superset and the one systemd runs. **Third instance of the pattern Phase 0.4 missed;
       sweep for more.**
