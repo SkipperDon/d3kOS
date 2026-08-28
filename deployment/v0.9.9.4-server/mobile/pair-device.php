@@ -14,6 +14,10 @@
  * 3. Pi polls command-queue.php, sees "paired" command, registers via register-device.php
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 // This file is loaded in WordPress context via the AJAX handler in registration.php
 // The actual handler is: add_action('wp_ajax_atmyboat_confirm_pairing', ...)
 

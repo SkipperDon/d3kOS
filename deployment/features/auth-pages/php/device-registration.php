@@ -41,8 +41,8 @@ function amboat_claim_registration_code( string $raw_code ): string|WP_Error {
 
     $code_hash = hash( 'sha256', $code );
 
-    $table_codes = $wpdb->prefix . 'amboat_registration_codes';
-    $table_enrol = $wpdb->prefix . 'amboat_device_enrolments';
+    $table_codes = 'amboat_registration_codes';
+    $table_enrol = 'amboat_device_enrolments';
 
     // Transaction: SELECT FOR UPDATE to prevent concurrent redemption, then UPDATE.
     $wpdb->query( 'START TRANSACTION' );
@@ -98,7 +98,7 @@ function amboat_claim_registration_code( string $raw_code ): string|WP_Error {
  */
 function amboat_rollback_registration_code( string $code_hash ): void {
     global $wpdb;
-    $table_codes = $wpdb->prefix . 'amboat_registration_codes';
+    $table_codes = 'amboat_registration_codes';
     $wpdb->update(
         $table_codes,
         [ 'status' => 'valid', 'used_at' => null, 'used_at_ip' => null ],
@@ -118,7 +118,7 @@ function amboat_rollback_registration_code( string $code_hash ): void {
  */
 function amboat_registration_audit( string $event, ?int $user_id, string $detail = '' ): void {
     global $wpdb;
-    $table = $wpdb->prefix . 'amboat_registration_audit';
+    $table = 'amboat_registration_audit';
     $wpdb->insert(
         $table,
         [

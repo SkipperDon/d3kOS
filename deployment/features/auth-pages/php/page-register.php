@@ -117,7 +117,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['atmyboat_register_n
                     // Bind account to device (D4: exactly one account per device_token)
                     global $wpdb;
                     $wpdb->insert(
-                        $wpdb->prefix . 'amboat_device_accounts',
+                        'amboat_device_accounts',
                         [ 'device_token' => $device_token, 'user_id' => $user_id ],
                         [ '%s', '%d' ]
                     );
