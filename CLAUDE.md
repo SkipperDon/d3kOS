@@ -273,7 +273,7 @@ At the end of every session (user says "done", "that's it", "end", "wrap up",
 Do not skip steps. If a file does not need updating, state that in the chat summary.
 
 **Step 1 — SESSION_LOG.md**
-Write a new entry to SESSION_LOG.md in the project root.
+Write a new entry to `Helm-OS/SESSION_LOG.md` — **the canonical session log** (operator decision, S135 2026-08-28; the diverged `/home/boatiq/SESSION_LOG.md` was merged in and is now a redirect stub). **Append here only.**
 
 Format:
 ```

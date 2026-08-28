@@ -167,3 +167,10 @@ Per-Pi delta for avnav_server.xml is now formally documented in `deployment/docs
 - Also flagged: S134 deleted the GATE 0 table as "all cleared" while items 1.5/3.1/3.3 still referenced G2/G3/G4/G6 — dangling four sessions, now restored. BUG-66 Phase C's "6 endpoints migrated" — 3 of 6 are not deployed.
 - Open questions: G3 (nginx log, unreachable by FTP) · G8 (MailPoet auto-create-user — can re-escalate BUG-57) · G9 (count of users with falsy `atmyboat_tier`) · G10 (which audit table exists live) · G11 (rotate FTP passwords)
 - Self-correction: BUG-75 was briefly listed as an overturned premise; its entry was always accurate. Four overturned, not five.
+
+## [2026-08-28] governance | S135 — SESSION_LOG canonicalised: two diverged files merged into one
+- Files changed: `Helm-OS/SESSION_LOG.md` (5,479 → 14,879 lines, 144 sections) · `/home/boatiq/SESSION_LOG.md` → redirect stub · `/home/boatiq/CLAUDE.md` (session-start pointer + stale note) · `Helm-OS/CLAUDE.md` (session-close pointer disambiguated)
+- Operator decision: **`Helm-OS/SESSION_LOG.md` is canonical.** The parent's 86 unique sections (9,427 lines) were merged in chronologically; the other file held 42 unique sections (4,029 lines). 16 shared sections identical; 1 (S34) differed only by a trailing separator — took the richer copy.
+- Verified before install: 144 unique input sections → 144 output, **0 missing, 0 duplicated.** Both originals backed up byte-identical and md5-verified to `.aao-backups/20260828_112110_S135/`.
+- Contradictions resolved: the split was the mechanism by which S134-cont's **live** BUG-66/BUG-72 deploy was recorded in neither log — no entry, no Release Package Manifest — while four other records said the endpoint was never deployed.
+- Open questions: canonical log is now ~926 KB (≈230k tokens). **Recommended: archive S16–S99 to `SESSION_LOG_ARCHIVE.md`** (precedent: S79 archived S36-and-earlier). Operator decision, not done.
