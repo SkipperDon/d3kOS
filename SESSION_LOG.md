@@ -7067,3 +7067,61 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+## S136 — 2026-08-28
+**Goal:** Complete all v0.9.9.4 PHASE 5 bug fixes from atomic specs. Deploy to lab Pi and HostPapa live. FTP credentials active throughout; to be rotated on session end.
+
+**Completed:**
+- BUG-87: My Account throttle (R1: 5-fail transient 15min, R2: pw_delete gate on delete_account). Deployed HostPapa live. 4/4 PASS.
+- BUG-76: Canonical endpoint names confirmed as deployed reality: data-ingress.php, community-markers.php, community-get.php. MASTER_SYSTEM_SPEC §8.4.4 rewritten v4.1. ARCH_SERVICE_MAP.md corrected. community-api.py fixed on Pi and HostPapa. verify-endpoints.sh created, T5/T6 PASS.
+- BUG-89: version.php created (OTA version manifest matching update_agent.py expected format). cloud-link-api.py webhook_url added to required. verify-endpoints.sh built. All 4 URLs resolving.
+- BUG-24: boatlog_capture.py server-side engine capture service. d3kos-boatlog-capture.service deployed lab Pi. app.py GET /api/boatlog/entries (read-only). boat-log.html fetches+merges on load. boatlog-engine.js retired. T4 PASS (engine row without page open). T8 PASS (journald within 7s).
+- BUG-82: boatlog-export-api.py loopback bind fixed via Option B proxy in app.py. 3 proxy routes: status/voice-note/export. BOATLOG_API='' in boat-log.html. T1 PASS (remote status). T5 PASS (visible error).
+- BUG-88 Part 1: 38 unsourced production mobile/ PHP files captured byte-identical in atmyboat-forum commit 718b97a. config.php excluded (live Stripe/Gemini/API keys; gitignored). Part 2: inc/atmyboat-functions.php deleted from repo and HostPapa (dormant landmine with wrong get_template_directory() calls). T6 PASS.
+- EXECUTION-ORDER.md: marked 5.7/5.8/5.11/5.13/5.14/5.15 done (all implementable Phase 5 bugs complete).
+- V09994_BUG_FIXES.md: status updated for BUG-24/82/87/88.
+
+**Decisions:**
+- BUG-82 Option B chosen (proxy via app.py:3000, not binding 0.0.0.0) — consistent with BUG-24 pattern, no new network surface.
+- BUG-24 Option A confirmed (G6 cleared) — server-side service modeled on predictive_maintenance.py.
+- config.php (live API keys) correctly excluded from atmyboat-forum repo and gitignored.
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-08-28 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- BUG-60: requires operator WP Admin click (Settings → Discussion).
+- BUG-57-MAILPOET: gated on G8 (MailPoet screenshot from operator).
+- BUG-56: CRM VM unreachable from lab.
+- BUG-75 Step 3: operator decision on /mobile/ alias (recommend: no).
+- BUG-54-PART2: G3 blocked (nginx error log outside FTP web root).
+- BUG-72 (2.10): deploy version-heartbeat.php — requires explicit APPROVED.
+- FTP password rotation: operator action required NOW (rotated after session).
+- config.php on HostPapa: live Stripe/Gemini/AMBOAT keys — operator should rotate.
+- atmyboat-functions.php on HostPapa: DELETED this session. Confirm no regression.
+- PHASE 5 exit criterion: MET (BUG-90/91/85/65-Step3 all closed).
+
+---
+
+SQS: 83/100
+- AAO compliance: 17/20 (no Boat Pi deploy as instructed; all lab Pi deploys under blanket session approval)
+- Scope discipline: 19/20
+- Test coverage: 14/20 (T3/T12 not pre-failure-tested before lab Pi deploy — TDD gap; T10/T11 not browser-validated, no GUI test)
+- Uncertainty flags: 20/20
+- Summary accuracy: 13/20 (config.php credential exposure found during commit)
+
+EXTENDED DATA FIELDS — 2026-08-28
+─────────────────────────────────────────────────────
+session_duration_min   : 180
+tasks_planned          : 11 (PHASE 5 bugs remaining at session start)
+tasks_completed        : 6 (BUG-87/76/89/24/82/88)
+governing_doc_version  : CLAUDE.md 2026-08-28
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────

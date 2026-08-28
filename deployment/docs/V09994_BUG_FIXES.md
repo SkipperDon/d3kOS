@@ -1707,7 +1707,7 @@ Tapping the voice record button, speaking a sentence, then tapping stop does not
 
 ## BUG-24 — Boat Log Engine Auto-Capture Not Working
 
-**Status:** `[~]` **RE-DIAGNOSED S116 2026-08-01 — original hypothesis DISPROVED. Still open; fix path now clear.**
+**Status:** `[x]` **FIXED S136 2026-08-28 — Option A implemented. `boatlog_capture.py` server-side service; `d3kos-boatlog-capture.service` enabled on lab Pi. `app.py` GET `/api/boatlog/entries` read-only. `boat-log.html` fetches+merges server entries on load. boatlog-engine.js <script> removed; file kept RETIRED. T4 PASS: engine row written without page open. T8 PASS: journald within 7s.**
 
 **The logic works.** Verified S116 with LAB-SIM: with the Boat Log page open, injecting RPM 0 →
 2200 wrote an `event:"start"` engine entry to `localStorage('d3kos-boatlog-entries')` exactly as
@@ -6110,7 +6110,7 @@ failure mode)
 **Logged:** 2026-08-28 (S135) · **Platform:** Pi (lab Pi `192.168.1.237`, confirmed live)
 · **Severity:** **MEDIUM** — three user-facing Boat Log features silently fail whenever the dashboard
 is opened over the LAN; the failures are invisible because every caller discards the error
-· **Status:** `[ ]` OPEN — found during the BUG-24 Option A investigation. **No fix attempted.**
+· **Status:** `[x]` **FIXED S136 2026-08-28 — Option B (proxy via app.py). 3 proxy routes added: GET /api/boatlog/status, POST /voice-note, POST /export. BOATLOG_API='' in boat-log.html. refreshStatus() checks r.ok → visible error on 503. T1 PASS (78 entries from remote). T5 PASS (visible 'unavailable (HTTP 503)').**
 
 ### Symptom
 
@@ -6426,8 +6426,7 @@ not broken, the database name is wrong.** The two databases are separate; there 
 ## BUG-87 — My Account actions are unthrottled, and account deletion does not re-prompt for the password
 
 **Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (live) · **Severity:** **LOW — hardening**
-· **Status:** `[ ]` OPEN — split out of BUG-64 when that closed NOT A BUG. **Neither item is
-exploitable by an unauthenticated party.** Both require an already-valid session.
+· **Status:** `[x]` **FIXED S136 2026-08-28 — R1: 5-failure transient throttle (15 min) on change_password. R2: wp_check_password + pw_delete input on delete_account. Wordfence confirmed does NOT protect this handler. Deployed live. 4/4 PASS.**
 
 **File:** `wp-content/themes/twentytwenty-child/page-my-account.php` (live md5 `400fa44e…`).
 ⚠ Edit the **Helm-OS** copy at `deployment/features/auth-pages/php/page-my-account.php` — the
@@ -6500,7 +6499,7 @@ admin** rather than deleting posts, so the blast radius is the account, not its 
 
 **Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (live) + `atmyboat-forum` repo
 · **Severity:** **MEDIUM** — this is the measurable form of a root cause three other bugs already name
-· **Status:** `[ ]` OPEN — found during the BUG-71 investigation. No fix attempted.
+· **Status:** `[x]` **FIXED S136 2026-08-28 — Part 1: 38 unsourced files captured byte-identical in atmyboat-forum commit 718b97a. config.php excluded (live creds) → gitignored; ⚠ OPERATOR: rotate Stripe/Gemini/API keys. Part 2: inc/atmyboat-functions.php deleted from repo and HostPapa live. T6 PASS: site healthy.**
 
 ---
 
