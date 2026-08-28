@@ -332,9 +332,11 @@ recorded from an inference rather than a read.**
       R1: 5-failure transient throttle (`atmyboat_pw_fail_{user_id}`, 15 min) on change_password handler.
       R2: `wp_check_password($pw_del,...)` + `pw_delete` input field on delete_account handler.
       Deployed to `wp-content/themes/twentytwenty-child/page-my-account.php` (24559 bytes). 4/4 PASS.
-- [ ] **5.15 — `BUG-88.md`** — **32 production files exist nowhere in the repo.** ⛔ **Do not copy
-      production in wholesale** — some repo copies are newer. **Feeds `PHASE3-server-canonical-tree.md`
-      Step 1; do this before 3.1.**
+- [x] **5.15 — `BUG-88.md`** ✓ DONE S136 2026-08-28 — Part 1: 77 mobile/ prod vs 38 repo = 39 absent;
+      38 captured byte-identical in atmyboat-forum commit 718b97a (config.php excluded — live Stripe/
+      Gemini/API keys; added to .gitignore; ⚠ OPERATOR: rotate these keys). Part 2: deleted dead
+      `inc/atmyboat-functions.php` (15467 bytes) from repo AND HostPapa live (was dormant landmine —
+      get_template_directory() reaching child-theme paths). T6 PASS: /register/ 200, site healthy.
 
 ### 5.3 — BLOCKED / DECISIONS
 
