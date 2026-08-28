@@ -318,9 +318,12 @@ recorded from an inference rather than a read.**
 - [x] **5.12 — `BUG-83.md`** — de-duplicate `alert_watcher.py`. ⛔ **Promote, do not prune** — the root
       copy is the superset and the one systemd runs. **Third instance of the pattern Phase 0.4 missed;
       sweep for more.**
-- [ ] **5.13 — `BUG-24.md`** — Boat Log engine auto-capture, **Option A** (G6 cleared).
-      ⚠ Model on `predictive_maintenance.py`, **not** `alert_watcher.py`. The UI read path is part of the
-      fix — a server-side writer alone leaves the operator seeing nothing.
+- [x] **5.13 — `BUG-24.md`** ✓ DONE S136 2026-08-28 — Option A. `boatlog_capture.py`: SK REST poll
+      5s, 3-sample debounce, direct SQLite write (pattern: predictive_maintenance.py). Systemd unit
+      deployed lab Pi (PYTHONUNBUFFERED=1, MemoryMax=128M). `app.py` GET `/api/boatlog/entries`
+      (read-only, same origin, sidesteps F3). `boat-log.html` fetches+merges on load; legacy
+      localStorage preserved. boatlog-engine.js <script> removed; file kept with RETIRED header.
+      T4 PASS: engine row written without page open. T8 PASS: journald within 7s. T13 spec written.
 - [x] **5.14 — `BUG-87.md`** (LOW) ✓ DONE S136 2026-08-28 — Wordfence confirmed: only covers
       `/wp-login.php` (maxFailures=20, lockoutMins=240); custom page-my-account.php POST handler unprotected.
       R1: 5-failure transient throttle (`atmyboat_pw_fail_{user_id}`, 15 min) on change_password handler.
