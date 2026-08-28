@@ -11,7 +11,29 @@ Tier 3 faithfully implementing the guess."* All four are OPEN with root cause un
 
 ---
 
-## BUG-71 — `pair-device.php` HTTP 500
+## BUG-71 — `pair-device.php` HTTP 500 — ⛔ RESOLVED AND CORRECTED S135 2026-08-28
+
+> **⛔ THIS SECTION IS SUPERSEDED. Do not act on it. It is retained only so the error is visible.**
+>
+> **Unblocked (FTP = condition 1) and diagnosed on 2026-08-28.** `pair-device.php` **is not an
+> endpoint.** It is a WordPress AJAX handler registration file — `:20`
+> `add_action('wp_ajax_atmyboat_confirm_pairing', …)` — `require_once`d by `functions.php:220` and
+> invoked through `admin-ajax.php`. It carries **no `ABSPATH` guard**, so a direct HTTP fetch executes
+> it outside WordPress, `add_action()` is undefined, PHP fatals, and the response is 500 with an empty
+> body. Fix = a three-line guard. Severity **HIGH → LOW**.
+>
+> **⛔ The claim below that this is "step 2 of PWA device pairing", that "every PWA integration test for
+> a new device is blocked behind it", and that "it is the critical path, not a side issue" — is WRONG.**
+> The handler is registered, so the pairing path is intact and nothing is blocked by the 500.
+>
+> **The lesson worth keeping:** the reasoning below is *sound* — the empty body really is consistent
+> with `error_reporting(0)`, and sibling endpoints really do return 401/405. It still reached the wrong
+> conclusion, because it never asked *whether this file is an endpoint*. **A 500 proves a PHP file
+> executed. It does not prove the file was meant to be requested.**
+>
+> Full record: `V09994_BUG_FIXES.md` BUG-71. Source captured byte-identical in commit `13eebcbc`.
+
+### Original S131 analysis — superseded, retained for the record
 
 **Verified S131:** returns **500 twice**, against a stable 401 control. Sibling endpoints in the same
 directory return 401/405 correctly, so the directory resolves and PHP executes — the fault is inside the

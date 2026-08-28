@@ -3406,6 +3406,61 @@ never updated. The test now enforces the defect.
 
 ## BUG-54 — Cloud export has failed silently every ~10 minutes since 2026-02-20
 
+> ### ⚠ S135 2026-08-28 — PART 2 INVESTIGATION. The regression has a DATE.
+>
+> **Reproduced live** from the lab Pi journal, 2026-08-28 07:58:12:
+> ```
+> Uploading to https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/data-ingress.php
+> ✗ Export upload failed: HTTP 400: <html>…<center><h1>400 Bad Request</h1></center><hr><center>nginx</center>
+> ```
+> Part 1's fix is working — the diagnostics are visible in the journal.
+>
+> #### ⛔ THE RECORD'S FRAMING IS WRONG — corrected
+>
+> This entry says *"Cloud export has failed silently every ~10 minutes since 2026-02-20."*
+> **Not true.** The queue's own history:
+>
+> | Period | Outcome |
+> |---|---|
+> | 2026-02-20 → 03-26 | 110 failures — placeholder host `d3kos-cloud-api.example.com` |
+> | 2026-03-26 → **04-22** | **237 SUCCESSES** (155 in March, 82 in April) |
+> | **2026-04-22** → 08-28 | **99 nginx 400s** (1 Apr, 19 Jul, 79 Aug) — still accumulating |
+>
+> **Export worked for four weeks. The last success and the first nginx 400 are both 2026-04-22.**
+> This is a **regression with a date**, not a permanent misconfiguration — which makes it findable.
+> ⚠ **The count is 99 now, not the 63 recorded.** ⚠ Note Phase 4 went live 2026-04-12, ten days before.
+> **Ask what changed on the server on or about 2026-04-22.**
+>
+> #### What S135 ELIMINATED — do not re-test these
+>
+> | Hypothesis | Verdict |
+> |---|---|
+> | Wrong URL / staging leftover | **No.** `amboat_base_url = https://atmyboat.com`; endpoint string correct. BUG-55 holds. |
+> | Malformed header values | **No.** api_key 64 chars, device_token 36 chars, **zero non-printable or space characters** in either. |
+> | Headers rejected by nginx | **No.** All three real headers POSTed to `atmyboat.com/` from the Pi → **HTTP 200**. Tested singly too — all 200. |
+> | Body too large | **No.** Bodies of 1/16/64/128/256 KB POSTed to the homepage → all **200**. Real payloads are only **23–33 KB** (n=237 completed, median 25,650 B). |
+> | Request never reaches the server | **No.** nginx answers with its own HTML error page. |
+> | PHP rejecting it | **No.** **Zero `data-ingress` entries** in `mobile/error_log` across a full week (21–28 Aug). nginx rejects **before PHP** — confirmed, not assumed. |
+> | `/exports/exports/` doubled path | **NOT A BUG.** The directory genuinely exists with 248 files and **all 473 queue entries use it consistently.** Checked before reporting. |
+>
+> #### Where that leaves it
+>
+> `GET` on `data-ingress.php` reaches PHP (**405**). `POST` is rejected by nginx (**400**). The same
+> headers and comparable body sizes are accepted at `/`. **So the fault is specific to POST + that path,
+> it began on 2026-04-22, and 237 payloads of the same shape succeeded before that date.**
+>
+> `Uncertainty flag: the actual nginx rule is still unidentified. nginx logs sit outside the web root and
+> FTP cannot reach them. Everything above narrows the search; none of it names the cause.`
+>
+> **Next diagnostic — needs operator approval, it is a POST to a production data endpoint:**
+> from the Pi, POST a minimal payload to `data-ingress.php`. If a small body succeeds where 25 KB fails,
+> the cause is size- or content-dependent and can be bisected. If a minimal body **also** 400s, the cause
+> is the path or method and the payload is irrelevant. **One request settles which.**
+>
+> ⚠ Also still unchecked: **the boat Pi's `failed_exports/` count.** The lab Pi's is **0**. Boat is out of
+> scope per operator directive S135 — carry it on the boat test card.
+
+
 **Status:** `[~]` **PART 1 FIXED + DEPLOYED LAB PI S118 2026-08-03 — TDD 2/3 fail pre-fix → 3/3 pass,
 end-to-end proven in the journal. PART 2 (the HTTP 400 itself) still OPEN — needs an external probe
 to atmyboat.com, which requires operator approval. NOT on boat Pi.**
@@ -3657,77 +3712,181 @@ itself has moved to production, or only the Pi-side services should repoint.**
 
 ## BUG-56 — Admin Console HTTP 400 Bad Request; HostPapa database API endpoint failing
 
-**Status:** `[~]` **ROOT CAUSE FOUND S131 2026-08-24 — the endpoint DOES NOT EXIST. Re-diagnosed from a live production probe; the S120 HTTP 400 no longer reproduces (it is now 404). This is a BUILD task, not a debugging task.** | Prior: `[ ]` OPEN — logged 2026-08-11 S120
-
-**Platform:** HostPapa (atmyboat.com live site)
-
-**Severity:** MEDIUM — Admin Console is a critical system; database connectivity is broken.
-
-### Symptoms
-
-- Admin Console (CRM VM at 192.168.236.5) unable to retrieve data or post to database
-- HTTP 400 Bad Request returned by HostPapa API endpoint
-- Error URL: `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/api-admin.php`
-
-### ROOT CAUSE FOUND — S131 2026-08-24 (live HTTP probe against production)
-
-`api-admin.php` **does not exist on the server.** Probed twice, with a stable control:
-
-```
-GET .../twentytwenty-child/mobile/api-admin.php      -> 404, 404
-control: .../mobile/dashboard-data.php               -> 401, 401  (stable, endpoint present)
-```
-
-The response is **404, not the 400 recorded in S120**. Sibling endpoints in the same directory
-return 401/405, which proves the directory resolves and PHP executes there — so a 404 means the
-file is absent, not misconfigured.
-
-**There is also no source copy anywhere in the repo.** A repo-wide search for `api-admin.php`
-returns nothing. The Admin Console is therefore calling an endpoint that exists neither in
-production nor in version control.
-
-⚠ **The six candidate causes in the section below are all SUPERSEDED.** Every one of them assumed
-the endpoint exists and was rejecting requests; none can apply to a file that is absent. Preserved
-for the record, not for action.
-
-**Corrected remedy — build, not debug:**
-1. Read `crm-proxy.php` on the Admin Console VM (192.168.236.5) to establish the exact contract the
-   console expects — method, headers, payload, response shape.
-2. Write `api-admin.php` to that contract.
-3. Place it in the server-side canonical tree (does not exist yet — see BUG-72/73 and the
-   HostPapa-tree gap) and deploy with operator approval.
-
-**Why it read as 400 in S120 and 404 now:** not established. Either the file was removed between
-S120 and S131, or the 400 came from a different layer (proxy/WAF) and was attributed to the
-endpoint. `Uncertainty flag: I cannot distinguish these without the HostPapa access logs.`
-
-### Root Cause (S120 — SUPERSEDED by the S131 probe above)
-
-Unknown — candidates to investigate:
-1. **Malformed request headers** — Admin Console VM sending incorrect Content-Type, User-Agent, or authentication headers
-2. **Missing or invalid request body** — POST payload missing required fields or invalid JSON/form-data
-3. **PHP endpoint error** — `api-admin.php` returning 400 before processing (check nginx error logs and PHP error logs on HostPapa)
-4. **HostPapa nginx configuration** — request size limits, allowed methods, or other constraints rejecting the request
-5. **Authentication failure** — Bearer token, API key, or CORS headers invalid or missing
-6. **Database connection credentials** — credentials in `api-admin.php` or `atmyboat-config.php` incorrect or expired (related to BUG-54/55 environmental configuration)
-
-### Next Steps
-
-1. **Admin Console side:** capture and log the exact request being sent (headers, body, method, authentication)
-2. **HostPapa side:** check nginx error log (`/var/log/nginx/error.log`) and PHP error log (`/var/log/php-errors.log`) for the timestamp of the 400 response
-3. **Cross-reference:** compare `api-admin.php` endpoint against the working `support-request.php` endpoint (which succeeded in S119)
-4. **Check recent changes:** determine if this started after BUG-55's staging→production migration or a prior HostPapa change
-
-### Related Bugs
-
-- **BUG-55:** Staging vs. production URL migration (may have displaced the correct endpoint)
-- **BUG-54:** HTTP 400 on cloud export (similar error; different endpoint)
+**Status:** `[~]` **ROOT CAUSE FOUND S135 2026-08-28 — and BOTH prior diagnoses were wrong.**
+`api-admin.php` is **a placeholder token inside a config string, not an endpoint.** The real fault is a
+**silently no-op string replace.** **This is NOT a build task** — do not write `api-admin.php`.
+**Severity: MEDIUM.** Blocked only on one config value from the CRM VM.
 
 ---
 
-## BUG-57 — CRITICAL: Unauthorized mass user account creation via MailPoet exploitation
+## S135 INVESTIGATION — 2026-08-28
 
-**Status:** `[ ]` OPEN — 2026-08-13 S121 **CRITICAL SEVERITY — ACTIVE BREACH**
+### The mechanism, end to end
+
+The CRM does not hold endpoint URLs. It holds one `proxy_url` and **derives every endpoint by
+string-replacing the filename out of it**:
+
+```python
+# app_patched.py:38-83
+_tickets_url = config["proxy_url"].replace("api-admin.php", "admin-api-tickets.php")
+_issues_url  = config["proxy_url"].replace("api-admin.php", "issue-api.php")
+# ...9 endpoints derived this way
+```
+
+`DEPLOYMENT_INDEX.md:1226` records what then happened:
+
+> VM `/home/d3kos-admin/config/config.json` — **[UPDATED — S58]** `proxy_url` changed from
+> `.../mobile/admin-api.php` to `.../mobile/crm-proxy.php`.
+
+**Once `proxy_url` ends in `crm-proxy.php`, every `.replace()` matches nothing and returns the string
+unchanged.** Each call then POSTs its payload to `crm-proxy.php` regardless of which endpoint it meant.
+
+Production `crm-proxy.php` (411 lines, 19,525 B) knows **12 actions** — `test_db`, `get_customers`,
+`get_customer`, `update_tier`, `reset_fmp`, `get_audit_log`, `get_diagnostics`, `find_user_by_email`,
+`browse_table`, `get_fleets`, `get_fleet_detail`, `suspend_fleet`. Anything else hits `:404-405`:
+
+```php
+http_response_code(400);
+echo json_encode(['error' => 'Unknown action: ' . htmlspecialchars($action)]);
+```
+
+**That is the HTTP 400 reported in S120.** Not malformed headers, not nginx, not credentials — a proxy
+correctly rejecting an action it does not implement, because the caller never redirected to the file
+that does.
+
+### ⚠ Both prior diagnoses were wrong, in opposite directions
+
+- **S120** logged HTTP 400 and listed six candidate causes — malformed headers, bad POST body, PHP
+  error, nginx constraints, auth failure, DB credentials. **The 400 was real and correctly observed.
+  None of the six is the cause.**
+- **S131** probed `api-admin.php`, got 404, and concluded *"THE ENDPOINT DOES NOT EXIST… This is a BUILD
+  task, not a debugging task."* **It probed a placeholder string.** `api-admin.php` was never meant to
+  be requested; the 404 is meaningless. It also declared all six S120 causes superseded — correct, but
+  for the wrong reason.
+
+⚠ **Writing `api-admin.php` — the S131 recommendation — would have created a file to satisfy a token in
+a config string, and the CRM still would not have called it.**
+
+### ⚠ There are TWO spellings of the placeholder, and that is decisive
+
+| Module | Token used |
+|---|---|
+| `support-tickets/crm/app_patched.py` | `api-admin.php` |
+| `autonomous-agents/crm/failure_routes.py` | `admin-api.php` |
+| `autonomous-agents/crm/update_routes.py` | `admin-api.php` |
+| `autonomous-agents/crm/fleet_versions_routes.py` | `admin-api.php` |
+| `diagnostic-console/crm/ticket_diagnose_routes.py` | `admin-api.php` |
+
+**`api-admin` vs `admin-api`.** Therefore **no single value of `proxy_url` can make both sets work** —
+whatever it is set to, at least one group of call sites no-ops and posts to the wrong file. This is
+true independently of the S58 change and would have broken eventually regardless.
+
+### The real defect is the pattern, not the value
+
+Deriving an endpoint URL by replacing a filename inside a base URL fails **silently** the moment the
+configured filename changes. `str.replace()` on a non-match returns the original string — no exception,
+no log line. The same class as BUG-54 (a swallowed diagnostic) and BUG-84 (an unverified assumption).
+
+**Fix — in order:**
+1. **Read `proxy_url` from the VM's `/home/d3kos-admin/config/config.json`.** That single value confirms
+   which call sites are currently broken. It is the only remaining unknown.
+2. **Change the config to a base *directory* URL** (`.../mobile/`) and have each module **append** its
+   filename. Delete every `.replace()`.
+3. **Unify the two spellings** as part of the same change, or the bug returns.
+4. Add a startup assertion: if a derived URL still contains `admin-api` or `api-admin`, **fail loudly**.
+   A guard that logs nothing is what allowed this to persist from S58.
+
+`Uncertainty flag: the CRM VM (192.168.236.5) is UNREACHABLE from the lab network — ping returns 100%
+packet loss. The current value of proxy_url could NOT be read this session; the S58 value is taken from
+DEPLOYMENT_INDEX.md, which is a record, not a live read. Confirm before implementing. The two-spelling
+finding above does NOT depend on it.`
+
+### What the unblock condition becomes
+
+`PHASE3-blocked-items.md` asks for *"crm-proxy.php from 192.168.236.5, to establish the exact contract
+the console expects."* **Superseded.** `crm-proxy.php` lives on HostPapa and was read this session; its
+12 actions are listed above. **All nine replacement targets already exist in production**
+(`admin-api-tickets.php`, `diagnostic-bundle.php`, `diagnostic-fix.php`, `diagnostic-resolve.php`,
+`diagnostic-past-cases.php`, `config-backup-status.php`, `issue-api.php`, `update-publish.php`,
+`version-api.php`). **Nothing needs building.** The only thing still needed is **one config value off
+the VM.**
+
+⚠ **The repo's `crm-proxy.php` is 32 lines and knows 2 actions; production's is 411 lines and knows 12.**
+Another instance of BUG-88 — do not audit this file from the repo copy.
+
+### Related
+
+- **BUG-88** — the repo copy is drastically stale; 32 production files unsourced
+- **BUG-73 / BUG-75 / BUG-71** — same session, same lesson: a status code is a response, not a fact
+- **BUG-54** — silent failure from a swallowed signal
+
+## BUG-57 — Unauthorized mass user account creation via MailPoet exploitation
+
+**Status:** `[~]` **HIGH — CONTAINED. RE-SCORED 2026-08-28 (S135) by operator decision.**
+Was: `[ ]` CRITICAL — ACTIVE BREACH (S121). **One vector remains unexplained: MailPoet.**
+
+---
+
+## ⚠ S135 RE-SCORING — 2026-08-28 — read this before the S121 record below
+
+### The S121 containment record credits a control that did nothing
+
+S121 recorded: *"Primary Vector Closed: Public registration disabled in WordPress
+(Settings → General)."* **That control was a no-op.** BUG-63 later established that
+`deployment/features/auth-pages/php/page-register.php:88` calls `wp_create_user()` **directly** — a
+custom page template that never consults WordPress's `users_can_register`. Unticking "Anyone can
+register" therefore changed nothing, while making the form appear closed.
+
+**Consequence: between 2026-08-13 (S121) and 2026-08-22 (S127) the registration form was believed
+closed and was in fact fully open.** The real containment was S127 setting `/register/` to Draft; the
+real fix is BUG-63's device gate, live 2026-08-25.
+
+⚠ `Uncertainty flag: the August drop in attack volume (72,628 POSTs in July → 188 in August) is NOT
+explained by the registration setting. Candidates are the .htaccess hardening, the IP blocks, or the
+botnet moving on. The cause was never established and should not be asserted.`
+
+**Process lesson — the same one as BUG-08 and BUG-81:** a control was recorded as effective without
+anyone reading the code path it was supposed to govern. *Verify against the code, not the setting.*
+
+### Verified closed as of S135
+
+| | Control | Evidence |
+|---|---|---|
+| ✅ | Registration vector — `/register/` device-gated; requires a server-issued 10-char code tied to an operator-approved device | BUG-63 `[x]` FIXED + LIVE 2026-08-25 (commits `d9915753` + `a3914b20`) |
+| ✅ | `/wp-json/wp/v2/users` returns 403 | S121; re-confirmed by the deleted GATE 0 item G7 |
+| ✅ | WP Activity Log installed; `.htaccess` hardened (REST, xmlrpc, SQLi patterns) | S121 |
+| ✅ | 2FA enrolled on the admin account | BUG-69 Step 1, S128 |
+| ✅ | 9 attacker IPs blocked | BUG-67, S128 |
+| ✅ | 62,000 accounts removed; verification sweep found **0** remaining unverified subscriber accounts created ≥ 2026-06-01 | operator Aug 2026 + `cleanup-botnet-accounts.php`, S134-cont |
+
+### Operator decisions — 2026-08-28 (S135)
+
+| Item | Decision | Reason |
+|---|---|---|
+| **Severity** | CRITICAL/ACTIVE → **HIGH/CONTAINED** | The "active ongoing breach" label was false and was distorting prioritisation. MailPoet keeps it at HIGH. |
+| **CAPTCHA on `/register/`** | **DROPPED — closed as redundant, not deferred** | The device gate requires a server-issued code tied to an operator-approved device. CAPTCHA proves "a human" and is strictly weaker. Adding it would harden a form bots can no longer submit to. **Do not re-raise this as outstanding work.** |
+| **User notification of the 62,000 address holders** | **OUT OF SCOPE for v0.9.9.4** | Operator decision, S135. ⚠ This is a legal/privacy question (PIPEDA breach-notification and record-keeping), **not** a technical one. Recorded as out of scope, **not** as resolved. Do not treat this entry's closure as advice that no notification is required. |
+| **MailPoet investigation** | **IN SCOPE — operator has MailPoet admin access** | The sole remaining open item. Spec: `atomic-specs/BUG-57-MAILPOET.md`. |
+
+### The one thing still open
+
+**MailPoet was accessed directly and how was never established.** This vector is **independent of
+`/register/`** — a compromised MailPoet credential or API key is untouched by the device gate. Until it
+is explained, BUG-57 cannot close.
+
+Three questions, all answerable from the MailPoet admin UI:
+1. What do the MailPoet subscriber **import logs** show for June–August 2026 — bulk events, source IP, method?
+2. Are any **MailPoet API keys** exposed or unrotated?
+3. Is **"auto-create WordPress user on subscribe"** enabled? If so, the account creation may never have
+   gone through `/register/` at all — which would mean the device gate does not close this path either.
+
+⚠ Question 3 is the one that could change the conclusion. **Do not close BUG-57 on the device gate alone.**
+
+**Superseded:** the "Immediate Remediation Steps" and "Prevention Checklist" sections below are the
+S121 plan. Items 1–4, 8 are done; the CAPTCHA item is dropped per the table above; items 5–7 and 9
+survive only insofar as they serve the MailPoet questions. Read the S135 tables above as authoritative.
+
+---
 
 ### Symptoms
 - **62,000+ unauthorized user accounts created** on atmyboat.com (all Subscriber role)
@@ -4077,9 +4236,88 @@ add_filter('script_loader_src', function($src) {
 
 ## BUG-60 — Spam Comments Posted Automatically (atmyboat.com) — Require Approval Before Publishing
 
-**Status:** `[ ]` OPEN — logged S125 2026-08-21. MEDIUM severity.
+**Status:** `[~]` **CONFIRMED OPEN S135 2026-08-28 — the defect is real, but its stated ROOT CAUSE is
+wrong in a way that matters.** Severity **MEDIUM** (unchanged).
 
-### Symptoms
+---
+
+## ⚠ S135 VERIFICATION — 2026-08-28 — read before acting on the plan below
+
+### The attack surface in this entry is wrong: no account is needed
+
+This entry states *"Spammers create free accounts via `/register/` form… Each account immediately gains
+ability to post comments."*
+
+**That is not how the spam arrives.** Verified live 2026-08-28 against
+`https://atmyboat.com/say-hello-to-my-little-buddy/` as an **anonymous, logged-out** visitor:
+
+| Check | Result |
+|---|---|
+| `comment-form` rendered to anonymous visitor | **yes** (5 occurrences) |
+| posts to `wp-comments-post.php` | **yes** |
+| "You must be logged in to post a comment" | **absent** |
+| Anti-spam plugin in markup — Akismet / reCAPTCHA / hCaptcha / Turnstile / CleanTalk | **none, zero of five** |
+| Fields offered anonymously | `author`, `email`, **`url`**, `submit` |
+
+⚠ **Therefore BUG-63's device gate does NOTHING for this vector.** Registration hardening and comment
+spam are independent problems. Anyone can comment without an account, and the **author `url` field —
+the exact payload target of link spam — is enabled with no filter in front of it.**
+
+**This matters because it would have been easy to assume BUG-60 was solved by closing registration.
+It is not.**
+
+### The "~5 per day since 2026-08-15" claim is not supported by the published record
+
+The comments RSS feed (`/comments/feed/`, 10 items) shows **no published comment later than
+17 April 2026** — four months *before* this bug was logged on 2026-08-21.
+
+Two of the ten are unmistakably spam and **were published live**: author `啪啪导航` (16 Apr 2026, 9-char
+body) and author `333985` (15 Apr 2026, 22-char body). The remaining eight are genuine
+(Skipper Don ×4, Irene ×3, Mark Fedak ×1). No external domains appear in any comment body — only
+`atmyboat.com`.
+
+`Uncertainty flag: the feed lists only APPROVED comments, so it cannot distinguish "moderation is now
+enabled" from "no spam is arriving" from "the operator deletes spam quickly". What it does establish is
+that spam WAS publishing live in April. The August "~5 per day" figure could not be corroborated and
+should not be repeated as fact without a look at the moderation queue.`
+
+⚠ **The state of `comment_moderation` could NOT be determined from outside** — it is not visible in
+rendered HTML. **Do not record Phase 1 as done or not-done without reading the setting.** BUG-57's
+S121 entry recorded a control as effective without checking it; that is the mistake to avoid here.
+
+### Revised remediation — replaces PHASE 1–3 below
+
+**Operator, one visit to `atmyboat.com/wp-admin/` → Settings → Discussion:**
+
+1. ☑ **"Comment must be approved before appearing"** — as originally planned. Still correct.
+2. ☑ **"Users must be registered and logged in to comment"** — **this is now the strong control, and it
+   was not when this bug was written.** Before BUG-63, requiring login was near-useless because bots
+   could self-register. **Now a commenter must hold a server-issued code tied to an
+   operator-approved d3kOS device.** The device gate does not protect comments by itself — but it makes
+   *this checkbox* into a hard barrier. Free, one click.
+3. **Remove or filter the comment author `url` field**, or enable **Akismet**. Approval-before-publishing
+   stops spam reaching readers; it does not stop it reaching the operator's queue. With no anti-spam
+   layer at all, the queue becomes the new manual-deletion chore this bug was raised about.
+
+⛔ **PHASE 2 below (reCAPTCHA on the registration form) is SUPERSEDED — do not do it.** Registration is
+not the vector, and the operator closed CAPTCHA as redundant on 2026-08-28 (see BUG-57 S135). It would
+harden a door the spam never uses.
+
+### Verification
+
+- [ ] Read the two Discussion settings and **record their actual state** before changing anything
+- [ ] Check the moderation queue depth — that is the only real measure of current spam rate
+- [ ] After enabling: submit one test comment logged-out → must be **refused** (login required)
+- [ ] Re-check `/comments/feed/` after a week — no new spam authors
+
+### Related
+
+- **BUG-57** — the breach; **independent of this**, despite both involving bots
+- **BUG-63** — closes registration; makes remediation step 2 viable, but does not fix this alone
+
+---
+
+### Symptoms *(original S125 record follows — attack-surface section superseded above)*
 - ~5 spam comments per day posted to blog articles since 2026-08-15 (BUG-57 remediation)
 - Comments contain promotional links and random spam text
 - Comments appear live immediately after being submitted
@@ -4458,9 +4696,61 @@ server-issued code from an operator-approved d3kOS device. **Do not re-publish
 
 ## BUG-64 — My Account Page Lacks Security Controls
 
-**Status:** `[!]` **LOGGED S126 2026-08-22. HIGH severity — potential privilege escalation and data exposure.**
+**Status:** `[x]` **CLOSED — NOT A BUG. S135 2026-08-28, operator decision, after a full source audit of
+the LIVE file.** Was: `[!]` LOGGED S126 HIGH — potential privilege escalation and data exposure.
+**Two minor hardening gaps found and split out to BUG-87. Neither is a vulnerability.**
 
-### Symptoms
+---
+
+## ⚠ S135 AUDIT — 2026-08-28 — every question below is answered; do not re-investigate
+
+**What was audited:** the **deployed** file, not a repo copy.
+`wp-content/themes/twentytwenty-child/page-my-account.php`, 23,345 B, md5 `400fa44e…`, 556 lines,
+pulled over FTPS 2026-08-28.
+
+⚠ **Three variants of this file exist. The live one matches `Helm-OS/deployment/features/auth-pages/php/`
+(md5 `400fa44e…`); the `atmyboat-forum` working copy (md5 `a89e7176…`) is STALE.** Audit the Helm-OS
+copy or the live file — not the forum repo. (`concepts/two-source-sync-rule` violated again.)
+
+### Answers to the seven questions in "Attack Surface (To Investigate)"
+
+| # | Question | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Can any logged-in user access another user's account page? | **NO** | `:23` `if ( ! is_user_logged_in() )` gate; `:34` `$current_user = wp_get_current_user()`; `:35` `$user_id = $current_user->ID`. **No user identifier is read from any request** — the only `$_POST` reads are `account_action` and the nonce. **No IDOR is possible.** |
+| 2 | Can a Subscriber escalate to Admin by editing their role? | **NO** | Zero occurrences of `set_role`, `add_cap`, `add_role`, or any `role` field. The one `wp_update_user` call (`:120`) writes `[ 'ID' => $user_id, 'user_email' => $new_email ]` and nothing else. **There is no role field to tamper with.** |
+| 3 | Are email changes verified? | **YES** | `:120` updates the address, then `:125` sets `atmyboat_email_verified = '0'` and `:127` stores a 40-char token. That flag **gates login**, so an unverified change locks the account rather than silently taking effect. |
+| 4 | Are password changes rate-limited / confirmed? | **Confirmed, not throttled** | `:92` `wp_check_password( $pw_cur, … )` **before** `:99` `wp_set_password()`; min 8 chars (`:95`); confirm-match (`:97`). `:100` comments the auth-cookie invalidation deliberately. **Throttling absent → BUG-87 R1.** |
+| 5 | Is 2FA available/required? | **Out of scope for this file** | Admin 2FA is Wordfence Login Security — BUG-69 Step 1, done S128. |
+| 6 | Can user data be exported/changed without verification? | **NO** | Export (`:41`) is GET-triggered but nonce-checked at `:43` against `'amboat_export_' . $user_id` — **user-scoped**, so one user's export nonce cannot fetch another's data. |
+| 7 | Are admin-only pages protected from direct URL access? | **Not applicable here** | This file exposes no admin surface. |
+
+### Additional checks performed beyond the original list
+
+- **Direct SQL / injection:** **none.** Zero `$wpdb` references in the file.
+- **CSRF:** protected, and carefully. `:84` verifies the nonce against `'amboat_acct_' . $act` —
+  **action-scoped**, so a nonce minted for one action cannot be replayed against another. Only three
+  actions exist: `change_password` (`:86`), `change_email` (`:109`), `delete_account` (`:149`).
+- **Account deletion:** `:152` requires the literal string `DELETE MY ACCOUNT`; `:157`
+  `wp_delete_user( $user_id, 1 )` **reassigns content to the admin rather than destroying posts**;
+  then `wp_logout()` and a PRG redirect.
+
+### Why this is closed
+
+Every escalation and access-control question raised in S126 is answered in the negative by the code.
+The entry was a list of things to check — reasonable to raise, and all the load-bearing ones hold.
+**The page is better built than the entry assumed.**
+
+⚠ **The S126 severity (HIGH, "potential privilege escalation") was assigned without reading the file.**
+That is the same pattern as BUG-57's phantom containment and BUG-81's fabricated hardware model:
+*a claim recorded before the source was read.* Cost here was low; the habit is what matters.
+
+**Residual, split out — see BUG-87:** no throttling on the account actions (R1), and account deletion
+does not re-prompt for the password (R2). Both are hardening. Neither is exploitable by an
+unauthenticated party.
+
+---
+
+### Symptoms *(original S126 record follows — superseded by the audit above)*
 - `/my-account/` page accessible without proper access controls
 - Unclear what security protections exist on this page
 - Potential for: unauthorized account access, privilege escalation, data exposure, email/password changes by unauthorized users
@@ -4587,6 +4877,33 @@ same one BUG-66 and the registration spec both require.
 ---
 
 ## BUG-66 — One fleet-wide API key in cleartext on every Pi authenticates all 12 server endpoints
+
+> ### ⚠ S135 2026-08-28 — PHASE C COVERAGE CORRECTION (read before trusting "6 endpoints migrated")
+>
+> Phase C's record states *"6 Pi→Server endpoints migrated to Ed25519"*. Verified against the production
+> FTP listing on 2026-08-28: **three of the six are not deployed.**
+>
+> | Endpoint | In production? | Edited file lives in |
+> |---|---|---|
+> | `version-heartbeat.php` | ✅ yes — **verified live, returns 401** | `features/autonomous-agents/php/` |
+> | `failure-report.php` | ✅ yes | `features/autonomous-agents/php/` |
+> | `config-backup.php` | ✅ yes | `features/fi4-config-backup/php/` |
+> | `fix-confirmed.php` | ❌ **no** | `features/autonomous-agents/php/` |
+> | `community-markers-write.php` | ❌ **no** | `features/v0941-plan/php/` — a **DESIGN tree** |
+> | `community-position.php` | ❌ **no** | `features/v0941-plan/php/` — a **DESIGN tree** |
+>
+> **This is not a live exposure** — an undeployed file cannot be attacked, and hardening it early is not
+> wrong. It is a **coverage claim that overstates reality**: half the migration hardened files nobody
+> serves. **Do not read "6 migrated" as "6 live".**
+>
+> ⚠ **Root of the trap: `deployment/features/v0941-plan/php/` is a DESIGN tree, not a deployment
+> source.** It contains `page-community-ORIGINAL.php` and `page-dashboard-ORIGINAL.php` mockup variants
+> beside the PHP. Nothing in it is deployed. Check where a file lives before counting it as shipped.
+>
+> **Open question carried from BUG-86:** is the `d3kos-device-auth` plugin currently ACTIVE on staging,
+> or was it deactivated to stop the 2026-08-25 fatal? Needs `active_plugins` from `atmyb197_wp5888`.
+> Found via BUG-76. Full detail: `V09994_BUG_FIXES.md` BUG-76.
+
 
 **Status:** `[~]` **PHASES A+B+C+D COMPLETE S134-cont 2026-08-25 — AWAITING HOSTPAPA STAGING DEPLOY (Phase A server files). All code changes in canonical tree. SEVERITY HELD AT CRITICAL (operator decision S131). Release gate for v0.9.9.4.**
 
@@ -4902,53 +5219,101 @@ During S129 public-release branch cleanup, Claude Code removed the `doc/` folder
 
 ## BUG-71 — `pair-device.php` returns HTTP 500 in production; no source exists in the repo
 
-**Logged:** 2026-08-24 (S131)
-**Platform:** HostPapa (atmyboat.com production)
-**Severity:** **HIGH** — this is step 2 of PWA device pairing. The v0.9.4 PWA cannot bind an
-`app_token` to a `device_token`, so every downstream PWA call is unreachable for a new user.
-
-### Symptom
-
-```
-GET .../twentytwenty-child/mobile/pair-device.php   -> 500, 500   (re-probed, stable)
-control: .../mobile/dashboard-data.php             -> 401, 401   (stable)
-```
-
-The endpoint is deployed and **crashing**. Siblings in the same directory return 401/405 correctly,
-so this is a fault inside `pair-device.php` itself, not the directory, PHP handler, or WAF.
-
-### Root Cause
-
-**Unknown — not investigated.** A 500 cannot be diagnosed from outside; it requires either the PHP
-error log or the file contents. Neither is available: the FTP account supplied in S131
-(`admin@atmyboat.com`) is chrooted to an empty home and cannot read `public_html`.
-
-⚠ **`pair-device.php` has NO source copy anywhere in the repo.** Repo-wide search returns nothing.
-So there is no reference implementation to diff against, and no way to know what it should do beyond
-the one-line description in `ARCH_SERVICE_MAP.md` ("Links app_token to device_token, returns tier
-level", auth = `app_token`).
-
-### Blocking
-
-- Blocks the end-to-end pairing test (register-device -> pair-device -> dashboard-data)
-- Blocks any PWA integration validation for a new device
-- Cannot be fixed without either main cPanel FTP access or the HostPapa PHP error log
-
-### Fix Required
-
-1. **Operator:** provide main cPanel FTP credentials (home = `public_html`) or retrieve the PHP
-   error log entry for a 500 on this endpoint.
-2. Read the deployed file; establish the fault.
-3. Bring the file under version control in the server-side canonical tree **before** editing it —
-   it is currently unsourced production code.
-4. Fix, deploy with explicit approval, re-probe for a correct 401/405 on an unauthenticated GET.
-
-### Related Bugs
-
-- **BUG-73** — same class: documented endpoint with no repo source
-- **BUG-56** — same class: documented endpoint absent from production and repo
+**Status:** `[~]` **ROOT CAUSE FOUND S135 2026-08-28 — THE PREMISE WAS WRONG. `pair-device.php` is not
+an endpoint.** Source now under version control. One real defect remains (a missing guard); the
+"broken pairing endpoint" it was logged as does not exist.
+**Severity:** downgraded **HIGH → LOW.** It is not on the critical path and never was.
 
 ---
+
+## S135 INVESTIGATION — 2026-08-28
+
+**Unblocked by:** FTP access (condition G2 in `PHASE3-blocked-items.md`).
+**First action taken, per that spec:** the file was brought under version control **byte-identical,
+before any analysis** — commit `13eebcbc`, `deployment/v0.9.9.4-server/mobile/pair-device.php`,
+3,306 B, md5 `b3ccd9f34d04a3c43a88eabd1aec4e1d`. No edits.
+
+### The 500 is fully explained
+
+`pair-device.php` is a **WordPress AJAX handler registration file**, not a routable endpoint. Its own
+comments say so (`:17-18`), and `:20` is:
+
+```php
+add_action( 'wp_ajax_atmyboat_confirm_pairing', 'atmyboat_confirm_pairing' );
+```
+
+It is `require_once`d into WordPress by `functions.php:220` and invoked through
+`admin-ajax.php?action=atmyboat_confirm_pairing`.
+
+**It has no `ABSPATH` guard.** So an HTTP request straight to the file executes it outside WordPress,
+`add_action()` is undefined, PHP fatals, and — with `display_errors` off — the response is
+**HTTP 500 with an empty body.** That is exactly what S131 observed and recorded as "the fault is
+inside the file". The fault is that the file was fetched at all.
+
+⚠ **S131's reasoning was sound and still reached the wrong conclusion.** It noted the empty body was
+"consistent with `error_reporting(0)`", and that sibling endpoints return 401/405 correctly — both true.
+The missing step was asking *whether this file is an endpoint*. **A 500 from a PHP file proves the file
+executed; it does not prove the file was meant to be requested.**
+
+### The critical-path claim was wrong — correct the record
+
+`PHASE3-blocked-items.md` states: *"It is step 2 of PWA device pairing… every PWA integration test for
+a new device is blocked behind it. It is the critical path, not a side issue."*
+
+**That is not correct.** The handler is registered (`functions.php:220` — verified present), so the
+pairing path through `admin-ajax.php` is intact. Nothing is blocked by the 500.
+
+`Uncertainty flag: the pairing round-trip was NOT executed end-to-end — that needs an authenticated
+session and a real pi_id, which was out of scope for a read-only investigation. What is established is
+that the handler is registered and the 500 is an artefact of direct fetch. Do not upgrade that to
+"pairing works" without running it.`
+
+### The one real defect
+
+**`pair-device.php` is the ONLY file in `mobile/` that is a WordPress include and lacks the guard.**
+Audited all 44 local `mobile/*.php`: exactly one has a top-level `add_action`/`add_filter` **and** no
+`ABSPATH` reference — this file.
+
+⚠ **The other 42 files without an `ABSPATH` reference are NOT defects.** They are standalone REST
+endpoints meant to be fetched directly (`data-ingress.php` → 405, `version-heartbeat.php` → 401).
+**Do not "fix" them by adding guards — that would break every Pi→server call.**
+
+**Fix — three lines, at the top of the file:**
+
+```php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+```
+
+This matches `enrol.php` and makes a direct fetch return an empty 200 instead of a 500.
+**Decision needed:** match `enrol.php`'s silent 200, or return an explicit 403? 403 is better practice;
+200-empty is consistent with the existing codebase. Operator's call — it is cosmetic either way.
+
+### Two further findings from the same investigation — logged separately
+
+1. **`inc/atmyboat-functions.php:107`** requires this file via `get_template_directory()` — the
+   **PARENT** theme — for a file that lives in the **child**. Identical trap to BUG-86. **Currently
+   dormant: nothing requires `inc/atmyboat-functions.php`** (grep of `functions.php` and `inc/` returns
+   nothing). A latent landmine, not an active fault. → **BUG-88**
+2. **The repo holds 44 `mobile/*.php`; production has 76.** **32 production files exist nowhere in the
+   repo.** This is the concrete measure of the "no canonical tree for the HostPapa side" root cause that
+   BUG-72, BUG-76 and `PHASE3-server-canonical-tree.md` all reference. → **BUG-88**
+
+### Definition of done
+
+- [x] Source under version control, byte-identical, own commit (`13eebcbc`)
+- [ ] `ABSPATH` guard added — operator picks 200-empty or 403
+- [ ] Re-probe: direct GET returns **not-500**
+- [ ] Pairing round-trip exercised once through `admin-ajax.php` to retire the uncertainty flag above
+- [ ] `PHASE3-blocked-items.md` corrected — the critical-path claim must not survive
+- [ ] Live deploy only with explicit operator `APPROVED`
+
+### Related
+
+- **BUG-88** — the parent-path landmine and the 32 unversioned production files
+- **BUG-86** — the same parent-vs-child theme-path error, which did fire
+- **BUG-72 / BUG-76** — same root cause: no server-side canonical tree
 
 ## BUG-72 — `version-heartbeat.php` was written but never deployed; BUG-66's live severity is overstated
 
@@ -5004,52 +5369,98 @@ deployed where. This endpoint was written (2026-04-08, `autonomous-agents`) and 
 
 ## BUG-73 — `fix-my-pi-billing.php` absent from both production and the repo; Fix My Pi payments cannot complete
 
-**Logged:** 2026-08-24 (S131)
-**Platform:** HostPapa (atmyboat.com production)
-**Severity:** **HIGH** — a revenue path is documented as built and is not present. A customer can be
-charged with no webhook to queue the work they paid for.
-
-### Symptom
-
-```
-GET .../twentytwenty-child/mobile/fix-my-pi-billing.php  -> 404, 404   (re-probed, stable)
-GET .../twentytwenty-child/mobile/fix-my-pi-app.php      -> 405        (deployed, guard correct)
-```
-
-The **app-facing** half of Fix My Pi is deployed. The **billing webhook** half is not.
-
-`ARCH_SERVICE_MAP.md` documents it as: "Stripe webhook for FMP charges, queues command", auth =
-Stripe webhook secret. Repo-wide search for `fix-my-pi-billing.php` returns **nothing** — it exists
-neither in production nor in version control.
-
-### Consequence
-
-Per `ARCH_SERVICE_MAP.md` the intended flow is
-`fix-my-pi-app.php` (initiate charge) -> Stripe -> `fix-my-pi-billing.php` (webhook) -> queued command.
-
-With the webhook absent, Stripe has nowhere to deliver the payment event, so the command is never
-queued. **Whether a charge can actually be initiated has NOT been tested** — that requires a Stripe
-test-mode transaction, which is an operator action.
-
-`Uncertainty flag: I have not confirmed that fix-my-pi-app.php can initiate a charge at all. If it
-cannot, no customer has been charged and severity is lower. This must be checked in the Stripe
-dashboard before assuming financial exposure.`
-
-### Fix Required
-
-1. **Operator:** check the Stripe dashboard for any FMP charges that were captured with no
-   corresponding queued command. This determines whether the exposure is theoretical or real.
-2. Confirm the intended contract (what the webhook must write, which command it queues).
-3. Write `fix-my-pi-billing.php`, place it in the server-side canonical tree, deploy with approval.
-4. Verify with a Stripe **test-mode** event end-to-end. Never test against live payments.
-
-### Related Bugs
-
-- **BUG-10** — Stripe webhook endpoints pointed at `/staging/` after the Phase 4 live push (closed
-  S74); same class of Stripe-endpoint drift
-- **BUG-71, BUG-72** — the same HostPapa state-tracking gap
+**Status:** `[x]` **CLOSED — NOT A BUG. S135 2026-08-28. THE PREMISE IS WRONG ON BOTH COUNTS.**
+The file exists in production **and** in the repo, byte-identical, and it works.
+Was: `[ ]` OPEN, HIGH — revenue path.
 
 ---
+
+## S135 INVESTIGATION — 2026-08-28
+
+### The file exists in both places, and they are in sync
+
+| Location | Size | md5 |
+|---|---|---|
+| Production `wp-content/themes/twentytwenty-child/mobile/fix-my-pi-billing.php` | 16,700 B | `767eee77c91f478dbac7fd43e63eb703` |
+| Repo `atmyboat-forum/wp-content/themes/twentytwenty-child/mobile/fix-my-pi-billing.php` | 16,700 B | `767eee77c91f478dbac7fd43e63eb703` |
+
+**Identical.** Its two siblings are also present and in sync — `fix-my-pi-app.php` (8,802 B) and
+`fix-my-pi-job.php` (1,668 B).
+
+### Why the 404 was not what it looked like
+
+The file is a **392-line action router**. Requesting it without an `?action=` parameter falls through
+to the default case at `:252`:
+
+```php
+amboat_send_error( 'Unknown action.', 404 );
+```
+
+**The 404 was the file answering correctly.** Proven by probe, 2026-08-28:
+
+```
+?action=webhook  -> 405   (:178 POST required — the route exists)
+?action=bogus    -> 404   (:252 Unknown action)
+(no action)      -> 404   (same default case)
+```
+
+A 405 on `?action=webhook` is only possible if the file is present, parsed, and routing.
+
+### Root cause of the misdiagnosis — a repo search that covered one of two repos
+
+S131 recorded *"Repo-wide search returns nothing for the billing half."* Confirmed S135:
+`find /home/boatiq/Helm-OS -name fix-my-pi-billing.php` returns **nothing** — while the file sits in
+`/home/boatiq/atmyboat-forum/`.
+
+⚠ **This project has two repos. The search covered `Helm-OS/` only.** Combined with reading an HTTP 404
+as "file absent" rather than as a response, that produced a HIGH-severity revenue-path bug for a file
+that was present and working the whole time.
+
+**Standing correction: `grep`/`find` for any atmyboat.com asset must cover BOTH `/home/boatiq/Helm-OS/`
+and `/home/boatiq/atmyboat-forum/`.** See also `SESSION-START git check` — the same two-repo split
+already caused a `git status` blind spot (S107).
+
+### What is actually implemented — assessed, not assumed
+
+`?action=create_session` (Stripe checkout, T1 $29.99) · `?action=webhook`
+(`checkout.session.completed`) · `?action=request_free` (T2 decrement / T3 unlimited) · a refund path
+(`:155`) · writes to `amboat_billing` (`:223`).
+
+**Webhook signature verification is correct** (`:367-392`) — not a stub:
+- parses `t` and `v1` from `HTTP_STRIPE_SIGNATURE`
+- **rejects events older than 300 s** — replay protection present
+- `hash_hmac('sha256', "$timestamp.$payload", STRIPE_WEBHOOK_SECRET)`
+- compares with **`hash_equals()`** — constant-time, not `===`
+- returns `null` on any failure; the caller then 400s
+
+That is the reference implementation, including the constant-time comparison most integrations get
+wrong. **There is no unsigned-webhook bypass.** Had verification been a stub, anyone could have POSTed
+a forged `checkout.session.completed` and queued paid work for free — it is not.
+
+### What this does to the G4 operator action
+
+`PHASE3-blocked-items.md` framed the Stripe dashboard check as urgent: *"This determines whether the
+exposure is theoretical or whether a customer has been charged for work never done."*
+
+**Downgrade it to routine verification.** That concern rested on the webhook being absent, so Stripe
+having nowhere to deliver the payment event. The webhook is present, wired and signature-verified —
+there is **no structural reason** for a charge to complete without work being queued.
+
+`Uncertainty flag: the end-to-end flow was NOT executed. Confirming that a real charge produces a
+queued fix_my_pi command still needs the Stripe dashboard, and any test must use Stripe TEST mode only.
+"The code is correct" is not "the flow has run". Do not close the G4 check on this entry alone.`
+
+⚠ **BUG-10's precedent still applies and is unaffected by this closure:** Stripe webhooks were once left
+pointing at `/staging/`. **Check where the Stripe dashboard currently points** — a correct webhook file
+at the wrong URL fails exactly like a missing one. ⚠ And note **BUG-85**: anything aimed at a
+`/staging/` page route is now served by production.
+
+### Related
+
+- **BUG-75** — same session, same shape: an endpoint declared 404/missing that is present and returns 405
+- **BUG-71** — same session: a 500 read as "broken endpoint" when the file was not an endpoint
+- **BUG-88** — 32 production files with no repo copy; the reason searches like this go wrong
+- **BUG-10** — Stripe webhooks pointed at staging after the Phase 4 live push
 
 ## BUG-74 — `MASTER_SYSTEM_SPEC` §8.4.2 P5 names a credential file that does not exist; the real one is world-readable
 
@@ -5084,9 +5495,55 @@ BUG-66 (the key this file holds), BUG-65 (same 644 class), BUG-78 (this file shi
 
 ## BUG-75 — `MASTER_SYSTEM_SPEC` §8.4.2 P1 specifies a data-ingress URL that returns 404
 
-**Logged:** 2026-08-24 (S131) · **Platform:** HostPapa + spec · **Severity:** MEDIUM
+**Status:** `[~]` **CONFIRMED ACCURATE S135 2026-08-28. Step 1 done (S131), Step 2 DONE (S135).
+Only Step 3 remains — an operator decision.** Severity MEDIUM.
 
-### Symptom
+---
+
+## ⚠ S135 — 2026-08-28
+
+### This entry was logged correctly — noted deliberately
+
+Re-probed 2026-08-28, reproducing the entry exactly:
+
+```
+/mobile/data-ingress.php                                       -> 404
+/wp-content/themes/twentytwenty-child/mobile/data-ingress.php  -> 405   (POST-only)
+```
+
+⚠ **Correction to an S135 claim made earlier in this session:** BUG-75 was briefly grouped with BUG-73
+as a "premise overturned by a live read." **That was wrong.** This entry recorded *both* probes and
+stated that only the full child-theme path resolves. It is accurate and always was. Four premises were
+overturned this session (BUG-72, 73, 71, 64) — **not** this one.
+
+### Step 2 — the URL audit — COMPLETE, and it found three broken destinations
+
+Step 2 asked for *"every Pi-side and Node-RED destination URL audited against the probe results, not
+against the spec."* Done across the canonical Pi tree. **No Pi code uses the broken short
+`/mobile/` form** — so the spec error never propagated into code. But the audit found three
+destinations that 404 for other reasons → logged as **BUG-89**.
+
+**`/staging` also appears three times in the tree — that is NOT a BUG-55 regression.** All three hits
+are inside `tools/verify-bug55.sh`, the guard script, which necessarily contains the string it searches
+for. BUG-55 holds.
+
+### Step 3 — the only thing left, and it is an operator decision
+
+**Should a `/mobile/` rewrite alias exist?**
+
+- **No (recommended):** delete the short form from the spec. Nothing uses it, the full path works, and
+  an alias is one more thing to keep in sync.
+- **Yes:** it is a deliberate `.htaccess` change on HostPapa — **not** a documentation edit.
+  ⚠ Sequence it **after BUG-85**: `/staging/.htaccess` is currently a copy of live's, so any rewrite
+  work must not be tested through a staging path that production serves.
+
+### Related
+
+- **BUG-89** — the three broken destinations this audit found
+- **BUG-54** — export failures; ⚠ still no evidence linking its HTTP 400 to this. Do not merge them.
+- **BUG-76** — the naming-scheme conflict, which this audit **widened from three schemes to five**
+
+### Symptom *(original S131 record — still accurate)*
 §8.4.2 P1 states the "Required" endpoint is `https://atmyboat.com/mobile/data-ingress.php`. Probed:
 
 ```
@@ -5115,45 +5572,100 @@ BUG-54 (export failures), BUG-55 (staging→production repointing), BUG-76
 
 ## BUG-76 — Five endpoints specified as REQUIRED in §8.4.4 are all 404, and three documents name them three different ways
 
-**Logged:** 2026-08-24 (S131) · **Platform:** HostPapa + spec · **Severity:** HIGH — blocks the entire community/telemetry pipeline, which the operator has placed in v0.9.9.4 scope
-
-### Symptom
-§8.4.4 lists five PHP endpoints as required in the child theme's `mobile/` directory. All five probed:
-
-```
-community-markers-post.php  -> 404      telemetry-push.php      -> 404
-community-markers-get.php   -> 404      community-benchmark.php -> 404
-community-position.php      -> 404
-```
-
-**None is deployed.** §8.4.3 additionally records three Node-RED flows as "Disabled — URL placeholder",
-and the repo's only `flows.json` lives under `deployment/v0.9.2/pi_source/`, not the v0.9.9.4 tree.
-
-### The naming conflict
-| §8.4.4 (spec) | `ARCH_SERVICE_MAP.md` | Repo (`features/v0941-plan/php/`) |
-|---|---|---|
-| `community-markers-post.php` | `community/markers.php` | `community-markers-write.php` |
-| `community-markers-get.php` | — | `community-get.php` |
-| `telemetry-push.php` | `telemetry/push.php` | — |
-| `community-position.php` | `community/position.php` | `community-position.php` |
-| `community-benchmark.php` | `community/benchmark.php` | — |
-
-Three schemes for one set of endpoints. **No single document can be trusted as the deployment target.**
-One name must be chosen and the other two corrected.
-
-### Fix Required
-1. **Operator/Tier 1 decision:** pick the canonical naming scheme. Recommend the flat
-   `community-*.php` form already used by the repo files, since those are the artifacts that exist.
-2. Correct the two non-canonical documents.
-3. Bring the repo PHP into a server-side canonical tree (none exists — see BUG-72).
-4. Deploy, then re-probe for a correct 401/405 on each.
-5. Only then enable the Node-RED flows (§8.4.3), and only with the API key injected from config, never
-   hardcoded in the flow.
-
-### Related
-BUG-72 (no server-side canonical tree), BUG-75, BUG-66 (these endpoints authenticate with the fleet key)
+**Status:** `[~]` **CONFIRMED S135 2026-08-28 — the premise HOLDS (unlike BUG-73/75). But the fix is to
+correct the SPEC, not to build five endpoints.** §8.4.4 describes an architecture that was never built,
+running in parallel with one that was and works.
+**Severity:** HIGH → **MEDIUM.** The community/telemetry pipeline is **not** blocked; it runs by a
+different route.
 
 ---
+
+## S135 VERIFICATION — 2026-08-28
+
+Read from the production FTP listing (76 files in `mobile/`), not inferred from HTTP codes.
+
+### The five are genuinely absent — this one is real
+
+| §8.4.4 name | Production | Repo |
+|---|---|---|
+| `community-markers-post.php` | **ABSENT** | absent |
+| `community-markers-get.php` | **ABSENT** | absent |
+| `telemetry-push.php` | **ABSENT** | **absent from BOTH repos — never written** |
+| `community-benchmark.php` | **ABSENT** | **absent from BOTH repos — never written** |
+| `community-position.php` | **ABSENT** | `features/v0941-plan/php/` only — a **design** tree |
+
+⚠ **Note the distinction this session has had to make five times:** BUG-73 and BUG-75 were files that
+existed and answered with 404/405. **These five are actually not there.** The difference was established
+by an FTP directory listing, not by reading status codes. *Probe to find a candidate; list the directory
+to conclude.*
+
+### But the pipeline they are "required" for already works, by another path
+
+| Deployed and working | Size | Role |
+|---|---|---|
+| `data-ingress.php` | 11,517 B | telemetry receiver — `export_worker.py:299` POSTs here; returns 405 on GET |
+| `community-get.php` | 3,888 B | community read path |
+| `community-markers.php` | 4,691 B | markers |
+
+`export_worker.py` → `data-ingress.php` → `wpax_usermeta` → `community-get.php`. The S134-cont audit
+reached the same conclusion independently: *"community map DOES NOT NEED these flows… fleet dots work
+via this existing path."*
+
+**So `telemetry-push` and `community-benchmark` are not missing implementations of a required
+interface. They are a paper design that a working implementation bypassed.**
+
+### Resolving the three-way naming conflict — decide from what is deployed
+
+| Source | Name |
+|---|---|
+| `MASTER_SYSTEM_SPEC` §8.4.4 | `community-markers-post.php` / `community-markers-get.php` |
+| `ARCH_SERVICE_MAP.md` | `community/markers.php` |
+| **Production (authoritative)** | **`community-markers.php` + `community-get.php`** |
+
+⚠ BUG-76's original recommendation was *"the flat `community-*.php` form, since those files exist."*
+**Refine it: the canonical names are the two that are DEPLOYED.** A fourth name,
+`community-markers-write.php`, exists in the design tree and must be retired, not adopted — otherwise
+this becomes a four-way conflict.
+
+### Fix required — spec correction, then a product decision
+
+1. **Correct `MASTER_SYSTEM_SPEC` §8.4.4** to describe the deployed reality: `data-ingress.php`,
+   `community-get.php`, `community-markers.php`. Remove `community-markers-post`/`-get` as REQUIRED —
+   they never existed and nothing needs them.
+2. **Correct `ARCH_SERVICE_MAP.md`** to the same names. ⚠ Three documents, one truth — fix both, or the
+   conflict simply moves.
+3. **Operator decision, not an implementation task:** are `telemetry-push` and `community-benchmark`
+   wanted *capabilities*? They were never written. If yes they are **v0.9.9.5 features**; if no, delete
+   them from the spec. **Do not build them to satisfy a document.**
+4. Retire `community-markers-write.php` from `v0941-plan/` or rename it to the deployed name.
+
+⚠ **`deployment/features/v0941-plan/php/` is a DESIGN tree, not a deployment source.** It holds
+`page-community-ORIGINAL.php` and `page-dashboard-ORIGINAL.php` mockup variants alongside the PHP.
+Nothing in it should be assumed deployed. This trapped BUG-66 Phase C — see below.
+
+### ⚠ Knock-on finding for BUG-66 — recorded there too
+
+BUG-66 Phase C reports *"6 Pi→Server endpoints migrated to Ed25519"*. **Three of the six are not in
+production:**
+
+| Endpoint | Deployed? | Where the edited file lives |
+|---|---|---|
+| `version-heartbeat.php` | ✅ yes (verified 401 live) | `features/autonomous-agents/php/` |
+| `failure-report.php` | ✅ yes | `features/autonomous-agents/php/` |
+| `config-backup.php` | ✅ yes | `features/fi4-config-backup/php/` |
+| `fix-confirmed.php` | ❌ **no** | `features/autonomous-agents/php/` |
+| `community-markers-write.php` | ❌ **no** | `features/v0941-plan/php/` (design tree) |
+| `community-position.php` | ❌ **no** | `features/v0941-plan/php/` (design tree) |
+
+**This is not a live exposure** — an undeployed file cannot be attacked. It is a **coverage claim that
+overstates reality**: half the migration hardened files nobody serves. Correct BUG-66's status line so a
+future session does not read "6 migrated" as "6 live".
+
+### Related
+
+- **BUG-66** — the overstated Phase C coverage
+- **BUG-88** — 32 production files with no repo copy; the same absent-canonical-tree root cause
+- **BUG-72 / BUG-75 / BUG-73** — same S131 sweep; those three premises were wrong, this one is right
 
 ## BUG-77 — `detectTier()` can never return Tier 1, yet Tier 1 is a defined tier and the registration design gates on it
 
@@ -5591,5 +6103,759 @@ failure mode)
 - `deployment/docs/CX5106_CONFIGURATION_FROM_MANUAL.md` — internal record: manual-derived truth
   plus the full artifact audit (S132)
 - `docs/CX5106_DIP_SWITCH.md` — public guide, written S132, **not yet published**
+
+---
+## BUG-82 — `boatlog-export-api.py` binds `127.0.0.1`; all four :8095 endpoints are unreachable from any remote browser
+
+**Logged:** 2026-08-28 (S135) · **Platform:** Pi (lab Pi `192.168.1.237`, confirmed live)
+· **Severity:** **MEDIUM** — three user-facing Boat Log features silently fail whenever the dashboard
+is opened over the LAN; the failures are invisible because every caller discards the error
+· **Status:** `[ ]` OPEN — found during the BUG-24 Option A investigation. **No fix attempted.**
+
+### Symptom
+
+Opening the Boat Log page from any browser that is not on the Pi itself: the service-status indicator,
+voice-note upload, and CSV export all fail. No error is shown to the operator.
+
+### Evidence — live, 2026-08-28
+
+```
+$ ss -tlnp | grep 8095
+LISTEN 0  128  127.0.0.1:8095  0.0.0.0:*  users:(("python3",pid=1016,fd=3))
+```
+
+Source: `opt/d3kos/services/boatlog/boatlog-export-api.py:350` — `app.run(host='127.0.0.1', port=PORT)`.
+
+Callers build the URL from the browser's own hostname, so they never reach a loopback-bound socket:
+
+- `templates/boat-log.html:316` — `var BOATLOG_API = 'http://' + window.location.hostname + ':8095';`
+- used at `:447` `/api/boatlog/status`, `:551` `/api/boatlog/voice-note`, `:591` `/api/boatlog/export`
+- `static/js/boatlog-engine.js:16` — same construction
+
+### Root cause
+
+The Flask app binds loopback while every consumer addresses it by LAN hostname. This is the **server
+side** of the BUG-46/48 defect class: BUG-46/48 removed hardcoded `localhost` from **front-end** code
+because it resolves in the browser. Nobody then checked whether the **services** those pages call were
+actually listening on an address the browser could reach. `boatlog-export-api.py` was not.
+
+⚠ **`app.py` binding localhost is correct and unrelated** — that is server-side code making outbound
+calls. This entry is about an inbound listener. Do not conflate them.
+
+### Why it went unnoticed
+
+Every caller swallows the failure:
+`boat-log.html` uses bare `.catch()` chains, and `boatlog-engine.js:89` is an explicitly empty
+`.catch(function () { /* API unavailable — localStorage copy already saved */ })`.
+A connection refusal is indistinguishable from success. Same silent-failure shape as BUG-54.
+
+### Fix required
+
+1. Bind `0.0.0.0` (matching the other d3kOS service listeners), **or** proxy `/api/boatlog/*` through the
+   dashboard on :3000. ⚠ **Binding wider is a security-surface change** — decide deliberately, and check
+   it against the BUG-66/BUG-74 credential posture before doing it.
+2. Replace the empty `.catch()` handlers with ones that surface the failure. A silent catch is what made
+   this invisible for months.
+3. Verify the Pi's own kiosk browser: if it loads the dashboard via `localhost:3000` these calls work
+   locally today, which would explain why the feature ever appeared to function. `Uncertainty flag: the
+   kiosk URL was not read this session.`
+
+### Scope note
+
+**BUG-24's Option A spec deliberately routes around this** by serving `GET /api/boatlog/entries` from
+`app.py` on :3000 (same origin) rather than :8095. BUG-24 is **not** gated on BUG-82.
+
+### Related
+
+- **BUG-46 / BUG-48** — the front-end half of the same defect class
+- **BUG-54** — silent failure caused by a swallowed diagnostic
+- **BUG-24** — found during its investigation; routes around this one
+
+---
+
+## BUG-83 — `services/ai/alert_watcher.py` is a stale divergent copy of the `alert_watcher.py` systemd actually runs
+
+**Logged:** 2026-08-28 (S135) · **Platform:** Pi (canonical tree + lab Pi)
+· **Severity:** **MEDIUM** — a second, older copy of a live service sits in the tree with no marking;
+the next person to edit "the alert watcher" has a 50% chance of editing the one that never runs
+· **Status:** `[ ]` OPEN — found during the BUG-24 investigation. **No fix attempted.**
+
+### Symptom
+
+Two files named `alert_watcher.py` exist in the canonical tree with different contents:
+
+| Path | Version header | Lines | md5 | Runs? |
+|---|---|---|---|---|
+| `opt/d3kos/services/alert_watcher.py` | 0.9.6 | 405 | `2e94fe79…` | **YES** |
+| `opt/d3kos/services/ai/alert_watcher.py` | 0.9.5 | 338 | `48b07c5e…` | no |
+
+`etc/systemd/system/d3kos-alert-watcher.service` sets `WorkingDirectory=/opt/d3kos/services` and
+`ExecStart=/usr/bin/python3 alert_watcher.py` — so the **root** copy is the live one.
+
+### Root cause
+
+The root copy is a **strict superset** of the `ai/` copy. `diff` shows the `ai/` version is missing:
+
+```
+USER_PREFS_FILE = Path('/opt/d3kos/config/user-preferences.json')
+def load_alert_prefs()     — reads alert_prefs from user-preferences.json
+def local_prefs_allow()    — applies enabled_types / quiet_hours locally
+```
+
+Nothing exists in `ai/` that is absent from root. So `ai/alert_watcher.py` is simply the older file, left
+behind when the service gained local alert-preference handling.
+
+⚠ **This is the same shape as the `cloud_agent.py` / `ota_upgrade.py` duplication that Phase 0.4
+(BUG-28 Step 1) resolved** — 719-line superset vs 630-line copy, systemd running one of them. **Phase 0.4
+did not catch this third instance.** The de-duplication pass was scoped to two named files rather than
+driven by a search for the pattern.
+
+### Fix required
+
+⛔ **Promote, do not prune** — the standing trap from Phase 0.4. Confirm the superset relationship holds
+at the moment of the fix (re-run the `diff`, do not trust this entry), then remove the stale `ai/` copy
+in its own commit. **Deleting the wrong one destroys the only copy of `load_alert_prefs` and
+`local_prefs_allow`.**
+
+Then: **search for further instances rather than fixing this one and stopping.** Phase 0.4's method is
+what let this survive. Run a basename-collision scan across `opt/d3kos/services/` and log whatever it
+finds — do not cap the audit and call it coverage (STANDING TRAP 2).
+
+### Verification
+
+- `release-state.sh` reports `ai/alert_watcher.py` as tracked, so removing it changes `MANIFEST.md5` —
+  regenerate as part of the change.
+- Confirm `d3kos-alert-watcher.service` is still `active` after the removal.
+
+### Related
+
+- **BUG-28 Step 1 / Phase 0.4** — the same defect, twice, already fixed for `cloud_agent.py` and
+  `ota_upgrade.py`
+- **BUG-36** — a deploy that silently regressed a file, the failure mode duplicate copies enable
+
+---
+## BUG-84 — Unauthenticated one-shot scratch scripts left live on the staging web root
+
+**Logged:** 2026-08-28 (S135) · **Platform:** HostPapa staging · **Severity:** **MEDIUM**
+· **Status:** `[x]` **FIXED S135 2026-08-28 — both files deleted with operator approval.**
+
+### Symptom
+
+Two S134-cont one-shot tools were still present and publicly reachable ten days after use:
+
+| File | Size | What it did |
+|---|---|---|
+| `staging/d3k-rawcheck.php` | 617 B | `file_get_contents('wp-config.php')`, regex-extracts `DB_NAME`/`DB_USER`/`DB_PASSWORD`, opens a PDO connection, `echo`s the `active_plugins` option. **No authentication.** |
+| `staging/d3k-deactivate.php` | 1,039 B | Plugin-deactivation script. **No authentication.** Never executed by this session. |
+
+### Why it matters
+
+`d3k-rawcheck.php` is a credential-reading database client on a public URL. It happened to return HTTP
+500 with an empty body because `$table_prefix` failed to parse (`Undefined array key 1`) and the query
+hit a non-existent `options` table — and because `display_errors` is off. **Both of those are luck, not
+controls.** One working query and it prints database internals to anyone who requests it.
+
+⚠ `d3k-deactivate.php` on a public URL with no auth is the more direct risk: the plugin it would
+deactivate is `d3kos-device-auth`, which is the BUG-63 registration gate. **A deactivation endpoint for
+your anti-bot control, reachable by bots.**
+
+### Root cause — a process gap, not a code defect
+
+S134-cont's SESSION_LOG records the one-shot tools as *"committed + deleted"*. Three were
+(`republish-register.php`, `probe-register-page.php`, `cleanup-botnet-accounts.php`). **These two were
+not, and nothing checked.** The deletion was recorded as done because it was intended, not because it
+was verified — the same failure shape as BUG-57's S121 "primary vector closed" entry and BUG-72's
+"never deployed" record.
+
+### Fix applied — S135 2026-08-28
+
+Operator gave explicit in-session approval. Both files backed up byte-identically **before** deletion to
+`.aao-backups/20260828_112110_S135/mirrored/staging/`, md5-verified against the remote copies, then
+deleted over FTPS.
+
+```
+d3k-rawcheck.php    617 B  md5=709012b92806d17ede3fab60a5fd0361
+d3k-deactivate.php 1039 B  md5=3e29054205356ca14a52ae1acf156bbc
+```
+
+Post-delete verification: FTP `LIST staging` → no `d3k-*` files remain; HTTP GET of both paths → 404.
+
+### Prevention
+
+⚠ **A one-shot tool is not deleted until a listing proves it.** Any future session that uploads a
+temporary script must end by listing the directory and pasting the output — not by stating the file was
+removed. Add this to the deploy close sequence.
+
+### Related
+
+- **BUG-57** — the same class of exposure this repo already suffered
+- **BUG-85** — found in the same sweep
+
+---
+
+## BUG-85 — `/staging/.htaccess` is a copy of the live site's; every staging page-route is served or redirected by PRODUCTION
+
+**Logged:** 2026-08-28 (S135) · **Platform:** HostPapa staging + live
+· **Severity:** **HIGH** — staging has not been a test environment for any page-based route, and nobody
+knew · **Status:** `[ ]` OPEN — **no fix attempted; changing `.htaccess` on a live host needs approval.**
+
+### Symptom — proven, 2026-08-28
+
+```
+GET https://atmyboat.com/staging/about/   -> 301 -> https://atmyboat.com/about/     (LIVE)
+GET https://atmyboat.com/staging/blog/    -> 301                                     (LIVE)
+GET https://atmyboat.com/staging/<random>.php
+      -> 404 page whose assets are ALL at the live root:
+         18x https://atmyboat.com/wp-content/...   0x https://atmyboat.com/staging/wp-content/...
+         byte-comparable to the live root 404 (40,024 B)
+```
+
+`/staging/` itself works (200, 72 KB, correct `/staging/` asset URLs) because `index.php` is a **real
+file**. Everything that is not a real file or directory leaves staging entirely.
+
+### Root cause
+
+`/staging/.htaccess` is a **verbatim copy of the live site's**, not one generated for a subdirectory
+install:
+
+```
+39: RewriteBase /                    <- must be /staging/
+43: RewriteRule . /index.php [L]     <- must be /staging/index.php
+57: php_value auto_prepend_file '/home/atmyb197/public_html/wordfence-waf.php'   <- LIVE's WAF
+```
+
+With `RewriteBase /`, any non-file/non-dir request under `/staging/` is rewritten to the **live**
+`index.php`. Live WordPress then canonical-redirects `/staging/about/` to `/about/`.
+
+⚠ **`siteurl`/`home` are NOT the cause and must not be "fixed" again.** They are correct: the staging
+homepage renders zero `staging/staging` occurrences and every asset resolves to `/staging/`.
+`wp-config.php` defines neither `WP_SITEURL` nor `WP_HOME`. **Previous sessions edited `wpax_options`
+chasing this symptom — do not repeat that.**
+
+### Consequence — read this before trusting any past "verified on staging" claim
+
+**Any test performed against a staging URL with a pretty permalink was executed against production, or
+redirected to it.** That includes anything reached via `/staging/register/`, `/staging/app/`,
+`/staging/community/` and similar. Direct `.php` file paths under
+`/staging/wp-content/themes/...` are unaffected (they are real files) — which is why the S134-cont
+endpoint deploys did behave sensibly.
+
+`Uncertainty flag: the /staging/wp-admin/ -> /staging/staging/wp-login.php doubling is NOT yet explained
+by this. wp-admin IS a real directory, so the rewrite should not fire on it. Cause unresolved — do not
+assume this entry covers it.`
+
+### Fix required
+
+1. Regenerate `/staging/.htaccess` for a subdirectory install: `RewriteBase /staging/` and
+   `RewriteRule . /staging/index.php [L]`. Easiest safe route is WordPress itself — Settings →
+   Permalinks → Save, from **staging's** wp-admin (blocked today; see the uncertainty flag).
+2. Point `auto_prepend_file` at staging's own `wordfence-waf.php`, or remove it.
+3. ⚠ **Take a backup of `.htaccess` first.** A bad rewrite rule takes the whole path down.
+4. Re-test with the three probes above. **`/staging/about/` returning staging content is the pass
+   condition** — a 200 alone is not, because live returns 200 too.
+
+### Related
+
+- **BUG-61** — its remaining scope; BUG-61's front-end half is fixed, this is what is actually left
+- **BUG-62** — closed NOT A BUG in S131 as a misdiagnosis of the `/staging/staging/` URL; consistent
+- **BUG-84** — found in the same sweep
+
+---
+
+## BUG-86 — `d3kos-device-auth` plugin fataled every staging page load on 2026-08-25 (resolved before logging)
+
+**Logged:** 2026-08-28 (S135) · **Platform:** HostPapa staging
+· **Severity:** was CRITICAL while live · **Status:** `[x]` **RESOLVED BEFORE LOGGING — recorded for the
+incident history, not as open work.**
+
+### What happened
+
+`staging/error_log`, 2026-08-25 18:49 UTC:
+
+```
+PHP Fatal error: Uncaught Error: Failed opening required
+'/home/atmyb197/public_html/staging/wp-content/themes/twentytwenty/mobile/device-auth.php'
+  in .../plugins/d3kos-device-auth/d3kos-device-auth.php:23
+Stack: wp-settings.php(597) -> wp-config.php(102) -> wp-load.php(50)
+       -> wp-blog-header.php(13) -> index.php(17)
+```
+
+The require resolved to the **parent** theme (`twentytwenty`) while `device-auth.php` was deployed to the
+**child** (`twentytwenty-child`). Because the plugin loads from `wp-settings.php`, **every page load of
+staging fataled** for the duration.
+
+### Why it is not open
+
+Verified 2026-08-28 by reading both deployed copies over FTPS:
+
+| | Size | Directory function |
+|---|---|---|
+| staging plugin | 11,376 B | `get_stylesheet_directory()` ✅ |
+| live plugin | 11,376 B | `get_stylesheet_directory()` ✅ |
+
+Byte-identical and correct on both. The fatal came from an earlier build during the S134-cont deploy
+iteration (`44a6e415` — *"device-auth.php fixed for standalone PHP context"*) and no longer reproduces.
+Staging currently returns HTTP 200.
+
+### What this leaves open — a question, not a defect
+
+⚠ **Is the plugin currently ACTIVE on staging, or was it deactivated to stop the fatal?**
+`d3k-deactivate.php` was created at 14:49 on the same day (see BUG-84), which suggests deactivation was
+at least attempted. **If it is inactive, BUG-66 Phase A is not running on staging while the records say
+it is.** Answering needs the `active_plugins` option out of `atmyb197_wp5888` — carry it into the
+BUG-66 verification, do not assume either way.
+
+### Documentation corrections established while investigating
+
+Read directly from the two `wp-config.php` files, 2026-08-28:
+
+| | Recorded | Actual |
+|---|---|---|
+| Staging DB | `atmyb197_wp302` | **`atmyb197_wp5888`** (prefix `wpax_`) |
+| Live DB | `atmyb197_wp59874` | `atmyb197_wp59874` ✅ (prefix **`wpax_`** — was "unverified") |
+
+⚠ **This explains the "`atmyb197_wp302` credentials are BROKEN" note in MEMORY.md — the credentials are
+not broken, the database name is wrong.** The two databases are separate; there is no shared-DB problem.
+
+### Related
+
+- **BUG-66** — the plugin this concerns; the activation question belongs to its verification
+- **BUG-84 / BUG-85** — same sweep
+
+---
+## BUG-87 — My Account actions are unthrottled, and account deletion does not re-prompt for the password
+
+**Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (live) · **Severity:** **LOW — hardening**
+· **Status:** `[ ]` OPEN — split out of BUG-64 when that closed NOT A BUG. **Neither item is
+exploitable by an unauthenticated party.** Both require an already-valid session.
+
+**File:** `wp-content/themes/twentytwenty-child/page-my-account.php` (live md5 `400fa44e…`).
+⚠ Edit the **Helm-OS** copy at `deployment/features/auth-pages/php/page-my-account.php` — the
+`atmyboat-forum` copy is stale (BUG-64 audit).
+
+---
+
+### R1 — No throttling on any account action
+
+`change_password`, `change_email`, `delete_account` and the data export accept unlimited POSTs from a
+valid session. Nothing records attempts, and there is no `transient`, cooldown or counter in the file.
+
+**Concrete failure:** `:92` calls `wp_check_password( $pw_cur, … )` on every submission with no
+back-off. **An attacker who has a session but does not know the password can brute-force the
+current-password field through the account page.** That matters because the current password is the
+gate on `change_password` — guessing it lets the session be converted into permanent account takeover
+(change password → change email) rather than access that ends when the cookie expires.
+
+`Uncertainty flag: Wordfence may already throttle these POSTs at the HTTP layer. This was NOT verified —
+confirming it means submitting repeated failed passwords against the live site, which was not done.
+Check the Wordfence rate-limiting configuration before writing any code; the fix may already exist one
+layer up.`
+
+**Fix options, cheapest first:**
+1. Confirm Wordfence's existing rate limiting covers authenticated POSTs to this page — possibly no code.
+2. A per-user transient counter: N failed `wp_check_password` attempts in M minutes → refuse and log.
+3. ⚠ **Fail closed but do not lock the user out permanently** — a self-service account page that can be
+   locked by an attacker is a denial-of-service on the legitimate owner. Time-boxed back-off only.
+
+### R2 — `delete_account` does not require the current password
+
+`:149-158` requires a valid action-scoped nonce and the literal string `DELETE MY ACCOUNT`. That is
+sound against CSRF and against accidents. It is **not** sound against an unattended logged-in session:
+anyone at the keyboard can type eleven words and destroy the account.
+
+Mitigating factor already present: `:157` `wp_delete_user( $user_id, 1 )` **reassigns content to the
+admin** rather than deleting posts, so the blast radius is the account, not its contributions.
+
+**Fix:** require `wp_check_password()` on `delete_account`, exactly as `change_password` already does at
+`:92`. The pattern is in the same file — reuse it, do not invent a second one.
+
+---
+
+### Tests
+
+| # | Test | Pass condition |
+|---|---|---|
+| T1 | Submit `change_password` with a wrong current password N+1 times | request N+1 is refused/backed-off, not evaluated |
+| T2 | Legitimate user changes password successfully after a wrong attempt | **not locked out** — proves R1's fix does not become a self-DoS |
+| T3 | `delete_account` with correct confirmation string but wrong password | **rejected** |
+| T4 | `delete_account` with correct confirmation string and correct password | succeeds; content reassigned to user 1 |
+| **T5** | **Negative: remove the throttle, re-run T1** | T1 **fails** — proves the guard bites (STANDING TRAP 6) |
+
+⚠ **T2 is the one that matters most.** A throttle that locks the real owner out is worse than no throttle.
+
+### Definition of done
+
+- [ ] Wordfence's existing coverage checked **first** — do not write code that duplicates it
+- [ ] T1–T5 written before the fix; T1 and T3 observed failing pre-fix
+- [ ] Edited in the Helm-OS copy; the stale `atmyboat-forum` copy reconciled or removed
+- [ ] Deployed to live only with explicit operator `APPROVED`
+
+### Related
+
+- **BUG-64** — closed NOT A BUG; this is its residual
+- **BUG-69** — admin 2FA, the adjacent control that is already done
+
+---
+## BUG-88 — 32 production PHP files exist nowhere in the repo, and a dormant parent-theme include waits to fatal
+
+**Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (live) + `atmyboat-forum` repo
+· **Severity:** **MEDIUM** — this is the measurable form of a root cause three other bugs already name
+· **Status:** `[ ]` OPEN — found during the BUG-71 investigation. No fix attempted.
+
+---
+
+### Part 1 — The repo does not know what production runs
+
+| | `mobile/*.php` count |
+|---|---|
+| `atmyboat-forum` repo | **44** |
+| Production (FTP listing, 2026-08-28) | **76** |
+
+**32 files are running in production with no source anywhere in the repo.** BUG-71 was one of them until
+S135 (commit `13eebcbc`); the other 31 are still unsourced.
+
+This is the concrete measurement of the root cause that **BUG-72**, **BUG-76** and
+`PHASE3-server-canonical-tree.md` all describe in the abstract: *"There is no canonical tree, manifest,
+or drift check for the HostPapa side."* The Pi side has `MANIFEST.md5` and `release-state.sh`. The
+server side has nothing, and the gap is 32 files wide.
+
+⚠ **Consequences already observed this session, not hypothetical:**
+- **BUG-71** — a production file with no repo copy; the bug survived multiple sessions partly because
+  there was nothing to read.
+- **BUG-64** — three variants of `page-my-account.php` exist; the `atmyboat-forum` copy is **stale** and
+  live matches the Helm-OS copy instead.
+- **BUG-84** — two scratch files sat in production for ten days because nothing compares the server
+  against a manifest.
+
+⚠ **Do not "fix" this by copying production into the repo wholesale.** `PHASE3-server-canonical-tree.md`
+Step 1 is explicit: **pull the deployed files down and diff them against the repo copies — assume
+nothing.** Some repo copies are newer than production, some are older, and at least one production file
+(`page-my-account.php`) matches a *different* repo than the theme repo. A blind copy would overwrite
+good source with stale source.
+
+**⚠ Also do not cap the audit.** The 76/44 figure is `mobile/` only. The rest of the child theme, the
+plugins directory and the `app/` tree were not counted. Count them before claiming coverage
+(STANDING TRAP 2).
+
+### Part 2 — A dormant parent-theme include
+
+`atmyboat-forum/wp-content/themes/twentytwenty-child/inc/atmyboat-functions.php:107`:
+
+```php
+require_once get_template_directory() . '/mobile/pair-device.php';
+```
+
+`get_template_directory()` returns the **PARENT** theme (`twentytwenty`). The file lives in the
+**child**. If this line ever executes, it is an unconditional fatal on every page load — **exactly the
+failure BUG-86 caused on staging on 2026-08-25.**
+
+**It is currently dormant.** A grep of `functions.php` and `inc/` finds nothing that requires
+`inc/atmyboat-functions.php`, so the line never runs. The live include is `functions.php:220`, which
+correctly uses `get_stylesheet_directory()`.
+
+**Fix:** either delete `inc/atmyboat-functions.php` if it is dead, or correct line 107 to
+`get_stylesheet_directory()`. **Do not simply leave it** — a dead file containing a site-killing line is
+one careless `require` away from an outage, and the same mistake has already fired once.
+
+⚠ **Search for other instances before closing.** `get_template_directory()` used to reach a child-theme
+file is now a known recurring error in this codebase (BUG-86, and this). Grep the whole theme for it and
+log what turns up — do not fix these two and declare the class closed.
+
+### Definition of done
+
+- [ ] Every `mobile/*.php` in production diffed against its repo copy (or recorded as absent) — no blind copy
+- [ ] The 31 remaining unsourced files brought under version control byte-identical, own commit
+- [ ] Count extended beyond `mobile/` and the true total reported
+- [ ] `inc/atmyboat-functions.php` deleted or line 107 corrected
+- [ ] Repo-wide grep for `get_template_directory()` reaching child-theme paths; findings logged
+- [ ] Feeds `PHASE3-server-canonical-tree.md` Step 1 — this bug is that spec's evidence base
+
+### Related
+
+- **BUG-71** — where this was found; one of the 32
+- **BUG-86** — the parent-theme include error that actually fired
+- **BUG-64** — stale repo copy of a live file
+- **BUG-72 / BUG-76** — same root cause, different symptom
+
+---
+## BUG-89 — Three Pi→server destination URLs 404; OTA version checks have never resolved
+
+**Logged:** 2026-08-28 (S135) · **Platform:** Pi canonical tree → atmyboat.com
+· **Severity:** **HIGH** — one of the three is the OTA update path · **Status:** `[ ]` OPEN.
+Found by completing **BUG-75 Step 2** (audit every destination URL against probe results, not the spec).
+
+### The three, all confirmed 404 on 2026-08-28
+
+| Source | URL | Result |
+|---|---|---|
+| `opt/d3kos/services/agents/agents/update_agent.py:47` `VERSION_URL` | `…/mobile/version.php` | **404** |
+| `opt/d3kos/services/community/community-api.py:49,73` | `atmyboat.com/api/community/markers` | **404** |
+| `opt/d3kos/services/cloud/cloud-link-api.py:66` `webhook_url` default | `atmyboat.com/api/notify` | **404** |
+
+Control: `…/mobile/version-api.php` → **401**. The theme path resolves and the probe method is sound;
+these three are genuinely absent.
+
+---
+
+### 1. `version.php` — the OTA path, and BUG-55 half-fixed it
+
+Production has `version-api.php`, `version-heartbeat.php` and `version-registry.php`. **There is no
+`version.php`.**
+
+⚠ **BUG-55 corrected this line's HOST and left its FILENAME wrong.** BUG-55 Category B recorded:
+*"`VERSION_URL` was hardcoded to staging, so OTA version checks were hitting the test site."* The fix
+moved it from **the wrong site** to **the right site and a file that does not exist**. Same silent
+failure, new address. The verifier `verify-bug55.sh` checks for the *string* `atmyboat.com/staging`; it
+never checked that the resulting URL resolves.
+
+**Almost certainly the reason no OTA has ever run.** `PHASE4-release-engineering.md` notes *"a real OTA
+(BUG-35's fix has never executed — no OTA has ever run)"*. An update agent whose version check 404s
+never discovers an update, so the download-and-apply path is never entered.
+
+`Uncertainty flag: that causal link is an inference from two facts (the URL 404s; no OTA has run). It
+was NOT confirmed by reading update_agent.py's error handling or the Pi's journal. Confirm before
+recording it as the cause of BUG-35's untested state.`
+
+**Fix:** determine which endpoint is intended — `version-api.php` (401, auth-gated, most likely) or
+`version-registry.php` — then correct line 47. ⚠ **Do not guess between them; read what each returns
+and what `update_agent.py` expects to parse.**
+
+### 2. `/api/community/markers` — a FIFTH naming scheme
+
+`community-api.py` calls a REST-style path that does not exist. This is **not** one of the three schemes
+BUG-76 catalogued — it is a fifth, and it is the one the **Pi's own code** uses:
+
+| # | Source | Name |
+|---|---|---|
+| 1 | `MASTER_SYSTEM_SPEC` §8.4.4 | `community-markers-post.php` / `-get.php` |
+| 2 | `ARCH_SERVICE_MAP.md` | `community/markers.php` |
+| 3 | **Production (authoritative)** | **`community-markers.php`** |
+| 4 | `features/v0941-plan/php/` (design tree) | `community-markers-write.php` |
+| 5 | **`community-api.py:49,73` (Pi, live code)** | **`/api/community/markers`** |
+
+⚠ **BUG-76 must be widened: five schemes, not three — and the running Pi code matches none of them.**
+Whatever canonical name is chosen, `community-api.py` has to change too. A doc-only fix leaves the Pi
+still calling a 404.
+
+### 3. `/api/notify` — a default that resolves to nothing
+
+`cloud-link-api.py:66` uses `data.get('webhook_url', 'https://atmyboat.com/api/notify')`. The **default**
+404s. It only bites when a caller omits `webhook_url` — which is exactly the BUG-55 Category A shape:
+*"latent fallback defaults that resolved correctly only because a config key happened to be set."*
+
+**Fix:** either point the default at a real endpoint or **remove the default and fail loudly** on a
+missing `webhook_url`. ⚠ A silent fallback to a 404 is worse than a missing-key error.
+
+---
+
+### The pattern across all three
+
+Every one fails **silently**: a 404 on a background POST produces no operator-visible symptom. Same
+class as BUG-54 (five months of invisible export failures) and BUG-56 (a no-op string replace).
+
+⚠ **`verify-bug55.sh` and `release-state.sh` both pass while all three are broken**, because both check
+*text* and *file identity*, never *whether a destination resolves*.
+
+**Recommended systemic fix:** a `verify-endpoints.sh` that extracts every `atmyboat.com/...` literal from
+the canonical tree and asserts each returns something other than 404. Sequential requests only —
+Wordfence treats a parallel sweep as a scanner (`PHASE3-server-canonical-tree.md` Step 2).
+
+### Definition of done
+
+- [ ] `update_agent.py:47` pointed at the correct, verified endpoint
+- [ ] `community-api.py` aligned with BUG-76's canonical-name decision
+- [ ] `cloud-link-api.py:66` default fixed or removed in favour of a loud failure
+- [ ] `verify-endpoints.sh` written; **plant a known-404 and watch it fail** before trusting it
+- [ ] BUG-35's "no OTA has ever run" re-assessed once the version URL resolves
+- [ ] Lab Pi only; boat Pi out of scope per operator directive S135
+
+### Related
+
+- **BUG-75** — the audit that found these · **BUG-76** — widened to five naming schemes
+- **BUG-55** — fixed the host, missed the filename · **BUG-35 / PHASE4** — the untested OTA
+- **BUG-54 / BUG-56** — the same silent-failure class
+
+---
+## BUG-90 — The registration audit trail has never recorded anything: `$wpdb->prefix` applied to a deliberately unprefixed table
+
+**Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (LIVE) · **Severity:** **HIGH**
+· **Status:** `[ ]` OPEN — found in the live error log during the BUG-54 investigation. No fix attempted.
+
+**This is the detection control for a repeat of BUG-57, and it has never worked.**
+
+### Evidence — live error log, `public_html/error_log`
+
+```
+[26-Aug-2026 04:34:39 UTC] WordPress database error
+  Table 'atmyb197_wp59874.wpax_amboat_registration_audit' doesn't exist
+  for query SHOW FULL COLUMNS FROM `wpax_amboat_registration_audit`
+  made by require('wp-blog-header.php'), … include('/themes/twentytwenty-child/page-register.php'),
+          amboat_registration_audit
+```
+
+Dated **one day after** BUG-63 Step 3 put the device-gated `/register/` live.
+
+### Root cause — a one-line prefix mismatch
+
+| Role | Location | Table named |
+|---|---|---|
+| **Creator** | `v0.9.9.4-server/sql/device-auth-tables.sql:47` | `amboat_registration_audit` — **unprefixed** |
+| **Creator** | `plugins/d3kos-device-auth/d3kos-device-auth.php:108` (dbDelta) | `amboat_registration_audit` — **unprefixed** |
+| **Plugin's own insert** | `d3kos-device-auth.php:192` | `$wpdb->insert('amboat_registration_audit', …)` — **unprefixed, CORRECT** |
+| **Consumer — the defect** | `features/auth-pages/php/device-registration.php:121` | `$table = $wpdb->prefix . 'amboat_registration_audit';` → **`wpax_amboat_registration_audit`** |
+
+The unprefixed convention is **deliberate and documented** — `device-auth-tables.sql:9-10`:
+*"Table names do NOT use the WordPress prefix — they use the amboat_ namespace directly, consistent
+with the existing amboat_devices table in version-heartbeat.php."*
+
+**`device-registration.php:121` did not follow it.** One line, one `$wpdb->prefix`.
+
+### Impact
+
+`page-register.php` calls `amboat_registration_audit()` in three places — `:105` `redeem_fail`,
+`:114` `wp_create_user_failed`, `:162` **`account_created`**. **Every call targets a table that does not
+exist, so no registration event has ever been recorded.**
+
+⚠ **BUG-57's root-cause list includes, verbatim: *"No audit trail or notification when accounts were
+created."*** BUG-63 was built to close that hole. **The audit half of it has been inert since the day it
+went live.** If a second botnet ran tomorrow, the record would look exactly as empty as it did in June.
+
+**Registration itself still works** — `$wpdb->insert()` on a missing table returns `false` and logs;
+it does not throw, and the call sits after `wp_create_user()`. The `/register/` page returns 200 and
+renders the gate (verified S135). **The failure is silent and affects only the audit trail** — which is
+the worst place for it to be silent, because the audit trail is what you would consult to find out
+whether anything went wrong.
+
+Same class as BUG-54 (five months of invisible failures) and BUG-89 (three 404s nobody sees).
+
+### Fix
+
+Delete `$wpdb->prefix .` from `device-registration.php:121`.
+
+⚠ **Before that, confirm which table actually exists in the live database.** Commit `904a4f47` claims
+*"6 device auth tables created in live DB"*, which implies the **unprefixed** `amboat_registration_audit`
+is present — but that has not been read. Two possibilities, opposite fixes:
+
+- **Unprefixed table exists** → remove the prefix from the consumer. One-line fix.
+- **Neither table exists** → the dbDelta never ran or failed; fix the creation path first. A consumer
+  fix alone would then still write nowhere.
+
+`Uncertainty flag: the live database was NOT queried this session. The error log proves only that the
+PREFIXED table is absent. Do not apply the one-line fix until the unprefixed table is confirmed present
+— otherwise the audit trail stays broken and the bug looks closed.`
+
+⚠ **Audit every other consumer of these tables for the same mistake before closing.** `amboat_devices`,
+`amboat_device_enrolments`, `amboat_registration_codes` and `amboat_device_accounts` share the
+unprefixed convention. Grep for `$wpdb->prefix . 'amboat_` across both repos — do not fix this one and
+declare the class closed (STANDING TRAP 2).
+
+### Verification
+
+- [ ] Confirm from the live DB which of the two table names exists
+- [ ] Fix, then register one test account and **read the audit row back** — not "no error in the log"
+- [ ] Grep both repos for `$wpdb->prefix . 'amboat_` and fix every hit
+- [ ] Re-check `public_html/error_log` afterwards for a clean run
+
+### Related
+
+- **BUG-57** — the breach whose root cause included the absent audit trail
+- **BUG-63** — the fix this defect silently hollows out
+- **BUG-66** — created these tables; its Phase A dbDelta is the creator side
+- **BUG-54 / BUG-89** — the same silent-failure class
+
+---
+## BUG-91 — The entitlement authority fails OPEN to Tier 1, and ignores the tier-audit fields the Pi sends it
+
+**Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (LIVE `data-ingress.php`)
+· **Severity:** **HIGH — revenue** · **Status:** `[ ]` OPEN. No fix attempted.
+**Found by performing the FEATURE_MATRIX reconciliation that `BUG-65.md` §4 requires before Step 3.**
+
+### The reconciliation itself came out clean — record that first
+
+`BUG-65.md` §4 warned: *"there are already two matrices, one per platform. Reconcile them before adding
+enforcement; if they disagree, the two sides differ on what a paid tier includes."*
+
+**They do not disagree.** Parsed both and compared programmatically, 2026-08-28:
+
+```
+Pi     tier_service.py FEATURE_MATRIX  : tiers 0,1,2,3   17 features
+Server data-ingress.php feature_matrix : tiers T1,T2,T3  11 features
+Shared features: 10      VALUE MISMATCHES ACROSS T1/T2/T3: 0
+```
+
+**Zero.** BUG-77's deferred concern is answered: no divergence bug exists. The problems are structural.
+
+---
+
+### Finding 1 — two fail-open defaults to a PAID tier, in the entitlement authority itself
+
+```php
+148: $tier = amboat_get_user_meta( $user_id, 'atmyboat_tier' ) ?: 'T1';
+227: $tier = amboat_get_user_meta( $user_id, 'atmyboat_tier' ) ?: 'T1';
+272: $features = $feature_matrix[ $tier ] ?? $feature_matrix['T1'];
+```
+
+`?:` is a **falsy** test. `'0'`, `''`, `0`, `null` and "meta absent entirely" all collapse to `'T1'`.
+Line 272 then does it again for any tier key the matrix lacks.
+
+**A free user, or any user whose `atmyboat_tier` meta was never written, is served Tier 1 entitlements
+by the server.** There is **no `T0` key in the server matrix at all** — so Tier 0 cannot be expressed,
+only defaulted away.
+
+⚠ **This is precisely what BUG-65 Step 3 exists to fix.** Step 3's premise is *"enforce paid features
+server-side, where the secret lives."* **The server-side authority currently fails open to a paid tier.**
+Step 3 cannot be written on top of this — the default must be closed first, or server enforcement
+inherits the same bypass it was created to close.
+
+⚠ **Fixing it is not simply changing `'T1'` to `'T0'`.** Adding a `T0` row and failing closed will
+**strip features from any existing paying customer whose `atmyboat_tier` meta is missing or malformed.**
+Count those users before changing the default. **A fail-closed default applied blind is an outage for
+paying customers.**
+
+### Finding 2 — the server ignores every audit field BUG-65 Step 2 sends it
+
+`export_worker.py:239-242` appends `tier_claimed`, `tier_detected`, `opencpn_present`,
+`subscription_key_present` on every export. Grep of the **live** `data-ingress.php` for all four:
+**zero matches.**
+
+⚠ **BUG-65's record is therefore wrong where it says:** *"Server receives the claim + the detected value
+every export — mismatch is visible for human review."* **It is not visible.** Nothing reads the fields,
+nothing stores them, no audit row is written, and there is nothing for a human to review.
+
+**Step 2 is half-built: the Pi emits, the server discards.** The Pi-side work is real and correct — the
+receiving half was never written. Correct the record, then build the consumer.
+
+### Finding 3 — 7 Pi features have no server representation
+
+Pi-only: `camera`, `cloud_sync`, `engine_monitoring`, `maintenance_schedule`, `mobile_app`,
+`predictive_alerts`, `voice_assistant`. Server-only: `live_monitoring`.
+
+⚠ **`cloud_sync` is the problem.** BUG-65 §4 classifies cloud sync as a **server-enforced** feature —
+but the server matrix has no key for it. **The server cannot enforce an entitlement it cannot name.**
+`camera`, `voice_assistant` and `predictive_alerts` are the Tier 2 features BUG-65's own symptom text
+names as unlockable by forgery.
+
+`mobile_app` / `engine_monitoring` vs `live_monitoring` may be the same concept under two names —
+**verify rather than assume; if they are, unify the name; if not, both matrices are incomplete.**
+
+---
+
+### What this means for BUG-65 Step 3
+
+**Step 3's prerequisite is now DONE** (the reconciliation) and it produced three blockers. Order:
+
+1. Close the fail-open defaults — **after counting affected users**. Without this, server enforcement is decorative.
+2. Add the missing feature keys, `cloud_sync` first.
+3. Build the consumer for the Step 2 audit fields, and correct BUG-65's claim that it already exists.
+4. **Then** write Step 3.
+
+`Uncertainty flag: the live database was NOT queried. How many users have a missing or falsy
+atmyboat_tier is UNKNOWN, and it decides whether closing the default is safe or an outage. Count first.`
+
+### Related
+
+- **BUG-65** — Step 3's blocker; its Step 2 "visible for human review" claim is corrected here
+- **BUG-77** — deferred this exact comparison as needing a live HostPapa read; now done, no divergence
+- **BUG-90** — same session, same shape: a control believed active that never ran
 
 ---

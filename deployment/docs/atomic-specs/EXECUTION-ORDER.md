@@ -19,6 +19,27 @@ the dependencies below are real, and several items make a later item impossible 
 
 ---
 
+## OPERATOR GATES — restored and re-scored 2026-08-28 (S135)
+
+⚠ **S134 deleted the GATE 0 table as "all cleared" while items 1.5, 3.1 and 3.3 still referenced
+G2/G3/G4/G6.** Those references were dangling for four sessions. Restored here with current status.
+
+| # | Gate | Status 2026-08-28 | Blocks |
+|---|---|---|---|
+| G1 | Inspect the released `.img` for a live `AMBOAT_API_KEY` | ✅ CLEAR (S133) | — |
+| **G2** | **Main FTP access to `public_html`** | ✅ **CLEARED S135** — the `d3kos@` account reaches the web root; used throughout S135 | was 4 of 5 Phase 3 items |
+| **G3** | **HostPapa nginx error log** | ⛔ **STILL BLOCKED** — outside the web root, FTP cannot reach it | BUG-54 Part 2's final answer |
+| **G4** | **Stripe dashboard check** | ⚠ **DOWNGRADED urgent → routine (BUG-73 closed NOT A BUG)** — the webhook exists, is wired and verifies signatures | BUG-73 verification only |
+| G5 | Install `poppler-utils` | open | CX5106 manual readability |
+| **G6** | **BUG-24 design decision** | ✅ **CLEARED S135 — operator chose Option A** | item 1.5, now unblocked |
+| G7 | BUG-57 partial close — REST user enumeration returns 403 | ✅ confirmed | record accuracy |
+| **G8** | **MailPoet Q3: is "auto-create WordPress user on subscribe" enabled?** | ⛔ **OPEN — one screenshot.** If YES, BUG-57 goes back to CRITICAL and the device gate does not close it | BUG-57 closure |
+| **G9** | **Count users with missing/falsy `atmyboat_tier`** | ⛔ **OPEN** — decides whether closing BUG-91's fail-open is safe or an outage | BUG-91, then BUG-65 Step 3 |
+| **G10** | **Which `amboat_registration_audit` table exists in the live DB** | ⛔ **OPEN** — one `SHOW TABLES` | BUG-90 |
+| **G11** | **Rotate the two FTP passwords** | ⛔ **OPEN** — they are in the S135 transcript twice | commit handoff item 0.5 B1a |
+
+---
+
 ## PHASE 0 — Make the records true and the state measurable
 
 No dependencies. Do this first: everything after it is untrustworthy otherwise.
@@ -44,6 +65,12 @@ No dependencies. Do this first: everything after it is untrustworthy otherwise.
       ⚠ **The 719-line `cloud_agent.py` is a strict SUPERSET of the 630-line one that systemd runs.
       "De-duplicate" reads like "delete the idle one" — doing that destroys the only copy of
       `push_config_snapshot`. Promote, do not prune.** Test T4 exists for this.
+- [ ] **0.5 — `S135-COMMIT-HANDOFF.md`** — commit the uncommitted `/home/boatiq` and `atmyboat-forum`
+      working trees. **Do this first in the next session.** `Helm-OS` is clean; the other two are not,
+      so AAO §17 currently has no valid rollback baseline for them.
+      ⚠ `atmyboat-forum/…/mobile/crm-config.php` is **untracked, credential-bearing, and NOT matched by
+      the existing `.gitignore`.** A blanket `git add -A` commits it. Do A1 before staging anything.
+      ⛔ `/home/boatiq` has **no remote and must never get one.**
 
 ---
 
@@ -150,8 +177,18 @@ Operator decision: security first. This runs before Phase 1.
       ⚠ Prerequisite mismatches noted and resolved: P1 expected 1 cylinderMap, found 3 (comment+def+use); P4
       expected 2 (8 switches), found 3 (extra static HTML). Both resolved in the same commit.
       ⚠ Tests T1-T16 (SPEC §4) cannot run until lab Pi is available — test file written S134-cont as TDD remediation: `tests/bug81-cx5106-dip.spec.ts`. Must verify GREEN before deploy.
-- [ ] **1.5 — `BUG-24.md`** — blocked on **G6**. Recommendation: Option A, modelled on
-      `alert_watcher.py`. Option B is the trap: it turns "never captures" into "captures sometimes".
+- [ ] **1.5 — `BUG-24.md`** — **UNBLOCKED. G6 cleared 2026-08-28 (S135): operator chose Option A.**
+      Spec rewritten S135 against the live code and lab Pi; ready for Tier 3.
+      ⚠ **Model on `predictive_maintenance.py`, NOT `alert_watcher.py`** — S131's recommendation is
+      superseded. The predictive service already writes `boatlog_entries` on this exact DB in production
+      (72 rows); it is the nearest working thing. *Diff against what works.*
+      ⚠ S135 found three further faults in the same path (spec §0): `/api/boatlog/engine-entry` **does not
+      exist** so every POST has 404'd since v0.9.2.3; the JS `.catch` hides it; and
+      `boatlog-export-api.py` **binds `127.0.0.1`**, so all :8095 calls fail from any remote browser.
+      The spec routes around the bind fault on purpose — **BUG-24 is not gated on it.**
+      ⚠ The UI read path is part of the fix. `boat-log.html` renders from `localStorage` only, so a
+      server-side writer alone leaves the operator seeing nothing. Serve `GET /api/boatlog/entries`
+      from **`app.py` (:3000, same origin)**, not :8095.
 - [x] **1.6 — BUG-53** ✓ DONE inside 1.1 S134-cont 2026-08-25 — assertion inverted in bug26 spec;
       BASE_HOST:3002 asserted; not.toContain('localhost') regression guard added. Anchor alarm coverage retained.
 
@@ -217,3 +254,87 @@ Operator decision: security first. This runs before Phase 1.
    keep working, log the staleness, never downgrade.
 6. **Guard tests must be proven to bite.** Plant the regression and watch the test fail. A guard that
    is present but non-functional manufactures confidence.
+
+
+---
+
+## PHASE 5 — S135 FINDINGS (2026-08-28)
+
+**Twelve bugs were investigated one-by-one with live evidence. Six had wrong premises.** Ten new bugs
+were logged (BUG-82…BUG-91). Every item below has an atomic spec. **Do them in this order — the
+dependencies are real.**
+
+⚠⚠ **THE LESSON THAT GOVERNS THIS PHASE.** BUG-72 (recorded "never deployed" — it is live and returns
+401), BUG-73 (recorded "absent from production and repo" — present in both, byte-identical, working),
+BUG-71 (recorded "broken endpoint" — not an endpoint), BUG-64 (recorded HIGH privilege-escalation — no
+role field exists), BUG-56 (recorded "BUILD task" — the target is a placeholder token). **Every one was
+recorded from an inference rather than a read.**
+**Probe to find a candidate. Read the file or list the directory to conclude.**
+**A status code is a response, not a fact.**
+
+### 5.1 — SECURITY FIRST (operator's standing ordering)
+
+- [ ] **5.1 — `BUG-90.md`** (HIGH) — the registration audit trail has **never recorded a row**.
+      `device-registration.php:121` applies `$wpdb->prefix` to a deliberately unprefixed table.
+      ⛔ **Gated on G10** — read the live DB first. If neither table exists, a consumer-only fix writes
+      nowhere and makes the bug *look* closed.
+      ⚠ BUG-57's root cause included "no audit trail when accounts were created". This is that control.
+- [ ] **5.2 — `BUG-91.md`** (HIGH, revenue) — the entitlement authority **fails open to Tier 1** and
+      discards all four BUG-65 Step 2 audit fields.
+      ⛔ **Gated on G9 — count affected users first. Closing the default blind is an outage for paying
+      customers.**
+      ✅ The BUG-65 §4 FEATURE_MATRIX reconciliation is **done**: 0 value mismatches. No divergence bug.
+- [ ] **5.3 — `BUG-65.md` Step 3** — server-side enforcement. **Blocked until 5.2 lands.** Building
+      enforcement on a fail-open authority inherits the bypass it exists to close.
+- [ ] **5.4 — `BUG-85.md`** (HIGH) — `/staging/.htaccess` is a copy of live's; every staging page-route
+      is served or 301'd by **production**. **Sequence early: staging is not a test environment until
+      this is fixed**, and later items want to test there.
+      ⚠ `siteurl`/`home` are CORRECT — **do not edit `wpax_options` again.**
+- [ ] **5.5 — `BUG-60.md`** — comments are open to **anonymous** visitors with an author-`url` field and
+      **zero** anti-spam layers. **BUG-63's device gate does nothing for this vector.**
+      ⚠ Requiring login is now a *strong* control **because of** BUG-63 — one checkbox.
+      ⛔ Record both settings' prior state before changing them.
+- [ ] **5.6 — `BUG-57-MAILPOET.md`** — **gated on G8.** Answer Q3 first; it can re-escalate BUG-57.
+
+### 5.2 — CORRECTNESS
+
+- [ ] **5.7 — `BUG-76.md`** — five naming schemes, not three; the **live Pi code matches none**.
+      Canonical = what is **deployed**. **Gates 5.8's part B.**
+- [ ] **5.8 — `BUG-89.md`** (HIGH) — three Pi→server URLs 404, including `update_agent.py`'s
+      `VERSION_URL`. ⚠ **BUG-55 fixed that line's host and left its filename wrong** — likely why no OTA
+      has ever run. Part B waits on 5.7.
+      ⚠ Build `verify-endpoints.sh`: `verify-bug55.sh` and `release-state.sh` both PASS while all three
+      are broken, because they check text and file identity, never whether a URL resolves.
+- [ ] **5.9 — `BUG-56.md`** — `api-admin.php` is a **placeholder token, not an endpoint**.
+      ⛔ **Do not build it.** Two spellings exist, so **no single `proxy_url` value can work.**
+      Blocked on reading one config value from the CRM VM (unreachable from the lab 2026-08-28).
+- [ ] **5.10 — `BUG-71.md`** — three-line `ABSPATH` guard.
+      ⛔ **Do NOT add guards to the other 42 `mobile/*.php` files** — they are standalone endpoints and
+      guarding them breaks every Pi→server call.
+- [ ] **5.11 — `BUG-82.md`** — `boatlog-export-api.py` binds `127.0.0.1`; all four :8095 endpoints fail
+      from any remote browser. Also fix the empty `.catch()` handlers that hid it.
+- [ ] **5.12 — `BUG-83.md`** — de-duplicate `alert_watcher.py`. ⛔ **Promote, do not prune** — the root
+      copy is the superset and the one systemd runs. **Third instance of the pattern Phase 0.4 missed;
+      sweep for more.**
+- [ ] **5.13 — `BUG-24.md`** — Boat Log engine auto-capture, **Option A** (G6 cleared).
+      ⚠ Model on `predictive_maintenance.py`, **not** `alert_watcher.py`. The UI read path is part of the
+      fix — a server-side writer alone leaves the operator seeing nothing.
+- [ ] **5.14 — `BUG-87.md`** (LOW) — My Account throttling + password on delete.
+      ⛔ **Check Wordfence first — the fix may already exist one layer up.**
+      ⚠ A throttle that locks the real owner out is worse than no throttle.
+- [ ] **5.15 — `BUG-88.md`** — **32 production files exist nowhere in the repo.** ⛔ **Do not copy
+      production in wholesale** — some repo copies are newer. **Feeds `PHASE3-server-canonical-tree.md`
+      Step 1; do this before 3.1.**
+
+### 5.3 — BLOCKED / DECISIONS
+
+- [ ] **5.16 — `BUG-75.md` Step 3** — operator decision: should a `/mobile/` alias exist?
+      Recommend **no**. If yes, sequence **after 5.4**.
+- [ ] **5.17 — `BUG-54-PART2.md`** — ⛔ **G3 blocked** for the final answer, but **one approved POST**
+      splits size-vs-path first. ⚠ **The regression has a date: 2026-04-22.** Export worked for four
+      weeks; six hypotheses are eliminated. **Do not re-test them.**
+
+### Phase 5 exit criterion
+
+BUG-90, 91, 85 closed and BUG-65 Step 3 written. Those are the release-gate items; the rest are
+correctness and can trail.
