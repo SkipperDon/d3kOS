@@ -330,7 +330,7 @@ def handle_fix_my_pi(cmd_id, base_url, api_key, device_token):
             f"errors={len(result.get('errors', []))}"
         )
     except ImportError:
-        err = 'fix_my_pi.py not found at /opt/d3kos/services/fix_my_pi.py'
+        err = 'fix_my_pi.py not found at /opt/d3kos/services/cloud-agent/fix_my_pi.py'
         ack_command(base_url, api_key, device_token, cmd_id, 'failed', {'error': err})
         logger.error(f"fix_my_pi: {err}")
     except Exception as e:

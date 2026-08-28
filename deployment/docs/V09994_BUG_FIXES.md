@@ -6859,3 +6859,45 @@ atmyboat_tier is UNKNOWN, and it decides whether closing the default is safe or 
 - **BUG-90** — same session, same shape: a control believed active that never ran
 
 ---
+
+## BUG-92 — `services/fix_my_pi.py` is a stale 251-line copy; `cloud-agent/fix_my_pi.py` (333 lines) is the active superset
+
+**Severity:** LOW | **Platform:** Pi — canonical tree | **Status:** OPEN
+**Logged:** S136 2026-08-28 (BUG-83 §5 sweep)
+
+### Symptom
+
+Two copies of `fix_my_pi.py` exist in the canonical tree:
+
+| Path | Lines | Notes |
+|---|---|---|
+| `services/fix_my_pi.py` | 251 | Missing `check_file_integrity()` and `hashlib` import |
+| `services/cloud-agent/fix_my_pi.py` | 333 | Has file integrity check (diagnostic #6); **active — cloud_agent.py imports this via relative path** |
+
+`cloud_agent.py` runs from `cloud-agent/` and imports `from fix_my_pi import run_diagnostics` — resolves
+to the 333-line copy. The 251-line root copy is dead weight. The error message in `cloud_agent.py` points
+to `/opt/d3kos/services/fix_my_pi.py` (root path) — this path description is wrong; the active import
+resolves to `cloud-agent/fix_my_pi.py`.
+
+### Root Cause
+
+BUG-83 §5 pattern: a stale copy was not cleaned up when the cloud-agent version was extended.
+
+### Fix
+
+Delete `services/fix_my_pi.py` (root stale copy). Update the error message in `cloud_agent.py` to
+reference the correct path `cloud-agent/fix_my_pi.py`.
+
+### Affected Files
+
+- `deployment/v0.9.9.4/opt/d3kos/services/fix_my_pi.py` — DELETE (stale)
+- `deployment/v0.9.9.4/opt/d3kos/services/cloud-agent/cloud_agent.py` — error string correction
+
+### signalk_client.py — NOT a bug (design note)
+
+`services/ai/signalk_client.py` (145L, class-based `SignalKClient`) and `services/ai-bridge/utils/signalk_client.py`
+(188L, function-based `get_navigation_snapshot`) are different implementations for different services.
+`query_handler.py` uses the ai/ class; `ai-bridge` uses the utils/ function interface. Both are in active
+use. Design smell (two SK interfaces) but not a stale-duplicate bug. If SK clients are ever unified, these
+merge; not worth doing now.
+
