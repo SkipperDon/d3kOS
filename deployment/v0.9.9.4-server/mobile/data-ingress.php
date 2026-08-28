@@ -226,6 +226,30 @@ while ( $row = $result->fetch_assoc() ) {
 
 $tier = amboat_get_user_meta( $user_id, 'atmyboat_tier' ) ?: 'T0';
 
+// BUG-65 Step 3 — Server-side entitlement audit.
+// If Pi sends tier_claimed, compare against server entitlement ($tier = Stripe-backed usermeta).
+// Log mismatch rows to amboat_registration_audit. Never auto-downgrade.
+$tier_claimed = isset( $body['tier_claimed'] ) ? sanitize_key( $body['tier_claimed'] ) : null;
+if ( $tier_claimed !== null && $tier_claimed !== $tier ) {
+    $db_a  = amboat_get_db();
+    $stmt_a = $db_a->prepare(
+        "INSERT INTO amboat_registration_audit (event, user_id, detail, ip, created_at)
+         VALUES ('tier_mismatch', ?, ?, ?, NOW())"
+    );
+    if ( $stmt_a ) {
+        $mismatch_detail = substr(
+            "claimed={$tier_claimed},server={$tier}" .
+            ',detected=' . sanitize_key( (string) ( $body['tier_detected'] ?? '' ) ) .
+            ',opencpn='  . ( ! empty( $body['opencpn_present'] ) ? '1' : '0' ) .
+            ',subkey='   . ( ! empty( $body['subscription_key_present'] ) ? '1' : '0' ),
+            0, 255
+        );
+        $ip_a = substr( $_SERVER['REMOTE_ADDR'] ?? '', 0, 45 );
+        $stmt_a->bind_param( 'iss', $user_id, $mismatch_detail, $ip_a );
+        $stmt_a->execute();
+    }
+}
+
 // Return full feature flags so Pi always has current entitlements without a separate call
 $feature_matrix = [
     'T0' => [
