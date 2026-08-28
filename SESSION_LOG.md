@@ -7125,3 +7125,51 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+QUALITY METRICS — 2026-08-28
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+NOTE: TDD gap — T3 (debounce oscillation) and T12 (crash guard) for BUG-24 not
+pre-observed failing before fix. Lab-sim lacked the 'oscillate' scenario (T3);
+T12 could have been tested by renaming the DB — not done. Reported here; does
+not reduce formula-defined metrics but is a genuine quality gap.
+
+RELEASE PACKAGE MANIFEST — S136
+─────────────────────────────────────────────────────
+Version: 0.9.9.4 (no version bump — bug fixes only)
+Update type: incremental
+Platform A: HostPapa live (atmyboat.com)
+Changed files:
+| File | HostPapa Path | Change |
+|------|---------------|--------|
+| page-my-account.php | wp-content/themes/twentytwenty-child/ | BUG-87: R1 throttle + R2 pw-gate on delete |
+| data-ingress.php | wp-content/themes/twentytwenty-child/mobile/ | BUG-91 T0 default + BUG-65 Step 3 audit |
+| pair-device.php | wp-content/themes/twentytwenty-child/mobile/ | BUG-71 ABSPATH guard |
+| device-registration.php | wp-content/themes/twentytwenty-child/ | BUG-90 unprefixed table names |
+| page-register.php | wp-content/themes/twentytwenty-child/ | BUG-90 unprefixed table name |
+| staging/.htaccess | staging/ | BUG-85 staging isolation |
+| version.php | wp-content/themes/twentytwenty-child/mobile/ | BUG-89 OTA manifest |
+| (deleted) inc/atmyboat-functions.php | wp-content/themes/twentytwenty-child/inc/ | BUG-88 Part 2 landmine removed |
+
+Platform B: Lab Pi (192.168.1.237)
+Changed files:
+| File | Pi Path | Change |
+|------|---------|--------|
+| boatlog_capture.py | /opt/d3kos/services/boatlog/ | BUG-24 engine capture service (new) |
+| d3kos-boatlog-capture.service | /etc/systemd/system/ | BUG-24 systemd unit (new, enabled) |
+| app.py | /opt/d3kos/services/dashboard/ | BUG-24 /api/boatlog/entries + BUG-82 proxy routes |
+| boat-log.html | /opt/d3kos/services/dashboard/templates/ | BUG-24 server merge + BUG-82 BOATLOG_API='' |
+| boatlog-engine.js | /opt/d3kos/services/dashboard/static/js/ | BUG-24 RETIRED header |
+| community-api.py | /opt/d3kos/services/community/ | BUG-76/89 canonical URLs |
+
+Post-install steps: d3kos-boatlog-capture enabled and running; d3kos-dashboard restarted.
+Rollback: git revert the relevant commits; re-deploy via scp/tee.
+Health check: curl :3000/api/boatlog/entries → ok:true; systemctl is-active d3kos-boatlog-capture → active
+─────────────────────────────────────────────────────
