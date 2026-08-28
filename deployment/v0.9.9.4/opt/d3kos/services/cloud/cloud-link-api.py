@@ -53,7 +53,7 @@ def read_last_push():
 def link_device():
     """Receive credentials from atmyboat.com and write cloud-credentials.json."""
     data = request.get_json(silent=True) or {}
-    required = ['boat_uuid', 'device_api_key', 'supabase_url', 'supabase_anon_key', 'tier']
+    required = ['boat_uuid', 'device_api_key', 'supabase_url', 'supabase_anon_key', 'tier', 'webhook_url']
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({'success': False, 'error': f'Missing fields: {", ".join(missing)}'}), 400
@@ -63,7 +63,7 @@ def link_device():
         'device_api_key':   data['device_api_key'],
         'supabase_url':     data['supabase_url'],
         'supabase_anon_key': data['supabase_anon_key'],
-        'webhook_url':      data.get('webhook_url', 'https://atmyboat.com/api/notify'),
+        'webhook_url':      data['webhook_url'],
         'tier':             data['tier'],
         'linked_at':        datetime.utcnow().isoformat() + 'Z'
     }
