@@ -1,0 +1,30 @@
+[Unit]
+Description=d3kOS Boatlog Capture — engine auto-log (BUG-24)
+Documentation=https://github.com/SkipperDon/d3kOS
+After=network.target d3kos-signalk.service
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/boatlog
+ExecStart=/usr/bin/python3 /opt/d3kos/services/boatlog/boatlog_capture.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# PYTHONUNBUFFERED=1 is mandatory — without it CPython block-buffers print()
+# under systemd (socket, not TTY) and five months of failures can go unseen (BUG-54).
+Environment=PYTHONUNBUFFERED=1
+
+# Resource limits
+MemoryMax=128M
+CPUQuota=10%
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

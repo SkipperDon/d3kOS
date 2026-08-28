@@ -1,4 +1,10 @@
-/* boatlog-engine.js — d3kOS v0.9.2.3 Session D
+/* RETIRED 2026-08-28 — BUG-24 Option A
+   Engine capture replaced by boatlog_capture.py (server-side service).
+   This file is kept on disk so the diagnosis history remains recoverable.
+   The <script> tag in boat-log.html was removed; this code no longer runs.
+
+   Original description:
+   boatlog-engine.js — d3kOS v0.9.2.3 Session D
    Engine start/stop detection via Signal K WebSocket.
    Captures automatic entries into the boat log on:
      - Engine start (RPM transitions 0 → running)

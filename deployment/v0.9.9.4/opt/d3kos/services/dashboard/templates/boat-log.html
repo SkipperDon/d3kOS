@@ -606,15 +606,46 @@ function exportCSV() {
     .catch(function(err) { alert('Export failed: ' + err.message); });
 }
 
+/* ── Server fetch + merge (BUG-24) ── */
+function _fetchServerEntries() {
+  fetch('/api/boatlog/entries')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok || !Array.isArray(data.entries)) return;
+      var local   = loadEntries();
+      var byId    = {};
+      local.forEach(function(e) { if (e.entry_id) byId[e.entry_id] = e; });
+      data.entries.forEach(function(e) {
+        if (!byId[e.entry_id]) {
+          // Map server schema → local display schema
+          byId[e.entry_id] = {
+            entry_id  : e.entry_id,
+            timestamp : e.timestamp,
+            type      : e.entry_type,
+            text      : e.content || '',
+          };
+        }
+      });
+      var merged = Object.values(byId);
+      merged.sort(function(a, b) {
+        return (b.timestamp || '').localeCompare(a.timestamp || '');
+      });
+      saveEntries(merged);
+      renderEntries();
+    })
+    .catch(function() { /* server not reachable — localStorage entries still render */ });
+}
+
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function() {
   renderEntries();
   refreshStatus();
+  _fetchServerEntries();  // BUG-24: merge server-written engine entries on load
 });
 </script>
 
-<!-- Engine auto-capture module: SK WebSocket → ENGINE entries in boat log -->
-<script src="{{ url_for('static', filename='js/boatlog-engine.js') }}"></script>
+<!-- boatlog-engine.js retired by BUG-24 (2026-08-28): engine capture moved to
+     boatlog_capture.py (server-side service). File kept on disk for history. -->
 
 </body>
 </html>

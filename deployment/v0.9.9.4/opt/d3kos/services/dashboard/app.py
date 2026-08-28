@@ -20,6 +20,7 @@ import sys
 import hashlib
 import shutil
 import socket
+import sqlite3
 import subprocess
 import requests
 from pathlib import Path
@@ -491,6 +492,37 @@ def settings():
         tier_num=tier_num,
         device_token=device_token,
     )
+
+
+_BOATLOG_DB = Path('/opt/d3kos/data/boatlog/boatlog.db')
+
+
+@app.route('/api/boatlog/entries')
+def api_boatlog_entries():
+    """
+    BUG-24 — Return all boatlog entries from SQLite so boat-log.html can render
+    them without the page having been open during the session.
+
+    Read-only connection (uri=True, mode=ro) — the dashboard must never write
+    to the log. Returns 200 with empty list when DB absent (kiosk with no log yet).
+    Served on :3000 (same origin as boat-log.html) — sidesteps F3 loopback bind
+    on boatlog-export-api.py :8095.
+    """
+    if not _BOATLOG_DB.exists():
+        return jsonify({'ok': True, 'entries': []})
+    try:
+        uri = f'file:{_BOATLOG_DB}?mode=ro'
+        with sqlite3.connect(uri, uri=True) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT entry_id, timestamp, entry_type, content, "
+                "latitude, longitude, weather_conditions "
+                "FROM boatlog_entries ORDER BY timestamp DESC"
+            ).fetchall()
+        entries = [dict(r) for r in rows]
+        return jsonify({'ok': True, 'entries': entries})
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 500
 
 
 @app.route('/api/recovery-key')
