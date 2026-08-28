@@ -525,6 +525,48 @@ def api_boatlog_entries():
         return jsonify({'ok': False, 'error': str(exc)}), 500
 
 
+_BOATLOG_API_BASE = 'http://127.0.0.1:8095'
+
+
+@app.route('/api/boatlog/status')
+def api_boatlog_status():
+    """BUG-82 Option B — proxy to boatlog-export-api.py :8095 (loopback only) so remote browsers work."""
+    try:
+        r = requests.get(f'{_BOATLOG_API_BASE}/api/boatlog/status', timeout=5)
+        return (r.content, r.status_code, {'Content-Type': r.headers.get('Content-Type', 'application/json')})
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc), 'entry_count': 0}), 503
+
+
+@app.route('/api/boatlog/voice-note', methods=['POST'])
+def api_boatlog_voice_note():
+    """BUG-82 Option B — proxy voice-note upload to :8095."""
+    try:
+        r = requests.post(
+            f'{_BOATLOG_API_BASE}/api/boatlog/voice-note',
+            data=request.get_data(),
+            headers={k: v for k, v in request.headers if k.lower() not in ('host', 'content-length')},
+            timeout=30
+        )
+        return (r.content, r.status_code, {'Content-Type': r.headers.get('Content-Type', 'application/json')})
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 503
+
+
+@app.route('/api/boatlog/export', methods=['POST'])
+def api_boatlog_export():
+    """BUG-82 Option B — proxy CSV export to :8095."""
+    try:
+        r = requests.post(f'{_BOATLOG_API_BASE}/api/boatlog/export', timeout=30)
+        headers = {
+            'Content-Type': r.headers.get('Content-Type', 'text/csv'),
+            'Content-Disposition': r.headers.get('Content-Disposition', 'attachment; filename="boatlog.csv"'),
+        }
+        return (r.content, r.status_code, headers)
+    except Exception as exc:
+        return jsonify({'ok': False, 'error': str(exc)}), 503
+
+
 @app.route('/api/recovery-key')
 def api_recovery_key():
     """

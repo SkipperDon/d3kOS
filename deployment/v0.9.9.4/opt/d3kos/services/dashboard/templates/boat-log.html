@@ -309,11 +309,11 @@
 <script>
 /* ── Boatlog page — v0.9.2.3 Session D
    Voice log + engine entry rendering.
-   Engine capture is handled by boatlog-engine.js loaded at end of body.
-   API: boatlog-export-api.py at localhost:8095
+   Engine capture is handled by boatlog_capture.py (server-side service, BUG-24).
+   API: routed via app.py :3000 (BUG-82 Option B — was :8095 loopback, unreachable from remote browsers).
 */
 
-var BOATLOG_API   = 'http://' + window.location.hostname + ':8095';
+var BOATLOG_API   = '';
 var mediaRecorder = null;
 var audioChunks   = [];
 var recTimerID    = null;
@@ -445,8 +445,12 @@ function deleteEntry(i) {
 /* ── Status check ── */
 function refreshStatus() {
   fetch(BOATLOG_API + '/api/boatlog/status')
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(d) {
+      if (d.ok === false) throw new Error(d.error || 'service error');
       var dot  = document.getElementById('api-dot');
       var stat = document.getElementById('api-status');
       var cnt  = document.getElementById('entry-count');
@@ -456,11 +460,11 @@ function refreshStatus() {
       if (cnt)  cnt.textContent  = d.entry_count !== undefined ? d.entry_count : '—';
       if (cdot) { cdot.classList.remove('off'); cdot.classList.add('ok'); }
     })
-    .catch(function() {
+    .catch(function(err) {
       var dot  = document.getElementById('api-dot');
       var stat = document.getElementById('api-status');
       if (dot)  { dot.classList.remove('ok'); dot.classList.add('off'); }
-      if (stat) stat.textContent = 'unavailable';
+      if (stat) stat.textContent = 'unavailable (' + (err.message || 'error') + ')';
     });
 }
 
