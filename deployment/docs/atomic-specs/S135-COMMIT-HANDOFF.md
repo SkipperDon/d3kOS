@@ -129,17 +129,39 @@ anything under `.claude/`:
 the stale `D3kFtp2026!` pair at lines 507–508 that S134 replaced. **Two records, one truth.** Reconcile
 them; a reader hitting line 507 first gets a password that has not worked for months.
 
-### B2 — The 276 noise entries: leave them, report them
+### B2 — The 276 noise entries: commit separately, then propose the cleanup
 
 `.claude/` (file-history, backups, paste-cache, `projects/*.jsonl`), `.npm/_cacache`, `.npm/_logs`,
 `.cache/gh/`, `.bash_history`, and the `@anthropic-ai/claude-code` npm binaries are all runtime churn
-from Claude Code and npm. **They are tracked, which is why this repo is never clean.**
+from Claude Code and npm. **They are tracked, which is why this repo is never clean** — and why the
+Pre-Edit Snapshot Rule fires a false alarm at the start of every single session.
 
-**Do not `.gitignore` them in this task.** Untracking ~276 paths changes the repo layout and is an
-operator decision, not a hygiene commit. **Raise it as one labelled `SUGGESTION:` line and move on.**
+**This task: commit them in their own commit**, after B1, message `chore: runtime cache churn (S135)`.
+⚠ Subject to **B1a** — if the FTP passwords have not been rotated, **omit `.claude/projects/*.jsonl`**
+and say so.
 
-Either commit them in a **separate** commit (`chore: runtime cache churn`) or leave them dirty — your
-call, but the three real items in B1 must be in a commit of their own so the history is readable.
+**Then propose the permanent cleanup — do NOT execute it in this task.** Untracking ~276 paths changes
+the repo layout and is the operator's call. Present exactly this and wait:
+
+```
+SUGGESTION: untrack the runtime-churn trees in /home/boatiq —
+  .claude/{file-history,backups,paste-cache,projects}/  .npm/  .cache/  .bash_history
+  .npm-global/lib/node_modules/@anthropic-ai/
+  — because they are the ONLY reason `git status` is never clean, which makes the AAO §17
+    snapshot check useless: a real uncommitted change is invisible among 276 noise entries.
+  — what would change: add the paths to .gitignore, then `git rm -r --cached <path>` for each.
+    ⚠ `--cached` ONLY. Files stay on disk; only the index entry is removed.
+    ⚠ One commit per tree, so a mistake is revertible in isolation.
+    ⚠ `.claude/projects/*.jsonl` are session transcripts — confirm the operator does not
+      rely on git history for them before untracking.
+  Apply?
+```
+
+⛔ **Never `git rm` without `--cached` here.** These are live runtime directories — Claude Code's own
+state, npm's cache, and the shell history. Deleting them from disk breaks the working environment.
+
+⛔ **The three real items in B1 must be in a commit of their own**, before this one, so the history
+shows the project change separately from the noise.
 
 ---
 

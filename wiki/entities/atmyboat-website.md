@@ -93,3 +93,19 @@ Credentials in CREDENTIAL_VAULT.md Live Mode section.
 - [[entities/pwa]] — mobile PWA hosted here
 - [[entities/admin-console-vm]] — CRM admin interface manages site data
 - [[concepts/php-proxy-pattern]]
+
+## ⚠ S135 2026-08-28 — corrections established from live reads
+
+- **Staging DB is `atmyb197_wp5888`, NOT `atmyb197_wp302`.** *This is why the "wp302 credentials" read as
+  broken — the credentials are fine, the database name was wrong.* Live is `atmyb197_wp59874`;
+  prefix **`wpax_`** confirmed on both. The two databases are separate.
+- **Staging is NOT a test environment for page routes.** `/staging/.htaccess` is a verbatim copy of the
+  live site's (`RewriteBase /`, `RewriteRule . /index.php [L]`), so `/staging/about/` **301s to
+  `atmyboat.com/about/`**. Only the homepage and real files stay on staging. → BUG-85.
+  ⚠ `siteurl`/`home` are CORRECT — do not edit `wpax_options` chasing this.
+- **Production `mobile/` holds 76 PHP files; the repo has 44.** 32 run live with no source anywhere. → BUG-88.
+- **The registration audit trail has never recorded a row** — `$wpdb->prefix` applied to a deliberately
+  unprefixed table. The `amboat_*` tables are unprefixed **by documented design**. → BUG-90.
+- **`data-ingress.php` fails OPEN to Tier 1** for any user with missing or falsy `atmyboat_tier`. → BUG-91.
+- Endpoint truth: `community-get.php` + `community-markers.php` are the deployed community endpoints.
+  `api-admin.php` is a **placeholder token in a config string**, never a file.

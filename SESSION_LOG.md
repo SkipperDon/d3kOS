@@ -5401,3 +5401,78 @@ Notes:
 - One in-session code defect fixed (cleanup script republish block was inside the count>0 conditional; restructured to run unconditionally). This is new-code correction, not a git rollback — REC stays 0.
 - All 3 BUG-63 Step 3 actions (HTML form fix, republish, botnet cleanup) had prior explicit APPROVED from operator.
 
+
+## S135 — 2026-08-28
+
+**Goal:** Instruct Sonnet to commit the outstanding trees; create atomic specs for the remaining
+unsolutioned bugs; determine whether Sonnet followed instructions.
+
+**Scope note:** operator directed **lab Pi only — boat Pi out of scope.** That reframed the count:
+~25 `[~]` "fixed lab, NOT on boat" entries are effectively closed, leaving a genuine handful.
+
+**Completed:**
+- **Sonnet audit.** Engineering held — correct sequencing, honest prerequisite-abort on BUG-81,
+  promote-not-prune honoured, real tests, never pushed. **Seven records-vs-reality gaps found**, chiefly:
+  the BUG-66/BUG-72 **live** deploy (commit `904a4f47`) is recorded in **no** governance file — no
+  SESSION_LOG entry, no Release Package Manifest, and four records still said "never deployed"; the
+  GATE 0 table was deleted as "all cleared" while four items still referenced it; SQS 100/100 was
+  self-reported with OIC omitted; two divergent SESSION_LOG files.
+- **Lab Pi verified live** via `release-state.sh`: **213 identical, 0 drifted, 1 missing** (a README).
+  Sonnet's "all deployed" claim **holds**. ⚠ `MANIFEST.md5` is stale (8 changed, 2 never added).
+- **Twelve items investigated one-by-one** with live evidence (FTPS, sequential read-only HTTPS probes,
+  lab Pi journal/queue, live HostPapa error logs).
+- **16 atomic specs written**; `EXECUTION-ORDER.md` PHASE 5 (17 ordered items) + gates table restored.
+- **BUG-84 FIXED** — two unauthenticated scratch scripts deleted from staging, operator-approved,
+  backed up byte-identically and md5-verified first.
+- **BUG-64 and BUG-73 closed NOT A BUG.** BUG-57 re-scored CRITICAL → HIGH/CONTAINED.
+- **BUG-65 §4 FEATURE_MATRIX reconciliation completed** — 0 value mismatches; BUG-77's deferred
+  concern answered.
+
+**Six premises overturned by live reads** — BUG-72, BUG-73, BUG-71, BUG-64, BUG-56, BUG-60. Every one
+had been recorded from an inference rather than a read.
+
+**New bugs logged (82–91), four HIGH:** BUG-85 (staging `.htaccess` is live's — staging page-routes are
+served by production), BUG-89 (three Pi→server 404s incl. the OTA `VERSION_URL`), BUG-90 (registration
+audit trail has never recorded a row), BUG-91 (entitlement authority fails open to Tier 1).
+
+**Decisions:**
+- BUG-24 → **Option A** (server-side capture). Model on `predictive_maintenance.py`, not
+  `alert_watcher.py` — S131's recommendation came from documents; the running code is a closer match.
+- BUG-57 → re-scored; **CAPTCHA dropped as redundant** behind the device gate; **user notification out
+  of scope** for v0.9.9.4 (recorded as out-of-scope, **not** resolved — it is a PIPEDA question).
+- Read-only HTTPS probes and FTP reads authorised; **sequential only** (Wordfence treats parallel sweeps
+  as scanners).
+
+**BUG-54 Part 2:** regression **dated to 2026-04-22** — 237 successes preceded it; six hypotheses
+eliminated. The record's "failed continuously since 2026-02-20" framing was wrong.
+
+**Errors made this session, corrected:**
+1. A redaction pattern failed to match a table layout and **printed two FTP passwords** into the
+   transcript. Operator advised to rotate; the commit handoff now gates on it.
+2. Claimed the staging→live `.htaccess` bleed was "proven" before it was; retracted and then proved
+   properly by checking whose assets the 404 page loads.
+3. Listed BUG-75 among the overturned premises. **It was always accurate** — four, not five. Retracted
+   in both records rather than quietly edited out.
+
+**Not completed / deferred:** BUG-54 Part 2 root cause (needs one approved POST, then the nginx log,
+G3) · BUG-56 (needs `proxy_url` from the CRM VM — unreachable, ping 100% loss) · BUG-65 Step 3 (blocked
+on BUG-91) · all 16 specs are **unexecuted**.
+
+**Operator actions required:** rotate the two FTP passwords (G11) · MailPoet Q3 screenshot (G8 — can
+re-escalate BUG-57 to CRITICAL) · two Settings→Discussion checkboxes (BUG-60) · approve BUG-85's
+`.htaccess` change · approve the one BUG-54 POST · count users with falsy `atmyboat_tier` (G9) ·
+`SHOW TABLES` for the audit table (G10).
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-08-28 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**task_classification:** ARCHITECT — Tier 1. Reason: spec authorship governing multiple future sessions
+plus cross-system diagnosis across Pi, HostPapa and two repos.
+
+**Deployed:** nothing, except the two BUG-84 file deletions on HostPapa staging (operator-approved,
+backed up first). No `git push`.
+
+---

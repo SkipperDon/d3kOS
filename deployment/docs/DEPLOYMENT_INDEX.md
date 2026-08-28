@@ -7,6 +7,75 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — S135 ATOMIC SPEC SET + 10 bugs logged, 6 premises overturned (S135 2026-08-28)
+
+**Twelve open items investigated one-by-one against live evidence** — FTP reads of production, sequential
+read-only HTTPS probes, the lab Pi, and the live HostPapa error logs. **Start at
+`atomic-specs/EXECUTION-ORDER.md` → PHASE 5.**
+
+⚠⚠ **SIX PREMISES WERE OVERTURNED BY LIVE READS. Every one had been recorded from an inference.**
+
+| Bug | Was recorded as | Actually |
+|---|---|---|
+| BUG-72 | "written, never deployed; vector not live" | **live, returns 401** — correct auth behaviour |
+| BUG-73 | "absent from BOTH production and the repo" | **present in both, byte-identical, working** |
+| BUG-71 | "500 — the fault is inside the file" | **not an endpoint** — a missing `ABSPATH` guard |
+| BUG-64 | HIGH — potential privilege escalation | **no role field exists** — closed NOT A BUG |
+| BUG-56 | "the endpoint does not exist — a BUILD task" | **a placeholder token in a config string** |
+| BUG-60 | "spammers create accounts via /register/" | **comments are open to anonymous visitors** |
+
+**Probe to find a candidate. Read the file or list the directory to conclude. A status code is a
+response, not a fact.**
+
+### New atomic specs
+
+| File | Description |
+|------|-------------|
+| `deployment/docs/atomic-specs/S135-COMMIT-HANDOFF.md` | **[NEW — S135]** Item 0.5. Commit the uncommitted `/home/boatiq` and `atmyboat-forum` trees. ⚠ `mobile/crm-config.php` is untracked, credential-bearing and **not** matched by `.gitignore` — a blanket `git add -A` commits it. ⛔ `/home/boatiq` has no remote and must never get one. |
+| `atomic-specs/BUG-90.md` | **[NEW — HIGH]** The registration audit trail has **never recorded a row** — `device-registration.php:121` applies `$wpdb->prefix` to a deliberately unprefixed table. ⛔ Gated on a live `SHOW TABLES`: if neither table exists, a consumer-only fix writes nowhere and looks closed. |
+| `atomic-specs/BUG-91.md` | **[NEW — HIGH, revenue]** The entitlement authority **fails open to Tier 1** (`data-ingress.php:148/227/272`) and discards all four BUG-65 Step 2 audit fields. ⛔ Count affected users before closing the default — blind fail-closed is an outage for paying customers. **Blocks BUG-65 Step 3.** |
+| `atomic-specs/BUG-85.md` | **[NEW — HIGH]** `/staging/.htaccess` is a copy of live's; every staging page-route is served or 301'd by **production**. ⚠ `siteurl`/`home` are CORRECT — do not edit `wpax_options` again. |
+| `atomic-specs/BUG-89.md` | **[NEW — HIGH]** Three Pi→server URLs 404, incl. `update_agent.py:47` `VERSION_URL`. ⚠ BUG-55 fixed that line's **host** and left its **filename** wrong — likely why no OTA has ever run. |
+| `atomic-specs/BUG-88.md` | **[NEW]** 32 production `mobile/*.php` files exist nowhere in the repo (76 live vs 44) + a dormant `get_template_directory()` parent-theme include. ⛔ Do not copy production in wholesale — some repo copies are newer. Feeds `PHASE3-server-canonical-tree.md` Step 1. |
+| `atomic-specs/BUG-56.md` | **[NEW]** `api-admin.php` is a placeholder token, not an endpoint. ⛔ Do not build it. **Two spellings** (`api-admin` / `admin-api`) mean no single `proxy_url` value can work. |
+| `atomic-specs/BUG-76.md` | **[NEW]** Five naming schemes, not three; the **live Pi code matches none**. Canonical = what is deployed. Fix the spec, not the endpoints. |
+| `atomic-specs/BUG-54-PART2.md` | **[NEW]** ⚠ **The regression has a date: 2026-04-22.** 237 successes preceded it. Six hypotheses eliminated. One approved POST splits size-vs-path. |
+| `atomic-specs/BUG-60.md` | **[NEW]** Comments open to anonymous visitors, author-`url` field, **zero** anti-spam layers. Requiring login is now a strong control *because of* BUG-63. |
+| `atomic-specs/BUG-57-MAILPOET.md` | **[NEW]** BUG-57's sole remaining item. Q3 (auto-create-user on subscribe) answered first — it can re-escalate BUG-57 to CRITICAL. |
+| `atomic-specs/BUG-71.md` | **[NEW]** Three-line `ABSPATH` guard. ⛔ Do **not** guard the other 42 `mobile/*.php` — they are standalone endpoints; guarding them breaks every Pi→server call. |
+| `atomic-specs/BUG-82.md` | **[NEW]** `boatlog-export-api.py` binds `127.0.0.1`; all four :8095 endpoints fail from any remote browser. Also fix the empty `.catch()` handlers that hid it. |
+| `atomic-specs/BUG-83.md` | **[NEW]** De-duplicate `alert_watcher.py`. ⛔ Promote, do not prune. **Third instance of the pattern Phase 0.4 missed** — sweep for more. |
+| `atomic-specs/BUG-87.md` | **[NEW — LOW]** My Account throttling + password on delete. ⛔ Check Wordfence first. ⚠ A throttle that locks the owner out is worse than none. |
+| `atomic-specs/BUG-75.md` | **[NEW]** Steps 1–2 done; only the `/mobile/` alias decision remains. ⚠ Its entry was always accurate — a S135 claim that it was an "overturned premise" is retracted. |
+| `atomic-specs/BUG-24.md` | **[REWRITTEN — S135]** Option A chosen (G6 cleared). ⚠ Model on `predictive_maintenance.py`, **not** `alert_watcher.py`. The UI read path is part of the fix — `boat-log.html` renders from `localStorage`, so a server-side writer alone leaves the operator seeing nothing. |
+| `atomic-specs/EXECUTION-ORDER.md` | **[UPDATED — S135]** PHASE 5 added (17 ordered items) + **operator gates table RESTORED**. ⚠ S134 deleted the gates as "all cleared" while items 1.5/3.1/3.3 still referenced G2/G3/G4/G6 — dangling for four sessions. G2 and G6 now genuinely cleared; G8–G11 added. |
+| `atomic-specs/PHASE3-blocked-items.md` | **[CORRECTED — S135]** Its BUG-71 section claimed "step 2 of PWA pairing… every PWA integration test is blocked behind it — the critical path." **Wrong.** The handler is registered; nothing is blocked. Original retained under a superseded banner. |
+| `deployment/v0.9.9.4-server/mobile/pair-device.php` | **[NEW — S135]** Unsourced production code captured **byte-identical before analysis** (commit `13eebcbc`, md5 `b3ccd9f3…`), per `PHASE3-blocked-items.md`. |
+
+### Fixed this session
+
+| File | Description |
+|------|-------------|
+| `staging/d3k-rawcheck.php`, `staging/d3k-deactivate.php` (HostPapa) | **[DELETED — S135, operator-approved]** BUG-84. Two unauthenticated one-shot scripts left live for ten days. `d3k-rawcheck.php` read DB credentials from `wp-config.php` and dumped `active_plugins`; `d3k-deactivate.php` was a public, unauthenticated kill switch for the BUG-63 anti-bot gate. Backed up byte-identically and md5-verified **before** deletion → `.aao-backups/20260828_112110_S135/`. ⚠ S134-cont's log recorded the one-shots as "committed + deleted" — three were, these two were not, and nothing verified it. |
+
+### Records corrected
+
+`V09994_BUG_FIXES.md` **85 entries** · `PROJECT_CHECKLIST.md` **v3.59, 84 PART 17 rows**.
+BUG-57 re-scored CRITICAL→HIGH/CONTAINED (its S121 "primary vector closed" credited a control BUG-63
+later proved was a no-op — the form was open for nine days while the record said otherwise).
+BUG-64 and BUG-73 closed NOT A BUG. BUG-61's front-end half closed, remainder → BUG-85.
+✅ **BUG-65 §4 FEATURE_MATRIX reconciliation completed: 0 value mismatches** — BUG-77's deferred concern
+is answered, no divergence bug exists.
+⚠ **Self-correction:** BUG-75 was briefly listed as an overturned premise; it was always accurate.
+**Four overturned, not five.** Retracted in both records.
+
+⚠ **Documentation correction:** staging's database is **`atmyb197_wp5888`**, not `atmyb197_wp302` —
+*that is why those credentials read as "broken"*. Live is `atmyb197_wp59874`, prefix **`wpax_`** confirmed.
+
+**Nothing deployed except the BUG-84 deletions. No `git push`.**
+
+---
+
 ## v0.9.9.4 — Device-Tied Forum Registration Spec v2.0.0 + BUG-65/66 logged (S127 2026-08-22)
 
 | File | Description |

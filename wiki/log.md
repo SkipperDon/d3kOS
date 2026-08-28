@@ -159,3 +159,11 @@ Per-Pi delta for avnav_server.xml is now formally documented in `deployment/docs
 - Wiki pages updated: `wiki/entities/atmyboat-website.md` (FTP root path clarification, DB user corrected, device-gated registration section added)
 - Contradictions flagged: S17c rule "always 127.0.0.1" is STALE — localhost (socket) works for production DB atmyb197_wp59874; 127.0.0.1 (TCP) does not. Memory file updated. Entity updated.
 - Open questions: BUG-57 CAPTCHA on now-live /register/; BUG-73 billing webhook still absent; BUG-76 5 endpoints 404
+
+## [2026-08-28] investigation+spec-authoring | S135 — 12 items investigated live; 6 premises overturned; 16 atomic specs
+- Files changed: `PROJECT_CHECKLIST.md` (v3.48→v3.59, 84 PART 17 rows) · `deployment/docs/V09994_BUG_FIXES.md` (81→85 entries) · `deployment/docs/DEPLOYMENT_INDEX.md` · 16 new `atomic-specs/*.md` · `atomic-specs/EXECUTION-ORDER.md` (PHASE 5 + gates table restored) · `atomic-specs/PHASE3-blocked-items.md` (BUG-71 section corrected) · `deployment/v0.9.9.4-server/mobile/pair-device.php` (captured byte-identical)
+- Wiki pages updated: log.md; `entities/atmyboat-website.md` (staging DB name correction)
+- Contradictions flagged: **6 bug premises overturned by live reads** — BUG-72 (live, not absent), BUG-73 (present in both repos), BUG-71 (not an endpoint), BUG-64 (no vulnerability), BUG-56 (placeholder token), BUG-60 (anonymous, not via /register/). All had been recorded from inference rather than a read.
+- Also flagged: S134 deleted the GATE 0 table as "all cleared" while items 1.5/3.1/3.3 still referenced G2/G3/G4/G6 — dangling four sessions, now restored. BUG-66 Phase C's "6 endpoints migrated" — 3 of 6 are not deployed.
+- Open questions: G3 (nginx log, unreachable by FTP) · G8 (MailPoet auto-create-user — can re-escalate BUG-57) · G9 (count of users with falsy `atmyboat_tier`) · G10 (which audit table exists live) · G11 (rotate FTP passwords)
+- Self-correction: BUG-75 was briefly listed as an overturned premise; its entry was always accurate. Four overturned, not five.
