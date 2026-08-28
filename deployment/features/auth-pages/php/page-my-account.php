@@ -89,13 +89,22 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['account_action'] ) 
         $pw_new = wp_unslash( $_POST['pw_new']     ?? '' );
         $pw_cf  = wp_unslash( $_POST['pw_confirm'] ?? '' );
 
-        if ( ! wp_check_password( $pw_cur, $current_user->user_pass, $user_id ) ) {
+        // BUG-87 R1 — throttle failed current-password checks: 5 failures = 15 min back-off.
+        // Time-boxed only; never permanent. Transient resets on success.
+        $fail_key   = 'atmyboat_pw_fail_' . $user_id;
+        $fail_count = (int) get_transient( $fail_key );
+
+        if ( $fail_count >= 5 ) {
+            $action_error = 'Too many failed attempts. Please try again in 15 minutes.';
+        } elseif ( ! wp_check_password( $pw_cur, $current_user->user_pass, $user_id ) ) {
+            set_transient( $fail_key, $fail_count + 1, 15 * MINUTE_IN_SECONDS );
             $action_error = 'Current password is incorrect.';
         } elseif ( strlen( $pw_new ) < 8 ) {
             $action_error = 'New password must be at least 8 characters.';
         } elseif ( $pw_new !== $pw_cf ) {
             $action_error = 'New passwords do not match.';
         } else {
+            delete_transient( $fail_key );
             wp_set_password( $pw_new, $user_id );
             // wp_set_password() invalidates the current auth cookie.
             // Re-authenticate so the user stays logged in.
@@ -149,9 +158,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['account_action'] ) 
     } elseif ( $act === 'delete_account' ) {
 
         $confirm = sanitize_text_field( wp_unslash( $_POST['confirm_delete'] ?? '' ) );
+        $pw_del  = wp_unslash( $_POST['pw_delete'] ?? '' );
 
         if ( $confirm !== 'DELETE MY ACCOUNT' ) {
             $action_error = 'Please type DELETE MY ACCOUNT exactly to confirm.';
+        } elseif ( ! wp_check_password( $pw_del, $current_user->user_pass, $user_id ) ) {
+            // BUG-87 R2 — require current password on deletion to close unattended-session risk
+            $action_error = 'Password incorrect. Account not deleted.';
         } else {
             require_once ABSPATH . 'wp-admin/includes/user.php';
             // Reassign any content to site admin (user 1) rather than deleting posts
@@ -536,6 +549,11 @@ get_header();
                             </label>
                             <input class="acct-inp" type="text" id="confirm_delete" name="confirm_delete"
                                 autocomplete="off" placeholder="DELETE MY ACCOUNT" aria-required="true">
+                        </div>
+                        <div class="acct-field">
+                            <label class="acct-lbl" for="pw_delete">Current password</label>
+                            <input class="acct-inp" type="password" id="pw_delete" name="pw_delete"
+                                autocomplete="current-password" aria-required="true">
                         </div>
                         <button type="submit" class="acct-btn btn-danger">Permanently Delete Account</button>
                     </form>

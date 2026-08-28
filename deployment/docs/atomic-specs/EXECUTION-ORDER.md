@@ -298,13 +298,15 @@ recorded from an inference rather than a read.**
 
 ### 5.2 — CORRECTNESS
 
-- [ ] **5.7 — `BUG-76.md`** — five naming schemes, not three; the **live Pi code matches none**.
-      Canonical = what is **deployed**. **Gates 5.8's part B.**
-- [ ] **5.8 — `BUG-89.md`** (HIGH) — three Pi→server URLs 404, including `update_agent.py`'s
-      `VERSION_URL`. ⚠ **BUG-55 fixed that line's host and left its filename wrong** — likely why no OTA
-      has ever run. Part B waits on 5.7.
-      ⚠ Build `verify-endpoints.sh`: `verify-bug55.sh` and `release-state.sh` both PASS while all three
-      are broken, because they check text and file identity, never whether a URL resolves.
+- [x] **5.7 — `BUG-76.md`** ✓ DONE S136 2026-08-28 — canonical names = deployed reality: `data-ingress.php`,
+      `community-markers.php`, `community-get.php`. Five retired naming schemes documented. §8.4.4 in
+      `doc/MASTER_SYSTEM_SPEC.md` rewritten to v4.1. `deployment/docs/ARCH_SERVICE_MAP.md` lines 204-207
+      corrected. `community-api.py` URLs fixed on both Pi and HostPapa. `verify-endpoints.sh` T5+T6 PASS.
+- [x] **5.8 — `BUG-89.md`** (HIGH) ✓ DONE S136 2026-08-28 — Part A: new `version.php` created at
+      canonical path; format matches `update_agent.py` expected parse `{incremental,major}`; curl PASS.
+      Part B: `community-api.py` URL fixes (done in 5.7). Part C: `cloud-link-api.py` `webhook_url` added
+      to required list. `deployment/tools/verify-endpoints.sh` created; T5 PASS (4 URLs, 0 failures),
+      T6 PASS (planted 404 caught). OTA endpoint now resolves for first time.
 - [ ] **5.9 — `BUG-56.md`** — `api-admin.php` is a **placeholder token, not an endpoint**.
       ⛔ **Do not build it.** Two spellings exist, so **no single `proxy_url` value can work.**
       Blocked on reading one config value from the CRM VM (unreachable from the lab 2026-08-28).
@@ -319,9 +321,11 @@ recorded from an inference rather than a read.**
 - [ ] **5.13 — `BUG-24.md`** — Boat Log engine auto-capture, **Option A** (G6 cleared).
       ⚠ Model on `predictive_maintenance.py`, **not** `alert_watcher.py`. The UI read path is part of the
       fix — a server-side writer alone leaves the operator seeing nothing.
-- [ ] **5.14 — `BUG-87.md`** (LOW) — My Account throttling + password on delete.
-      ⛔ **Check Wordfence first — the fix may already exist one layer up.**
-      ⚠ A throttle that locks the real owner out is worse than no throttle.
+- [x] **5.14 — `BUG-87.md`** (LOW) ✓ DONE S136 2026-08-28 — Wordfence confirmed: only covers
+      `/wp-login.php` (maxFailures=20, lockoutMins=240); custom page-my-account.php POST handler unprotected.
+      R1: 5-failure transient throttle (`atmyboat_pw_fail_{user_id}`, 15 min) on change_password handler.
+      R2: `wp_check_password($pw_del,...)` + `pw_delete` input field on delete_account handler.
+      Deployed to `wp-content/themes/twentytwenty-child/page-my-account.php` (24559 bytes). 4/4 PASS.
 - [ ] **5.15 — `BUG-88.md`** — **32 production files exist nowhere in the repo.** ⛔ **Do not copy
       production in wholesale** — some repo copies are newer. **Feeds `PHASE3-server-canonical-tree.md`
       Step 1; do this before 3.1.**
