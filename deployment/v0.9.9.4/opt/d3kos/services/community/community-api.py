@@ -46,7 +46,7 @@ def post_marker():
         }
         
         response = requests.post(
-            'https://atmyboat.com/api/community/markers',
+            'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/community-markers.php',
             json=payload,
             timeout=10
         )
@@ -70,7 +70,7 @@ def get_markers():
     
     try:
         response = requests.get(
-            f'https://atmyboat.com/api/community/markers?bbox={bbox}',
+            f'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/community-get.php?bbox={bbox}',
             timeout=10
         )
         

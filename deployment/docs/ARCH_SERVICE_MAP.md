@@ -144,22 +144,13 @@ All endpoints live under `atmyboat.com/wp-content/themes/twentytwenty-child/mobi
 |  | point, initiates charge|   | charges, queues command |             |
 |  +------------------------+   +-------------------------+             |
 |                                                                       |
-|  COMMUNITY (Node-RED flows — disabled until Phase 4)                 |
+|  COMMUNITY MAP (BUG-76 — canonical names from deployed reality)      |
 |  +------------------------+   +-------------------------+             |
-|  | community/markers.php  |   | community/position.php  |             |
-|  | Community map markers  |   | Position broadcast      |             |
+|  | community-markers.php  |   | community-get.php       |             |
+|  | Hazard marker overlay  |   | Fleet dots (read)       |             |
 |  +------------------------+   +-------------------------+             |
-|  +------------------------+                                           |
-|  | community/benchmark.ph |                                           |
-|  | Performance benchmarks |                                           |
-|  +------------------------+                                           |
-|                                                                       |
-|  TELEMETRY (Node-RED flows — disabled until Phase 4)                 |
-|  +------------------------+                                           |
-|  | telemetry/push.php     |                                           |
-|  | High-freq telemetry    |                                           |
-|  | ingest (future use)    |                                           |
-|  +------------------------+                                           |
+|  Position write is via data-ingress.php — no separate endpoint.      |
+|  telemetry-push / community-benchmark / community-position = RETIRED  |
 |                                                                       |
 |  WEBRTC SUPPORT                                                       |
 |  +------------------------+   +-------------------------+             |
@@ -201,10 +192,8 @@ All endpoints live under `atmyboat.com/wp-content/themes/twentytwenty-child/mobi
 | list-reports.php | app_token | PWA | List stored reports |
 | fix-my-pi-app.php | app_token | PWA | Initiate Fix My Pi charge |
 | fix-my-pi-billing.php | Stripe webhook secret | Stripe | Handle FMP payment webhook |
-| community/markers.php | app_token | Node-RED / Pi | Community map markers |
-| community/position.php | app_token | Node-RED / Pi | Position broadcast |
-| community/benchmark.php | app_token | Node-RED / Pi | Performance benchmarks |
-| telemetry/push.php | AMBOAT_API_KEY | Node-RED / Pi | High-freq telemetry (Phase 4) |
+| community-markers.php | app_token | PWA | Community hazard marker overlay |
+| community-get.php | app_token | PWA | Community map fleet dots |
 | turn-credentials.php | app_token | PWA | Generate TURN credentials |
 | rtc-signal.php | app_token | PWA + Pi | WebRTC signaling |
 | watchdog-alert.php | internal secret | Pi cron | Pi health alerts |

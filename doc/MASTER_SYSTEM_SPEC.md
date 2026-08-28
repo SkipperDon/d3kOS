@@ -6359,35 +6359,20 @@ Three flows deployed to Pi but disabled (waiting for live endpoints):
 
 #### 8.4.4 Website-Side Community API Endpoints (v0.9.4.1)
 
-⚠ **STATUS v4.0 (2026-08-24, S131) — BUG-76: ALL FIVE RETURN 404. NONE IS DEPLOYED.** Verified by live
-probe of production. §8.4.3's three Node-RED flows therefore remain non-functional regardless of their
-enabled state.
+⚠ **STATUS v4.1 (2026-08-28, S136) — BUG-76 CLOSED. Canonical names established from the deployed reality.** The community map pipeline works via `data-ingress.php` (positions embedded in the sync call) and `community-get.php` / `community-markers.php` (read paths). No separate POST endpoints are needed — `data-ingress.php` handles the position write. `telemetry-push.php` and `community-benchmark.php` were **never written and are not needed for v0.9.9.4**; if wanted, they are v0.9.9.5 features. `community-position.php` has been removed — position is written via `data-ingress.php`.
 
-⚠ **NAMING CONFLICT — three documents, three schemes for the same endpoints (BUG-76).** No document is
-currently a trustworthy deployment target:
+**Naming conflict resolved (BUG-76):** canonical = what is deployed.
 
-| This section (§8.4.4) | `ARCH_SERVICE_MAP.md` | Repo (`deployment/features/v0941-plan/php/`) |
+| Canonical name | Deployed? | Notes |
 |---|---|---|
-| `community-markers-post.php` | `community/markers.php` | `community-markers-write.php` |
-| `community-markers-get.php` | — | `community-get.php` |
-| `telemetry-push.php` | `telemetry/push.php` | — |
-| `community-position.php` | `community/position.php` | `community-position.php` |
-| `community-benchmark.php` | `community/benchmark.php` | — |
+| `data-ingress.php` | ✓ deployed | Handles sync + position write in one call |
+| `community-get.php` | ✓ deployed | Returns community map data for the PWA |
+| `community-markers.php` | ✓ deployed | Returns hazard marker overlay |
 
-**A canonical naming decision is required before any of these is built.** Recommendation: adopt the flat
-`community-*.php` / `telemetry-*.php` form used in this section, since it matches the repo most closely,
-then correct `ARCH_SERVICE_MAP.md`. Pending that decision the table below is a *design intent*, not a
-deployment target.
-
-Five new PHP endpoints required in the `mobile/` directory of the child theme:
-
-| File | Method | Purpose |
-|------|--------|---------|
-| `community-markers-post.php` | POST | Receives anonymised hazard marker from Pi. Auth: Bearer + X-Device-Token. Stores in `amboat_community_markers` table. |
-| `community-markers-get.php` | GET `?bbox=lat1,lng1,lat2,lng2` | Returns markers within bounding box. GPS rounded to 2 decimal places on output (≈1.1km blur). No auth required. |
-| `telemetry-push.php` | POST | Receives engine benchmark data from Node-RED. Stores in `amboat_telemetry` table. Used for fleet benchmarking. |
-| `community-benchmark.php` | POST | Receives performance comparison payload. Stored for community averages. |
-| `community-position.php` | POST | Receives boat position update. Checks user's `atmyboat_map_sharing` preference. Stores/updates position for community map dot. Drops positions inactive > 30 days. |
+**Retired names — do not use in code or docs:**
+- `community-markers-post.php` / `community-markers-get.php` (this section, pre-v4.1)
+- `community/markers.php`, `community/position.php`, `community/benchmark.php`, `telemetry/push.php` (`ARCH_SERVICE_MAP.md`, pre-S136)
+- `community-markers-write.php`, `community-position.php` (design tree)
 
 **Community map privacy rules (enforced at output):**
 - All GET endpoints round GPS to 2 decimal places (≈1.1km)

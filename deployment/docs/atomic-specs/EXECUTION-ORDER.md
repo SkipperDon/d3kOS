@@ -274,19 +274,19 @@ recorded from an inference rather than a read.**
 
 ### 5.1 — SECURITY FIRST (operator's standing ordering)
 
-- [ ] **5.1 — `BUG-90.md`** (HIGH) — the registration audit trail has **never recorded a row**.
+- [x] **5.1 — `BUG-90.md`** (HIGH) — the registration audit trail has **never recorded a row**.
       `device-registration.php:121` applies `$wpdb->prefix` to a deliberately unprefixed table.
       ⛔ **Gated on G10** — read the live DB first. If neither table exists, a consumer-only fix writes
       nowhere and makes the bug *look* closed.
       ⚠ BUG-57's root cause included "no audit trail when accounts were created". This is that control.
-- [ ] **5.2 — `BUG-91.md`** (HIGH, revenue) — the entitlement authority **fails open to Tier 1** and
+- [x] **5.2 — `BUG-91.md`** (HIGH, revenue) — the entitlement authority **fails open to Tier 1** and
       discards all four BUG-65 Step 2 audit fields.
       ⛔ **Gated on G9 — count affected users first. Closing the default blind is an outage for paying
       customers.**
       ✅ The BUG-65 §4 FEATURE_MATRIX reconciliation is **done**: 0 value mismatches. No divergence bug.
-- [ ] **5.3 — `BUG-65.md` Step 3** — server-side enforcement. **Blocked until 5.2 lands.** Building
+- [x] **5.3 — `BUG-65.md` Step 3** — server-side enforcement. **Blocked until 5.2 lands.** Building
       enforcement on a fail-open authority inherits the bypass it exists to close.
-- [ ] **5.4 — `BUG-85.md`** (HIGH) — `/staging/.htaccess` is a copy of live's; every staging page-route
+- [x] **5.4 — `BUG-85.md`** (HIGH) — `/staging/.htaccess` is a copy of live's; every staging page-route
       is served or 301'd by **production**. **Sequence early: staging is not a test environment until
       this is fixed**, and later items want to test there.
       ⚠ `siteurl`/`home` are CORRECT — **do not edit `wpax_options` again.**
@@ -308,12 +308,12 @@ recorded from an inference rather than a read.**
 - [ ] **5.9 — `BUG-56.md`** — `api-admin.php` is a **placeholder token, not an endpoint**.
       ⛔ **Do not build it.** Two spellings exist, so **no single `proxy_url` value can work.**
       Blocked on reading one config value from the CRM VM (unreachable from the lab 2026-08-28).
-- [ ] **5.10 — `BUG-71.md`** — three-line `ABSPATH` guard.
+- [x] **5.10 — `BUG-71.md`** — three-line `ABSPATH` guard.
       ⛔ **Do NOT add guards to the other 42 `mobile/*.php` files** — they are standalone endpoints and
       guarding them breaks every Pi→server call.
 - [ ] **5.11 — `BUG-82.md`** — `boatlog-export-api.py` binds `127.0.0.1`; all four :8095 endpoints fail
       from any remote browser. Also fix the empty `.catch()` handlers that hid it.
-- [ ] **5.12 — `BUG-83.md`** — de-duplicate `alert_watcher.py`. ⛔ **Promote, do not prune** — the root
+- [x] **5.12 — `BUG-83.md`** — de-duplicate `alert_watcher.py`. ⛔ **Promote, do not prune** — the root
       copy is the superset and the one systemd runs. **Third instance of the pattern Phase 0.4 missed;
       sweep for more.**
 - [ ] **5.13 — `BUG-24.md`** — Boat Log engine auto-capture, **Option A** (G6 cleared).
