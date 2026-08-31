@@ -7,6 +7,18 @@ This is the master index of all solution documents, feature deployments, and arc
 
 ---
 
+## v0.9.9.4 — BUG-85 VERIFIED FIXED; staging now a real test environment (S137 2026-08-31)
+
+**BUG-85 fully resolved.** Staging `.htaccess` (deployed S136) corrected `RewriteBase /` → `RewriteBase /staging/`.
+S137 corrected `siteurl` in `atmyb197_wp5888` (`staging/staging` → `https://atmyboat.com/staging`),
+regenerated `.htaccess` via Permalinks → Save. Verification: `/staging/about/` returns staging content;
+wp-admin redirects no longer double the path. **Staging is a real test environment for the first time.**
+
+⚠ `home` option absent from `atmyb197_wp5888` — not blocking (WordPress uses `siteurl` fallback);
+monitor and add if URL issues recur.
+
+---
+
 ## v0.9.9.4 — S135 ATOMIC SPEC SET + 10 bugs logged, 6 premises overturned (S135 2026-08-28)
 
 **Twelve open items investigated one-by-one against live evidence** — FTP reads of production, sequential

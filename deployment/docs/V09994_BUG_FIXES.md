@@ -6296,8 +6296,26 @@ removed. Add this to the deploy close sequence.
 ## BUG-85 — `/staging/.htaccess` is a copy of the live site's; every staging page-route is served or redirected by PRODUCTION
 
 **Logged:** 2026-08-28 (S135) · **Platform:** HostPapa staging + live
-· **Severity:** **HIGH** — staging has not been a test environment for any page-based route, and nobody
-knew · **Status:** `[ ]` OPEN — **no fix attempted; changing `.htaccess` on a live host needs approval.**
+· **Severity:** **HIGH** · **Status:** `[x]` **FIXED + VERIFIED — S136 deployed new `.htaccess`; S137 2026-08-31 full verification passed.**
+
+### Fix applied (S136 + S137)
+
+S136 deployed corrected `/staging/.htaccess`: `RewriteBase /staging/`, `RewriteRule . /staging/index.php [L]`.
+S137 found that after the fix, staging ran its own WordPress instance for the first time, and `siteurl` in
+`atmyb197_wp5888` had been set to `https://atmyboat.com/staging/staging`. Corrected to
+`https://atmyboat.com/staging` via phpMyAdmin. Staging `.htaccess` regenerated via Settings → Permalinks → Save.
+
+⚠ **Correction to the "do not fix siteurl" note below:** that warning was based on S135 pre-fix probes
+where `siteurl` was correct. After the S136 fix, the siteurl legitimately required correction — these are
+two different system states. The warning still applies to the S125/S126 era edits to `wpax_options`.
+
+### Verification — 2026-08-31
+
+```
+GET https://atmyboat.com/staging/about/   -> 200, assets all /staging/wp-content/  ✓
+GET https://atmyboat.com/staging/wp-admin/ -> 302 -> /staging/wp-login.php (no doubling) ✓
+staging wp-admin navigation: working ✓
+```
 
 ### Symptom — proven, 2026-08-28
 
