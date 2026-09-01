@@ -5236,7 +5236,7 @@ The scheduled caller passes the authentication token as a GET query parameter (`
 
 ## BUG-69 — Admin Username `admin` Publicly Enumerable via Forum URLs + 2FA Disabled
 
-**Status:** `[~]` 2FA ACTIVATED S128 2026-08-23. Wordfence Login Security TOTP enrolled on admin account (operator action this session). Step 1 complete. Step 2 pending: rename admin username to a non-guessable value.
+**Status:** `[x]` **FULLY RESOLVED S140 2026-09-01.** Step 1: 2FA activated S128 2026-08-23 (Wordfence TOTP). Step 2: admin username renamed S140 2026-09-01 — new admin account created with non-guessable username + 2FA enrolled, old `admin` account deleted with content reassigned. Verified: `/forum/users/admin/topics/` → page not found. Username no longer enumerable.
 
 **Source:** Wordfence Live Traffic log analysis, 2026-08-23 session. 2FA status confirmed by operator.
 
