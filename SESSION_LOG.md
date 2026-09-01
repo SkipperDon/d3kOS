@@ -7308,3 +7308,85 @@ attributed_rec         : 0
 failure_category       : stop_gate_discipline
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-01 (S139) — Bug record closure pass: BUG-61/71/76/79/80/83/89/90/91/92
+
+**Goal:** Fix all open/partial v0.9.9.4 bugs that can be resolved without operator action or external access.
+
+**Completed:**
+- **Research pass** — analysed all open/partial bugs in PROJECT_CHECKLIST.md PART 17 and V09994_BUG_FIXES.md; confirmed which were code-fixable vs. operator-gated vs. already deployed-but-not-recorded.
+- **Key discovery** — S136 commit `be4485c9` had already deployed fixes for BUG-71/83/85/90/91 to HostPapa; commit `f9ad6e0d` had deleted the BUG-92 stale file. Bug records had not been updated post-deploy. The real work became record updates, not new code.
+- **BUG-80 FIXED** — `MASTER_SYSTEM_SPEC §12.2` step 9 replaced the stale "Connect to WiFi d3kOS" instruction with the correct guidance: AP is NOT SUPPORTED in current builds; connect via Ethernet or pre-configured WiFi credentials.
+- **V09994_BUG_FIXES.md** — status updated for 9 bugs:
+  - BUG-61 L4504: `[!] REOPENED` → `[x] RESOLVED S137` (BUG-85 .htaccess fix eliminated /staging/staging/ doubling; live probe confirmed)
+  - BUG-71 L5290-5292: `[~] ROOT CAUSE FOUND` → `[x] FIXED + DEPLOYED S136` (ABSPATH guard added, commit be4485c9)
+  - BUG-76 L5643-5645: `[~] CONFIRMED` → `[x] FIXED S136` (§8.4.4 corrected, commit be4485c9)
+  - BUG-79 L5922: added `[x] FIXED S131` line (§9.2 "no phone-home" corrected)
+  - BUG-83 L6249: `[ ] OPEN` → `[x] FIXED S136` (stale ai/alert_watcher.py deleted, commit be4485c9)
+  - BUG-89 L6669: `[ ] OPEN` → `[x] RESOLVED 2026-09-01` (all three URLs confirmed working via live curl probes)
+  - BUG-90 L6767: `[ ] OPEN` → `[x] FIXED + DEPLOYED S136` ($wpdb->prefix removed from amboat_registration_audit, commit be4485c9)
+  - BUG-91 L6855: `[ ] OPEN` → `[x] FIXED + DEPLOYED S136` (T0 row added, fail-open defaults closed, 7 missing feature keys added, commit be4485c9)
+  - BUG-92 L6950: `OPEN` → `[x] FIXED S136` (stale services/fix_my_pi.py deleted, commit f9ad6e0d)
+- **PROJECT_CHECKLIST.md PART 17** — 9 status column replacements (BUG-61/71/76/79/80/83/89/90/91); BUG-92 row added; version header bumped to v3.60.
+- **Committed all Helm-OS changes** — commit `b5e67b17` (3 files: V09994_BUG_FIXES.md, PROJECT_CHECKLIST.md, MASTER_SYSTEM_SPEC.md).
+- **Emergency Brake executed mid-session** — operator sent "stop" during research; all tool execution halted; files touched listed (none at that point); re-authorized with "go ahead".
+
+**Decisions:**
+- BUG-89 live probes: version.php → 200, community-markers.php → 405 (correct, POST-only endpoint), community-get.php → 200. All three previously-404 URLs now resolve.
+- BUG-61 confirmed resolved: `/staging/about/` → 200 staging content; the /staging/staging/ doubling eliminated by BUG-85's .htaccess fix in S137.
+- BUG-89 bug record had incorrect URLs — code at community-api.py:49 already used correct full paths; record was wrong, code was correct. Record corrected.
+- BUG-92 row had never been added to PROJECT_CHECKLIST.md; added this session with `[x]` status.
+- Remaining genuinely open bugs (require operator action or external access): BUG-54 (nginx 400, no log access), BUG-57 (MailPoet G8 screenshot), BUG-58 (on-boat SSH), BUG-65 Step 3 (architectural decision), BUG-66 (3 undeployed endpoints), BUG-67 (ongoing monitoring), BUG-69 (WP admin rename), BUG-72 (deploy approval), BUG-75 (operator decision), BUG-81 (GitHub push approval).
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- BUG-54: nginx 400 on data-ingress.php POST — needs nginx log access or one approved live POST to diagnose
+- BUG-57: MailPoet G8 — awaiting screenshot of auto-create WP user setting
+- BUG-58: Pi API key rotation — requires on-boat SSH
+- BUG-65 Step 3: server-side tier enforcement — Tier 1/2 gate + operator decision
+- BUG-66: 3 remaining endpoints in design tree, not deployed to HostPapa live
+- BUG-69: Admin username rename — operator WP Admin action
+- BUG-72: version-heartbeat.php deploy — requires explicit APPROVED
+- BUG-75 Step 3: /mobile/ alias decision (operator)
+- BUG-81: Update public GitHub docs — requires APPROVED for git push
+- BUG-90/91 verification: live DB audit row read + count users with missing/falsy atmyboat_tier
+- GitHub Issue Sync: deferred until all bugs fixed — BUG-54, 55, 57–92 need issues created/updated
+
+---
+
+**SESSION QUALITY SCORE (SQS):**
+```
+─────────────────────────────────────────────────────
+TASK TYPE: [IMPLEMENT + RESEARCH] — Tier 3 (record updates + doc fix)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100% (Emergency Brake executed correctly)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 95/100
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions: 100, 79, 100, 100, 92 → avg 94.2. This session: 95.
+```
+
+EXTENDED DATA FIELDS — 2026-09-01
+─────────────────────────────────────────────────────
+session_duration_min   : 120
+tasks_planned          : 1 (fix all open/partial bugs that can be done without operator action)
+tasks_completed        : 1
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
