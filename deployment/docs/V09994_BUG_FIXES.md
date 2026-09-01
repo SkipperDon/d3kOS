@@ -7000,3 +7000,43 @@ reference the correct path `cloud-agent/fix_my_pi.py`.
 use. Design smell (two SK interfaces) but not a stale-duplicate bug. If SK clients are ever unified, these
 merge; not worth doing now.
 
+
+---
+
+## BUG-93 — GPS and Engine export collectors crash with JSONDecodeError when Signal K path returns 404
+
+**Symptom:** Every export cycle on lab Pi logs:
+```
+✗ GPS error: Expecting value: line 1 column 1 (char 0)
+✗ Engine error: Expecting value: line 1 column 1 (char 0)
+```
+Export continues successfully despite the errors (the `except` block catches them), but GPS and engine
+data are always null in the export payload. The error message gives no indication of the true cause.
+
+**Root Cause:** `collect_gps()` and `collect_engine()` in `export_categories.py` call `r.json()`
+immediately after `requests.get()` without checking `r.status_code`. When Signal K returns HTTP 404
+(path not present because the device has no GPS or NMEA 2000 source connected), the response body
+is an HTML error page. Calling `.json()` on HTML raises `json.JSONDecodeError: Expecting value`.
+The inner fuel and battery sub-requests already guard with `if r.status_code == 200:` — the outer
+calls were missing the same guard.
+
+**Platform:** Pi (lab Pi confirmed; boat Pi unaffected — SK has GPS via gpsd and N2K engine via CX5106).
+
+**Affected Files:**
+- `deployment/v0.9.9.4/opt/d3kos/services/export/export_categories.py` — `collect_gps()` and `collect_engine()`
+
+**Fix:** Added `if r.status_code != 200: return empty_structure_with_note` guard before `r.json()`
+in both functions. When SK returns non-200, the function returns null data with a `note` field
+explaining the HTTP status code, and prints a clear log message (`SK returned 404 — no navigation data`).
+
+**Verification (S140 2026-09-01):**
+```
+✗ GPS: SK returned 404 — no navigation data
+✗ Engine: SK returned 404 — no propulsion data
+✓ Export uploaded: q_20260901_152616
+```
+No more JSONDecodeError. Exports continue uploading successfully.
+
+**Status:** `[x]` **FIXED S140 2026-09-01** — lab Pi verified. Boat Pi not yet tested (requires
+GPS lock and CX5106 connected). SK paths (`/navigation`, `/propulsion/port`) are correct for the
+boat Pi — fix is defensive only.

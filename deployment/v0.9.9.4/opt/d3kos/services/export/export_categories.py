@@ -377,6 +377,20 @@ class ExportCategories:
                 'http://localhost:8099/signalk/v1/api/vessels/self/navigation',
                 timeout=5
             )
+            if r.status_code != 200:
+                print(f"  ✗ GPS: SK returned {r.status_code} — no navigation data")
+                return {
+                    'category': 'gps',
+                    'data': {
+                        'latitude': None,
+                        'longitude': None,
+                        'speed_over_ground_knots': None,
+                        'course_over_ground_deg': None,
+                        'signal_k_timestamp': None,
+                        'has_fix': False
+                    },
+                    'note': f'SK returned {r.status_code} — GPS not available on this device'
+                }
             nav = r.json()
 
             # Position
@@ -441,6 +455,22 @@ class ExportCategories:
                 'http://localhost:8099/signalk/v1/api/vessels/self/propulsion/port',
                 timeout=5
             )
+            if r.status_code != 200:
+                print(f"  ✗ Engine: SK returned {r.status_code} — no propulsion data")
+                return {
+                    'category': 'engine',
+                    'data': {
+                        'rpm': None,
+                        'boost_pressure_kpa': None,
+                        'oil_pressure_kpa': None,
+                        'coolant_temp_c': None,
+                        'fuel_level_pct': None,
+                        'engine_hours': None,
+                        'engine_on': False,
+                        'battery_voltage_v': None
+                    },
+                    'note': f'SK returned {r.status_code} — propulsion not available on this device'
+                }
             prop = r.json()
 
             # RPM — SK gives Hz (revolutions/s), multiply by 60 for RPM
