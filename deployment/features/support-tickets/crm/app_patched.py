@@ -33,21 +33,35 @@ ALLOWED_TABLES = [
     "amboat_alerts", "amboat_admin_log",
 ]
 
-# Tickets proxy — same auth as proxy_call but targets admin-api-tickets.php
+# Tickets proxy — BUG-56: uses mobile_base_url (trailing-slash base directory), NOT proxy_url.
+# proxy_url is used by db.py for crm-proxy.php database calls — do not change it.
+# config.json: add "mobile_base_url": "https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/"
 import requests as _requests
-_tickets_url       = config["proxy_url"].replace("api-admin.php", "admin-api-tickets.php")
+_base              = config["mobile_base_url"]
+_tickets_url       = _base + "admin-api-tickets.php"
 _tickets_headers   = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
-_diag_bundle_url   = config["proxy_url"].replace("api-admin.php", "diagnostic-bundle.php")
-_diag_fix_url      = config["proxy_url"].replace("api-admin.php", "diagnostic-fix.php")
-_diag_resolve_url  = config["proxy_url"].replace("api-admin.php", "diagnostic-resolve.php")
-_diag_past_url     = config["proxy_url"].replace("api-admin.php", "diagnostic-past-cases.php")
+_diag_bundle_url   = _base + "diagnostic-bundle.php"
+_diag_fix_url      = _base + "diagnostic-fix.php"
+_diag_resolve_url  = _base + "diagnostic-resolve.php"
+_diag_past_url     = _base + "diagnostic-past-cases.php"
 _diag_headers_get  = {"Authorization": f"Bearer {config['proxy_api_key']}"}
-_backup_status_url = config["proxy_url"].replace("api-admin.php", "config-backup-status.php")
+_backup_status_url = _base + "config-backup-status.php"
 _backup_status_hdrs = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
-_issues_url        = config["proxy_url"].replace("api-admin.php", "issue-api.php")
+_issues_url        = _base + "issue-api.php"
 _issues_headers    = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
-_publish_url       = config["proxy_url"].replace("api-admin.php", "update-publish.php")
+_publish_url       = _base + "update-publish.php"
 _publish_headers   = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
+_version_url       = _base + "version-api.php"
+
+# BUG-56 startup assertion: refuse to start if any URL still contains the old placeholder tokens.
+for _u in [_tickets_url, _diag_bundle_url, _diag_fix_url, _diag_resolve_url,
+           _diag_past_url, _backup_status_url, _issues_url, _publish_url, _version_url]:
+    if "api-admin.php" in _u or "admin-api.php" in _u:
+        raise RuntimeError(
+            f"BUG-56: proxy_url config still contains a placeholder token. "
+            f"Set proxy_url to the mobile/ base directory with a trailing slash. Offending: {_u}"
+        )
+del _u
 
 
 def proxy_call_tickets(action: str, **kwargs) -> dict:
@@ -80,7 +94,7 @@ def proxy_post_issues(payload):
 def proxy_call_versions(params):
     try:
         r = _requests.get(
-            config["proxy_url"].replace("api-admin.php", "version-api.php"),
+            _version_url,
             params=params,
             headers=_issues_headers,
             timeout=10,
@@ -275,7 +289,22 @@ def customer_diagnostics(user_id):
 @app.route("/diagnostics")
 @login_required
 def diagnostics():
-    return render_template("placeholder.html", section="Pi Diagnostics — open a customer profile to view diagnostics")
+    db_key = session.get("active_db", "staging")
+    now = datetime.utcnow()
+    try:
+        data = proxy_call("get_customers", db=db_key, page=1)
+        fleet = data.get("customers", [])
+        total = data.get("total", 0)
+        err = None
+    except Exception as e:
+        fleet, total, err = [], 0, str(e)
+    for c in fleet:
+        try:
+            ls = datetime.strptime(c["last_seen"], "%Y-%m-%d %H:%M:%S")
+            c["is_online"] = (now - ls).total_seconds() < 300
+        except Exception:
+            c["is_online"] = False
+    return render_template("diagnostics_fleet.html", fleet=fleet, total=total, error=err)
 
 
 # ── Email Inbox ───────────────────────────────────────────────────────────────

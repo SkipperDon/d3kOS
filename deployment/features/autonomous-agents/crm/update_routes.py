@@ -5,7 +5,7 @@
 #
 # 1. Add helper near other proxy helpers in app.py:
 #
-#   _publish_url     = config["proxy_url"].replace("admin-api.php", "update-publish.php")
+#   _publish_url     = config["proxy_url"] + "update-publish.php"  # BUG-56: base-directory, no .replace()
 #   _publish_headers = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
 #
 #   def proxy_call_publish(params):

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Fleet Pi Diagnostics{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Pi Diagnostics — Fleet Overview</h2>
+  <span class="total-badge">{{ total }} customers</span>
+</div>
+
+{% if error %}<div class="error-banner">{{ error }}</div>{% endif %}
+
+{% if fleet %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Customer</th><th>Email</th><th>Tier</th><th>Pi Status</th><th>Last Seen</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in fleet %}
+      <tr>
+        <td>{{ c.display_name or c.user_email }}</td>
+        <td>{{ c.user_email }}</td>
+        <td><span class="tier-badge tier-{{ (c.tier or "0").lstrip("T") }}">{{ c.tier or "T0" }}</span></td>
+        <td>
+          {% if c.last_seen %}
+            <span class="online-badge {{ "online" if c.is_online else "offline" }}">{{ "Online" if c.is_online else "Offline" }}</span>
+          {% else %}
+            <span class="online-badge offline">No Pi</span>
+          {% endif %}
+        </td>
+        <td>{{ c.last_seen[:10] if c.last_seen else "Never" }}</td>
+        <td><a href="/customer/{{ c.ID }}/diagnostics" class="btn-link">Diagnostics →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state"><p>No customers found.</p></div>
+{% endif %}
+{% endblock %}

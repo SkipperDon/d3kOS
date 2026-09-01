@@ -6,8 +6,8 @@ Also add to imports at top of app.py:
     from ai_client import draft_reply, diagnose_pi
     import base64 as _b64
 
-Also add near _tickets_url line:
-    _diag_bundle_url = config["proxy_url"].replace("admin-api.php", "diagnostic-bundle.php")
+Also add near _tickets_url line (BUG-56 fix — base-directory pattern, no .replace()):
+    _diag_bundle_url = config["proxy_url"] + "diagnostic-bundle.php"
 """
 
 # ── /ticket/<id>/bundle-status  (AJAX — used by ticket detail page) ───────────

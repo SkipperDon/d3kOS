@@ -9,7 +9,7 @@
 #       """GET to version-api.php — Bearer auth."""
 #       try:
 #           r = _requests.get(
-#               config["proxy_url"].replace("admin-api.php", "version-api.php"),
+#               config["proxy_url"] + "version-api.php",  # BUG-56: base-directory, no .replace()
 #               params=params,
 #               headers=_issues_headers,   # same Bearer + Content-Type
 #               timeout=10,

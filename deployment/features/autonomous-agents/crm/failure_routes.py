@@ -5,7 +5,7 @@
 #
 # 1. Add helper near proxy_call() in app.py:
 #
-#   _issues_url     = config["proxy_url"].replace("admin-api.php", "issue-api.php")
+#   _issues_url     = config["proxy_url"] + "issue-api.php"  # BUG-56: base-directory, no .replace()
 #   _issues_headers = {"Authorization": f"Bearer {config['proxy_api_key']}", "Content-Type": "application/json"}
 #
 #   def proxy_call_issues(params):
