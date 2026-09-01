@@ -138,24 +138,26 @@ class ExportCategories:
             cursor = conn.cursor()
 
             cursor.execute("""
-                SELECT capture_id, timestamp, species, confidence,
-                       latitude, longitude, file_size
+                SELECT id, timestamp, species, species_confidence, location
                 FROM captures
                 ORDER BY timestamp DESC
             """)
 
             entries = []
             for row in cursor.fetchall():
+                loc = row['location']
+                if isinstance(loc, str):
+                    try:
+                        import json as _json
+                        loc = _json.loads(loc)
+                    except Exception:
+                        loc = None
                 entries.append({
-                    'capture_id': row['capture_id'],
+                    'capture_id': row['id'],
                     'timestamp': row['timestamp'],
                     'species': row['species'],
-                    'confidence': row['confidence'],
-                    'gps': {
-                        'latitude': row['latitude'],
-                        'longitude': row['longitude']
-                    },
-                    'file_size_bytes': row['file_size']
+                    'confidence': row['species_confidence'],
+                    'gps': loc,
                     # file_path NOT included — images stay on Pi, stream to phone via WebRTC (S6)
                 })
 
