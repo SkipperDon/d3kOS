@@ -7445,3 +7445,90 @@ human_verified         : 0
 - GitHub Issue Sync: deferred to when all bugs complete
 
 ---
+## Session 2026-09-01 (S140-cont)
+**Goal:** Fix GPS and Engine export errors after BUG-54 resolution revealed remaining ✗ errors in export cycle.
+
+**Completed:**
+- **BUG-93 LOGGED + FIXED**: `collect_gps()` and `collect_engine()` in `export_categories.py` called `r.json()` without checking `r.status_code`. When SK returns 404 HTML (lab Pi has no USB GPS or CX5106/N2K hardware), `json.JSONDecodeError` was raised. Added `if r.status_code != 200: return empty_structure_with_note` guard before `r.json()` in both functions. Lab Pi verified: clean log messages, exports continue uploading successfully.
+- **Confirmed root cause of lab Pi GPS absence**: lab Pi has gpsd running but no GPS device/fix (no antenna). SK has no navigation or propulsion paths because no GPS/NMEA source is configured. Boat Pi will have both (USB GPS → gpsd → SK navigation path; CX5106 via N2K → SK propulsion.port path).
+- **BUG-93 logged**: in `V09994_BUG_FIXES.md` and `PROJECT_CHECKLIST.md` PART 17.
+- **Commit 498eb654**: fix(BUG-93): add HTTP status guard before r.json() in collect_gps/collect_engine.
+
+**Verification:**
+```
+✗ GPS: SK returned 404 — no navigation data
+✗ Engine: SK returned 404 — no propulsion data
+✓ Export uploaded: q_20260901_152616
+```
+
+**Decisions:**
+- SK paths (`/signalk/v1/api/vessels/self/navigation` and `/propulsion/port`) are CORRECT for boat Pi — the fix is defensive only, not a path change.
+- Lab Pi's gpsd is running but has no GPS device connected — this is expected for a lab environment.
+
+**Files changed:**
+- `deployment/v0.9.9.4/opt/d3kos/services/export/export_categories.py` — status_code guard in collect_gps() and collect_engine()
+- `deployment/docs/V09994_BUG_FIXES.md` — BUG-93 entry appended
+- `PROJECT_CHECKLIST.md` — BUG-93 row added, version bumped to 3.64
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending (carried forward):**
+- Boat Pi: deploy `export_categories.py` BUG-93 fix (lab Pi only so far)
+- Boat Pi: deploy `export_worker.py` + `cloud_agent.py` UA fix (BUG-54 — lab Pi only so far)
+- Boat Pi: verify `cloud-config.json` has correct `amboat_api_key`
+- Boat Pi: check `failed_exports/` directory count
+- BUG-66: Pi fleet enrolment flow
+- BUG-57: MailPoet G8 screenshot from operator
+- BUG-65 Step 3: server-side tier enforcement
+- BUG-69: Admin username rename (operator WP Admin)
+- BUG-75 Step 3: operator decision on /mobile/ alias
+- BUG-81: public GitHub docs update — requires git push APPROVED
+- GitHub Issue Sync: deferred to when all bugs complete
+
+---
+
+## Session 2026-09-01 (S140 continued — context resumed)
+**Goal:** Complete BUG-66 close-out; verify/advance BUG-65 Step 3; fix BUG-81 P3; correct stale checklist entries for BUG-82/87/88.
+
+**Completed:**
+- **BUG-66 PROJECT_CHECKLIST.md** — updated row to `[x]` FULLY RESOLVED S140. Lab Pi enrolled, Ed25519 chain verified end-to-end. Boat Pi deferred (hotspot only).
+- **BUG-65 Step 3 VERIFIED DEPLOYED** — live HostPapa data-ingress.php confirmed has tier_claimed (7), tier_mismatch (1), BUG-65 comment (1), amboat_registration_audit (2). Code went live with the BUG-54 deploy S140. V09994_BUG_FIXES.md and PROJECT_CHECKLIST.md updated to reflect deployed state. Remaining gap: feature matrix name alignment (Finding 3, 7 Pi-only feature names) — deferred v0.9.9.5.
+- **BUG-81 P3 FIXED** — `doc/CX5106_USER_MANUAL.md` line 53 corrected from "8 switches in a row" to two-block model (Block A 7 positions RPM ratio, Block B 2 positions); ASCII diagram updated. V09994_BUG_FIXES.md status updated. P1 and P4 were already done (S134-cont/S132). P2 (public GitHub docs) remains blocked on git push approval.
+- **Stale checklist entries corrected** — BUG-82, BUG-87, BUG-88 updated from `[ ]` to `[x]` in PROJECT_CHECKLIST.md (all three were marked `[x]` FIXED in V09994_BUG_FIXES.md since S136 but checklist was never updated).
+- **d3kos-admin question answered** — device approval queue is wp-admin only; URL: `https://atmyboat.com/wp-admin/admin.php?page=d3kos-device-approvals`. Not part of Admin CRM VM.
+
+**Decisions:**
+- BUG-65 Step 3 is now considered deployed (audit logging + correct server-side entitlement response). Feature matrix name alignment is a separate cleanup, deferred to v0.9.9.5.
+- BUG-81 P2 (public GitHub docs) remains deferred — requires explicit git push APPROVED which was not requested this session.
+
+**Files changed:**
+- `PROJECT_CHECKLIST.md` — BUG-66 `[~]`→`[x]`, BUG-65 Step 3 status updated, BUG-82/87/88 `[ ]`→`[x]`
+- `deployment/docs/V09994_BUG_FIXES.md` — BUG-65 Step 3 status updated (DEPLOYED S140), BUG-81 P3 status updated (FIXED S140)
+- `doc/CX5106_USER_MANUAL.md` — P3 fix: 8-switch claim corrected to two-block model
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending (carried forward):**
+- Boat Pi: deploy `export_categories.py` BUG-93 fix (lab Pi only so far)
+- Boat Pi: BUG-54 UA fix, `cloud-config.json` key, `failed_exports/` check
+- Boat Pi: BUG-66 enrolment (requires hotspot access to 172.20.10.8)
+- BUG-57: MailPoet G8 screenshot from operator
+- BUG-69: Admin username rename (operator WP Admin action)
+- BUG-75 Step 3: operator decision on /mobile/ alias
+- BUG-81 P2: public GitHub docs — requires git push APPROVED
+- BUG-65 Finding 3: feature matrix name alignment — deferred v0.9.9.5
+- GitHub Issue Sync: deferred to when all v0.9.9.4 bugs complete
+
+---

@@ -4880,7 +4880,7 @@ unauthenticated party.
 
 ## BUG-65 — `license.json` is unsigned and world-readable: any user can self-elevate to Tier 3
 
-**Status:** `[~]` **STEPS 1+2 DONE S134-cont 2026-08-25 — 14/14 PASS. Step 3 (server-side enforcement) DEFERRED — Tier 1/2 architectural gate; required before Phase 2 exits.**
+**Status:** `[~]` **STEPS 1+2 DONE S134-cont 2026-08-25 — 14/14 PASS. Step 3 (tier mismatch audit) DEPLOYED S140 2026-09-01 — live data-ingress.php confirmed: `tier_claimed` read from Pi body, mismatches logged to `amboat_registration_audit`, feature flags returned from server-side `$tier` (not Pi-claimed value). BUG-91 fixed fail-open default: T0 row added to feature_matrix, default changed `'T1'` → `'T0'`. ⚠ REMAINING: Finding 3 — 7 Pi features absent from server matrix (`camera`, `cloud_sync`, `engine_monitoring`, `maintenance_schedule`, `mobile_app`, `predictive_alerts`, `voice_assistant`) — feature matrix alignment deferred to v0.9.9.5.**
 
 **Step 1 — `first-boot-setup.sh` promoted to canonical tree:**
 - Canonical path: `deployment/v0.9.9.4/opt/d3kos/scripts/first-boot-setup.sh`
@@ -4990,7 +4990,7 @@ same one BUG-66 and the registration spec both require.
 > Found via BUG-76. Full detail: `V09994_BUG_FIXES.md` BUG-76.
 
 
-**Status:** `[~]` **PHASES A+B+C+D COMPLETE — ALL 5 IN-SCOPE PHASE C ENDPOINTS ON Ed25519 LIVE S139 2026-09-01. version-heartbeat ✅ S134, failure-report ✅ S139, config-backup ✅ S139, fix-confirmed ✅ S139, community-markers ✅ S139 (Pi community-api.py also updated to sign requests). community-position.php: never built, Pi does not call it, skipped. All 5 confirm 401 on unauthenticated POST. SEVERITY HELD AT CRITICAL pending enrolment flow + Pi deploy. Release gate for v0.9.9.4.**
+**Status:** `[x]` **FULLY RESOLVED S140 2026-09-01 — LAB PI ENROLLED + VERIFIED. Phases A+B+C+D complete. Plugin active on live HostPapa. Lab Pi (`701e5754`) enrolled: keypair generated, POST /wp-json/amboat-device/v1/enrol → HTTP 200 `{"status":"pending"}`, operator approved via wp-admin, GET /amboat-device/v1/status → HTTP 200 `{"status":"approved"}`. Ed25519 auth chain verified end-to-end. Boat Pi enrolment deferred — requires on-boat access. Legacy AMBOAT_API_KEY fallback retained with audit logging until all Pi fleet enrolled.**
 
 ### PHASE A — S134 2026-08-25 — SERVER-SIDE (COMPLETE, AWAITING HOSTPAPA STAGING DEPLOY)
 
@@ -6015,7 +6015,7 @@ wrongly, and the incorrect guide is already public on `main` and linked twice fr
   - **Step 0 DONE:** `doc/CX5106_CONFIGURATION_GUIDE.md` corrected (local-only); superseded original preserved.
   - **AODA FIXED:** `font-size: 18px` added to `.dip-block`, `.dip-switches`, `.dip-sw`, `.dip-why`, `.dip-install`, `.dip-context` — T11 GREEN.
   - **P2 OPEN:** `docs/CX5106_CONFIGURATION_GUIDE.md` on `origin/main` — needs explicit operator APPROVED.
-  - **P3 OPEN:** `doc/CX5106_USER_MANUAL.md` line 53 — "8 switches in a row" still present.
+  - **P3 FIXED S140 2026-09-01:** `doc/CX5106_USER_MANUAL.md` line 53 — corrected to two-block model (Block A 7 switches RPM ratio, Block B 2 switches); ASCII diagram updated to match.
 
 ### Symptom
 

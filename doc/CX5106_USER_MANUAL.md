@@ -50,14 +50,15 @@ Before you begin, gather this information about your engine:
 
 ### What is a DIP Switch?
 
-A DIP switch is a small physical switch that can be set to ON (up) or OFF (down). The CX5106 has 8 switches arranged in a row.
+A DIP switch is a small physical switch that can be set to ON (up) or OFF (down). The CX5106 (Matsutec) has **two physically separate blocks**: Block A with 7 switches (RPM speed ratio) and Block B with 2 switches (tank sender standard and engine position).
 
 ```
-┌─┬─┬─┬─┬─┬─┬─┬─┐
-│1│2│3│4│5│6│7│8│  ← Switch numbers
-├─┼─┼─┼─┼─┼─┼─┼─┤
-│↑│↓│↑│↓│↑│↓│↑│↓│  ← UP = ON, DOWN = OFF
-└─┴─┴─┴─┴─┴─┴─┴─┘
+Block A — 7 positions (RPM ratio)       Block B — 2 positions
+┌─┬─┬─┬─┬─┬─┬─┐                        ┌─┬─┐
+│1│2│3│4│5│6│7│  ← Switch numbers       │1│2│  ← Switch numbers
+├─┼─┼─┼─┼─┼─┼─┤                        ├─┼─┤
+│↑│↓│↑│↓│↑│↓│↑│  ← UP = ON             │↑│↓│  ← UP = ON
+└─┴─┴─┴─┴─┴─┴─┘                        └─┴─┘
 ```
 
 ### Location on CX5106
