@@ -146,6 +146,7 @@ def make_headers(api_key, device_token):
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {api_key}',
         'X-Device-Token': device_token,
+        'User-Agent': 'Mozilla/5.0',  # nginx blocks python-requests UA on HostPapa (BUG-54/BUG-56)
     }
 
 

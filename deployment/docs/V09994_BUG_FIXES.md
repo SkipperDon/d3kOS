@@ -3461,9 +3461,7 @@ never updated. The test now enforces the defect.
 > scope per operator directive S135 — carry it on the boat test card.
 
 
-**Status:** `[~]` **PART 1 FIXED + DEPLOYED LAB PI S118 2026-08-03 — TDD 2/3 fail pre-fix → 3/3 pass,
-end-to-end proven in the journal. PART 2 (the HTTP 400 itself) still OPEN — needs an external probe
-to atmyboat.com, which requires operator approval. NOT on boat Pi.**
+**Status:** `[~]` **PART 1 FIXED + DEPLOYED LAB PI S118. PART 2 ROOT CAUSE FOUND + FIX WRITTEN S140 2026-09-01 — `python-requests` UA blocked by nginx on HostPapa (same as BUG-56). `User-Agent: Mozilla/5.0` added to export_worker.py + cloud_agent.py. DEPLOY REQUIRED to lab Pi. NOT YET verified on boat Pi.**
 **Platform:** Pi — `d3kos-export-manager`; worker at `/opt/d3kos/services/export/export_worker.py`
 **Severity:** Part 1 MEDIUM (fixed). Part 2 pending — severity still gated on the boat-Pi check.
 
@@ -3524,29 +3522,48 @@ Archived failed export: /opt/d3kos/data/exports/failed_exports/q_20260803_075645
 ✗ Export upload failed: HTTP 400: <html>
 ```
 
-### PART 2 — THE HTTP 400 ITSELF (still open)
-Ruled out by direct inspection:
-- **Malformed headers** — `device_token` (36 ch) and `amboat_api_key` (39 ch) are both pure
-  printable ASCII with no whitespace. Not a bad-header 400.
-- **Missing config** — `cloud-config.json` and `device-token.json` both exist and parse.
-- **Body size** — failed payloads are ~50 KB; nginx returns 413, not 400, for oversize bodies.
+### PART 2 — THE HTTP 400 ITSELF — ✅ ROOT CAUSE FOUND + FIXED S140 2026-09-01
 
-`Uncertainty flag:` the remaining candidates (a WAF/ImunifyAV rule, an nginx request restriction, or
-a payload-shape rejection) **cannot be distinguished without sending a request to atmyboat.com.**
-That is an external call to the live production site and requires explicit operator approval. Do not
-guess the cause — the four-era history above shows this bug has already been misdiagnosed once.
+**Root cause: `python-requests` User-Agent is blocked by nginx on HostPapa globally.**
 
-### ⚠ NEW FINDING — the lab Pi posts to PRODUCTION, not staging
+Confirmed by two diagnostic POSTs from WSL2 this session (operator-approved):
+- `curl/8.5.0` UA → HTTP **401** (PHP ran, rejected fake key correctly — endpoint reachable)
+- `python-requests/2.31.0` UA → HTTP **400** (nginx blocked, identical to the Pi's failure)
+
+This is the **same nginx rule that caused BUG-56** (Admin CRM VM) — HostPapa nginx blocks
+`python-requests` User-Agent on POST. BUG-56 was fixed in S138 by adding `User-Agent: Mozilla/5.0`
+to the CRM VM's Python requests. `export_worker.py` was never given the same override.
+
+The S135 investigation eliminated "headers" as a cause by testing the 3 custom headers (Content-Type,
+Authorization, X-Device-Token) via curl — not via Python requests. The implicit User-Agent sent by
+the `requests` library was never tested as a standalone hypothesis.
+
+The 2026-04-22 regression date (10 days after Phase 4 went live) is consistent with HostPapa
+tightening nginx security rules for the `/mobile/` path after the new PHP files were deployed.
+237 exports succeeded before the rule was added; 99 have failed since.
+
+**Fix applied S140:**
+- `export_worker.py:300-307` — added `'User-Agent': 'Mozilla/5.0'` to the headers dict
+- `cloud_agent.py:144-149` — added `'User-Agent': 'Mozilla/5.0'` to `make_headers()` (same pattern)
+
+Both files in canonical Pi tree: `deployment/v0.9.9.4/opt/d3kos/services/`.
+
+**Deploy required:** push both files to lab Pi and restart `d3kos-export-manager`. Then verify next
+export attempt returns 401 (auth) instead of 400 (nginx) — confirming PHP is now reached. Once a
+valid `amboat_api_key` is configured, exports should succeed end-to-end.
+
+### ⚠ STILL OPEN — lab Pi posts to PRODUCTION, not staging
 `cloud-config.json` sets `amboat_base_url = https://atmyboat.com`. The code default in
 `export_worker.py` is `https://atmyboat.com/staging`, and the service still *logs* the staging URL at
 startup — but the actual POST goes to **production**. A development Pi is configured to write
 telemetry into the live AtMyBoat database. **Operator decision required: should it be, or should the
-lab point at staging?** This may also make the 400 moot on this device.
+lab point at staging?**
 
 ### Still to do
+- [ ] **Deploy fix to lab Pi** — push export_worker.py + cloud_agent.py, restart d3kos-export-manager
+- [ ] **Verify on lab Pi** — next export should return 401 (not 400), confirming nginx now passes it
 - [ ] **Check the boat Pi's `failed_exports/` count** — still unanswered; still sets true severity
 - [ ] Operator decision: lab Pi → staging or production?
-- [ ] Approval for one diagnostic request to atmyboat.com to identify the 400
 - [ ] Investigate the doubled `exports/exports/` path in the 7 "file not found" errors
 - [ ] Decide whether export health belongs in the Settings status panel (BUG-50 class defect —
       nothing in the UI surfaces this even now that the journal does)
