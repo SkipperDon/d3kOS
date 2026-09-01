@@ -4973,7 +4973,7 @@ same one BUG-66 and the registration spec both require.
 > Found via BUG-76. Full detail: `V09994_BUG_FIXES.md` BUG-76.
 
 
-**Status:** `[~]` **PHASES A+B+C+D COMPLETE S134-cont 2026-08-25 — AWAITING HOSTPAPA STAGING DEPLOY (Phase A server files). All code changes in canonical tree. SEVERITY HELD AT CRITICAL (operator decision S131). Release gate for v0.9.9.4.**
+**Status:** `[~]` **PHASES A+B+C+D COMPLETE — DEPLOYED TO HOSTPAPA LIVE S139 2026-09-01. 4 of 6 Phase C endpoints now on Ed25519 (version-heartbeat ✅ S134, failure-report ✅ S139, config-backup ✅ S139, fix-confirmed ✅ S139 new). 2 remaining: community-markers.php (Pi sends no auth headers — Pi-side update required before migration); community-position.php (never built — Pi does not call it). SEVERITY HELD AT CRITICAL (operator decision S131). Release gate for v0.9.9.4. Phase A server files (device-auth.php, enrol.php, status.php, request-code.php, d3kos-device-auth plugin) deployed Aug 25.**
 
 ### PHASE A — S134 2026-08-25 — SERVER-SIDE (COMPLETE, AWAITING HOSTPAPA STAGING DEPLOY)
 
