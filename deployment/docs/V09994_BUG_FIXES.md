@@ -3461,7 +3461,7 @@ never updated. The test now enforces the defect.
 > scope per operator directive S135 — carry it on the boat test card.
 
 
-**Status:** `[~]` **PART 1 FIXED + DEPLOYED LAB PI S118. PART 2 ROOT CAUSE FOUND + FIX WRITTEN S140 2026-09-01 — `python-requests` UA blocked by nginx on HostPapa (same as BUG-56). `User-Agent: Mozilla/5.0` added to export_worker.py + cloud_agent.py. DEPLOY REQUIRED to lab Pi. NOT YET verified on boat Pi.**
+**Status:** `[x]` **FULLY FIXED + VERIFIED S140 2026-09-01. Three-layer fix: (1) `python-requests` UA blocked by nginx → `User-Agent: Mozilla/5.0` in export_worker.py + cloud_agent.py; (2) Pi `cloud-config.json` `amboat_api_key` updated to match HostPapa's current key; (3) `sanitize_key()` WordPress polyfill added to data-ingress.php. First successful export confirmed in lab Pi journal: `✓ Export uploaded: q_20260901_150256`. NOT YET verified on boat Pi.**
 **Platform:** Pi — `d3kos-export-manager`; worker at `/opt/d3kos/services/export/export_worker.py`
 **Severity:** Part 1 MEDIUM (fixed). Part 2 pending — severity still gated on the boat-Pi check.
 
