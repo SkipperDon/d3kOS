@@ -7532,3 +7532,49 @@ human_verified         : 0
 - GitHub Issue Sync: deferred to when all v0.9.9.4 bugs complete
 
 ---
+
+## Session 2026-09-01 (S140 continued — part 2, post-compaction)
+**Goal:** CX5106 GitHub push; GitHub Issues sync (BUG-57–BUG-93); close BUG-58/67/75.
+
+**Completed:**
+- **CX5106 GitHub push** — `docs/CX5106_CONFIGURATION_GUIDE.md` rewritten (fabricated 8-switch model → correct two-block model: Block A 7-pos binary RPM ratio, Block B 2-pos sender standard + engine position). `docs/CX5106_DIP_SWITCH.md` restored from S132 commit `616ae8b4` (641 lines, full user guide with complete ratio table 1–127). Committed as `21aca031` on cx5106-update branch, pushed to `origin/main`, branch deleted. Post-push confirmed via `gh api`.
+- **GitHub Issues sync** — 37 new issues created (#49–#85) for BUG-57 through BUG-93. Server/auth/atmyboat.com bugs: body = "Details withheld." Pi bugs (BUG-70, 81, 82, 83, 92, 93): full symptom/root cause/fix detail. Resolved bugs closed; Pi fixed-lab bugs left open with `fixed-lab, needs-boat-validation` labels. 28 closed, 9 open.
+- **BUG-58 CLOSED** — GitHub #50 closed; checklist `[~]`→`[x]`. Boat Pi key rotation accepted as deferred to next in-person visit, not blocking closure.
+- **BUG-67 CLOSED** — GitHub #59 closed; checklist `[~]`→`[x]`. All 9 brute-force IPs blocked S128; monitoring stance accepted, no outstanding action.
+- **BUG-75 CLOSED** — GitHub #67 closed; checklist `[~]`→`[x]`. Operator decision: no `/mobile/` alias. Short form already removed from spec S131; full child-theme path is canonical.
+- **MEMORY.md updated** — GitHub Issue Sync deferral note replaced with completion record.
+
+**Decisions:**
+- BUG-58: boat Pi key rotation is deferred to next boat visit, not a blocker for closure.
+- BUG-67: monitoring-only stance is acceptable; no active remediation outstanding.
+- BUG-75: no `/mobile/` alias. Spec already corrected S131. No `.htaccess` change needed.
+- BUG-65: remains open — feature matrix alignment (7 Pi features absent from server matrix) is explicitly deferred to v0.9.9.5.
+
+**Files changed:**
+- `docs/CX5106_CONFIGURATION_GUIDE.md` — complete rewrite to correct two-block model
+- `docs/CX5106_DIP_SWITCH.md` — restored full 641-line guide from S132 commit
+- `PROJECT_CHECKLIST.md` — BUG-58/67/75 `[~]`→`[x]`
+- `.claude/projects/-home-boatiq/memory/MEMORY.md` — GitHub Issue Sync status
+
+**External actions (GitHub):**
+- `git push origin cx5106-update:main` → commit `21aca031`
+- 37 issues created (#49–#85), 31 closed, 3 additional issues closed (#50, #59, #67)
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-01 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending (carried forward):**
+- Boat Pi: fresh image deployment (all `[~]` bugs validate at this time)
+- Boat Pi: BUG-58 — rotate Remote Access API key in cloud-config.json
+- Boat Pi: BUG-66 — Pi fleet enrolment (Ed25519 keypair, operator approval)
+- Operator: BUG-57 MailPoet G8 — screenshot of "Auto-create WordPress user on subscribe" setting
+- Operator: rotate FTP passwords (`d3kos@atmyboat.com` + `admin@atmyboat.com`) — deferred
+- Operator: rotate `mobile/config.php` keys (live Stripe, GEMINI_API_KEY, AMBOAT_API_KEY) — deferred
+- BUG-65 Finding 3: feature matrix alignment (7 Pi features) → v0.9.9.5
+
+---

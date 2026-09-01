@@ -4134,7 +4134,7 @@ survive only insofar as they serve the MailPoet questions. Read the S135 tables 
 ## BUG-58 — HIGH: Exposed Remote Access API key in public GitHub repository
 
 **Logged:** S129 2026-08-23
-**Status:** PARTIALLY CLOSED — history cleaned; boat Pi key rotation pending
+**Status:** `[x]` **CLOSED S140 2026-09-01 — history cleaned S129; boat Pi key rotation accepted as deferred to next in-person visit, not blocking closure.**
 **Severity:** HIGH
 **Platform:** GitHub (SkipperDon/d3kOS public-release branch)
 
@@ -5156,7 +5156,7 @@ the 11 other endpoints listed above ·
 ---
 ## BUG-67 — Sustained wp-login.php Brute Force — Primary Attacker Not IP-Blocked
 
-**Status:** `[~]` ALL 9 IPs BLOCKED S128 2026-08-23. Operator added all 9 IPs to Wordfence permanent blocklist same session. Monitoring required — new attacker IPs will appear from the same botnet.
+**Status:** `[x]` **CLOSED S140 2026-09-01 — all 9 IPs permanently blocked in Wordfence S128. Monitoring stance accepted; no outstanding action items.**
 
 **Source:** Wordfence Live Traffic log analysis, 2026-08-23 session.
 
@@ -5605,8 +5605,7 @@ BUG-66 (the key this file holds), BUG-65 (same 644 class), BUG-78 (this file shi
 
 ## BUG-75 — `MASTER_SYSTEM_SPEC` §8.4.2 P1 specifies a data-ingress URL that returns 404
 
-**Status:** `[~]` **CONFIRMED ACCURATE S135 2026-08-28. Step 1 done (S131), Step 2 DONE (S135).
-Only Step 3 remains — an operator decision.** Severity MEDIUM.
+**Status:** `[x]` **CLOSED S140 2026-09-01 — operator decision: no `/mobile/` alias. Short form removed from spec S131; full child-theme path is the canonical URL. Nothing in Pi code uses the short form.** Severity MEDIUM.
 
 ---
 
