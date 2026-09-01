@@ -37,6 +37,13 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 
+// Polyfill for WordPress functions not available when called outside WP context
+if ( ! function_exists( 'sanitize_key' ) ) {
+    function sanitize_key( $key ) {
+        return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
+    }
+}
+
 if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
     amboat_send_error( 'Method not allowed.', 405 );
 }
