@@ -3870,8 +3870,35 @@ Another instance of BUG-88 — do not audit this file from the repo copy.
 
 ## BUG-57 — Unauthorized mass user account creation via MailPoet exploitation
 
-**Status:** `[~]` **HIGH — CONTAINED. RE-SCORED 2026-08-28 (S135) by operator decision.**
-Was: `[ ]` CRITICAL — ACTIVE BREACH (S121). **One vector remains unexplained: MailPoet.**
+**Status:** `[x]` **CLOSED S140 2026-09-01 — MailPoet investigation complete. All three questions answered from live screenshots. MailPoet was NOT a vector. Only `/register/` was exploited; BUG-63 closed it. See S140 MailPoet findings below.**
+Was: `[~]` HIGH/CONTAINED S135 2026-08-28. Was: `[ ]` CRITICAL — ACTIVE BREACH (S121).
+
+---
+
+## S140 MAILPOET INVESTIGATION — 2026-09-01 — CLOSED
+
+**Q1 — Did MailPoet carry the 62,000 accounts?**
+**NO.** Live MailPoet Subscribers page (screenshot 2026-09-01): **14 total subscribers**.
+Breakdown: Subscribed 12, Unconfirmed 2, Unsubscribed 0, Inactive 0, Bounced 0.
+Most recent subscription date: **February 2026**. Zero entries in the June–August 2026 attack window.
+No bulk import events of any kind. No Logs tab in the Subscribers view.
+
+**Conclusion:** The S121 record's claim that "MailPoet was a second confirmed vector" is **refuted by evidence**. MailPoet was never exploited. All 62,000 accounts came through `/register/`.
+
+**Q2 — Are any MailPoet API keys exposed or unrotated?**
+**CLEAN.** Key Activation tab (screenshot 2026-09-01): one MSS key exists, shown masked (not exposed), status "Your key is valid / MailPoet Sending Service is active." No external exposure. No rotation required.
+
+**Q3 — Is "auto-create WordPress user on subscribe" enabled?**
+**NO.** Answered S138 2026-09-01. Feature removed from MailPoet 7.1. Confirmed by full Advanced tab review (three screenshots 2026-09-01): no such setting exists in any tab.
+
+**Root cause (final):** Sole confirmed attack vector = `/register/` endpoint calling `wp_create_user()` directly, bypassing all WordPress registration controls. Closed by BUG-63 device gate, live 2026-08-25. No MailPoet involvement.
+
+**Other Advanced tab observations (S140):**
+- Sending: MailPoet Sending Service (recommended) — correct
+- Engagement tracking: Full — no security concern
+- Spam protection on MailPoet forms: Built-in CAPTCHA (default) — correct
+- Protect registration forms (WP /register/): No — moot; BUG-63 device gate closes /register/ independently
+- Logging: Errors only — no import history recorded at this level
 
 ---
 
