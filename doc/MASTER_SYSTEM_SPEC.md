@@ -6901,12 +6901,10 @@ other work.**
 
 8. Power on → Wait for first boot (2-3 minutes)
 
-9. Connect to WiFi "d3kOS" (password: see DEFAULT CREDENTIALS table, page 1)
-   ⚠ **`[VERIFY]` — CONTRADICTION, BUG-80 (flagged v4.0, 2026-08-24, S131).** The DEFAULT CREDENTIALS
-   table on page 1 marks this access point struck-through and **"❌ NOT SUPPORTED"**, while this step
-   instructs every new user to join it. One of the two is wrong and a new user may be directed to a
-   network that does not exist. **Not silently deleted** — establish which is correct, then fix both.
-   *Note: the default password itself is an accepted operator exception (S131) and is not a defect.*
+9. The `d3kOS` WiFi access point is **NOT SUPPORTED** in current builds (per DEFAULT CREDENTIALS table,
+   page 1). Ensure the Pi is connected to your home/local network via Ethernet or by pre-configuring
+   WiFi credentials on the SD card image. The Pi will be reachable at `http://d3kos.local` (step 10).
+   *(BUG-80 FIXED 2026-09-01.)*
 
 10. Open browser → `http://d3kos.local` or `http://10.42.0.1`
 

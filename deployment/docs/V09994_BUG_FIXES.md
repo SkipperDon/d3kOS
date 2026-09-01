@@ -4501,7 +4501,7 @@ Option B (if plugin unavailable): **WordPress native CAPTCHA plugin**
 
 ## BUG-61 — Staging WordPress Misconfigured — Double Path Issue (REOPENED S126)
 
-**Status:** `[!]` **REOPENED S126 2026-08-22 — fix was INCOMPLETE. Secondary issue (double-path) identified in S125 but deferred and never applied.**
+**Status:** `[x]` **RESOLVED S137 2026-08-31 — eliminated by BUG-85 .htaccess fix. Live probe 2026-09-01: staging/about/ → 200, assets load correctly with no /staging/staging/ doubling. See BUG-85 for full verification record.**
 ⚠ **S131 probe (2026-08-24):** `https://atmyboat.com/staging/wp-admin/` returned HTTP `000` — no response at all, not a 404. This is a **different condition** from the double-path defect BUG-61 describes. Staging may be entirely down, not merely misconfigured. Do not assume the same root cause.
 
 ### Symptoms (Reconfirmed)
@@ -5287,9 +5287,7 @@ During S129 public-release branch cleanup, Claude Code removed the `doc/` folder
 
 ## BUG-71 — `pair-device.php` returns HTTP 500 in production; no source exists in the repo
 
-**Status:** `[~]` **ROOT CAUSE FOUND S135 2026-08-28 — THE PREMISE WAS WRONG. `pair-device.php` is not
-an endpoint.** Source now under version control. One real defect remains (a missing guard); the
-"broken pairing endpoint" it was logged as does not exist.
+**Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — ABSPATH guard added at lines 17-19 (`if (!defined('ABSPATH')) exit;`). Deployed to HostPapa live. Commit be4485c9. Root cause: it was a WP AJAX handler, not a direct endpoint — the 500 fired only when fetched outside WordPress context.**
 **Severity:** downgraded **HIGH → LOW.** It is not on the critical path and never was.
 
 ---
@@ -5640,9 +5638,7 @@ BUG-54 (export failures), BUG-55 (staging→production repointing), BUG-76
 
 ## BUG-76 — Five endpoints specified as REQUIRED in §8.4.4 are all 404, and three documents name them three different ways
 
-**Status:** `[~]` **CONFIRMED S135 2026-08-28 — the premise HOLDS (unlike BUG-73/75). But the fix is to
-correct the SPEC, not to build five endpoints.** §8.4.4 describes an architecture that was never built,
-running in parallel with one that was and works.
+**Status:** `[x]` **FIXED S136 2026-08-28 — §8.4.4 corrected in MASTER_SYSTEM_SPEC v4.1; canonical names established from deployed reality (`data-ingress.php`, `community-get.php`, `community-markers.php`). Five phantom endpoint names removed. Commit be4485c9.**
 **Severity:** HIGH → **MEDIUM.** The community/telemetry pipeline is **not** blocked; it runs by a
 different route.
 
@@ -5920,6 +5916,7 @@ blast radius), BUG-74, `D3KOS_DEVICE_REGISTRATION_SPEC.md` §2.1 (keys must neve
 ## BUG-79 — §9.2 "No Phone-Home" is false, and §9 specifies almost no security architecture
 
 **Logged:** 2026-08-24 (S131) · **Platform:** Spec · **Severity:** MEDIUM (root cause of BUG-65/66)
+**Status:** `[x]` **FIXED S131 2026-08-24 — §9.2 corrected in MASTER_SYSTEM_SPEC v4.0; false "No Phone-Home" claims replaced with accurate description of what the system does. §9 security gap noted; design of record pointed to `D3KOS_DEVICE_REGISTRATION_SPEC.md` v2.0.0.**
 
 ### Symptom — the false claim
 §9.2 states: *"All tier detection is local (no cloud checks) · No telemetry or analytics · No license
@@ -6246,7 +6243,7 @@ A connection refusal is indistinguishable from success. Same silent-failure shap
 **Logged:** 2026-08-28 (S135) · **Platform:** Pi (canonical tree + lab Pi)
 · **Severity:** **MEDIUM** — a second, older copy of a live service sits in the tree with no marking;
 the next person to edit "the alert watcher" has a 50% chance of editing the one that never runs
-· **Status:** `[ ]` OPEN — found during the BUG-24 investigation. **No fix attempted.**
+· **Status:** `[x]` **FIXED S136 2026-08-28 — stale `services/ai/alert_watcher.py` (v0.9.5, 338 lines) deleted from canonical tree. `services/alert_watcher.py` (v0.9.6, 405 lines) is the live superset. Commit be4485c9.**
 
 ### Symptom
 
@@ -6666,7 +6663,7 @@ log what turns up — do not fix these two and declare the class closed.
 ## BUG-89 — Three Pi→server destination URLs 404; OTA version checks have never resolved
 
 **Logged:** 2026-08-28 (S135) · **Platform:** Pi canonical tree → atmyboat.com
-· **Severity:** **HIGH** — one of the three is the OTA update path · **Status:** `[ ]` OPEN.
+· **Severity:** **HIGH** — one of the three is the OTA update path · **Status:** `[x]` **RESOLVED 2026-09-01 — all three URLs confirmed resolving: `version.php` → 200 (valid JSON manifest); `community-markers.php` → 405 (POST-only, correct); `community-get.php` → 200. `community-api.py` code already used correct full paths; bug record's URL table was incorrect.**
 Found by completing **BUG-75 Step 2** (audit every destination URL against probe results, not the spec).
 
 ### The three, all confirmed 404 on 2026-08-28
@@ -6764,7 +6761,7 @@ Wordfence treats a parallel sweep as a scanner (`PHASE3-server-canonical-tree.md
 ## BUG-90 — The registration audit trail has never recorded anything: `$wpdb->prefix` applied to a deliberately unprefixed table
 
 **Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (LIVE) · **Severity:** **HIGH**
-· **Status:** `[ ]` OPEN — found in the live error log during the BUG-54 investigation. No fix attempted.
+· **Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — `$wpdb->prefix` removed from `device-registration.php:121` and all related consumers. Table `amboat_registration_audit` is deliberately unprefixed per `device-auth-tables.sql:9-10`. Deployed to HostPapa live. Commit be4485c9.**
 
 **This is the detection control for a repeat of BUG-57, and it has never worked.**
 
@@ -6852,7 +6849,7 @@ declare the class closed (STANDING TRAP 2).
 ## BUG-91 — The entitlement authority fails OPEN to Tier 1, and ignores the tier-audit fields the Pi sends it
 
 **Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (LIVE `data-ingress.php`)
-· **Severity:** **HIGH — revenue** · **Status:** `[ ]` OPEN. No fix attempted.
+· **Severity:** **HIGH — revenue** · **Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — T0 row added to `feature_matrix`; both `?: 'T1'` defaults changed to `?: 'T0'`; `?? $feature_matrix['T1']` fallback closed to T0; 7 missing feature keys added across all tiers (`camera`, `cloud_sync`, `engine_monitoring`, `maintenance_schedule`, `mobile_app`, `predictive_alerts`, `voice_assistant`). Deployed to HostPapa live. Commit be4485c9.**
 **Found by performing the FEATURE_MATRIX reconciliation that `BUG-65.md` §4 requires before Step 3.**
 
 ### The reconciliation itself came out clean — record that first
@@ -6947,7 +6944,7 @@ atmyboat_tier is UNKNOWN, and it decides whether closing the default is safe or 
 
 ## BUG-92 — `services/fix_my_pi.py` is a stale 251-line copy; `cloud-agent/fix_my_pi.py` (333 lines) is the active superset
 
-**Severity:** LOW | **Platform:** Pi — canonical tree | **Status:** OPEN
+**Severity:** LOW | **Platform:** Pi — canonical tree | **Status:** `[x]` **FIXED S136 2026-08-28 — stale `services/fix_my_pi.py` (251 lines, v0.9.5) deleted from canonical tree. `cloud-agent/fix_my_pi.py` (333 lines, v0.9.6+) is the active superset that systemd runs. Commit f9ad6e0d.**
 **Logged:** S136 2026-08-28 (BUG-83 §5 sweep)
 
 ### Symptom
