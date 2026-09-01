@@ -2,8 +2,10 @@
 # community API Flask service port 8095
 
 from flask import Flask,jsonify,request
-import requests,json,os
+import requests,json,os,sys
+sys.path.insert(0, '/opt/d3kos/services')
 from anonymiser import strip_position
+from device_sign import sign_device_request
 
 app = Flask(__name__)
 
@@ -45,9 +47,12 @@ def post_marker():
             'lon': pos['lon_approx']
         }
         
+        _path = '/wp-content/themes/twentytwenty-child/mobile/community-markers.php'
+        auth_headers = sign_device_request(_path)
         response = requests.post(
-            'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/community-markers.php',
+            'https://atmyboat.com' + _path,
             json=payload,
+            headers=auth_headers,
             timeout=10
         )
         
