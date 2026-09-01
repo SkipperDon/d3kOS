@@ -6761,7 +6761,7 @@ Wordfence treats a parallel sweep as a scanner (`PHASE3-server-canonical-tree.md
 ## BUG-90 — The registration audit trail has never recorded anything: `$wpdb->prefix` applied to a deliberately unprefixed table
 
 **Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (LIVE) · **Severity:** **HIGH**
-· **Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — `$wpdb->prefix` removed from `device-registration.php:121` and all related consumers. Table `amboat_registration_audit` is deliberately unprefixed per `device-auth-tables.sql:9-10`. Deployed to HostPapa live. Commit be4485c9.**
+· **Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — `$wpdb->prefix` removed from `device-registration.php:121` and all related consumers. Table `amboat_registration_audit` is deliberately unprefixed per `device-auth-tables.sql:9-10`. Deployed to HostPapa live. Commit be4485c9. ✅ VERIFIED S139 2026-09-01 — live DB query confirmed `amboat_registration_audit` contains 1 row; table is receiving writes. Gap closed.**
 
 **This is the detection control for a repeat of BUG-57, and it has never worked.**
 
@@ -6849,7 +6849,7 @@ declare the class closed (STANDING TRAP 2).
 ## BUG-91 — The entitlement authority fails OPEN to Tier 1, and ignores the tier-audit fields the Pi sends it
 
 **Logged:** 2026-08-28 (S135) · **Platform:** atmyboat.com (LIVE `data-ingress.php`)
-· **Severity:** **HIGH — revenue** · **Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — T0 row added to `feature_matrix`; both `?: 'T1'` defaults changed to `?: 'T0'`; `?? $feature_matrix['T1']` fallback closed to T0; 7 missing feature keys added across all tiers (`camera`, `cloud_sync`, `engine_monitoring`, `maintenance_schedule`, `mobile_app`, `predictive_alerts`, `voice_assistant`). Deployed to HostPapa live. Commit be4485c9.**
+· **Severity:** **HIGH — revenue** · **Status:** `[x]` **FIXED + DEPLOYED S136 2026-08-28 — T0 row added to `feature_matrix`; both `?: 'T1'` defaults changed to `?: 'T0'`; `?? $feature_matrix['T1']` fallback closed to T0; 7 missing feature keys added across all tiers (`camera`, `cloud_sync`, `engine_monitoring`, `maintenance_schedule`, `mobile_app`, `predictive_alerts`, `voice_assistant`). Deployed to HostPapa live. Commit be4485c9. ✅ VERIFIED S139 2026-09-01 — live DB query confirmed 0 users have missing/empty/zero `atmyboat_tier` meta. Fail-closed to T0 was safe; no paying customer affected. Gap closed.**
 **Found by performing the FEATURE_MATRIX reconciliation that `BUG-65.md` §4 requires before Step 3.**
 
 ### The reconciliation itself came out clean — record that first
