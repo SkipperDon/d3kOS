@@ -7390,3 +7390,58 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-01 (S139 — Addendum) — BUG-90/91 Verification + BUG-66 Phase C Deployment
+
+**Goal continuation:** After the initial S139 close entry, operator authorized additional work: verify BUG-90/91 gaps via live DB query and complete BUG-66 Phase C.
+
+**Completed:**
+- **BUG-90/91 live DB verification** — deployed a token-protected diagnostic PHP script to HostPapa live, ran both queries, deleted the script within 60 seconds:
+  - BUG-90: `amboat_registration_audit` has 1 row → table is receiving writes → gap CLOSED
+  - BUG-91: 0 users with missing/empty/zero `atmyboat_tier` → fail-closed to T0 was safe → gap CLOSED
+  - V09994_BUG_FIXES.md updated with ✅ VERIFIED S139 notes on both records
+  - Commit c28d2b24
+
+- **BUG-66 Phase C audit — S134-cont record was wrong on 4 of 6 endpoints:**
+  - Phase C claimed 6 endpoints deployed with Ed25519. Live FTP listing + live file reads showed only `version-heartbeat.php` had actually been deployed with Ed25519.
+  - `failure-report.php` and `config-backup.php` were live but still had `hash_equals(AMBOAT_API_KEY)` — repo had Ed25519 versions, never uploaded.
+  - `fix-confirmed.php` was entirely absent from live directory.
+  - `community-markers-write.php` (claimed in Phase C record) does not exist anywhere — the live endpoint is `community-markers.php` which used `amboat_auth_pi_request()` (legacy key via auth.php); the Pi sent zero auth headers to it.
+  - `community-position.php` (claimed in Phase C record) does not exist anywhere and the Pi never calls it.
+
+- **BUG-66 Phase C deployment — all 5 in-scope endpoints now on Ed25519:**
+  1. `failure-report.php` — deployed repo Ed25519 version. HTTP 401 on unauth POST confirmed.
+  2. `config-backup.php` — deployed repo Ed25519 version. HTTP 401 confirmed.
+  3. `fix-confirmed.php` — deployed repo Ed25519 version (new file on HostPapa). HTTP 401 confirmed.
+  4. `community-markers.php` — wrote new Ed25519 version in canonical server tree; added `require_once device-auth.php` + `verify_device_request()` + `amboat_get_user_by_device_token()` lookup (keeps auth.php for helper functions). Deployed to HostPapa live. HTTP 401 confirmed.
+  5. `community-api.py` (Pi) — added `device_sign.sign_device_request()` import and signing headers to `post_marker()`. Commits d95d4dff, 1bcb364e.
+
+**Decisions:**
+- `community-markers.php` kept `require_once auth.php` alongside `require_once device-auth.php` because the file relies on `amboat_send_error()`, `amboat_get_db()`, `amboat_get_user_meta()`, `amboat_update_user_meta()`, and `amboat_get_user_by_device_token()` — all defined in auth.php. Removing auth.php would require rewriting those helpers.
+- Ed25519 verification is done first by `verify_device_request()` (new system); user_id lookup falls back to `amboat_get_user_by_device_token()` from wpax_usermeta (old pairing system). This is correct for the transition period — both device enrollment (new) and legacy key (audited) paths work.
+- `community-position.php` — never built, Pi does not call it. Confirmed by reading community-api.py in full. Skipped.
+- BUG-66 stays CRITICAL: the endpoints are hardened but the Pi fleet hasn't run through the enrolment flow yet, so they fall through to the audited legacy key path until enrolled.
+
+**Files changed this addendum:**
+- `deployment/v0.9.9.4-server/mobile/community-markers.php` — CREATED (was live-only, now in canonical server tree)
+- `deployment/v0.9.9.4/opt/d3kos/services/community/community-api.py` — UPDATED (device_sign import + signing headers)
+- `deployment/docs/V09994_BUG_FIXES.md` — UPDATED (BUG-90/91 verified; BUG-66 Phase C status corrected)
+- `PROJECT_CHECKLIST.md` — UPDATED (BUG-66 status corrected; version bumped)
+
+**Ollama:** 0 calls.
+
+**Pending (carried forward):**
+- BUG-66: Pi fleet enrolment flow required before legacy key path can be removed
+- BUG-54: nginx 400 on data-ingress.php POST — needs nginx log or one live POST
+- BUG-57: MailPoet G8 screenshot from operator
+- BUG-58: Pi API key rotation — on-boat SSH
+- BUG-65 Step 3: server-side tier enforcement
+- BUG-69: Admin username rename (operator WP Admin)
+- BUG-72: version-heartbeat.php now live (was BUG-72 blocker) — verify full heartbeat flow end-to-end
+- BUG-75 Step 3: operator decision on /mobile/ alias
+- BUG-81: public GitHub docs update — requires git push APPROVED
+- GitHub Issue Sync: deferred to when all bugs complete
+
+---

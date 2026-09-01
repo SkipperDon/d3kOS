@@ -1724,3 +1724,32 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `PROJECT_CHECKLIST.md` | **[UPDATED — S138]** BUG-56 marked `[x]` FIXED. |
 
 **Key lesson S138:** nginx can block entire User-Agent strings globally. `python-requests` UA is blocked on atmyboat.com nginx. Fix: set `User-Agent: Mozilla/5.0` in all request headers AND monkey-patch `requests.utils.default_user_agent` for library-level calls. Wordfence WAF blocks PHP files matching webshell patterns (external auth + PDO + `php://input` in one file) — WordPress REST API is the correct bypass: Wordfence never blocks registered WP REST routes.
+
+---
+
+### S139 — 2026-09-01 — BUG-66 Phase C: Ed25519 Auth for All In-Scope Endpoints
+
+**Discovery:** S134-cont Phase C record claimed 6 endpoints deployed with Ed25519. Live FTP reads confirmed only 1 (`version-heartbeat.php`) had actually been updated. 4 endpoints were stale (2 had Ed25519 in repo but legacy key on HostPapa; 1 missing entirely from HostPapa; 1 had wrong filename in records). `community-position.php` — never built, never called by Pi. Confirmed by reading `community-api.py` in full.
+
+| File | Description |
+|---|---|
+| HostPapa live: `mobile/failure-report.php` | **[UPDATED — S139 BUG-66 Phase C]** Deployed repo version: replaces `hash_equals(AMBOAT_API_KEY)` at line 28 with `verify_device_request()` from device-auth.php. Confirmed 401 on unauthenticated POST. |
+| HostPapa live: `mobile/config-backup.php` | **[UPDATED — S139 BUG-66 Phase C]** Deployed repo version: replaces `hash_equals(AMBOAT_API_KEY)` at line 47 with `verify_device_request()`. Confirmed 401 on unauthenticated POST. |
+| HostPapa live: `mobile/fix-confirmed.php` | **[CREATED — S139 BUG-66 Phase C]** New file on HostPapa — was not present live at all despite being in repo with `verify_device_request()` since S134-cont. Deployed. Confirmed 401 on unauthenticated POST. Pi path: `wp-content/themes/twentytwenty-child/mobile/fix-confirmed.php`. |
+| `deployment/v0.9.9.4-server/mobile/community-markers.php` | **[CREATED — S139 BUG-66 Phase C]** Was live-only; previous live version used `amboat_auth_pi_request()` (legacy key wrapper); Pi sent zero auth headers (feature was broken). New version: `require_once device-auth.php` + `verify_device_request()` + `amboat_get_user_by_device_token()` for user_id lookup; `require_once auth.php` kept for `amboat_send_error()`, `amboat_get_db()`, `amboat_get_user_meta()`, `amboat_update_user_meta()`. Rate limit 20/day. Deployed to HostPapa live. Confirmed 401 on unauthenticated POST. |
+| HostPapa live: `mobile/community-markers.php` | **[UPDATED — S139 BUG-66 Phase C]** See above. Legacy key path in device-auth.php still active for transition period with audit logging to `amboat_registration_audit`. |
+| `deployment/v0.9.9.4/opt/d3kos/services/community/community-api.py` | **[UPDATED — S139 BUG-66 Phase C]** Added Ed25519 signing to `post_marker()`: `sys.path.insert(0, '/opt/d3kos/services')` + `from device_sign import sign_device_request`. `sign_device_request(_path)` call builds headers dict; passed to `requests.post()`. Pi path: `/opt/d3kos/services/community/community-api.py`. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S139]** BUG-90 verified (audit row count = 1); BUG-91 verified (0 users with missing/empty/zero tier); BUG-66 Phase C status corrected (all 5 in-scope endpoints now Ed25519). |
+| `PROJECT_CHECKLIST.md` | **[UPDATED — S139]** BUG-66 status updated; BUG-92 row added; version bumped v3.60→v3.61. |
+| `SESSION_LOG.md` | **[UPDATED — S139]** Initial S139 entry (bug record closure pass) + addendum (BUG-90/91 verification + BUG-66 Phase C) both appended. |
+
+**BUG-66 Phase C in-scope endpoints (confirmed complete):**
+1. `version-heartbeat.php` — deployed S134-cont (Aug 25)
+2. `failure-report.php` — deployed S139
+3. `config-backup.php` — deployed S139
+4. `fix-confirmed.php` — deployed S139 (new file on HostPapa)
+5. `community-markers.php` — deployed S139 (new version in repo + HostPapa)
+
+**Out-of-scope (confirmed):** `fleet-*` endpoints (PWA JWT, not AMBOAT_API_KEY). `community-position.php` (never built, Pi never calls it).
+
+**BUG-66 remains CRITICAL** pending Pi fleet enrolment flow — Pi falls through to audited legacy key path until each unit runs first-boot enrolment.
