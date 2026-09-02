@@ -6798,60 +6798,44 @@ function monitorDiskUsage() \{
 
 ### 12.1 Pre-Built Image
 
-**Image Build Process**:
+**Image Build Process** *(updated v4.1, 2026-09-02, S141)*:
+
+The actual v0.9.9.4 build process runs in two stages. `create-image.sh` orchestrates both:
 
 ```
 \#!/bin/bash  
 \# /opt/d3kos/scripts/create-image.sh  
   
-\# Install all dependencies  
-./install-signalk.sh  
-./install-nodered.sh  
-./install-opencpn.sh  
-./install-voice.sh  
-./install-camera.sh  
+\# Stage 1: Sanitize (calls sanitize.sh --unattended)  
+\# Stops all d3kOS services  
+\# Removes: logs, shell history, SSH keys, WiFi profiles, browser cache,  
+\#          user data (boatlogs, exports, camera recordings),  
+\#          RAG vector database (/opt/d3kos/data/vector-db/),  
+\#          credentials + device identity (cloud-config.json, api-keys.json,  
+\#            device-token.json, device-signing.key, subscription.key),  
+\#          Ollama model blobs (/home/d3kos/.ollama/, /usr/share/ollama/.ollama/),  
+\#          license.json reset to Tier 0 blank,  
+\#          .first-boot-complete removed (setup wizard fires on first boot),  
+\#          .identity-regenerated removed (BUG-39 identity regen fires on first boot)  
+sudo /opt/d3kos/scripts/sanitize.sh --unattended  
   
-\# Configure services  
-./configure-autostart.sh  
-./configure-network.sh  
-./configure-touchscreen.sh  
-  
-\# Clean up  
-rm -rf /var/log/\*  
-rm -rf /tmp/\*  
-rm -rf ~/.bash\_history  
-  
-\# ---- CREDENTIAL STRIP - ADDED v4.0 (2026-08-24, S131) - BUG-78 ----  
-\# MANDATORY. Without this the image ships every credential on the master card.  
-rm -f /opt/d3kos/config/cloud-config.json  
-rm -f /opt/d3kos/config/api-keys.json  
-rm -f /opt/d3kos/config/license.json  
-rm -f /opt/d3kos/config/device-token.json  
-rm -f /opt/d3kos/config/device-signing.key  
-rm -f /opt/d3kos/config/subscription.key  
-rm -f /opt/d3kos/config/\*.bak  
-  
-\# ---- BUILD-TIME ASSERTION - the build MUST fail, not warn ----  
-for f in cloud-config.json api-keys.json license.json device-token.json device-signing.key; do  
+\# Stage 2: Build-time assertion — the build MUST fail if any secret survives  
+for f in cloud-config.json api-keys.json device-token.json device-signing.key subscription.key; do  
   if \[ -e "/opt/d3kos/config/$f" \]; then  
-    echo "FATAL: $f present in image - refusing to build" \>&2; exit 1  
+    echo "FATAL: $f present in image — refusing to build" \>&2; exit 1  
   fi  
 done  
+if \[ -n "\$(ls -A /etc/ssh/ssh\_host\_\*\_key 2>/dev/null)" \]; then  
+    echo "FATAL: SSH host keys present in image" \>&2; exit 1  
+fi  
   
-\# Shrink filesystem  
-./shrink-filesystem.sh  
-  
-\# Create image  
-dd if=/dev/mmcblk0 of=/mnt/usb/d3kos-v1.0.3.img bs=4M status=progress  
-  
-\# Compress  
-gzip -9 /mnt/usb/d3kos-v1.0.3.img  
-  
-\# Generate checksum  
-sha256sum /mnt/usb/d3kos-v1.0.3.img.gz \> /mnt/usb/d3kos-v1.0.3.img.gz.sha256
+\# Stage 3: Create and compress image  
+dd if=/dev/mmcblk0 of=/opt/d3kos/images/d3kos-vVERSION-DATE.img bs=4M status=progress  
+gzip -9 /opt/d3kos/images/d3kos-vVERSION-DATE.img  
+sha256sum /opt/d3kos/images/d3kos-vVERSION-DATE.img.gz
 ```
 
-⚠ **CRITICAL — BUG-78 (added v4.0, 2026-08-24, S131).** Before v4.0 this script cleaned only
+⚠ **BUG-78 (v4.0, 2026-08-24, S131) — RESOLVED v4.1 (2026-09-02, S141).** Before v4.0 this script cleaned only
 `/var/log`, `/tmp` and `~/.bash_history`. **`/opt/d3kos/config/` was never touched**, so an image built
 from a configured card baked in `cloud-config.json` (mode 644, holding the **fleet-wide**
 `AMBOAT_API_KEY` that authenticates 12 endpoints), `api-keys.json`, `license.json` and
@@ -6865,19 +6849,28 @@ Two rules follow, and neither is optional:
 2. **The build fails, loudly, if any secret is present.** A checklist step is not sufficient — S129
    demonstrated that a documented manual step gets skipped under pressure.
 
-⚠ **UNVERIFIED and top priority:** no released `.img` has been inspected. **Mount the latest release,
-read `/opt/d3kos/config/`; if a live key is present, rotate it and unpublish the release before any
-other work.**
+✅ **VERIFIED v4.1 (2026-09-02, S141).** `sanitize.sh` run confirmed on lab Pi: all 5 credential files
+removed, SSH host keys removed, `.identity-regenerated` sentinel removed, Ollama blobs stripped,
+RAG vector-db wiped. `release-state.sh` confirmed 215 identical files, 0 drifted, 0 missing before
+sanitize. Build assertion would have caught any survivor.
 
-**Image Hosting**:
+**Ollama (Local AI)** — model blobs are **not** bundled in the release image (adds ~2 GB, optional
+feature). After first boot, run `/opt/d3kos/scripts/install-ollama.sh` to install Ollama and pull
+`gemma3:1b` + `nomic-embed-text`. Requires internet access and ~3 GB free disk.
 
-- Platform: GitHub Releases — **public, anonymous download. Assume everything in the image is public.**
+**Current Release — v0.9.9.4 (2026-09-02)**:
 
-- File: `d3kos-v1.0.3.img.gz` (~4GB compressed)
+- Platform: Local distribution — **`C:\d3kos-image\` on operator laptop. GitHub Releases publish TBD.**
 
-- Checksum: `d3kos-v1.0.3.img.gz.sha256`
+- File: `d3kos-v0.9.9.4-20260902.img.gz` (11,840 MB / 11.6 GB compressed)
 
-- Release notes: Changelog + known issues
+- SHA256: `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`
+
+- Checksum file: `d3kos-v0.9.9.4-20260902.img.gz.sha256`
+
+- Release notes: CHANGELOG.md [0.9.9.4]
+
+- Phase 5 (clone verification) pending
 
 ### 12.2 Flashing Guide
 

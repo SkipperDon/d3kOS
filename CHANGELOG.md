@@ -672,19 +672,106 @@ d3kOS uses semantic versioning with the following convention:
 
 ## [0.9.9.4] - 2026-09-02
 
-### Release Image
-- **d3kos-v0.9.9.4-20260902.img.gz** — first official release image for v0.9.9.4
-- Size: 11,840 MB (11.6 GB compressed)
-- SHA256: `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`
-- Phase 5 (clone verification) pending — flash to spare card to confirm BUG-39 fires on first boot
+### Summary
 
-### Scripts
-- `sanitize.sh`: added `.identity-regenerated` removal (BUG-39), RAG vector-db wipe, Ollama blob strip
-- `create-image.sh`: version string corrected to `0.9.9.4`
-- `install-ollama.sh`: new optional post-install script — downloads `gemma3:1b` + `nomic-embed-text`
+**v0.9.9.4 — Security Gate + Fleet Hardening Release**
 
-### Deployment
-- MANIFEST.md5 regenerated: 215 files, 0 stale
-- 23 orphan files removed from Pi before imaging
-- `d3kos-identity-regen` service confirmed enabled
+v0.9.9.4 closes every security gate required before v1.0 and repairs the core data pipeline that had been silently failing since April 2026. The primary work: per-device Ed25519 authentication replacing the single fleet-wide API key (BUG-66), device-gated registration (BUG-63), tier authority hardening (BUG-65/77), and full repair of the cloud export pipeline (BUG-54). Dashboard remote access is now fully functional — localhost hardcoding was removed across 17 service URL sites (BUG-46/48/55). The release image is clean-built with build-time secret assertions.
+
+**Status:** Release image created. Phase 5 (clone verification on spare SD card) pending.
+
+**Image:** `d3kos-v0.9.9.4-20260902.img.gz` — 11,840 MB (11.6 GB)
+**SHA256:** `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`
+
+---
+
+### Security
+
+- **BUG-66 — Per-device Ed25519 authentication** — fleet-wide `AMBOAT_API_KEY` replaced with per-device Ed25519 keypair. All 5 in-scope server endpoints (`version-heartbeat.php`, `failure-report.php`, `config-backup.php`, `fix-confirmed.php`, `community-markers.php`) hardened. Pi-side: `device_sign.py` + `sign_device_request()` in `regenerate-identity.sh`. Server-side: `device-auth.php` + `verify_device_request()` + 4 new DB tables + wp-admin approval queue.
+- **BUG-65 — License file hardening** — `license.json` set to mode 600; tier enforced server-side via `data-ingress.php` entitlement check (7 audit fields logged); server returns correct tier on every sync regardless of local `license.json` value.
+- **BUG-63 — Device-gated registration** — `page-register.php` now requires a valid paired device token before `wp_create_user()` is called. Registration without a paired Pi is rejected. Closed the bot-creation vector exploited in BUG-57.
+- **BUG-78 — Image credential strip + build assertion** — `create-image.sh` calls `sanitize.sh` first; build-time assertion fails loudly if any secret survives into the image. `.identity-regenerated` sentinel cleared so BUG-39 fires on every clone.
+- **BUG-77 — Tier 1 authority moved server-side** — `tier_service.py` calls `detect_tier()` which checks device pairing + server approval; local `license.json` cannot self-grant Tier 1.
+- **BUG-74 — Cloud config file hardened** — `cloud-credentials.json` corrected to `cloud-config.json`; file mode enforced 600 in `first-boot-setup.sh`.
+- **BUG-57 — MailPoet botnet contained** — 62,000 bot accounts created via MailPoet auto-subscribe vector; registration secured by BUG-63 device gate; MailPoet G8 (auto-create WP user) pending operator screenshot verification.
+- **BUG-59 — Pre-commit credential scanning** — `.git/hooks/pre-commit` added to both repos; blocks commits containing live API key patterns.
+- **BUG-62 — wp-admin hardened** — HTTP Auth layer added over `/wp-admin/` on HostPapa.
+- **BUG-60 — Comment spam blocked** — WordPress comment approval queue enabled; anonymous comments require login.
+
+---
+
+### Dashboard & Signal K
+
+- **BUG-29** — `propulsion.0.*` → `propulsion.port.*` — engine gauges now receive live Signal K data.
+- **BUG-30** — depth `belowKeel` → `belowTransducer` — depth gauge now populates from the correct SK path.
+- **BUG-36** — M14 engine-data cache restored to `instruments.js`; had been silently removed in an S105 deploy.
+- **BUG-43** — Imperial/metric unit selection now affects all dashboard gauges (settings preference was never propagated).
+- **BUG-46/48** — `localhost` hardcoding removed from WebSocket and all other service URLs; dashboard now works from any remote browser. Guard test `bug48-no-hardcoded-localhost.spec.ts` added.
+- **BUG-47** — `propulsion.port.coolantTemperature` handler added; coolant gauge now populates.
+- **BUG-49** — Dashboard header wordmark and logo fixed in day and night modes.
+- **BUG-13** — Speed gauge flicker during throttle transitions fixed.
+- **BUG-17** — Battery voltage gauge now displays correctly.
+- **BUG-34** — Engine gauge tap dialog reads live Signal K values with boat-document tolerances; hardcoded strings removed.
+- **BUG-42** — Oil pressure alert dismisses correctly after engine shutdown.
+- **BUG-45** — False critical engine alerts on Pi boot (before engine start) suppressed.
+- **BUG-44** — TTS voice warning now fires on critical engine alerts (`showCrit` calls TTS).
+
+---
+
+### Cloud Export & Data Pipeline
+
+- **BUG-54 — Cloud export fully restored** — three-layer fix: (1) User-Agent override in `export_worker.py` and `cloud_agent.py` (nginx blocks `python-requests` UA globally); (2) Pi `cloud-config.json` API key updated to current value; (3) `sanitize_key()` polyfill added to `data-ingress.php` for HMAC key padding. First successful export confirmed 2026-09-01 after 132 days of silent failure.
+- **BUG-93** — `collect_gps()` and `collect_engine()` now check `r.status_code == 200` before calling `r.json()`; prevents `JSONDecodeError` crash on lab Pi where GPS/N2K hardware is absent.
+- **BUG-55** — All 17 staging URL references in Pi code and server code corrected to production `atmyboat.com`.
+
+---
+
+### Admin CRM
+
+- **BUG-56 — Admin CRM fully restored** — three-layer fix: (1) WP REST endpoint `POST /wp-json/d3k/v1/crm` registered in `functions.php` (bypasses Wordfence WAF which blocks direct PHP file access); (2) DB credentials in `mobile/config.php` corrected from broken `atmyb197_wp302` to production `atmyb197_wp59874`; (3) VM `db.py` User-Agent set to `Mozilla/5.0`. Fleet diagnostics page now shows all Pi online/offline status.
+
+---
+
+### AvNav & Navigation
+
+- **BUG-19/20** — `fetchAis="true"` and `aisQueryPeriod="5"` added to `avnav_server.xml`; AIS targets now appear on AvNav chart overlay.
+- **BUG-32** — `rtl_ais` directed to dedicated port 10108 (was colliding with Signal K's TCP 10110).
+- **BUG-33** — Forward-watch hazard alerting enabled and response time reduced.
+
+---
+
+### Setup & Identity
+
+- **BUG-39** — First-boot identity regeneration: `d3kos-identity-regen.service` generates unique `device-token.json`, SSH host keys, and `installation_id` on first boot of each flashed image. `.identity-regenerated` sentinel prevents repeat runs.
+- **BUG-35** — OTA upgrade no longer overwrites `version.txt` fields.
+- **BUG-22** — Setup wizard no longer bypassed on fresh load.
+- **BUG-81 P1/P3** — CX5106 DIP switch wizard and user manual corrected: two-block model (Block A: 7-position binary RPM ratio; Block B: 2-position sender standard). Previous docs described a non-existent 8-switch layout.
+
+---
+
+### Test Harness
+
+- **BUG-51** — `run-all.sh` is now the canonical runner; exits non-zero on any failure or unexecutable file. Baseline: 94 passing tests.
+- **BUG-52/53** — Stale test expectations corrected for BUG-30 and BUG-26.
+
+---
+
+### Image & Release Infrastructure
+
+- `sanitize.sh` — added: `.identity-regenerated` sentinel removal (BUG-39), RAG vector-db wipe (`/opt/d3kos/data/vector-db/`), Ollama model blob strip (`/home/d3kos/.ollama/` + `/usr/share/ollama/.ollama/`).
+- `create-image.sh` — version string corrected `0.9.1.2` → `0.9.9.4`; now calls `sanitize.sh --unattended` + build-time secret assertion before `dd`.
+- `install-ollama.sh` — new optional post-install script; installs Ollama and pulls `gemma3:1b` + `nomic-embed-text`. Ollama blobs are **not** bundled in the image.
+- `MANIFEST.md5` regenerated — 215 canonical files tracked.
+- `release-state.sh` — three-way verifier (repo ↔ MANIFEST ↔ Pi) confirms zero drift before imaging.
+
+---
+
+### Pending (Phase 5 — clone verification)
+
+- Flash `d3kos-v0.9.9.4-20260902.img.gz` to spare SD card and verify:
+  1. BUG-39 fires: new `device-token.json` + `.identity-regenerated` created on first boot
+  2. `license.json` shows blank `installation_id`, Tier 0
+  3. No credentials from master card present in `/opt/d3kos/config/`
+  4. `systemctl --failed` = 0 (excluding hardware-dependent services)
+  5. Dashboard loads at `:3000`
 

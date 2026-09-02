@@ -7625,9 +7625,14 @@ human_verified         : 0
 | Ollama | 0 calls | $0.00 |
 | Session total | | TBD |
 
+**Completed (S141 continuation — context resumed):**
+- `doc/MASTER_SYSTEM_SPEC.md` §12.1 updated: stale install-script code block replaced with actual `sanitize.sh` + `dd` flow; "UNVERIFIED top priority" warning removed (resolved); image filename/size/SHA256 updated to v0.9.9.4; Ollama optional-install note added.
+- `CHANGELOG.md` (Helm-OS) v0.9.9.4 entry expanded from 12-line stub to ~100-line comprehensive entry covering all bug fixes and sections.
+- Public `github.com/SkipperDon/d3kOS` CHANGELOG.md updated via `gh api` PUT — v0.9.9.4 entry inserted before [0.9.6] (commit `bc0b42f08eff`). Operator explicitly authorized this push.
+
 **Pending:**
 - Phase 5: Flash image to spare SD card, boot, verify BUG-39 fires + Tier 0 license + clean services + dashboard at :3000
-- Lab Pi: restore to working state (currently sanitized master — needs to be re-configured for lab use, or leave as-is until Phase 5 test)
+- Lab Pi: restore to working state (currently sanitized master — SD card back in Pi, needs reboot to regenerate SSH host keys; password auth needed to re-add authorized_keys)
 - Boat Pi: deploy fresh image in person (all [~] bugs validate at this time)
 
 ---
