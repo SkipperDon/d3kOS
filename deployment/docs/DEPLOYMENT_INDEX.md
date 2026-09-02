@@ -1768,3 +1768,14 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 
 **Lab Pi state after S141:** Sanitized master (blank). SSH inaccessible (authorized_keys removed by sanitize.sh — by design). SD card currently in Windows card reader. Pi needs SD card re-inserted and reconfiguration for lab use, or leave as blank master until Phase 5.
 
+
+---
+
+### S141-cont-3 — 2026-09-02 — v0.9.9.4 Final Release Close-Out
+
+| File / Resource | Description |
+|----------------|-------------|
+| GitHub: `docs/D3KOS_USER_MANUAL_v2.4.0.md` | **[RENAMED — S141-cont-3]** User manual renamed from `D3KOS_USER_MANUAL_v2.3.0.md` to `D3KOS_USER_MANUAL_v2.4.0.md` on `SkipperDon/d3kOS` public repo. Filename now matches content version. Commits `b0aa9d03294f` (create) + `81c836a3b769` (delete old). |
+| GitHub: `README.md` | **[UPDATED — S141-cont-3]** Link to user manual updated from v2.3.0 to v2.4.0 filename. Commit `70e3d9330c7c`. |
+| GitHub Release: `v0.9.9.4` | **[NEW — S141-cont-3]** `https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4`. Tag + release notes: archive.org download link, SHA256, 128GB SD card requirement, full feature list, installation steps, links to INSTALLATION.md + user manual v2.4.0. |
+| HostPapa: `page-manual.php` | **[UPDATED — S141-cont-3]** Version strings updated v0.9.9.2 → v0.9.9.4 (subtitle + download card heading). PDF download link retained at v2.3.0 filename (no new PDF generated). Deployed live via FTP_TLS. Commit `aae03e6` in `atmyboat-forum`. |
