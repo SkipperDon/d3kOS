@@ -7665,3 +7665,100 @@ human_verified         : 0
 ─────────────────────────────────────────────────────
 
 ---
+
+## Session 2026-09-02 (S141-cont-2) — v0.9.9.4 Archive.org Release + Documentation Close-Out
+
+**Goal:** Complete documentation updates, publish release image to archive.org, wire links across GitHub / atmyboat.com / Pi.
+
+**Completed:**
+- **MASTER_SYSTEM_SPEC.md §12.1** — Rewrote image build section: replaced stale install-script code block with actual `sanitize.sh` + `dd` flow; removed "UNVERIFIED top priority" warning (resolved); updated image filename to `d3kos-v0.9.9.4-20260902.img.gz`, size 11,840 MB, SHA256 `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`; added Ollama optional-install note.
+- **Helm-OS CHANGELOG.md** — v0.9.9.4 entry expanded from 12-line stub to ~100-line comprehensive entry with all sections (confirmed was already updated in S141 initial phase; committed in this continuation).
+- **Public d3kOS CHANGELOG.md** — v0.9.9.4 entry inserted before [0.9.6] via `gh api` PUT (commit `bc0b42f08eff`). Operator explicitly authorized.
+- **Public d3kOS User Manual** (`docs/D3KOS_USER_MANUAL_v2.3.0.md`) — version header 0.9.9.3→0.9.9.4, document version 2.3.0→2.4.0, footer fixed and dated 2026-09-02 (commit `18607ae9a174`).
+- **Public INSTALLATION.md** — version 2.0→2.1, date updated, SD card 64GB→128GB Class 10 A2, image filename/size/SHA256 updated to v0.9.9.4 (commit `a200948c0347`).
+- **Pi SSH restore** — after reboot post-sanitize, SSH host keys regenerated via `ssh-keygen -A`; operator used RealVNC to run commands; authorized_keys re-added; SSH key auth confirmed working.
+- **Archive.org upload** — item created at `https://archive.org/details/d3kos-v0.9.9.4-20260902.img` via browser upload. Description updated with correct 128GB SD card requirement, Raspberry Pi Imager instructions, SHA256. Item still deriving — 12 GB file presence to be verified.
+- **GitHub README.md** — Download badge, download section, SD card requirement all updated to v0.9.9.4 / archive.org / 128 GB (commit `a5f8580aa8d6`).
+- **atmyboat.com `page-download.php`** — version v0.9.2.2→v0.9.9.4, download URL→archive.org, button "from GitHub"→"from Archive.org", 64GB→128GB, release notes updated. Deployed to HostPapa live via FTP.
+- **atmyboat.com `version-registry.php`** — version v0.9.2.2→v0.9.9.4, SHA256 updated, download_url→archive.org direct .img.gz link, release notes updated. Deployed to HostPapa live via FTP.
+- **Pi `license.json`** — version field "1.0.3"→"0.9.9.4" (via SSH sudo).
+- **Pi `version.txt`** — updated: "unreleased (in development)"→"Released, 2026-09-02", SHA256 added.
+- **Deferred items review** — full accounting presented to operator; operator confirmed list is acceptable.
+- Committed Helm-OS changes: `e5cc1a90`; atmyboat-forum changes: `6060d50`.
+
+**Decisions:**
+- Phase 5 (clone verification) explicitly declined by operator this session — not deferred by AI, operator decision.
+- 128 GB minimum SD card confirmed from MASTER_SYSTEM_SPEC.md §3.1 (spec: 64 GB minimum, 128 GB recommended; operator directive: 128 GB minimum for v0.9.9.4).
+- Credential rotations (FTP, mobile/config.php, VM) acknowledged as outstanding — operator confirmed list is acceptable; no timeline set.
+- archive.org item still deriving — if 12 GB file absent on verification, `ia` CLI upload to be run.
+
+**Errors / Corrections:**
+- Stated "32 GB or larger" SD card and "download from GitHub" as facts without reading project docs first (95% certainty rule violation). Operator corrected: "find it on the site then report back." Read MASTER_SYSTEM_SPEC.md §3.1 and INSTALLATION.md; corrected to 128 GB / Archive.org. This is counted as UAC=1.
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-02 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Verify archive.org item shows full 12 GB file (check `https://archive.org/details/d3kos-v0.9.9.4-20260902.img` → SHOW ALL). If missing, run `ia` CLI upload.
+- Credential rotation: FTP passwords (`d3kos@atmyboat.com` + `admin@atmyboat.com`), `mobile/config.php` live keys, VM config — operator acknowledged, no timeline set.
+- BUG-60: WP Admin click (operator action required).
+- BUG-57-MAILPOET G8: screenshot verification (operator action required).
+- BUG-65 Finding 3 + BUG-81 P2: deferred to v0.9.9.5.
+
+---
+
+**SESSION QUALITY SCORE (SQS):**
+```
+QUALITY METRICS — 2026-09-02 (S141-cont-2)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 1
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 97/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: UAC=1 — stated SD card size (32 GB) and download source
+("from GitHub") as facts without reading project docs first. 95% certainty
+rule violation. Corrected after operator instructed "find it on the site."
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions SQS: 97 (S141), 97 (S141), 95 (S140), 92 (S139), 100 (S138)
+Average: 96.2. Primary improvement target: UAC (certainty violations).
+Trend: stable/improving.
+─────────────────────────────────────────────────────
+```
+
+### Release Package Manifest — S141-cont-2 Pi Deploy
+```
+- Version: 0.9.9.4 (metadata only — no service files changed)
+- Update type: metadata update
+- Changed files:
+  | File                              | Pi Path                          | Change                            |
+  |-----------------------------------|----------------------------------|-----------------------------------|
+  | license.json                      | /opt/d3kos/config/license.json   | version field "1.0.3" → "0.9.9.4" |
+  | version.txt                       | /opt/d3kos/config/version.txt    | Released status + SHA256 added    |
+- Pre-install steps: none
+- Post-install steps: none (config files only, no service restart required)
+- Rollback: restore from version.txt.bak.20260727 for version.txt; license.json has no backup (metadata only)
+- Health check: ssh to Pi, cat /opt/d3kos/config/version.txt confirms "Released"
+- Plain-language: Updated the Pi's internal version label and release status to reflect the v0.9.9.4 release. No services affected.
+```
+
+EXTENDED DATA FIELDS — 2026-09-02 (S141-cont-2)
+─────────────────────────────────────────────────────
+session_duration_min   : 90
+tasks_planned          : 3 (MASTER_SYSTEM_SPEC, CHANGELOG, archive.org publish)
+tasks_completed        : 10 (all planned + user manual, INSTALLATION.md, README, atmyboat.com x2, Pi x2)
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : certainty_violation (SD card size stated without reading docs)
+human_verified         : 0
+─────────────────────────────────────────────────────
+
