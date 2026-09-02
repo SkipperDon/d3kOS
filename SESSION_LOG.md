@@ -7762,3 +7762,63 @@ failure_category       : certainty_violation (SD card size stated without readin
 human_verified         : 0
 ─────────────────────────────────────────────────────
 
+## Session 2026-09-02 (S141-cont-3) — v0.9.9.4 GitHub Release + User Manual Rename
+**Goal:** Resolve operator-reported GitHub verification issues (user manual showing v2.3.0, Releases section empty). Complete v0.9.9.4 internal documentation close-out.
+
+**Completed:**
+- **GitHub user manual renamed** — `docs/D3KOS_USER_MANUAL_v2.3.0.md` deleted and recreated as `docs/D3KOS_USER_MANUAL_v2.4.0.md` (commits `b0aa9d03294f` + `81c836a3b769`). Filename now matches content version. Root cause of operator confusion: filename contained v2.3.0 while body said v2.4.0.
+- **GitHub README.md updated** — link to user manual updated from v2.3.0 to v2.4.0 filename (commit `70e3d9330c7c`).
+- **GitHub Release v0.9.9.4 created** — `https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4`. Tag `v0.9.9.4` created. Release includes: archive.org direct download link, SHA256, 128GB SD card requirement, full feature list, installation steps, links to INSTALLATION.md and D3KOS_USER_MANUAL_v2.4.0.md. Operator explicitly authorized.
+- **Internal documentation close-out** — SESSION_LOG, PROJECT_CHECKLIST, MEMORY.md all updated to reflect v0.9.9.4 as fully released.
+
+**Decisions:**
+- GitHub Release points to archive.org for the download (not a GitHub release asset) — file is 11.6 GB; GitHub has a 2 GB per-file limit.
+- `gh release create` used (not `gh api`) — this is the correct tool for release creation and is sanctioned by session authorization pattern.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-02 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Verify archive.org item shows full 12 GB file (operator screenshot confirmed presence; still worth a browser check).
+- Credential rotation: FTP passwords, `mobile/config.php` keys — operator acknowledged deferred.
+- BUG-60: WP Admin click (operator action required).
+- BUG-57-MAILPOET G8: screenshot (operator action required).
+- BUG-65 Finding 3 + BUG-81 P2: deferred to v0.9.9.5.
+- Boat Pi: fresh image deployment (in-person visit required — all `[~]` bugs validate at that time).
+
+---
+
+**SESSION QUALITY SCORE (SQS):**
+```
+QUALITY METRICS — 2026-09-02 (S141-cont-3)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions SQS: 100 (S141-cont-3), 97 (S141-cont-2), 97 (S141), 95 (S140), 92 (S139)
+Average: 96.2. Primary improvement target: UAC (certainty violations). Trend: stable/improving.
+─────────────────────────────────────────────────────
+```
+
+EXTENDED DATA FIELDS — 2026-09-02 (S141-cont-3)
+─────────────────────────────────────────────────────
+session_duration_min   : 20
+tasks_planned          : 2 (user manual rename, GitHub Release)
+tasks_completed        : 3 (user manual rename + README link + GitHub Release created)
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
