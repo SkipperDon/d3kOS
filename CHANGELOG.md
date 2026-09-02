@@ -667,3 +667,24 @@ d3kOS uses semantic versioning with the following convention:
 - **3.0.x**: Tier 3 features complete
 
 **Current**: v0.9.2.2 = Release Candidate — full marine intelligence platform
+
+---
+
+## [0.9.9.4] - 2026-09-02
+
+### Release Image
+- **d3kos-v0.9.9.4-20260902.img.gz** — first official release image for v0.9.9.4
+- Size: 11,840 MB (11.6 GB compressed)
+- SHA256: `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`
+- Phase 5 (clone verification) pending — flash to spare card to confirm BUG-39 fires on first boot
+
+### Scripts
+- `sanitize.sh`: added `.identity-regenerated` removal (BUG-39), RAG vector-db wipe, Ollama blob strip
+- `create-image.sh`: version string corrected to `0.9.9.4`
+- `install-ollama.sh`: new optional post-install script — downloads `gemma3:1b` + `nomic-embed-text`
+
+### Deployment
+- MANIFEST.md5 regenerated: 215 files, 0 stale
+- 23 orphan files removed from Pi before imaging
+- `d3kos-identity-regen` service confirmed enabled
+

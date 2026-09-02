@@ -1753,3 +1753,18 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 **Out-of-scope (confirmed):** `fleet-*` endpoints (PWA JWT, not AMBOAT_API_KEY). `community-position.php` (never built, Pi never calls it).
 
 **BUG-66 remains CRITICAL** pending Pi fleet enrolment flow — Pi falls through to audited legacy key path until each unit runs first-boot enrolment.
+
+---
+
+### S141 — 2026-09-02 — v0.9.9.4 Release Image
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/scripts/sanitize.sh` | **[UPDATED — S141]** Three new cleanup steps: (1) `.identity-regenerated` sentinel removal (STEP 9) — BUG-39 fires on every clone; (2) RAG vector-db wipe `rm -rf /opt/d3kos/data/vector-db/` (STEP 7) — user PDF embeddings do not ship; (3) Ollama blob strip (STEP 7c) — both `/home/d3kos/.ollama/` and `/usr/share/ollama/.ollama/` removed. Summary log updated. |
+| `deployment/v0.9.9.4/opt/d3kos/scripts/create-image.sh` | **[UPDATED — S141]** Version string corrected `0.9.1.2` → `0.9.9.4`. |
+| `deployment/v0.9.9.4/opt/d3kos/scripts/install-ollama.sh` | **[NEW — S141]** Post-install optional Ollama setup script. Checks disk space (≥3 GB) and internet, installs Ollama via official installer, pulls `gemma3:1b` + `nomic-embed-text`, verifies both models. Run as root after first boot if local AI features are desired. |
+| `deployment/v0.9.9.4/MANIFEST.md5` | **[UPDATED — S141]** Regenerated: 215 entries, 0 stale. Includes all S136–S141 file changes. |
+| `C:\d3kos-image\d3kos-v0.9.9.4-20260902.img.gz` | **[NEW — S141 — Windows only, not in repo]** First official v0.9.9.4 release image. 11,840 MB (11.6 GB). SHA256: `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`. Created via PowerShell .NET stream from Realtek PCIe card reader. Phase 5 (clone verification) pending. |
+
+**Lab Pi state after S141:** Sanitized master (blank). SSH inaccessible (authorized_keys removed by sanitize.sh — by design). SD card currently in Windows card reader. Pi needs SD card re-inserted and reconfiguration for lab use, or leave as blank master until Phase 5.
+

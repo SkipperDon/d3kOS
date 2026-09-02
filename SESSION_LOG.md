@@ -7578,3 +7578,85 @@ human_verified         : 0
 - BUG-65 Finding 3: feature matrix alignment (7 Pi features) → v0.9.9.5
 
 ---
+
+## Session 2026-09-02 (S141) — v0.9.9.4 Release Image
+
+**Goal:** Prepare lab Pi for v0.9.9.4 release — fix scripts, sanitize Pi, build image.
+
+**Completed:**
+- **Phase 1 — Script fixes (canonical tree):**
+  - `sanitize.sh`: added `.identity-regenerated` removal (BUG-39 fires on every clone), RAG vector-db wipe, Ollama blob strip (STEP 7c — both user and system paths)
+  - `create-image.sh`: version string `0.9.1.2` → `0.9.9.4`
+  - `install-ollama.sh`: new post-install script — checks disk space + internet, installs Ollama via official installer, pulls `gemma3:1b` + `nomic-embed-text`, verifies both models present. Operator decision: strip blobs from image, make Ollama optional via this script.
+  - Committed `e678cc31`
+
+- **Phase 2 — Pre-image checks (lab Pi 192.168.1.237):**
+  - `release-state.sh` run 1: 4 drifted, 30 extra. Root causes: Phase 1 files not yet on Pi, orphan scripts from superseded versions.
+  - Deployed Phase 1 scripts + drifted service files (`community-api.py`, `cloud-link-api.py`) to Pi.
+  - Enabled `d3kos-identity-regen` (was `disabled` — critical for BUG-39 on clones).
+  - Deleted 23 orphan files: 3 orphan service files (`fix_my_pi.py`, `cloud_agent.py`, `ota_upgrade.py`) + 20 old scripts no longer in canonical tree.
+  - Deployed `var/lib/avnav/README.md`, deleted old `avnav_server.xml-20260313154938`.
+  - Regenerated `MANIFEST.md5` — 215 entries, 0 stale. Committed `4b71d75a`.
+  - `release-state.sh` run 2: 215 identical, 0 drifted, 0 missing. 6 extras (all expected Pi-local config: avnav_server.xml + 5 Signal K runtime files). Invariants OK.
+
+- **Phase 3 — Sanitize:**
+  - `sudo /opt/d3kos/scripts/sanitize.sh --unattended` — ran cleanly. 29 services stopped, all user data/credentials/keys/WiFi profiles (8)/Ollama blobs stripped, license reset to Tier 0, `.identity-regenerated` sentinel removed. Pi is blank master.
+
+- **Phase 4 — Image creation:**
+  - SSH auth lost after sanitize (expected — authorized_keys removed). Pi inaccessible remotely.
+  - Used PowerShell stream from WSL2 via `\\.\PHYSICALDRIVE1` (Realtek PCIe card reader, Disk 1) to dd the card from Windows.
+  - Sector-not-found at 99.2% (29.5 GB) — normal trailing empty-space boundary error. All Pi partitions intact.
+  - Compressed with GZipStream. Final output: `C:\d3kos-image\d3kos-v0.9.9.4-20260902.img.gz`
+  - **Size: 11,840 MB (11.6 GB)**
+  - **SHA256: `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`**
+
+**Decisions:**
+- Ollama blobs: STRIP from image. New `install-ollama.sh` provides optional post-install download.
+- Orphan scripts (20+ files not in canonical tree): deleted from Pi before imaging.
+- Image creation method: PowerShell .NET stream from Windows (PCIe card readers cannot be forwarded to WSL2 via usbipd).
+- Phase 5 (clone verification) deferred — requires a spare SD card.
+
+**Ollama:** 0 calls.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-02 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Phase 5: Flash image to spare SD card, boot, verify BUG-39 fires + Tier 0 license + clean services + dashboard at :3000
+- Lab Pi: restore to working state (currently sanitized master — needs to be re-configured for lab use, or leave as-is until Phase 5 test)
+- Boat Pi: deploy fresh image in person (all [~] bugs validate at this time)
+
+---
+
+**SESSION QUALITY SCORE (SQS):**
+```
+─────────────────────────────────────────────────────
+TASK TYPE: [IMPLEMENT + DEPLOY] — Tier 3
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100% (confirmed before Phase 3 destructive step)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 97/100
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions: 79, 100, 100, 92, 95 → avg 93.2. This session: 97.
+```
+
+EXTENDED DATA FIELDS — 2026-09-02
+─────────────────────────────────────────────────────
+session_duration_min   : 120
+tasks_planned          : 1 (v0.9.9.4 release image — 5 phases)
+tasks_completed        : 4 (Phase 1–4 complete; Phase 5 deferred)
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---
