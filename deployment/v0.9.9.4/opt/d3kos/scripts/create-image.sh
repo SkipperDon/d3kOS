@@ -1,7 +1,7 @@
 #!/bin/bash
 # d3kOS Image Creation Script
 
-VERSION="0.9.1.2"
+VERSION="0.9.9.4"
 DATE=$(date +%Y%m%d)
 IMAGE_NAME="d3kos-v${VERSION}-${DATE}.img"
 OUTPUT_DIR="/opt/d3kos/images"

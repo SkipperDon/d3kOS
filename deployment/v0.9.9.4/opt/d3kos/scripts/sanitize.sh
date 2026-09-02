@@ -244,6 +244,12 @@ if [ -d "/opt/d3kos/data/backups" ]; then
     rm -rf /opt/d3kos/data/backups/*
 fi
 
+# RAG vector database (contains ingested user PDF embeddings)
+if [ -d "/opt/d3kos/data/vector-db" ]; then
+    log "  Removing RAG vector database..."
+    rm -rf /opt/d3kos/data/vector-db/
+fi
+
 # STEP 7b: Strip credentials and device identity  (BUG-78 D2)
 # ==============================================================================
 # These five files are secrets or per-device identity. If ANY of them survives
@@ -276,6 +282,27 @@ rm -f /opt/d3kos/config/*.bak
 rm -f /opt/d3kos/config/*.pre-*.bak
 
 log "  Credential strip complete"
+
+# ==============================================================================
+# STEP 7c: Strip Ollama model blobs
+# ==============================================================================
+
+log ""
+log "STEP 7c: Stripping Ollama model blobs..."
+
+# User-level Ollama data (d3kos user)
+if [ -d "/home/d3kos/.ollama" ]; then
+    log "  Removing /home/d3kos/.ollama/..."
+    rm -rf /home/d3kos/.ollama/
+fi
+
+# System-level Ollama data (ollama service user)
+if [ -d "/usr/share/ollama/.ollama" ]; then
+    log "  Removing /usr/share/ollama/.ollama/..."
+    rm -rf /usr/share/ollama/.ollama/
+fi
+
+log "  Ollama blobs stripped — use /opt/d3kos/scripts/install-ollama.sh to restore"
 
 # ==============================================================================
 # STEP 8: Reset license.json (clear installation ID)
@@ -329,6 +356,12 @@ fi
 if [ -f "/opt/d3kos/.first-boot-complete" ]; then
     log "  Removing first-boot marker..."
     rm -f /opt/d3kos/.first-boot-complete
+fi
+
+# Remove identity-regenerated sentinel so BUG-39 first-boot regen fires on every clone
+if [ -f "/opt/d3kos/config/.identity-regenerated" ]; then
+    log "  Removing .identity-regenerated sentinel..."
+    rm -f /opt/d3kos/config/.identity-regenerated
 fi
 
 # ==============================================================================
@@ -421,7 +454,11 @@ log "✓ SSH keys removed"
 log "✓ WiFi passwords cleared"
 log "✓ Browser cache cleared"
 log "✓ User data removed"
+log "✓ RAG vector database removed"
+log "✓ Credentials and device identity stripped"
+log "✓ Ollama model blobs stripped"
 log "✓ Installation ID reset"
+log "✓ .identity-regenerated sentinel removed (BUG-39 will fire on first boot)"
 log "✓ Onboarding reset"
 log "✓ Signal K data cleared"
 log "✓ Node-RED credentials removed"
