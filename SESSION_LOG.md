@@ -7934,3 +7934,62 @@ attributed_rec         : 0
 failure_category       : certainty_rule_miss_hosting_infrastructure_inference
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-03 (S142-cont) — Bing indexing + SEO plugins
+
+**Goal:** Resolve Bing not indexing atmyboat.com; follow up on sitemap timeout error.
+
+**Completed:**
+- Investigated Bing indexing failure — Copilot had flagged "weak discovery signals, no inbound links"
+- Confirmed GitHub README already has multiple inbound links to atmyboat.com (badges + Community section)
+- Confirmed homepage (`front-page.php`) has 2 outbound links to `github.com/SkipperDon/d3kOS`
+- Confirmed `/download/` page links to `archive.org` download
+- Bing Webmaster Tools — sitemap `sitemap_index.xml` showed timeout error from 9/1/2026, 0 URLs discovered
+- Diagnosed: sitemap loads correctly in browser (fast, 8 sub-sitemaps); no bot-blocking in `.htaccess`; no Bingbot traffic in Wordfence Live Traffic → likely HostPapa ImunifyAV blocking at server level, OR transient load issue pre-caching
+- Resubmitted sitemap in Bing Webmaster Tools — **SUCCESS: 0 errors, 0 warnings, 8 URLs discovered**
+- Operator installed **IndexNow plugin** (self-configuring) — future page updates push directly to Bing
+- Operator updated 2 WordPress plugins (WP Super Cache + IndexNow)
+
+**Decisions:**
+- No BUG-XX assigned to Bing/sitemap issue — resolved as transient + operational maintenance, not a d3kOS code defect
+- IndexNow install recommended as set-and-forget — no configuration required, self-activates
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | included with S142 — check console.anthropic.com → Usage → 2026-09-03 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Bing indexing: allow a few days for pages to appear in results; check URL Inspection in Bing Webmaster Tools
+- All prior open items carry forward unchanged (credential rotation, BUG-60/57-G8, BUG-66, boat Pi)
+
+---
+
+QUALITY METRICS — 2026-09-03 (S142-cont)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions SQS: 100 (S142/S142-cont), 85 (S141-cont-3 final), 97 (S141-cont-2), 97 (S141), 95 (S140). Average: 94.8. Trend: stable/improving.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-03 (S142-cont)
+─────────────────────────────────────────────────────
+session_duration_min   : 30
+tasks_planned          : 1 (Bing indexing investigation)
+tasks_completed        : 1
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
