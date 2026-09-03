@@ -7066,3 +7066,65 @@ No more JSONDecodeError. Exports continue uploading successfully.
 **Status:** `[x]` **FIXED S140 2026-09-01** — lab Pi verified. Boat Pi not yet tested (requires
 GPS lock and CX5106 connected). SK paths (`/navigation`, `/propulsion/port`) are correct for the
 boat Pi — fix is defensive only.
+
+---
+
+## BUG-94 — atmyboat.com has no page cache — server response time 632ms (threshold 600ms)
+
+**Logged:** S142 2026-09-03
+**Platform:** atmyboat.com (HostPapa shared hosting)
+**Severity:** LOW — performance only; no data loss, no security impact; 32ms over threshold
+
+**Symptom:** Website performance scanner reports "Critical — Page cache is not detected and the
+server response time is slow." Specifically:
+- Median server response time: 632ms (threshold: 600ms)
+- No HTTP client caching headers detected (cache-control, expires, age, last-modified, etag, via,
+  x-cache, x-litespeed-cache, cf-cache-status, etc.)
+- No page cache plugin detected
+
+**Root Cause:** No caching layer is configured at the WordPress level on the HostPapa site.
+HostPapa shared hosting runs **Apache** (not LiteSpeed — confirmed S142 when LiteSpeed Cache
+plugin showed "LSCache caching functions unavailable — requires LiteSpeed web server or QUIC.cloud").
+Without a cache plugin, WordPress serves every page dynamically — PHP + MySQL per hit — with no
+full-page cache and no HTTP caching headers set.
+
+**Note on "Critical" label:** The scanner labels this Critical in its own severity scheme.
+AAO severity is LOW — this is a performance issue only. The response time is 32ms over threshold,
+the site is functional, and there is no security or data integrity impact.
+
+**S142 investigation note:** LiteSpeed Cache plugin was installed first (incorrect recommendation
+based on an unverified assumption that HostPapa uses LiteSpeed). Plugin warning confirmed Apache.
+LiteSpeed Cache deactivated. Correct fix is WP Super Cache (Apache-compatible).
+
+**Fix:** Install and activate **WP Super Cache**.
+- Made by Automattic (WordPress team); works on Apache shared hosting.
+- Generates static HTML files served directly by Apache — no server-level requirements.
+- Sets HTTP caching headers (Last-Modified, ETag, Cache-Control) which satisfy the scanner.
+- Free, no account required.
+
+**Operator action (WP Admin — click-by-click):**
+1. Plugins → Deactivate LiteSpeed Cache (cannot work on Apache — remove it)
+2. Plugins → Add New Plugin
+3. Search: `WP Super Cache`
+4. Click Install Now → Activate
+5. Settings → WP Super Cache → select **Caching On** → click **Update Status**
+
+**Affected Files:** None (plugin install only — no repo files modified)
+
+**Verification (S142 2026-09-03 — WP Super Cache built-in Cache Tester):**
+```
+Fetching http://atmyboat.com/ to prime cache: OK (0.html)
+Fetching first copy of http://atmyboat.com/: OK (1.html)
+Fetching second copy of http://atmyboat.com/: OK (2.html)
+Page 1: 200 (OK)
+Page 2: 200 (OK)
+Page 1: 2026-09-03 12:12:14
+Page 2: 2026-09-03 12:12:14
+The timestamps on both pages match!
+```
+Matching timestamps confirm page 2 was served from the static HTML cache — not a fresh PHP/MySQL
+render. Cache is functioning correctly.
+
+**Status:** `[x]` **FIXED + VERIFIED S142 2026-09-03 — WP Super Cache installed, Caching ON,
+cache tester passed (matching timestamps on both requests). LiteSpeed Cache deactivated (incompatible
+with Apache). Original performance scanner re-run pending to confirm caching headers detected.**

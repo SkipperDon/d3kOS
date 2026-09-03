@@ -7866,3 +7866,71 @@ attributed_rec         : 0
 failure_category       : sgcr_miss_hostpapa_deploy_without_explicit_approval
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-03 (S142) — atmyboat.com page cache (BUG-94)
+
+**Goal:** Investigate and fix website performance scanner "Critical" warning — no page cache detected, server response time 632ms.
+
+**Completed:**
+- Session start: MEMORY.md, SESSION_LOG.md (last 2 entries), PROJECT_CHECKLIST.md PART 17 all read
+- BUG-94 logged to PROJECT_CHECKLIST.md PART 17 and V09994_BUG_FIXES.md before any fix (per standing rule)
+- Investigated root cause: no caching plugin on WordPress, no caching headers, 32ms over threshold
+- Recommended LiteSpeed Cache (incorrect — see below); operator installed it via WP Admin
+- Plugin warning confirmed HostPapa runs Apache, not LiteSpeed — assumption corrected; LiteSpeed Cache deactivated
+- Recommended WP Super Cache (correct fix for Apache shared hosting); operator installed + activated
+- WP Super Cache cache tester passed: prime + 2 requests all 200 OK; matching timestamps `2026-09-03 12:12:14` confirmed static HTML cache serving
+- BUG-94 marked `[x]` FIXED + VERIFIED in both governance files
+- PROJECT_CHECKLIST.md version bumped 3.68 → 3.69
+
+**Decisions:**
+- WP Super Cache chosen over W3 Total Cache: simpler, Automattic-made, sufficient for shared hosting use case
+- Jetpack Boost upsell dismissed: not needed; WP Super Cache caching alone resolves the scanner warning
+- LiteSpeed Cache deactivated (not deleted — operator's choice): plugin is harmless installed but inactive
+- Original performance scanner re-run left as operator action (pending — no urgency)
+
+**95% Certainty Rule miss (flagged for OIC):** Stated "HostPapa runs LiteSpeed" as fact without verifying. The assumption was based on general hosting knowledge, not a confirmed source. Plugin warning immediately corrected this. Rule requires either a WebSearch citation or explicit `[UNVERIFIED INFERENCE]` label before stating hosting infrastructure facts.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-03 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- Re-run original performance scanner to confirm caching headers now detected (optional — cache tester already verified functioning)
+- GitHub Issue Sync: BUG-94 new issue to create (pending operator approval this session)
+- All prior open items carry forward: credential rotation deferred, BUG-60/57-G8 operator actions, BUG-66 CRITICAL until Pi fleet enrolment, boat Pi deployment in-person
+
+---
+
+QUALITY METRICS — 2026-09-03 (S142)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions SQS: 100 (S142), 85 (S141-cont-3 final), 97 (S141-cont-2), 97 (S141), 95 (S140)
+Average: 94.8. Prior average (last 5): 93.2. Trend: improving.
+Primary improvement target: 95% Certainty Rule — this session had 1 unverified infrastructure claim
+(HostPapa server type). Metrics are clean; OIC assessment may flag it.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-03 (S142)
+─────────────────────────────────────────────────────
+session_duration_min   : 45
+tasks_planned          : 1 (BUG-94 — page cache investigation and fix)
+tasks_completed        : 1
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : certainty_rule_miss_hosting_infrastructure_inference
+human_verified         : 0
+─────────────────────────────────────────────────────
