@@ -7200,8 +7200,22 @@ this script has no source anywhere.
 and deploy to Pi, OR disable the unit with `systemctl disable d3kos-timezone-setup.service` until
 the script is written.
 
-**Status:** `[!]` **OPEN — script does not exist. Fix requires authoring. Unit left registered
-but failing. Operator decision needed: write the script or disable the unit.**
+**Fix:** `deployment/v0.9.9.4/opt/d3kos/scripts/detect-timezone.sh` written S144.
+Tries ip-api.com → worldtimeapi.org → ipapi.co (8s timeout each). Validates `Region/City`
+format. Calls `timedatectl set-timezone`. Exits 0 always — API failure is non-fatal.
+All log output to stderr so capture is clean inside command substitution.
+
+**Verification (S144 manual run):**
+```
+[detect-timezone] Starting timezone detection (current: America/Toronto)
+[detect-timezone] API 1 (ip-api.com) responded: America/Toronto
+[detect-timezone] Detected timezone matches current — no change needed
+exit: 0
+```
+
+**Status:** `[~]` **FIXED LAB S144 2026-09-04 — script written, deployed to Pi, manual test
+passed (exit 0, correct timezone detected and matched). Takes effect cleanly on next reboot.
+Boat Pi: deploy at next in-person visit.**
 
 ---
 
