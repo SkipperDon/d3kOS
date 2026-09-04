@@ -8057,3 +8057,111 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## S144 — 2026-09-04 — Lab Pi Boot Diagnosis + BUG-95 through BUG-101
+
+**Goal:** Diagnose why lab Pi boots with errors; fix deploy gaps; write missing scripts; deploy
+api-keys.json; investigate Pi registration readiness.
+
+**Completed:**
+- **Pi Diagnosis Protocol** — 3 parallel agents ran; root-caused 6 failed services into: 2 hardware-absent
+  (tier-gated: voice, cameras), 3 missing scripts (deploy gap + never authored), 1 wrong watchdog config.
+- **BUG-95 FIXED LAB** — `export-on-boot.sh` and `export-daily.sh` deployed to lab Pi (`/opt/d3kos/scripts/`).
+  Boot service ran; uploaded 11 then 10 queued exports successfully. Scripts existed in repo but were never
+  deployed.
+- **BUG-96 FIXED LAB** — `detect-timezone.sh` authored from scratch. Queries ip-api.com → worldtimeapi.org →
+  ipapi.co (8 s timeout each); validates IANA format; calls `timedatectl`; exits 0 always. Bug found and fixed:
+  `log()` was writing to stdout, polluting command-substitution capture → `$DETECTED` contained log lines,
+  comparison failed. Fixed: `log() { echo "..." >&2; }`. Deployed to lab Pi, both reboots show "Finished"
+  (unit active, exit 0). Committed: `281838fb`.
+- **BUG-97 FIXED LAB** — Watchdog SK health check URL corrected (`localhost:3000/signalk` → `localhost:8099/signalk`;
+  `User=d3kos` → `User=root`). Both canonical repo files updated. Second boot: watchdog produced no journal
+  entries (SK + Node-RED both healthy — correct silent behaviour).
+- **BUG-98 FIXED LAB** — `/etc/apt/sources.list.d/tailscale.list` deleted from lab Pi. `apt update` no longer
+  shows Tailscale GPG error.
+- **BUG-99 FIXED LAB** — (A) `/etc/xdg/autostart/vnc_xrandr.desktop`: `Hidden=true` added — VNC xrandr tool
+  no longer runs under Wayland session. (B) `~/.config/labwc/autostart`: `swaybg -c '#2d2d2d' &` added. `swaybg`
+  v1.2.1 installed. Second boot confirms `swaybg -c #2d2d2d` running (PID verified). Backup at
+  `~/.config/labwc/autostart.bak-bug99`. Note: sed failed (quoting artifact); fixed using Python insert.
+- **BUG-100 LOGGED** — free-x.de apt GPG key warning. Key fingerprint captured:
+  `06B67AB0E988310475E75A2746E95F3C8A61623B`, repo `https://www.free-x.de/debian trixie`. Source list file
+  not yet identified. OPEN.
+- **BUG-101 LOGGED** — `generate-reg-token.php` returns HTTP 500 (empty body) on POST. Pi credentials
+  confirmed correct (`api-keys.json` deployed, `amboat_api_key` 39 chars from `fleet-push.env`,
+  `device_token` UUID present). Root suspected: `config.php` does not include `auth.php` so
+  `amboat_get_db()` / `amboat_send_error()` are undefined. Secondary: `app.py:497` has wrong URL
+  (`/mobile/...` → 404; correct path `/wp-content/themes/twentytwenty-child/mobile/...`). OPEN.
+- **api-keys.json deployed to lab Pi** — `/opt/d3kos/config/api-keys.json` created (chmod 600).
+  `amboat_api_key` sourced from existing `fleet-push.env`. `gemini_api_key` left empty (key not on Pi —
+  deferred). `gemini_model: gemini-2.5-flash-lite`.
+- **Two reboots executed** — boot reports captured both times. Second boot: 1 failed unit only
+  (`d3kos-camera-stream` — no hardware in lab, expected). Previously 3 failed.
+- **V09994_BUG_FIXES.md** — BUG-96 status updated to FIXED LAB (edit failed in prior context due to string
+  mismatch; corrected at session continuation start).
+- **All governance files updated** — PROJECT_CHECKLIST.md, V09994_BUG_FIXES.md, MEMORY.md, DEPLOYMENT_INDEX.md.
+
+**Decisions:**
+- `api-keys.json` sourced from `fleet-push.env` (AMBOAT_API_KEY already on Pi from earlier session) — correct
+  approach; key not bypassed.
+- `gemini_api_key` left empty in `api-keys.json` — Gemini not functional on lab Pi until key is added. Deferred.
+- `~/.config/labwc/autostart` not tracked in canonical repo tree (Pi user-session file) — documented in BUG-99
+  record; to be added when image rebuild is planned.
+- Camera stream retry storm (20+ retries in 12 s on every boot) — noted but not yet logged as a separate bug.
+  Camera hardware absent in lab is expected; the retry behaviour is excessive and needs a `StartLimitBurst` cap.
+
+**Release Package Manifest:**
+
+| File | Pi Path | Change |
+|------|---------|--------|
+| `scripts/export-on-boot.sh` | `/opt/d3kos/scripts/export-on-boot.sh` | DEPLOYED (was in repo, never on Pi) |
+| `scripts/export-daily.sh` | `/opt/d3kos/scripts/export-daily.sh` | DEPLOYED (was in repo, never on Pi) |
+| `scripts/detect-timezone.sh` | `/opt/d3kos/scripts/detect-timezone.sh` | NEW — authored and deployed S144 |
+| `config/api-keys.json` | `/opt/d3kos/config/api-keys.json` | NEW — created from fleet-push.env key |
+| *(Pi-only)* | `/etc/apt/sources.list.d/tailscale.list` | DELETED |
+| *(Pi-only)* | `/etc/xdg/autostart/vnc_xrandr.desktop` | EDITED — Hidden=true added |
+| *(Pi-only)* | `~/.config/labwc/autostart` | EDITED — swaybg line added |
+
+Post-install: both reboots completed. Health: 1 failed unit (camera, expected), watchdog silent.
+Rollback: `/etc/xdg/autostart/vnc_xrandr.desktop` — remove `Hidden=true`; `~/.config/labwc/autostart.bak-bug99`
+available for autostart restore.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-04 (S144 continued from S143 same day) | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- BUG-101 — HostPapa `generate-reg-token.php` PHP 500: fix `config.php` auth.php include + fix `app.py:497` URL
+- BUG-100 — free-x.de apt source: SSH in, identify source list file, delete
+- BUG-95/96/97/98/99 — all FIXED LAB only; boat Pi deployment deferred to next in-person visit
+- `gemini_api_key` — add to `/opt/d3kos/config/api-keys.json` on lab Pi (Gemini non-functional until done)
+- Camera retry storm — not yet logged as BUG-102; needs `StartLimitBurst` cap in service unit
+- GitHub Issue Sync — BUG-95 through BUG-101 not yet synced (requires operator approval)
+- Rotate FTP passwords + mobile/config.php keys — carried from S143, still deferred
+
+---
+
+SQS BLOCK
+─────────────────────────────────────────────────────
+tasks_planned          : 6 (diagnose, BUG-95, BUG-96, BUG-97, BUG-98, BUG-99)
+tasks_completed        : 6
+deferred               : 2 (BUG-100 open, BUG-101 open)
+regressions            : 0
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-04
+─────────────────────────────────────────────────────
+session_duration_min   : 180
+tasks_planned          : 6
+tasks_completed        : 6
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────

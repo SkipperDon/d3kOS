@@ -7296,6 +7296,92 @@ type or a tool that no longer runs under this session.
 
 ---
 
+## BUG-101 — generate-reg-token.php returns HTTP 500 on POST; Pi registration blocked
+
+**Logged:** S144 2026-09-04
+**Platform:** HostPapa live (atmyboat.com) + Lab Pi (d3kOS v0.9.9.4)
+**Severity:** HIGH — Pi registration flow completely blocked. No user can register via Pi
+until resolved.
+
+**Symptom:** Lab Pi calls `POST https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/generate-reg-token.php`
+with correct credentials. HostPapa returns HTTP 500 with an empty body — PHP fatal error.
+No JSON error object returned, no token generated.
+
+**Investigation (S144):**
+- Pi `api-keys.json` deployed: `amboat_api_key` present (39 chars, from `fleet-push.env`),
+  `device_token` present (36-char UUID). Pi credentials confirmed correct.
+- URL discovery: file does NOT exist at `https://atmyboat.com/mobile/generate-reg-token.php`
+  (404). File IS at `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/generate-reg-token.php`
+  (returns 500 on POST, 500 on GET — file exists, PHP crashes).
+- `app.py` has WRONG URL: `_AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/mobile/generate-reg-token.php'`
+  — this is a secondary bug (app.py URL needs correcting too).
+- `generate-reg-token.php` opens with `require_once __DIR__ . '/config.php'` then calls
+  `amboat_send_error()` and `amboat_get_db()` which are defined in `auth.php` (not in
+  `config.php` directly). If `config.php` does not `require_once` `auth.php`, these calls
+  are undefined → PHP fatal error → 500.
+
+**Root Cause (suspected):**
+`generate-reg-token.php` was new code added S143. The existing `config.php` on HostPapa
+may not include `auth.php`, or `auth.php` may define `amboat_get_db()` differently than
+the new script expects. All existing mobile endpoints (fleet-push, offline-check) work —
+they were built when config.php was set up. `generate-reg-token.php` may rely on an
+`auth.php` include that `config.php` does not provide.
+
+**Secondary Bug:** `app.py:497` has wrong endpoint URL:
+```python
+_AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/mobile/generate-reg-token.php'  # 404
+# Correct:
+_AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/generate-reg-token.php'
+```
+
+**Affected Files:**
+- HostPapa: `wp-content/themes/twentytwenty-child/mobile/generate-reg-token.php` (server crash)
+- HostPapa: `wp-content/themes/twentytwenty-child/mobile/config.php` (likely missing auth.php include)
+- Pi canonical: `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py:497` (wrong URL)
+- Pi live: `/opt/d3kos/services/dashboard/app.py:497` (wrong URL, not yet fixed)
+
+**Fix Plan:**
+1. FTP to HostPapa → check PHP error log or add `error_reporting` to `generate-reg-token.php`
+   temporarily to expose the fatal error
+2. Verify `config.php` includes `auth.php` — if not, add the include
+3. Fix `app.py:497` URL in canonical tree and redeploy to Pi
+4. End-to-end test: Pi POST → HostPapa returns `{success:true, data:{token, register_url}}`
+
+**Status:** `[!]` **OPEN S144 2026-09-04 — Pi credentials deployed and confirmed correct.
+Server-side PHP 500 blocks all registration. Two fixes required: (1) HostPapa config.php
+or generate-reg-token.php fix; (2) app.py URL correction.**
+
+---
+
+## BUG-100 — apt update GPG key warning for free-x.de repository
+
+**Logged:** S144 2026-09-04
+**Platform:** Lab Pi (d3kOS v0.9.9.4) — boat Pi status unknown
+**Severity:** LOW — warning only; apt still functions. No security exposure confirmed.
+**Symptom:** During BUG-98 apt cleanup investigation, a second apt GPG key warning was
+observed for a `free-x.de` repository after the Tailscale source was deleted. Separate
+from BUG-98.
+
+**Root Cause:** Unknown. A third-party apt source list under `/etc/apt/sources.list.d/`
+references `free-x.de`. The GPG key or keyring associated with this repo is stale or
+missing — likely left behind when the originating package was removed. Candidate packages:
+x2goserver, TigerVNC, or another remote-desktop/VNC tool previously installed.
+
+**Affected Files (Pi):**
+- `/etc/apt/sources.list.d/<unknown>.list` — source referencing free-x.de
+- `/usr/share/keyrings/<unknown>.gpg` (or `/etc/apt/trusted.gpg.d/`) — orphaned key
+
+**Fix Plan:**
+1. `grep -r "free-x.de" /etc/apt/sources.list.d/` — identify the source list file
+2. Check whether the originating package is still installed
+3. If unneeded: delete the source list file (and associated keyring if present)
+4. `sudo apt update` to confirm warning is gone
+
+**Status:** `[!]` **OPEN S144 2026-09-04 — not yet investigated. Spotted as a side-effect
+of BUG-98 diagnosis. Needs one SSH session to identify and remove.**
+
+---
+
 ## BUG-97 — SK watchdog checks wrong port; Signal K health check always fails
 
 **Logged:** S144 2026-09-04

@@ -1796,3 +1796,21 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `atmyboat-forum/blog-drafts/security-reregistration.html` | **[PUBLISHED — S143 2026-09-04]** Re-registration blog post. Title: "Yes, You Need to Re-Register — But Trust Us, It's Worth It". Published to WordPress, **scheduled to go live 2026-09-09**. Warm tone, no technical detail. Features: Fix My Pi, live monitoring, Find My Boat, Chart Room, community map. Closing paragraph for first-time visitors → /download/. |
 | `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S143]** BUG-60 S143 section added: operator confirmed manual approval only, no login required; CLOSED FINAL. |
 | `PROJECT_CHECKLIST.md` | **[UPDATED — S143]** BUG-60 CLOSED FINAL note appended. |
+
+---
+
+### S144 — 2026-09-04 — Lab Pi Boot Diagnosis + BUG-95 through BUG-101
+
+| File | Description |
+|------|-------------|
+| `deployment/v0.9.9.4/opt/d3kos/scripts/detect-timezone.sh` | **[NEW — S144 BUG-96]** IP-geolocation timezone auto-detection. Queries ip-api.com → worldtimeapi.org → ipapi.co (8 s each, fallback order). Validates IANA `Region/City` format. Calls `timedatectl set-timezone`. Exits 0 always — API failure is non-fatal. `log()` writes to stderr only (stdout clean for command-substitution capture). Pi: `/opt/d3kos/scripts/detect-timezone.sh`. Unit: `d3kos-timezone-setup.service`. |
+| `deployment/v0.9.9.4/etc/systemd/system/d3kos-sk-nodered-watchdog.service` | **[UPDATED — S144 BUG-97]** SK health check URL corrected `localhost:3000/signalk` → `localhost:8099/signalk` (SK runs on PORT=8099, not Flask port 3000). `User=d3kos` → `User=root` (d3kos has no sudo for systemctl restart). Both canonical copies updated. |
+| `deployment/pi_config/systemd/d3kos-sk-nodered-watchdog.service` | **[UPDATED — S144 BUG-97]** Same fix as above — both canonical copies kept in sync. |
+| Pi: `/opt/d3kos/scripts/export-on-boot.sh` | **[DEPLOYED — S144 BUG-95]** Script existed in repo but was never on Pi. Deployed; boot service ran immediately; uploaded 11 queued exports on first run. |
+| Pi: `/opt/d3kos/scripts/export-daily.sh` | **[DEPLOYED — S144 BUG-95]** Script existed in repo but was never on Pi. Deployed alongside export-on-boot.sh. |
+| Pi: `/opt/d3kos/config/api-keys.json` | **[DEPLOYED — S144]** Created `chmod 600`. `amboat_api_key` sourced from existing `fleet-push.env` (39 chars). `gemini_api_key` empty (deferred — key not on Pi). `gemini_model: gemini-2.5-flash-lite`. Required by both `d3kos-gemini-proxy.service` (port 8097) and dashboard `/api/generate-reg-token` endpoint. |
+| Pi: `/etc/apt/sources.list.d/tailscale.list` | **[DELETED — S144 BUG-98]** Tailscale package removed earlier but source list was never cleaned up. Deletion removes red GPG error from every `apt update`. |
+| Pi: `/etc/xdg/autostart/vnc_xrandr.desktop` | **[EDITED — S144 BUG-99A]** `Hidden=true` added. Prevents VNC xrandr tool from running under Wayland/labwc session. Was incorrectly attempting `xrandr --fb 1920x1080` against a 1920×1200 native output (via XWayland, which hides physical monitors). |
+| Pi: `~/.config/labwc/autostart` | **[EDITED — S144 BUG-99B]** `swaybg -c '#2d2d2d' &` added after header. `swaybg` v1.2.1 installed. Solid dark grey desktop background. Backup: `~/.config/labwc/autostart.bak-bug99`. Not tracked in canonical tree (Pi user-session file). |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S144]** BUG-95 through BUG-101 added. BUG-96 status updated to FIXED LAB with verification output. |
+| `PROJECT_CHECKLIST.md` | **[UPDATED — S144]** BUG-95 through BUG-101 rows added/updated in PART 17. |
