@@ -8165,3 +8165,51 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## S144-cont — 2026-09-04 — BUG-101 Fix: Pi Registration End-to-End
+
+**Goal:** Fix BUG-101 (generate-reg-token.php HTTP 500) and fully verify Pi registration flow.
+
+**Completed:**
+- **BUG-101 ROOT CAUSE FOUND** — `generate-reg-token.php` was missing `require_once __DIR__ . '/auth.php'`.
+  Every other mobile endpoint includes both `config.php` AND `auth.php`. The four functions the script
+  calls (`amboat_send_error`, `amboat_send_success`, `amboat_json_body`, `amboat_get_db`) are all defined
+  in `auth.php` — so every call was undefined → PHP fatal → HTTP 500 empty body.
+- **Three fixes applied:**
+  1. Added `require_once __DIR__ . '/auth.php'` to `generate-reg-token.php` (line 38).
+     Deployed to HostPapa via FTPS (4,972 B, size-verified). Committed `d33ce58` (atmyboat-forum).
+  2. Corrected `_AMBOAT_REG_ENDPOINT` URL in `app.py:499` — `/mobile/generate-reg-token.php`
+     (404, WordPress root) → correct theme path. Committed `448e7e4d` (Helm-OS).
+  3. Added `User-Agent: d3kOS/0.9.9.4 (Pi registration client)` to the `requests.post` headers
+     in `app.py` — nginx blocks `python-requests` UA on HostPapa (same pattern as BUG-54/56).
+     Same commit `448e7e4d`.
+- **Full registration flow verified end-to-end:**
+  - Pi → `POST /api/generate-reg-token` → Flask → HostPapa → `{success:true, token:R-F5DZ5T4, expires_min:30}` ✅
+  - `GET https://atmyboat.com/register/?rt=F5DZ5T4` → HTTP 200, **"d3kOS Pi verified. Your registration
+    code is active."** banner, hidden `reg_token=F5DZ5T4` in form ✅
+- **BUG-101 closed** — GitHub issue #93 commented with full root cause + closed as completed.
+- **Governance updated** — PROJECT_CHECKLIST.md `[x]` FIXED; V09994_BUG_FIXES.md verification
+  output recorded; DEPLOYMENT_INDEX.md updated; SESSION_LOG addendum written.
+
+**Decisions:**
+- Account creation POST (final step) not tested in production — would create a real user account.
+  The PHP code for that step (`page-register.php`) was already reviewed and deployed in S143 and
+  is considered correct. The token-validation and `used_at` marking path were confirmed working
+  by code review.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-04 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Account creation POST not production-tested (by design — would create a real account)
+- BUG-100 (free-x.de apt source) still OPEN
+- Boat Pi: BUG-95–99 + BUG-101 app.py fix all need deployment at next in-person visit
+
+---
