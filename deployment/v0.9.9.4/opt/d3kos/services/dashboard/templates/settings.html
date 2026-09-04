@@ -599,6 +599,44 @@
             <div class="btn-group" style="margin-top:10px;">
               <button class="btn btn-primary" onclick="showToast('Opening AtMyBoat.com \u2014 requires internet')">&#127760; Visit AtMyBoat.com</button>
             </div>
+
+            <!-- Register with AtMyBoat.com -->
+            <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);">
+              <div class="trow-lbl" style="margin-bottom:6px;font-size:18px;">Create Account</div>
+              <p class="card-desc" style="margin-bottom:12px;">Get a one-time registration code for <strong>atmyboat.com/register/</strong>. Valid 30 minutes. Requires internet.</p>
+
+              <!-- Idle state -->
+              <div id="reg-idle">
+                <button class="btn btn-primary" onclick="generateRegToken()" style="width:100%;">&#128273; Get Registration Code</button>
+              </div>
+
+              <!-- Loading state -->
+              <div id="reg-loading" style="display:none;text-align:center;padding:12px 0;color:var(--muted);font-size:18px;">
+                Contacting AtMyBoat.com&hellip;
+              </div>
+
+              <!-- Code display state -->
+              <div id="reg-code" style="display:none;">
+                <div style="text-align:center;margin-bottom:14px;">
+                  <canvas id="reg-qr" width="160" height="160" style="border-radius:6px;background:#fff;padding:6px;"></canvas>
+                </div>
+                <div style="background:rgba(0,0,0,.25);border-radius:6px;padding:14px;text-align:center;margin-bottom:10px;">
+                  <div style="font-size:18px;color:var(--muted);margin-bottom:4px;">Your code</div>
+                  <div id="reg-token-display" style="font-family:'Chakra Petch',monospace;font-size:28px;letter-spacing:.18em;color:var(--accent);font-weight:700;"></div>
+                  <div id="reg-expires" style="font-size:18px;color:var(--muted);margin-top:6px;"></div>
+                </div>
+                <a id="reg-link" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;text-align:center;width:100%;margin-bottom:8px;">
+                  &#128279; Open Register Page
+                </a>
+                <button class="btn" onclick="resetRegToken()" style="width:100%;font-size:18px;">&#8635; Get New Code</button>
+              </div>
+
+              <!-- Error state -->
+              <div id="reg-error" style="display:none;background:rgba(220,50,50,.12);border:1px solid rgba(220,50,50,.4);border-radius:6px;padding:12px;color:#ff8080;font-size:18px;">
+                <span id="reg-error-msg"></span>
+                <button class="btn" onclick="resetRegToken()" style="margin-top:8px;width:100%;font-size:18px;">Try Again</button>
+              </div>
+            </div>
           </div>
           <div class="card">
             <div class="trow-lbl" style="margin-bottom:6px;">Mobile Pairing</div>
@@ -633,8 +671,65 @@
     };
   </script>
   <script src="/static/js/connectivity-check.js"></script>
+  <!-- QR code library — loaded from CDN only when Register section is used (internet required anyway) -->
+  <script>
+    function _loadQrLib(cb) {
+      if (window.QRCode) { cb(); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      s.onload = cb; s.onerror = cb; // cb handles missing lib gracefully
+      document.head.appendChild(s);
+    }
+  </script>
 
   <script>
+    /* ── REGISTRATION CODE (AtMyBoat.com device-gated signup) ── */
+    function generateRegToken() {
+      document.getElementById('reg-idle').style.display    = 'none';
+      document.getElementById('reg-loading').style.display = 'block';
+      document.getElementById('reg-error').style.display   = 'none';
+      document.getElementById('reg-code').style.display    = 'none';
+
+      fetch('/api/generate-reg-token', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('reg-loading').style.display = 'none';
+          if (!data.success) {
+            document.getElementById('reg-error-msg').textContent = data.error || 'Unknown error.';
+            document.getElementById('reg-error').style.display = 'block';
+            return;
+          }
+          const d = data.data;
+          document.getElementById('reg-token-display').textContent = d.token;
+          document.getElementById('reg-expires').textContent = 'Expires in ' + d.expires_min + ' min';
+          const link = document.getElementById('reg-link');
+          link.href = d.register_url;
+          document.getElementById('reg-code').style.display = 'block';
+          // Try to render QR code — graceful fallback if CDN unreachable
+          _loadQrLib(function() {
+            const canvas = document.getElementById('reg-qr');
+            if (window.QRCode) {
+              try {
+                new QRCode(canvas, { text: d.register_url, width: 160, height: 160 });
+              } catch(e) { canvas.style.display = 'none'; }
+            } else {
+              canvas.style.display = 'none';
+            }
+          });
+        })
+        .catch(() => {
+          document.getElementById('reg-loading').style.display = 'none';
+          document.getElementById('reg-error-msg').textContent = 'Network error. Check internet connection.';
+          document.getElementById('reg-error').style.display = 'block';
+        });
+    }
+
+    function resetRegToken() {
+      document.getElementById('reg-code').style.display  = 'none';
+      document.getElementById('reg-error').style.display = 'none';
+      document.getElementById('reg-idle').style.display  = 'block';
+    }
+
     /* ── THEME (honour localStorage day/night set on dashboard) ── */
     (function () {
       if (localStorage.getItem('d3kTheme') === 'night')

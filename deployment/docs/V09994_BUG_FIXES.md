@@ -4351,6 +4351,16 @@ add_filter('script_loader_src', function($src) {
 
 **Note:** The `url` field question (Step 3 from atomic spec) is moot — the form is not rendered at all for anonymous visitors. Logged-in device-paired users can still see the field, but they are operator-approved accounts; this is acceptable.
 
+### S143 UPDATE — 2026-09-04
+
+**Operator revised settings 2026-09-04 (confirmed via WP Admin screenshot):**
+- ☐ "Users must be registered and logged in to comment" → **UNCHECKED** (deliberate operator choice)
+- ☑ "Comment must be manually approved" → confirmed enabled (unchanged)
+
+**Rationale:** Open commenting (name + email only) with mandatory manual approval. Operator audits every comment before publishing. Acceptable because any registered commenter who is logged in is already a device-gated, operator-approved d3kOS user.
+
+**Final status:** CLOSED. BUG-60 is resolved. Manual approval is the active control.
+
 ---
 
 ## ⚠ S135 VERIFICATION — 2026-08-28 — read before acting on the plan below

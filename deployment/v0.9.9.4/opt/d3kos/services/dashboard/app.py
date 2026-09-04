@@ -494,6 +494,53 @@ def settings():
     )
 
 
+_APIKEYS_JSON = Path('/opt/d3kos/config/api-keys.json')
+_TOKEN_FILE   = Path('/opt/d3kos/config/device-token.json')
+_AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/mobile/generate-reg-token.php'
+
+
+@app.route('/api/generate-reg-token', methods=['POST'])
+def generate_reg_token():
+    """
+    Request a one-time registration code from HostPapa.
+    The Pi authenticates with its AMBOAT_API_KEY + device_token.
+    Returns: {token, register_url, expires_at, expires_min} or {error}.
+    Called by the 'Register at AtMyBoat.com' button in settings.html.
+    """
+    try:
+        keys         = json.loads(_APIKEYS_JSON.read_text())
+        api_key      = keys.get('amboat_api_key', '')
+        device_token = json.loads(_TOKEN_FILE.read_text()).get('device_token', '')
+    except Exception as e:
+        return jsonify({'error': f'Could not load Pi credentials: {e}'}), 500
+
+    if not api_key or not device_token:
+        return jsonify({'error': 'Pi credentials not configured. Complete Initial Setup first.'}), 500
+
+    try:
+        resp = requests.post(
+            _AMBOAT_REG_ENDPOINT,
+            json={'pi_id': device_token},
+            headers={
+                'Authorization':  f'Bearer {api_key}',
+                'X-Device-Token': device_token,
+                'Content-Type':   'application/json',
+            },
+            timeout=10,
+        )
+        data = resp.json()
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'AtMyBoat.com did not respond. Check your internet connection.'}), 504
+    except Exception as e:
+        return jsonify({'error': f'Request failed: {e}'}), 502
+
+    if resp.status_code != 200 or not data.get('success'):
+        msg = data.get('error', 'Unknown error from AtMyBoat.com')
+        return jsonify({'error': msg}), resp.status_code
+
+    return jsonify({'success': True, 'data': data.get('data', {})})
+
+
 _BOATLOG_DB = Path('/opt/d3kos/data/boatlog/boatlog.db')
 
 
