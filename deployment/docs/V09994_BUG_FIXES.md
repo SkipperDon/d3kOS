@@ -7138,3 +7138,181 @@ render. Cache is functioning correctly.
 **Status:** `[x]` **FIXED + VERIFIED S142 2026-09-03 — WP Super Cache installed, Caching ON,
 cache tester passed (matching timestamps on both requests). LiteSpeed Cache deactivated (incompatible
 with Apache). Original performance scanner re-run pending to confirm caching headers detected.**
+
+---
+
+## BUG-95 — export-on-boot.sh and export-daily.sh not deployed to Pi
+
+**Logged:** S144 2026-09-04
+**Platform:** Lab Pi (d3kOS v0.9.9.4)
+**Severity:** MEDIUM — `d3kos-export-boot.service` and `d3kos-export-daily.service` fail at every
+boot with exit code 203/EXEC (script file not found). Boot-time and daily scheduled exports have
+never run on this Pi image.
+
+**Symptom:** `systemctl list-units --state=failed` reports both services as failed at boot.
+`journalctl` shows `203/EXEC` — the kernel could not execute the ExecStart binary because the path
+does not exist.
+
+**Root Cause:** Both scripts exist in the repo at `Helm-OS/scripts/export-on-boot.sh` and
+`Helm-OS/scripts/export-daily.sh` but were never copied to `/opt/d3kos/scripts/` on the Pi during
+image creation or any subsequent deploy. The systemd unit files reference these paths and were
+registered, but the scripts themselves were omitted from the deploy.
+
+**Affected Files:**
+- `Helm-OS/scripts/export-on-boot.sh` (repo — correct, not on Pi)
+- `Helm-OS/scripts/export-daily.sh` (repo — correct, not on Pi)
+- `/etc/systemd/system/d3kos-export-boot.service` (Pi — registered, references missing script)
+- `/etc/systemd/system/d3kos-export-daily.service` (Pi — registered, references missing script)
+
+**Related:** BUG-54 (export failures / HTTP 400 to server). BUG-95 is a precondition failure —
+the export scripts never start, independent of BUG-54's HTTP issue.
+
+**Fix:** `scp` both scripts to `/opt/d3kos/scripts/` and verify they are executable. Then
+`systemctl reset-failed d3kos-export-boot d3kos-export-daily` and confirm services run.
+
+**Status:** `[~]` **FIXED LAB S144 2026-09-04 — both scripts copied to `/opt/d3kos/scripts/`,
+permissions set 755, `systemctl reset-failed` run. Export-boot service started successfully
+(ran, attempted upload — upload behaviour is BUG-54 scope, not BUG-95). Boot-time 203/EXEC
+failure resolved. Boat Pi: scripts must be deployed at next in-person visit.**
+
+---
+
+## BUG-96 — detect-timezone.sh referenced by systemd unit but never written
+
+**Logged:** S144 2026-09-04
+**Platform:** Lab Pi (d3kOS v0.9.9.4)
+**Severity:** LOW — timezone auto-detection has never run; Pi uses default/static timezone.
+No data loss, no service outage.
+
+**Symptom:** `d3kos-timezone-setup.service` fails at boot with exit code 203/EXEC. The unit
+`ExecStart=/opt/d3kos/scripts/detect-timezone.sh` references a script that does not exist on the
+Pi or in the repo.
+
+**Root Cause:** The systemd unit file was written and registered, but the corresponding
+`detect-timezone.sh` script was never authored. Unlike BUG-95 (scripts exist in repo, not deployed),
+this script has no source anywhere.
+
+**Affected Files:**
+- `/etc/systemd/system/d3kos-timezone-setup.service` (Pi — registered, references nonexistent script)
+- `/opt/d3kos/scripts/detect-timezone.sh` — DOES NOT EXIST (Pi or repo)
+
+**Fix:** Write `detect-timezone.sh` (query IP geolocation API, call `timedatectl set-timezone`)
+and deploy to Pi, OR disable the unit with `systemctl disable d3kos-timezone-setup.service` until
+the script is written.
+
+**Status:** `[!]` **OPEN — script does not exist. Fix requires authoring. Unit left registered
+but failing. Operator decision needed: write the script or disable the unit.**
+
+---
+
+## BUG-98 — Tailscale apt keyring deleted but source list not removed; apt update fails at every boot
+
+**Logged:** S144 2026-09-04
+**Platform:** Lab Pi (d3kOS v0.9.9.4)
+**Severity:** LOW — no service impact; causes a brief red warning notification at login and
+pollutes journal with GPG errors on every apt update attempt.
+
+**Symptom:** At login, a red Software Updater warning appears briefly. `xsession-errors`
+contains: `up: Error updating cache - W: ... Failed to parse keyring
+"/usr/share/keyrings/tailscale-archive-keyring.gpg" ... No such file or directory`.
+
+**Root Cause:** Tailscale was removed from the Pi (standing instruction: "Tailscale: REMOVE
+from Pi before v0.9.4 build begins"). The keyring file
+`/usr/share/keyrings/tailscale-archive-keyring.gpg` was deleted, but
+`/etc/apt/sources.list.d/tailscale.list` still exists and references it. Every `apt update`
+(run automatically at login by the software updater) fails the GPG signature check and
+produces the warning.
+
+**Affected Files (Pi):**
+- `/etc/apt/sources.list.d/tailscale.list` — must be deleted (references nonexistent keyring)
+- `/usr/share/keyrings/tailscale-archive-keyring.gpg` — already absent
+
+**Fix:** `sudo rm /etc/apt/sources.list.d/tailscale.list` then `sudo apt update` to verify
+clean output.
+
+**Status:** `[~]` **FIXED LAB S144 2026-09-04 — `/etc/apt/sources.list.d/tailscale.list` deleted.
+`apt update` verified: no Tailscale errors. ⚠ Separate `free-x.de` GPG key warning remains —
+different repo, different key, outside BUG-98 scope. Boat Pi: apply at next in-person visit.**
+
+---
+
+## BUG-99 — VNC xrandr autostart conflicts with Wayland/1920×1200 native monitor; background appears changed
+
+**Logged:** S144 2026-09-04
+**Platform:** Lab Pi (d3kOS v0.9.9.4)
+**Severity:** LOW — cosmetic + log noise; all services function correctly at native resolution.
+
+**Symptom:** (1) `.xsession-errors` contains xrandr error at every login:
+`/usr/bin/xrandr: specified screen 1920x1080 not large enough for output HDMI-A-1 (1920x1200+0+0)`.
+(2) Operator reports desktop background looks different from before.
+
+**Root Cause — two independent issues sharing one trigger:**
+
+*Issue A — VNC xrandr autostart:*
+`/etc/xdg/autostart/vnc_xrandr.desktop` runs:
+`sh -c "if ! (xrandr | grep -q -w connected) ; then /usr/bin/xrandr --fb 1920x1080 ; fi"`
+Under labwc (Wayland), `xrandr` queries XWayland which does not expose the physical HDMI
+monitor to X11, so `grep -q -w connected` returns false (no connected monitor seen). The
+condition triggers and attempts `xrandr --fb 1920x1080` — but the actual Wayland output
+(HDMI-A-1) is at its native **1920×1200** (preferred and current per `wlr-randr`). xrandr
+cannot shrink the framebuffer smaller than the active output → error. The VNC script is a
+Raspberry Pi OS VNC helper; it is irrelevant on a Pi with a physical monitor.
+
+*Issue B — no wallpaper setter in labwc autostart:*
+The labwc `~/.config/labwc/autostart` launches twofing, unclutter, and the d3kOS dashboard,
+but contains no wallpaper command (`swaybg`, `wbg`, etc.). labwc renders its compositor
+default background. Previously the desktop may have run a wallpaper via a different session
+type or a tool that no longer runs under this session.
+
+**Affected Files (Pi):**
+- `/etc/xdg/autostart/vnc_xrandr.desktop` — VNC-only tool, must be disabled for this system
+- `~/.config/labwc/autostart` — add wallpaper setter if a specific background is desired
+
+**Fix Plan — see BUG-99 fix plan below.**
+
+**Status:** `[~]` **FIXED LAB S144 2026-09-04.**
+- **Part A:** `/etc/xdg/autostart/vnc_xrandr.desktop` — `Hidden=true` appended. Will not
+  execute at next login. xrandr error will be gone.
+- **Part B:** `~/.config/labwc/autostart` — `swaybg -c '#2d2d2d' &` inserted after header.
+  `swaybg` v1.2.1 installed via apt. Dark grey background takes effect on next login/reboot.
+  Backup at `~/.config/labwc/autostart.bak-bug99`.
+- **Note:** `~/.config/labwc/autostart` is not tracked in the canonical repo tree — Pi-only
+  file. Add to canonical tree if image rebuild is planned.
+- **Boat Pi:** apply both changes at next in-person visit.
+
+---
+
+## BUG-97 — SK watchdog checks wrong port; Signal K health check always fails
+
+**Logged:** S144 2026-09-04
+**Platform:** Lab Pi (d3kOS v0.9.9.4)
+**Severity:** LOW — watchdog always fails with exit code 1; SK and Node-RED are unaffected.
+Watchdog is non-functional and produces a misleading failed-unit entry at every boot.
+
+**Symptom:** `d3kos-sk-nodered-watchdog.service` fails at boot with exit code 1. Signal K
+is healthy (active, ports 8375/10110/8099) and Node-RED is healthy (active, port 1880).
+
+**Root Cause:** The watchdog inline script checks `curl http://localhost:3000/signalk` to verify
+Signal K health. Port 3000 is the Flask d3kOS dashboard — not Signal K. Signal K runs on ports
+8375 (admin UI), 10110 (NMEA), and 8099 (streaming). The curl returns HTTP 404 from Flask →
+`SK_OK=0` (false negative) → the script executes `systemctl restart signalk` as user `d3kos`
+(no sudo privilege) → permission denied → exit code 1.
+
+**Affected Files:**
+- `/etc/systemd/system/d3kos-sk-nodered-watchdog.service` — ExecStart inline bash script
+  has wrong SK health URL (`localhost:3000/signalk`; correct is `localhost:8375/signalk/v1/api/`)
+
+**Note:** The watchdog is `Type=oneshot` run by a timer — it is not a crash-restart loop.
+However, compare with BUG-09 / BUG-23a: operator has a standing rule against watchdogs for AvNav.
+This watchdog covers SK + Node-RED (different services). **Operator should decide whether this
+watchdog stays, is fixed, or is disabled.**
+
+**Fix (if keeping the watchdog):** Update the SK health check URL to
+`http://localhost:8375/signalk/v1/api/` and run the unit as root (or add sudoers rule) so
+`systemctl restart signalk/nodered` can execute.
+
+**Status:** `[~]` **FIXED LAB S144 2026-09-04 — SK URL corrected to `http://localhost:8099/signalk`
+(SK runs with `PORT=8099`; port 8375 is TCP stream only, not HTTP). `User=root` set so
+`systemctl restart` has permission. Manual test: `status=0/SUCCESS`, SK_OK=1, NR_OK=1,
+no restart triggered. Timer active (60s after boot, every 120s). Both canonical repo files
+updated. Boat Pi: deploy at next in-person visit.**
