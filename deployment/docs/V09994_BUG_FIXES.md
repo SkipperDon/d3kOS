@@ -7387,23 +7387,42 @@ Lab Pi → HostPapa → token generated. Registration flow end-to-end working.
 observed for a `free-x.de` repository after the Tailscale source was deleted. Separate
 from BUG-98.
 
-**Root Cause:** Unknown. A third-party apt source list under `/etc/apt/sources.list.d/`
-references `free-x.de`. The GPG key or keyring associated with this repo is stale or
-missing — likely left behind when the originating package was removed. Candidate packages:
-x2goserver, TigerVNC, or another remote-desktop/VNC tool previously installed.
+**Root Cause (S144-cont 2026-09-04):** The free-x.de repo is the **AvNav apt repository**
+— a core d3kOS component. The source was NOT orphaned. The real issue was twofold:
+1. The GPG key file at `/usr/share/keyrings/avnav-archive-keyring.gpg` was only 32 bytes
+   (essentially empty — written during initial Pi setup but never populated).
+2. The source entry used `trusted=yes` (unsigned trust bypass) with no `signed-by=` reference.
+   Newer apt/sqv (Sequoia PGP verifier) still attempts key verification even with `trusted=yes`,
+   and logs a warning when the key is missing — repo IS used, warning is cosmetic only.
+
+**Discovery Path (S144-cont):**
+1. `grep -r "free-x.de" /etc/apt/sources.list.d/` → source is `/etc/apt/sources.list.d/avnav.list`
+2. The source line had `trusted=yes` but no `signed-by=`. Newer sqv warns even with `trusted=yes`.
+3. Probed `https://www.free-x.de/debian/` for common key file paths. Found `oss.boating.gpg`
+   returns HTTP 200 (all others 404). Confirmed fingerprint `06B67AB0E988310475E75A2746E95F3C8A61623B`
+   matches the required key via `gpg --list-packets`. Key is NOT on keyserver.ubuntu.com or
+   keys.openpgp.org — must be fetched directly from `https://www.free-x.de/debian/oss.boating.gpg`.
 
 **Affected Files (Pi):**
-- `/etc/apt/sources.list.d/<unknown>.list` — source referencing free-x.de
-- `/usr/share/keyrings/<unknown>.gpg` (or `/etc/apt/trusted.gpg.d/`) — orphaned key
+- `/etc/apt/sources.list.d/avnav.list` — source referencing free-x.de (AvNav repo)
+- `/usr/share/keyrings/avnav-archive-keyring.gpg` — was 32-byte empty file, now populated
 
-**Fix Plan:**
-1. `grep -r "free-x.de" /etc/apt/sources.list.d/` — identify the source list file
-2. Check whether the originating package is still installed
-3. If unneeded: delete the source list file (and associated keyring if present)
-4. `sudo apt update` to confirm warning is gone
+**Fix Applied (S144-cont 2026-09-04):**
+1. `sudo curl -sS 'https://www.free-x.de/debian/oss.boating.gpg' -o /usr/share/keyrings/avnav-archive-keyring.gpg`
+   — downloaded binary GPG public key (1,741 bytes). Key is NOT ASCII-armored — do NOT use `--dearmor`.
+2. `sudo chmod 644 /usr/share/keyrings/avnav-archive-keyring.gpg`
+   — sqv runs as `_apt` user; file must be world-readable (default was 600 → permission denied).
+3. Source list updated to reference keyring and use HTTPS:
+   - Before: `deb [arch=arm64 trusted=yes] http://www.free-x.de/debian trixie main`
+   - After:  `deb [arch=arm64 signed-by=/usr/share/keyrings/avnav-archive-keyring.gpg] https://www.free-x.de/debian trixie main`
+4. Backup: `/etc/apt/sources.list.d/avnav.list.bak-bug100`
 
-**Status:** `[!]` **OPEN S144 2026-09-04 — not yet investigated. Spotted as a side-effect
-of BUG-98 diagnosis. Needs one SSH session to identify and remove.**
+**Verification:** `sudo apt update` → `Hit:6 https://www.free-x.de/debian trixie InRelease` — no warning, no error.
+
+**Boat Pi:** Same fix required at next in-person visit. The empty keyring and `trusted=yes` source
+line exist on any Pi built from the v0.9.9.4 image.
+
+**Status:** `[x]` **FIXED LAB S144-cont 2026-09-04 — warning eliminated. Boat Pi: needs deployment.**
 
 ---
 

@@ -8213,3 +8213,44 @@ human_verified         : 0
 - Boat Pi: BUG-95–99 + BUG-101 app.py fix all need deployment at next in-person visit
 
 ---
+
+---
+
+## S144-cont-2 — 2026-09-04 — BUG-100: AvNav APT GPG Key Fix
+
+**Goal:** Fix free-x.de apt GPG key warning (BUG-100).
+
+**Completed:**
+- **BUG-100 ROOT CAUSE CLARIFIED** — free-x.de is the AvNav apt repository (a core d3kOS
+  component), NOT an orphaned third-party source. The warning was triggered because:
+  1. `/usr/share/keyrings/avnav-archive-keyring.gpg` was 32 bytes (empty) on the Pi.
+  2. Source line used `trusted=yes` (no `signed-by=`). Newer apt + sqv (Sequoia verifier)
+     still attempts key verification even with `trusted=yes`, and warns when the key is missing.
+- **Key discovery path:**
+  - `grep -r 'free-x.de' /etc/apt/sources.list.d/` → `/etc/apt/sources.list.d/avnav.list`
+  - Key is NOT on keyserver.ubuntu.com or keys.openpgp.org
+  - Probed `https://www.free-x.de/debian/` with common key filename patterns
+  - `oss.boating.gpg` returned HTTP 200; confirmed fingerprint `06B67AB0E988310475E75A2746E95F3C8A61623B` via `gpg --list-packets`
+- **Three-step fix:**
+  1. `sudo curl -sS 'https://www.free-x.de/debian/oss.boating.gpg' -o /usr/share/keyrings/avnav-archive-keyring.gpg` (1,741 bytes, binary — do NOT --dearmor)
+  2. `sudo chmod 644 /usr/share/keyrings/avnav-archive-keyring.gpg` (sqv runs as `_apt`, needs world-readable)
+  3. Updated avnav.list: removed `trusted=yes`, added `signed-by=`, changed `http` → `https`
+- **Verification:** `sudo apt update` → `Hit:6 https://www.free-x.de/debian trixie InRelease` — no warning.
+- **Governance updated:** V09994_BUG_FIXES.md, PROJECT_CHECKLIST.md (→ `[~]`), DEPLOYMENT_INDEX.md.
+
+**Decisions:**
+- Did NOT delete the AvNav source — AvNav is a core component.
+- Boat Pi needs same fix at next in-person visit (empty keyring on any Pi built from v0.9.9.4 image).
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-04 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Boat Pi BUG-100 fix (key URL confirmed: `https://www.free-x.de/debian/oss.boating.gpg`)
+
+---
