@@ -7347,9 +7347,34 @@ _AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/wp-content/themes/twentytwenty-chil
 3. Fix `app.py:497` URL in canonical tree and redeploy to Pi
 4. End-to-end test: Pi POST → HostPapa returns `{success:true, data:{token, register_url}}`
 
-**Status:** `[!]` **OPEN S144 2026-09-04 — Pi credentials deployed and confirmed correct.
-Server-side PHP 500 blocks all registration. Two fixes required: (1) HostPapa config.php
-or generate-reg-token.php fix; (2) app.py URL correction.**
+**Fix applied S144:**
+Three root causes found and fixed:
+1. **`generate-reg-token.php` missing `require_once __DIR__ . '/auth.php'`** — all four
+   helper functions (`amboat_send_error`, `amboat_send_success`, `amboat_json_body`,
+   `amboat_get_db`) are defined in `auth.php`. Every other mobile endpoint includes both
+   `config.php` AND `auth.php`. This file only had `config.php`. Added the missing include.
+   Deployed to HostPapa via FTPS (4,972 B size-verified). Committed `d33ce58` (atmyboat-forum).
+2. **`app.py:497` wrong URL** — `https://atmyboat.com/mobile/generate-reg-token.php` (404)
+   corrected to the theme path. Committed `448e7e4d` (Helm-OS).
+3. **Missing `User-Agent` header** — nginx on HostPapa blocks `python-requests` UA.
+   Added `'User-Agent': 'd3kOS/0.9.9.4 (Pi registration client)'` to the headers dict.
+   Same commit `448e7e4d`.
+
+**Verification:**
+```json
+{
+  "success": true,
+  "data": {
+    "token":        "R-F5DZ5T4",
+    "register_url": "https://atmyboat.com/register/?rt=F5DZ5T4",
+    "expires_at":   "2026-09-04 23:59:50",
+    "expires_min":  30
+  }
+}
+```
+Lab Pi → HostPapa → token generated. Registration flow end-to-end working.
+
+**Status:** `[x]` **FIXED + DEPLOYED S144 2026-09-04.**
 
 ---
 
