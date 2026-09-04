@@ -496,7 +496,7 @@ def settings():
 
 _APIKEYS_JSON = Path('/opt/d3kos/config/api-keys.json')
 _TOKEN_FILE   = Path('/opt/d3kos/config/device-token.json')
-_AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/mobile/generate-reg-token.php'
+_AMBOAT_REG_ENDPOINT = 'https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/generate-reg-token.php'
 
 
 @app.route('/api/generate-reg-token', methods=['POST'])
@@ -525,6 +525,7 @@ def generate_reg_token():
                 'Authorization':  f'Bearer {api_key}',
                 'X-Device-Token': device_token,
                 'Content-Type':   'application/json',
+                'User-Agent':     'd3kOS/0.9.9.4 (Pi registration client)',
             },
             timeout=10,
         )
