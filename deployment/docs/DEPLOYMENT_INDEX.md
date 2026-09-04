@@ -1779,3 +1779,20 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | GitHub: `README.md` | **[UPDATED — S141-cont-3]** Link to user manual updated from v2.3.0 to v2.4.0 filename. Commit `70e3d9330c7c`. |
 | GitHub Release: `v0.9.9.4` | **[NEW — S141-cont-3]** `https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4`. Tag + release notes: archive.org download link, SHA256, 128GB SD card requirement, full feature list, installation steps, links to INSTALLATION.md + user manual v2.4.0. |
 | HostPapa: `page-manual.php` | **[UPDATED — S141-cont-3]** Version strings updated v0.9.9.2 → v0.9.9.4 (subtitle + download card heading). PDF download link retained at v2.3.0 filename (no new PDF generated). Deployed live via FTP_TLS. Commit `aae03e6` in `atmyboat-forum`. |
+
+---
+
+### S143 — 2026-09-04 — Device-Gated Registration (Option B) + BUG-60 Close
+
+| File | Description |
+|------|-------------|
+| HostPapa live: `mobile/generate-reg-token.php` | **[NEW — S143]** Pi → HostPapa token generation endpoint. Auth: `AMBOAT_API_KEY` (header) + `X-Device-Token`. Generates 7-char code from unambiguous charset `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`; 30-min expiry; rate-limited 5/hr per pi_id; returns existing unexpired token rather than creating duplicates. Responds: `{success, data:{token, register_url, expires_at, expires_min}}`. |
+| HostPapa live: `page-register.php` | **[UPDATED — S143]** Token validation added. GET with `?rt=` validates token from `amboat_reg_tokens` (unexpired, unused), shows green "d3kOS Pi verified" badge. Hidden `reg_token` field in form. POST re-validates, marks `used_at = NOW()`, stores `atmyboat_pending_pi_id` in user meta. |
+| HostPapa live: `page-pair-device.php` | **[UPDATED — S143]** Reads `atmyboat_pending_pi_id` user meta; shows "Your d3kOS Pi is recognized (ID: xxxx…)" banner when set. |
+| HostPapa live DB: `amboat_reg_tokens` | **[NEW TABLE — S143]** `CHAR(7) token` (UNIQUE), `pi_id CHAR(36)`, `device_token CHAR(36)`, `expires_at DATETIME`, `used_at DATETIME NULL`. Created via `install-schema.php?key=amboat2026schema` (script deleted after run). |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py` | **[UPDATED — S143]** Flask route `/api/generate-reg-token` (POST). Reads `api-keys.json` + `device-token.json`; POSTs to HostPapa with `Authorization: Bearer {amboat_api_key}` + `X-Device-Token`. Returns `{success, data:{token, register_url, expires_at, expires_min}}`. Deployed to lab Pi. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/settings.html` | **[UPDATED — S143]** AtMyBoat.com settings card: "Create Account" section with idle/loading/code/error states. QR code via CDN qrcodejs (lazy-loaded, graceful fallback). Token displayed as `R-XXXXXXX` with link + "Open Register Page" button + expiry countdown. Deployed to lab Pi. |
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` | **[UPDATED v2.4.0 → v2.4.1 — S143]** Section 17.4 "Creating Your AtMyBoat.com Account (Device-Gated Registration)" added: 4-step walkthrough (Settings → Get Registration Code → scan/click → register → pair) + troubleshooting table. Deployed to lab Pi `/opt/d3kos/data/manuals/` and pushed to GitHub `public-release` branch (commit `2391c1ab`). |
+| `atmyboat-forum/blog-drafts/security-reregistration.html` | **[NEW — S142/S143]** Re-registration blog post draft. Title: "Yes, You Need to Re-Register — But Trust Us, It's Worth It". Warm tone, no technical detail. Features: Fix My Pi (full paragraph), live monitoring, Find My Boat, Chart Room, community map. Separate closing paragraph for first-time visitors pointing to /download/. NOT yet published to WordPress. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S143]** BUG-60 S143 section added: operator confirmed manual approval only, no login required; CLOSED FINAL. |
+| `PROJECT_CHECKLIST.md` | **[UPDATED — S143]** BUG-60 CLOSED FINAL note appended. |

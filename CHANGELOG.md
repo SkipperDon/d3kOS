@@ -775,3 +775,16 @@ v0.9.9.4 closes every security gate required before v1.0 and repairs the core da
   4. `systemctl --failed` = 0 (excluding hardware-dependent services)
   5. Dashboard loads at `:3000`
 
+
+## [v0.9.9.4-post] — 2026-09-04 — Device-Gated Registration Live
+
+### Added
+- **Device-gated registration (Option B)** — Pi-generated one-time short code replaces UUID copy-paste. Pi dashboard → Settings → "Get Registration Code" displays a 7-character code + QR code. User scans or clicks, lands on `/register/` with a green "d3kOS Pi verified" badge. Token is single-use, 30-minute expiry. No copying between applications required.
+- **`amboat_reg_tokens` table** — production database schema updated; stores token, pi_id, device_token, expiry, and used_at.
+- **User manual Section 17.4** — "Creating Your AtMyBoat.com Account (Device-Gated Registration)" with 4-step walkthrough and troubleshooting table. v2.4.1.
+
+### Fixed
+- **BUG-60 CLOSED** — WordPress comment settings confirmed: manual approval required, open commenting permitted (no login gate required).
+
+### Security
+- Deleted 50 MB SQL database dump (`atmyb197_wp59874-2026-08-18-6ed06e9.sql`) that was sitting in the web root and publicly accessible.

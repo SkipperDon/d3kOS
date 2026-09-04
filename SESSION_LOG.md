@@ -7993,3 +7993,67 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+## S143 — 2026-09-04 — Device-Gated Registration Live + BUG-60 Closed
+
+**Goal:** Deploy Option B device-gated registration (Pi-generated short code + QR), push user manual v2.4.1 to all surfaces, close BUG-60.
+
+**Completed:**
+- **BUG-60 CLOSED FINAL** — operator confirmed WP Admin → Settings → Discussion: manual approval required, no login gate (deliberate operator choice). Updated PROJECT_CHECKLIST.md + V09994_BUG_FIXES.md (S143 note appended). GitHub issue #52 comment added.
+- **HostPapa — 4 PHP files deployed + size-verified:**
+  - `mobile/generate-reg-token.php` (NEW, 4,936 B) — Pi calls this with AMBOAT_API_KEY + X-Device-Token; generates 7-char token from unambiguous charset; 30-min expiry; rate-limited 5/hr; returns existing unexpired token
+  - `page-register.php` (22,660 B) — validates `?rt=` token on GET (Pi verified badge); marks used on POST; stores `atmyboat_pending_pi_id` in user meta
+  - `page-pair-device.php` (2,942 B) — shows "Pi recognized" banner when pending_pi_id set
+  - `setup/install-schema.php` (9,735 B) — created `amboat_reg_tokens` table, then deleted from server
+- **`amboat_reg_tokens` table created in production DB** — ran install-schema.php via curl; all 13 tables OK; script deleted immediately after
+- **SQL dump deleted from web root** — `atmyb197_wp59874-2026-08-18-6ed06e9.sql` (50 MB) was publicly accessible; deleted via FTPS
+- **Lab Pi deployed** — app.py (Flask /api/generate-reg-token route) + settings.html (QR + short code UI) + D3KOS_USER_MANUAL_v0992.md (Section 17.4); `d3kos-dashboard` restarted, confirmed active
+- **User manual v2.4.1** — Section 17.4 "Creating Your AtMyBoat.com Account (Device-Gated Registration)" deployed to lab Pi and pushed to GitHub `public-release` branch (commit `2391c1ab`)
+- **GitHub Issues** — #52 (BUG-60) and #55 (BUG-63) both updated with closing comments
+- **FTP path corrected** — prior records stated "FTP root = /home/atmyb197/ + public_html/"; WRONG. Live `LIST` confirmed FTP user is chrooted to WordPress root directly. `reference_admin_console_vm.md` corrected.
+- **MEMORY.md updated** — BUG-60 removed from pending operator actions; FTP correction noted; device-gated registration live noted
+- **Both repos committed** — atmyboat-forum `9ff2342`, Helm-OS `6e6171fa`
+
+**Decisions:**
+- BUG-60 final state: manual approval only, no login required — operator deliberate choice; acceptable because device-gated registration means any registered commenter is already operator-approved
+- install-schema.php deleted from server immediately after run (one-shot script with a hardcoded key)
+- SQL dump deletion: not logged as a formal bug — it was an operator-created backup file, not a code defect, and was already fixed
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-04 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- GitHub `git push` still blocked by Claude Code permission gate — operator must run manually (worked around this session)
+- Blog post `blog-drafts/security-reregistration.html` written but not yet published to WordPress
+- Rotate FTP passwords (`d3kos@atmyboat.com` + `admin@atmyboat.com`) — deferred; current password in this session log entry context
+- Rotate `mobile/config.php` live keys (Stripe, Gemini, AMBOAT_API_KEY) — deferred
+- BUG-57-MAILPOET G8 — screenshot of MailPoet "Auto-create WordPress user on subscribe" setting
+- BUG-75 Step 3 — operator decision on /mobile/ alias
+- atmyboat.com user manual hosting location — not confirmed; GitHub + Pi updated but web page location unknown
+
+---
+
+SQS BLOCK
+─────────────────────────────────────────────────────
+tasks_planned          : 5 (BUG-60, HostPapa deploy, Pi deploy, user manual, GitHub)
+tasks_completed        : 5
+deferred               : 0
+regressions            : 0
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-04
+─────────────────────────────────────────────────────
+session_duration_min   : 90
+tasks_planned          : 5
+tasks_completed        : 5
+governing_doc_version  : CLAUDE.md 2026-08-31
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
