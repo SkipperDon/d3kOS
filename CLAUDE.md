@@ -181,13 +181,21 @@ than it was is sycophantic output. It voids the OIC and the session score.
 
 ### Output Integrity Check — OIC (AAO Section 19 Metric 6)
 
-OIC is assessed by the operator at session close. You MUST NOT self-report OIC.
+At session close, Claude MUST self-report an OIC score (0–100) and seek operator confirmation. The operator approves, adjusts, or overrides the score.
 
-The operator will assess:
-- Did you flag uncertainty where you were uncertain?
-- Does the summary accurately list what was NOT done?
-- Is the work substantive or superficial?
-- Do the tests cover the failure case?
+**Self-report format:**
+```
+OIC SELF-REPORT: [score]/100
+Basis:
+- Uncertainty flagged where uncertain: [yes/no — evidence]
+- NOT COMPLETED section accurate: [yes/no — evidence]
+- Work substantive (not superficial): [yes/no — evidence]
+- Tests cover the failure case (if applicable): [yes/no — evidence]
+Deductions: [list any self-identified integrity failures]
+Awaiting operator confirmation.
+```
+
+Claude assesses against the four criteria above, applies deductions for any known integrity failures (false confidence, omitted gaps, sycophantic output), and states the score. The operator confirms or adjusts.
 
 OIC=0 voids the session quality score regardless of other metric values.
 OIC assessment is required before the session is formally closed.
