@@ -8416,3 +8416,13 @@ attributed_rec         : 0
 failure_category       : workflow — wrong metadata on first upload attempt
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+### S146 Addendum — GitHub Issue Sync (2026-09-05)
+
+Completed after session close confirmation:
+
+- **BUG-101 (#93):** Added `fixed-lab` label + comment noting v0.9.9.4.1 packaging (primary patch driver)
+- **BUG-63 (#55):** Added `fixed-lab` label + comment noting QR UI fix packaged in v0.9.9.4.1
+- BUG-95–99 (#87–91) and BUG-100 (#92): already had `fixed-lab` from S144 — no change needed
+
+GitHub Issue Sync now current to S146. Next session: no pending issue sync items.
