@@ -7776,11 +7776,14 @@ fix worth considering: move the password fields outside `wiz-form` entirely (a s
 not nested in any `<form>`) so this class of bug cannot recur for any future step added before the
 password gate.
 
-**SUGGESTION (not applied — flagged, not executed):** the UI hint text says "Cannot be the
-default password," but `change_password()` (`app.py:364-397`) has no such check — only a
-length check (`len(new_password) < 8`). The hint currently promises an enforcement that does
-not exist. Add a server-side check rejecting the known default (`d3kos2026`) so the hint is
-true. Apply?
+**Follow-up applied S148-cont 2026-09-05 (operator approved):** the UI hint text said "Cannot
+be the default password," but `change_password()` (`app.py:364-397`) had no such check — only
+a length check. Added a 3-line rejection: `if new_password == 'd3kos2026': return
+{'success': False, 'error': 'Cannot reuse the factory default password'}, 400`. Deployed —
+exact 4-line diff against pre-fix backup, md5-identical repo↔Pi, dashboard restarted clean.
+Live-tested: POSTing `d3kos2026` to `/network/change-password` now correctly returns the
+rejection; `GET /` unaffected (still 200) — the lab Pi's already-set password (an explicit
+prior operator decision, made before this check existed) was not touched or invalidated.
 
 **Immediate operator unblock (S148-cont, live, no reboot):** password set directly via
 `sudo /usr/sbin/chpasswd` (matching the exact command the endpoint itself runs) + `onboarding.json`

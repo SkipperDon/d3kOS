@@ -370,6 +370,10 @@ def change_password():
     if not new_password or len(new_password) < 8:
         return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
 
+    # BUG-107 follow-up (S148): the UI hint claims this, but nothing enforced it.
+    if new_password == 'd3kos2026':
+        return jsonify({'success': False, 'error': 'Cannot reuse the factory default password'}), 400
+
     try:
         result = subprocess.run(
             ['sudo', '/usr/sbin/chpasswd'],
