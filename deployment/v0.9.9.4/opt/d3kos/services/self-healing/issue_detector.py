@@ -8,15 +8,17 @@ import psutil
 import subprocess
 import time
 import json
+import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
 class IssueDetector:
     def __init__(self):
-        self.db_path = '/opt/d3kos/data/self-healing/issues.db'
+        # Env override exists only for verify-bug105.sh (scratch DB). Production sets nothing.
+        self.db_path = os.environ.get('D3KOS_ISSUES_DB', '/opt/d3kos/data/self-healing/issues.db')
         self.init_database()
 
     def init_database(self):
@@ -105,7 +107,10 @@ class IssueDetector:
                 capture_output=True,
                 text=True
             )
-            if result.stdout.strip() != 'active':
+            # BUG-105: only 'failed' is an issue. 'inactive' is a clean stop — a tier-gated unit
+            # skipped by ExecCondition (BUG-102) or an operator `systemctl stop`. Fighting either
+            # is exactly the loop that froze the lab Pi.
+            if result.stdout.strip() == 'failed':
                 return {
                     'category': 'service_down',
                     'severity': 'critical',
@@ -113,6 +118,20 @@ class IssueDetector:
                     'metrics': json.dumps({'service': service})
                 }
         return None
+
+    def _already_open(self, cursor, description):
+        """BUG-105 dedup: one open row per symptom. A row the engine retired as 'failed'
+        suppresses re-entry for one hour, so a genuinely broken service gets ~3 restart
+        attempts per hour instead of 40 per second."""
+        cutoff = (datetime.now() - timedelta(hours=1)).isoformat()
+        row = cursor.execute('''
+            SELECT 1 FROM issues
+            WHERE description = ?
+              AND (status = 'detected'
+                   OR (status = 'failed' AND resolved_at > ?))
+            LIMIT 1
+        ''', (description, cutoff)).fetchone()
+        return row is not None
 
     def detect_issues(self):
         """Run all detection checks and log issues"""
@@ -130,6 +149,8 @@ class IssueDetector:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             for issue in detected_issues:
+                if self._already_open(cursor, issue['description']):
+                    continue   # BUG-105: one open row per symptom — never one row per poll
                 cursor.execute('''
                     INSERT INTO issues (timestamp, category, severity, description, metrics)
                     VALUES (?, ?, ?, ?, ?)

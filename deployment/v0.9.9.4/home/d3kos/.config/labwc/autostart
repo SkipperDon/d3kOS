@@ -1,0 +1,39 @@
+#!/bin/bash
+# d3kOS labwc autostart — runs when graphical session starts
+
+# ── wallpaper (solid dark grey) ────────────────────────────────────────
+swaybg -c '#2d2d2d' &
+
+# ── twofing (two-finger pinch zoom for OpenCPN) ──────────────────────────────
+(
+  export DISPLAY=:0
+  export XDG_RUNTIME_DIR=/run/user/1000
+  export WAYLAND_DISPLAY=wayland-0
+
+  sleep 15
+
+  if ! pgrep -x twofing > /dev/null; then
+    twofing &
+  fi
+) &
+
+# ── unclutter (hide mouse cursor on touchscreen) ─────────────────────────────
+unclutter-xfixes --timeout 1 &
+
+# ── d3kOS dashboard (Chromium maximised app window, not kiosk) ───────────────
+(
+  export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+  export XDG_RUNTIME_DIR=/run/user/1000
+  export WAYLAND_DISPLAY=wayland-0
+
+  # Wait for Flask dashboard to be ready before launching browser.
+  # BUG-106 (S148 2026-09-05): at Tier 0 / no vessel.env, the dashboard correctly
+  # returns 302 -> /setup (the onboarding wizard), never 200. The old check only
+  # accepted 200, so on every genuine first boot this loop never exits and the
+  # kiosk screen stays blank grey forever. Accept either — both mean "reachable".
+  until curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ | grep -qE '^(200|302)$'; do
+    sleep 2
+  done
+
+  /opt/d3kos/scripts/launch-d3kos.sh
+) &

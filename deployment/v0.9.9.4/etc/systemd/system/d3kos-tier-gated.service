@@ -1,0 +1,8 @@
+[Unit]
+Description=d3kOS — re-evaluate tier-gated services (BUG-102)
+After=d3kos-tier.service
+
+[Service]
+Type=oneshot
+# Units whose ExecCondition/Condition is still unmet are skipped silently; running ones are untouched.
+ExecStart=/bin/systemctl start --no-block d3kos-camera-stream.service d3kos-fish-detector.service d3kos-voice.service d3kos-live.service

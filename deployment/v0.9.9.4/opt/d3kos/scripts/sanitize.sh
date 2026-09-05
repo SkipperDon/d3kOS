@@ -250,6 +250,20 @@ if [ -d "/opt/d3kos/data/vector-db" ]; then
     rm -rf /opt/d3kos/data/vector-db/
 fi
 
+# Self-healing issue DB + service logs (BUG-105). v0.9.9.4.1 shipped a 7,055-row
+# issues.db; the remediation engine replays every open row from first boot.
+if [ -d "/opt/d3kos/data/self-healing" ]; then
+    log "  Removing self-healing issue database..."
+    rm -f /opt/d3kos/data/self-healing/issues.db*
+fi
+for d in /var/log/d3kos /opt/d3kos/logs; do
+    if [ -d "$d" ]; then
+        log "  Truncating $d/*.log..."
+        for f in "$d"/*.log; do [ -f "$f" ] && : > "$f"; done
+        rm -f "$d"/*.log.1 "$d"/*.pre-*.txt
+    fi
+done
+
 # STEP 7b: Strip credentials and device identity  (BUG-78 D2)
 # ==============================================================================
 # These five files are secrets or per-device identity. If ANY of them survives

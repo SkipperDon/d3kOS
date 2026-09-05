@@ -8565,3 +8565,62 @@ failure_category       : none (S146 release process gap surfaced — no soak tes
 human_verified         : 0
 task_classification    : ARCHITECT — Tier 1 (cross-service root cause + spec governing next sessions)
 ─────────────────────────────────────────────────────
+
+---
+
+## S148-cont — 2026-09-05 — BUG-105 fix executed, BUG-106 found+fixed, cold reboot verified
+
+**Model:** Sonnet 5. **Continuation of S148** — Fable diagnosed + wrote the atomic spec; this session executed it.
+
+**Completed:**
+- Verified all 11 prerequisites (P1–P11, md5-anchored) — exact match, proceeded per spec.
+- Captured `verify-bug105.sh` FAILING pre-fix (T1–T12 correctly fail; T13–T15 untestable on unpatched code — itself informative, since the isolation mechanism the tests need is part of the fix).
+- Applied all repo edits exactly as specified: journald drop-in (BUG-103), `remediation_engine.py` 4 replacements + `issue_detector.py` 4 replacements + `sanitize.sh` addition (BUG-105), 4 unit-file edits + 2 new units (BUG-102). Both `.py` files compile-clean; `sanitize.sh` syntax-clean.
+- Found and fixed one bug in the TEST SCRIPT itself (not the target code): T9 mixed a `sudo`-owned scratch log with a later non-`sudo` append — permission error. Fixed by keeping both calls under `sudo -E`.
+- Found and documented one missing deploy step: `systemctl restart systemd-journald` alone doesn't migrate the open volatile journal to persistent storage — `journalctl --flush` is required on a live restart (not needed on a genuine reboot, confirmed later). Added to spec Step 1.
+- Deployed all 9 files to the lab Pi with `.pre-bug105.bak` backups; confirmed md5 parity repo↔Pi before enabling anything.
+- Re-ran `verify-bug105.sh`: 12/15 → (after fixes) 15/15 PASS with self-healing still disabled → **paused and got explicit operator approval** before the one High-risk step (re-enabling `d3kos-remediation`/`d3kos-issue-detector` — the exact pair that caused the freeze).
+- Re-enabled both services; 15/15 PASS live; 150 s stability window clean (load 0.09–0.57, 0 failed units, 0 systemctl storm calls, `remediation.log` ~39 KB not 2.6 GB).
+- **Operator flagged the physical Pi screen showing blank** mid-session. Diagnosed live (not a crash — the backend was fully healthy): `~/.config/labwc/autostart`'s `until curl … grep -q 200` loop never exits at Tier 0 because the dashboard correctly returns 302, so the kiosk Chromium never launches. **BUG-106 logged and fixed** — accept `200|302`. Immediate lab fix: killed the stuck loop, launched the browser manually via `setsid` with env read from the live compositor process. Brought the previously-unsourced `autostart` file under version control (`deployment/v0.9.9.4/home/d3kos/.config/labwc/autostart`) before patching it — same convention as prior unsourced-script findings (BUG-28/83).
+- **Operator confirmed:** "that's great — this is the first time I've seen it boot to the wizard" (i.e. the setup wizard had never actually rendered on this hardware before this fix).
+- **Operator requested a full reboot + monitor to prove the fix survives a real boot cycle, not just live patching.** Took a complete pre-reboot snapshot, rebooted, SSH back in ~30 s (no BUG-104 recurrence — this was a normal reboot, not a re-sanitize, so host keys were untouched). Post-reboot: 0 failed units, all 4 tier-gated units `inactive` (never `failed`) straight out of cold boot, self-healing active, tier-gated timer scheduled, journald already writing to `/var/log/journal` (auto-flushed by `systemd-journal-flush.service` on real boot), all file md5s unchanged, kiosk Chromium **auto-launched unattended** at boot with zero manual intervention. Ran `verify-bug105.sh` a third time: **15/15 PASS.**
+- Updated `atomic-specs/BUG-105.md` with the full execution log; `PROJECT_CHECKLIST.md` BUG-102/103/105 marked `[x]` FIXED, BUG-106 logged and marked `[x]` FIXED (v3.74).
+
+**Decisions:**
+- BUG-106 folded into the same fix pass as BUG-102/103/105 — same root-cause family (code that only understands "off" or "fully configured," not the correct Tier-0 middle state).
+- 24 h lab soak now IN PROGRESS (started 17:21 EDT 2026-09-05) as the acceptance gate before v0.9.9.4.2 is built — this is the step v0.9.9.4.1 skipped.
+- Operator asked whether a general mechanism exists to prevent database/log runaway growth in the future (beyond this specific fix) — answered separately in chat; proposal pending operator decision on scope (logrotate for `/var/log/d3kos/` + `/opt/d3kos/logs/`, plus an age-based purge for `issues.db`'s resolved/failed rows, which currently accumulate forever even with BUG-105's dedup fix).
+
+**Pending / operator actions:**
+- 24 h soak — check back ~17:21 EDT 2026-09-06 before building v0.9.9.4.2.
+- Step 0 of `BUG-105.md`: mount the v0.9.9.4.1 `.img` and confirm `issues.db` is actually inside (currently an inference).
+- Decide on the general log/DB growth-prevention proposal (see chat).
+- Boat Pi: same storm almost certainly running there — v0.9.9.4.2 image at the in-person visit, do not hotspot-patch.
+- All S147 pending items carry forward unchanged.
+
+**Files changed:** `deployment/v0.9.9.4/opt/d3kos/services/self-healing/remediation_engine.py`, `issue_detector.py`, `deployment/v0.9.9.4/opt/d3kos/scripts/sanitize.sh`, 4 unit files + 2 new units under `deployment/v0.9.9.4/etc/systemd/system/`, `deployment/v0.9.9.4/etc/systemd/journald.conf.d/50-d3kos-persistent.conf` (new), `deployment/v0.9.9.4/home/d3kos/.config/labwc/autostart` (new — brought under version control), `deployment/v0.9.9.4/tools/verify-bug105.sh` (new), `atomic-specs/BUG-105.md`, `V09994_BUG_FIXES.md`, `PROJECT_CHECKLIST.md`, `SESSION_LOG.md`. Pi (lab, all backed up first): all 9 files installed + fixed autostart deployed; two services re-enabled; one full reboot performed.
+
+**No git push. No boat Pi or HostPapa change.**
+
+QUALITY METRICS — 2026-09-05 (S148-cont)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%  (paused for explicit approval before re-enabling self-healing AND before the reboot)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-05 (S148-cont)
+─────────────────────────────────────────────────────
+session_duration_min   : ~50
+tasks_planned          : 3 (execute BUG-105 spec, log+fix BUG-106, reboot-verify)
+tasks_completed        : 3
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+task_classification    : IMPLEMENT — Tier 2 (exact spec execution with two escalations: one test-harness bug fixed, one new live-discovered bug folded in)
+─────────────────────────────────────────────────────

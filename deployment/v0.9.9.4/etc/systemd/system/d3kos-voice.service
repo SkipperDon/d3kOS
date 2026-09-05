@@ -1,7 +1,8 @@
 [Unit]
 Description=d3kOS Hybrid Voice Assistant
 Documentation=https://github.com/d3kos/d3kos
-After=network.target sound.target
+After=network.target sound.target d3kos-tier.service
+Wants=d3kos-tier.service
 
 [Service]
 Type=simple
@@ -13,9 +14,8 @@ WorkingDirectory=/opt/d3kos/services/voice
 Environment="PYTHONUNBUFFERED=1"
 Environment="HOME=/home/d3kos"
 
-# Main command - runs in interactive mode
-# Check if voice assistant is enabled for current tier
-ExecStartPre=/bin/bash -c 'curl -s http://localhost:8093/tier/feature/voice_assistant | jq -e ".enabled == true" || exit 1'
+# Tier gate (BUG-102) — ExecCondition skips the unit cleanly at Tier 0; see d3kos-camera-stream.service
+ExecCondition=/bin/bash -c 'for i in 1 2 3 4 5; do curl -sf http://localhost:8093/tier/feature/voice_assistant 2>/dev/null | jq -e ".enabled == true" >/dev/null 2>&1 && exit 0; sleep 3; done; exit 1'
 
 ExecStart=/usr/bin/python3 /opt/d3kos/services/voice/voice-assistant-hybrid.py --auto-start
 

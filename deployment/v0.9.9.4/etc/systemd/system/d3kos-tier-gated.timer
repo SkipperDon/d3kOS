@@ -1,0 +1,10 @@
+[Unit]
+Description=d3kOS — tier-gated service re-try every 5 min (BUG-102)
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

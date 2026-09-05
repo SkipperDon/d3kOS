@@ -1,18 +1,23 @@
 [Unit]
 Description=d3kOS Camera Stream Manager
-After=network.target
-Wants=network-online.target
+After=network.target d3kos-tier.service
+Wants=network-online.target d3kos-tier.service
+StartLimitIntervalSec=120
+StartLimitBurst=3
 
 [Service]
 Type=simple
 User=d3kos
 WorkingDirectory=/opt/d3kos/services/marine-vision
-# Check if camera is enabled for current tier
-ExecStartPre=/bin/bash -c 'curl -s http://localhost:8093/tier/feature/camera | jq -e ".enabled == true" || exit 1'
+# Tier gate (BUG-102). ExecCondition, not ExecStartPre: a non-zero exit SKIPS the unit
+# (final state 'inactive', no failure, no Restart) instead of failing it. At Tier 0 this
+# unit must be a silent no-op — d3kOS runs without cameras. d3kos-tier-gated.timer re-tries.
+# Retries 5x3s because the tier API may not be listening yet at boot.
+ExecCondition=/bin/bash -c 'for i in 1 2 3 4 5; do curl -sf http://localhost:8093/tier/feature/camera 2>/dev/null | jq -e ".enabled == true" >/dev/null 2>&1 && exit 0; sleep 3; done; exit 1'
 
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/usr/bin/python3 /opt/d3kos/services/marine-vision/camera_stream_manager.py
-Restart=always
+Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal

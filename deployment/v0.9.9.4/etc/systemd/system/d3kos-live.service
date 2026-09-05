@@ -3,6 +3,9 @@ Description=d3kOS Live Session Service — WebRTC tunnel for mobile app
 Documentation=https://atmyboat.com
 After=network-online.target d3kos-cloud-agent.service
 Wants=network-online.target
+# BUG-102: an unpaired / Tier-0 device has neither file. Skip cleanly instead of exit(1) + restart loop.
+ConditionPathExists=/opt/d3kos/config/cloud-config.json
+ConditionPathExists=/opt/d3kos/config/device-token.json
 
 [Service]
 Type=simple

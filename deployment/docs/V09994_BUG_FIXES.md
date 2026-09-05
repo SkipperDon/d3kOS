@@ -7661,3 +7661,62 @@ dependency order, Sonnet-implementable, TDD.
 **Related:** BUG-23a (same hot-loop shape, S116), BUG-09 (operator's standing rule against blind watchdogs
 — this engine is exactly the class of watchdog that rule exists for), BUG-102, BUG-103.
 
+
+---
+
+## BUG-106 — Kiosk browser never launches on first boot at Tier 0 (blank grey screen)
+
+**Logged:** S148 2026-09-05  
+**Severity:** CRITICAL — release gate for v0.9.9.4.2 (folded into BUG-105 fix pass, same theme: first boot at Tier 0)  
+**Platform:** Pi touchscreen — every v0.9.9.4.1 install on genuinely fresh first boot  
+**Status:** `[x]` FIXED lab Pi S148 2026-09-05, applied live + committed to canonical tree
+
+**Symptom:** Physical Pi touchscreen shows only the bare Wayland desktop (solid dark grey
+`swaybg` wallpaper) — never the d3kOS dashboard or the setup wizard. Discovered live during
+the BUG-105 verification session: after the crash + reboot, the lab Pi (in the same
+`vessel.env`-absent state every fresh v0.9.9.4.1 install starts in) sat on a blank screen for
+over an hour. **Operator: "that's great — this is the first time I've seen it boot to the
+wizard,"** confirming the wizard screen had never actually rendered on this hardware before.
+
+**Root Cause (confirmed live):** `~/.config/labwc/autostart` gates the kiosk browser launch on
+the dashboard returning exactly HTTP 200:
+```bash
+until curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ | grep -q 200; do
+    sleep 2
+done
+/opt/d3kos/scripts/launch-d3kos.sh
+```
+At Tier 0 with `vessel.env` absent (the correct state for every fresh install — see BUG-102),
+`app.py:236` returns **302 → `/setup`**, never 200. The `until … grep -q 200` loop therefore
+**never exits on a genuine first boot**, and `launch-d3kos.sh` (which starts Chromium) never
+runs. Confirmed live: the loop's shell (`sh /home/d3kos/.config/labwc/autostart`, PID 2908)
+had been blocked since boot (16:07) with the dashboard steadily returning 302 the entire time.
+
+**This is the same failure class as BUG-102** — code written assuming the dashboard is always
+either "down" or "fully configured," with no allowance for the correct, common, in-between
+state (up, but showing the setup wizard).
+
+**Fix:** Accept either 200 or 302 as "reachable" — both mean the Flask app is up and the
+kiosk browser should launch (it will simply render the setup wizard if the Pi isn't configured
+yet, which is correct and desired):
+```bash
+until curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ | grep -qE '^(200|302)$'; do
+    sleep 2
+done
+```
+**Affected file:** `/home/d3kos/.config/labwc/autostart` — previously **unsourced** (not in any
+repo — same pattern as BUG-28/BUG-83's unversioned-script findings). Brought under version
+control byte-identical first, then patched: `deployment/v0.9.9.4/home/d3kos/.config/labwc/autostart`.
+
+**Immediate lab recovery (non-destructive, no reboot):** killed the stuck wait-loop shell,
+launched `/opt/d3kos/scripts/launch-d3kos.sh` directly via `setsid` with the compositor's own
+`DBUS_SESSION_BUS_ADDRESS`/`XDG_RUNTIME_DIR`/`WAYLAND_DISPLAY` env (read from the live `labwc`
+and `wayvnc` process environs). Chromium came up cleanly, screen showed the setup wizard.
+
+**Verification:** full reboot test — see BUG-105 record, Step 7 deploy log. Confirms the fixed
+autostart script launches the kiosk automatically on real (not live-patched) boot.
+
+**Related:** BUG-102 (same root cause family — code that only understands "off" and "fully
+on," not the Tier-0/unconfigured middle state). Fixed together as part of the same
+`atomic-specs/BUG-105.md` pass.
+
