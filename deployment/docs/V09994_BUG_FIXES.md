@@ -7720,3 +7720,73 @@ autostart script launches the kiosk automatically on real (not live-patched) boo
 on," not the Tier-0/unconfigured middle state). Fixed together as part of the same
 `atomic-specs/BUG-105.md` pass.
 
+
+---
+
+## BUG-107 — Password-change step: Enter key silently resubmits vessel wizard, never sets the password
+
+**Logged:** S148-cont 2026-09-05  
+**Severity:** CRITICAL — blocks first-run access to the dashboard entirely  
+**Platform:** Pi dashboard setup wizard — every fresh v0.9.9.4.1 install (Tier 0, default password)  
+**Status:** `[x]` FIXED + DEPLOYED lab Pi S148-cont 2026-09-05. Operator unblocked live
+(password set to `d3kos2026` — operator's explicit decision, made knowing this is the
+documented default; lab Pi only, not internet-facing); `password_changed` flag flipped;
+`ONBOARDING_RUNS` reset to 0. Code fix deployed: `onkeydown` guard added to both password
+fields, calling `submitPasswordChange()` and `preventDefault()` on Enter. Verified: exact
+2-line diff against pre-fix backup, md5-identical repo↔Pi, dashboard restarted clean
+(`GET /` still 200 after restart). **Not yet verified end-to-end in an actual browser** —
+the fix is a client-side JS guard; no browser-automation test exists for this page.
+
+**Symptom:** Operator completed the vessel setup wizard, but was repeatedly returned to what
+looked like the same wizard instead of reaching the dashboard. Each attempt silently consumed
+one of the 10 allowed onboarding runs (`ONBOARDING_RUNS` climbed to 7 with no vessel data change).
+Navigating back does not help — `/` unconditionally redirects to `/setup` while the password is
+still default (by design; see BUG-102/106 family).
+
+**Root Cause (confirmed):**
+1. `app.py:235-236` — `/` correctly redirects to `/setup?require_password=1` while
+   `onboarding.json`'s `password_changed` is `false`.
+2. `setup.html`'s client-side `checkDefaultPassword()` (DOMContentLoaded) correctly detects this
+   (`/network/check-default-password` returns `{"default": true}` — confirmed live) and shows the
+   `#wiz-password` step.
+3. **The bug:** `#wiz-password`'s two `<input type="password">` fields (`#pw-new`, `#pw-confirm`)
+   sit inside `<form id="wiz-form" method="POST" action="/setup">` — the SAME form used by the
+   6-step vessel wizard. The submit button is correctly `type="button" onclick="submitPasswordChange()"`,
+   but **nothing prevents the browser's default Enter-key behavior**: pressing Enter in either
+   password field submits the *enclosing form* directly to `/setup` (the vessel wizard's own POST
+   handler, `setup_post()`) instead of calling `submitPasswordChange()`, which POSTs JSON to
+   `/network/change-password`. `grep` for `preventDefault`/`keydown` in `setup.html` returns nothing
+   — zero protection exists.
+4. Because the vessel fields were already filled from a prior run (sticky by design), the accidental
+   submission silently resubmits the *same* vessel data — no visible error, no data loss — but
+   increments `ONBOARDING_RUNS`, writes `vessel.env` again, and redirects to `/`, which redirects
+   right back to `/setup?require_password=1` since the password was never touched. **Confirmed
+   backend-side that this is not a server bug:** `/network/check-default-password` and `sudo chpasswd`
+   (passwordless sudoers rule present) both work correctly when tested directly.
+
+**Compounding harm:** every accidental resubmission burns one of the 10 `ONBOARDING_RUN_LIMIT`
+attempts (`app.py:39`) for no reason — the user is never actually retrying the vessel wizard, they're
+being silently defeated by the missing Enter-key guard. Reset live for the operator (`ONBOARDING_RUNS`
+set back to 0 directly in `vessel.env`).
+
+**Fix:** add an Enter-key guard to the password step that calls `submitPasswordChange()` and
+prevents the default form submission, e.g. `onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasswordChange();}"`
+on `#pw-new` and `#pw-confirm`, or a single `keydown` listener scoped to `#wiz-password`. Broader
+fix worth considering: move the password fields outside `wiz-form` entirely (a separate `<div>`,
+not nested in any `<form>`) so this class of bug cannot recur for any future step added before the
+password gate.
+
+**SUGGESTION (not applied — flagged, not executed):** the UI hint text says "Cannot be the
+default password," but `change_password()` (`app.py:364-397`) has no such check — only a
+length check (`len(new_password) < 8`). The hint currently promises an enforcement that does
+not exist. Add a server-side check rejecting the known default (`d3kos2026`) so the hint is
+true. Apply?
+
+**Immediate operator unblock (S148-cont, live, no reboot):** password set directly via
+`sudo /usr/sbin/chpasswd` (matching the exact command the endpoint itself runs) + `onboarding.json`
+`password_changed` set to `true` manually; `ONBOARDING_RUNS` reset to `0` in `vessel.env`.
+
+**Related:** discovered immediately after BUG-106 (kiosk now shows the wizard) — same session,
+same "first time this screen has ever rendered" territory. Not the same root cause, but the same
+class of defect: functionality that was written but never exercised end-to-end before release.
+

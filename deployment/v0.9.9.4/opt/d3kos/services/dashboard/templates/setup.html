@@ -408,12 +408,12 @@
       <div class="card-body">
         <div class="field">
           <label for="pw-new">New Password</label>
-          <input type="password" id="pw-new" placeholder="Minimum 8 characters" autocomplete="new-password">
+          <input type="password" id="pw-new" placeholder="Minimum 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasswordChange();}">
           <div class="hint">Must be at least 8 characters. Cannot be the default password.</div>
         </div>
         <div class="field">
           <label for="pw-confirm">Confirm Password</label>
-          <input type="password" id="pw-confirm" placeholder="Re-enter your password" autocomplete="new-password">
+          <input type="password" id="pw-confirm" placeholder="Re-enter your password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasswordChange();}">
         </div>
         <div class="pw-error" id="pw-error" role="alert" aria-live="polite"></div>
         <button type="button" class="btn-submit" onclick="submitPasswordChange()">SET PASSWORD &amp; CONTINUE &rsaquo;</button>
