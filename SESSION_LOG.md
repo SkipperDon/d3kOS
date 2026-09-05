@@ -8269,3 +8269,68 @@ human_verified         : 0
 **Rule change:** OIC protocol updated — Claude now self-reports score and seeks operator confirmation. Updated in both `/home/boatiq/CLAUDE.md` and `Helm-OS/CLAUDE.md`. Committed `e084a05d` (Helm-OS) / `469cd5e7` (home).
 
 ---
+
+## S145 — 2026-09-05 — atmyboat.com Security Hardening
+
+**Goal:** Diagnose and apply WordPress site health recommendations and security hardening to atmyboat.com live site.
+
+**Completed:**
+
+- **Site Health analysis** — Three warnings: imagick not installed, OPcache not enabled, persistent object cache missing. Advised: check PHP Extensions in cPanel for imagick/OPcache; persistent object cache requires HostPapa support or plan upgrade (low priority at current traffic).
+
+- **Plugin conflict analysis** — 9 plugins reviewed. Two real conflicts identified: WP Super Cache + bbPress (forum pages) and WP Super Cache + d3kOS Device Authentication (registration pages). WP Super Cache config read from live server — `$wp_cache_not_logged_in = 2` already correctly handles logged-in users; no exclusions needed.
+
+- **WP Toolkit security hardening** — 15 measures reviewed. WP Toolkit premium required to apply via UI (not purchased). All applicable measures applied manually via FTP:
+  - `.htaccess` — 8 new rules: Options -Indexes, wp-config.php block, .htaccess/.htpasswd block, sensitive files block, author enumeration block (?author=N — BUG-57 vector), PHP execution block in uploads/, cache/, and wp-includes/ (tinymce excepted). Committed `0525602` atmyboat-forum repo.
+  - `wp-config.php` — Added `DISALLOW_FILE_EDIT` + `CONCATENATE_SCRIPTS` constants. Not committed (contains DB credentials).
+  - Skipped: bot protection (Wordfence WAF already active, Pi device auth REST calls currently work), table prefix change (already wpax_), admin username change (already Bohdon65 — confirmed via Wordfence log, changed Aug 31→Sep 1 2026).
+
+- **Security keys rotated** — All 8 WordPress auth keys/salts fetched fresh from api.wordpress.org and replaced in wp-config.php. Post-BUG-57 breach hygiene. Old keys confirmed gone. Don logged back in successfully as Bohdon65.
+
+- **Traffic analysis (AWStats + Wordfence cross-reference):**
+  - Sep 1–5: 279 "unique visitors" per AWStats — actual real external humans: ~15–25
+  - IP 174.93.61.185 (Don/Bohdon65, Weston Ontario) = 4,693/7,240 page views (64.8%)
+  - IP 66.102.137.24 = 2,167 "viewed" pages — Google bot misclassified as human (113 bytes/hit is impossible for real content)
+  - Attack activity ongoing: NY credential stuffing (amanda/amandamedison — BUG-57 leaked email list), Russia credential stuffing (zetgifari), France SQL injection (BLOCKED by Wordfence)
+  - IP 198.46.154.22 (BUG-57 attacker) still making GET requests — block was POST-only
+
+- **BUG-57 IP block extended to all methods** — Removed `<Limit POST>` wrapper from attacker IP blocklist. All 12 IPs now blocked for GET, POST, HEAD, and all methods. Removed duplicate tail deny entries. Committed `d7e28cc` atmyboat-forum repo. Live on site.
+
+- **Memory updated** — `atmyboat_security_s145.md` created with security state facts, WP Super Cache config facts, bot protection decision, admin username confirmation.
+
+**Decisions:**
+- Bot protection (WP Toolkit): Skip permanently — Wordfence WAF prepended to every request is more comprehensive; Pi device auth REST calls currently pass through it.
+- WP Super Cache exclusions: Not needed — `not_logged_in=2` setting correctly handles logged-in users; 30-min cache safe for forum and registration pages.
+- Admin username: Confirmed changed to Bohdon65 between Aug 31 2:24 PM and Sep 1 5:34 PM (Wordfence log evidence).
+- Security keys: Rotated post-BUG-57 breach per standard hygiene.
+- BUG-57 attacker IP block: Upgraded from POST-only to ALL methods after traffic analysis showed attacker still browsing via GET.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-05 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- atmyboat.com: imagick and OPcache — check cPanel PHP Extensions (5-minute task)
+- atmyboat.com: Austria user (178.115.64.70) requested password reset Sep 2 — may be a real d3kOS user locked out; monitor
+- atmyboat.com: Scheduled blog post "Yes, You Need to Re-Register" goes live 2026-09-09 — no action needed
+- Rotate FTP passwords (d3kos@atmyboat.com + admin@atmyboat.com) — deferred, still open
+- Rotate mobile/config.php live keys (Stripe, GEMINI, AMBOAT) — deferred, still open
+
+---
+
+EXTENDED DATA FIELDS — 2026-09-05
+─────────────────────────────────────────────────────
+session_duration_min   : ~180
+tasks_planned          : 1 (security hardening)
+tasks_completed        : 1
+governing_doc_version  : 2026-09-04
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
+
+---

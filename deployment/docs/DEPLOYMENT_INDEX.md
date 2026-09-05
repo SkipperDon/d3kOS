@@ -1821,3 +1821,14 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | Pi: `/etc/apt/sources.list.d/avnav.list` | **[FIXED — S144-cont-2 BUG-100]** Updated: removed `trusted=yes`, added `signed-by=/usr/share/keyrings/avnav-archive-keyring.gpg`, changed `http` → `https`. Backup: `avnav.list.bak-bug100`. `apt update` now clean: `Hit:6 https://www.free-x.de/debian trixie InRelease`. |
 | `deployment/v0.9.9.4/etc/apt/sources.list.d/avnav.list` | **[NEW — S144-cont-2 BUG-100]** Added to canonical tree. Fixed source: `signed-by=` + HTTPS. Replaces old `trusted=yes` + HTTP that produced sqv warning on every Pi built from image. |
 | `deployment/v0.9.9.4/usr/share/keyrings/avnav-archive-keyring.gpg` | **[NEW — S144-cont-2 BUG-100]** Added to canonical tree. Binary OpenPGP key for AvNav repo, fingerprint `06B67AB0E988310475E75A2746E95F3C8A61623B`. 1,741 bytes. Source: `https://www.free-x.de/debian/oss.boating.gpg` (NOT on public keyservers). Must be deployed chmod 644 on Pi. |
+
+## S145 — 2026-09-05 — atmyboat.com Security Hardening
+
+| File / Location | Change |
+|---|---|
+| HostPapa live: `.htaccess` (web root) | **[UPDATED — S145]** Added `AtMyBoat Security Hardening 2026-09-05` block: Options -Indexes, wp-config.php blocked, .htaccess/.htpasswd blocked, sensitive files blocked (readme.html, license.txt etc.), author enumeration blocked (?author=N), PHP execution blocked in uploads/ cache/ wp-includes/ (tinymce excepted). Committed `0525602` atmyboat-forum. |
+| HostPapa live: `.htaccess` (web root) | **[UPDATED — S145]** BUG-57 attacker IP block extended from `<Limit POST>` to ALL methods (GET+POST+HEAD). Duplicate tail deny entries removed. 12 attacker IPs now fully blocked. Committed `d7e28cc` atmyboat-forum. |
+| HostPapa live: `wp-config.php` (web root) | **[UPDATED — S145]** Added `define('DISALLOW_FILE_EDIT', true)` and `define('CONCATENATE_SCRIPTS', false)`. Not committed to repo (contains DB credentials + auth salts). |
+| HostPapa live: `wp-config.php` (web root) | **[UPDATED — S145]** All 8 WordPress auth keys/salts rotated via api.wordpress.org/secret-key/1.1/salt/. Post-BUG-57 hygiene. Old keys confirmed gone. Not committed. |
+| `atmyboat-forum/.htaccess` | **[NEW — S145]** First-ever .htaccess committed to atmyboat-forum repo. Tracks all security hardening rules for reproducibility. `0525602` + `d7e28cc`. |
+| Memory: `atmyboat_security_s145.md` | **[NEW — S145]** Security state facts, WP Super Cache config facts (not_logged_in=2, 30-min cache, no exclusions needed), bot protection decision (skip — Wordfence covers it), admin username confirmed Bohdon65. |
