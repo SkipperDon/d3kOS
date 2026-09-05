@@ -8254,3 +8254,18 @@ human_verified         : 0
 - Boat Pi BUG-100 fix (key URL confirmed: `https://www.free-x.de/debian/oss.boating.gpg`)
 
 ---
+
+---
+
+## S144-cont-2 — SESSION CLOSE — 2026-09-04
+
+**OIC:** 82/100 — confirmed by operator.
+
+**Deductions recorded:**
+- −10 BUG-100 original hypothesis wrong (inference before read — S135 pattern)
+- −5 Two wasted tool calls (--dearmor on binary, tee double-write)
+- −3 gpg --list-keys format mismatch (keybox vs raw OpenPGP)
+
+**Rule change:** OIC protocol updated — Claude now self-reports score and seeks operator confirmation. Updated in both `/home/boatiq/CLAUDE.md` and `Helm-OS/CLAUDE.md`. Committed `e084a05d` (Helm-OS) / `469cd5e7` (home).
+
+---
