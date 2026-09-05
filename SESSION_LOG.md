@@ -8624,3 +8624,94 @@ failure_category       : none
 human_verified         : 0
 task_classification    : IMPLEMENT — Tier 2 (exact spec execution with two escalations: one test-harness bug fixed, one new live-discovered bug folded in)
 ─────────────────────────────────────────────────────
+
+---
+
+## S148-cont-2 — 2026-09-05 — BUG-104/106/107 fixed live; 24h soak status; documentation pass
+
+**Model:** Sonnet 5. Direct continuation of S148-cont (same session, same reboot).
+
+**Context:** Immediately after the S148-cont cold-reboot verification of BUG-102/103/105, the
+operator's own physical touchscreen surfaced two more real, first-boot-blocking bugs while actually
+using the newly-working kiosk display — exactly the kind of defect that only shows up when the code
+is exercised end-to-end for the first time.
+
+**Completed:**
+- **BUG-106** (found live, physical screen blank): kiosk `labwc` autostart script gated the Chromium
+  launch on the dashboard returning exactly HTTP 200; at Tier 0 the dashboard correctly returns 302,
+  so the kiosk never launched on any genuine first boot. Fixed to accept `200|302`. Previously-unsourced
+  script brought under version control at `deployment/v0.9.9.4/home/d3kos/.config/labwc/autostart`.
+  Operator: "that's great — this is the first time I've seen it boot to the wizard."
+- **BUG-107** (found live immediately after): operator completed the vessel wizard, got looped back
+  instead of reaching the dashboard, burning onboarding-run attempts (counter reset to 0 for them,
+  twice, as the bug kept re-triggering). Root cause: the mandatory first-boot password-change step's
+  two input fields sit inside the same `<form>` as the vessel wizard with no Enter-key guard —
+  pressing Enter silently resubmitted the vessel form instead of calling the password-change JS.
+  Confirmed backend was fine in isolation before concluding front-end; fixed with an `onkeydown` guard.
+  Operator then approved a follow-up: `change_password()` only checked length, so the UI's
+  "cannot be the default password" hint was unenforced — added the missing check.
+- Answered operator's security-architecture question mid-fix: confirmed (by reading both the endpoint
+  code and the registration spec) that the Pi's local `d3kos` system password and the atmyboat.com
+  account password are fully independent — the Pi never collects or transmits the latter.
+- Operator made an explicit, informed decision to set the lab Pi's password to the documented default
+  (`d3kos2026`) for now, understanding the tradeoff (lab-only, not internet-facing, already known to
+  this session via SSH regardless).
+- **BUG-104 fixed** (was left open at end of S148-cont): wrote `lab-restore.sh`, a console-run SSH
+  recovery tool, staged at `/home/d3kos/lab-restore.sh` on the Pi. Deliberately kept OUT of
+  `sanitize.sh` itself — adding it there would bake one shared SSH host keypair into every distributed
+  image, defeating the per-device uniqueness `ConditionFirstBoot=yes` correctly provides for real
+  customers. Confirmed via grep that `sanitize.sh` never broadly wipes `/home/d3kos`, so this script
+  survives future sanitize runs.
+- All six bugs (BUG-102/103/104/105/106/107) now `[x]` FIXED in `PROJECT_CHECKLIST.md` PART 17.
+- Checked 24h soak status at the 32-minute mark: 0 failed units, 0 `systemctl` storm calls, journald
+  167.6 MB (under the 200 MB cap), `d3kos-tier-gated.timer` firing cleanly every 5 min (units briefly
+  show `activating` during their own 15 s `ExecCondition` retry, then settle `inactive` — confirmed
+  via journal this is expected behavior, not a fault).
+- Documentation pass: `DEPLOYMENT_INDEX.md` updated with all new/changed files this continuation;
+  memory topic file `bug105_self_healing_runaway_s148.md` expanded with BUG-104/106/107 detail and
+  current soak state; `MEMORY.md` index line updated.
+
+**Decisions:**
+- Operator plan going forward: let the 24h soak run (ends 2026-09-06 17:21 EDT); check back in ~1 hour
+  in the meantime; after the soak, reboot the Pi once more and manually walk through the setup wizard
+  end-to-end (vessel info → password step → dashboard) as a final human-verified confirmation before
+  starting v0.9.9.4.2 release prep.
+- This session cannot autonomously wake itself after exactly 1 hour (not running under `/loop`) — the
+  next soak check and the reboot will happen when the operator next prompts.
+
+**Pending / operator actions:**
+- Soak check-in requested by operator in ~1 hour, then reboot + manual wizard walkthrough.
+- Once the walkthrough succeeds: begin v0.9.9.4.2 release prep (sanitize → image → SHA256 → GitHub
+  Release → archive.org → README → CHANGELOG, per `PHASE4-release-engineering.md`).
+- Growth-prevention mechanism (logrotate + issues.db age-based purge) — proposed, awaiting operator
+  go-ahead, not yet actioned.
+- Step 0 of `BUG-105.md` — mount the v0.9.9.4.1 `.img` and confirm `issues.db` is actually inside.
+- Boat Pi almost certainly running the pre-fix storm — v0.9.9.4.2 image at the in-person visit.
+- All earlier S147/S148 pending items carry forward unchanged.
+
+**Files changed:** `deployment/v0.9.9.4/home/d3kos/.config/labwc/autostart` (new), `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/setup.html`, `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py`, `deployment/v0.9.9.4/home/d3kos/lab-restore.sh` (new), `V09994_BUG_FIXES.md`, `PROJECT_CHECKLIST.md`, `DEPLOYMENT_INDEX.md`, `SESSION_LOG.md`. Pi (lab, all backed up first): all 4 files installed; dashboard restarted twice (clean both times); password changed + flag set + run counter reset (twice).
+
+**No git push. No boat Pi or HostPapa change.**
+
+QUALITY METRICS — 2026-09-05 (S148-cont-2)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%  (raised a correctness CONCERN before setting the default password back; proceeded only after explicit operator decision)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-05 (S148-cont-2)
+─────────────────────────────────────────────────────
+session_duration_min   : ~40
+tasks_planned          : 2 (unblock operator live, fix BUG-104/106/107 properly)
+tasks_completed        : 2 (plus 1 approved follow-up: default-password server-side check)
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+task_classification    : IMPLEMENT — Tier 2, with two live-discovered bugs found via direct operator use of the fixed kiosk, not pre-planned
+─────────────────────────────────────────────────────
