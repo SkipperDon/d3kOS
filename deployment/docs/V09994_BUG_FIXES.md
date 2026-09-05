@@ -7591,9 +7591,15 @@ ssh-keygen -R 192.168.1.237
 ssh -i ~/.ssh/id_d3kos d3kos@192.168.1.237
 ```
 
-**Proposed Fix:** Add a post-sanitize note to `sanitize.sh` (or a separate
-`lab-restore.sh`) that runs `ssh-keygen -A` after sanitization so the lab Pi remains
-accessible for development without needing physical console access.
+**Fix APPLIED S148-cont 2026-09-05:** `deployment/v0.9.9.4/home/d3kos/lab-restore.sh` —
+a standalone script (NOT touched by `sanitize.sh`'s deletion list, confirmed by grep: it only
+deletes specific named files, never a broad `/home/d3kos` wipe) that regenerates SSH host keys
+and starts/enables sshd. **Deliberately NOT added to `sanitize.sh` itself** — doing so would bake
+a single shared host keypair into every image built from that run, defeating the per-device
+uniqueness `ConditionFirstBoot=yes` correctly provides for real customers. This script is a
+console-run lab tool only, staged at `/home/d3kos/lab-restore.sh` on the Pi so it survives future
+sanitize runs and needs no network access — which matters, since SSH being down is the exact
+problem it solves. Deployed and executable on the lab Pi.
 
 
 ---
