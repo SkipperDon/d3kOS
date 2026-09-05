@@ -1,5 +1,5 @@
 # v0.9.9.5 — Research & Discussion Backlog
-**Version:** 1.1 | **Created:** 2026-06-23 S92 | **Updated:** 2026-07-15 S99 — D13 added | **Status:** DISCUSSION / PRE-APPROVAL
+**Version:** 1.2 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-05 S147 — build classification added | **Status:** DISCUSSION / PRE-APPROVAL
 **Owner:** Donald Moskaluk — AtMyBoat.com / d3kOS
 
 > **Purpose:** Captures every idea, research topic, and architectural discussion that has been
@@ -9,6 +9,46 @@
 >
 > This document is the "holding tank" between idea and PROJECT_CHECKLIST.md build task.
 > When an item is approved for build, move it to PROJECT_CHECKLIST.md with a task breakdown.
+
+---
+
+## Build Classification (decided S147 2026-09-05)
+
+Items in this backlog are organized into two distinct builds:
+
+### d3kOS Build — v0.9.9.5
+Runs on the existing d3kOS Pi (RPi 4B). Integrates into d3kOS services, dashboard, and voice system. Includes bug corrections carried forward from v0.9.9.4.
+
+| Item | Description |
+|------|-------------|
+| D02 SafeHelm | Python collision avoidance service :8095, COLREGs engine, voice + AvNav integration |
+| D05 signalk-forward-watch v0.2.4 | Three small improvements to existing Signal K plugin |
+| D11 360° Marine Vision AI | USB AI accelerator + MQTT service reading existing 4 cameras |
+| D13 VHF Communication Suite | USB audio adapter, audio replay, Signal K alerts, STT, translation |
+| D15 Universal Device Health | Real device health indicators in Settings (builds on BUG-50 fix) |
+| D16 3D Surround Situational Awareness | Tesla-style 3D helm view in Chromium; existing 4 cameras; single switch vs. AvNav; D11 AI overlays in Phase 2 |
+| Bug corrections | All open v0.9.9.4 bugs carried forward |
+
+**Hardware to procure for v0.9.9.5:**
+- USB C-Media audio adapter (D13) — ~$15 CAD
+- USB AI accelerator — NCS2 / Hailo-8L / Google Coral (D11) — decision pending
+
+---
+
+### New Build — Microware Spatial Awareness
+Separate hardware. Dedicated RPi 5 with kernel 5.10 locked permanently. Cannot run on the d3kOS Pi due to the kernel lock requirement. Communicates with d3kOS via WebSocket :8766.
+
+| Item | Description |
+|------|-------------|
+| D01 WiBoat | WiFi CSI marine radar — RPi 5 + ALFA adapters + SP4T switch + UCA antennas + LoRa mesh |
+
+**Hardware to procure for Microware Spatial Awareness:**
+- RPi 5 board — ~$110 CAD
+- 2× ALFA AWUS036NH USB adapters — ~$100 CAD
+- SP4T RF switch (GPIO-controlled) — ~$45 CAD
+- 4× 12dBi omni antennas (UCA array) — ~$180 CAD
+- Heltec V3 LoRa module — ~$30 CAD
+- **Total — ~$465 CAD**
 
 ---
 
@@ -632,6 +672,142 @@ displayed AIS as healthy. The owner had no way to know.
 
 ---
 
+## 16. 3D Surround Situational Awareness — Tesla-Style Helm View
+
+**Status:** `[PARTIAL DESIGN]` — display mode decided S147 2026-09-05. Architecture defined. No code written.
+**Build group:** d3kOS Build — v0.9.9.5 (runs in Chromium on existing Pi, no new hardware)
+
+**What was discussed (S147 2026-09-05):**
+
+A surround situational awareness display rendered in Chromium. Uses the existing 4 cameras (bow, helm/stern, port, starboard — all RLC-810A/820A, confirmed installed S112). Accessible from the d3kOS dashboard via a single switch that toggles between AvNav (:8080) and this view (:3000/3d-view).
+
+**Display mode decided:** Bird's eye view with prominent forward panel. Forward emphasis minimum 50 metres.
+
+### Display Layout (decided S147 2026-09-05)
+
+Three-zone layout integrated into the existing Marine Vision page. The toggle (AvNav ↔ Marine Vision) switches the iframe `src` — Marine Vision now contains all three zones.
+
+Display is 1920×1200 landscape (confirmed from d3kOS Chromium flags).
+
+```
+┌─────────────────────────────┬──────────────────────┐
+│  FORWARD PANEL              │  BIRD'S EYE STITCH   │
+│  Bow cam — perspective view │  All 4 cameras        │
+│  50m+ range rings (SVG)     │  Homography stitch    │
+│  D11 detection boxes        │  Forward-emphasized   │
+│  WiBoat range → rings Ph.3  │  D11 bearing markers  │
+│  (~65% of top section)      │  (~35% of top section)│
+├─────────────────────────────┴──────────────────────┤
+│  MARINE VISION — existing screens (unchanged)      │
+│  Camera grids · fish detection · controls          │
+└────────────────────────────────────────────────────┘
+```
+
+**Why forward panel + bird's eye side-by-side (not pure bird's eye for 50m):**
+Camera-only bird's eye transformation loses useful resolution past ~15–20m — a camera at 1–2m above the waterline sees 50m objects at a very shallow angle, and top-down projection compresses them to near-zero pixels. The forward perspective panel solves this: natural perspective projection shows 50m+ clearly with SVG range rings calibrated to the bow camera's FOV and mount height. The bird's eye stitch handles close-quarters spatial awareness around the hull. Same approach used by Garmin Surround View (commercial marine reference, confirmed S147).
+
+**Precedent / prior art (researched S147 2026-09-05):**
+- **Frigate NVR + go2rtc "Birdseye"** — closest open-source example. Uses go2rtc for streaming + tiled composite view. Not a true homography stitch — a grid of feeds. Confirmed go2rtc is the right streaming layer.
+- **RPI_BEV (hichristensen)** — OpenCV perspective transformation for navigational assistance on RPi. Confirms the stitch approach works on Pi hardware. No browser output or RTSP.
+- **4-camera surround on RPi 3 (hanifizzudinrahman)** — OpenCV surround view on Pi with fisheye cameras. Confirms Pi compute is sufficient.
+- **Garmin Surround View** — only production marine bird's eye surround system. Six through-hull cameras, 360° view for docking. Commercially closed, thousands of dollars. Validates the marine use case.
+- **Gap:** No open-source marine multi-camera bird's eye view served to a browser on a Raspberry Pi exists. d3kOS D16 would be the first.
+
+### Architecture
+
+**Phase 1 — Base view (no AI required)**
+- Python Flask serves `/3d-view` page
+- OpenCV homography stitches 4 camera RTSP sub-streams into bird's eye image (JPEG, served via existing camera service port 8084)
+- Bow camera RTSP sub-stream displayed as perspective forward panel (HTML `<video>` element or MJPEG)
+- SVG range rings at 10m / 25m / 50m overlaid on forward panel (calibrated to bow camera mount height + field of view)
+- **Toggle switch — AvNav ↔ 3D view (HARD CONSTRAINT: must not touch engine or nav ribbon)**
+  - AvNav already runs as `#avnav-frame` iframe inside the d3kOS dashboard. Engine row (`#rowEngine`) and nav row (`#rowNav`) are fully independent and stay full width at all times — this is existing behaviour ("ribbons stay full width").
+  - The toggle switches only the iframe `src` — AvNav URL ↔ `:3000/3d-view`. One JS call. No page navigation.
+  - The row-pill controls (BOTH / ENGINE / NAV / WX) that govern the ribbons are completely unaffected. Toggle must not be placed in the row-pill zone and must not interact with `showRow()`.
+  - Toggle button sits outside both ribbon rows — exact placement confirmed against live layout during build.
+
+**Phase 2 — D11 AI overlays**
+- Page subscribes to MQTT `vessel/safety/vision_alerts` via WebSocket bridge
+- Detection events appear as coloured bounding boxes on the forward panel
+- Bearing-only markers appear as directional wedges on the bird's eye stitch
+- No additional hardware — requires D11 (USB AI accelerator) to be operational
+
+**Phase 3 — WiBoat range integration**
+- WiBoat range measurements (WebSocket :8766) lock range rings to real measured distances
+- Bird's eye markers become positionally accurate (bearing + range = true grid position)
+- Forward panel range rings update dynamically from WiBoat data
+
+### Open-source stack (researched S147 2026-09-05 — verified projects only)
+
+**No Three.js or Babylon.js needed.** The browser does layout only. All video processing stays in Python/go2rtc. Plain HTML/CSS in an existing Flask template — fits the d3kOS pattern exactly.
+
+**go2rtc** — `github.com/AlexxIT/go2rtc` — MIT licence ✅
+- RTSP → WebRTC / MJPEG / HLS served to any browser
+- Pre-built ARM64 binary, runs on Pi natively — no compilation
+- All 4 Reolink RTSP sub-streams configured in one YAML file
+- Forward panel: bow camera WebRTC stream in HTML `<video>` element
+- 2,100+ commits, actively maintained
+
+**Bird's eye homography stitch — implement directly in d3kOS using OpenCV** (Apache 2.0 ✅)
+- Reference implementation: `github.com/dyfcalid/CameraCalibration` (Python + OpenCV, supports standard cameras, matches RLC-810A/820A) — but it is **GPL-3.0 ⚠️**
+- d3kOS distributes as an SD card image (binary distribution). Including GPL-3.0 code requires a GPL-3.0 licence notice on d3kOS. **Decision: implement the stitch natively using `cv2.getPerspectiveTransform` + `cv2.warpPerspective` — ~50 lines of Python, Apache 2.0, no dependency on the GPL project. dyfcalid is the reference, not the dependency.**
+- Output: OpenCV MJPEG stream → served by existing Flask camera service at port 8084 → HTML `<img>` element in the 3D view page
+
+**SVG range rings** — plain SVG overlay on the `<video>` element, calibrated to bow camera FOV and mount height. No library needed.
+
+**Open decision — go2rtc vs. `camera_stream_manager.py` at port 8084:**
+go2rtc may overlap with the existing camera service. Boundary must be drawn before build: does go2rtc replace `camera_stream_manager.py`, run alongside it, or serve D16 only? This is a build-start decision.
+
+### Hardware required
+- **None** — uses existing 4 cameras, existing Pi, existing Chromium stack
+- D11 USB AI accelerator required for Phase 2 overlays only
+
+### Relationship to existing items
+- **D11:** D11 is the detection backend; D16 Phase 2 consumes its MQTT output. D16 Phase 1 builds and ships independently.
+- **WiBoat (Microware Spatial Awareness):** Provides range data for Phase 3 accurate positioning.
+- **AvNav:** Not replaced — single-switch toggle keeps both available at the helm.
+
+**Camera mount confirmed S147 2026-09-05 (photo provided by operator):**
+- Position: starboard bow rail top, bullet-style Reolink mount, forward-facing
+- Estimated height above waterline: ~1.2–1.5m (Monterey 265 bow rail height — freeboard not published in any spec sheet per research S147; must be measured on boat)
+- Line of sight confirmed: 300m+ on open water at that elevation (operator confirmed from photo)
+- 50m range trivially achievable. Ring distribution at ~1.5m height:
+  - 10m ring: low in frame (near bow deck visible)
+  - 25m ring: mid-frame
+  - 50m ring: upper third (near horizon)
+
+**Open questions before build begins:**
+1. Precise bow camera height above waterline — tape measure, bow rail top to waterline, on next boat visit. Required for exact ring pixel positions.
+2. Bow camera tilt angle — level or angled slightly downward? Affects ring vertical distribution.
+3. Confirm horizontal FOV in installed position (RLC-810A spec: 87° — verify no obstruction from rail hardware).
+
+**Installation standard — minimum camera height (applies to all d3kOS users, not just this boat):**
+
+Different boats have different bow rail heights. D16 must work across all installations. The physics determines the minimum:
+
+| Standard | Height | Reason |
+|----------|--------|--------|
+| Absolute minimum | 0.9m / 3 ft above waterline | Deck level on a small boat — wave interference becomes frequent below this |
+| Recommended minimum | 1.2m / 4 ft above waterline | Typical bow rail height on recreational boats — range rings spread adequately across the frame |
+| Ideal | 1.5m+ / 5 ft+ above waterline | Top of bow rail on mid-size+ boats — rings distribute cleanly across full frame height |
+
+**Additional mounting requirements:**
+- Forward-facing — no more than 15° downward tilt
+- Clear sight line ahead — not obscured by windshield, bimini frame, or anchor hardware
+- Camera must support RTSP sub-stream at 640×360 or lower (all Reolink models do)
+
+**Calibration — user inputs their camera height, software calculates ring positions:**
+The range ring pixel positions are calculated from camera height + camera FOV. D16 includes a settings input (camera height in metres/feet). User enters their measurement once; rings calculate automatically. No hardcoded values — works for any boat installation.
+
+Formula: for a ring at distance d, with camera height h and vertical FOV θ_v:
+`ring_y = frame_height × (0.5 - arctan(h/d) / θ_v)`
+
+**What would trigger moving to PROJECT_CHECKLIST.md:**
+- Don approves Phase 1 build start
+- Can proceed without D11 — Phase 1 is camera-only
+
+---
+
 ## Prioritization Discussion (not decided — for Don's review)
 
 | # | Item | Complexity | Dependency | Value |
@@ -654,6 +830,7 @@ displayed AIS as healthy. The owner had no way to know.
 | 13 | pypilot integration | Very High | SafeHelm Phase 2 sea trial | Automation |
 | 14 | Unclean-shutdown hardening (D14) — full self-healing audit | High | An actual corruption event being captured | Unproven — no corruption ever observed |
 | 15 | Universal device health framework (D15, ex BUG-11) | High | **BUG-50 fixed first** — it is the reference implementation | Owner can tell if their AIS/GPS/mic/speaker works |
+| 16 | **3D Surround Situational Awareness (D16)** | Medium (~6–10h) | Don chooses display mode (bird's eye vs. 3D perspective) | Tesla-style helm view; pairs with D11 + WiBoat |
 
 ---
 

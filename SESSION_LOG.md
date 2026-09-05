@@ -8426,3 +8426,82 @@ Completed after session close confirmation:
 - BUG-95–99 (#87–91) and BUG-100 (#92): already had `fixed-lab` from S144 — no change needed
 
 GitHub Issue Sync now current to S146. Next session: no pending issue sync items.
+
+## S147 — 2026-09-05 — v0.9.9.5 Planning + D16 3D Surround View Design
+
+**Goal:** Review v0.9.9.5 backlog, classify builds, add and design D16 (3D Surround Situational Awareness).
+
+**Completed:**
+- Verified archive.org upload of `d3kos-v0.9.9.4.1-20260905.img.gz` (13.03 GB) — COMPLETE. Torrent auto-generated, derivative processing running (normal). Memory updated.
+- Listed all 15 v0.9.9.5 backlog items (D01–D15) from V09995_DISCUSSION_PLAN.md with status and blocking gates.
+- Researched and corrected procurement list: cameras confirmed all 4 installed + working (S112 cruise validation — V09994_BUG_FIXES.md line 1478 "Four cameras functioning and connected."). PoE switch confirmed standard unmanaged (on board). Cameras removed from procurement list.
+- Grouped v0.9.9.5 items into two named builds (operator decision):
+  - **d3kOS Build — v0.9.9.5**: D02 SafeHelm · D05 signalk-fw v0.2.4 · D11 360° Vision AI · D13 VHF Suite · D15 Device Health · bug corrections. Hardware: USB audio adapter (~$15 CAD) + USB AI accelerator (decision pending).
+  - **New Build — Microware Spatial Awareness**: D01 WiBoat only. Dedicated RPi 5, kernel 5.10 locked. ~$465 CAD BOM. WebSocket :8766 to d3kOS.
+- Added D16 — 3D Surround Situational Awareness (operator idea: Tesla-style helm view):
+  - Display mode decided: bird's eye stitch + forward perspective panel side-by-side, integrated into existing Marine Vision page
+  - Layout: forward panel (bow cam, 50m+ range rings, left 65%) + bird's eye stitch (right 35%) + Marine Vision below (unchanged)
+  - Toggle constraint recorded: switches only `#avnav-frame` iframe src — engine row and nav row completely unaffected (confirmed from reading index.html — AvNav already runs as iframe, ribbons always full width)
+  - Researched open-source stack (two fork agents): go2rtc (MIT, ARM64, RTSP→WebRTC) for streaming; OpenCV native homography stitch (Apache 2.0) for bird's eye; plain SVG range rings. No Three.js/Babylon.js needed.
+  - Confirmed no open-source marine multi-camera bird's eye view served to a browser on RPi exists — D16 would be the first.
+  - Bow camera confirmed from photo: starboard bow rail top, forward-facing, ~1.2–1.5m above waterline, 300m+ line of sight confirmed by operator. Monterey 265 freeboard not published in any spec sheet (research confirmed).
+  - Installation standard documented: min 0.9m absolute / 1.2m recommended / 1.5m+ ideal above waterline. Calibration input: user enters camera height, software calculates ring positions via arctan formula. Works for any boat.
+- V09995_DISCUSSION_PLAN.md updated to v1.2 — build classification section added at top, D16 added as full PARTIAL DESIGN entry, prioritization table updated.
+- MEMORY.md updated: v0.9.9.5 entry revised with build names, D16, camera/PoE confirmed facts.
+- project_image_publish_v09994.md updated: archive.org status COMPLETE.
+
+**Decisions:**
+- D01 WiBoat = "New Build — Microware Spatial Awareness" (separate RPi 5, kernel-locked). Cannot share d3kOS Pi.
+- D02/D05/D11/D13/D15/D16 = d3kOS Build v0.9.9.5 (all on existing Pi, no new mobo).
+- eSIM/4G HAT → USB cellular dongle (PiCAN-M occupies GPIO header).
+- Cameras: NOT on procurement list — all 4 RLC-810A/820A confirmed installed and working.
+- D16 display: forward perspective panel (50m+ range rings, left 65%) + bird's eye stitch (right 35%) + Marine Vision below.
+- D16 open-source stack: go2rtc (streaming) + OpenCV native stitch (GPL avoided by implementing directly).
+- D16 toggle: iframe src switch only — does not touch engine/nav ribbons.
+- D16 calibration: user-entered camera height → auto-calculated ring positions (works for any installation).
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-05 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D16 Phase 1 build start — awaiting operator approval (no hardware needed, can start now)
+- D13 VHF: confirm VHF radio audio jack (blocking)
+- D11: choose AI accelerator (NCS2 / Hailo-8L / Google Coral)
+- D01 WiBoat: operator go-ahead for Phase 1 + hardware procurement (~$465 CAD)
+- Bow camera precise height measurement (tape measure, dock visit) — needed for D16 range ring calibration
+- Credential rotation deferred: FTP passwords (d3kos@atmyboat.com + admin@atmyboat.com), mobile/config.php live keys
+- BUG-57-MAILPOET G8 screenshot — operator action
+- BUG-75 Step 3 decision — operator decision
+- Blog post "Yes, You Need to Re-Register" — scheduled live 2026-09-09
+- archive.org v0.9.9.4.1 derivative processing — running automatically, nothing to do
+
+---
+
+QUALITY METRICS — 2026-09-05
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+TREND: Last 5 sessions SQS: 97 (S146), 100 (S145), 100 (S144-cont-2), 100 (S143), 100 (S142). Average: 99.4. S147: 100. Trend: stable/high. Primary improvement target: none — all metrics at ceiling.
+
+EXTENDED DATA FIELDS — 2026-09-05
+─────────────────────────────────────────────────────
+session_duration_min   : ~120 (estimated)
+tasks_planned          : research/planning session — no fixed sprint scope
+tasks_completed        : 8 distinct research + design + documentation tasks
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+─────────────────────────────────────────────────────
