@@ -8505,3 +8505,63 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0
 ─────────────────────────────────────────────────────
+
+---
+
+## S148 — 2026-09-05 — Lab Pi freeze: root cause, mitigation, BUG-105 atomic spec
+
+**Goal:** Lab Pi found frozen after the v0.9.9.4.1 sanitize run (S146). Operator: "it crashed and did not come back up properly… this has to work… you need to be able to capture this information." Investigate, stabilise, log bugs, write the fix spec for Sonnet.
+
+**Models:** Sonnet 4.6 (first half — SSH recovery, initial diagnosis, BUG-102/103/104 logged), Fable 5.1 (second half — crash root cause, mitigation, BUG-105, atomic spec).
+
+**Completed:**
+- SSH recovery: `sanitize.sh` deleted host keys + `authorized_keys`; keygen units have `ConditionFirstBoot=yes` so they never re-ran. Operator ran `ssh-keygen -A` + re-added the key from the console. Lab-only (BUG-104).
+- **Crash root cause found (BUG-105, CRITICAL):** `d3kos-remediation.service` had issued 67,410 `systemctl` calls in 21 min post-boot. `issue_detector.py` inserts a new `detected` row every 60 s per non-active service (no dedup) → 7,055 open rows; `remediation_engine.py` runs `systemctl restart` once per row every 30 s (no is-active check, no cap, no backoff) → ~40 restarts/sec for 8 days; `remediation.log` 2.6 GB / 24.1 M lines on the SD card; 218 back-to-back restarts of a HEALTHY `license-api` tripped systemd's start-limit and killed it (10:36 pre-crash, 16:09 post-boot). Camera at Tier 0 (`ExecStartPre` → `failed`) was the permanent feed. `sanitize.sh` never purges `data/self-healing/` → **the DB is in the v0.9.9.4.1 image.**
+- Crash timeline from persistent evidence (`remediation.log` gap analysis + `issues.db`; journal was volatile): engine's last write 09:55:53 → 4 h gap; detector's last row 13:52:29; freeze ~13:53 (restored boot clock 13:53:24); operator power-cycle 16:06:35 (`uptime -s`; journal "13:53" stamps are pre-NTP — Pi has no RTC). Kernel-level failure mode unprovable (BUG-103).
+- Verified NOT bugs: Tier 0 on first boot (operator: correct), setup-wizard redirect (vessel.env absent = first boot), voice failing in lab (no mic). Pi hardware fine: temp 36 °C, `throttled=0x0`, 4.5 GB free, 90 GB disk free.
+- **Mitigation (operator-approved, reversible):** `systemctl stop+disable d3kos-remediation d3kos-issue-detector`; 7,048 stale rows set `resolved` (`issues.db.pre-bug105.bak` kept); `remediation.log` truncated (`remediation.log.pre-bug105-tail.txt`, 5,000 lines kept); `license-api` reset-failed + started. Result: 0 `systemctl` calls/60 s, load 1.99 → 0.68.
+- Bugs logged (V09994_BUG_FIXES.md + PART 17): BUG-102 (4 tier-gated units loop at Tier 0 — fix = `ExecCondition`), BUG-103 (journald volatile — root cause = RPi vendor drop-in `40-rpi-volatile-storage.conf`), BUG-104 (lab SSH after sanitize), BUG-105 (self-healing runaway). PROJECT_CHECKLIST 3.71 → 3.73.
+- **Atomic spec written: `atomic-specs/BUG-105.md`** — one spec, three bugs in dependency order (103→105→102), all exact `old`/`new` replacements, md5-anchored prerequisites, full `deployment/v0.9.9.4/tools/verify-bug105.sh` (15 assertions; T8 "never restart a healthy service" and T12 "camera-stream ends `inactive` at Tier 0" are the release criteria), deploy, 24 h soak, rollback. EXECUTION-ORDER Phase 6 added. DEPLOYMENT_INDEX + MEMORY.md updated.
+
+**Decisions:**
+- Tier 0 on first boot is correct and stays (operator). Tier-gated features must be silent no-ops.
+- Fix mechanism = systemd `ExecCondition=` (skip → `inactive`) rather than Python exit-0 paths — unit-file-only, no service code touched for BUG-102.
+- v0.9.9.4.2 is required; 24 h lab soak is the acceptance gate the .1 release skipped.
+- The self-healing layer's existence is an operator call for v0.9.9.5 (standing no-blind-watchdog rule). This spec makes it safe, not justified.
+
+**Pending / operator actions:**
+- Sonnet: execute `BUG-105.md` (Phase 6.1) — capture `verify-bug105.sh` FAILING first.
+- Operator: Step 0 — mount the v0.9.9.4.1 .img and confirm `issues.db` is inside (replaces the inference).
+- Boat Pi almost certainly storming — fresh v0.9.9.4.2 image at next visit; do not hotspot-patch.
+- BUG-104 lab helper (`ssh-keygen -A` post-sanitize) — after each future sanitize.
+- All S147 pending items carry forward unchanged.
+
+**Files changed:** `deployment/docs/atomic-specs/BUG-105.md` (new), `EXECUTION-ORDER.md`, `V09994_BUG_FIXES.md`, `PROJECT_CHECKLIST.md`, `DEPLOYMENT_INDEX.md`, `SESSION_LOG.md`; home: `memory/MEMORY.md`. Pi (lab, mitigation only, no code): two units disabled, `issues.db` rows updated, `remediation.log` truncated.
+
+**Ollama:** 0 calls. **Costs:** Claude API — console.anthropic.com 2026-09-05; Ollama $0.
+
+**No git push. No boat Pi or HostPapa change.**
+
+QUALITY METRICS — 2026-09-05 (S148)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%  (mitigation waited for explicit "do the immediate mitigation")
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: none. Operator flagged one delay (2.6 GB log scanned twice on SD) — process, not scope.
+
+EXTENDED DATA FIELDS — 2026-09-05 (S148)
+─────────────────────────────────────────────────────
+session_duration_min   : ~110
+tasks_planned          : 4 (investigate crash, stabilise, log bugs, write spec)
+tasks_completed        : 4
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 0
+failure_category       : none (S146 release process gap surfaced — no soak test)
+human_verified         : 0
+task_classification    : ARCHITECT — Tier 1 (cross-service root cause + spec governing next sessions)
+─────────────────────────────────────────────────────

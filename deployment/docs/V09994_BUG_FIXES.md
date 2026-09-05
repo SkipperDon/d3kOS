@@ -7460,3 +7460,204 @@ watchdog stays, is fixed, or is disabled.**
 `systemctl restart` has permission. Manual test: `status=0/SUCCESS`, SK_OK=1, NR_OK=1,
 no restart triggered. Timer active (60s after boot, every 120s). Both canonical repo files
 updated. Boat Pi: deploy at next in-person visit.**
+
+---
+
+## BUG-102 — Camera service restart-storms at Tier 0; d3kOS must run without cameras
+
+**Logged:** S148 2026-09-05  
+**Severity:** HIGH  
+**Platform:** Pi — all v0.9.9.4.1 users on first boot (Tier 0)  
+**Status:** `[ ]` OPEN
+
+**Symptom:** On first boot (fresh image / sanitized Pi), `d3kos-camera-stream.service`
+enters an infinite restart storm — "Start request repeated too quickly" floods the journal.
+The service never transitions to a stable state. Operator requirement: d3kOS must run cleanly
+at Tier 0 with no cameras connected or enabled.
+
+**Root Cause (confirmed in code):**
+
+1. `d3kos-camera-stream.service` has `ExecStartPre`:
+   ```
+   /bin/bash -c 'curl -s http://localhost:8093/tier/feature/camera | jq -e ".enabled == true" || exit 1'
+   ```
+2. On first boot, `cloud-config.json` is absent (deleted by `sanitize.sh`). The tier service
+   (`tier_service.py:208`) logs: `"no cache + server down — returning False (fail closed)"` and
+   returns Tier 0. Operator confirmed: **Tier 0 on first boot is correct and intentional.**
+3. Tier 0 feature matrix has `camera: False` — `tier/feature/camera` returns `{"enabled": false}`.
+4. ExecStartPre exits 1 → service fails.
+5. `Restart=always` in the unit → systemd retries immediately → hits burst limit → "repeated
+   too quickly" → service stuck in `failed` state, then retried again by subsequent triggers.
+
+**The bug is not the tier check — it is the crash-loop.** A disabled feature must produce a
+clean, stable no-op, not a storm.
+
+**Affected Files:**
+- `/etc/systemd/system/d3kos-camera-stream.service` — `ExecStartPre` + `Restart=always`
+- `/opt/d3kos/services/marine-vision/camera_stream_manager.py` — no tier-disabled exit path
+
+**Proposed Fix (minimal, two-part):**
+1. In the service unit: change `Restart=always` → `Restart=on-failure`. Add
+   `StartLimitIntervalSec=120` + `StartLimitBurst=3` so transient failures retry but a
+   persistently-disabled feature gives up cleanly.
+2. In `camera_stream_manager.py`: add a tier check at startup — if camera disabled,
+   log `"Camera feature not enabled for this tier — exiting cleanly"` and `sys.exit(0)`.
+   Modify (or remove) the ExecStartPre so exit 0 on disabled does not trigger a restart.
+
+**Scope correction S148 (Fable):** FOUR units loop at Tier 0, not one — `d3kos-camera-stream`,
+`d3kos-fish-detector`, `d3kos-voice` (all `ExecStartPre` tier checks → `failed`) and `d3kos-live`
+(`live_session.py:874` `sys.exit(1)` when `cloud-config.json`/`device-token.json` absent → `Restart=on-failure`
+every 10 s forever; the author already wrote the correct "stay up, don't restart-loop" pattern 8 lines
+above for the aiortc case). **Fix mechanism decided:** `ExecCondition=` (systemd 257 on the Pi) — a
+non-zero exit SKIPS the unit to `inactive` with no failure and no restart; `ConditionPathExists=` for
+live; one `d3kos-tier-gated.timer` re-tries every 5 min. Unit-file edits only. **This is what fed
+BUG-105** — a `failed` camera unit is what the detector inserted 6,837 rows about.
+**Fix spec:** `atomic-specs/BUG-105.md` Step 5.
+
+---
+
+## BUG-103 — journald volatile storage; crash events are unrecoverable
+
+**Logged:** S148 2026-09-05  
+**Severity:** MEDIUM  
+**Platform:** Pi — all versions  
+**Status:** `[ ]` OPEN
+
+**Symptom:** After a Pi crash or unexpected reboot, `journalctl --list-boots` shows only the
+current boot. All logs from the previous session are permanently lost. Crash cause cannot be
+determined. Operator confirmed: no power loss occurred — the Pi crashed and there is no
+evidence of why.
+
+**Root Cause (CONFIRMED S148):** Raspberry Pi OS ships
+`/usr/lib/systemd/journald.conf.d/40-rpi-volatile-storage.conf` = `Storage=volatile` (SD-wear protection).
+`/etc/systemd/journald.conf` is all defaults (`#Storage=auto`) and `/var/log/journal/` exists (empty,
+created 2026-04-01) — so a past attempt to enable persistence never took: the vendor drop-in wins over
+`journald.conf`. Only a drop-in in `/etc/systemd/journald.conf.d/` sorting after `40-` overrides it.
+Journal lives in `/run/log/journal/` (tmpfs, 147 MB during the BUG-105 storm) and is wiped on reboot.
+Consequence on 2026-09-05: the kernel-level cause of an 8-day-uptime freeze is unrecoverable.
+**Fix spec:** `atomic-specs/BUG-105.md` Step 1 — `50-d3kos-persistent.conf`, 200 MB cap, weekly rotation.
+
+**Verification:**
+```bash
+# On Pi — shows volatile if /var/log/journal/ does not exist or Storage=volatile
+cat /etc/systemd/journald.conf | grep Storage
+ls /var/log/journal/ 2>/dev/null || echo "NOT PERSISTENT"
+```
+
+**Affected Files:**
+- `/etc/systemd/journald.conf` — `Storage=` setting
+
+**Proposed Fix:**
+1. Set `Storage=persistent` in `/etc/systemd/journald.conf`.
+2. Set `SystemMaxUse=200M` to cap SD card use.
+3. Create `/var/log/journal/` (systemd does this automatically when Storage=persistent).
+4. Restart `systemd-journald` — logs persist across reboots immediately.
+
+**SD card write concern:** Persistent logging increases write frequency. On an SD card this
+is a long-term wear concern. Mitigation: `SystemMaxUse=200M`, `MaxFileSec=1week`,
+`Compress=yes` (all in journald.conf). Logs rotate weekly and total size is capped.
+
+**Note:** This bug means any past Pi crash cause is unrecoverable. Once BUG-103 is fixed,
+future crashes will be diagnosable from `journalctl -b -1`.
+
+---
+
+## BUG-104 — sanitize.sh leaves lab Pi with SSH dead after reboot (lab-only)
+
+**Logged:** S148 2026-09-05  
+**Severity:** LOW (lab-only, not user-facing)  
+**Platform:** Lab Pi only  
+**Status:** `[ ]` OPEN
+
+**Symptom:** After `sanitize.sh` runs on the lab Pi and the Pi is subsequently rebooted
+(crash or manual), SSH port 22 refuses connections. `systemctl status ssh` shows failed.
+
+**Root Cause:** `sanitize.sh` Step 4 deletes `/etc/ssh/ssh_host_*_key*`. The OS has two
+keygen services (`sshd-keygen.service`, `regenerate_ssh_host_keys.service`) that regenerate
+them, but BOTH have `ConditionFirstBoot=yes`. Because the lab Pi is past first-boot, this
+condition is never met again — keygen is skipped, sshd fails to start.
+
+**Why this does NOT affect real users:** A customer who flashes the image triggers a genuine
+first boot. `ConditionFirstBoot=yes` is met, keygen runs, host keys are created, SSH works.
+The lab Pi is the only machine where sanitize.sh runs on a non-first-boot system.
+
+**Lab Recovery Procedure (manual, already applied S148):**
+```bash
+# On Pi console (keyboard + HDMI required):
+sudo ssh-keygen -A
+sudo systemctl start ssh && sudo systemctl enable ssh
+# On WSL:
+ssh-keygen -R 192.168.1.237
+ssh -i ~/.ssh/id_d3kos d3kos@192.168.1.237
+```
+
+**Proposed Fix:** Add a post-sanitize note to `sanitize.sh` (or a separate
+`lab-restore.sh`) that runs `ssh-keygen -A` after sanitization so the lab Pi remains
+accessible for development without needing physical console access.
+
+
+---
+
+## BUG-105 — Self-healing runaway: remediation engine × issue detector storm crashed the lab Pi; ships in v0.9.9.4.1
+
+**Logged:** S148 2026-09-05  
+**Severity:** CRITICAL — release gate for v0.9.9.4.2  
+**Platform:** Pi — every v0.9.9.4.1 install at Tier 0 (i.e. every fresh install)  
+**Status:** `[~]` MITIGATED LAB S148 (services stopped + disabled, DB purged, log truncated). Code fix: atomic spec `atomic-specs/BUG-105.md`.
+
+**Symptom:** Lab Pi froze hard (ARP unresolvable, no ping) ~09:55 EDT 2026-09-05 after 8 days uptime;
+recovered only by power-cycle at 16:06. Operator confirmed no power loss. Post-boot: `d3kos-license-api`
+dead (`start-limit-hit`), `d3kos-camera-stream` in permanent restart storm, PID 1 at 38% CPU,
+`dbus-daemon` and `systemd-journald` elevated, 67,410 `systemctl` invocations in the first 21 minutes.
+
+**Root cause (confirmed in code and on the live Pi):** two services form an unbounded positive-feedback loop.
+
+1. `self-healing/issue_detector.py` polls every 60 s and **INSERTs a new `detected` row every poll** for
+   any service whose `systemctl is-active` ≠ `active`. No dedup, no check for an existing open row.
+   `issues.db` held **7,055 open rows**: 6,837 × "d3kos-camera-stream is not running" (since 2026-08-28
+   06:52) + 218 × license-api.
+2. `self-healing/remediation_engine.py` every 30 s SELECTs **all** `detected` rows and runs
+   `systemctl restart <svc>` **once per row** — no attempt counter, no backoff, no terminal state; a
+   failed row stays `detected` and is retried every cycle forever. With 7,055 rows that is ~170 s of
+   back-to-back `systemctl restart` per 200 s cycle ≈ **40 restarts/sec, continuously, for 8 days.**
+3. It restarts services **without checking whether they are already running.** `license-api` was healthy;
+   218 back-to-back restarts tripped systemd's start-rate limit and left it `failed` — first at 10:36
+   pre-crash, again at 16:09 post-boot. **The self-healing layer killed a working service.**
+4. `remediation.log` is appended 3 lines per attempt with no rotation: **2.6 GB / 24,142,348 lines**
+   on the SD card (est. ~1.3 GB/day at the final rate). Continuous SD write load for 8 days.
+5. Why the storm exists at Tier 0: camera is a Tier ≥1 feature; at Tier 0 (correct on first boot —
+   operator decision S148) `d3kos-camera-stream`'s ExecStartPre exits 1 → unit `failed` → detector
+   inserts 1 row/min → engine load grows linearly, restart rate quadratically.
+
+**Crash timeline (from `remediation.log` gap analysis + `issues.db`; journal was volatile — BUG-103):**
+- 09:55:53 — last engine write before a **4-hour gap**. Engine wedged.
+- 13:52:29 — last detector row (detector thread still limping).
+- ~13:53 — full freeze (restored boot clock = 13:53:24 = last clock save).
+- 16:06:35 — operator power-cycle (true boot time; journal "13:53" stamps are pre-NTP).
+- 16:09:59 — post-boot engine reaches license-api rows → 218-restart burst → `start-limit-hit`.
+`Uncertainty flag: the kernel-level failure mode (SD controller stall under sustained write vs PID 1
+job saturation) is not provable — the journal was in RAM. BUG-103 fix makes the next one diagnosable.`
+
+**Release impact:** `sanitize.sh` and `create-image.sh` never touch `/opt/d3kos/data/self-healing/` or
+`/var/log/d3kos/`. **The 7,055-row `issues.db` was imaged into v0.9.9.4.1** [inference from the scripts;
+the .img was not mounted — verify by mounting before v0.9.9.4.2 build]. Even with a clean DB, every
+Tier-0 install regenerates the storm from minute one via item 5. **v0.9.9.4.1 is unstable at Tier 0.**
+
+**Affected files (all md5-identical repo↔Pi, verified S148):**
+- `opt/d3kos/services/self-healing/remediation_engine.py` — no is-active check, no cap, no per-service dedup, no log rotation
+- `opt/d3kos/services/self-healing/issue_detector.py` — no dedup; flags `inactive` (clean stop) same as `failed`
+- `opt/d3kos/scripts/sanitize.sh` — does not purge self-healing DB or `/var/log/d3kos/*.log`
+- Units: `d3kos-remediation.service`, `d3kos-issue-detector.service` (both `Restart=always`, `User=root`)
+
+**Mitigation applied lab Pi S148 (reversible):** `systemctl stop+disable d3kos-remediation d3kos-issue-detector`;
+7,048 `detected` rows set `resolved` with `remediation_action='BUG-105 S148 purge'` (backup
+`issues.db.pre-bug105.bak`); `remediation.log` truncated after saving `remediation.log.pre-bug105-tail.txt`
+(5,000 lines); `license-api` reset-failed + started. **Boat Pi: same storm is running there right now
+if camera is Tier-gated off — check `journalctl _COMM=systemctl | wc -l` at next visit.**
+
+**Fix:** `deployment/docs/atomic-specs/BUG-105.md` — one spec covering BUG-103 → BUG-105 → BUG-102 in
+dependency order, Sonnet-implementable, TDD.
+
+**Related:** BUG-23a (same hot-loop shape, S116), BUG-09 (operator's standing rule against blind watchdogs
+— this engine is exactly the class of watchdog that rule exists for), BUG-102, BUG-103.
+

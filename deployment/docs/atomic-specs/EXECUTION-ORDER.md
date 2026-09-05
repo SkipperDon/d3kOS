@@ -350,3 +350,32 @@ recorded from an inference rather than a read.**
 
 BUG-90, 91, 85 closed and BUG-65 Step 3 written. Those are the release-gate items; the rest are
 correctness and can trail.
+
+---
+
+## PHASE 6 — v0.9.9.4.2 FIRST-BOOT STABILITY (added 2026-09-05 S148)
+
+⚠ **Read first:** the lab Pi froze on 2026-09-05 after 8 days uptime. Cause: the self-healing layer
+(`issue_detector.py` × `remediation_engine.py`) is an unbounded loop — ~40 `systemctl restart`/sec at
+Tier 0, 2.6 GB log, healthy services killed via start-rate limit. **It is inside the published
+v0.9.9.4.1 image.** Lab mitigation (both units disabled) is in place; nothing depends on them.
+
+- [ ] **6.1 — `BUG-105.md`** — ONE spec, three bugs, fixed in dependency order:
+      BUG-103 (persistent journald drop-in — so the next freeze is diagnosable) →
+      BUG-105 (engine: is-active check, one action per service per pass, 3-strike retire, log rotation;
+      detector: dedup, `failed`-only; sanitize: purge DB + logs) →
+      BUG-102 (four tier-gated units → `ExecCondition` skip, `Restart=on-failure`, live gated on config
+      files, `d3kos-tier-gated.timer` re-try).
+      **TDD: `deployment/v0.9.9.4/tools/verify-bug105.sh` must be captured FAILING first.** 15 assertions; **T8 (never
+      restart a healthy service) and T12 (camera-stream ends `inactive`, not `failed`, at Tier 0) are
+      the release criteria.** Re-enable the two self-healing units only after T1–T7 pass.
+- [ ] **6.2 — 24 h soak** on the lab Pi: `journalctl --since '24 hours ago' _COMM=systemctl | grep -c
+      'Job for'` in single digits. This is the acceptance test v0.9.9.4.1 skipped.
+- [ ] **6.3 — v0.9.9.4.2 image** per `PHASE4-release-engineering.md`. Then `ssh-keygen -A` on the lab
+      Pi console (BUG-104) before anyone needs SSH again.
+- [ ] **6.4 — Boat Pi** — same storm is almost certainly running there. Fresh v0.9.9.4.2 image at the
+      in-person visit (operator strategy S140). Do not hotspot-patch.
+
+### Phase 6 exit criterion
+
+`verify-bug105.sh` 15/15, 24 h soak clean, v0.9.9.4.2 published, v0.9.9.4.1 marked superseded.
