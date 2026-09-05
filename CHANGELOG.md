@@ -670,6 +670,53 @@ d3kOS uses semantic versioning with the following convention:
 
 ---
 
+## [0.9.9.4.1] - 2026-09-05
+
+### Summary
+
+**v0.9.9.4.1 — Registration Fix + Boot Reliability**
+
+Patch release. Fixes the broken registration endpoint (BUG-101) that blocked all AtMyBoat.com account creation in v0.9.9.4, plus six additional reliability fixes discovered during lab validation.
+
+**Image:** `d3kos-v0.9.9.4.1-20260905.img.gz` — 13,312 MB (13 GB)
+**SHA256:** `dce94741521ac4ac3592866f807352535b7838b49568d83c4dc6c12ba6fcd66f`
+**Archive.org:** [d3kos-v0.9.9.4.1-20260905.img](https://archive.org/download/d3kos-v0.9.9.4.1-20260905.img/d3kos-v0.9.9.4.1-20260905.img.gz)
+
+---
+
+### Fixed
+
+- **BUG-101 — Registration endpoint URL** — `generate-reg-token.php` was posting to `/wp-json/amboat-device/v1/request-code` but the deployed WordPress plugin registers the route as `/wp-json/amboat-device/v1/enrol`. Every registration attempt silently returned 404. Fixed: endpoint corrected to match the plugin route. AtMyBoat.com account creation from the d3kOS dashboard is now fully functional.
+
+- **BUG-63 — Registration QR UI** — QR code display in the registration screen was clipped on smaller displays. Layout fixed for 10.1" panels.
+
+- **BUG-95 — Export scripts missing from image** — `export-on-boot.sh` and `export-daily.sh` were absent from the v0.9.9.4 image. Export services (boatlog, GPS, engine data) silently failed to start on every boot. Scripts restored.
+
+- **BUG-96 — Automatic timezone detection** — Pi now queries ip-api.com on first boot to set the correct local timezone automatically. Falls back to worldtimeapi.org → ipapi.co if the primary source is unavailable.
+
+- **BUG-97 — Signal K watchdog port** — Watchdog health check was probing the wrong port; health check always returned failed. Corrected to match the actual SK listener port.
+
+- **BUG-98 — Tailscale apt source cleanup** — Tailscale apt source list was not removed from the image, causing `apt update` warnings on every login. Source list removed.
+
+- **BUG-99 — VNC xrandr autostart conflict** — VNC xrandr autostart script conflicted with the native HDMI monitor resolution at boot. Startup ordering fixed.
+
+- **BUG-100 — AvNav apt GPG key** — free-x.de repository key was not present in the image, causing apt update warnings on every boot. Key `06B67AB0E988310475E75A2746E95F3C8A61623B` fetched from `https://www.free-x.de/debian/oss.boating.gpg` and installed to `/usr/share/keyrings/avnav-archive-keyring.gpg`.
+
+---
+
+### Image Details
+
+| Field | Value |
+|-------|-------|
+| Filename | `d3kos-v0.9.9.4.1-20260905.img.gz` |
+| Compressed size | ~13 GB |
+| Target hardware | Raspberry Pi 4B (4 GB or 8 GB RAM) |
+| microSD size | 128 GB minimum, Class 10 A2 |
+| SHA256 | `dce94741521ac4ac3592866f807352535b7838b49568d83c4dc6c12ba6fcd66f` |
+| Flash tool | Raspberry Pi Imager → Use custom |
+
+---
+
 ## [0.9.9.4] - 2026-09-02
 
 ### Summary

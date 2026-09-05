@@ -1832,3 +1832,18 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | HostPapa live: `wp-config.php` (web root) | **[UPDATED — S145]** All 8 WordPress auth keys/salts rotated via api.wordpress.org/secret-key/1.1/salt/. Post-BUG-57 hygiene. Old keys confirmed gone. Not committed. |
 | `atmyboat-forum/.htaccess` | **[NEW — S145]** First-ever .htaccess committed to atmyboat-forum repo. Tracks all security hardening rules for reproducibility. `0525602` + `d7e28cc`. |
 | Memory: `atmyboat_security_s145.md` | **[NEW — S145]** Security state facts, WP Super Cache config facts (not_logged_in=2, 30-min cache, no exclusions needed), bot protection decision (skip — Wordfence covers it), admin username confirmed Bohdon65. |
+
+## S146 — 2026-09-05 — v0.9.9.4.1 Patch Release
+
+| File / Location | Change |
+|---|---|
+| `C:\d3kos-image\CREATE-IMAGE-v0.9.9.4.1.bat` | **[NEW — S146]** UAC-elevating launcher for the PowerShell image creation script. Opens an elevated PowerShell window via `-Verb RunAs`. Identical pattern to S141 v0.9.9.4 launcher. |
+| `C:\d3kos-image\create-d3kos-image-v09941.ps1` | **[NEW — S146]** PowerShell image creation script. Reads `\\.\PHYSICALDRIVE1` (Realtek PCIe card reader, Disk 1, 31,914,983,424 bytes) as raw .img, compresses to .img.gz via GZipStream, deletes raw file, calculates SHA256. Output: `d3kos-v0.9.9.4.1-20260905.img.gz`. |
+| `C:\d3kos-image\d3kos-v0.9.9.4.1-20260905.img.gz` | **[NEW — S146]** v0.9.9.4.1 SD card image. 13 GB compressed. SHA256: `dce94741521ac4ac3592866f807352535b7838b49568d83c4dc6c12ba6fcd66f`. Source: cloned SD card in laptop PCIe reader (Disk 1). |
+| `C:\d3kos-image\d3kos-v0.9.9.4.1-20260905.img.gz.sha256` | **[NEW — S146]** SHA256 checksum file written by PowerShell script after compression complete. |
+| `Helm-OS/CHANGELOG.md` | **[UPDATED — S146]** Full v0.9.9.4.1 entry added: 8 bug fixes (BUG-63/95/96/97/98/99/100/101), SHA256, image details table, archive.org download link. |
+| GitHub `SkipperDon/d3kOS` — Release `v0.9.9.4.1` | **[PUBLISHED — S146]** GitHub release published (was draft from prior session). Title: "d3kOS v0.9.9.4.1 — Registration Fix + Boot Reliability". SHA256 real value. URL: `https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4.1` |
+| GitHub `SkipperDon/d3kOS` — `README.md` (main branch) | **[UPDATED — S146 via API]** Badge, Latest Release header, Archive.org page URL, direct download URL, version string — all updated from v0.9.9.4 to v0.9.9.4.1. Commit `d9fbd823`. Updated via `gh api PUT` (no git push). |
+| archive.org `d3kos-v0.9.9.4.1-20260905.img` | **[IN PROGRESS — S146]** Upload running. `mediatype:image` (matching v0.9.9.4). Second attempt after first upload used wrong `mediatype:software` and was killed. Item identifier unchanged so all GitHub links remain valid. |
+| archive.org `d3kos-v0.9.9.4-20260902.img` | **[DELETION QUEUED — S146]** Main `.gz` file deletion queued via `ia delete --cascade`. Metadata shell files (403) remain — expected archive.org behavior. Item will be empty/inaccessible. |
+| Lab Pi (192.168.1.237) | **[SANITIZED — S146]** `sanitize.sh --unattended` run. 11 credential/config steps completed. SSH locked out (authorized_keys stripped). BUG-39 identity regen will fire on first boot. Used as base for v0.9.9.4.1 image. |

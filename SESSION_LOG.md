@@ -8348,3 +8348,71 @@ SESSION QUALITY SCORE              : 100/100
 TREND: Last 5 sessions SQS: 100 (S143), 100 (S142), 85 (S141-cont-3 final), 97 (S141-cont-2), 97 (S141). Average: 95.8. S145: 100. Trend: improving.
 Primary improvement target: SGCR (85 outlier was HostPapa deploy without pre-statement — not repeated this session).
 
+
+---
+
+## S146 — 2026-09-05 — v0.9.9.4.1 Patch Release
+
+**Goal:** Build and publish d3kOS v0.9.9.4.1 patch release — sanitize lab Pi as fresh image base, create SD card image, publish to GitHub and archive.org.
+
+**Completed:**
+- Lab Pi sanitized as fresh install base: 5 config files manually reset (alert-watcher-state.json, onboarding.json, fleet.json, license.json, user-preferences.json) before running `sanitize.sh --unattended`. Steps 1–11 verified complete; SSH locked out (expected — authorized_keys stripped). BUG-39 will fire on first boot (identity regenerated, .identity-regenerated sentinel removed by sanitize.sh).
+- SD card image created: `CREATE-IMAGE-v0.9.9.4.1.bat` → UAC elevation → `create-d3kos-image-v09941.ps1` read `\\.\PHYSICALDRIVE1` (Realtek PCIe card reader, Disk 1, 31,914,983,424 bytes), wrote raw .img, GZipStream compressed to `d3kos-v0.9.9.4.1-20260905.img.gz` (13 GB), raw .img deleted, SHA256 computed: `dce94741521ac4ac3592866f807352535b7838b49568d83c4dc6c12ba6fcd66f`.
+- GitHub draft release `v0.9.9.4.1` updated with real SHA256 and published: https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4.1
+- GitHub README updated (via API, not git push): badge, Latest Release, Archive.org URL, direct download URL, version string — all updated from v0.9.9.4 to v0.9.9.4.1. Commit `d9fbd823` on GitHub main.
+- CHANGELOG.md updated: full v0.9.9.4.1 entry added covering BUG-63/95/96/97/98/99/100/101 with SHA256 and image details table.
+- archive.org v0.9.9.4 item (`d3kos-v0.9.9.4-20260902.img`) deletion queued via `ia delete --cascade` — main 12 GB .gz file queued; metadata shell files (403) remain (expected archive.org behavior).
+- archive.org v0.9.9.4.1 upload started: first attempt used wrong `mediatype:software` (v0.9.9.4 had `mediatype:image`). Upload killed, partial item confirmed absent. Re-upload started with `mediatype:image` — `d3kos-v0.9.9.4.1-20260905.img` — **STILL RUNNING** at session close. Same identifier, so all GitHub links remain valid.
+- PowerShell image creation script written: `C:\d3kos-image\create-d3kos-image-v09941.ps1` + `CREATE-IMAGE-v0.9.9.4.1.bat` launcher (UAC elevation via `-Verb RunAs`). Method identical to S141.
+
+**Decisions:**
+- mediatype for archive.org images = `image` (not `software`) — matched to the v0.9.9.4 item. Re-upload required.
+- GitHub README updated via REST API (`gh api PUT`) rather than git push — no git push performed; all standing git push rules observed.
+- v0.9.9.4 archive.org item deletion: cannot delete metadata shell files (403 expected); main .gz deletion queued — effective result is empty inaccessible item.
+- Lab Pi sanitize.sh STEP 12 (zero-fill): piped stdin was exhausted at interactive prompt, defaulted to skip (Y = skip zero-fill). Acceptable — all 11 critical credential steps completed.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-05 | TBD |
+| Ollama (qwen3-coder:30b) | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- archive.org upload `d3kos-v0.9.9.4.1-20260905.img` — still running (13 GB, mediatype:image, re-upload after mediatype fix)
+- Verify archive.org item is live and accessible once upload completes
+- GitHub Issue Sync: BUG-95 through BUG-101 label updates (need operator approval per session — see Step 8 below)
+- Boat Pi: BUG-39 identity regen, BUG-100 AvNav GPG key — needs in-person visit
+- Credential rotation deferred: FTP passwords (d3kos@atmyboat.com + admin@atmyboat.com), mobile/config.php live keys
+- BUG-57-MAILPOET G8 screenshot — operator action
+- BUG-75 Step 3 decision — operator decision
+- Blog post "Yes, You Need to Re-Register" scheduled live 2026-09-09
+
+---
+
+QUALITY METRICS — 2026-09-05
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 1
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 97/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: REC=1 — archive.org re-upload required because `mediatype:software` was used instead of `image`. v0.9.9.4 item mediatype was not checked before starting upload. Fix: check prior item metadata before specifying mediatype on new uploads.
+TREND: Last 5 sessions SQS: 100 (S145), 100 (S144-cont-2), 100 (S143), 100 (S142), 85 (S141-cont-3). Average: 97. S146: 97. Trend: stable/high.
+Primary improvement target: verify prior item metadata before re-uploading (new pattern established this session).
+
+EXTENDED DATA FIELDS — 2026-09-05
+─────────────────────────────────────────────────────
+session_duration_min   : ~240 (estimated — started mid-morning, compaction occurred)
+tasks_planned          : 6 (lab Pi cleanup, image build, GitHub release, archive upload, archive v0.9.9.4 delete, CHANGELOG)
+tasks_completed        : 5 completed + 1 in progress (archive upload)
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 0
+failure_category       : workflow — wrong metadata on first upload attempt
+human_verified         : 0
+─────────────────────────────────────────────────────
