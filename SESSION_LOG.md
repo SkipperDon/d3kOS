@@ -8715,3 +8715,106 @@ failure_category       : none
 human_verified         : 0
 task_classification    : IMPLEMENT — Tier 2, with two live-discovered bugs found via direct operator use of the fixed kiosk, not pre-planned
 ─────────────────────────────────────────────────────
+
+---
+
+## S148-close — 2026-09-05 — Session close: first-boot stability incident response (S148 arc)
+
+**Model:** Sonnet 5 (this close) / Fable 5.1 (crash diagnosis, atomic spec) / Sonnet 5 (execution, S148-cont, S148-cont-2). Closing the full S148 incident-response arc (S148 → S148-cont → S148-cont-2), which followed directly from S147's planning session.
+
+**Trigger:** Lab Pi found frozen after S146's `sanitize.sh` run. What began as an SSH-recovery task
+uncovered a critical self-healing runaway (BUG-105) that ships inside the published v0.9.9.4.1 image,
+plus five more first-boot-blocking defects (BUG-102/103/104/106/107) found only because fixing the
+first one let the operator actually exercise the kiosk end-to-end for the first time — and a sixth
+(BUG-108, registration) found the same way, still open.
+
+**Summary of the whole arc (detail lives in the individual S148/S148-cont/S148-cont-2 entries above —
+not repeated here):**
+- **BUG-105** (CRITICAL, root cause of the freeze) — self-healing engine × detector unbounded loop,
+  ~40 `systemctl restart`/sec for 8 days, 2.6 GB log, killed a healthy service. **FIXED, cold-reboot
+  verified twice, 15/15 `verify-bug105.sh` both times.**
+- **BUG-102** (four tier-gated units restart-looping at Tier 0) — **FIXED**, `ExecCondition` gate,
+  confirmed `inactive` (never `failed`) on two separate cold boots.
+- **BUG-103** (journald volatile, crash evidence unrecoverable) — **FIXED**, persistent drop-in,
+  auto-flushes on real reboot.
+- **BUG-104** (lab-only SSH dead after sanitize) — **FIXED**, `lab-restore.sh` console tool.
+- **BUG-106** (kiosk never launches at Tier 0, blank screen) — **FIXED**, found live, operator
+  confirmed "first time I've seen it boot to the wizard."
+- **BUG-107** (Enter key in password field silently resubmitted the wrong form) — **FIXED** +
+  approved follow-up (server-side default-password rejection).
+- **BUG-108** (AtMyBoat.com registration backend broken — `api-keys.json` has no regeneration path)
+  — **LOGGED, UI fix applied, backend fix PAUSED.** Operator questioned whether this was ever really
+  human-verified working before (it likely wasn't — this session found the whole front-end for it
+  had never even been deployed to this Pi) and instructed: find real historical evidence further
+  back before choosing between restoring the old credential-based design and migrating to Ed25519.
+  **Explicit instruction: do not implement either fix next session without that history review.**
+
+**24h lab soak:** started 2026-09-05 17:21 EDT on the first cold-reboot verification; a second full
+reboot was performed later in the arc (19:28 EDT) at operator request to test BUG-106/107 live, which
+restarts the soak clock in practice — **treat the soak as running from the most recent reboot, not
+the first one, when next checking.**
+
+**Files changed (22 total, full diff `85a3d7d2..HEAD`):** two Python services rewritten with brakes
+(`remediation_engine.py`, `issue_detector.py`), `sanitize.sh`, 4 systemd units + 2 new units, a
+journald drop-in, `dashboard/app.py`, 3 dashboard templates (`setup.html` ×2 fixes, `settings.html`
+×2 fixes), the previously-unsourced `labwc/autostart` (now versioned), a new `lab-restore.sh`, a new
+`verify-bug105.sh` test harness, plus the atomic spec and all bug-record/checklist documentation.
+
+**Decisions this arc:**
+- Tier 0 on first boot is correct by design; d3kOS must run cleanly with no cameras (operator,
+  standing).
+- `ExecCondition=` is now the standing pattern for any future tier-gated unit.
+- The self-healing layer's long-term justification (vs. the operator's standing no-blind-watchdog
+  rule) is deferred to a v0.9.9.5 decision — this arc made it safe, not made the case for keeping it.
+- BUG-108's auth-method choice is explicitly deferred pending a history review — **do not decide this
+  without the operator present.**
+
+**Pending / operator actions carried into next session:**
+- BUG-108: search `SESSION_LOG.md` / `SESSION_LOG_ARCHIVE.md` for genuine prior evidence of a real
+  (human, browser-level) registration test, before proposing restore-vs-Ed25519 again.
+- Growth-prevention mechanism (logrotate + `issues.db` age-based purge) — proposed S148, never
+  actioned, still awaiting a go/no-go.
+- Step 0 of `BUG-105.md` — mount the v0.9.9.4.1 `.img` and confirm `issues.db` is actually inside.
+- Boat Pi almost certainly running the pre-fix storm — v0.9.9.4.2 image at the in-person visit only.
+- v0.9.9.4.2 release prep does not start until the 24h soak (from the most recent reboot) completes
+  clean AND BUG-108 has a decided, implemented fix (registration is core to the release, not optional).
+- All earlier S147 pending items (VHF audio jack, AI accelerator choice, WiBoat go-ahead, credential
+  rotation, MailPoet screenshot, `/mobile/` alias decision) carry forward unchanged.
+
+**No git push at any point in this arc. No boat Pi or HostPapa change at any point in this arc.**
+
+### Release Package Manifest — lab Pi only (informal; v0.9.9.4.2 has not been built)
+
+- Version: v0.9.9.4.1 (unreleased fixes layered on the lab Pi, NOT yet imaged as v0.9.9.4.2)
+- Update type: incremental (6 bug fixes across self-healing, systemd units, journald, dashboard templates/backend)
+- Changed files: see the 22-file diff above; all deployed to `192.168.1.237` with `.pre-bug*.bak` backups of every file before overwrite, md5-verified repo↔Pi after every deploy
+- Pre-install steps: none beyond the backups already taken
+- Post-install steps: `daemon-reload` + service restarts performed per-fix; two full reboots performed and verified
+- Rollback: every touched file has a dated `.bak` on the Pi; `git revert` available for every commit in the repo; the S148 mitigation (`systemctl disable --now d3kos-remediation d3kos-issue-detector`) remains a safe fallback if the self-healing fix is ever suspected of regressing
+- Health check: `deployment/v0.9.9.4/tools/verify-bug105.sh` (15/15 expected) + `journalctl _COMM=systemctl` quiet + `systemctl --failed` empty
+- Plain-language release notes (for Don): the lab Pi's freeze is fixed and proven across two real reboots. The touchscreen now boots correctly to the setup wizard or dashboard as appropriate. One more thing — online account registration — is found broken and paused for your decision before we can call this release-ready.
+
+QUALITY METRICS — 2026-09-05 (S148 arc close)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100% — every High-risk action (re-enabling self-healing, both reboots, the default-password decision, the Ed25519 investigation) either waited for or was cut short by explicit operator instruction, including immediate compliance with "stop"
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+ROOT CAUSE NOTE: none this arc. (Standing note carried from S147: v0.9.9.4.1 shipped without a soak
+test, which is the process gap this entire arc exists to close before v0.9.9.4.2.)
+
+EXTENDED DATA FIELDS — 2026-09-05 (S148 arc close)
+─────────────────────────────────────────────────────
+session_duration_min   : ~330 (S148 start to this close, across model handoffs)
+tasks_planned          : 1 initial (investigate crash) — grew via live discovery, not scope creep
+tasks_completed        : 6 of 7 bugs fully fixed; 1 (BUG-108) logged + partially fixed, decision paused by operator
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 0
+failure_category       : none (a release-process gap — no soak test before v0.9.9.4.1 — is the standing finding, not a session failure)
+human_verified         : 0
+task_classification    : mixed — ARCHITECT (Fable, crash diagnosis + spec) then IMPLEMENT (Sonnet, execution) then DEBUG (Sonnet, two live-discovered UI bugs)
+─────────────────────────────────────────────────────
