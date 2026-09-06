@@ -7807,7 +7807,7 @@ class of defect: functionality that was written but never exercised end-to-end b
 **Logged:** S148-cont-2 2026-09-05  
 **Severity:** CRITICAL — blocks the core registration/subscription business function on every fresh install  
 **Platform:** Pi dashboard "Create Account" (Settings) — every v0.9.9.4.1 install, no exceptions  
-**Status:** `[x]` FIXED S149 2026-09-06 — Ed25519 migration complete; registration end-to-end verified via `curl`
+**Status:** `[~]` BACKEND ONLY S149 2026-09-06 — Ed25519 migration deployed; `curl` verified; end-to-end NOT verified in browser or on phone
 
 **Symptom:** Tapping "Get Registration Code" in Settings → Community → Create Account shows only a
 bare error box — no QR code, no code text, no clickable link, nothing to type or scan. Discovered
