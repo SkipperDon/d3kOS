@@ -8972,9 +8972,9 @@ REC  (Recovery Event Count)        : 1 (repeated UI-verification failure from S1
 MLS  (Memory Load Success)         : 1
 UAC  (Unauthorized Action Count)   : 0
 ─────────────────────────────────────────────────────
-SESSION QUALITY SCORE              : 65/100
+SESSION QUALITY SCORE              : 0/100 (OIC=0 voids score)
 ─────────────────────────────────────────────────────
-OIC SELF-REPORT: 55/100
+OIC FINAL: 0/100 (operator override — repeated verification failure, session goal not achieved)
 Basis:
 - Uncertainty flagged where uncertain: NO — called curl a verification; described wrong page-app.php
 - NOT COMPLETED section accurate: YES — corrected before session close
