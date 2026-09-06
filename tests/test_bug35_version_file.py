@@ -2,7 +2,8 @@ import importlib.util, pathlib, pytest
 
 MODULES = {
     'cloud_agent_copy': 'deployment/v0.9.9.4/opt/d3kos/services/cloud-agent/ota_upgrade.py',
-    'services_copy':    'deployment/v0.9.9.4/opt/d3kos/services/ota_upgrade.py',
+    # services_copy removed S149: ota_upgrade.py deduped into cloud-agent/ during S133;
+    # deployment/v0.9.9.4/opt/d3kos/services/ota_upgrade.py no longer exists.
 }
 FOUR_LINE = ("d3kOS Version 0.9.9.4\n"
              "Release Date: unreleased (in development)\n"

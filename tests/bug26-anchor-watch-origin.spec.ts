@@ -14,7 +14,7 @@ test.describe('BUG-26: Anchor Watch Set Anchor origin fix', () => {
       }
     });
 
-    await page.goto(BASE + '/anchor-watch.html');
+    await page.goto(BASE + '/anchor-watch');
 
     // Set a radius value
     const slider = await page.locator('#aw-radius');
@@ -38,7 +38,7 @@ test.describe('BUG-26: Anchor Watch Set Anchor origin fix', () => {
   });
 
   test('Verify AI_BRIDGE constant uses window.location.hostname (BUG-48 fix)', async ({ page }) => {
-    const response = await page.goto(BASE + '/anchor-watch.html');
+    const response = await page.goto(BASE + '/anchor-watch');
     const content = await response?.text() || '';
 
     // BUG-48 contract: AI_BRIDGE must be derived from the page's hostname, NOT literal.

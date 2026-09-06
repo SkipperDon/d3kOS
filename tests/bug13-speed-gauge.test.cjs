@@ -118,9 +118,12 @@ try {
 // Run async test
 (async () => {
   try {
-    await testTimer();
-    if (test1Passed && test5Passed) {
-      console.log('\nBUG-13: TESTS COMPLETED (Expected: T1 PASS, T2 FAIL, T3 FAIL, T4 FAIL, T5 PASS)');
+    const test3Passed = await testTimer();
+    if (test1Passed && test2Passed && test3Passed && test4Passed && test5Passed) {
+      console.log('\nALL ASSERTIONS PASSED');
+    } else {
+      console.error('\nSOME ASSERTIONS FAILED — see output above');
+      process.exit(1);
     }
   } catch (e) {
     console.error('Async test failed:', e.message);

@@ -7894,3 +7894,82 @@ authorized to be implemented until that history is found and reviewed with the o
 regeneration path) and BUG-66 (fleet-wide shared secret authenticating multiple endpoints — a
 standing CRITICAL concern this bug adds a fifth consumer to).
 
+
+---
+
+## BUG-109 — Test suite accuracy: 6 test code defects producing false failures
+
+**Logged:** S149 2026-09-06 | **Severity:** MEDIUM (test integrity) | **Platform:** Repo / test suite
+**Status:** `[x]` FIXED S149 2026-09-06
+
+**Symptom:** `./tests/run-all.sh` reports 16 Playwright failures, 1 Node failure, 1 Pytest failure
+(18 total) against the live lab Pi. Investigation shows the Pi and product code are correct for most
+of these — the test code itself is wrong.
+
+**Root cause:** Six distinct test code defects, all introduced at different times and never caught
+because there was no CI gate and previous sessions trusted reported pass counts without running the
+full suite under run-all.sh.
+
+**Affected files:**
+- `tests/contract-dashboard.spec.ts`
+- `tests/bug26-anchor-watch-origin.spec.ts`
+- `tests/bug13-speed-gauge.test.cjs`
+- `tests/test_bug35_version_file.py`
+
+**Individual findings and fixes (S149):**
+
+### TS-1 — C3 wrong route URLs (contract-dashboard.spec.ts)
+- **Error:** C3 route test checked `/anchor-watch.html`, `/boatlog.html`, `/ai-status` — all 404.
+- **Root cause:** Flask routes are `/anchor-watch`, `/boat-log`, `/status` (no `.html`; `/ai-status` never existed).
+- **Fix:** Updated `EXPECTED_ROUTES` to `/anchor-watch`, `/boat-log`, `/status`.
+
+### TS-2 — C2 `CSS is not defined` (contract-dashboard.spec.ts)
+- **Error:** `ReferenceError: CSS is not defined` — test called `CSS.escape()` directly in Node.js context.
+- **Root cause:** `CSS.escape()` is a browser DOM API, not available in the Playwright Node runner.
+- **Fix:** Replaced with `await page.evaluate((i) => CSS.escape(i), id)` to run it in the browser context.
+
+### TS-3 — C2 compound selector CSS.escape corruption (contract-dashboard.spec.ts)
+- **Error:** After TS-2 fix, 3 violations reported: `#posRpt .pr-big`, `#posRpt .pr-mid`, `#posRpt .pr-pos` absent from DOM.
+- **Root cause:** `CSS.escape('posRpt .pr-big')` produces `posRpt\ \.pr-big` — escaping the space and dot turns a valid compound selector into a literal-ID lookup that never matches.
+- **Verified:** Live `curl` of `http://192.168.1.237:3000/` confirmed all three elements exist in the rendered HTML.
+- **Fix:** Skip CSS.escape for selectors containing a space (compound selectors from `querySelector`); use as-is with `#` prefix.
+
+### TS-4 — bug26 wrong page URL (bug26-anchor-watch-origin.spec.ts)
+- **Error:** Both bug26 tests navigate to `/anchor-watch.html` → 404 → test times out or checks 404 HTML body.
+- **Root cause:** Flask route is `/anchor-watch` (no `.html`).
+- **Fix:** Replaced both occurrences of `/anchor-watch.html` with `/anchor-watch`.
+
+### TS-5 — bug13 stale sentinel and incomplete final condition (bug13-speed-gauge.test.cjs)
+- **Error:** `run-all.sh` reports "EARLY EXIT" — test ends with "TESTS COMPLETED" not "ALL ASSERTIONS PASSED".
+- **Root cause:** Test was written when T2/T3/T4 were expected-to-fail (BUG-13 not yet fixed). Final condition only checked `test1Passed && test5Passed`; `testTimer()` return value discarded; sentinel was "TESTS COMPLETED" not "ALL ASSERTIONS PASSED".
+- **Finding:** All 5 tests now pass — BUG-13 is fully fixed. The stale expected-fail framing is no longer valid.
+- **Fix:** Store T3 result, check all 5 in final condition, change sentinel to "ALL ASSERTIONS PASSED", add `process.exit(1)` on failure.
+
+### TS-6 — test_bug35 services_copy fixture references deleted file (test_bug35_version_file.py)
+- **Error:** `FileNotFoundError: deployment/v0.9.9.4/opt/d3kos/services/ota_upgrade.py` — 5 pytest errors.
+- **Root cause:** `ota_upgrade.py` was deduplicated into `cloud-agent/` during S133. The `services_copy` fixture still pointed to the old location.
+- **Verified:** `cloud_agent_copy` path (`deployment/v0.9.9.4/opt/d3kos/services/cloud-agent/ota_upgrade.py`) confirmed present.
+- **Fix:** Removed `services_copy` from the `MODULES` dict with a comment explaining the deduplication.
+
+**Result after all 6 fixes:**
+- Node: 0 failed (was 1)
+- Pytest: 0 failed (was 1, 5 errors)
+- Playwright: 11 failed (was 16) — all 11 remaining are LAB-SIM environment dependencies or BUG-110
+
+---
+
+## BUG-110 — `propulsion.port.coolantTemperature` has no handler in instruments.js
+
+**Logged:** S149 2026-09-06 | **Severity:** MEDIUM | **Platform:** Pi dashboard
+**Status:** `[ ]` OPEN — logged S149, fix not yet implemented
+
+**Symptom:** C1 bidirectional test fails: "propulsion.port.coolantTemperature is required (BUG-47 bidirectional guard) but has no handler in instruments.js."
+
+**Root cause:** The BUG-47 fix added `propulsion.port.oilPressure` and `propulsion.port.revolutions` aliases but missed `propulsion.port.coolantTemperature`. The engine coolant temperature gauge has no SK data handler — it will show `---` even when the CX5106 is reporting coolant temperature on the N2K bus.
+
+**Affected files:** `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/instruments.js`
+
+**Evidence:** C1 bidirectional test, confirmed against live `instruments.js` served from Pi (test fetches the served file, not the repo copy).
+
+**Fix:** Add `propulsion.port.coolantTemperature` to `SK_HANDLERS` in `instruments.js` with the same unit conversion pattern as `propulsion.port.oilPressure` (K → °F or °C depending on vessel unit preference). Requires verifying the exact SK path the CX5106 publishes for coolant temperature on this vessel before implementing.
+

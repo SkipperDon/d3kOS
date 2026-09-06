@@ -167,7 +167,12 @@ test.describe('C2 — DOM ID contract', () => {
 
     const violations: string[] = [];
     for (const id of ids) {
-      const el = await page.$(`#${CSS.escape(id)}`);
+      // Compound selectors (e.g. "posRpt .pr-big" from querySelector('#posRpt .pr-big'))
+      // must be used as-is with the # prefix; CSS.escape would corrupt the space/dot.
+      const selector = id.includes(' ')
+        ? `#${id}`
+        : `#${await page.evaluate((i) => CSS.escape(i), id)}`;
+      const el = await page.$(selector);
       if (!el) {
         violations.push(`#${id} written by instruments.js but absent from rendered index.html`);
       }
@@ -188,10 +193,10 @@ test.describe('C3 — Flask route contract', () => {
   // Extend this list whenever new routes are added.
   const EXPECTED_ROUTES = [
     '/',
-    '/anchor-watch.html',
-    '/boatlog.html',
+    '/anchor-watch',
+    '/boat-log',
     '/settings',
-    '/ai-status',
+    '/status',
   ];
 
   test('Every dashboard route returns a non-404, non-5xx response', async ({ page }) => {
