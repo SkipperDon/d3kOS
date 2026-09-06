@@ -603,7 +603,7 @@
             <!-- Register with AtMyBoat.com -->
             <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);">
               <div class="trow-lbl" style="margin-bottom:6px;font-size:18px;">Create Account</div>
-              <p class="card-desc" style="margin-bottom:12px;">Get a one-time registration code for <strong>atmyboat.com/register/</strong>. Valid 30 minutes. Requires internet.</p>
+              <p class="card-desc" style="margin-bottom:12px;">Scan the QR code below with your phone to open AtMyBoat.com and create your free account. No app needed — it opens directly in your phone's browser. The code expires in 30 minutes. Requires internet.</p>
 
               <!-- Idle state -->
               <div id="reg-idle">
@@ -624,6 +624,10 @@
                   <div style="font-size:18px;color:var(--muted);margin-bottom:4px;">Your code</div>
                   <div id="reg-token-display" style="font-family:'Chakra Petch',monospace;font-size:28px;letter-spacing:.18em;color:var(--accent);font-weight:700;"></div>
                   <div id="reg-expires" style="font-size:18px;color:var(--muted);margin-top:6px;"></div>
+                </div>
+                <div style="font-size:18px;color:var(--muted);word-break:break-all;text-align:center;margin-bottom:10px;">
+                  No camera? Type this into any browser:<br>
+                  <span id="reg-url-text" style="color:var(--accent);"></span>
                 </div>
                 <a id="reg-link" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;text-align:center;width:100%;margin-bottom:8px;">
                   &#128279; Open Register Page
@@ -704,6 +708,7 @@
           document.getElementById('reg-expires').textContent = 'Expires in ' + d.expires_min + ' min';
           const link = document.getElementById('reg-link');
           link.href = d.register_url;
+          document.getElementById('reg-url-text').textContent = d.register_url;
           document.getElementById('reg-code').style.display = 'block';
           // Try to render QR code — graceful fallback if CDN unreachable
           _loadQrLib(function() {

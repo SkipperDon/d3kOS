@@ -7799,3 +7799,83 @@ prior operator decision, made before this check existed) was not touched or inva
 same "first time this screen has ever rendered" territory. Not the same root cause, but the same
 class of defect: functionality that was written but never exercised end-to-end before release.
 
+
+---
+
+## BUG-108 — AtMyBoat.com registration completely non-functional: `api-keys.json` has zero creation mechanism
+
+**Logged:** S148-cont-2 2026-09-05  
+**Severity:** CRITICAL — blocks the core registration/subscription business function on every fresh install  
+**Platform:** Pi dashboard "Create Account" (Settings) — every v0.9.9.4.1 install, no exceptions  
+**Status:** `[ ]` OPEN — root cause confirmed, fix requires an operator decision (see options below)
+
+**Symptom:** Tapping "Get Registration Code" in Settings → Community → Create Account shows only a
+bare error box — no QR code, no code text, no clickable link, nothing to type or scan. Discovered
+live immediately after BUG-106/107, while the operator was testing the online registration flow the
+newly-working kiosk finally let them reach.
+
+**Root Cause (confirmed):** `/api/generate-reg-token` (`app.py:506-546`) reads
+`/opt/d3kos/config/api-keys.json` for `amboat_api_key` before it can even attempt the HostPapa call:
+```python
+keys = json.loads(_APIKEYS_JSON.read_text())
+api_key = keys.get('amboat_api_key', '')
+```
+Live test: `curl -X POST http://localhost:3000/api/generate-reg-token` →
+`{"error":"Could not load Pi credentials: [Errno 2] No such file or directory: '/opt/d3kos/config/api-keys.json'"}`
+
+`api-keys.json` is one of the five files `sanitize.sh`'s BUG-78 credential-strip deletes before every
+image build (same family as `cloud-config.json`, `device-token.json`, etc.). **Unlike the other four,
+which are documented as "regenerated on first boot" in the BUG-78 spec, `api-keys.json` has no
+regeneration path at all** — confirmed by exhaustive search: no template file anywhere in the repo,
+no reference in `first-boot-setup.sh`, no mention in `CREDENTIAL_VAULT.md`. It appears to have only
+ever existed by being hand-placed once, outside any documented provisioning process.
+
+**Why this is worse than BUG-102/BUG-106/BUG-107:** those blocked convenience features (camera,
+kiosk display, password UX) that a Tier-0 user can live without. This blocks **every path to Tier 1**
+— no registration means no subscription, no mobile app pairing via account, no forum access. Every
+customer who has ever tried "Create Account" on a genuinely fresh v0.9.9.4.1 Pi has hit this exact
+error.
+
+**Compounding UX gap (operator-identified, same session):** even in the *success* case, the only
+fallback if scanning fails is a button labeled "🔗 Open Register Page" with no visible URL text —
+nothing a user can read aloud, copy by hand, or type on a different device. Normal QR UX (scan →
+browser opens a plain `https://` URL directly, no app required) is the correct existing design intent
+for *this* QR (unlike the separate Mobile Pairing QR, which intentionally needs the d3kOS app's own
+scanner) — `d.register_url` from HostPapa is expected to be a normal link. The missing piece is only
+the backend credential, not the QR mechanism itself. Additionally, the on-screen description text
+("Get a one-time registration code for atmyboat.com/register/. Valid 30 minutes. Requires internet.")
+does not explain what the code is for or how to use it — operator: "the description on the page needs
+to be straightforward. It is not."
+
+**Fix — requires an operator decision on approach:**
+1. **(Immediate, lab-only, reversible)** Operator supplies the current `AMBOAT_API_KEY` (already
+   known to exist in `mobile/config.php` on HostPapa — flagged for rotation, not yet rotated) so
+   `api-keys.json` can be manually restored on the lab Pi for continued testing. Does not touch
+   production; does not appear in any future image (sanitize.sh still strips it).
+2. **(Proper, larger scope)** Either (a) build a first-boot provisioning step for this fleet secret,
+   matching the pattern the other four files are documented — but never implemented — to follow, or
+   (b) migrate `generate-reg-token.php`'s auth to the Ed25519 device-signing mechanism that
+   `regenerate-identity.sh` already correctly self-provisions on every device's first boot (BUG-66
+   Phase B) — closing this the same way other endpoints in that migration already have. Option (b)
+   requires a **server-side PHP change on HostPapa**, which needs explicit pre-change file list +
+   operator `APPROVED` per standing rule before any work begins.
+3. **(UI, independent of 1/2, low-risk) APPLIED S148-cont-2 2026-09-05, operator approved** — added
+   a visible plain-text URL row ("No camera? Type this into any browser:") alongside the existing
+   "Open Register Page" button, and rewrote the description copy from jargon ("Get a one-time
+   registration code...") to plain, action-first language ("Scan the QR code below with your phone
+   to open AtMyBoat.com and create your free account..."). Deployed — exact diff confirmed, md5-
+   identical repo↔Pi, dashboard restarted clean, `/settings` still 200.
+   **⚠ Deploy-time discovery, unrelated to this bug's root cause but recorded for the record:** the
+   lab Pi's live `settings.html` was 100 lines shorter than the canonical repo copy — the entire
+   "Create Account" section (HTML + QR loader + `generateRegToken()`/`resetRegToken()` JS) existed
+   in the repo but had **never actually been deployed to this Pi**. This deploy brought it into
+   parity with the repo (plus the 3 UI fixes above) in one step. The backend route
+   (`/api/generate-reg-token` in `app.py`) was already live and independently confirmed broken via
+   direct `curl` before this — the missing frontend and the missing backend credential are two
+   separate facts, both real, now both visible on screen as a proper error state instead of nothing
+   at all.
+
+**Related:** same root-cause family as BUG-102/BUG-106 (files `sanitize.sh` strips with no
+regeneration path) and BUG-66 (fleet-wide shared secret authenticating multiple endpoints — a
+standing CRITICAL concern this bug adds a fifth consumer to).
+
