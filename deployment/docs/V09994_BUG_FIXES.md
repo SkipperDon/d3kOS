@@ -7859,6 +7859,21 @@ to be straightforward. It is not."
    Phase B) — closing this the same way other endpoints in that migration already have. Option (b)
    requires a **server-side PHP change on HostPapa**, which needs explicit pre-change file list +
    operator `APPROVED` per standing rule before any work begins.
+**⚠ AUTH-METHOD DECISION PAUSED S148-cont-2 (operator: "stop") — do not pick an approach without
+re-reading this first.** Operator initially chose Ed25519 migration (option 2 below), then
+questioned it: the BUG-101 "End-to-end verified" claim this session cited as prior proof the
+Bearer-token design worked is now assessed as weak evidence — the exact wording ("token generated,
+30-min expiry, register URL returned") reads as an API/backend-only check, not a human browser+QR
+test, and separately this session found the entire front-end for this feature had **never been
+deployed to the lab Pi at all** until S148-cont-2 — so no human could have tested the real on-screen
+flow before now regardless. Operator's explicit instruction: **"you need to see how this work[ed]
+before, way before, when we actually tested and work well"** — i.e. find genuine historical evidence
+(not this session's inference) of a real working end-to-end test, from further back than BUG-101/S144,
+before choosing between restoring the old design vs. migrating to Ed25519. **Next session: search
+SESSION_LOG.md / SESSION_LOG_ARCHIVE.md history for the actual first working registration test
+(if one exists) before proceeding with either fix option.** Neither option 1 nor option 2 below is
+authorized to be implemented until that history is found and reviewed with the operator.
+
 3. **(UI, independent of 1/2, low-risk) APPLIED S148-cont-2 2026-09-05, operator approved** — added
    a visible plain-text URL row ("No camera? Type this into any browser:") alongside the existing
    "Open Register Page" button, and rewrote the description copy from jargon ("Get a one-time
