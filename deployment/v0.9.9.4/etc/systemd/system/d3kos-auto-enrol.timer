@@ -1,0 +1,16 @@
+[Unit]
+Description=d3kOS Auto-Enrolment Retry Timer
+Documentation=https://github.com/SkipperDon/d3kOS
+# Fires whenever network is online. Stops being useful once the Pi is enrolled
+# (the service exits 0 when already pending/approved, so the timer is harmless to leave running).
+
+[Timer]
+# Wait 2 minutes after boot before first attempt (let network-online.target settle)
+OnBootSec=2min
+# Retry every 30 minutes (in case the first attempt had no internet)
+OnUnitActiveSec=30min
+# Also fire when the unit is first enabled (catches immediate internet availability)
+Unit=d3kos-auto-enrol.service
+
+[Install]
+WantedBy=timers.target

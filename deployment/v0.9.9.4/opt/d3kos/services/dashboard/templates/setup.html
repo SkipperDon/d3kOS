@@ -930,8 +930,10 @@
         <div class="card-head-over">Step 6 of 8 &mdash; Mobile Pairing</div>
         <div class="card-head-title">Connect your<br>mobile phone</div>
         <div class="card-head-sub">
-          Scan the QR code or type your unique vessel ID to pair the
-          d3kOS mobile app to this installation. You can skip this and pair later.
+          Connecting the d3kOS mobile app to this Pi is <strong>free</strong>. However,
+          connecting will share information about your Pi with AtMyBoat.com.<br><br>
+          <strong>If you do not connect, your Pi stays completely anonymous.</strong><br>
+          Skip this to continue without sharing any information.
         </div>
       </div>
       <div class="card-body">
@@ -945,14 +947,22 @@
           </div>
           <div class="pairing-copied" id="uuid-copied">Copied!</div>
           <div class="pairing-sub">
-            &bull; Download <strong>d3kOS</strong> from AtMyBoat.com<br>
-            &bull; Tap <strong>Pair with Pi</strong> and scan or enter the ID above<br>
-            &bull; You can pair later &mdash; tap Skip to continue
+            <strong>How to pair using your smartphone:</strong><br><br>
+            &bull; <strong>Step 1 &mdash; Create a free account:</strong><br>
+            On your smartphone, go to <strong>atmyboat.com/register</strong> and create your free account.<br><br>
+            &bull; <strong>Step 2 &mdash; Open the d3kOS app:</strong><br>
+            After signing in, open <strong>atmyboat.com/app</strong> on your smartphone.<br><br>
+            &bull; <strong>Step 3 &mdash; Scan the QR code above:</strong><br>
+            Tap <strong>Pair with Pi</strong> in the app, then point your smartphone camera at the QR code above to scan it.
+            If the QR code does not scan, type the vessel ID shown above directly into the app.<br><br>
+            &bull; <strong>Step 4 &mdash; Link your account to this Pi:</strong><br>
+            Follow the on-screen steps in the app to link your account to this vessel.
+            Your phone is now paired and can monitor your Pi remotely.
           </div>
         </div>
         <button type="button" class="btn-submit" onclick="goTo(7)">NEXT &rsaquo;</button>
         <button type="button" class="btn-back" onclick="goTo(5)">&larr; Back</button>
-        <button type="button" class="btn-skip-step" onclick="goTo(7)">Skip &mdash; I&rsquo;ll pair later &rsaquo;</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(7)">Skip this to continue &rsaquo;</button>
       </div>
     </div>
 

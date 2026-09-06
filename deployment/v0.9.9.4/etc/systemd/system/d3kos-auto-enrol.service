@@ -1,0 +1,20 @@
+[Unit]
+Description=d3kOS Auto-Enrolment (silent background)
+Documentation=https://github.com/SkipperDon/d3kOS
+# Requires network with actual internet connectivity
+After=network-online.target d3kos-first-boot.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=d3kos
+Group=d3kos
+ExecStart=/usr/bin/python3 /opt/d3kos/services/identity/auto_enrol.py
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=60
+# Success (0) or pending (1) both mean "worked"; 2=skipped, 3=server error
+SuccessExitStatus=0 1 2
+
+[Install]
+WantedBy=multi-user.target
