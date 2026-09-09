@@ -9137,3 +9137,85 @@ failure_category       : scope — unrequested expansion of a defined task
 human_verified         : 0
 task_classification    : ARCHITECT — Tier 1 (cross-system design + atomic spec authoring)
 ─────────────────────────────────────────────────────
+
+## Session 2026-09-09 (S151) — Housekeeping: graft context graph installed in both repos
+
+**Goal:** Install graft (@nanonets/graft) in /home/boatiq and Helm-OS/ and wire Claude Code to use it.
+
+**Completed:**
+- Researched graft — confirmed it is @nanonets/graft, an npm package that builds a repo context graph and injects relevant context per Claude Code prompt via MCP + hooks
+- Added `.aao-backups/` to `/home/boatiq/.gitignore` (was missing; Helm-OS already had it)
+- Backed up both `.claude/settings.json` files to `.aao-backups/20260909_094613_S151/`
+- `graft init --agents claude` in `/home/boatiq/` — 20 nodes, 53 edges (2 Python files: simulator, marketing scripts)
+- `graft init --agents claude` in `Helm-OS/` — **3,912 nodes, 8,505 edges** (370 files: Python, PHP, JS, TS — full codebase)
+- Verified AAO hooks survived graft's merge of `settings.json` in root repo — all 3 AAO hooks intact (PreToolUse scope/deploy-block, PostToolUse ruff, Stop session-close reminder)
+- Updated `CLAUDE.md` with "Graft Context Graph" subsection under Git Policy — documents the `graft/` cache directory, regeneration command, graph scale, and config file locations
+- Committed both repos: root `master 2ba6bf31`, Helm-OS `main 26239830`
+
+**Decisions:**
+- `graft init` requires `--agents claude` flag when run without a TTY (Claude Code Bash tool has no interactive terminal)
+- `graft/` cache directory is git-ignored automatically by graft in both repos
+- Only project files committed — Claude Code system files (.bash_history, .claude.json, .claude/backups, .claude/file-history) excluded from both commits
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-09 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending from prior sessions (unchanged this session):**
+- BUG-111…121 atomic spec unimplemented
+- Lab Pi 24h soak result (ended 2026-09-06 19:28 EDT) — still unchecked
+- BUG-118: SHOW CREATE TABLE amboat_reg_tokens + d3kos_pairings in phpMyAdmin
+- BUG-06 [!], BUG-81 P2/P3 (GitHub push approval), BUG-65 Step 3
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- graft context graph installed and committed in both repos — active from next Claude Code restart
+- CLAUDE.md updated with graft documentation
+
+NOT COMPLETED / DEFERRED:
+- None — session goal fully achieved
+
+KNOWN GAPS OR UNCERTAINTIES:
+- None identified
+
+OPERATOR ACTIONS REQUIRED:
+- Restart Claude Code to activate graft MCP server and hooks
+- Prior operator actions unchanged: BUG-118 phpMyAdmin reads, BUG-06 [!], BUG-81 P2/P3 push approval
+
+---
+
+SQS BLOCK — 2026-09-09 (S151)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100% (no scope creep)
+SGCR (Stop Gate Compliance Rate)   : 100% (no deployments, no pushes)
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+
+OIC SELF-REPORT: 96/100
+Basis:
+- Uncertainty flagged where uncertain: N/A — nothing was uncertain this session
+- NOT COMPLETED section accurate: YES — all tasks completed
+- Work substantive: YES — graft installed, committed, CLAUDE.md updated in both repos
+- Tests cover the failure case: N/A — housekeeping session, no code changes
+Deductions: -4 for the initial `graft init` without `--agents claude` that produced no output (minor, caught and corrected immediately)
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-09 (S151)
+─────────────────────────────────────────────────────
+session_duration_min   : ~35
+tasks_planned          : 1 (install graft in both repos)
+tasks_completed        : 1
+governing_doc_version  : CLAUDE.md updated this session (2026-09-09)
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+task_classification    : IMPLEMENT — Tier 3 (tooling install, config update)
+─────────────────────────────────────────────────────

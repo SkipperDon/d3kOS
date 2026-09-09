@@ -1856,3 +1856,22 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `deployment/v0.9.9.4/opt/d3kos/services/dashboard/app.py` | **[UPDATED — S148-cont]** BUG-107 follow-up — `change_password()` now rejects the exact factory default (`d3kos2026`), matching the UI hint's existing claim (previously only length-checked). |
 | `deployment/v0.9.9.4/opt/d3kos/services/self-healing/remediation_engine.py`, `issue_detector.py`, `opt/d3kos/scripts/sanitize.sh`, 4 unit files + `d3kos-tier-gated.service`/`.timer`, `etc/systemd/journald.conf.d/50-d3kos-persistent.conf` | **[UPDATED/NEW — S148/S148-cont]** BUG-102/103/105 fix per `atomic-specs/BUG-105.md` — see that spec for full detail. Verified `verify-bug105.sh` 15/15 PASS after a genuine cold reboot. |
 | Lab Pi (192.168.1.237) | **[STABILITY FIX DEPLOYED + 24h SOAK IN PROGRESS — S148/S148-cont]** BUG-102/103/104/105/106/107 all fixed and deployed live. Cold-reboot-verified 15/15. 24h soak started 2026-09-05 17:21 EDT, ends 2026-09-06 17:21 EDT — gates the v0.9.9.4.2 build. Operator plans a second reboot + manual wizard walkthrough after soak to confirm end-to-end before release prep begins. |
+
+## S151 — 2026-09-09 — Graft context graph installed (tooling)
+
+| File / Location | Change |
+|---|---|
+| `/home/boatiq/.claude/settings.json` | **[UPDATED — S151]** graft hooks merged in (PostToolUse graph-rebuild, UserPromptSubmit context injection, SessionStart/Stop reporting). Existing AAO hooks preserved intact. graft permissions added to allow list. |
+| `/home/boatiq/.claude/helpers/graft-hooks.cjs` | **[NEW — S151]** graft hook shim for root repo — drives graph rebuild and context injection. |
+| `/home/boatiq/.claude/helpers/graft-statusline.cjs` | **[NEW — S151]** graft statusline shim for root repo — shows graph stats in Claude Code status bar. |
+| `/home/boatiq/.claude/skills/graft/SKILL.md` | **[NEW — S151]** graft skill definition — instructs Claude to query the graph before grepping source files. |
+| `/home/boatiq/.mcp.json` | **[NEW — S151]** MCP server config for graft in root repo. Requires Claude Code restart to load. |
+| `/home/boatiq/.gitignore` | **[UPDATED — S151]** Added `.aao-backups/` (was missing from root repo). |
+| `/home/boatiq/CLAUDE.md` | **[UPDATED — S151]** Added "Graft Context Graph" subsection under Git Policy — documents graft/ cache, regeneration, graph scale, config locations. |
+| `Helm-OS/.claude/settings.json` | **[UPDATED — S151]** graft hooks + permissions added; no prior hooks existed here. |
+| `Helm-OS/.claude/helpers/graft-hooks.cjs` | **[NEW — S151]** graft hook shim for Helm-OS — 3,912 nodes / 8,505 edges graph. |
+| `Helm-OS/.claude/helpers/graft-statusline.cjs` | **[NEW — S151]** graft statusline shim for Helm-OS. |
+| `Helm-OS/.claude/skills/graft/SKILL.md` | **[NEW — S151]** graft skill definition for Helm-OS. |
+| `Helm-OS/.mcp.json` | **[NEW — S151]** MCP server config for graft in Helm-OS. Requires Claude Code restart to load. |
+| `Helm-OS/.gitignore` | **[UPDATED — S151]** `/graft/` cache entry added automatically by graft init. |
+| `Helm-OS/graft/` | **[NEW — S151 — git-ignored]** Local context graph cache. 3,912 nodes / 8,505 edges across 370 source files. Regenerate with `graft build` if deleted. |
