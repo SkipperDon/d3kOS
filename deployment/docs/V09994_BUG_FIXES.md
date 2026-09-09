@@ -7809,6 +7809,24 @@ class of defect: functionality that was written but never exercised end-to-end b
 **Platform:** Pi dashboard "Create Account" (Settings) — every v0.9.9.4.1 install, no exceptions  
 **Status:** `[~]` BACKEND ONLY S149 2026-09-06 — Ed25519 migration deployed; `curl` verified; end-to-end NOT verified in browser or on phone
 
+**⚠ S150 2026-09-06 — ROOT CAUSE DECOMPOSED. Read this before doing any further work on BUG-108.**
+
+The backend is not the remaining problem. A live read of the Pi, the live HostPapa files and the live PWA established that the Ed25519 work done in S149 is correct and functioning: `/api/generate-reg-token` returns a valid `register_url`, and that URL resolves HTTP 200 with the code pre-filled in the form. What remained broken is the surrounding user path, which is **five separate defects** now tracked individually:
+
+- **BUG-111** — `/register/` accepts a present-but-invalid or expired code without error, creating an unlinked T0 account and showing the success screen. This is the largest part of BUG-108's user-visible failure.
+- **BUG-112** — the setup wizard never calls `/api/generate-reg-token`; Step 6 is a mobile-pairing screen whose QR encodes `d3kos://pair/<uuid>`, which no phone camera can act on.
+- **BUG-113** — the QR library is CDN-only, so no QR renders without internet.
+- **BUG-114** — the displayed code carries an `R-` prefix that both server validators reject, so manual entry always fails.
+- **BUG-115** — the PWA `/app` login screen contains no route to registration at all (this is where the operator was looking when reporting "there is no way to register").
+
+**Two premises from earlier records are now DISPROVED and must not be re-investigated:**
+1. `DEVICE_UUID` is **not** blank (S149's hypothesis). `app.py:52` reads `/etc/machine-id` with a hostname-SHA256 fallback; the live lab Pi renders a populated UUID.
+2. `/register/` is **not** device-gated, and the BUG-63-era "Draft" state no longer holds. The live page returns HTTP 200 with an unguarded, working "Create account" form, and registration is linked from the site header and footer. **Self-serve registration on the website works today.** The gap is discoverability from the PWA and the hand-off from the Pi — not a missing registration system.
+
+**Operator decisions S150 that govern the fix:** (1) **one event** — redeeming the Pi's code creates the account *and* links the Pi, with Tier 1 following automatically, so device pairing folds into registration (this closes MASTER_SYSTEM_SPEC §12 Open Item #2); (2) **Tier 0 may register** — open web signup stays available and the code is a linking mechanism, not an entry gate, which reverses registration-spec decision D1.
+
+**Implementation spec:** `deployment/docs/atomic-specs/BUG-111-118-REGISTRATION.md`
+
 **Symptom:** Tapping "Get Registration Code" in Settings → Community → Create Account shows only a
 bare error box — no QR code, no code text, no clickable link, nothing to type or scan. Discovered
 live immediately after BUG-106/107, while the operator was testing the online registration flow the
@@ -7978,3 +7996,305 @@ full suite under run-all.sh.
 
 **Verification:** Deploy to Pi and run `./tests/run-all.sh` — the C1 bidirectional guard test must pass. With no LAB-SIM or real engine hardware, C1 first test may still flag coolantTemperature as absent from the SK tree; that is an environment condition, not a code defect.
 
+
+---
+
+## BUG-111 — `/register/` does not block a present-but-invalid or expired registration code; the account is created unlinked and the success screen is shown
+
+**Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** atmyboat.com (HostPapa live)
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** A visitor who submits the registration form with a registration code that is either malformed (e.g. `R-CDEDWMH`, which is exactly what the Pi displays — see BUG-114) or expired/already-used is shown the "check your email" success screen. The account is created, but `used_at` is never set on the token, `atmyboat_pending_pi_id` is never written, and the device therefore never reaches Tier 1. There is no error explaining why. This is a substantial part of the user-visible failure recorded under BUG-108.
+
+**Root cause:** Two independent gaps in the live `page-register.php` (22,660 bytes, downloaded and read contiguously S150):
+
+1. Line 96 reads `if ( $post_token !== '' && preg_match( '/^[A-Z2-9]{7}$/', $post_token ) ) {`. A non-empty token that fails the regex skips the entire block (96–108). The `else` that would set `$reg_error` is *inside* that block, so nothing is recorded and `$reg_token` / `$reg_token_pi_id` retain their initialised `''` values from lines 50–51.
+2. The field-validation chain at 113–127 is a fresh `if/elseif` that never references `$reg_error`. An expiry error set at line 106 is therefore ignored, execution reaches the `else` at 127 → `wp_create_user()` at 132 → the linking guard at 152 (`if ( $reg_token !== '' && $reg_token_pi_id !== '' )`) sees empty values and skips → `$reg_success = true` at 183. The renderer branches on `$reg_success` before `$reg_error`, so success is displayed over an error that was set but never read.
+
+**Explicitly NOT the cause — do not re-follow this lead:** lines 134–136 are a correct `if ( is_wp_error( $user_id ) ) { … } else { … }`. During S150 an initial read using stitched non-contiguous `sed` ranges appeared to show the entire success path nested inside the `is_wp_error` branch (which would have meant no verification email was ever sent on success). A contiguous read with line numbers disproved this before it was acted on. The conditional is sound.
+
+**Fix required:**
+1. Add an `else` to the conditional at line 96 that sets `$reg_error` for a present-but-malformed token.
+2. Add `$reg_error !== ''` as the FIRST condition of the validation chain at line 113, so any token error aborts before `wp_create_user()`.
+
+⚠ **An EMPTY token must remain permitted.** Per operator decision S150, Tier 0 open web registration stays available and the registration code is a *linking* mechanism, not an entry gate. Requiring a code here would break open signup and contradict registration-spec decision D1's reversal. Reject only a code that is present and bad.
+
+**Affected files:** `wp-content/themes/twentytwenty-child/page-register.php` (HostPapa live)
+
+**Verification (UI-level, four cases — no curl):** submit the live form on a phone with (a) no code → account created at T0, success screen, no Pi link; (b) `R-XXXXXXX` → visible error, **no account created**; (c) a genuinely expired 7-char code → visible error, **no account created**; (d) a freshly issued valid code → account created, `used_at` set, `atmyboat_pending_pi_id` written, Pi reaches Tier 1.
+
+**Related:** BUG-108 (this is a large part of its user-visible failure), BUG-114 (produces the malformed code in case (b)), BUG-112.
+
+---
+
+## BUG-112 — Setup wizard Step 6 is a mobile-pairing screen and is never wired to the registration token system
+
+**Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** Pi dashboard
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** Operator scanned the Step 6 QR code with a phone camera and got "no data found." There is no working path from first boot to an atmyboat.com account.
+
+**Root cause:** `setup.html` contains **zero** calls to `/api/generate-reg-token`. Step 6 was built as a *mobile PWA pairing* screen, not a registration screen: `initQR()` encodes `text: 'd3kos://pair/' + DEVICE_UUID` (line 1211), a custom URI scheme with no registered handler on a phone camera — so the QR does contain data, but nothing on the phone can act on it. Its prose (lines ~950–960, "How to pair using your smartphone", Steps 1–4) instructs the user to create an account at the **bare** `atmyboat.com/register` with no code, then pair inside the app. That bare URL renders a form with an empty `reg_token`, which is precisely the BUG-111 unlinked-account path.
+
+**Explicitly REFUTED — do not re-investigate:** `DEVICE_UUID` is **not** empty. `app.py:52` `_get_device_uuid()` reads `/etc/machine-id` with a hostname-SHA256 fallback and cannot return an empty string. Live lab Pi renders `1ED18218-6C9E-4148-9EE4-B943E00CEC52` at `setup.html:1050` and `setup.html:918`. S149's "DEVICE_UUID may be blank" hypothesis is disproved by a live read.
+
+**Fix required:** per operator decision S150 (**one event**), Step 6 becomes a registration screen: call `/api/generate-reg-token`, encode `register_url` in the QR, and display the tappable link plus the bare 7-character code. Because a redeemed token already carries `pi_id`, registering **is** the pairing — the `d3kos://pair/` mechanism is no longer required for linking. Step 6 must also handle the offline and not-yet-approved states (see the atomic spec).
+
+**Affected files:** `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/setup.html`
+
+**Verification (UI-level):** fresh wizard → Step 6 → scan with a phone → lands on `/register/?rt=<code>` with the code pre-filled in the form.
+
+**Related:** BUG-108, BUG-111, BUG-113, BUG-114, BUG-115.
+
+---
+
+## BUG-113 — QR library is loaded from a CDN only, so no QR renders without internet
+
+**Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** Pi dashboard
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** On a Pi with no internet — the normal state on a boat — the setup wizard's QR area shows only "QR library unavailable — use the ID below."
+
+**Root cause:** `setup.html:1067` loads `qrcodejs` from `https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js` with `onerror` revealing `#qr-fallback`. There is no local copy — `static/js/` contains no qrcode file. `settings.html:680-686` `_loadQrLib()` performs the same CDN fetch lazily. Measured fetch time on the lab network was **5.16 s**, so even with working internet, advancing to Step 6 quickly is a genuine race against the download.
+
+**Note on the existing code comment:** `settings.html:679` justifies the CDN with "internet required anyway." That is true for Settings (issuing a code needs a server round-trip) but false as a general assumption, and it is what allowed the same pattern into the wizard.
+
+**Fix required:** vendor `qrcode.min.js` into `static/js/` and load it locally in both templates. Keep the existing graceful fallback.
+
+**Affected files:** `setup.html`, `settings.html`, `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/`
+
+**Verification (UI-level):** disconnect the Pi from the internet, load the page, confirm the QR still renders from local assets.
+
+**Related:** BUG-112. Note that an offline Pi cannot obtain a registration code at all (the code is server-issued), so Step 6's offline state is a separate design requirement handled in the atomic spec — this bug is only about the library dependency.
+
+---
+
+## BUG-114 — Registration code is displayed with an `R-` prefix that both server validators reject
+
+**Logged:** S150 2026-09-06 | **Severity:** MEDIUM | **Platform:** Pi dashboard + atmyboat.com
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** A user who reads the code off the Pi screen and types it into the registration form can never succeed. Because of BUG-111 the attempt fails silently and produces an unlinked account instead of an error.
+
+**Root cause:** `/api/generate-reg-token` (`app.py:507-546`) returns two representations of the same code — `"token": "R-CDEDWMH"` (9 characters, `R-` prefix) and `"register_url": "https://atmyboat.com/register/?rt=CDEDWMH"` (bare 7 characters). `settings.html:707` displays `d.token`, the **prefixed** form, under the heading "Your code". Both server-side validators are `/^[A-Z2-9]{7}$/` (`page-register.php:57` on GET, `:96` on POST), which `R-CDEDWMH` cannot match. The QR and link paths work because they carry `register_url`; only the human-typed path is broken.
+
+**Fix required:** display the bare 7-character code (strip the `R-` prefix in the UI, or have the API return a distinct display field), **and** strip a leading `R-` server-side before validating, defensively.
+
+**Affected files:** `settings.html:707`, `setup.html` (new Step 6), `app.py:507-546`, `page-register.php`
+
+**Verification (UI-level):** read the code off the Pi screen, type it manually into the form on a phone, registration completes and the Pi links.
+
+**Related:** BUG-111, BUG-112.
+
+---
+
+## BUG-115 — PWA `/app` login screen has no route to registration
+
+**Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** PWA (atmyboat.com/app)
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** Operator, verbatim: "you cannot register a new user through atmyboat.com/app and there is no way for user to know where to register if they want to go to tier1." Confirmed by live read.
+
+**Root cause:** `/app` is a **physical directory** at the web root (`drwxr-xr-x app`), so Apache serves `/app/index.html` directly and WordPress never runs for that URL. `page-app.php` exists in the child theme but is unreachable at `/app` — this is why an S149 read of `page-app.php` described a marketing page while the live URL shows a login form. In the live `/app/app.js`, `screens.login` (~lines 420–490) renders only the logo, an error banner, Username, Password and Sign In. A grep of all 181,253 bytes for `register|create.*account|sign.*up` matches only `navigator.serviceWorker.register('/sw.js')` at line 4449. There is no create-account link, no "no account?" text, and no link back to atmyboat.com anywhere in the app.
+
+**Contrast:** registration IS discoverable on the website — `header.php:74-79` renders a `.amboat-nav-cta` link to `/register/` and `footer.php:79-80` repeats it. A web visitor reaches it in one click; a PWA user cannot reach it at all. The gap is the PWA, not the site.
+
+**Fix required:** add a "Create an account" link to `screens.login` pointing at `https://atmyboat.com/register/`.
+
+**Affected files:** `/app/app.js` (HostPapa live), plus the repo copy if one exists — check both `Helm-OS/` and `atmyboat-forum/` per the S135 standing rule.
+
+**Verification (UI-level):** open `/app` logged out on a phone, tap the link, land on `/register/`.
+
+**Related:** BUG-108, BUG-112.
+
+---
+
+## BUG-116 — Settings "Mobile Pairing" card shows a hardcoded placeholder Pi ID
+
+**Logged:** S150 2026-09-06 | **Severity:** LOW | **Platform:** Pi dashboard
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** Settings → Mobile Pairing displays `Pi ID: d3k-2024-boatiq-001` on every Pi, regardless of device.
+
+**Root cause:** the string is hardcoded in the markup at `settings.html:~648` rather than rendered from the device identity.
+
+**Fix required:** render the real device UUID (same source as `setup.html:918`), or remove the row entirely if mobile pairing is folded into registration per the S150 one-event decision.
+
+**Affected files:** `settings.html`
+
+**Verification (UI-level):** two different Pis display two different IDs.
+
+---
+
+## BUG-117 — CLOSED, NOT A BUG — the OpenCPN tier check is an intentional operator fallback
+
+**Logged:** S150 2026-09-06 | **Closed:** S150 2026-09-06 (same session) | **Platform:** Pi
+**Status:** `[x]` **CLOSED — NOT A BUG. Do not re-raise.**
+
+**Operator ruling, verbatim:** *"I put opencpn in there as a fallback I don't care about it."*
+
+The OpenCPN-presence check in `tier_service.py detect_tier()` is a **deliberate design choice** — a
+fallback path the operator put there on purpose. It is not an entitlement hole and not a defect. This
+record was raised from an unrequested security inference during the S150 registration work; the
+operator had not asked for a tier-ladder review and does not consider the behaviour a problem.
+
+⚠ **Standing note for future sessions:** do not re-log this. A filesystem check that *looks* like the
+BUG-65 forgeable-check pattern is not automatically a bug — BUG-65 concerned `subscription.key` (a
+paid entitlement), which is a different question from OpenCPN presence (a free package used as a
+capability fallback). Before raising anything in `tier_service.py` as a security finding, confirm the
+operator considers it in scope.
+
+**No fix. No spec. `tier_service.py` is unchanged and must stay unchanged for this reason.**
+
+---
+
+<details><summary>Original (withdrawn) report — kept for the audit trail only</summary>
+
+**Severity as filed:** MEDIUM (entitlement / security) — **withdrawn**
+
+**Symptom:** The lab Pi reports `{"tier":2,"tier_str":"T2"}` while having never registered — no enrolment approval, and `state/tier1-approval.json` does not exist.
+
+**Root cause:** `tier_service.py detect_tier()` returns T2 whenever OpenCPN is found at any known path. BUG-77 correctly made **Tier 1** server-verified (`_check_tier1_approval()`, `tier_service.py:155-220`, requiring a live signed GET to `/wp-json/amboat-device/v1/status` that returns `approved`, with an offline cache and fail-closed default). But T2 sits **above** T1 in the ladder while remaining a purely local filesystem test, so installing a free package grants a tier that skips registration entirely — and every Tier-1-gated feature with it.
+
+**Fix required:** design decision, same forgeable-filesystem-check class as BUG-65 (T3 via `subscription.key`). Options: (a) require T1 server approval as a precondition before T2/T3 can be reported, or (b) treat OpenCPN presence as a capability flag rather than a tier rung. Not in scope for the S150 registration spec.
+
+**Affected files:** `deployment/v0.9.9.4/opt/d3kos/services/dashboard/tier_service.py`
+
+**Verification:** a Pi with OpenCPN installed and no server approval must not report a tier above T0.
+
+**Related:** BUG-65, BUG-77.
+
+</details>
+
+---
+
+## BUG-118 — `amboat_reg_tokens` may lack the `created_at` column its rate-limit query requires
+
+**Logged:** S150 2026-09-06 | **Severity:** MEDIUM | **Platform:** atmyboat.com (HostPapa live)
+**Status:** `[~]` **LIKELY NOT A BUG — corrected later the same session. ⚠ READ THE CORRECTION BLOCK
+AT THE END OF THIS FILE ("BUG-118 — CORRECTION") BEFORE ACTING ON ANYTHING BELOW.** The column exists
+per `install-schema.php:126`; the hypothesis below was formed from a search that covered only
+`Helm-OS/` and missed `atmyboat-forum/`. The original text is preserved unedited for the audit trail.
+
+**Symptom:** Unknown. Either no visible effect, or the per-Pi rate limiter and the token-reuse lookup silently error.
+
+**Root cause (hypothesis, NOT confirmed):** `mobile/generate-reg-token.php` references `created_at` four times — lines 62 and 156 (the 5-per-hour-per-`pi_id` rate limit) and lines 76 and 169 (the "reuse an unexpired unused token" lookup, `ORDER BY created_at DESC`). The schema recorded at `DEPLOYMENT_INDEX.md:1795` (created S143 by `install-schema.php`, which was deleted afterwards) lists only `token CHAR(7) UNIQUE, pi_id CHAR(36), device_token CHAR(36), expires_at DATETIME, used_at DATETIME NULL` — no `created_at`. If the column is genuinely absent, both queries fail.
+
+⚠ **Status is UNCONFIRMED and must stay that way until read.** MySQL is not reachable over FTP. Do not record this as either confirmed or closed on the strength of the code or the deployment index alone — the S135 rule applies: a document is not a live read.
+
+**Fix required:** first run `SHOW CREATE TABLE amboat_reg_tokens` (phpMyAdmin in cPanel) and paste the output into this record. Then either add the missing column or rewrite the two queries against `expires_at`.
+
+**Affected files:** `wp-content/themes/twentytwenty-child/mobile/generate-reg-token.php`
+
+**Verification:** `DESCRIBE amboat_reg_tokens` output recorded here, and a 6th code request within one hour correctly rate-limited.
+
+---
+
+## BUG-119 — `/register/` discards the registration code for logged-in users, so an existing owner cannot link a second Pi
+
+**Logged:** S150 2026-09-06 | **Severity:** MEDIUM | **Platform:** atmyboat.com (HostPapa live)
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** A user who already has an atmyboat.com account and sets up an additional Pi scans that Pi's registration QR, is bounced straight to `/my-account/` with no message, and the code is never redeemed. There is no indication anything was missed, and no path to link the new Pi.
+
+**Root cause:** `page-register.php:19-22`:
+```php
+// Redirect logged-in users — nothing to do here
+if ( is_user_logged_in() ) {
+    wp_safe_redirect( home_url( '/my-account/' ) );
+    exit;
+}
+```
+The redirect fires before the `?rt=` code is examined, so the token is dropped. The comment "nothing to do here" was true when `/register/` only created accounts; it is false now that the same URL carries a device-linking token.
+
+**Not a data-model gap — this was mis-recorded in the first draft of the atomic spec.** Multiple Pis per account is already the designed model: `mobile/pair-device.php` writes `d3kos_pairings (user_id, pi_id, vessel_name, vessel_type, is_primary, paired_at)` and derives `is_primary` by counting the account's existing pairings (`SELECT COUNT(*) FROM d3kos_pairings WHERE user_id = %d`), which only makes sense if an account may hold several. Registration-spec **D4 "exactly 1 account per device" constrains the DEVICE side** — each Pi belongs to one account — and does **not** cap Pis per account.
+
+**Also noted:** `pair-device.php`'s docblock states the Pi's QR is supposed to contain `atmyboat.com/pair-device/?pi_id=<UUID>` — a real https URL a phone camera can open. `setup.html:1211` encodes `d3kos://pair/<uuid>` instead. The wizard diverged from the documented contract; the custom URI scheme was never the design (see BUG-112).
+
+**Fix required (per the S150 one-event decision — one QR must work for everyone):** replace the blanket redirect so that when the visitor is logged in **and** a valid `rt` code is present, the Pi is linked to the current account instead of the code being thrown away — look up the token's `pi_id`, write `d3kos_pairings`, set `used_at`, then redirect to `/my-account/` with a success notice. Reuse the logic in `atmyboat_confirm_pairing()` (`mobile/pair-device.php`) rather than duplicating it; note it derives `is_primary` and queues a `pair_confirmed` command on `amboat_command_queue`, both of which the linked path still needs. Keep the plain redirect when no code is present.
+
+**Affected files:** `wp-content/themes/twentytwenty-child/page-register.php`, `wp-content/themes/twentytwenty-child/mobile/pair-device.php` (read, likely not modified)
+
+**Verification (UI-level):** sign in on a phone, then scan a second Pi's registration QR. The new Pi must be linked to the existing account with a visible confirmation, `used_at` set on the token, a `d3kos_pairings` row created with `is_primary = 0`, and the second Pi must reach Tier 1.
+
+**Related:** BUG-108, BUG-111, BUG-112.
+
+---
+
+## BUG-120 — No approval-notification email exists; the wizard is about to promise one
+
+**Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** atmyboat.com (HostPapa live)
+**Status:** `[ ]` **OPEN**
+
+**Symptom:** A device enrols, sits in the wp-admin queue as `pending`, and is approved by the operator — and the owner is never told. There is no way for a user to learn their Pi is ready to register other than repeatedly re-checking the dashboard.
+
+**Root cause:** `wp-content/plugins/d3kos-device-auth/d3kos-device-auth.php` contains **zero** occurrences of `wp_mail`. The approval action (`:179`, `$new_status = ($action === 'approve') ? 'approved' : $action . 'd';`) updates the status and sends nothing. The enrolment table does carry a `contact_email VARCHAR(254) NULL` column (`:82`, indexed at `:90`), but the REST argument is declared `'contact_email' => ['required' => false, …]` (`:41`) — so the address is **optional and may be absent entirely**.
+
+**Why it matters:** operator decision S150 (G1) is that the wizard and Settings tell the user *"you'll get an email"* when the Pi is approved, with no turnaround time quoted. That copy promises a notification nothing currently sends, so the email has to exist before the copy ships.
+
+**Fix required — operator ruling S150: "just send an email to notify me."** Keep it that simple.
+
+1. In the approve branch of the wp-admin handler (`:179`), call `wp_mail()`. One call.
+2. Send it to `contact_email` when that column has a value; when it is NULL, send to the site admin
+   address (`get_option('admin_email')`) so a notification always goes somewhere. No enrolment-payload
+   change, no `required => true`, no firmware coupling — the NULL case is a one-line fallback.
+3. Match the existing `wp_mail()` style already in `page-register.php:180` — plain text,
+   `[ 'Content-Type: text/plain; charset=UTF-8' ]`.
+4. Body: the Pi is approved, and to register open Settings → Community on the Pi (or the wizard's
+   Step 6). Do **not** embed a registration code — codes carry a 30-minute TTL and would be expired
+   on arrival.
+5. Rejection emails: not requested. Do not build one.
+
+⚠ **An earlier draft of this record turned this into an operator decision matrix (mandatory vs
+optional `contact_email`, Pi payload changes, cross-version compatibility). That was over-engineering
+a one-line requirement and was withdrawn on operator instruction.** Do not reintroduce it.
+
+**Affected files:** `wp-content/plugins/d3kos-device-auth/d3kos-device-auth.php`, possibly `auto_enrol.py` (canonical tree) if the email becomes mandatory.
+
+**Verification (UI-level):** enrol a device, approve it in wp-admin, confirm a real email arrives at the address supplied. Then approve a device with no `contact_email` and confirm the chosen fallback behaves as specified rather than erroring.
+
+**Related:** BUG-108, BUG-112 (the wizard copy that creates the promise), spec `atomic-specs/BUG-111-118-REGISTRATION.md` gate G1.
+
+---
+
+## BUG-121 — `pi_id` is the device token, but the wizard's pairing QR carried the machine-id UUID
+
+**Logged:** S150 2026-09-06 | **Severity:** MEDIUM (explains a long-standing dead feature) | **Platform:** Pi dashboard
+**Status:** `[ ]` **OPEN — resolved as a side effect of BUG-112 if that fix lands as specified**
+
+**Symptom:** Mobile pairing via the setup wizard's QR has never worked, and could not have worked, independent of the URI-scheme problem recorded in BUG-112.
+
+**Root cause:** two unrelated identifiers were conflated.
+- `app.py:528` sends `json={'pi_id': device_token}` — the server's `pi_id` **is** the `device_token` read from `/opt/d3kos/config/device-token.json` (e.g. `d8ab359f-2b16-486e-8701-b0e41445461a`). `generate-reg-token.php` validates it as a UUID and stores it in `amboat_reg_tokens.pi_id`; `pair-device.php` stores the same value in `d3kos_pairings.pi_id`.
+- `setup.html:1211` encoded `d3kos://pair/' + DEVICE_UUID`, where `DEVICE_UUID` comes from `app.py:52` `_get_device_uuid()` — derived from `/etc/machine-id` (e.g. `1ED18218-6C9E-4148-9EE4-B943E00CEC52`). **The server has never seen this value.**
+
+So even if the QR had used `pair-device.php`'s documented `atmyboat.com/pair-device/?pi_id=<UUID>` form instead of a custom scheme, it would have submitted an identifier that matches no row on the server.
+
+**Consequence for BUG-116:** the Settings "Mobile Pairing" card must display the **`device_token`**, not `device_uuid`. The Settings route already passes `device_token` (`app.py:489-498`) and does **not** pass `device_uuid` — so the correct fix is `{{ device_token }}`, and no new template variable is needed.
+
+**Fix:** folding pairing into registration (BUG-112, operator one-event decision) removes the need for the `DEVICE_UUID` pairing QR entirely — `register_url` carries a server-issued token that is already bound to the correct `pi_id`. Keep `{{ device_uuid }}` on screen only as a support/diagnostic identifier, clearly labelled as such and never as the pairing ID.
+
+**Affected files:** `setup.html`, `settings.html`, `app.py` (read only — no change needed)
+
+**Verification:** grep the templates for `DEVICE_UUID` and confirm no remaining use presents it as a pairing or registration identifier.
+
+**Related:** BUG-112, BUG-116, BUG-119.
+
+---
+
+### BUG-118 — CORRECTION (same session): `created_at` exists; the bug is very likely invalid
+*Supersedes the BUG-118 record earlier in this file. Not a separate bug — do not assign a new number.*
+
+**Updated:** S150 2026-09-06 | **Status:** `[~]` **LIKELY NOT A BUG — one live confirm outstanding**
+
+`install-schema.php:126` — the script that actually created the table — defines `amboat_reg_tokens` with:
+```sql
+`created_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+```
+The column is present with a default, so `generate-reg-token.php`'s omission of it from the INSERT at line 191 is harmless and the rate-limit query at lines 62/156 is valid. The `DEPLOYMENT_INDEX.md:1795` schema summary that omitted `created_at` was simply an incomplete record, not evidence of a missing column.
+
+⚠ **Found in `atmyboat-forum/`, not `Helm-OS/`** — this is the second time the S135 "search BOTH repos" rule was the deciding factor. The first search of this session covered only `Helm-OS/` and produced a MEDIUM bug that does not exist.
+
+**Remaining:** `install-schema.php` is the creating script, which is strong evidence but still not a live read of production (the S135 rule: a document is not a live read; a *creating script* is closer but a later `ALTER` could have diverged — `PROJECT_CHECKLIST_ARCHIVE.md:262` records seven historical `ALTER TABLE` statements against these tables). One `SHOW CREATE TABLE amboat_reg_tokens` closes it. **Downgraded from blocking gate G2 to a confirmation item** — it no longer blocks the registration spec.
+
+**Same source resolves BUG-119's schema question:** `d3kos_pairings` is defined at `install-schema.php:112` as `id, user_id, pi_id CHAR(36), device_token CHAR(36) NULL, vessel_name VARCHAR(80) DEFAULT '', vessel_type VARCHAR(50) DEFAULT 'powerboat', is_primary TINYINT(1) DEFAULT 0, paired_at DATETIME DEFAULT CURRENT_TIMESTAMP`, with **`UNIQUE KEY pi_id (pi_id)`** and `KEY user_id (user_id)`. The unique key is on `pi_id` **alone**, which enforces registration-spec D4 at the database level: a Pi can belong to exactly one account. See BUG-119 for the design consequence.

@@ -379,3 +379,57 @@ v0.9.9.4.1 image.** Lab mitigation (both units disabled) is in place; nothing de
 ### Phase 6 exit criterion
 
 `verify-bug105.sh` 15/15, 24 h soak clean, v0.9.9.4.2 published, v0.9.9.4.1 marked superseded.
+
+---
+
+## PHASE 7 — v0.9.9.4.2 REGISTRATION FLOW (added 2026-09-06 S150)
+
+⚠ **Read first:** the S149 Ed25519 backend is **correct and working** — `/api/generate-reg-token`
+returns a valid `register_url` that resolves HTTP 200 with the code pre-filled. Do not re-do it. Two
+premises that shaped earlier sessions are **disproved by live reads**: `DEVICE_UUID` is not blank, and
+`/register/` is neither device-gated nor in Draft — self-serve web registration works today and is
+linked from the site header and footer. The gap is the hand-off from the Pi and the missing route from
+the PWA, plus a server-side guard that silently corrupts data.
+
+- [ ] **7.1 — `BUG-111-118-REGISTRATION.md`** — ONE spec, six bugs, fixed in dependency order:
+      BUG-111 (`/register/` must refuse a present-but-invalid or expired code instead of creating an
+      unlinked T0 account and showing success — **do this first, every later step drives users through
+      it**) → BUG-113 (vendor `qrcode.min.js` locally; CDN-only means no QR on a boat) →
+      BUG-114 (display the bare 7-char code; strip `R-` server-side) →
+      BUG-112 (wizard Step 6 becomes a four-state registration screen calling
+      `/api/generate-reg-token`; the old `d3kos://pair/` QR had no phone handler) →
+      BUG-115 (add a create-account link to the PWA login screen) → BUG-116 (cosmetic Pi ID).
+      Then BUG-120 (one `wp_mail()` on approve —
+      no approval email exists today) and BUG-121 (stop presenting the machine-id as an identifier).
+      **All gates answered S150 — nothing is blocked.** G1 "you'll get an email", no duration quoted ·
+      G2 both schemas read from `atmyboat-forum/.../install-schema.php`, so **BUG-118 is very likely
+      invalid** · G3 one `wp_mail()` to `contact_email` or the admin address.
+      ⚠ **BUG-117 is CLOSED NOT A BUG** — the OpenCPN tier check is the operator's deliberate
+      fallback. **Do not touch `tier_service.py`.**
+      **TDD: `tests/registration-flow.spec.ts` (T1–T8, Playwright UI) and
+      `tests/test_register_token_guard.py` (T9–T14) must be captured FAILING first.** T10–T12 are the
+      BUG-111 regression guards and are the release criteria. These are also the Playwright UI tests
+      the operator approved in S148 and S149 that were never started.
+- [ ] **7.2 — Operator physical walkthrough** (spec Section 9): scan the QR with a real phone, complete
+      the form, confirm the account links and the Pi reaches Tier 1. **`curl` is not verification** —
+      that substitution is exactly why BUG-108 was wrongly marked FIXED in S149.
+- [ ] **7.3 — Amend the records the fix invalidates:** registration-spec D1 ("Tier 0 does not
+      qualify") is reversed by operator decision; `MASTER_SYSTEM_SPEC.md` §12 Open Item #2 is closed by
+      the one-event decision; user manual §17.4 must match the shipped flow.
+
+**Coverage:** BUG-108 (by decomposition), 111–117, 119, 120, 121 all specified. BUG-118 resolved as
+very likely invalid. Nothing in the registration area is left unspecified.
+
+⚠ **`pi_id` IS the `device_token`** (`app.py:528` sends `json={'pi_id': device_token}`), **not** the
+`/etc/machine-id`-derived `DEVICE_UUID` the wizard QR carried. That is BUG-121 and it means mobile
+pairing could never have worked. Settings must display `{{ device_token }}`.
+
+⚠ **`d3kos_pairings` has `UNIQUE KEY pi_id (pi_id)`** — a Pi belongs to exactly one account, D4
+enforced in the DB. `pair-device.php`'s `ON DUPLICATE KEY UPDATE` does not update `user_id`, so a code
+redeemed for someone else's Pi silently succeeds while changing nothing. Step 4b must detect and
+report that case.
+
+### Phase 7 exit criterion
+
+T1–T14 passing, `./tests/run-all.sh` exit zero, Section 9 walked physically by the operator with each
+step's result recorded, BUG-108 re-assessed against a real end-to-end run.

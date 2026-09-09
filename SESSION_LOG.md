@@ -8994,3 +8994,146 @@ failure_category       : overconfidence — curl treated as end-to-end verificat
 human_verified         : 0
 task_classification    : IMPLEMENT — Tier 3
 ─────────────────────────────────────────────────────
+
+## Session 2026-09-06 (S150) — Registration flow root-caused; BUG-111…121 logged; atomic spec written
+
+**Goal:** Answer why BUG-108 kept being "fixed" without resolving. Research the Pi→atmyboat.com
+registration path, log every defect found, write an atomic spec. No code changes.
+
+**Completed:**
+- Three parallel live-read investigations (Pi wiring, live HostPapa files via FTP, spec intent).
+- **11 bug records logged:** BUG-111…BUG-121 in `PROJECT_CHECKLIST.md` PART 17 + `V09994_BUG_FIXES.md`.
+- BUG-108 root cause **decomposed** into BUG-111/112/113/114/115 with a "read this first" block.
+- Atomic spec `deployment/docs/atomic-specs/BUG-111-118-REGISTRATION.md` (813 lines, 12 sections).
+- `EXECUTION-ORDER.md` Phase 7 added.
+- `MEMORY.md` compacted 19.7 KB → 15.6 KB, 0 links dropped; new `registration_flow_s150.md`.
+
+**Root cause of the BUG-108 saga:** the registration system already works. `/api/generate-reg-token`
+returns a valid `register_url` that resolves HTTP 200 with the code pre-filled, and `/register/` serves
+a working unguarded form linked from the site header/footer. Nothing connected them. The wizard printed
+static prose pointing at the BARE `/register/` URL (no code), which creates an account that is never
+linked to a Pi — and `/register/` reports success anyway.
+
+**Six premises DISPROVED by live reads (all previously recorded as fact):**
+1. `DEVICE_UUID` is not blank — `app.py:52` reads `/etc/machine-id` (S149 hypothesis dead).
+2. `/register/` is neither device-gated nor in Draft — self-serve web registration works today.
+3. The registration code is SERVER-generated; the Pi only requests it.
+4. Tier 1 is server-verified and FREE, not a filesystem test.
+5. `/app` is a physical directory — `page-app.php` is unreachable there (why S149 read the wrong file).
+6. D4 does not cap Pis per account — `d3kos_pairings` + `is_primary` prove multi-Pi was designed.
+
+**Findings only a file read produced:**
+- **`pi_id` IS the `device_token`** (`app.py:528`), not `DEVICE_UUID`. The wizard QR carried an
+  identifier the server has never seen → mobile pairing could never have worked (BUG-121). Also means
+  BUG-116 must render `{{ device_token }}`.
+- **No approval email exists** — zero `wp_mail` in `d3kos-device-auth.php` (BUG-120).
+- **`d3kos_pairings` has `UNIQUE KEY pi_id` alone** and `ON DUPLICATE KEY UPDATE` skips `user_id`, so a
+  code redeemed for another account's Pi silently "succeeds" while changing nothing.
+- **BUG-118 does not exist** — `created_at` is defined at `install-schema.php:126`, in
+  **`atmyboat-forum/`**. The S135 search-both-repos rule was decisive twice this session.
+- `screens.login` builds DOM via an `el()` helper — an HTML snippet would not have worked.
+- A device must be **approved** before it can get a code, so the wizard usually cannot issue one at
+  first boot → Step 6 specified as a four-state screen, not a QR.
+
+**Operator decisions (binding):**
+- **ONE EVENT** — redemption creates the account AND links the Pi; Tier 1 follows. Closes
+  `MASTER_SYSTEM_SPEC.md` §12 Open Item #2.
+- **TIER 0 MAY REGISTER** — reverses registration-spec D1; an empty token must always be permitted.
+- **G1** — wizard says "you'll get an email"; quote no duration.
+- **BUG-117 CLOSED NOT A BUG** — *"I put opencpn in there as a fallback I don't care about it."*
+  `tier_service.py` must not be touched.
+- **BUG-120** — *"just send an email to notify me."* One `wp_mail()`; no payload/contract changes.
+
+**My failures this session — all operator-corrected or self-caught:**
+1. Nearly filed a false CRITICAL bug: stitched non-contiguous `sed` ranges made `page-register.php`'s
+   success path look nested inside its `is_wp_error` branch. Caught by a contiguous re-read **before**
+   reporting. Spec §2.4 now says do not re-follow.
+2. First spec draft used "read the file and derive the anchor" for BUG-112/115/119 instead of exact
+   replacements — pushing my job onto the implementer, violating the standing anchor rule. Operator
+   challenged; every anchor is now read from its target file.
+3. **Invented BUG-117** as an entitlement hole from the operator's intentional design, then added a
+   step + gate G4 for it. Unrequested security inference. Withdrawn.
+4. **Inflated BUG-120** into a decision matrix (mandatory `contact_email`, `auto_enrol.py` changes,
+   cross-version compatibility) when the requirement was one line. Withdrawn.
+5. During MEMORY.md compaction, carried **BUG-57-MAILPOET G8** and **BUG-75 Step 3** forward as live
+   operator actions — both CLOSED S140. Preserved without verifying against PART 17. Corrected.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-06 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Spec not implemented. 10 bugs remain `[ ]`; BUG-108 stays `[~]` until the Section 9 physical walkthrough.
+- Not drafted (offered, not started): manual §17.4 replacement text, and the T1–T14 Playwright test files.
+- Specified as contracts, code not authored: `_regSetState()` + four Step 6 state containers,
+  `atmyboat_link_pi_from_token()`, BUG-120's `wp_mail()` block, `/my-account/` notice rendering.
+- Never read: the `/my-account/` template; `el()` signature and `/app/sw.js` cache constant left to verify.
+- 24 h lab-Pi soak ending 2026-09-06 19:28 EDT — **not checked this session.**
+
+---
+
+ACCOMPLISHED THIS SESSION:
+- Registration flow root-caused across Pi, HostPapa and PWA from live reads
+- BUG-111…BUG-121 logged in both trackers; BUG-108 decomposed; BUG-117 closed; BUG-118 retired
+- 813-line atomic spec + EXECUTION-ORDER Phase 7; all gates answered, nothing blocked
+- MEMORY.md compacted with zero link loss
+
+NOT COMPLETED / DEFERRED:
+- No code written or deployed — spec is unexecuted
+- Manual §17.4 text and T1–T14 test files not drafted
+- Soak result unchecked; 42 `[~]` boat-blocked bugs untouched (operator's S140 strategy)
+
+KNOWN GAPS OR UNCERTAINTIES:
+- `install-schema.php` is the creating script, not a live read; `PROJECT_CHECKLIST_ARCHIVE.md:262`
+  records 7 historical ALTERs and production has `last_seen_at` the script does not show. One
+  `SHOW CREATE TABLE` on `amboat_reg_tokens` + `d3kos_pairings` closes this.
+- BUG-121's "pairing never worked" is inferred from identifier mismatch, not a phone test.
+- `/my-account/` can render the four `pi_link` notices — assumed, template unread.
+
+OPERATOR ACTIONS REQUIRED:
+- `SHOW CREATE TABLE amboat_reg_tokens` + `d3kos_pairings` (phpMyAdmin) — closes BUG-118
+- BUG-06 `[!]`; BUG-81 P2/P3 (GitHub push approval); BUG-65 Step 3
+- Decide whether the §17.4 text and T1–T14 tests are drafted before implementation
+
+---
+
+SQS BLOCK — 2026-09-06 (S150)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 70% (2 unrequested expansions: BUG-117 invention, BUG-120 inflation)
+SGCR (Stop Gate Compliance Rate)   : 100% (no code, no deploy, no push)
+REC  (Recovery Event Count)        : 3 (spec under-delivery, BUG-117, BUG-120)
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+
+OIC SELF-REPORT: 72/100
+Basis:
+- Uncertainty flagged where uncertain: YES — BUG-118 held UNCONFIRMED until the schema was found;
+  `d3kos_pairings` explicitly marked inferred before it was read; BUG-121 flagged as not phone-tested
+- NOT COMPLETED section accurate: YES — partial-vs-exact spec coverage disclosed before being asked,
+  then again in full when challenged
+- Work substantive: YES — 6 recorded premises overturned by live reads, 11 bugs logged, 813-line spec
+- Tests cover the failure case: NO — T1–T14 specified but not written
+Deductions: -15 for inventing BUG-117 from an intentional design and building a gate on it; -8 for
+inflating BUG-120 into a decision matrix; -5 for the first spec draft delegating anchor derivation to
+the implementer, corrected only after operator challenge. No deduction for the near-miss false
+critical bug — it was caught by self-verification before reaching the operator, which is the process
+working. Memory compaction error (2 closed bugs relisted) folded into the -5.
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-06 (S150)
+─────────────────────────────────────────────────────
+session_duration_min   : ~120
+tasks_planned          : 3 (research/suggest, log bugs, write atomic spec)
+tasks_completed        : 3, two requiring operator-forced rework
+governing_doc_version  : CLAUDE.md 2026-09-05
+attributed_rec         : 1 (S149's "curl = verified" framing carried into this session's premises)
+failure_category       : scope — unrequested expansion of a defined task
+human_verified         : 0
+task_classification    : ARCHITECT — Tier 1 (cross-system design + atomic spec authoring)
+─────────────────────────────────────────────────────
