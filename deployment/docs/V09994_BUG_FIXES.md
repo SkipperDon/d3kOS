@@ -7609,7 +7609,7 @@ problem it solves. Deployed and executable on the lab Pi.
 **Logged:** S148 2026-09-05  
 **Severity:** CRITICAL — release gate for v0.9.9.4.2  
 **Platform:** Pi — every v0.9.9.4.1 install at Tier 0 (i.e. every fresh install)  
-**Status:** `[~]` MITIGATED LAB S148 (services stopped + disabled, DB purged, log truncated). Code fix: atomic spec `atomic-specs/BUG-105.md`.
+**Status:** `[x]` FIXED + DEPLOYED LAB S148 2026-09-05 — `verify-bug105.sh` 15/15 PASS, re-confirmed after full cold reboot. **24H SOAK PASS S152 2026-09-09** — Pi ran unattended 24+ hours, operator confirmed zero issues, no storm, no crash; Pi shut down cleanly by operator after soak. v0.9.9.4.2 soak gate CLEARED.
 
 **Symptom:** Lab Pi froze hard (ARP unresolvable, no ping) ~09:55 EDT 2026-09-05 after 8 days uptime;
 recovered only by power-cycle at 16:06. Operator confirmed no power loss. Post-boot: `d3kos-license-api`
