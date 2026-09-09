@@ -1270,53 +1270,61 @@ Your account tier determines which website features are available after login:
 
 ---
 
-### 17.4 Creating Your AtMyBoat.com Account (Device-Gated Registration)
+### 17.4 Creating Your AtMyBoat.com Account
 
-To protect the community from spam and bots, registration at **atmyboat.com/register/** requires proof that you have a real d3kOS installation. The process takes about 60 seconds.
+Registration is **optional** — d3kOS works fully at Tier 0 without an account. If you want cloud features such as the Chart Room, community map, and voyage history, create a free account. Your Pi is linked to your account automatically at the moment you register — no separate pairing step required.
 
-#### Step 1 — Get your registration code from the Pi
+#### What you need before registering
+
+Your Pi must be running and connected to the internet. The dashboard generates a one-time registration token when you open the **AtMyBoat.com** section in Settings.
+
+#### Step 1 — Open the registration QR code on your Pi
 
 1. Open the d3kOS dashboard in any browser on your home network
    - On the same device: go to `http://localhost:3000`
    - On a phone or tablet on the same Wi-Fi: go to `http://[your-Pi's-IP]:3000`
 2. Tap **Settings** (gear icon)
 3. Scroll to the **AtMyBoat.com** section
-4. Tap **Get Registration Code**
-5. The dashboard contacts AtMyBoat.com and displays:
-   - A **QR code** — scan it with your phone camera to go directly to the registration form
-   - A **clickable link** — tap it if you are viewing the dashboard on the device you want to register with
-   - A **7-character code** (e.g. `R-7X9KM2`) — type it manually at atmyboat.com/register/ if needed
 
-> The code is valid for **30 minutes** and can only be used once.
+The dashboard displays three ways to reach the registration form:
+- A **QR code** — scan it with your phone camera
+- A **clickable URL** — tap it if you are viewing the dashboard on the same device you want to register from
+- A **7-character code** (e.g. `R-7X9KM2`) — type it manually at the end of `atmyboat.com/register/?rt=` if needed
+
+> The token is valid for **30 minutes** and can only be used once.
 
 #### Step 2 — Register at AtMyBoat.com
 
-Using the QR code, link, or code from Step 1:
+**If you do not have an AtMyBoat.com account yet:**
 
-1. Go to **atmyboat.com/register/**
-2. The page will show a green **"d3kOS Pi verified"** badge confirming your code is active
-3. Fill in your first name, last name, email address, and password
-4. Accept the Terms of Service
-5. Tap **Create Account**
+1. Follow the QR code, link, or URL with your code — this takes you to `atmyboat.com/register/?rt=YOURCODE`
+2. Fill in your first name, last name, email address, and password
+3. Accept the Terms of Service
+4. Tap **Create Account**
+
+Your account is created **and** your Pi is linked in a single step. There is no separate Pair Device step.
+
+**If you already have an AtMyBoat.com account and are logged in:**
+
+Scanning the QR code or visiting the registration URL while already logged in automatically links your Pi to your existing account. You are redirected to your account dashboard with a confirmation — no form to fill out.
 
 #### Step 3 — Verify your email
 
 A verification email is sent to the address you provided. Click the link in that email to activate your account. The link is valid for 24 hours.
 
-#### Step 4 — Pair your Pi
-
-After verifying your email and logging in, go to **atmyboat.com/pair-device/** to pair your Pi with your account. Pairing upgrades your account from T0 to T1 (First Mate) and enables cloud features including the Chart Room, community map, and voyage history.
+> **Tip:** You can skip registration and continue using d3kOS at Tier 0. Tap **Skip** in the Settings → AtMyBoat.com section if you prefer not to register now.
 
 #### Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| "Invalid registration code" | The code expired (30 min limit) or was already used. Go back to the Pi dashboard and get a new code. |
-| "Too many requests" | More than 5 codes were requested in 1 hour. Wait and try again. |
+| "Invalid registration token" | The token expired (30 min limit) or was already used. Go back to Settings → AtMyBoat.com on your Pi to get a fresh QR code. |
+| "Too many requests" | More than 5 tokens were requested in 1 hour. Wait and try again. |
 | Did not receive verification email | Check your spam folder. The email comes from hello@atmyboat.com. |
-| Badge not showing on register page | Make sure you followed the link from your Pi dashboard, or type the code into the URL: `atmyboat.com/register/?rt=YOURCODE` |
+| Pi not shown as linked after registering | Ensure the Pi was online when you completed the form. Return to Settings → AtMyBoat.com and use the QR code again — if you are already logged in, your Pi will be auto-linked immediately. |
+| QR code not appearing in Settings | Tap the **AtMyBoat.com** section header to expand it. If it still does not appear, check that the Pi has an active internet connection. |
 
 ---
 
-*d3kOS User Manual v0.9.9.3 — Document version 2.4.1 — September 2026*
+*d3kOS User Manual v0.9.9.4.2 — Document version 2.5.0 — September 2026*
 *AtMyBoat.com — Open-source marine intelligence*
