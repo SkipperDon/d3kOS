@@ -113,6 +113,7 @@ ab2bf95b420ac589e5b7233e442b4569  opt/d3kos/services/dashboard/static/js/boatlog
 9f2fc4e11884ef0163bd5d88e1d9a23d  opt/d3kos/services/dashboard/static/js/cameras.js
 1c1bb499db851927ec5d2fa954b11e6a  opt/d3kos/services/dashboard/static/js/connectivity-check.js
 e9bf25388ab0859d64eb0eb574c9ed15  opt/d3kos/services/dashboard/static/js/helm.js
+517b55d3688ce9ef1085a3d9632bcb97  opt/d3kos/services/dashboard/static/js/qrcode.min.js
 af3e015c694f48a1e745a6dc18948045  opt/d3kos/services/dashboard/static/js/instruments.js
 0a1c7f6f5a4e6250ff05ff52f99120f3  opt/d3kos/services/dashboard/static/js/nav.js
 080b82113cc13214271c76262af513c2  opt/d3kos/services/dashboard/static/js/overlays.js
@@ -129,8 +130,8 @@ efb6478e641942112097a0c51eb1bec2  opt/d3kos/services/dashboard/templates/boat-lo
 9ab99c193ee51a80a475aedb338b78e0  opt/d3kos/services/dashboard/templates/manual.html
 ae9b46207ab44b9e322e39a61d897652  opt/d3kos/services/dashboard/templates/marine-vision.html
 d3585fb75c1fef039a2d206fdbf04fca  opt/d3kos/services/dashboard/templates/offline.html
-16c6b3e892eb8a3d554c775b02633eb9  opt/d3kos/services/dashboard/templates/settings.html
-fd9d4f1a2d5ccff93d48c64df39687ab  opt/d3kos/services/dashboard/templates/setup.html
+b9cdf50d8640e2a5acfbcef553c8c6c9  opt/d3kos/services/dashboard/templates/settings.html
+e4f90b681d352639c279d250368f2176  opt/d3kos/services/dashboard/templates/setup.html
 55fed2245151b5a545c3fadc3aecb60d  opt/d3kos/services/dashboard/templates/upload-documents.html
 8bf3b4cef4ce0d254318bb7d61eb0376  opt/d3kos/services/device_sign.py
 e15f24f17518237cdb7affef0f874ab9  opt/d3kos/services/diagnostic/diagnostic_agent.py
@@ -176,8 +177,8 @@ b8432c26c8d5378f4aa8b83edd7e1070  opt/d3kos/services/voice/wake_word_porcupine.p
 60e550d68d696625ae85cbd8725d617a  opt/d3kos/services/watchdog/d3kos_watchdog.py
 2f93caddf4354741254deff13982c6d1  var/lib/avnav/README.md
 53b2c31e9c0a2695897d0fde79b6b41e  var/www/html/ai-assistant.html
-5e258bdd3d718bd6c6a77c230e55d33d  var/www/html/app.css
-aa77b249bd7b060bb9791b02f6634edc  var/www/html/app.js
+0be8d100ce541f501efdbb86a63a70f2  var/www/html/app.css
+15b235ef81a499b949fe549d6ef00eb8  var/www/html/app.js
 31f2f8be05dfaddc1d6ec66a5541b258  var/www/html/atmyboat.png
 90c7680c9f40058b4cc1ab722b0f3a9a  var/www/html/benchmark.html
 042ec30804fb0091f9443e407b2deae9  var/www/html/boatlog.html
@@ -206,7 +207,7 @@ f361d8486022cc240fcef42715e3f274  var/www/html/remote-access.html
 b12769b20158e1d2eec153130be33350  var/www/html/settings-network.html
 42755a38f49f29f2b6a207b502e775cb  var/www/html/settings.html
 f186435266364465e15cd6b37171d9df  var/www/html/settings.html.backup.20260214_094224
-febc65d8f80dd4afb34c50fbf9b2bb7e  var/www/html/sw.js
+e98a722a617df2ddd774cd4d44e41385  var/www/html/sw.js
 84939a9ab494b76aea0e135824a8cfae  var/www/html/test-input.html
 2e87f94c4ff839a556a9a1e735aa181c  var/www/html/test-keyboard.html
 576f237540f0fa4dec72e625711c0309  var/www/html/upload-manual.html

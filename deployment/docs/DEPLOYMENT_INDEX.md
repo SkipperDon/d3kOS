@@ -1875,3 +1875,20 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `Helm-OS/.mcp.json` | **[NEW — S151]** MCP server config for graft in Helm-OS. Requires Claude Code restart to load. |
 | `Helm-OS/.gitignore` | **[UPDATED — S151]** `/graft/` cache entry added automatically by graft init. |
 | `Helm-OS/graft/` | **[NEW — S151 — git-ignored]** Local context graph cache. 3,912 nodes / 8,505 edges across 370 source files. Regenerate with `graft build` if deleted. |
+
+## S152 — 2026-09-09 — BUG-111–121 Registration/Pairing Flow Fixes
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/setup.html` | **[UPDATED — S152]** BUG-112/113/121: `initQR()` fully replaced with fetch-based 5-state implementation (loading/code/pending-approval/offline/error); Step 6 prose replaced with 5 state divs; `qrcode.min.js` CDN tag → local `/static/js/qrcode.min.js`; UUID label → "Support ID (diagnostic only)"; `#reg-state-loading` anonymity text added; Skip button `min-height:48px` AODA fix. Deployed to lab Pi. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/settings.html` | **[UPDATED — S152]** BUG-113/114/116: `_loadQrLib()` → local qrcode.min.js; token display strips `R-` prefix; Pi ID renders `{{ device_token }}` with "Not yet enrolled" fallback. Deployed to lab Pi. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/qrcode.min.js` | **[NEW — S152]** BUG-113: qrcodejs 1.0.0 vendored locally. 19,927 bytes. SHA256: `517b55d3688ce9ef1085a3d9632bcb97`. Deployed to lab Pi. |
+| `deployment/v0.9.9.4/var/www/html/app.js` | **[UPDATED — S152]** BUG-115: PWA login screen now includes "Create one" link to `atmyboat.com/register/` in `.login-register-hint` paragraph. Deployed to HostPapa `/staging/app/`. |
+| `deployment/v0.9.9.4/var/www/html/app.css` | **[UPDATED — S152]** BUG-115: `.login-register-hint { text-align:center; margin-top:18px; font-size:18px; }` added. Deployed to HostPapa `/staging/app/`. |
+| `deployment/v0.9.9.4/var/www/html/sw.js` | **[UPDATED — S152]** BUG-115: cache version bumped `d3kos-pwa-v8` → `d3kos-pwa-v9`. Deployed to HostPapa `/staging/app/`. |
+| `deployment/v0.9.9.4/MANIFEST.md5` | **[UPDATED — S152]** New entry for `qrcode.min.js`; updated md5 hashes for `setup.html`, `settings.html`, `app.js`, `app.css`, `sw.js`. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/page-register.php` | **[UPDATED — S152]** BUG-111/114/119: outer `elseif` for malformed token; `$reg_error !== ''` guard before `wp_create_user()`; `R-` stripped on GET and POST paths; logged-in branch calls `atmyboat_link_pi_from_token()`. Deployed to HostPapa live. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/inc/registration.php` | **[UPDATED — S152]** BUG-119: `atmyboat_link_pi_from_token(int $user_id, string $token): string` added — looks up token, checks ownership conflict, upserts `d3kos_pairings`, queues `pair_confirmed`, consumes token, returns status slug. Deployed to HostPapa live. |
+| `atmyboat-forum/wp-content/plugins/d3kos-device-auth/d3kos-device-auth.php` | **[UPDATED — S152]** BUG-120: approve handler sends `wp_mail()` to `contact_email` or `admin_email`. Deployed to HostPapa live. |
+| `tests/registration-flow.spec.ts` | **[NEW — S152]** T1–T8 Playwright regression guards for BUG-111/112/113/114/115/116/119/121. All 8 GREEN on lab Pi after fixes. |
+| `tests/test_register_token_guard.py` | **[NEW — S152]** T9–T14 pytest server-side guards for BUG-111/114/119. T11–T13 skipped (need staging DB). T9/T10/T14 require staging env (WAF blocks programmatic POST to production). |

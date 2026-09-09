@@ -291,7 +291,7 @@
   .btn-back:hover { border-color: var(--g-bdr); color: var(--ink2); }
   .btn-skip-step { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
     font-size: 20px; font-weight: 700; color: var(--ink3); cursor: pointer;
-    display: block; margin: 14px auto 0; letter-spacing: .06em; padding: 6px 0; }
+    display: block; margin: 14px auto 0; letter-spacing: .06em; padding: 14px 0; min-height: 48px; min-width: 48px; }
   .btn-skip-step:hover { color: var(--ink2); }
 
   /* ── Security pre-step ── */
@@ -943,21 +943,36 @@
             QR library unavailable &mdash; use the ID below.
           </div>
           <div class="pairing-uuid" id="uuid-display" onclick="copyUUID()" title="Tap to copy">
-            {{ device_uuid }}
+            Support ID (diagnostic only): {{ device_uuid }}
           </div>
           <div class="pairing-copied" id="uuid-copied">Copied!</div>
-          <div class="pairing-sub">
-            <strong>How to pair using your smartphone:</strong><br><br>
-            &bull; <strong>Step 1 &mdash; Create a free account:</strong><br>
-            On your smartphone, go to <strong>atmyboat.com/register</strong> and create your free account.<br><br>
-            &bull; <strong>Step 2 &mdash; Open the d3kOS app:</strong><br>
-            After signing in, open <strong>atmyboat.com/app</strong> on your smartphone.<br><br>
-            &bull; <strong>Step 3 &mdash; Scan the QR code above:</strong><br>
-            Tap <strong>Pair with Pi</strong> in the app, then point your smartphone camera at the QR code above to scan it.
-            If the QR code does not scan, type the vessel ID shown above directly into the app.<br><br>
-            &bull; <strong>Step 4 &mdash; Link your account to this Pi:</strong><br>
-            Follow the on-screen steps in the app to link your account to this vessel.
-            Your phone is now paired and can monitor your Pi remotely.
+          <div class="pairing-sub" id="reg-state-loading" style="font-size:18px;">Contacting AtMyBoat.com&hellip;<br><small style="font-size:18px;">Registration is optional — d3kOS works fully without an account.</small></div>
+
+          <div class="pairing-sub" id="reg-state-code" style="display:none;font-size:18px;">
+            <p style="font-size:18px;">Scan this QR code with your phone camera to create your free AtMyBoat.com account and link this Pi in one step.</p>
+            <p style="font-size:18px;"><a id="reg-register-link" href="#" style="font-size:18px;word-break:break-all;"></a></p>
+            <p style="font-size:18px;">Or type this code at <strong>atmyboat.com/register</strong>:</p>
+            <p id="reg-code-display" style="font-family:'Chakra Petch',monospace;font-size:28px;letter-spacing:.18em;font-weight:700;"></p>
+            <p style="font-size:18px;">Code expires in <span id="reg-expiry-display"></span>.</p>
+            <p style="font-size:18px;"><em>Registration is optional &mdash; d3kOS works fully without an account. Tier 1 is free and adds the mobile app, cameras, voice assistant, anchor alerts, cloud sync, and data export.</em></p>
+          </div>
+
+          <div class="pairing-sub" id="reg-state-pending" style="display:none;font-size:18px;">
+            <p style="font-size:18px;">This Pi is enrolled with AtMyBoat.com and is waiting to be approved.</p>
+            <p style="font-size:18px;">You will receive an email when your Pi is approved. Once approved, open <strong>Settings &rarr; Community</strong> to get your registration code.</p>
+            <p style="font-size:18px;"><em>Registration is optional &mdash; d3kOS works fully without an account. Your Pi stays completely anonymous if you skip this.</em></p>
+          </div>
+
+          <div class="pairing-sub" id="reg-state-offline" style="display:none;font-size:18px;">
+            <p style="font-size:18px;">Registration needs an internet connection.</p>
+            <p style="font-size:18px;">You can do this later from <strong>Settings &rarr; Community</strong> once this Pi is online.</p>
+            <p style="font-size:18px;"><em>Registering is optional &mdash; d3kOS works fully without an account. If you do not connect, your Pi stays completely anonymous.</em></p>
+          </div>
+
+          <div class="pairing-sub" id="reg-state-error" style="display:none;font-size:18px;">
+            <p style="font-size:18px;"><span id="reg-state-error-msg"></span></p>
+            <p style="font-size:18px;"><button type="button" onclick="_regRequested=false;initQR();" style="font-size:18px;min-height:48px;min-width:48px;padding:8px 16px;">Retry</button></p>
+            <p style="font-size:18px;"><em>Registration is optional &mdash; you can skip this step.</em></p>
           </div>
         </div>
         <button type="button" class="btn-submit" onclick="goTo(7)">NEXT &rsaquo;</button>
@@ -1064,7 +1079,7 @@
 </div><!-- #setup-scroll -->
 {% endif %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+<script src="/static/js/qrcode.min.js"
   onerror="document.getElementById('qr-fallback').style.display='block'"></script>
 <script>
   /* Night mode */
@@ -1204,16 +1219,55 @@
   }
 
   /* ── QR code ── */
+  /* BUG-112: Step 6 is a REGISTRATION screen, not a mobile-pairing screen.
+     Operator decision S150 — one event: redeeming the code creates the account AND
+     links this Pi, so registering IS the pairing. The old d3kos:// deep link had no
+     handler on a phone camera, which is why scanning it reported "no data found". */
+  var _regRequested = false;
   function initQR() {
-    var canvas = document.getElementById('qr-canvas');
-    if (!canvas || canvas.children.length > 0) return;
-    if (typeof QRCode !== 'undefined') {
-      new QRCode(canvas, {
-        text: 'd3kos://pair/' + DEVICE_UUID, width: 200, height: 200,
-        colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
-      });
-    } else {
-      document.getElementById('qr-fallback').style.display = 'block';
+    if (_regRequested) return;
+    _regRequested = true;
+    _regSetState('loading');
+    fetch('/api/generate-reg-token', { method: 'POST' })
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) { _regSetState('pending'); return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        if (!data.success) { _regSetState('error', data.error || 'Unknown error.'); return; }
+        var d = data.data;
+        _regSetState('code', d);
+        var canvas = document.getElementById('qr-canvas');
+        if (canvas && typeof QRCode !== 'undefined') {
+          new QRCode(canvas, {
+            text: d.register_url, width: 200, height: 200,
+            colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+          });
+        } else if (canvas) {
+          document.getElementById('qr-fallback').style.display = 'block';
+        }
+        // Fill in the bare code and link
+        var codeEl = document.getElementById('reg-code-display');
+        var linkEl = document.getElementById('reg-register-link');
+        var expiryEl = document.getElementById('reg-expiry-display');
+        var bareCode = String(d.token).replace(/^R-/, '');
+        if (codeEl) codeEl.textContent = bareCode;
+        if (linkEl) { linkEl.href = d.register_url; linkEl.textContent = d.register_url; }
+        if (expiryEl) expiryEl.textContent = d.expires_min + ' minutes';
+      })
+      .catch(function () { _regSetState('offline'); });
+  }
+
+  function _regSetState(state, payload) {
+    var states = ['loading', 'code', 'pending', 'offline', 'error'];
+    states.forEach(function(s) {
+      var el = document.getElementById('reg-state-' + s);
+      if (el) el.style.display = (s === state) ? '' : 'none';
+    });
+    if (state === 'error' && payload) {
+      var msgEl = document.getElementById('reg-state-error-msg');
+      if (msgEl) msgEl.textContent = payload;
     }
   }
 

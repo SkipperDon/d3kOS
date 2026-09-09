@@ -647,7 +647,7 @@
             <p class="card-desc">Connect the d3kOS companion app to this Pi. Scan the QR code in Initial Setup or enter your Pi ID manually.</p>
             <div class="info-grid" style="margin-bottom:12px;">
               <span class="info-k">Pi ID:</span>
-              <span class="info-v" style="font-family:'Chakra Petch',monospace;color:var(--g-txt);">d3k-2024-boatiq-001</span>
+              <span class="info-v" style="font-family:'Chakra Petch',monospace;color:var(--g-txt);">{% if device_token %}{{ device_token }}{% else %}Not yet enrolled{% endif %}</span>
               <span class="info-k">Status:</span>
               <span class="info-v" id="pair-status" style="color:var(--ink3);">&#8212; Not paired</span>
             </div>
@@ -680,7 +680,7 @@
     function _loadQrLib(cb) {
       if (window.QRCode) { cb(); return; }
       var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      s.src = '/static/js/qrcode.min.js';
       s.onload = cb; s.onerror = cb; // cb handles missing lib gracefully
       document.head.appendChild(s);
     }
@@ -704,7 +704,9 @@
             return;
           }
           const d = data.data;
-          document.getElementById('reg-token-display').textContent = d.token;
+          // BUG-114: the API returns the code prefixed ("R-CDEDWMH") but both server
+          // validators are /^[A-Z2-9]{7}$/. Show what the user must actually type.
+          document.getElementById('reg-token-display').textContent = String(d.token).replace(/^R-/, '');
           document.getElementById('reg-expires').textContent = 'Expires in ' + d.expires_min + ' min';
           const link = document.getElementById('reg-link');
           link.href = d.register_url;

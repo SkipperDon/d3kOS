@@ -8002,7 +8002,7 @@ full suite under run-all.sh.
 ## BUG-111 — `/register/` does not block a present-but-invalid or expired registration code; the account is created unlinked and the success screen is shown
 
 **Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** atmyboat.com (HostPapa live)
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — `page-register.php` blocks malformed/present tokens; `$reg_error` propagated before `wp_create_user()`.
 
 **Symptom:** A visitor who submits the registration form with a registration code that is either malformed (e.g. `R-CDEDWMH`, which is exactly what the Pi displays — see BUG-114) or expired/already-used is shown the "check your email" success screen. The account is created, but `used_at` is never set on the token, `atmyboat_pending_pi_id` is never written, and the device therefore never reaches Tier 1. There is no error explaining why. This is a substantial part of the user-visible failure recorded under BUG-108.
 
@@ -8030,7 +8030,7 @@ full suite under run-all.sh.
 ## BUG-112 — Setup wizard Step 6 is a mobile-pairing screen and is never wired to the registration token system
 
 **Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** Pi dashboard
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — `setup.html` Step 6 fully replaced: fetches `/api/generate-reg-token`, 5-state UI, encodes `register_url` in QR.
 
 **Symptom:** Operator scanned the Step 6 QR code with a phone camera and got "no data found." There is no working path from first boot to an atmyboat.com account.
 
@@ -8051,7 +8051,7 @@ full suite under run-all.sh.
 ## BUG-113 — QR library is loaded from a CDN only, so no QR renders without internet
 
 **Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** Pi dashboard
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — `qrcode.min.js` vendored locally at `/static/js/qrcode.min.js`; CDN script tag removed from `setup.html` and `settings.html`.
 
 **Symptom:** On a Pi with no internet — the normal state on a boat — the setup wizard's QR area shows only "QR library unavailable — use the ID below."
 
@@ -8072,7 +8072,7 @@ full suite under run-all.sh.
 ## BUG-114 — Registration code is displayed with an `R-` prefix that both server validators reject
 
 **Logged:** S150 2026-09-06 | **Severity:** MEDIUM | **Platform:** Pi dashboard + atmyboat.com
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — `R-` prefix stripped on GET and POST paths in `page-register.php`; `initQR()` strips prefix before displaying token.
 
 **Symptom:** A user who reads the code off the Pi screen and types it into the registration form can never succeed. Because of BUG-111 the attempt fails silently and produces an unlinked account instead of an error.
 
@@ -8091,7 +8091,7 @@ full suite under run-all.sh.
 ## BUG-115 — PWA `/app` login screen has no route to registration
 
 **Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** PWA (atmyboat.com/app)
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — PWA login screen (`app.js`) now shows "Create one" link to `atmyboat.com/register/`; CSS rule added; sw.js bumped to v9.
 
 **Symptom:** Operator, verbatim: "you cannot register a new user through atmyboat.com/app and there is no way for user to know where to register if they want to go to tier1." Confirmed by live read.
 
@@ -8112,7 +8112,7 @@ full suite under run-all.sh.
 ## BUG-116 — Settings "Mobile Pairing" card shows a hardcoded placeholder Pi ID
 
 **Logged:** S150 2026-09-06 | **Severity:** LOW | **Platform:** Pi dashboard
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — `settings.html` now renders `{{ device_token }}` with "Not yet enrolled" fallback; placeholder `d3k-2024-boatiq-001` removed.
 
 **Symptom:** Settings → Mobile Pairing displays `Pi ID: d3k-2024-boatiq-001` on every Pi, regardless of device.
 
@@ -8193,7 +8193,7 @@ per `install-schema.php:126`; the hypothesis below was formed from a search that
 ## BUG-119 — `/register/` discards the registration code for logged-in users, so an existing owner cannot link a second Pi
 
 **Logged:** S150 2026-09-06 | **Severity:** MEDIUM | **Platform:** atmyboat.com (HostPapa live)
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — logged-in branch in `page-register.php` now calls `atmyboat_link_pi_from_token()`; `inc/registration.php` contains the function.
 
 **Symptom:** A user who already has an atmyboat.com account and sets up an additional Pi scans that Pi's registration QR, is bounced straight to `/my-account/` with no message, and the code is never redeemed. There is no indication anything was missed, and no path to link the new Pi.
 
@@ -8224,7 +8224,7 @@ The redirect fires before the `?rt=` code is examined, so the token is dropped. 
 ## BUG-120 — No approval-notification email exists; the wizard is about to promise one
 
 **Logged:** S150 2026-09-06 | **Severity:** HIGH | **Platform:** atmyboat.com (HostPapa live)
-**Status:** `[ ]` **OPEN**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — `d3kos-device-auth.php` sends approval email via `wp_mail()` to `contact_email` or `admin_email`.
 
 **Symptom:** A device enrols, sits in the wp-admin queue as `pending`, and is approved by the operator — and the owner is never told. There is no way for a user to learn their Pi is ready to register other than repeatedly re-checking the dashboard.
 
@@ -8260,7 +8260,7 @@ a one-line requirement and was withdrawn on operator instruction.** Do not reint
 ## BUG-121 — `pi_id` is the device token, but the wizard's pairing QR carried the machine-id UUID
 
 **Logged:** S150 2026-09-06 | **Severity:** MEDIUM (explains a long-standing dead feature) | **Platform:** Pi dashboard
-**Status:** `[ ]` **OPEN — resolved as a side effect of BUG-112 if that fix lands as specified**
+**Status:** `[x]` **FIXED + DEPLOYED S152 2026-09-09** — resolved as side effect of BUG-112 fix: `DEVICE_UUID` now labelled "Support ID (diagnostic only)"; `register_url` carries server-issued token bound to `pi_id`.
 
 **Symptom:** Mobile pairing via the setup wizard's QR has never worked, and could not have worked, independent of the URI-scheme problem recorded in BUG-112.
 

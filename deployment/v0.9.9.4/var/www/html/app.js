@@ -472,6 +472,12 @@ screens.login = function renderLogin() {
         passwordInput,
       ),
       submitBtn,
+      // BUG-115: the login screen had no route to registration at all — the operator
+      // reported "there is no way for a user to register" from exactly this screen.
+      el('p', { class: 'login-register-hint' },
+        'No account yet? ',
+        el('a', { href: 'https://atmyboat.com/register/' }, 'Create one'),
+      ),
     )
   );
 

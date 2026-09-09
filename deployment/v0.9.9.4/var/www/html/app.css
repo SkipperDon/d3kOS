@@ -1203,3 +1203,13 @@ html, body {
   margin-bottom: 12px;
 }
 .support-form {}
+
+/* ── Login screen registration hint (BUG-115) ─────────────────────────────── */
+.login-register-hint {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 18px;
+}
+.login-register-hint a {
+  font-size: 18px;
+}
