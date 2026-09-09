@@ -9298,3 +9298,29 @@ failure_category       : test_quality / haiku_output_correction
 human_verified         : 0
 task_classification    : IMPLEMENT — Tier 3 (Haiku); ARCHITECT — Tier 1 (session coordination)
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-09 (S152 — continued, live registration test)
+**Goal:** Live registration test revealed two post-deploy bugs; fix and verify
+
+**Completed:**
+- **Blog review** — identified two gaps between blog copy and code: (1) "Pair Device page" step should not exist (one-event design); (2) "old accounts must re-register" contradicts BUG-119 flow. Corrected blog drafted.
+- **Live test — blank QR in settings.html** — `<canvas id="reg-qr">` cannot accept qrcodejs children. Fixed: changed to `<div id="reg-qr">`. Deployed to Pi + service restarted.
+- **Live test — critical error on /register/** — `page-register.php` line 18 used `get_template_directory()` (parent theme path) for `require_once`. File lives in child theme; `functions.php:218` already loads it via `get_stylesheet_directory()`. Duplicate bad require caused PHP fatal. Fixed: removed the bad require_once. Deployed to HostPapa.
+- **Live registration confirmed** — operator registered new account, received verification email, linked lab Pi via BUG-119 flow (logged-in + fresh code → auto-link → /my-account/?pi_link=linked).
+
+**Decisions:**
+- settings.html QR container must be `<div>` not `<canvas>` — qrcodejs appends a child canvas/img into the container div. This was not caught by T5 (which only checks token text display, not QR render).
+- `require_once` in page-register.php removed entirely — functions.php is the correct and only load point for inc/registration.php.
+- Two-step Pi linking (register then separately link) is exceptional recovery path only, not normal flow. Normal flow: register WITH rt= code in URL = one step, Pi linked at form submit.
+
+**Pending:**
+- Image build for v0.9.9.4.2 — next session
+- BUG-102–110 GitHub Issue sync — next session
+- T5 Playwright test should be extended to also verify QR canvas has children (currently only checks token text)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S152 continued) | Included in S152 total above | TBD |
