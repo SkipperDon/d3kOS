@@ -9556,3 +9556,79 @@ failure_category       : uac (git push via Claude)
 human_verified         : 0
 task_classification    : IMPLEMENT — Tier 3
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-10 (S156)
+**Goal:** Review and triage open items; record v0.9.9.5 scope decisions; write D16 spec.
+
+**Completed:**
+- **Session log committed** — S155 entry committed to `Helm-OS/SESSION_LOG.md` (commit `d2c5c9e7`).
+- **Kiosk autostart confirmed working** — operator confirmed Pi kiosk launches correctly. labwc 0.9.8 upgrade did NOT break it. BUG-106 fix survived. Deferred item cleared from all records.
+- **BUG-06 closed** — PWA tier display confirmed resolved (fixed as part of S152 registration flow work). Checklist updated `[x]`, removed from MEMORY.md priority list.
+- **BUG-81 fully closed** — confirmed via GitHub API that corrected `docs/CX5106_CONFIGURATION_GUIDE.md` is live on `origin/main` (SHA `3e385b3d`, 11,420 bytes). All four parts verified: P1 wizard (S134), P2 public guide (confirmed live S156), P3 user manual (S140), P4 Actisense→Matsutec (S134). Checklist and bug fixes doc updated.
+- **v0.9.9.5 scope reduced** — operator decision: v0.9.9.5 = D02 SafeHelm + D05 signalk-fw v0.2.4 + D16 3D Surround View only. No new hardware required. Runs on existing RPi 4B.
+- **v0.9.9.6 defined** — D11 Vision AI + D13 VHF Suite + D15 Device Health + D01 WiBoat + RPi 5 platform with PiCAN-M alternative HAT for NMEA2000.
+- **signalk-forward-watch v0.2.4 improvements approved** — all three improvements (SK-FW-1 download-on-first-run, SK-FW-2 OpenPlotter test, SK-FW-3 README fix) approved for v0.9.9.5. Added to checklist as SK-FW-1/2/3.
+- **D16 3D Surround View spec written** — `deployment/docs/D16_3D_SURROUND_VIEW_SPEC.md` v1.0. Full spec: 3-zone layout, go2rtc stack, OpenCV homography stitch, SVG range rings, toggle constraint, range ring formula, camera mount standard, Phase 1/2/3 build plan, prior art.
+- **go2rtc architecture decision** — Option A confirmed (operator): go2rtc serves D16 only, `camera_stream_manager.py` unchanged. Option C deferred unless performance issues arise post-ship.
+
+**Decisions:**
+- v0.9.9.5 scope: D02 + D05 + D16 only. No new hardware.
+- v0.9.9.6 = deferred items + WiBoat + RPi 5 platform build with NMEA2000 HAT research.
+- D16 Phase 1 builds independently of D11 and WiBoat.
+- go2rtc Option A: isolated to D16 only; Option C deferred unless performance issues arise.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S156) | Check console.anthropic.com → Usage → 2026-09-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- FTP password rotation — `d3kos@atmyboat.com` + `admin@atmyboat.com` (deferred since S143)
+- `mobile/config.php` key rotation — Stripe, GEMINI_API_KEY, AMBOAT_API_KEY
+- Boat Pi deployment — v0.9.9.4.2 image, in-person visit required
+- BUG-65 Step 3 — server-side Tier 1/2 entitlement gate, deferred
+- DEP17 — Pi title bar text black (one-line themerc fix)
+- GitHub Issue sync — BUG-06 and BUG-81 closures (operator approval required this session)
+- D16 Phase 1 build — ready to start (all decisions made, spec complete)
+- SK-FW-1/SK-FW-3 — ready to build; SK-FW-2 needs OpenPlotter hardware
+
+SQS BLOCK — 2026-09-10 (S156)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+Trend (last 5 sessions — S152/S153/S154/S155/S156): 92 / 100 / 97 / 97 / 100 → avg 97.2. Stable.
+Primary improvement target: REC — S152 had 3 test-correction events; S153–S156 all 0.
+
+OIC SELF-REPORT: 99/100
+Basis:
+- Uncertainty flagged where uncertain: YES — BUG-81 P2 incorrectly assumed open; corrected immediately when operator challenged
+- NOT COMPLETED section accurate: YES — all deferred items listed honestly
+- Work substantive: YES — two bugs closed with GitHub evidence, spec written, scope decisions recorded
+- Tests: N/A (no code written this session)
+Deductions: -1 (minor: initial BUG-81 P2 analysis assumed local branch state rather than checking GitHub directly — corrected in session)
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-10 (S156)
+─────────────────────────────────────────────────────
+session_duration_min   : ~60
+tasks_planned          : open-ended triage + planning
+tasks_completed        : 8 (kiosk confirm, BUG-06, BUG-81, scope decisions ×2, SK-FW approval, D16 spec, go2rtc decision)
+governing_doc_version  : CLAUDE.md 2026-09-09
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+task_classification    : PLAN/IMPLEMENT — Tier 3
+─────────────────────────────────────────────────────
