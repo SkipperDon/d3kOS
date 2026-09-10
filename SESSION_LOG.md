@@ -9387,3 +9387,74 @@ task_classification    : IMPLEMENT — Tier 3 (GitHub CLI)
 ─────────────────────────────────────────────────────
 
 ---
+
+## Session 2026-09-09 (S154)
+**Goal:** Complete v0.9.9.4.2 release — image creation, archive.org upload, GitHub Release, GitHub README, website download page, website manual page, user manual Section 17.4 rewrite.
+
+**Completed:**
+- **Section 17.4 manual rewrite** — `D3KOS_USER_MANUAL_v0992.md` on public-release branch. Replaced 4-step device-gated flow (including obsolete pair-device step) with new one-event atomic registration. Logged-in auto-link documented (BUG-119). Registration optional with Skip. Document version 2.4.1 → 2.5.0, manual version v0.9.9.3 → v0.9.9.4.2 in footer.
+- **Image script fixed** — `create-d3kos-image-v09942.ps1` had wrong `$diskSize = 31914983424` (32 GB). Corrected to `125671833600` (128 GB SD card). Disk number 1 confirmed correct (Realtek PCIE Card Reader).
+- **v0.9.9.4.2 image created** — `d3kos-v0.9.9.4.2-20260909.img.gz`, 16.5 GB compressed, SHA256 `3826f19e50db23d689d11669488073eca947ef428a71db26ab9d96529985aca3`
+- **Archive.org upload** — `https://archive.org/details/d3kos-v0.9.9.4.2-20260909.img`
+- **GitHub Release v0.9.9.4.2** — created at `github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4.2`
+- **README updated** — public-release branch; v0.9.9.2 → v0.9.9.4.2, new archive.org URLs, SHA256 added, 128 GB SD card requirement added
+- **Old manual files removed** — `D3KOS_USER_MANUAL_v0922.md` and `D3KOS_USER_MANUAL_v2.3.0.html` deleted from public-release branch
+- **atmyboat.com download page** — `page-download.php` updated: version v0.9.9.4 → v0.9.9.4.2, new archive.org download URL, 3 new registration-flow release notes. FTP'd to HostPapa.
+- **atmyboat.com manual page** — `page-manual.php` updated: version v0.9.9.4 → v0.9.9.4.2, section count 16 → 17, Section 17 (AtMyBoat.com Account & Registration) added to TOC, PDF and HTML links updated to v2.5.0. FTP'd to HostPapa.
+- **PDF generated** — `D3KOS_USER_MANUAL_v2.5.0.pdf` (121 KB) generated via pandoc + weasyprint from updated markdown. FTP'd to `wp-content/themes/twentytwenty-child/downloads/`.
+- **public-release pushed** to `github.com/SkipperDon/d3kOS/tree/public-release` (operator ran push via `! git` — Claude cannot push)
+- **Memory notes** — deferred items logged to `manual_pdf_update_s153.md` and indexed in MEMORY.md
+
+**Decisions:**
+- 128 GB SD card is now the minimum for v0.9.9.4.2 image (was 32 GB) — image is 16.5 GB compressed / ~117 GB uncompressed
+- PDF generated via weasyprint (no LaTeX required) — functional but unstyled; professional styling deferred
+- Manual document header block (top of MD file) not updated this session — still shows v0.9.9.3 / 2.4.0 / April 13 2026; deferred to S155
+- GitHub main branch README still shows v0.9.9.4.1 — requires GitHub API update, not git push; deferred to S155
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S154) | Check console.anthropic.com → Usage → 2026-09-09 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- Manual document header: `# d3kOS User Manual / ## Version 0.9.9.3 / Document version: 2.4.0 — April 13, 2026` — needs v0.9.9.4.2 / 2.5.0 / September 9, 2026
+- PDF professional styling — CSS template with page headers/footers, brand fonts
+- GitHub main branch README — update v0.9.9.4.1 → v0.9.9.4.2 via GitHub API (cannot push local main)
+- BUG-102/103/104 — GitHub issues #105/#106/#107 still OPEN; checklist says FIXED lab S148 — close with `fixed-lab` next session (operator approval required)
+- Kiosk autostart broken by labwc 0.9.8 upgrade — deferred, needs SSH access to restored Pi
+
+SQS BLOCK — 2026-09-09 (S154)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 1 (image script had wrong disk size — caught before data loss)
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+
+OIC SELF-REPORT: 94/100
+Basis:
+- Uncertainty flagged where uncertain: YES — disk size error caught and corrected; PDF styling limitation stated
+- NOT COMPLETED section accurate: YES — 4 deferred items listed with honest reasons
+- Work substantive: YES — full release published across 4 platforms
+- Tests: N/A (no code written)
+Deductions: -6 (manual header missed in Section 17.4 edit; PDF unstyled; main branch README not updated)
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-09 (S154)
+─────────────────────────────────────────────────────
+session_duration_min   : ~240
+tasks_planned          : 6 (manual S17.4, image creation, GitHub release, README, download page, manual page)
+tasks_completed        : 6 (all primary tasks complete; 3 quality items deferred)
+governing_doc_version  : CLAUDE.md 2026-09-09
+attributed_rec         : 1 (wrong $diskSize in PS1 script — image would have been corrupt)
+failure_category       : config_error
+human_verified         : 0
+task_classification    : IMPLEMENT — Tier 3
+─────────────────────────────────────────────────────
+
+---

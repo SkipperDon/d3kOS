@@ -670,6 +670,61 @@ d3kOS uses semantic versioning with the following convention:
 
 ---
 
+## [0.9.9.4.2] - 2026-09-09
+
+### Summary
+
+**v0.9.9.4.2 — One-Step Registration**
+
+Registration and Pi pairing are now a single atomic event. Creating an AtMyBoat.com account links your Pi automatically at the moment you submit the form — no separate Pair Device step. Existing account holders are auto-linked by scanning the QR code in Settings while logged in. Registration is optional; d3kOS runs fully at Tier 0 without an account. Includes stability improvements and 24-hour soak validation.
+
+**Image:** `d3kos-v0.9.9.4.2-20260909.img.gz` — 16,896 MB (16.5 GB)
+**SHA256:** `3826f19e50db23d689d11669488073eca947ef428a71db26ab9d96529985aca3`
+**Archive.org:** [d3kos-v0.9.9.4.2-20260909.img](https://archive.org/download/d3kos-v0.9.9.4.2-20260909.img/d3kos-v0.9.9.4.2-20260909.img.gz)
+
+---
+
+### Fixed
+
+- **BUG-111 — Registration creates unlinked accounts** — Submitting the registration form created a T0 account but did not link the Pi. Fixed: token redemption now creates account AND links Pi in a single atomic operation.
+
+- **BUG-112 — Setup wizard QR encodes unusable deep link** — Wizard Step 6 QR encoded `d3kos://register` (an unresolvable deep link). Fixed: QR now encodes the correct `atmyboat.com/register/?rt=TOKEN` URL with 5-state UI (loading / code / pending-approval / offline / error).
+
+- **BUG-113 — QR library CDN-only** — qrcodejs was loaded from CDN; QR code never rendered offline. Fixed: `qrcode.min.js` vendored locally.
+
+- **BUG-114 — Registration token carries R- prefix that validators reject** — Token displayed as `R-XXXXXXX` but both client-side and server-side validators expected 7 characters without prefix. Fixed: `R-` stripped before display and validation.
+
+- **BUG-115 — PWA login has no registration link** — Mobile companion app login screen had no way to reach registration. Fixed: "Create one" link added.
+
+- **BUG-116 — Settings QR section missing** — Settings page had no AtMyBoat.com section or QR code display. Fixed: full AtMyBoat.com panel added to settings.html.
+
+- **BUG-117 — Token not consumed on use** — Registration token remained valid after successful use, allowing reuse. Fixed: token marked `used_at` on redemption.
+
+- **BUG-118 — amboat_reg_tokens table schema** — Token table missing `pi_id` and `device_token` columns needed for atomic link. Fixed: schema corrected.
+
+- **BUG-119 — Logged-in users not auto-linked** — Visiting the registration URL while already logged in showed the registration form again. Fixed: logged-in branch calls `atmyboat_link_pi_from_token()` and redirects to `/my-account/?pi_link=linked`.
+
+- **BUG-120 — Device approval email not sent** — Admin approval in wp-admin sent no notification to the device owner. Fixed: `wp_mail()` to contact_email on approval.
+
+- **BUG-121 — Skip registration option missing** — No way to dismiss the AtMyBoat.com section and proceed without registering. Fixed: Skip button added.
+
+- **BUG-102/103/104/105/106/107 — Pi stability** — Self-healing service runaway, journald volatile storage, first-boot wizard reliability. Previously fixed and validated in lab S148; included in v0.9.9.4.2 image.
+
+---
+
+### Image Details
+
+| Field | Value |
+|-------|-------|
+| Filename | `d3kos-v0.9.9.4.2-20260909.img.gz` |
+| Compressed size | ~16.5 GB |
+| Target hardware | Raspberry Pi 4B (4 GB or 8 GB RAM) |
+| microSD size | 128 GB minimum, Class 10 A2 |
+| SHA256 | `3826f19e50db23d689d11669488073eca947ef428a71db26ab9d96529985aca3` |
+| Flash tool | Raspberry Pi Imager → Use custom |
+
+---
+
 ## [0.9.9.4.1] - 2026-09-05
 
 ### Summary

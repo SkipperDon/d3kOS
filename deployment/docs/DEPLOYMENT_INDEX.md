@@ -1892,3 +1892,21 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `atmyboat-forum/wp-content/plugins/d3kos-device-auth/d3kos-device-auth.php` | **[UPDATED — S152]** BUG-120: approve handler sends `wp_mail()` to `contact_email` or `admin_email`. Deployed to HostPapa live. |
 | `tests/registration-flow.spec.ts` | **[NEW — S152]** T1–T8 Playwright regression guards for BUG-111/112/113/114/115/116/119/121. All 8 GREEN on lab Pi after fixes. |
 | `tests/test_register_token_guard.py` | **[NEW — S152]** T9–T14 pytest server-side guards for BUG-111/114/119. T11–T13 skipped (need staging DB). T9/T10/T14 require staging env (WAF blocks programmatic POST to production). |
+
+## S153/S154 — 2026-09-09 — v0.9.9.4.2 Release + Manual Section 17.4
+
+| File / Location | Change |
+|---|---|
+| `C:\d3kos-image\create-d3kos-image-v09942.ps1` | **[FIXED — S154]** `$diskSize` corrected from `31,914,983,424` (32 GB) to `125,671,833,600` (128 GB). Wrong value caused 296%+ progress and 88 GB partial read against the wrong baseline. Disk 1 (Realtek PCIe card reader) confirmed correct. |
+| `C:\d3kos-image\d3kos-v0.9.9.4.2-20260909.img.gz` | **[NEW — S154]** v0.9.9.4.2 SD card image. 16.5 GB compressed / ~117 GB uncompressed. SHA256: `3826f19e50db23d689d11669488073eca947ef428a71db26ab9d96529985aca3`. Source: 128 GB SD card in laptop PCIe reader (Disk 1). |
+| `C:\d3kos-image\d3kos-v0.9.9.4.2-20260909.img.gz.sha256` | **[NEW — S154]** SHA256 checksum file written by PowerShell script. |
+| `archive.org — d3kos-v0.9.9.4.2-20260909.img` | **[PUBLISHED — S154]** `https://archive.org/details/d3kos-v0.9.9.4.2-20260909.img`. Direct download: `https://archive.org/download/d3kos-v0.9.9.4.2-20260909.img/d3kos-v0.9.9.4.2-20260909.img.gz`. |
+| `GitHub SkipperDon/d3kOS — Release v0.9.9.4.2` | **[NEW — S154]** `https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.9.4.2`. Title: "d3kOS v0.9.9.4.2 — One-Step Registration". |
+| `Helm-OS/README.md` (public-release branch) | **[UPDATED — S154]** Version v0.9.9.2 → v0.9.9.4.2. Archive.org URLs updated. SHA256 added. SD card 32 GB → 128 GB requirement. Released date updated. |
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` (public-release branch) | **[UPDATED — S154]** Section 17.4 rewritten: title "Device-Gated Registration" removed; one-event atomic registration flow; logged-in auto-link (BUG-119); registration optional with Skip; pair-device step eliminated. Footer: v0.9.9.3 → v0.9.9.4.2, doc version 2.4.1 → 2.5.0. ⚠ Document header block (top of file) still says v0.9.9.3 / 2.4.0 / April 13 2026 — deferred to S155. |
+| `deployment/docs/D3KOS_USER_MANUAL_v0922.md` (public-release branch) | **[DELETED — S154]** Stale v0.9.2.2 manual removed from GitHub. |
+| `deployment/docs/D3KOS_USER_MANUAL_v2.3.0.html` (public-release branch) | **[DELETED — S154]** Stale HTML version removed from GitHub. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/page-download.php` | **[UPDATED — S154]** Version v0.9.9.4 → v0.9.9.4.2. Archive.org download URL updated. 3 new release notes (one-step registration, auto-link, optional registration). Deployed to HostPapa live. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/page-manual.php` | **[UPDATED — S154]** Version v0.9.9.4 → v0.9.9.4.2. Section count 16 → 17. Section 17 (AtMyBoat.com Account & Registration) added to TOC. PDF/HTML links updated v2.3.0 → v2.5.0. Deployed to HostPapa live. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/downloads/D3KOS_USER_MANUAL_v2.5.0.pdf` | **[NEW — S154]** Generated via pandoc + weasyprint from updated markdown. 121 KB. Deployed to HostPapa live. ⚠ Plain default styling — professional CSS styling deferred to S155. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/downloads/D3KOS_USER_MANUAL_v2.5.0.html` | **[NEW — S154]** Standalone HTML generated via pandoc from updated markdown. Deployed to HostPapa live. |
