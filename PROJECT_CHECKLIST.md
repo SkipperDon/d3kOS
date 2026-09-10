@@ -489,7 +489,7 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 |---|------|--------|
 | AAO-6 | Initialize LLM-Wiki for Helm-OS | `[ ]` Awaiting Don instruction — say "initialize the wiki" to activate |
 | AAO-7 | Update `aao-methodology-repo/SPECIFICATION.md` to formally add Section 23 — Three-Tier Agentic Model / Adaptive Governance Specification Principle | Claude | `[✓]` Done S81 — 10 subsections, commit 728a166, pushed to GitHub. |
-| BUG-06 | PWA tier still shows T1 | `[!]` Operator action: (1) Ctrl+Shift+R hard refresh, (2) log out → log in as admin@atmyboat.com (T3), (3) check localStorage `amboat_tier`. Cannot diagnose further without operator confirmation. |
+| BUG-06 | PWA tier still shows T1 | `[x]` **RESOLVED S156 2026-09-10 — operator confirmed addressed. Likely fixed as part of registration/tier flow rework in S152 (BUG-111–119).** |
 | SQS | SQS calculation block in CLAUDE.md session-close | `[ ]` Already running correctly — confirm and close |
 | v0.9.4.1 | Blocked on Phase 4 live push for public availability. Code complete on staging. | `[ ]` |
 | v0.9.9 | Security audit gates v1.0 full launch — see SA4-SA7 above | `[ ]` |
