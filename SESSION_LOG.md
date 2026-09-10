@@ -9458,3 +9458,28 @@ task_classification    : IMPLEMENT — Tier 3
 ─────────────────────────────────────────────────────
 
 ---
+
+## Session 2026-09-09 (S154 — Addendum)
+**Goal:** Complete the three items deferred at S154 close.
+
+**Completed:**
+- **Manual document header fixed** — `D3KOS_USER_MANUAL_v0992.md` top block: `Version 0.9.9.3 / 2.4.0 / April 13, 2026` → `Version 0.9.9.4.2 / 2.5.0 / September 9, 2026`. Committed to public-release (`16228939`), pushed.
+- **PDF regenerated** — `D3KOS_USER_MANUAL_v2.5.0.pdf` rebuilt from corrected markdown, re-uploaded to HostPapa. Header now reads correctly.
+- **GitHub main branch README updated** — via GitHub API (commit `696dcb0b`). Badge, download table, archive.org URLs, SHA256, version string all updated v0.9.9.4.1 → v0.9.9.4.2. No local push required.
+- **v0.9.9.4.2 release fully consistent** — all surfaces match: GitHub main README, GitHub public-release README, GitHub Release tag, archive.org, HostPapa download page, HostPapa manual page, PDF v2.5.0.
+
+**Pending:**
+- PDF professional styling (CSS template with page headers/footers, brand fonts) — still plain pandoc default, deferred to S155
+- Kiosk autostart broken by labwc 0.9.8 — deferred, needs SSH to restored Pi
+- BUG-102/103/104 GitHub issues close — deferred, needs operator approval
+
+SQS BLOCK — 2026-09-09 (S154 Addendum)
+─────────────────────────────────────────────────────
+SCR  : 100% | SGCR : 100% | REC : 0 | UAC : 0
+─────────────────────────────────────────────────────
+
+OIC SELF-REPORT: 98/100
+Deductions: -2 (PDF styling still plain default — noted and deferred)
+─────────────────────────────────────────────────────
+
+---
