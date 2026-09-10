@@ -1,9 +1,9 @@
 # d3kOS User Manual
-## Version 0.9.9.3
+## Version 0.9.9.4.2
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.4.0 — April 13, 2026
+**Document version:** 2.5.0 — September 9, 2026
 
 ---
 
