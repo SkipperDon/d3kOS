@@ -5,7 +5,7 @@
 If your boat doesn't have radar, a weather station, or a $5,000 multifunction display — d3kOS was built for you.
 Flash an SD card, plug it into a Raspberry Pi 4 at your helm, and you have a fully working marine intelligence centre running on a touchscreen. No programming required after installation.
 
-**Version**: v0.9.9.2 | **Released**: April 12, 2026 | **Platform**: Raspberry Pi 4B
+**Version**: v0.9.9.4.2 | **Released**: September 9, 2026 | **Platform**: Raspberry Pi 4B
 
 ---
 
@@ -25,21 +25,22 @@ The setup wizard walks you through the rest.
 
 ## Download
 
-**Latest Release: v0.9.9.2**
+**Latest Release: v0.9.9.4.2**
 
 | | |
 |---|---|
-| **Archive.org page** | https://archive.org/details/d3kos_v0.9.9.2 |
-| **Direct download** | https://archive.org/download/d3kos_v0.9.9.2/d3kos_v0.9.9.2.img |
-| **Format** | `.img` file — flash directly with Raspberry Pi Imager |
-| **Size** | ~50 GB uncompressed |
-| **Hardware** | Raspberry Pi 4B, 4 GB RAM minimum |
+| **Archive.org page** | https://archive.org/details/d3kos-v0.9.9.4.2-20260909.img |
+| **Direct download** | https://archive.org/download/d3kos-v0.9.9.4.2-20260909.img/d3kos-v0.9.9.4.2-20260909.img.gz |
+| **Format** | `.img.gz` — decompress with 7-Zip or flash directly with Raspberry Pi Imager (Use Custom) |
+| **Size** | 16.5 GB compressed / ~117 GB uncompressed |
+| **SHA256** | `3826f19e50db23d689d11669488073eca947ef428a71db26ab9d96529985aca3` |
+| **Hardware** | Raspberry Pi 4B, 4 GB RAM minimum, 128 GB microSD card |
 
 **How to flash:**
 
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/) — free, works on Windows, Mac, Linux
 2. Open Imager → **Choose OS** → **Use custom** → select the `.img` file
-3. **Choose Storage** → select your SD card (32 GB or larger recommended)
+3. **Choose Storage** → select your SD card (128 GB or larger required)
 4. Click **Write** — done
 
 Power on your Pi, wait 60 seconds, and the d3kOS setup wizard will launch automatically on your screen.
