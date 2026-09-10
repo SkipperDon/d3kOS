@@ -97,9 +97,8 @@ go2rtc overlaps with the existing `camera_stream_manager.py` at port 8084. Optio
 | B | go2rtc runs alongside `camera_stream_manager.py` on the same streams | Both services pull RTSP sub-streams. Reolink cameras support multiple concurrent sub-stream clients — low risk, but doubles stream connections. |
 | C | go2rtc replaces `camera_stream_manager.py` entirely | Eliminates duplication. High risk — Marine Vision, fish detection, and camera grid all depend on `camera_stream_manager.py`. Requires full regression test. |
 
-**Recommendation: Option A** — lowest risk, no impact on existing features, aligns with d3kOS pattern of isolated services.
-
-**Operator decision required before build.**
+**Decision: Option A — confirmed S156 2026-09-10 (operator).**
+go2rtc runs as an isolated service for D16 only. `camera_stream_manager.py` is unchanged. If performance issues arise after v0.9.9.5 ships, revisit Option C as a standalone housekeeping task.
 
 ---
 
