@@ -1,0 +1,273 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   d3kOS User Manual — Print CSS
+   Version: 2.5.0
+   Generated for: WeasyPrint 70+
+   Palette: d3kOS brand (--g #003A00, --g-mid #005000, --ink #040C04,
+                          --panel #F0F4F0, --bg #FFFFFF)
+   Font rule: 18px minimum on ALL text (AODA)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Page setup ──────────────────────────────────────────────────────────────── */
+
+@page {
+    size: A4;
+    margin: 3cm 2.5cm 3.5cm 2.5cm;
+
+    @top-left {
+        content: "d3kOS User Manual";
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #003A00;
+        border-bottom: 2px solid #003A00;
+        padding-bottom: 5px;
+        vertical-align: bottom;
+    }
+
+    @top-right {
+        content: "v0.9.9.4.2";
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 18px;
+        color: #555;
+        border-bottom: 2px solid #003A00;
+        padding-bottom: 5px;
+        vertical-align: bottom;
+    }
+
+    @bottom-center {
+        content: counter(page) " / " counter(pages);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 18px;
+        color: #666;
+        border-top: 1px solid #c0c8c0;
+        padding-top: 5px;
+        vertical-align: top;
+    }
+}
+
+/* No running header on cover page */
+@page :first {
+    margin-top: 5cm;
+
+    @top-left  { content: none; border: none; }
+    @top-right { content: none; border: none; }
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────────── */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    line-height: 1.75;
+    color: #040C04;
+    background: #FFFFFF;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Cover / title block ─────────────────────────────────────────────────────── */
+
+/* First h1 and h2 form the cover — large and centred */
+body > h1:first-of-type {
+    font-size: 42px;
+    color: #003A00;
+    border-bottom: 4px solid #003A00;
+    text-align: center;
+    margin-bottom: 0.2em;
+    padding-bottom: 12px;
+}
+
+body > h2:first-of-type {
+    font-size: 28px;
+    color: #005000;
+    border-bottom: none;
+    text-align: center;
+    margin-top: 0;
+    font-weight: 400;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────────────────── */
+
+h1 {
+    font-size: 32px;
+    color: #003A00;
+    border-bottom: 3px solid #003A00;
+    padding-bottom: 6px;
+    margin-top: 1.8em;
+    margin-bottom: 0.5em;
+    page-break-before: always;
+    page-break-after: avoid;
+}
+
+/* First h1 is the cover — don't force a page break before it */
+body > h1:first-of-type {
+    page-break-before: avoid;
+    margin-top: 0;
+}
+
+h2 {
+    font-size: 26px;
+    color: #003A00;
+    border-bottom: 1px solid #005000;
+    padding-bottom: 4px;
+    margin-top: 1.8em;
+    margin-bottom: 0.4em;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-size: 22px;
+    color: #005000;
+    margin-top: 1.4em;
+    margin-bottom: 0.3em;
+    page-break-after: avoid;
+}
+
+h4 {
+    font-size: 20px;
+    color: #005000;
+    margin-top: 1.2em;
+    margin-bottom: 0.2em;
+    font-style: italic;
+    page-break-after: avoid;
+}
+
+/* ── Paragraphs ──────────────────────────────────────────────────────────────── */
+
+p {
+    font-size: 18px;
+    margin: 0.5em 0 0.8em 0;
+    orphans: 3;
+    widows: 3;
+}
+
+/* ── Lists ───────────────────────────────────────────────────────────────────── */
+
+ul, ol {
+    font-size: 18px;
+    margin: 0.4em 0 0.8em 0;
+    padding-left: 2.2em;
+    line-height: 1.75;
+}
+
+li {
+    margin-bottom: 5px;
+}
+
+li > ul, li > ol {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────────── */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 18px;
+    margin: 1em 0 1.4em 0;
+    page-break-inside: avoid;
+}
+
+thead th {
+    background: #003A00;
+    color: #FFFFFF;
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 700;
+    border-bottom: 2px solid #001F00;
+}
+
+tbody td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #d0d8d0;
+    vertical-align: top;
+    font-size: 18px;
+}
+
+tbody tr:nth-child(even) td {
+    background: #F0F4F0;
+}
+
+tbody tr:last-child td {
+    border-bottom: 2px solid #003A00;
+}
+
+/* ── Code ────────────────────────────────────────────────────────────────────── */
+
+code {
+    font-family: 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
+    font-size: 18px;
+    background: #F0F4F0;
+    color: #003A00;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+pre {
+    background: #F0F4F0;
+    border-left: 5px solid #003A00;
+    padding: 14px 18px;
+    font-size: 18px;
+    line-height: 1.5;
+    margin: 0.8em 0 1.2em 0;
+    page-break-inside: avoid;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    color: #040C04;
+}
+
+/* ── Blockquotes / callout boxes ─────────────────────────────────────────────── */
+
+blockquote {
+    border-left: 5px solid #005000;
+    background: #F0F4F0;
+    margin: 1em 0;
+    padding: 10px 18px;
+    font-size: 18px;
+    color: #040C04;
+}
+
+blockquote p {
+    margin: 0.3em 0;
+}
+
+/* ── Horizontal rule ─────────────────────────────────────────────────────────── */
+
+hr {
+    border: none;
+    border-top: 1px solid #c0c8c0;
+    margin: 1.8em 0;
+}
+
+/* ── Links ───────────────────────────────────────────────────────────────────── */
+
+a {
+    color: #005000;
+    text-decoration: underline;
+}
+
+/* ── Strong / em ─────────────────────────────────────────────────────────────── */
+
+strong {
+    font-weight: 700;
+    color: #003A00;
+}
+
+/* ── Table of contents spacing ───────────────────────────────────────────────── */
+
+/* TOC follows cover — no forced page break before it */
+body > h2:nth-of-type(1) {
+    page-break-before: avoid;
+}
