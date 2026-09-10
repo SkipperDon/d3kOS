@@ -1,5 +1,5 @@
 # v0.9.9.5 — Research & Discussion Backlog
-**Version:** 1.2 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-05 S147 — build classification added | **Status:** DISCUSSION / PRE-APPROVAL
+**Version:** 1.3 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-10 S156 — v0.9.9.5 scope reduced; v0.9.9.6 defined | **Status:** DISCUSSION / PRE-APPROVAL
 **Owner:** Donald Moskaluk — AtMyBoat.com / d3kOS
 
 > **Purpose:** Captures every idea, research topic, and architectural discussion that has been
@@ -12,43 +12,51 @@
 
 ---
 
-## Build Classification (decided S147 2026-09-05)
+## Build Classification (updated S156 2026-09-10)
 
-Items in this backlog are organized into two distinct builds:
+### ✅ SCOPE DECISION — S156 2026-09-10 (operator)
+- **v0.9.9.5 scope reduced** to three items: D02, D05, D16 only. No new hardware required.
+- **D11, D13, D15 deferred to v0.9.9.6.**
+- **D01 WiBoat (Microware Spatial Awareness) moved to v0.9.9.6.**
+- **v0.9.9.6 will target RPi 5** as the platform — with a PiCAN-M alternative HAT for NMEA2000 so RPi 5 users have full engine data functionality. PiCAN-M HAT compatibility with RPi 5 is uncertain; research and hardware selection is part of v0.9.9.6 scope.
 
-### d3kOS Build — v0.9.9.5
-Runs on the existing d3kOS Pi (RPi 4B). Integrates into d3kOS services, dashboard, and voice system. Includes bug corrections carried forward from v0.9.9.4.
+---
+
+### d3kOS Build — v0.9.9.5 (REDUCED SCOPE — decided S156)
+Runs on the existing d3kOS Pi (RPi 4B). No new hardware required.
 
 | Item | Description |
 |------|-------------|
 | D02 SafeHelm | Python collision avoidance service :8095, COLREGs engine, voice + AvNav integration |
 | D05 signalk-forward-watch v0.2.4 | Three small improvements to existing Signal K plugin |
-| D11 360° Marine Vision AI | USB AI accelerator + MQTT service reading existing 4 cameras |
-| D13 VHF Communication Suite | USB audio adapter, audio replay, Signal K alerts, STT, translation |
-| D15 Universal Device Health | Real device health indicators in Settings (builds on BUG-50 fix) |
-| D16 3D Surround Situational Awareness | Tesla-style 3D helm view in Chromium; existing 4 cameras; single switch vs. AvNav; D11 AI overlays in Phase 2 |
+| D16 3D Surround Situational Awareness | Tesla-style 3D helm view in Chromium; existing 4 cameras; no new hardware |
 | Bug corrections | All open v0.9.9.4 bugs carried forward |
 
-**Hardware to procure for v0.9.9.5:**
-- USB C-Media audio adapter (D13) — ~$15 CAD
-- USB AI accelerator — NCS2 / Hailo-8L / Google Coral (D11) — decision pending
+**Hardware to procure for v0.9.9.5:** None — all three items run on existing hardware.
 
 ---
 
-### New Build — Microware Spatial Awareness
-Separate hardware. Dedicated RPi 5 with kernel 5.10 locked permanently. Cannot run on the d3kOS Pi due to the kernel lock requirement. Communicates with d3kOS via WebSocket :8766.
+### d3kOS Build — v0.9.9.6 (defined S156)
+Targets RPi 5 as the primary platform. Includes all items deferred from v0.9.9.5 plus WiBoat.
+**Key architectural decision for v0.9.9.6:** replace PiCAN-M with a RPi 5-compatible NMEA2000 HAT or adapter — so users with RPi 5 hardware have full engine data functionality. HAT selection is part of v0.9.9.6 research scope.
 
 | Item | Description |
 |------|-------------|
+| D11 360° Marine Vision AI | USB AI accelerator + MQTT service reading existing 4 cameras |
+| D13 VHF Communication Suite | USB audio adapter, audio replay, Signal K alerts, STT, translation |
+| D15 Universal Device Health | Real device health indicators in Settings (builds on BUG-50 fix) |
 | D01 WiBoat | WiFi CSI marine radar — RPi 5 + ALFA adapters + SP4T switch + UCA antennas + LoRa mesh |
+| RPi 5 platform | PiCAN-M alternative HAT/adapter for NMEA2000 on RPi 5 — research + selection TBD |
 
-**Hardware to procure for Microware Spatial Awareness:**
+**Hardware to procure for v0.9.9.6 (preliminary):**
 - RPi 5 board — ~$110 CAD
+- RPi 5-compatible NMEA2000 HAT/adapter — TBD (research required)
+- USB C-Media audio adapter (D13) — ~$15 CAD
+- USB AI accelerator — NCS2 / Hailo-8L / Google Coral (D11) — decision pending
 - 2× ALFA AWUS036NH USB adapters — ~$100 CAD
 - SP4T RF switch (GPIO-controlled) — ~$45 CAD
 - 4× 12dBi omni antennas (UCA array) — ~$180 CAD
 - Heltec V3 LoRa module — ~$30 CAD
-- **Total — ~$465 CAD**
 
 ---
 
