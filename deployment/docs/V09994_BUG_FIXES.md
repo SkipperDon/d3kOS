@@ -6050,7 +6050,7 @@ wrongly, and the incorrect guide is already public on `main` and linked twice fr
   - **P4 FIXED:** Actisense→Matsutec in dropdown + ctxTitle; "(8 switches)"→"(7 switches)"; "Row 1"→"Block A".
   - **Step 0 DONE:** `doc/CX5106_CONFIGURATION_GUIDE.md` corrected (local-only); superseded original preserved.
   - **AODA FIXED:** `font-size: 18px` added to `.dip-block`, `.dip-switches`, `.dip-sw`, `.dip-why`, `.dip-install`, `.dip-context` — T11 GREEN.
-  - **P2 OPEN:** `docs/CX5106_CONFIGURATION_GUIDE.md` on `origin/main` — needs explicit operator APPROVED.
+  - **P2 FIXED:** `docs/CX5106_CONFIGURATION_GUIDE.md` on `origin/main` — corrected guide confirmed live on GitHub main (SHA 3e385b3d, 11420 bytes). Two-block model, correct 7+2 layout. Verified S156 2026-09-10.
   - **P3 FIXED S140 2026-09-01:** `doc/CX5106_USER_MANUAL.md` line 53 — corrected to two-block model (Block A 7 switches RPM ratio, Block B 2 switches); ASCII diagram updated to match.
 
 ### Symptom
