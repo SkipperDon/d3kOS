@@ -393,9 +393,9 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 | PM4 | Predictive maintenance ML models (5 targets) | `[ ]` Deferred — needs on-water training data |
 | PM7 | Predictive maintenance advanced automation | `[ ]` Deferred — T3/Phase 5 |
 | RAG | RAG re-ingest after each Pi deployment | `[ ]` Recurring — `cd /home/boatiq/rag-stack && .venv/bin/python3 helm_os_ingest.py --collection source` |
-| SK-FW | signalk-forward-watch: add download-on-first-run | `[ ]` |
-| SK-FW | signalk-forward-watch: test on OpenPlotter | `[ ]` |
-| SK-FW | signalk-forward-watch: fix README (Step 2 model download now unnecessary) | `[ ]` |
+| SK-FW-1 | signalk-forward-watch v0.2.4: add download-on-first-run | `[ ]` **APPROVED S156 2026-09-10 — v0.9.9.5 scope** | Auto-download YOLOv8n ONNX on first enable. Model hosting URL TBD (GitHub Releases / Hugging Face / npm asset). |
+| SK-FW-2 | signalk-forward-watch v0.2.4: test on OpenPlotter | `[ ]` **APPROVED S156 2026-09-10 — v0.9.9.5 scope** | Run plugin on real OpenPlotter instance. Prerequisite for d3k-lite. Requires operator to have OpenPlotter available. |
+| SK-FW-3 | signalk-forward-watch v0.2.4: fix README (Step 2 model download now unnecessary) | `[ ]` **APPROVED S156 2026-09-10 — v0.9.9.5 scope** | Remove Step 2 from README — superseded by SK-FW-1 download-on-first-run. |
 
 ---
 
@@ -568,7 +568,7 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 | D02 | SafeHelm — Collision Avoidance | `DESIGN COMPLETE` | 7-layer architecture + COLREGs framework done. Blocked on community validation (forum article not yet posted — SH-1). |
 | D03 | Sail-O-Vision Collaboration | `RESEARCH` | nmea_client.py assessed as reusable in SafeHelm. Dragon's Lair simulator concept filed. Awaiting Don decision on outreach. |
 | D04 | D3K-Lite — OpenPlotter Addon | `AWAITING COMMUNITY` | Feasibility (1,261 lines) + forum article done. Blocked on community validation (article not yet posted — DL-1). |
-| D05 | signalk-forward-watch v0.2.4 | `PARTIAL DESIGN` | 3 small improvements discussed: download-on-first-run, OpenPlotter test, README fix. |
+| D05 | signalk-forward-watch v0.2.4 | `APPROVED` | 3 improvements approved S156 for v0.9.9.5 build. See SK-FW-1/2/3. |
 | D06 | AAO Data Collection System | `AWAITING OPERATOR` | Architecture v1.1 done. Blocked on DC-02 (UpdraftPlus backup) and DC-03 (email confirm) — Don's actions. |
 | D07 | Mobile App PWA — Remaining | `PARTIAL DESIGN` | Strategy decided. Fix My Pi, Find My Boat, OTA, fleet map not yet built. Blocked on on-boat validation first. |
 | D08 | pypilot Integration | `DEFERRED` | SafeHelm Phase 4 only. Hard gate: one full sailing season in advisory mode (WB-14) must pass first. |

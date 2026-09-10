@@ -223,7 +223,7 @@ Targets RPi 5 as the primary platform. Includes all items deferred from v0.9.9.5
 
 ## 5. signalk-forward-watch — Open Items Post-v0.2.3
 
-**Status:** `[PARTIAL DESIGN]` — v0.2.3 live on npm and Pi. Three small improvements discussed.
+**Status:** `[APPROVED]` — v0.2.3 live on npm and Pi. All three improvements approved S156 2026-09-10 for v0.9.9.5. Tracked as SK-FW-1/2/3 in PROJECT_CHECKLIST.md.
 
 **What was discussed:**
 - Download-on-first-run: instead of requiring manual model download, plugin downloads YOLOv8n ONNX on first enable
