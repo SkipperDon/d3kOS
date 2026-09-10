@@ -682,7 +682,7 @@ displayed AIS as healthy. The owner had no way to know.
 
 ## 16. 3D Surround Situational Awareness — Tesla-Style Helm View
 
-**Status:** `[PARTIAL DESIGN]` — display mode decided S147 2026-09-05. Architecture defined. No code written.
+**Status:** `[APPROVED]` — spec written S156 2026-09-10. See `deployment/docs/D16_3D_SURROUND_VIEW_SPEC.md`. One open decision before build: go2rtc vs. camera_stream_manager.py (§5 of spec). No code written.
 **Build group:** d3kOS Build — v0.9.9.5 (runs in Chromium on existing Pi, no new hardware)
 
 **What was discussed (S147 2026-09-05):**
