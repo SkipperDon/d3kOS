@@ -9632,3 +9632,91 @@ failure_category       : none
 human_verified         : 0
 task_classification    : PLAN/IMPLEMENT — Tier 3
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-10 (S157)
+**Goal:** Open-ended discussion — hardware capability detection architecture; write requirements; add to v0.9.9.5 checklist.
+
+**Completed:**
+- **Hardware Capability Detection architecture designed (D17)** — Full architectural discussion covering Pi model detection (`/proc/device-tree/model`), HAT detection (device-tree EEPROM), accelerator detection (Hailo-8L `/dev/hailo0`, Coral USB via `lsusb` USB IDs), dynamic hot-plug via udev rules, 15-minute scheduled fallback probe, and webhook notification to dashboard Flask service. Architecture is dynamic (udev for USB, boot probe for HAT/model — HATs not hot-plug by design).
+- **HCD-REQ-001 v1.0 written** — `deployment/docs/HARDWARE_CAPABILITY_DETECTION_REQUIREMENTS.md`. 97 requirements across 9 sections: platform detection, HAT detection, accelerator detection, dynamic detection (hot-plug + scheduled + on-demand), hardware profile schema, capabilities manifest schema, feature gate library, Setup Description (4-section hardware-aware summary), 5 default configuration scenarios, non-functional requirements. Appendix A (known HAT classes) and Appendix B (known accelerator device IDs) included as living lists.
+- **D17 added to PROJECT_CHECKLIST PART 20** — Status: APPROVED. References HCD-REQ-001 v1.0.
+- **HCD-1 through HCD-5 build tasks added to Pi Open Items** — HCD-1: probe script + JSON; HCD-2: udev rules; HCD-3: feature gate library + capabilities manifest; HCD-4: dashboard Hardware page + webhook + toast notifications; HCD-5: first-boot wizard Setup Description final screen.
+- **PROJECT_CHECKLIST bumped to v3.81.**
+
+**Key architectural decisions:**
+- Dynamic detection: udev rules for USB accelerators (real-time, ≤5 s); boot probe for HAT/Pi model; 15-min scheduled fallback for belt-and-suspenders; on-demand via `d3kos-probe` CLI and dashboard button.
+- Single source of truth: `config/hardware-profile.json` (atomic write, `probe_version` increment on every change).
+- Feature gate: shared Python library `d3kos_feature_gate.py` — `feature_available()` / `feature_reason()` / `feature_upgrade_path()`. In-memory cache invalidated on `probe_version` change.
+- Setup Description: 4-section plain-language summary — platform, enabled features (✓), locked features (✗ + reason), upgrade path. "HOW TO UNLOCK" section omitted when all features are enabled (Scenario C/D full stack).
+- Operator-override flag in manifest allows force-enable for diagnostics.
+- 5 scenarios documented: A (Pi 4B baseline), B (Pi 5 no accelerator), C (Pi 5 + Hailo full stack), D (Pi 5 + Coral USB), E (Pi 4 + Coral — demonstrates multi-condition gate failure with plain-language reason).
+
+**Ollama gate example confirmed:**
+- Pi 4B + no accelerator → Ollama locked ("requires Pi 5 + accelerator")
+- Pi 5 + Hailo-8L or Coral USB → Ollama auto-enabled ("offline capable")
+- Pi 4 + Coral USB → Ollama still locked ("accelerator detected but Pi 4 CPU insufficient") — multi-condition gate
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S157) | Check console.anthropic.com → Usage → 2026-09-10 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending (carried forward):**
+- FTP password rotation — `d3kos@atmyboat.com` + `admin@atmyboat.com` (deferred since S143)
+- `mobile/config.php` key rotation — Stripe, GEMINI_API_KEY, AMBOAT_API_KEY
+- Boat Pi deployment — v0.9.9.4.2 image, in-person visit required
+- BUG-65 Step 3 — server-side Tier 1/2 entitlement gate, deferred
+- DEP17 — Pi title bar text black (one-line themerc fix)
+- GitHub Issue sync — BUG-06 + BUG-81 closures (operator approval required)
+- D16 Phase 1 build (ready to start — all decisions made, spec complete)
+- SK-FW-1 + SK-FW-3 — ready to build; SK-FW-2 needs hardware
+- HCD-1 through HCD-5 — ready to build (start with HCD-1)
+
+**Files changed this session:**
+- `deployment/docs/HARDWARE_CAPABILITY_DETECTION_REQUIREMENTS.md` — CREATED (HCD-REQ-001 v1.0, 97 requirements)
+- `Helm-OS/PROJECT_CHECKLIST.md` — UPDATED (D17 added, HCD-1–5 added, v3.81)
+
+**No Pi deployment this session — no Release Package Manifest required.**
+
+**No git push executed.**
+
+QUALITY METRICS — 2026-09-10 (S157)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+Trend (last 5 sessions — S153/S154/S155/S156/S157): 100 / 97 / 97 / 100 / 100 → avg 98.8. Improving.
+Primary target: REC — S152 had 3 events; S153–S157 all zero. Target met.
+
+OIC SELF-REPORT: 100/100
+Basis:
+- Uncertainty flagged where uncertain: YES — architecture discussion flagged tradeoffs explicitly before decisions made
+- NOT COMPLETED section accurate: YES — all deferred items honestly carried forward
+- Work substantive: YES — 97-requirement spec written, 5 build tasks added, checklist updated
+- Tests: N/A (no code written this session)
+Deductions: none
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-10 (S157)
+─────────────────────────────────────────────────────
+session_duration_min   : ~45
+tasks_planned          : open-ended discussion + requirements + checklist
+tasks_completed        : 3 (D17 architecture designed, HCD-REQ-001 written, checklist updated)
+governing_doc_version  : CLAUDE.md 2026-09-09
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+task_classification    : ARCHITECT/PLAN — Tier 1
+─────────────────────────────────────────────────────
