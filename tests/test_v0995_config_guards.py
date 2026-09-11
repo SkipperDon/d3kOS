@@ -205,3 +205,72 @@ def test_s6_first_enable_requires_an_unskippable_acknowledgement():
     assert 'accepted' in low or 'acknowledged' in low, (
         'acknowledgement is not recorded -- §13.3 requires the date accepted'
     )
+
+
+# --------------------------------------------------------------------------
+# S7-S11 -- D19 boot-time acceptance gate (§15). Added v1.8 on operator
+# instruction: an experimental-software dialogue on boot, with Shutdown or
+# Accept. Offering Shutdown is what makes it consent rather than an
+# announcement.
+# --------------------------------------------------------------------------
+
+DASH = 'opt/d3kos/services/dashboard'
+
+
+def test_s7_disclaimer_gate_blocks_the_dashboard_until_accepted():
+    """S7: the gate must actually gate. An unacceptable disclaimer is decoration."""
+    src = require_file(f'{DASH}/app.py', '§15.1')
+    low = src.lower()
+    assert 'disclaimer' in low, 'no disclaimer gate in the dashboard app (§15.1)'
+    assert 'accept' in low, 'no acceptance path'
+
+
+def test_s8_acceptance_is_recorded_with_a_text_hash():
+    """S8: §15.3 -- the terms must not be changeable without re-consent.
+
+    Recording a bare "accepted: true" would let the disclaimer text be edited
+    afterwards while the record still claimed consent to it. The hash is what
+    makes the record worth anything later.
+    """
+    src = require_file(f'{DASH}/app.py', '§15.3')
+    low = src.lower()
+    assert 'disclaimer-accepted.json' in low or 'disclaimer_accepted' in low, (
+        'acceptance is not persisted (§15.3)')
+    assert 'sha256' in low, (
+        'no disclaimer text hash -- the terms could be changed after acceptance '
+        'while the record still claims consent (§15.3)')
+    assert 'version' in low, 'acceptance does not record the d3kOS version'
+
+
+def test_s9_poweroff_endpoint_is_loopback_only():
+    """S9: §15.4 -- the dashboard is reachable from the boat Wi-Fi by design.
+
+    An unrestricted poweroff endpoint would let any guest aboard kill the helm
+    display.
+    """
+    src = require_file(f'{DASH}/app.py', '§15.4')
+    assert 'poweroff' in src.lower(), 'no shutdown endpoint (§15.4)'
+    assert '127.0.0.1' in src, (
+        'poweroff endpoint is not restricted to loopback -- anyone on the boat '
+        'network could shut down the helm (§15.4)')
+
+
+def test_s10_accept_button_requires_scrolling_to_the_end():
+    """S10: §15.5 -- a button reachable without passing the text is not consent."""
+    src = require_file(f'{DASH}/templates/disclaimer.html', '§15.5')
+    low = src.lower()
+    assert 'scroll' in low, 'ACCEPT is not gated on scrolling to the end (§15.5)'
+    assert 'disabled' in low, 'ACCEPT is not initially disabled (§15.5)'
+
+
+@pytest.mark.parametrize('claim,needle', [
+    ('experimental',      'experimental'),
+    ('not a replacement', 'not a replacement for the captain'),
+    ('at your own risk',  'own risk'),
+    ('vessel assumptions', 'assumes'),
+])
+def test_s11_disclaimer_page_carries_the_required_statements(claim, needle):
+    """S11: §15.2 -- the operator asked specifically for experimental and
+    not-a-replacement-for-the-captain, plus the §15.6 vessel assumptions."""
+    src = require_file(f'{DASH}/templates/disclaimer.html', '§15.2')
+    assert needle in src.lower(), f'disclaimer is missing its "{claim}" statement'

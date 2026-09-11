@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.7
+**Version:** 1.8
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.8 | 2026-09-11 | **§15 D19 boot-time acceptance gate** per operator instruction — experimental-software dialogue with **Shutdown or Accept**. Offering Shutdown is what makes it consent rather than an announcement. Renders §13.1 verbatim (single source); acceptance recorded with a **sha256 of the rendered text** so the terms cannot change without re-consent. ⚠ **CONCERN RAISED:** implemented as accept-once-per-version rather than every boot, because a modal blocking the dashboard on every boot would leave the captain with a dark helm on an underway reboot — this project has already shipped BUG-106 (kiosk never launched, blank screen) and two restart storms. Every-boot is one config flag away; **operator decision pending.** Shutdown and accept endpoints are loopback-only (the dashboard is reachable from boat Wi-Fi, so an open poweroff endpoint would let any guest kill the helm display). §15.6: the §14 **Rule 9 and Rule 12** gaps reduce to two questions nobody has ever asked the operator — own-vessel type and length class — so they go in the first-boot wizard as a real fix rather than a disclaimer dodge. Suite: 140 cases. |
 | 1.7 | 2026-09-11 | **Operator decision D02-7: option B now, option A in v0.9.9.6.** Gate 7b closed. Closing option B properly exposed a hole in v1.6: gating only Rule 15's stand-on branch left **Rule 13 — which is also in Section II — free to assert Stand-On on an unconfirmed target.** Both branches are now gated, and the unconfirmed variant returns Rule 19(d)(ii) guidance (*avoid altering towards a vessel abaft the beam*) rather than a bare refusal, since that holds under either rule set. Option A recorded as **D18** in PART 20 for v0.9.9.6. Rule 17(b) remains required for v0.9.9.5 (gate 7c) — option B keeps Stand-On reachable once confirmed, and any Stand-On verdict owes the captain the 17(b) escalation. Suite: 132 cases. |
 | 1.6 | 2026-09-11 | **§14 COLREGs Part B coverage enumeration — the structural finding.** Four reviews had each found another missing rule; the cause was that coverage was never enumerated. v1.0 implemented the three rules its heading named and treated that as the rule set. Part B is **sixteen** rules. Enumerating them found: ⛔ **Rule 11** — Rules 11–18 apply *only to vessels in sight of one another*, and radar/AIS does not count. SafeHelm cannot establish visual contact, and in restricted visibility **Rule 19 has no stand-on vessel at all**, so *"hold course and speed"* is the opposite of what applies. **Rule 19(d) is the rule that actually governs an AIS-only detector** and is implementable from the data we have. ⛔ **Rule 17(b)** — the stand-on vessel *must* act when collision cannot be avoided by the give-way vessel alone; we say "Monitor" and never escalate, which is the failure mode in much of the collision case law. ⚠ Gaps in Rules 8, 9, 10, 12, 16 (Rule 9 matters: the reference vessel is under 20 m, and Rule 13's preamble excepts Rules 9 and 10). Option **B** implemented now — Stand-On is never asserted without confirmed vessel type **and** confirmed visual contact; options A/B/C put to the operator as gate 7b. Suite: 128 cases. |
 | 1.5 | 2026-09-11 | **Third external review — one claim real and serious, one incorrect.** ⛔ **Rule 13(d) was not implemented:** an established overtaking encounter must persist *"until she is finally past and clear"*, and a bearing change cannot convert it into a crossing. v1.4 re-read geometry every tick with no memory, so a ferry overtaking us would flip the captain from stand-on to give-way the moment its bearing slid forward of 112.5° — mid-encounter, at the worst possible moment. Fixed with a `prior_rule` lock threaded through `advisory_tick`; the classifier stays pure. The reviewer cited this as 13(c); the IMO text puts it at **13(d)**. ⚠ **13(c) turned out to be a separate unimplemented requirement** — *"when in any doubt as to whether she is overtaking… assume that this is the case"* — now applied, and it **supersedes the v1.3 symmetric dead-band on the give-way side**, resolving the flapping deterministically instead of by suppression. 13(c) biases toward the give-way role only; it never manufactures a stand-on claim. ✅ **The review's second claim (a "blind starboard" gap) was incorrect** — the cited scenario returns `rule13_overtaking`, not `rule15_giveway`, and its proposed `no_situation` would have been wrong advice. Documented as C16 so it is not re-litigated. Suite: 124 cases across 8 files. |
@@ -1870,6 +1871,139 @@ system is advisory; they do not excuse shipping a rule boundary nobody qualified
 
 ---
 
+## 15. D19 — Boot-Time Acceptance Gate
+
+**Operator instruction, S160:** *"we need to create with this a version when booting up a
+dialogue box that says indicates this is experimental and not replacement for captain or
+something a removes the liability. they either can press shutdown which turns off the pi
+or accept that goes to the dashboard."*
+
+Offering **Shutdown** is the right instinct and it is what makes this legally meaningful:
+a dialogue whose only button is OK is not consent, it is an announcement. Being able to
+decline — and have declining actually do something — is what turns it into acceptance.
+
+Scope is the **whole system**, not SafeHelm. d3kOS already shows depth, engine, AIS and
+anchor watch, all of which a captain may lean on. A whole-product statement is more honest
+than gating D02 alone.
+
+### ⚠ CONCERN — raise before building, not after
+
+**A modal that blocks the dashboard on *every* boot is a net safety negative.**
+
+The Pi reboots underway: brownouts, power glitches, OTA updates, the self-healing units.
+If the dashboard sits behind a modal needing a human tap, the captain loses depth, engine
+and AIS display at precisely the moment they may be in a tight spot — and this project has
+already shipped a dark-helm bug (BUG-106: kiosk never launched, blank grey touchscreen) and
+two restart storms (BUG-102, BUG-105). A boot-blocking modal is a third way to end up
+staring at a screen with nothing useful on it.
+
+| | Option | Assessment |
+|---|---|---|
+| **1** | Modal on **every** boot | Literal reading of the instruction. Maximum consent evidence. **Creates the dark-helm hazard above.** |
+| **2** | Modal until accepted; then boot straight through. Re-prompt on version change, on disclaimer-text change, and after factory reset. | **Recommended.** Same consent record, same first-boot experience, no hazard. Acceptance is a vessel-level fact, not a per-power-cycle ritual. |
+
+**Implemented as option 2. Option 1 is one config flag away
+(`disclaimer.require_every_boot: true`). Which do you want?**
+
+### 15.1 Behaviour
+
+```
+boot → kiosk launches → GET /  →  acceptance recorded for this version?
+                                   ├─ no  → /disclaimer  (blocking)
+                                   │         ├─ [ ACCEPT AND CONTINUE ]  → wizard or dashboard
+                                   │         └─ [ SHUT DOWN ]            → systemctl poweroff
+                                   └─ yes → wizard (if pending) → dashboard
+```
+
+The gate sits **before** the first-boot wizard: consent precedes configuration.
+
+### 15.2 Text — single source, no second wording
+
+The dialogue renders **§13.1 verbatim**, with one addition at the top:
+
+> **This is experimental software.**
+>
+> d3kOS is an experimental system built by one person. It has not been certified, type
+> approved, or independently validated. It may be wrong, it may stop working without
+> warning, and it may be wrong in ways that look right.
+>
+> **It is not a replacement for the captain.** You remain the master of your vessel and
+> solely responsible for its safe navigation.
+
+then the full §13.1 body (not a look-out · AIS-only blindness · silence is not clearance ·
+not an ARPA · not certified · no warranty), then:
+
+> **It assumes the following about your vessel.** If any of these is wrong, the COLREGs
+> advice will be wrong: *{vessel_type}*, *{vessel_length_class}*. You can change these in
+> Settings.
+>
+> By continuing you accept that you use d3kOS at your own risk.
+
+**§13.1 is the only source.** Two disclaimers that drift apart is the BUG-15 pattern applied
+to legal text — and the version that matters in a dispute would be whichever one was worse.
+
+### 15.3 Recording acceptance
+
+`/opt/d3kos/config/disclaimer-accepted.json`, atomic write:
+
+```json
+{
+  "accepted": true,
+  "accepted_at": "2026-09-11T14:22:07Z",
+  "d3kos_version": "0.9.9.5",
+  "disclaimer_sha256": "<hash of the rendered text>",
+  "accepted_from": "127.0.0.1"
+}
+```
+
+`disclaimer_sha256` is load-bearing: **the terms cannot be changed without re-consent.**
+If the rendered text differs from the recorded hash, the gate re-arms. That protects the
+captain and it is the only way the record is worth anything later.
+
+### 15.4 Security — the shutdown endpoint is privileged
+
+The dashboard on `:3000` is reachable from the boat Wi-Fi by design (phones, tablets). A
+naive `POST /api/system/poweroff` would let **any guest aboard kill the helm display.**
+
+| Control | Rule |
+|---|---|
+| `POST /api/system/poweroff` | **`127.0.0.1` only.** Rejects any non-loopback peer with 403. Available only while acceptance is pending. |
+| `POST /api/system/accept-disclaimer` | `127.0.0.1` only — consent comes from the person at the helm, not from a phone in the cockpit. |
+| Remote browser, pre-acceptance | Renders the disclaimer read-only with *"Must be accepted at the helm."* No Shutdown button. |
+
+Shutdown runs `systemctl poweroff` (passwordless sudo already configured for `d3kos`).
+
+### 15.5 AODA and consent integrity
+
+- 18px minimum throughout, including the legal body. It will need scrolling on the 7"
+  touchscreen; that is correct, not a defect.
+- **ACCEPT stays disabled until the text has been scrolled to the end.** Consent integrity
+  and AODA agree here: a button you can hit without passing the text is not consent.
+- ACCEPT and SHUT DOWN both ≥48×48px, visually distinct, with ≥16px separation so a lurch
+  at the helm cannot turn Accept into Shutdown.
+- SHUT DOWN asks once more (*"Shut down now?"*) — it is the destructive branch.
+
+### 15.6 This is also the cheap fix for Rules 9 and 12
+
+Both open items from §14 reduce to two facts nobody has ever asked the operator for:
+
+| Rule | Unasked question | Consequence today |
+|---|---|---|
+| 12 | Is own vessel **power-driven or sailing**? | Assumed power-driven and never checked. A sailor gets Rule 13/14/15 advice when Rule 12 governs, and Rule 18(b) gives them a different hierarchy. |
+| 9 | Is own vessel **under or over 20 m**? | Under 20 m, Rule 9(b) means own vessel is frequently the one required *not to impede* a vessel confined to a channel. Never surfaced. |
+
+The first-boot wizard already collects vessel data into `config/vessel.env`. **Adding two
+questions resolves both** — a real fix rather than a disclaimer dodge, and the answers feed
+straight into the classifier as `own_class` and `own_length_class`.
+
+Recommend: add to the wizard in v0.9.9.5, consume in v0.9.9.6 alongside D18. The disclaimer
+states the current assumption meanwhile (§15.2), so the captain knows the boundary either
+way.
+
+Guarded by `test_v0995_config_guards.py::S7`–`S11`.
+
+---
+
 ## 14. COLREGs Part B — Rule Coverage Enumeration
 
 **Why this exists.** Four successive reviews each found another unimplemented rule: two
@@ -2065,5 +2199,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.7 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.8 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*
