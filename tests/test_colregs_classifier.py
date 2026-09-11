@@ -166,3 +166,49 @@ def test_c8c_every_classification_has_a_voice_phrase(cc):
                 'rule14_headon', 'rule15_giveway', 'rule15_standon'}
     missing = required - set(phrases)
     assert not missing, f'Classifications with no voice phrase: {sorted(missing)}'
+
+
+# --------------------------------------------------------------------------
+# C9-C10 -- overtaking SOG dead-band (§8.4). Added v1.3 after external review.
+#
+# The overtaking test was a strict `>` on two AIS-reported SOGs. Two vessels
+# running near-identical speed with noisy reports would flap between
+# rule13_being_overtaken and no_situation tick to tick, alternating voice
+# phrases for one unchanging situation. Same anti-flap intent as
+# SafeHelmAlertManager.CLEAR_HYSTERESIS, applied to speed instead of CPA.
+# --------------------------------------------------------------------------
+
+def test_c9_near_equal_speed_does_not_register_as_overtaking(cc):
+    """C9: a 0.2 kt differential is inside the dead-band -> no Rule 13."""
+    assert cc.OVERTAKE_SOG_DEADBAND_KTS == pytest.approx(0.5)
+    assert cc.classify(own_cog=90, own_sog=10.0,
+                       tgt_cog=90, tgt_sog=10.2,
+                       relative_bearing=180) == 'no_situation'
+
+
+def test_c9b_dead_band_is_symmetric(cc):
+    """C9b: the same dead-band applies when we are the faster vessel."""
+    assert cc.classify(own_cog=90, own_sog=10.2,
+                       tgt_cog=90, tgt_sog=10.0,
+                       relative_bearing=0) != 'rule13_overtaking'
+
+
+def test_c10_clear_speed_differential_still_registers(cc):
+    """C10: the dead-band must not suppress a real overtaking situation."""
+    assert cc.classify(own_cog=90, own_sog=10.0,
+                       tgt_cog=90, tgt_sog=11.0,
+                       relative_bearing=180) == 'rule13_being_overtaken'
+
+
+def test_c10b_no_flapping_across_a_noisy_sog_sequence(cc):
+    """C10b: jittering SOG around parity must yield one stable answer.
+
+    Simulates +/- 0.3 kt of AIS noise on a target running at our speed. Every
+    tick must classify identically, or the captain hears alternating phrases.
+    """
+    results = {
+        cc.classify(own_cog=90, own_sog=10.0, tgt_cog=90,
+                    tgt_sog=10.0 + jitter, relative_bearing=180)
+        for jitter in (-0.3, -0.15, 0.0, 0.15, 0.3)
+    }
+    assert len(results) == 1, f'classification flapped across SOG noise: {results}'

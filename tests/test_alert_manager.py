@@ -33,7 +33,7 @@ def make_mgr(clock, monkeypatch):
         am = require_module('alert_manager', SPEC)
         monkeypatch.setattr(am.time, 'time', clock)
         args = dict(target_id='123456789', cpa=300.0, tcpa=400.0, bearing=45.0,
-                    rule_id='rule15_giveway', tier='warning')
+                    rule_id='rule15_giveway', tier='warning', voice_mode='once')
         args.update(kw)
         return am, am.SafeHelmAlertManager(**args)
     return _make
@@ -137,10 +137,10 @@ def test_m4c_no_relative_motion_target_can_clear(make_mgr):
     assert mgr.state is am.AlertState.CLEARED
 
 
-def test_m5_per_target_gap_is_sixty_seconds(make_mgr, clock):
+def test_m5_critical_repeat_gap_is_sixty_seconds(make_mgr, clock):
     """M5: policy D02-4 -- per-target 60 s; the 15 s cap is global, not per-target."""
-    am, mgr = make_mgr()
-    assert mgr.PER_TARGET_MIN_GAP_S == pytest.approx(60.0)
+    am, mgr = make_mgr(tier='critical', voice_mode='repeat')
+    assert mgr.REPEAT_GAP_S == pytest.approx(60.0)
 
     mgr.mark_spoken()
     assert mgr.wants_audio() is False
@@ -202,7 +202,7 @@ def test_m7_ack_affects_only_its_own_target(make_mgr):
     """
     am, a = make_mgr(target_id='111111111')
     b = am.SafeHelmAlertManager('222222222', 280.0, 380.0, 315.0,
-                                'rule15_standon', 'warning')
+                                'rule15_standon', 'warning', 'once')
 
     a.execute_ui_acknowledgement()
 
@@ -215,7 +215,7 @@ def test_m7b_critical_on_b_survives_ack_on_a(make_mgr):
     """M7b: D02-5 -- a Critical on B while A is acknowledged still preempts."""
     am, a = make_mgr(target_id='111111111')
     b = am.SafeHelmAlertManager('222222222', 280.0, 380.0, 315.0,
-                                'rule15_standon', 'warning')
+                                'rule15_standon', 'warning', 'once')
 
     a.execute_ui_acknowledgement()
     b.update_metrics(cpa=140.0, tcpa=200.0, tier=CRITICAL)
@@ -229,3 +229,62 @@ def test_m8_degrade_fraction_matches_policy(make_mgr):
     """M8: the 20% figure is an operator requirement; drift is a policy change."""
     _, mgr = make_mgr()
     assert mgr.DEGRADE_FRACTION == pytest.approx(0.80)
+
+
+# --------------------------------------------------------------------------
+# M9-M11 -- voice-mode cadence (§8.2 / §8.5). Added v1.3 after external review.
+#
+# v1.2 declared voice: 'once' | 'repeat' in alert_gate.TIERS and NOTHING EVER
+# READ IT. wants_audio() applied one 60 s gap to every tier, so after the first
+# utterance a Critical was re-voiced on exactly the same cadence as a Warning.
+# The §8.2 table promised a distinction the code did not implement.
+# --------------------------------------------------------------------------
+
+def test_m9_warning_speaks_once_per_120s_episode(make_mgr, clock):
+    """M9: Tier 2 is one utterance per episode, not a 60 s loop."""
+    am, mgr = make_mgr(tier='warning', voice_mode='once')
+    assert mgr.ONCE_GAP_S == pytest.approx(120.0)
+
+    assert mgr.wants_audio() is True
+    mgr.mark_spoken()
+
+    clock.advance(65)
+    assert mgr.wants_audio() is False, (
+        'Warning re-voiced on the Critical 60 s cadence -- voice mode ignored')
+    clock.advance(54)                            # t = 119 s
+    assert mgr.wants_audio() is False
+    clock.advance(2)                             # t = 121 s
+    assert mgr.wants_audio() is True, 'unacknowledged Warning went permanently silent'
+
+
+def test_m10_critical_repeats_on_the_60s_cadence(make_mgr, clock):
+    """M10: Tier 3 is genuinely more insistent than Tier 2."""
+    am, mgr = make_mgr(tier='critical', voice_mode='repeat')
+    assert mgr.wants_audio() is True
+    mgr.mark_spoken()
+
+    clock.advance(61)
+    assert mgr.wants_audio() is True, 'Critical did not repeat at 60 s'
+
+
+def test_m11_critical_cadence_is_strictly_faster_than_warning(make_mgr):
+    """M11: the two tiers must not share a cadence. This is the v1.2 defect."""
+    _, warn = make_mgr(tier='warning', voice_mode='once')
+    _, crit = make_mgr(tier='critical', voice_mode='repeat')
+    assert crit.REPEAT_GAP_S < warn.ONCE_GAP_S, (
+        'Tier 3 must be more insistent than Tier 2 -- §8.2 promises '
+        '"repeated" vs "once"')
+
+
+def test_m11b_de_escalation_does_not_re_announce(make_mgr, clock):
+    """M11b: a Critical whose CPA opens back to Warning should not re-speak.
+
+    Going quieter is not news. Re-announcing on de-escalation would add noise
+    for a situation that is improving.
+    """
+    am, mgr = make_mgr(tier='critical', voice_mode='repeat')
+    mgr.mark_spoken()
+    clock.advance(5)
+    mgr.update_metrics(cpa=250.0, tcpa=400.0, tier=WARNING)
+    assert mgr.voice_mode == 'once'
+    assert mgr.wants_audio() is False, 'de-escalation re-announced'

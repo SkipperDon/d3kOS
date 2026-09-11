@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.2
+**Version:** 1.3
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.3 | 2026-09-11 | **Third-party AI review (S160) — five findings, four were real defects.** (1) §10.1 case C4 did not state its SOGs, leaving its expected output undetermined; every classifier row now states both. (2) **`voice: 'once' \| 'repeat'` was declared in `alert_gate.TIERS` and never read** — `wants_audio()` applied one 60 s gap to every tier, so Critical was no more insistent than Warning. Cadence now differentiated: Tier 2 once per 120 s episode, Tier 3 every 60 s. (3) The per-target ↔ global glue was never specified or tested; §8.8 now defines `advisory_tick()` and `test_advisory_loop.py` guards the winner-only `mark_spoken()` invariant. (4) Rule 13 used a strict SOG `>` with no hysteresis, so near-equal speeds could flap between classifications under AIS noise; added `OVERTAKE_SOG_DEADBAND_KTS = 0.5`. (5) Domain correctness is not establishable by AI review — added §12.3 and gate item 6 requiring human maritime sign-off on §8.4. Also fixes **BUG-124** in `tests/run-all.sh`, found while building the suite. Suite: 92 cases across 8 files. |
 | 1.2 | 2026-09-11 | **Operator rulings on all four v1.1 open decisions (§2).** ACK scope = per-target, with Critical from another target winning queue insertion immediately (D02-5). SH-11 marked SUPERSEDED in the checklist (applied). `content_hash` guard approved, `probe_version` stays per-spec (D17-1). Rule 14 phrase changed to advisory language — *"COLREGs require starboard alteration"* — because an imperative shifts liability from captain to software (D02-6). Adds §12 Defect Closure: no BUG entry; the v1.0 defects are closed by named guard tests that must exist and fail before implementation. |
 | 1.1 | 2026-09-11 | **Opus 5 review.** Fixed: Rule 14 inversion (fired on *same*-course vessels, never on head-on); Rule 13 role inversion (told captain to give way while stand-on); alert gating policy added (v1.0 had none — every AIS target would voice every 15 s); SK-FW-1 rewritten to actually bundle the model; Signal K port corrected to 8099 (BUG-46); feature-gate accelerator whitelist fail-open fixed; `ram_gb` truncation fixed (8 GB Pi read as 7); REQ-HCD-027 15-minute re-probe added; restart-storm patterns removed from both units; credential and bind-address exposure closed; CORS gap closed; D16 stitch deferred behind a CPU gate; unit-test specifications added; requirements traceability matrix added; Advisory Role section added per operator instruction. |
 
@@ -742,16 +743,37 @@ deliberate: they are the safety-critical parts and they must be unit-testable in
 > alarms. Alert fatigue is how an advisory system gets switched off — which, for a system
 > whose whole purpose is assisting the captain (§1), is the worst possible outcome.
 
-| Tier | CPA | TCPA | Range | Output |
-|---|---|---|---|---|
-| **1 — Advisory** | ≤ 500 m | 0 … 10 min | ≤ 2.0 NM (3704 m) | Widget entry only. **No voice.** |
-| **2 — Warning** | ≤ 300 m | 0 … 7 min | ≤ 1.5 NM (2778 m) | Widget flashes + **voice once** |
-| **3 — Critical** | ≤ 150 m | 0 … 4 min | ≤ 0.75 NM (1389 m) | Widget red/2 Hz + **voice repeated** |
+| Tier | CPA | TCPA | Range | `voice` | Output |
+|---|---|---|---|---|---|
+| **1 — Advisory** | ≤ 500 m | 0 … 10 min | ≤ 2.0 NM (3704 m) | `None` | Widget entry only. **Never speaks.** |
+| **2 — Warning** | ≤ 300 m | 0 … 7 min | ≤ 1.5 NM (2778 m) | `'once'` | Widget flashes + **one utterance per 120 s episode** |
+| **3 — Critical** | ≤ 150 m | 0 … 4 min | ≤ 0.75 NM (1389 m) | `'repeat'` | Widget red/2 Hz + **utterance every 60 s while unacknowledged**, immediate on escalation |
 
 - All three conditions must hold. Highest qualifying tier wins.
 - **Head-on (Rule 14): TCPA limits for Tiers 2 and 3 extended by +2 min** — closing speed
   is roughly doubled, so the same TCPA leaves less distance.
 - Targets that do not qualify are logged by `shadow_logger` and never voiced.
+
+> **CONCERN — v1.3, refines D02-3/D02-4. Raised, implemented, needs confirmation.**
+>
+> v1.2 declared `voice: 'once' | 'repeat'` in `alert_gate.TIERS` and **nothing ever read
+> it.** `wants_audio()` applied the same 60 s gap to Warning and Critical alike, so after
+> the first utterance a Critical was re-voiced on exactly the same cadence as a Warning.
+> The table promised a distinction the code did not implement. Caught by external review,
+> S160.
+>
+> Two operator statements had to be reconciled. D02-3 says Tier 2 fires an *"Initial"*
+> alert and Tier 3 a *"Repeated"* one. D02-4 says a target *"can only trigger a voice alert
+> once every 60 seconds under normal Warning conditions"* — which is a **rate cap**
+> (an upper bound), not an obligation to repeat.
+>
+> Implemented: Tier 2 speaks once per 120 s episode, Tier 3 every 60 s. That is a real 2:1
+> cadence difference, honours the ≥60 s cap, and leaves nothing permanently silent — an
+> unacknowledged Warning is re-voiced after 120 s rather than never again.
+>
+> **Options: (1) as implemented — Warning 120 s / Critical 60 s; (2) both at 60 s, and the
+> table's "once vs repeated" is softened to describe widget behaviour only; (3) some other
+> pair of cadences. Which do you prefer?** Guarded by `test_alert_manager.py::M9`–`M11`.
 
 > **Correction to the supplied policy.** As given, every tier read *"TCPA ≤ X"* with no
 > lower bound, so a target with TCPA = −3 min (already passed and opening) satisfies
@@ -884,6 +906,13 @@ HEADON_COURSE_MIN  = 165.0   # reciprocal within 15 deg
 HEADON_BEARING_TOL = 22.5    # target must be roughly ahead
 OVERTAKE_COURSE_MAX = 67.5   # overtaking implies broadly similar courses
 
+# Dead-band on the overtaking speed comparison. A strict `>` on two noisy AIS
+# SOG reports makes near-equal-speed vessels flap between rule13_being_overtaken
+# and no_situation tick to tick, which under ADV-4 would alternate voice phrases
+# for what is one unchanging situation. Same anti-flap intent as
+# SafeHelmAlertManager.CLEAR_HYSTERESIS, applied to speed instead of CPA.
+OVERTAKE_SOG_DEADBAND_KTS = 0.5
+
 
 def _course_diff(a, b):
     """Angle between two headings, 0..180. 0 = same direction, 180 = reciprocal."""
@@ -910,10 +939,12 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing):
 
     # --- Rule 13 first: it overrides 14 and 15 (Rule 13(a) "notwithstanding") ---
     if cdiff < OVERTAKE_COURSE_MAX:
-        if ABAFT_STBD < rb < ABAFT_PORT and tgt_sog > own_sog:
+        if (ABAFT_STBD < rb < ABAFT_PORT
+                and tgt_sog - own_sog > OVERTAKE_SOG_DEADBAND_KTS):
             return 'rule13_being_overtaken'          # they overtake us -> we stand on
         rb_me = _relative_bearing_of_me_from_target(own_cog, tgt_cog, rb)
-        if ABAFT_STBD < rb_me < ABAFT_PORT and own_sog > tgt_sog:
+        if (ABAFT_STBD < rb_me < ABAFT_PORT
+                and own_sog - tgt_sog > OVERTAKE_SOG_DEADBAND_KTS):
             return 'rule13_overtaking'               # we overtake them -> we give way
 
     # --- Rule 14: reciprocal courses AND target roughly ahead ---
@@ -1041,21 +1072,29 @@ class SafeHelmAlertManager:
          'cpa > 500 and tcpa < 0' which could never be satisfied (see above)
     """
 
-    PER_TARGET_MIN_GAP_S = 60.0
-    SNOOZE_TIMEOUT_S     = 120.0
-    DEGRADE_FRACTION     = 0.80
-    CLEAR_HYSTERESIS     = 3
+    REPEAT_GAP_S     = 60.0     # Tier 3 cadence (D02-4 per-target cap)
+    ONCE_GAP_S       = 120.0    # Tier 2 episode length
+    SNOOZE_TIMEOUT_S = 120.0
+    DEGRADE_FRACTION = 0.80
+    CLEAR_HYSTERESIS = 3
 
-    def __init__(self, target_id, cpa, tcpa, bearing, rule_id, tier):
+    def __init__(self, target_id, cpa, tcpa, bearing, rule_id, tier, voice_mode):
         self.target_id = target_id
         self.cpa, self.tcpa, self.bearing = cpa, tcpa, bearing
         self.rule_id, self.tier = rule_id, tier
+        self.voice_mode = voice_mode            # None | 'once' | 'repeat'
         self.state = AlertState.ACTIVE_UNACKED
         self.ack_time = None
         self.cpa_at_ack = None
         self.last_audio_played = 0.0
         self._ungated_ticks = 0
         self._preempt = False
+        self._spoken_this_episode = False
+
+    def _arm(self):
+        """Start a new alert episode: eligible to speak again immediately."""
+        self.state = AlertState.ACTIVE_UNACKED
+        self._spoken_this_episode = False
 
     def update_metrics(self, cpa, tcpa, tier):
         """tier is alert_gate.classify_tier(...) or None."""
@@ -1070,19 +1109,22 @@ class SafeHelmAlertManager:
 
         escalated = tier['tier'] == 'critical' and self.tier != 'critical'
         self.tier = tier['tier']
+        self.voice_mode = tier['voice']
 
         if escalated:
             # D02-5: a fresh Critical wins queue insertion immediately, even if
             # another target is mid-acknowledgement. One-shot; cleared on speaking.
             self._preempt = True
-            self.last_audio_played = 0.0        # also bypasses the per-target cap
+            self.last_audio_played = 0.0
+            self._arm()
+            return
 
         if self.state is AlertState.ACKNOWLEDGED_MUTED:
             snoozed_out = time.time() - self.ack_time > self.SNOOZE_TIMEOUT_S
             degraded = (self.cpa_at_ack is not None
                         and self.cpa < self.cpa_at_ack * self.DEGRADE_FRACTION)
-            if snoozed_out or degraded or escalated:
-                self.state = AlertState.ACTIVE_UNACKED
+            if snoozed_out or degraded:
+                self._arm()
 
     def execute_ui_acknowledgement(self):
         """D02-5: clears ONLY this target's audio segment. Never touches another target."""
@@ -1092,22 +1134,105 @@ class SafeHelmAlertManager:
         self._preempt = False
 
     def wants_audio(self) -> bool:
-        """True if this target is eligible to speak. The global arbiter decides who does."""
+        """True if eligible to speak. The global arbiter decides who actually does.
+
+        Cadence is driven by the tier's voice mode (§8.2). v1.2 ignored it and
+        applied one 60 s gap to every tier, so Critical was no more insistent
+        than Warning.
+        """
         if self.state is not AlertState.ACTIVE_UNACKED:
             return False
-        if self.tier == 'advisory':
-            return False                        # Tier 1 is visual only (D02-3)
+        if self.voice_mode is None:
+            return False                        # Tier 1 Advisory is visual only
         if self._preempt:
-            return True                         # D02-5 preemption ignores the per-target cap
-        return time.time() - self.last_audio_played > self.PER_TARGET_MIN_GAP_S
+            return True                         # D02-5 preemption ignores the cap
+        if not self._spoken_this_episode:
+            return True                         # first utterance of this episode
+        gap = self.REPEAT_GAP_S if self.voice_mode == 'repeat' else self.ONCE_GAP_S
+        return time.time() - self.last_audio_played > gap
 
     def preempts(self) -> bool:
         return self._preempt
 
     def mark_spoken(self):
+        """Call ONLY on the arbiter's winning candidate — never on the losers.
+
+        Marking a loser resets its cadence timer without it having spoken, which
+        silences it for a full gap period. See §8.8 and test_advisory_loop.py::I1.
+        """
         self.last_audio_played = time.time()
         self._preempt = False                   # one-shot
+        self._spoken_this_episode = True
 ```
+
+### 8.8 Orchestration loop — the glue between per-target and global state
+
+**v1.2 omitted this entirely.** `SafeHelmAlertManager` and `VoiceArbiter` each track their
+own "have I just spoken" state, both need `mark_spoken()` called correctly, and no unit
+suite can catch a bug in the wiring between them. Caught by external review, S160.
+
+The invariant that matters: **`mark_spoken()` is called on the arbiter and on the winning
+manager only.** Calling it on the losing candidates resets their cadence timers without
+them having spoken, silencing each for a full gap period — a bug that would look like
+"quiet system" rather than an error.
+
+```python
+# safehelm.py
+def advisory_tick(own, targets, managers, arbiter, now_iso):
+    """One pass of the advisory loop. Returns the spoken candidate, or None.
+
+    `managers` is mutated: a dict {mmsi: SafeHelmAlertManager}. Entries appear
+    when a target first qualifies and are removed when the alert clears.
+    """
+    candidates = []
+
+    for tgt in targets:
+        cpa, tcpa, rng = cpa_engine.compute_cpa_tcpa(
+            own.lat, own.lon, own.sog, own.cog,
+            tgt.lat, tgt.lon, tgt.sog, tgt.cog)
+        rule = colregs_classifier.classify(own.cog, own.sog,
+                                           tgt.cog, tgt.sog, tgt.relative_bearing)
+        tier = alert_gate.classify_tier(
+            cpa, tcpa, rng, is_headon=rule in colregs_classifier.HEADON_RULES)
+
+        shadow_logger.record(now_iso, tgt.mmsi, cpa, tcpa, rng, rule, tier)
+
+        mgr = managers.get(tgt.mmsi)
+        if mgr is None:
+            if tier is None or rule == 'no_situation':
+                continue                       # never qualified; logged only
+            mgr = managers[tgt.mmsi] = alert_manager.SafeHelmAlertManager(
+                tgt.mmsi, cpa, tcpa, tgt.relative_bearing,
+                rule, tier['tier'], tier['voice'])
+        else:
+            mgr.rule_id = rule
+            mgr.bearing = tgt.relative_bearing
+            mgr.update_metrics(cpa, tcpa, tier)
+
+        if mgr.state is alert_manager.AlertState.CLEARED:
+            del managers[tgt.mmsi]
+            continue
+
+        if mgr.wants_audio():
+            candidates.append({
+                'target_id': tgt.mmsi,
+                'tier':      mgr.tier,
+                'tcpa_s':    mgr.tcpa,
+                'phrase':    colregs_classifier.VOICE_PHRASES[mgr.rule_id],
+                'preempt':   mgr.preempts(),
+            })
+
+    winner = arbiter.select(candidates)
+    if winner is None:
+        return None
+
+    voice_client.speak(winner['phrase'])
+    arbiter.mark_spoken()
+    managers[winner['target_id']].mark_spoken()    # the WINNER ONLY
+    return winner
+```
+
+Guarded by `tests/test_advisory_loop.py` (I1–I6).
 
 ### 8.6 Phase feature flag — SH-15
 
@@ -1251,15 +1376,26 @@ TDD, per the Master Standard: these are written and failing before the code.
 
 ### 10.1 `test_colregs_classifier.py` — catches both v1.0 safety defects
 
-| Case | Input | Expected | Catches |
-|---|---|---|---|
-| C1 | own 090/10kt, tgt 090/12kt, rb 180 | `rule13_being_overtaken` | v1.0 said give-way while stand-on |
-| C2 | own 090/12kt, tgt 090/8kt, rb 000 | `rule13_overtaking` | v1.0 said `rule15_giveway` |
-| C3 | own 090, tgt 270, rb 000 | `rule14_headon` | **v1.0 returned crossing** |
-| C4 | own 090, tgt 095, rb 045 | **not** `rule14_headon` | **v1.0 returned head-on for same-course vessels** |
-| C5 | own 000, tgt 270, rb 045 | `rule15_giveway` | starboard crossing |
-| C6 | own 000, tgt 090, rb 315 | `rule15_standon` | port crossing |
-| C7 | rb 113.0, equal SOG | `no_situation` | no Rule 13 without a speed differential |
+**Every row states both SOGs.** v1.2's table omitted them on C4, which left the expected
+output undetermined: at cdiff 5° that input enters the Rule 13 branch and `rb_me` = 220°
+falls inside the abaft-the-beam window, so the result depended entirely on the unstated
+speed comparison. The assertion held either way, but the row was not reproducible.
+Flagged by external review, S160.
+
+| Case | own COG/SOG | tgt COG/SOG | rel brg | Expected | Catches |
+|---|---|---|---|---|---|
+| C1 | 090 / 10.0 | 090 / 12.0 | 180 | `rule13_being_overtaken` | v1.0 said give-way while stand-on |
+| C2 | 090 / 12.0 | 090 / 8.0 | 000 | `rule13_overtaking` | v1.0 said `rule15_giveway` |
+| C3 | 090 / 10.0 | 270 / 10.0 | 000 | `rule14_headon` | **v1.0 returned crossing** |
+| C4 | 090 / 10.0 | 095 / 10.0 | 045 | `rule15_giveway`, **not** `rule14_headon` | **v1.0 returned head-on for same-course vessels** |
+| C5 | 000 / 10.0 | 270 / 10.0 | 045 | `rule15_giveway` | starboard crossing |
+| C6 | 000 / 10.0 | 090 / 10.0 | 315 | `rule15_standon` | port crossing |
+| C7 | 090 / 10.0 | 090 / 10.0 | 113 | `no_situation` | no Rule 13 without a speed differential |
+| C8–C8c | — | — | — | phrasing invariants | imperatives, safety claims, missing phrases |
+| C9 | 090 / 10.0 | 090 / 10.2 | 180 | `no_situation` | **SOG dead-band — anti-flap** |
+| C9b | 090 / 10.2 | 090 / 10.0 | 000 | **not** `rule13_overtaking` | dead-band is symmetric |
+| C10 | 090 / 10.0 | 090 / 11.0 | 180 | `rule13_being_overtaken` | dead-band must not mask real overtaking |
+| C10b | 090 / 10.0 | 090 / 10.0 ±0.3 | 180 | one stable answer across all 5 | **no alternating voice under AIS noise** |
 
 ### 10.2 `test_alert_gate.py`
 
@@ -1377,26 +1513,37 @@ closed; a defect with only a corrected document is not.
 
 | # | Condition | Status |
 |---|---|---|
-| 1 | Every test file in §10 exists and runs | ✅ **DONE S160** — 7 files, 86 cases |
-| 2 | Every case **fails** for the right reason — assertion failure, not import error | ✅ **DONE S160** — 86 failed, 0 errors |
+| 1 | Every test file in §10 exists and runs | ✅ **DONE S160** — 8 files, 92 cases |
+| 2 | Every case **fails** for the right reason — assertion failure, not import error | ✅ **DONE S160** — 92 failed, 0 errors |
 | 3 | Every case **passes** against a correct implementation | ✅ **DONE S160** — see §12.2 |
-| 4 | `./tests/run-all.sh` picks them up | ✅ **DONE S160** — matches its `tests/test_*.py` glob |
+| 4 | `./tests/run-all.sh` picks them up **and cannot report a non-collecting file as green** | ✅ **DONE S160** — BUG-124 fixed |
 | 5 | §9 traceability matrix completed for the remaining REQ-HCD IDs | ⬜ **OPEN** |
+| 6 | **Human maritime sign-off on the §8.4 rule boundaries** | ⬜ **OPEN — see §12.3** |
 
-Item 5 is the only remaining blocker. Items 1–4 are the "solution prior to implementing"
-the operator required, made checkable.
+Items 5 and 6 are the remaining blockers. Items 1–4 are the "solution prior to
+implementing" the operator required, made checkable.
 
-**Test files (86 cases, all red):**
+**Test files (92 cases, all red):**
 
 | File | Cases | Guards |
 |---|---|---|
-| `tests/test_colregs_classifier.py` | 10 | C1–C8c — both safety inversions, advisory-language rule |
+| `tests/test_colregs_classifier.py` | 14 | C1–C10b — both safety inversions, advisory language, SOG dead-band |
 | `tests/test_alert_gate.py` | 14 | G1–G8c — gating matrix, TCPA lower bound, head-on bonus |
 | `tests/test_cpa_engine.py` | 8 | P1–P5b — geometry, `inf`/negative TCPA, course convention |
-| `tests/test_alert_manager.py` | 16 | M1–M8 — `cpa_at_ack`, clear hysteresis, ACK scope, preemption |
+| `tests/test_alert_manager.py` | 20 | M1–M11b — `cpa_at_ack`, clear hysteresis, ACK scope, preemption, **voice cadence** |
 | `tests/test_voice_arbiter.py` | 8 | A1–A6 — rate caps, priority, D02-5 preemption |
+| `tests/test_advisory_loop.py` | 6 | I1–I6 — **the per-target ↔ global glue**, winner-only `mark_spoken` |
 | `tests/test_feature_gate.py` | 16 | F1–F8 — fail-open, RAM units, fail-closed, mtime reload |
 | `tests/test_v0995_config_guards.py` | 14 | S1–S3, U1–U5b — SK port, restart storms, binds, credentials, udev, timer |
+
+> **BUG-124, found while building this suite.** `run-all.sh` reported a pytest file that
+> collected **zero tests** as `✓ PASS` — the pytest arm inferred status by grepping the last
+> line for `failed|error`, never read pytest's exit code, and never populated `NOT_RUN`.
+> A rename or decorator typo in `test_colregs_classifier.py` would have silently removed
+> the guards on both COLREGs inversions. Fixed: status now routes on exit code, with 5
+> (nothing collected), 124 (timeout) and 2/3/4 (crash) all counted as cannot-execute.
+> `set -e` was deliberately **not** added — it would abort the loop on the first failing
+> suite, which is the BUG-51 subset problem and would make this very gate unverifiable.
 
 `tests/conftest.py` carries the harness. `require_module` must be called from a **test
 body**, never a fixture: pytest reports a fixture-time `pytest.fail()` as an ERROR, which
@@ -1434,7 +1581,64 @@ Neither would have been caught by review of the document alone.
 > advice to a captain, which §1 identifies as the worst outcome this system can produce.
 > A document correction does not prevent recurrence; a failing test does.
 
+### 12.3 Domain validation gate — what this document's review process cannot establish
+
+**This must be stated plainly, because the review history invites the wrong conclusion.**
+
+§8.4 has now been reviewed by three separate AI models: written by Sonnet 4.6, corrected by
+Opus 5, and independently checked by two further reviewers who traced C1–C7 and G1–G8 by
+hand. That process has genuine value and it found real defects — two safety-critical
+inversions, a fail-open gate, an unread `voice` field, an untested glue seam, an
+oscillation risk, and a false-green in the test runner itself.
+
+**None of it constitutes maritime domain validation.**
+
+What the AI review chain established:
+- The code is internally self-consistent.
+- The code matches its own test tables.
+- The implementation satisfies the operator's stated policies D02-3 … D02-6.
+
+What it did **not** and cannot establish:
+- That the **rule boundaries are correct COLREGs**. `OVERTAKE_COURSE_MAX = 67.5`,
+  `HEADON_BEARING_TOL = 22.5`, the 112.5°/247.5° sector edges and the fall-through to
+  `rule15_giveway` for shallow-angle converging courses are all judgment calls. Several
+  models agreeing on arithmetic is not a maritime opinion — it is the same arithmetic
+  checked repeatedly.
+- That the classification **generalises to real sea states and AIS noise** beyond the
+  cases the tables happen to cover. The C10b dead-band test models ±0.3 kt of jitter
+  because a reviewer thought to ask; nothing establishes that ±0.3 kt is representative.
+- That a specific known-awkward case is correctly handled: **near-parallel courses, target
+  close to dead ahead, no meaningful speed differential.** This currently returns
+  `rule15_giveway` because `rb ≤ 112.5`, although "two vessels in company, neither
+  overtaking nor meaningfully crossing" is not cleanly a Rule 15 situation. The §8.2 gate
+  suppresses the common form of this — matched course and speed gives `tcpa = inf`, which
+  the gate rejects — but a small speed differential produces a finite TCPA and can alert.
+
+**Gate item 6, therefore: a human with maritime credentials must review and bless the
+§8.4 rule boundaries before D02 ships.** Not as polish. §1 states that wrong right-of-way
+advice is the worst thing this system can produce, and §12's whole premise is that a
+mechanically-detectable defect gets a mechanical guard. Domain correctness is not
+mechanically detectable, so it needs the other kind of check.
+
+Suggested routes, cheapest first:
+
+1. **The existing forum thread.** SafeHelm was already posted to Navigation & Charts on
+   atmyboat.com as a concept gauge with six categories of open questions (S77). Post the
+   §8.4 decision table — the seven sector and threshold constants, in plain language, with
+   the worked C1–C10 cases — and ask holders of COLREGs tickets to mark any they disagree
+   with. Real boaters, zero cost, already an audience.
+2. **One paid review hour** from a licensed captain, RYA/MCA instructor, or marine
+   surveyor. The deliverable is narrow: sign or challenge seven constants and ten worked
+   cases. This is a cheap hour against the liability of shipping a wrong stand-on call.
+3. **Cross-check against a published reference implementation** of COLREGs CPA
+   classification, if one with a compatible licence can be found. Weaker than 1 or 2 —
+   it substitutes another implementer's judgment for a mariner's — but better than nothing.
+
+Until item 6 is signed off, the honest status of §8.4 is **"logically verified, not
+domain-validated."** The ADV-1 footer and ADV-2 announcement already tell the captain the
+system is advisory; they do not excuse shipping a rule boundary nobody qualified has read.
+
 ---
 
-*End of V09995-SOL-001 v1.2 — APPROVED for implementation, subject to §12.1.*
+*End of V09995-SOL-001 v1.3 — APPROVED for implementation, subject to §12.1 items 5 and 6.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*

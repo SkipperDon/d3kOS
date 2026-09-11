@@ -118,18 +118,42 @@ hdr "PYTEST  (tests/test_*.py)"
 PY_PASS=0; PY_FAIL=0
 for f in tests/test_*.py; do
   [ -e "$f" ] || continue
-  out=$(timeout 180 python3 -m pytest "$f" -q 2>&1)
+  out=$(timeout 180 python3 -m pytest "$f" -q 2>&1); rc=$?
   line=$(echo "$out" | tail -1)
   p=$(echo "$line" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo 0)
-  bad=$(echo "$line" | grep -cE 'failed|error' || true)
   PY_PASS=$((PY_PASS + p))
-  if [ "$bad" -gt 0 ]; then
-    printf '  %s✗%s %-38s %s\n' "$RED" "$RST" "$(basename "$f")" "$line"
-    echo "$out" | grep -E 'ModuleNotFoundError|AssertionError' | head -2 | sed 's/^/      /'
-    PY_FAIL=$((PY_FAIL+1)); FAILED=1; FAILURES+=("pytest: $(basename "$f")")
-  else
-    printf '  %s✓%s %-38s %s\n' "$GRN" "$RST" "$(basename "$f")" "$line"
-  fi
+
+  # BUG-124. Status comes from pytest's EXIT CODE, never from grepping prose.
+  # The old code matched 'failed|error' against the last line, so a file that
+  # collected nothing printed "no tests ran in 0.00s", matched neither, and was
+  # reported as a PASS with 0 tests. Exit code 5 was discarded and this arm
+  # never touched NOT_RUN -- so the header's promise ("a file that cannot run
+  # is not a pass") was enforced for playwright and node but never for python.
+  #
+  # pytest: 0 ok | 1 tests failed | 2 interrupted | 3 internal | 4 usage
+  #         | 5 NO TESTS COLLECTED.     timeout(1): 124 killed.
+  #
+  # Do NOT add `set -e` here. This loop must run every file and report one
+  # total; aborting on the first failure is the BUG-51 subset problem.
+  case "$rc" in
+    0)
+      printf '  %s✓%s %-38s %s\n' "$GRN" "$RST" "$(basename "$f")" "$line" ;;
+    1)
+      printf '  %s✗%s %-38s %s\n' "$RED" "$RST" "$(basename "$f")" "$line"
+      echo "$out" | grep -E 'ModuleNotFoundError|AssertionError|^Failed:|NOT YET IMPLEMENTED' \
+        | head -2 | sed 's/^/      /'
+      PY_FAIL=$((PY_FAIL+1)); FAILED=1; FAILURES+=("pytest: $(basename "$f")") ;;
+    5)
+      printf '  %s!%s %-38s COLLECTED 0 TESTS — CANNOT RUN\n' "$RED" "$RST" "$(basename "$f")"
+      NOT_RUN+=("$(basename "$f") (0 tests collected)"); FAILED=1 ;;
+    124)
+      printf '  %s!%s %-38s TIMED OUT after 180s — CANNOT RUN\n' "$RED" "$RST" "$(basename "$f")"
+      NOT_RUN+=("$(basename "$f") (timeout)"); FAILED=1 ;;
+    *)
+      printf '  %s!%s %-38s pytest exit %s — CANNOT RUN\n' "$RED" "$RST" "$(basename "$f")" "$rc"
+      echo "$out" | tail -3 | sed 's/^/      /'
+      NOT_RUN+=("$(basename "$f") (pytest exit $rc)"); FAILED=1 ;;
+  esac
 done
 
 # ───────────────────────────── TOTAL ─────────────────────────────

@@ -8397,3 +8397,88 @@ This runs once on first boot after flashing the image, before the wizard starts.
 ssh -i ~/.ssh/id_d3kos d3kos@192.168.1.237 "echo SSH OK"
 # Expected: SSH OK
 ```
+
+---
+
+## BUG-124 — `run-all.sh` reports a pytest file that collected zero tests as a pass
+
+**Status:** `[x]` FIXED S160 2026-09-11
+**Severity:** HIGH (test-harness integrity — invalidates a class of past green claims)
+**Platform:** Repo tooling — `Helm-OS/tests/run-all.sh`
+**Found:** S160, while building the v0.9.9.5 §12 red-phase guard suite. Not user-reported.
+
+### Symptom
+
+A Python test file that collects no tests is printed as `✓` and counted as a pass:
+
+```
+test_collects_nothing.py     rc=5   bad=0 p=0  REPORTED ✓ PASS
+     last-line: no tests ran in 0.00s
+```
+
+### Root cause
+
+The pytest arm inferred success by grepping the **last line** of output and never
+consulted pytest's exit code:
+
+```bash
+out=$(timeout 180 python3 -m pytest "$f" -q 2>&1)     # $? discarded
+line=$(echo "$out" | tail -1)
+bad=$(echo "$line" | grep -cE 'failed|error' || true)
+if [ "$bad" -gt 0 ]; then ... else  ✓ PASS
+```
+
+`no tests ran in 0.00s` matches neither `failed` nor `error`, so `bad=0` and the file
+took the pass branch with `p=0` passes counted. pytest exit code 5 ("no tests collected")
+was thrown away.
+
+Compounding it:
+
+```
+$ awk '/PYTEST/,/TOTAL/' tests/run-all.sh | grep -c NOT_RUN
+0
+```
+
+The pytest arm **never touched `NOT_RUN`**. The script's stated central guarantee — from
+its own header, *"it also fails if a known test file could not be EXECUTED. A file that
+cannot run is not a pass"* — was enforced for the Playwright and Node arms and never for
+Python. Same integrity class as BUG-51, which this runner was written to fix.
+
+### Consequence
+
+**Any past pytest green count is untrustworthy for a file that may not have collected.**
+A rename, a decorator typo, a `conftest.py` import error, or a `timeout` kill would all
+have presented as green. In the v0.9.9.5 case a silently non-collecting
+`test_colregs_classifier.py` would have removed the guards on both COLREGs safety
+inversions with no signal at all.
+
+### Fix
+
+Route on pytest's exit code instead of grepping prose:
+
+| rc | Meaning | Handling |
+|---|---|---|
+| 0 | all passed | `✓` |
+| 1 | tests failed | `✗`, `FAILED=1`, added to `FAILURES` |
+| 5 | **no tests collected** | `!` CANNOT RUN, added to `NOT_RUN`, `FAILED=1` |
+| 124 | `timeout` killed it | `!` CANNOT RUN, added to `NOT_RUN`, `FAILED=1` |
+| 2, 3, 4, other | interrupted / internal / usage error | `!` CANNOT RUN, added to `NOT_RUN`, `FAILED=1` |
+
+`set -e` was explicitly **not** added. An external review recommended `set -eo pipefail`;
+`pipefail` was already set at line 17, and `-e` would abort the loop on the first failing
+suite — reintroducing the exact "ran whatever subset happened to work" problem BUG-51
+exists to prevent, and making the §12.1 red-phase gate unverifiable.
+
+### Verification
+
+```
+test_collects_nothing.py  rc=5  -> ! COLLECTED 0 TESTS — CANNOT RUN   (was ✓ PASS)
+test_import_crash.py      rc=2  -> ! pytest exit 2 — CANNOT RUN       (was ✗ FAIL)
+7 v0.9.9.5 guard suites   rc=1  -> ✗ with correct failure counts       (unchanged)
+```
+
+### Prevention
+
+The cannot-execute rule now holds for all three harnesses. Any future harness arm added to
+`run-all.sh` must populate `NOT_RUN` on a cannot-execute condition, not infer status from
+output text.
