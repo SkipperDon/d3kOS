@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.4
+**Version:** 1.5
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.5 | 2026-09-11 | **Third external review — one claim real and serious, one incorrect.** ⛔ **Rule 13(d) was not implemented:** an established overtaking encounter must persist *"until she is finally past and clear"*, and a bearing change cannot convert it into a crossing. v1.4 re-read geometry every tick with no memory, so a ferry overtaking us would flip the captain from stand-on to give-way the moment its bearing slid forward of 112.5° — mid-encounter, at the worst possible moment. Fixed with a `prior_rule` lock threaded through `advisory_tick`; the classifier stays pure. The reviewer cited this as 13(c); the IMO text puts it at **13(d)**. ⚠ **13(c) turned out to be a separate unimplemented requirement** — *"when in any doubt as to whether she is overtaking… assume that this is the case"* — now applied, and it **supersedes the v1.3 symmetric dead-band on the give-way side**, resolving the flapping deterministically instead of by suppression. 13(c) biases toward the give-way role only; it never manufactures a stand-on claim. ✅ **The review's second claim (a "blind starboard" gap) was incorrect** — the cited scenario returns `rule13_overtaking`, not `rule15_giveway`, and its proposed `no_situation` would have been wrong advice. Documented as C16 so it is not re-litigated. Suite: 124 cases across 8 files. |
 | 1.4 | 2026-09-11 | **Gate item 6 withdrawn and replaced; disclaimer added; Rule 18 defect found.** The operator rejected v1.3's maritime sign-off gate as unobtainable — nobody endorses a rule boundary without reviewing the whole system, and anyone who does assumes liability. Correct, and a gate that cannot be satisfied is worse than none. Replaced by §12.3 items **6a** (every §8.4 constant traced to regulation text — three turn out to be Rule 13(b)/21(b)/21(c) verbatim, and exactly **four** values are tunable), **6b** (ask for challenge, never endorsement — nobody underwrites anything), **6c** (widget shows its reasoning so a wrong call is catchable at the helm). **§13 Disclaimer added** per operator instruction, with the non-ARPA and not-a-look-out wording deliberate, plus a flagged legal review. **⛔ While verifying the regulation text, found Rule 18(a) was not implemented at all** — Rules 13/14/15 govern two power-driven vessels, and v1.3 would have told a captain "You are Stand-On" against a sailing or fishing vessel that outranks them. Same severity class as the v1.0 inversions. Fixed, plus the safety rule that **Stand-On is never asserted for a target whose type AIS has not confirmed** (the common case — Class B carries no nav status). Suite: 117 cases across 8 files. |
 | 1.3 | 2026-09-11 | **Third-party AI review (S160) — five findings, four were real defects.** (1) §10.1 case C4 did not state its SOGs, leaving its expected output undetermined; every classifier row now states both. (2) **`voice: 'once' \| 'repeat'` was declared in `alert_gate.TIERS` and never read** — `wants_audio()` applied one 60 s gap to every tier, so Critical was no more insistent than Warning. Cadence now differentiated: Tier 2 once per 120 s episode, Tier 3 every 60 s. (3) The per-target ↔ global glue was never specified or tested; §8.8 now defines `advisory_tick()` and `test_advisory_loop.py` guards the winner-only `mark_spoken()` invariant. (4) Rule 13 used a strict SOG `>` with no hysteresis, so near-equal speeds could flap between classifications under AIS noise; added `OVERTAKE_SOG_DEADBAND_KTS = 0.5`. (5) Domain correctness is not establishable by AI review — added §12.3 and gate item 6 requiring human maritime sign-off on §8.4. Also fixes **BUG-124** in `tests/run-all.sh`, found while building the suite. Suite: 92 cases across 8 files. |
 | 1.2 | 2026-09-11 | **Operator rulings on all four v1.1 open decisions (§2).** ACK scope = per-target, with Critical from another target winning queue insertion immediately (D02-5). SH-11 marked SUPERSEDED in the checklist (applied). `content_hash` guard approved, `probe_version` stays per-spec (D17-1). Rule 14 phrase changed to advisory language — *"COLREGs require starboard alteration"* — because an imperative shifts liability from captain to software (D02-6). Adds §12 Defect Closure: no BUG entry; the v1.0 defects are closed by named guard tests that must exist and fail before implementation. |
@@ -943,6 +944,16 @@ OVERTAKE_COURSE_MAX = 67.5   # overtaking implies broadly similar courses
 # SafeHelmAlertManager.CLEAR_HYSTERESIS, applied to speed instead of CPA.
 OVERTAKE_SOG_DEADBAND_KTS = 0.5
 
+# Rule 13(d) lock. Once an overtaking situation exists it persists until the
+# vessels are finally past and clear; a bearing change cannot convert it into a
+# crossing. Both roles lock: the overtaking vessel stays give-way, and the
+# overtaken vessel stays stand-on.
+RULE13_LOCKED = frozenset({'rule13_being_overtaken', 'rule13_overtaking'})
+
+# "Finally past and clear" has no numeric definition in the regulations.
+# Tunable #5 -- see §12.3 item 6a.
+PAST_AND_CLEAR_RANGE_M = 500.0
+
 
 def _course_diff(a, b):
     """Angle between two headings, 0..180. 0 = same direction, 180 = reciprocal."""
@@ -967,7 +978,7 @@ RULE18_OUTRANKS_US = frozenset({
 
 
 def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing,
-             tgt_class=None):
+             tgt_class=None, prior_rule=None, is_past_and_clear=False):
     """Returns one of:
          'rule13_being_overtaken'      we are STAND-ON; Rule 13 overrides Rule 18
          'rule13_overtaking'           we are GIVE-WAY; keep clear
@@ -986,7 +997,17 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing,
     rb = relative_bearing % 360.0
     cdiff = _course_diff(own_cog, tgt_cog)
 
-    # --- Rule 13 first: it overrides 14 and 15 (Rule 13(a) "notwithstanding") ---
+    # --- Rule 13(d): an established overtaking situation PERSISTS. ---
+    # "Any subsequent alteration of the bearing between the two vessels shall
+    #  not make the overtaking vessel a crossing vessel within the meaning of
+    #  these Rules or relieve her of the duty of keeping clear of the
+    #  overtaken vessel until she is finally past and clear."
+    # Evaluated before the geometry, because the geometry is exactly what
+    # 13(d) forbids us from re-reading mid-encounter.
+    if prior_rule in RULE13_LOCKED and not is_past_and_clear:
+        return prior_rule
+
+    # --- Rule 13 next: it overrides 14, 15 and 18 (13(a) "notwithstanding") ---
     if cdiff < OVERTAKE_COURSE_MAX:
         if (ABAFT_STBD < rb < ABAFT_PORT
                 and tgt_sog - own_sog > OVERTAKE_SOG_DEADBAND_KTS):
@@ -995,6 +1016,17 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing,
         if (ABAFT_STBD < rb_me < ABAFT_PORT
                 and own_sog - tgt_sog > OVERTAKE_SOG_DEADBAND_KTS):
             return 'rule13_overtaking'               # we overtake them -> we give way
+        # --- Rule 13(c): "When a vessel is in any doubt as to whether she is
+        #     overtaking another, she shall assume that this is the case and
+        #     act accordingly." We are abaft the target's beam but the speed
+        #     differential is inside the AIS noise floor, so whether we are
+        #     gaining is genuinely unknown. Assume we are -> take the GIVE-WAY
+        #     role. Note the asymmetry: 13(c) biases toward the give-way role
+        #     only. It must never be used to manufacture a stand-on claim,
+        #     which is the verdict that tells the captain to hold course.
+        if (ABAFT_STBD < rb_me < ABAFT_PORT
+                and 0.0 < own_sog - tgt_sog <= OVERTAKE_SOG_DEADBAND_KTS):
+            return 'rule13_overtaking'
 
     # --- Rule 18(a): target outranks us. Sits after Rule 13 (whose preamble
     #     excepts it) and before Rules 14/15, which it overrides entirely. ---
@@ -1259,8 +1291,13 @@ def advisory_tick(own, targets, managers, arbiter, now_iso):
         cpa, tcpa, rng = cpa_engine.compute_cpa_tcpa(
             own.lat, own.lon, own.sog, own.cog,
             tgt.lat, tgt.lon, tgt.sog, tgt.cog)
-        rule = colregs_classifier.classify(own.cog, own.sog,
-                                           tgt.cog, tgt.sog, tgt.relative_bearing)
+        mgr_prior = managers.get(tgt.mmsi)
+        rule = colregs_classifier.classify(
+            own.cog, own.sog, tgt.cog, tgt.sog, tgt.relative_bearing,
+            tgt_class=tgt.vessel_class,
+            prior_rule=mgr_prior.rule_id if mgr_prior else None,
+            is_past_and_clear=(tcpa < 0.0
+                               and rng > colregs_classifier.PAST_AND_CLEAR_RANGE_M))
         tier = alert_gate.classify_tier(
             cpa, tcpa, rng, is_headon=rule in colregs_classifier.HEADON_RULES)
 
@@ -1277,6 +1314,10 @@ def advisory_tick(own, targets, managers, arbiter, now_iso):
             mgr.rule_id = rule
             mgr.bearing = tgt.relative_bearing
             mgr.update_metrics(cpa, tcpa, tier)
+
+        # Rule 13(d): thread the established rule back in so an overtaking
+        # encounter cannot be re-read as a crossing when the bearing moves.
+        # `managers` is where that state lives; the classifier stays pure.
 
         if mgr.state is alert_manager.AlertState.CLEARED:
             del managers[tgt.mmsi]
@@ -1890,5 +1931,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.4 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.5 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*

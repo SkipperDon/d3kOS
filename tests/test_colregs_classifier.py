@@ -192,11 +192,21 @@ def test_c9_near_equal_speed_does_not_register_as_overtaking(cc):
                        relative_bearing=180) == 'no_situation'
 
 
-def test_c9b_dead_band_is_symmetric(cc):
-    """C9b: the same dead-band applies when we are the faster vessel."""
+def test_c9b_dead_band_yields_to_rule_13c_on_the_give_way_side(cc):
+    """C9b: v1.3 asserted the dead-band was symmetric. Rule 13(c) supersedes that.
+
+    A sub-dead-band differential in OUR favour is exactly the doubt 13(c)
+    addresses: assume we are overtaking and take the give-way role. The
+    dead-band was an engineering anti-flap choice; 13(c) is regulation text,
+    and it resolves the same flapping deterministically rather than by
+    suppressing the classification.
+
+    The asymmetry is deliberate and is the point of C15b: 13(c) creates a duty,
+    never a privilege, so it applies on the give-way side only.
+    """
     assert cc.classify(own_cog=90, own_sog=10.2,
                        tgt_cog=90, tgt_sog=10.0,
-                       relative_bearing=0) != 'rule13_overtaking'
+                       relative_bearing=0) == 'rule13_overtaking'
 
 
 def test_c10_clear_speed_differential_still_registers(cc):
@@ -299,3 +309,121 @@ def test_c13c_tgt_class_defaults_to_unknown(cc):
     """
     assert cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
                        relative_bearing=315) == 'rule15_standon_unconfirmed'
+
+
+# --------------------------------------------------------------------------
+# C14-C16 -- Rule 13(c) and 13(d). Added v1.5 after a third external review.
+#
+# The review cited "Rule 13(c)" for the persistence requirement; the IMO text
+# (verified S160) puts it at 13(d), and 13(c) is a separate in-doubt rule that
+# was ALSO unimplemented. Both are now covered.
+#
+#   13(c) "When a vessel is in any doubt as to whether she is overtaking
+#          another, she shall assume that this is the case and act accordingly."
+#   13(d) "Any subsequent alteration of the bearing between the two vessels
+#          shall not make the overtaking vessel a crossing vessel within the
+#          meaning of these Rules or relieve her of the duty of keeping clear
+#          of the overtaken vessel until she is finally past and clear."
+# --------------------------------------------------------------------------
+
+def test_c14_overtaking_does_not_become_crossing_when_the_bearing_moves(cc):
+    """C14: THE RULE 13(d) GUARD. A ferry overtaking us stays an overtaking case.
+
+    A fast ferry comes up from our quarter (rb 120, abaft our beam) and we are
+    correctly STAND-ON. As it draws level and forward, its bearing slides to
+    rb 95 -- forward of the 112.5 deg boundary. Instantaneous geometry would
+    now read "target on our starboard bow" and hand us Rule 15 GIVE-WAY.
+
+    Rule 13(d) forbids exactly that. We remain stand-on until it is finally
+    past and clear. v1.4 evaluated geometry per tick with no memory and would
+    have flipped the captain's role mid-encounter -- the same class of error as
+    the v1.0 inversions, occurring at the worst possible moment.
+    """
+    established = cc.classify(own_cog=0, own_sog=10, tgt_cog=5, tgt_sog=18,
+                              relative_bearing=120, tgt_class='power-driven')
+    assert established == 'rule13_being_overtaken'
+
+    still = cc.classify(own_cog=0, own_sog=10, tgt_cog=5, tgt_sog=18,
+                        relative_bearing=95, tgt_class='power-driven',
+                        prior_rule=established, is_past_and_clear=False)
+    assert still == 'rule13_being_overtaken', (
+        'Rule 13(d) violated: a bearing change converted an overtaking '
+        'situation into a crossing and flipped the captain to give-way')
+
+
+def test_c14b_the_lock_also_holds_the_give_way_role(cc):
+    """C14b: 13(d) binds the overtaking vessel too -- it cannot shed give-way."""
+    still = cc.classify(own_cog=0, own_sog=18, tgt_cog=5, tgt_sog=10,
+                        relative_bearing=45, tgt_class='power-driven',
+                        prior_rule='rule13_overtaking', is_past_and_clear=False)
+    assert still == 'rule13_overtaking'
+
+
+def test_c14c_lock_releases_once_finally_past_and_clear(cc):
+    """C14c: 13(d) ends at "finally past and clear", not before and not never.
+
+    A lock that never released would pin a stale role for the rest of the
+    passage.
+    """
+    result = cc.classify(own_cog=0, own_sog=10, tgt_cog=180, tgt_sog=10,
+                         relative_bearing=0, tgt_class='power-driven',
+                         prior_rule='rule13_being_overtaken',
+                         is_past_and_clear=True)
+    assert result == 'rule14_headon', 'lock did not release when past and clear'
+
+
+def test_c14d_lock_does_not_apply_to_non_rule_13_priors(cc):
+    """C14d: only Rule 13 persists. A crossing situation is re-evaluated freely."""
+    result = cc.classify(own_cog=0, own_sog=10, tgt_cog=180, tgt_sog=10,
+                         relative_bearing=0, tgt_class='power-driven',
+                         prior_rule='rule15_giveway', is_past_and_clear=False)
+    assert result == 'rule14_headon'
+
+
+def test_c15_in_doubt_assumes_we_are_overtaking(cc):
+    """C15: Rule 13(c). Inside the SOG dead-band, assume we ARE overtaking.
+
+    We sit abaft the target's beam and are faster by 0.2 kt -- inside the AIS
+    noise floor, so whether we are really gaining is genuinely unknown. 13(c)
+    says assume we are, which puts us in the GIVE-WAY role. That is also the
+    conservative verdict.
+
+    The doubt must be genuine: the clause fires only for a POSITIVE
+    sub-threshold differential. At exactly zero, or when the target is faster,
+    we are demonstrably not coming up with her and 13(c) does not apply --
+    see C4 and C15b.
+    """
+    assert cc.classify(own_cog=0, own_sog=10.2, tgt_cog=0, tgt_sog=10.0,
+                       relative_bearing=45,
+                       tgt_class='power-driven') == 'rule13_overtaking'
+
+
+def test_c15b_in_doubt_never_manufactures_a_stand_on_claim(cc):
+    """C15b: 13(c) biases toward give-way only.
+
+    It is written from the overtaking vessel's perspective and creates a duty,
+    not a privilege. Using it to assert stand-on would invert its purpose and
+    hand the captain the dangerous verdict on doubtful data.
+    """
+    result = cc.classify(own_cog=90, own_sog=10.0, tgt_cog=90, tgt_sog=10.2,
+                         relative_bearing=180, tgt_class='power-driven')
+    assert result != 'rule13_being_overtaken', (
+        '13(c) was used to claim stand-on on a sub-dead-band differential')
+    assert result == 'no_situation'
+
+
+def test_c16_faster_vessel_on_our_starboard_bow_is_overtaking_not_crossing(cc):
+    """C16: documents the third review's second claim, which was incorrect.
+
+    It asserted that own 000/12 kt, tgt 000/8 kt, rb 045 returns
+    'rule15_giveway' and should return 'no_situation'. Neither is right:
+    the code returns 'rule13_overtaking', because rb_me = 225 deg places us
+    abaft the target's beam while gaining 4 kt -- which is precisely Rule
+    13(b) overtaking, and we are give-way under 13(a).
+
+    'no_situation' would have been wrong advice: a captain coming up on a
+    slower vessel does have a duty to keep clear.
+    """
+    assert cc.classify(own_cog=0, own_sog=12, tgt_cog=0, tgt_sog=8,
+                       relative_bearing=45,
+                       tgt_class='power-driven') == 'rule13_overtaking'
