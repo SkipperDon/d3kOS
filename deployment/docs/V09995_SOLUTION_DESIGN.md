@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.10
+**Version:** 1.11
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.11 | 2026-09-11 | **REQ-HCD-065 deviation accepted** (mtime rather than `probe_version`; requirement not amended, design records why it departs). **D02-8: HCD-8 wizard questions approved** — propulsion and length class, no defaults and no skip, closing the §14 Rule 12 and Rule 9 gaps properly rather than by disclaimer. Three length bands because 12 m is its own threshold in Rules 25 and 35. **§8.0 opens the Signal K plugin question** raised by the operator: recommendation is **build plugin-shaped in v0.9.9.5, publish in v0.9.9.6** — a published plugin is the best answer yet to the §12.3 6b domain-challenge problem, but `npm install` is not informed consent and escapes D19, HCD-8 and §13.1 entirely, so **D18 Rule 19(d) becomes a publish precondition rather than a v0.9.9.6 nicety.** Engine emits Signal K `notifications.*`; d3kOS layers voice and widget on top. Building plugin-shaped now costs ~nothing and deletes `signalk_client.py`, the reconnect logic and the port question; retrofitting later is a rewrite of the most safety-critical component. **Blocks the §8.1 file layout.** |
 | 1.10 | 2026-09-11 | **Gates 7c and 5 closed.** §8.9 implements **Rule 17** — v1.9 said *"You are Stand-On. Monitor."* and stopped, but 17(a)(ii) unlocks permission once the give-way vessel visibly is not acting, and **17(b) creates a duty** when collision can no longer be avoided by that vessel alone. A stand-on vessel holding course into a collision is the failure mode in much of the case law. Three-stage escalation, failing safe toward *hold* on thin track data but firing 17(b) on proximity alone; 17(c) composes exactly with Rule 15 (the target is to port by definition, so *"advise against altering to port"* always applies). §9 traceability matrix completed for all 63 REQ-HCD IDs, which itself found **three gaps** — REQ-HCD-032 (gated services do not watch the profile → **HCD-6**), REQ-HCD-097 (probe failure leaves no profile → **HCD-7**), REQ-HCD-096 (deployed default profile could overwrite operator data) — and one stated deviation (065, mtime rather than `probe_version`, because an in-process counter cannot work across processes). **Record correction: HCD-REQ-001 has 63 requirements, not 97** — the IDs run to 097 with block gaps and someone counted the highest ID. Fixed in four records. Suite: 158 cases across 9 files. |
 | 1.9 | 2026-09-11 | **§13.4 sensor coverage + §13.5 alert-authority principle + D19-1 every boot.** Operator: *"you do not have full awareness — you have AIS and cameras. This is a limited view for safety and cannot be solely dependent on d3kOS… to make this wider acceptable you need radar or something similar."* §13.4 states it comparatively as a table: **no radar at all**, non-AIS vessels invisible, no sound-signal or light/shape interpretation, cameras present but unused by D02, depth and position hardware-dependent and outside the collision logic. §13.5 draws the design principle out: **alert authority must be proportional to sensor coverage** — which is the real reason D02-6 advisory phrasing and §14.3 option B are right, and it makes radar (**D20**) the gate on any stronger alerting rather than better software. **D19-1: dialogue on EVERY boot** (operator decision, made with the dark-helm concern on the record), mitigated by a tiered form — full scroll-gated text on first boot / version change / text-hash change, abbreviated one-tap re-acknowledgement otherwise. Suite: 147 cases. |
 | 1.8 | 2026-09-11 | **§15 D19 boot-time acceptance gate** per operator instruction — experimental-software dialogue with **Shutdown or Accept**. Offering Shutdown is what makes it consent rather than an announcement. Renders §13.1 verbatim (single source); acceptance recorded with a **sha256 of the rendered text** so the terms cannot change without re-consent. ⚠ **CONCERN RAISED:** implemented as accept-once-per-version rather than every boot, because a modal blocking the dashboard on every boot would leave the captain with a dark helm on an underway reboot — this project has already shipped BUG-106 (kiosk never launched, blank screen) and two restart storms. Every-boot is one config flag away; **operator decision pending.** Shutdown and accept endpoints are loopback-only (the dashboard is reachable from boat Wi-Fi, so an open poweroff endpoint would let any guest kill the helm display). §15.6: the §14 **Rule 9 and Rule 12** gaps reduce to two questions nobody has ever asked the operator — own-vessel type and length class — so they go in the first-boot wizard as a real fix rather than a disclaimer dodge. Suite: 140 cases. |
@@ -1295,6 +1296,78 @@ class SafeHelmAlertManager:
         self._spoken_this_episode = True
 ```
 
+### 8.0 OPEN ARCHITECTURE DECISION — Signal K plugin or d3kOS-only?
+
+**Operator question, S160:** *"should this be a signalk npm for safehelm? to help test. or
+should this be solely d3kos."*
+
+This decision is cheap now and expensive in three weeks, so it is recorded before §8.1.
+
+#### The case for a plugin
+
+1. **Testing — the stated motive, and the strongest argument.** §12.3 6b needs mariners to
+   challenge the rule boundaries, and I could not offer a good channel for it. A published
+   Signal K plugin is a far better one than a forum post: it reaches people who already run
+   Signal K, on real boats, in real traffic. The issue tracker becomes the challenge
+   mechanism. **This is a real answer to the domain-validation problem.**
+2. **Signal K already holds every input.** AIS targets and own position/COG/SOG live in the
+   `vessels.*` tree. The plugin API hands them over — no WebSocket client, no reconnect
+   logic, and the BUG-46 8099-vs-3000 confusion simply evaporates.
+3. **The pipeline exists.** `signalk-forward-watch` is already published and D05 is already
+   touching its packaging this release. Marginal cost of a second plugin is low.
+4. **The classifier is not the moat.** d3kOS's value is the integrated helm, the voice, the
+   hardware, the manual, the support. Giving away COLREGs arithmetic costs little.
+
+#### The case against — and it is the liability work from §13 and §15
+
+**A published npm package escapes every control we just built.** `npm install` is not
+informed consent. A stranger's install never sees the D19 boot dialogue, never answers the
+HCD-8 vessel questions, and has no §13.1 acceptance recorded. We would be shipping
+right-of-way advice to unknown vessels with a README between us and them — after spending
+this entire session establishing that the advice must not be leaned on and that the system
+cannot even tell whether Section II applies (§14.3).
+
+Two further consequences:
+
+- **Option A stops being a v0.9.9.6 nicety and becomes a publish precondition.** You cannot
+  rely on an unknown user to confirm visual contact per target, so **Rule 19(d) must be the
+  default before anyone else runs this** (D18).
+- **Version skew is the BUG-28 trap.** A published plugin plus a bundled d3kOS copy is
+  exactly the two-source divergence that left the boat Pi on v0.9.2.2 while the dashboard
+  advanced. d3kOS must consume the plugin as a **dependency, never a fork.**
+
+#### Recommendation: build it as a plugin now, publish it later
+
+| Stage | Action |
+|---|---|
+| **v0.9.9.5** | **Build plugin-shaped, do not publish.** Same code, running inside d3kOS's own Signal K. |
+| **v0.9.9.6** | **Publish**, gated on D18 (Rule 19(d) default), HCD-8 consumption, and a mandatory disclaimer acknowledgement in plugin config. |
+
+The split that makes this work — and it is better architecture regardless of publishing:
+
+| Layer | Where | What |
+|---|---|---|
+| Engine | Plugin | CPA/TCPA, COLREGs classifier, gate, Rule 17 escalation → emits Signal K `notifications.*` |
+| Output | d3kOS | Voice via ai_bridge, AvNav widget, ACK handling — subscribes to those notifications |
+
+Signal K's `notifications` tree already has the severity vocabulary
+(`normal`/`alert`/`warn`/`alarm`/`emergency`), which maps onto the §8.2 tiers directly. Other
+Signal K users then get alerts through whatever their setup already does with notifications,
+and d3kOS layers voice and the widget on top.
+
+**Why build plugin-shaped even without publishing:** retrofitting a service into a plugin
+later means rewriting the whole data layer. Doing it now deletes `signalk_client.py`, the
+reconnect logic and the port question outright. The cost today is close to zero; in three
+weeks it is a rewrite of the most safety-critical component in the release.
+
+> ⚠ **SH-15 note.** Signal K notifications are not PGN emission, so SH-15 is not implicated
+> — **but Signal K can be configured to bridge notifications outward to NMEA 2000.** The
+> plugin must never emit anything that could reach a bus. Verify before publish; this is the
+> AIS-isolation concern wearing a different hat.
+
+**Operator decision required — this blocks the D02 file layout in §8.1.** My recommendation
+is build-as-plugin now, publish at v0.9.9.6.
+
 ### 8.9 Rule 17 — the stand-on vessel's own duties (gate 7c)
 
 **Closes gate 7c.** §14 found this: we said *"You are Stand-On. Monitor."* and stopped.
@@ -1629,8 +1702,8 @@ marine-vision are separate processes, and v1.0's attempt to poke
 atomic-rename write makes mtime the reliable cross-process signal. `SHALL NOT read the
 JSON file on every call` is satisfied: a bare `stat()` is not a read of the JSON, and
 `json.load()` runs only when the file has actually changed. REQ-HCD-094's ≤5 ms budget is
-met with large margin. **Operator: accept the deviation, or require literal
-`probe_version` comparison?**
+met with large margin. **✅ ACCEPTED by the operator, S160.** The deviation stands; the
+requirement is not amended, the design records why it departs from it.
 
 ## 10. Test Specifications
 
@@ -2156,9 +2229,30 @@ The first-boot wizard already collects vessel data into `config/vessel.env`. **A
 questions resolves both** — a real fix rather than a disclaimer dodge, and the answers feed
 straight into the classifier as `own_class` and `own_length_class`.
 
-Recommend: add to the wizard in v0.9.9.5, consume in v0.9.9.6 alongside D18. The disclaimer
-states the current assumption meanwhile (§15.2), so the captain knows the boundary either
-way.
+**✅ APPROVED by the operator, S160 (D02-8).** Added to the first-boot wizard in v0.9.9.5;
+consumed by the classifier in v0.9.9.6 alongside D18. The disclaimer states the live values
+meanwhile (§15.2), so the captain always sees what the advice assumes.
+
+**Wizard step — "About your vessel", before the Setup Description screen (HCD-5):**
+
+| Question | Options | Stored in `config/vessel.env` | Used by |
+|---|---|---|---|
+| How is your vessel propelled? | Power-driven · Sailing vessel · Both (motor-sailer) | `VESSEL_PROPULSION` | Rule 12, Rule 18(b) |
+| Overall length | Under 12 m · 12–20 m · Over 20 m | `VESSEL_LENGTH_CLASS` | Rule 9(b) |
+
+Three length bands rather than two: **12 m** is its own threshold in the regulations
+(Rule 25 lighting, Rule 35 sound signals), so capturing it now costs nothing and avoids
+re-asking later.
+
+**Defaults are deliberately absent.** No pre-selection, and the wizard cannot advance until
+both are answered. A defaulted answer here is indistinguishable from a real one later, and
+the whole point is that the system currently *assumes* power-driven and under 20 m without
+having asked. An unanswered value must read as `unknown` and make the classifier degrade,
+never silently assume.
+
+*Motor-sailer note:* a vessel under sail **with engine engaged** is a power-driven vessel
+under COLREGs. `both` therefore cannot be resolved at setup time — it needs a runtime state.
+Out of scope for v0.9.9.5; recorded for D18.
 
 Guarded by `test_v0995_config_guards.py::S7`–`S11`.
 
@@ -2418,5 +2512,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.10 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.11 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*
