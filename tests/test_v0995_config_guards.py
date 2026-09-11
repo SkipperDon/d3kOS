@@ -155,3 +155,53 @@ def test_u5b_probe_service_can_be_retriggered():
     src = require_file(f'{UNITS}/d3kos-hardware-probe.service', '§5 HCD-1')
     assert not re.search(r'^\s*RemainAfterExit\s*=\s*yes', src, re.M), (
         'RemainAfterExit=yes blocks the 15-minute timer from re-triggering')
+
+
+# --------------------------------------------------------------------------
+# S4-S6 -- disclaimer placement (§13.3). Added v1.4 on operator instruction.
+#
+# §12.3's original plan (a maritime professional's sign-off) is unobtainable:
+# nobody endorses a rule boundary without reviewing the whole system, and
+# anyone who does assumes liability. The system therefore ships without domain
+# endorsement, and that fact must reach the captain rather than be buried.
+# --------------------------------------------------------------------------
+
+DISCLAIMER_REQUIRED_CLAIMS = [
+    ('not a look-out',   ['not a look-out', 'not a lookout']),
+    ('AIS-only blindness', ['without ais are completely invisible',
+                            'without ais are invisible']),
+    ('silence is not clearance', ['silence does not mean']),
+    ('not an ARPA',      ['not an arpa']),
+    ('not type-approved', ['not type-approved', 'not type approved']),
+    ('captain responsible', ['remains solely responsible']),
+]
+
+
+def test_s4_widget_carries_the_always_visible_advisory_line():
+    """S4: ADV-1 -- one line, always visible, on the widget itself."""
+    src = require_file(f'{SAFEHELM}/static/safehelm-widget.js', '§13.3')
+    low = src.lower()
+    assert 'advisory only' in low, 'ADV-1 footer line missing from the widget'
+    assert 'captain remains responsible' in low
+
+
+@pytest.mark.parametrize('claim,variants', DISCLAIMER_REQUIRED_CLAIMS)
+def test_s5_full_disclaimer_is_present_on_the_hardware_page(claim, variants):
+    """S5: ADV-3 -- the full §13.1 text under the SafeHelm feature entry."""
+    src = require_file('opt/d3kos/services/dashboard/templates/hardware.html', '§13.3')
+    low = src.lower()
+    assert any(v in low for v in variants), (
+        f'§13.1 disclaimer is missing its "{claim}" statement')
+
+
+def test_s6_first_enable_requires_an_unskippable_acknowledgement():
+    """S6: §13.3 -- accepted once, recorded, and not skippable.
+
+    A disclaimer the operator can dismiss without reading is not a disclaimer.
+    """
+    src = require_file(f'{SAFEHELM}/safehelm.py', '§13.3')
+    low = src.lower()
+    assert 'disclaimer' in low, 'no disclaimer acknowledgement gate in safehelm.py'
+    assert 'accepted' in low or 'acknowledged' in low, (
+        'acknowledgement is not recorded -- §13.3 requires the date accepted'
+    )

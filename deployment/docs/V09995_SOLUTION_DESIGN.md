@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.3
+**Version:** 1.4
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.4 | 2026-09-11 | **Gate item 6 withdrawn and replaced; disclaimer added; Rule 18 defect found.** The operator rejected v1.3's maritime sign-off gate as unobtainable — nobody endorses a rule boundary without reviewing the whole system, and anyone who does assumes liability. Correct, and a gate that cannot be satisfied is worse than none. Replaced by §12.3 items **6a** (every §8.4 constant traced to regulation text — three turn out to be Rule 13(b)/21(b)/21(c) verbatim, and exactly **four** values are tunable), **6b** (ask for challenge, never endorsement — nobody underwrites anything), **6c** (widget shows its reasoning so a wrong call is catchable at the helm). **§13 Disclaimer added** per operator instruction, with the non-ARPA and not-a-look-out wording deliberate, plus a flagged legal review. **⛔ While verifying the regulation text, found Rule 18(a) was not implemented at all** — Rules 13/14/15 govern two power-driven vessels, and v1.3 would have told a captain "You are Stand-On" against a sailing or fishing vessel that outranks them. Same severity class as the v1.0 inversions. Fixed, plus the safety rule that **Stand-On is never asserted for a target whose type AIS has not confirmed** (the common case — Class B carries no nav status). Suite: 117 cases across 8 files. |
 | 1.3 | 2026-09-11 | **Third-party AI review (S160) — five findings, four were real defects.** (1) §10.1 case C4 did not state its SOGs, leaving its expected output undetermined; every classifier row now states both. (2) **`voice: 'once' \| 'repeat'` was declared in `alert_gate.TIERS` and never read** — `wants_audio()` applied one 60 s gap to every tier, so Critical was no more insistent than Warning. Cadence now differentiated: Tier 2 once per 120 s episode, Tier 3 every 60 s. (3) The per-target ↔ global glue was never specified or tested; §8.8 now defines `advisory_tick()` and `test_advisory_loop.py` guards the winner-only `mark_spoken()` invariant. (4) Rule 13 used a strict SOG `>` with no hysteresis, so near-equal speeds could flap between classifications under AIS noise; added `OVERTAKE_SOG_DEADBAND_KTS = 0.5`. (5) Domain correctness is not establishable by AI review — added §12.3 and gate item 6 requiring human maritime sign-off on §8.4. Also fixes **BUG-124** in `tests/run-all.sh`, found while building the suite. Suite: 92 cases across 8 files. |
 | 1.2 | 2026-09-11 | **Operator rulings on all four v1.1 open decisions (§2).** ACK scope = per-target, with Critical from another target winning queue insertion immediately (D02-5). SH-11 marked SUPERSEDED in the checklist (applied). `content_hash` guard approved, `probe_version` stays per-spec (D17-1). Rule 14 phrase changed to advisory language — *"COLREGs require starboard alteration"* — because an imperative shifts liability from captain to software (D02-6). Adds §12 Defect Closure: no BUG entry; the v1.0 defects are closed by named guard tests that must exist and fail before implementation. |
 | 1.1 | 2026-09-11 | **Opus 5 review.** Fixed: Rule 14 inversion (fired on *same*-course vessels, never on head-on); Rule 13 role inversion (told captain to give way while stand-on); alert gating policy added (v1.0 had none — every AIS target would voice every 15 s); SK-FW-1 rewritten to actually bundle the model; Signal K port corrected to 8099 (BUG-46); feature-gate accelerator whitelist fail-open fixed; `ram_gb` truncation fixed (8 GB Pi read as 7); REQ-HCD-027 15-minute re-probe added; restart-storm patterns removed from both units; credential and bind-address exposure closed; CORS gap closed; D16 stitch deferred behind a CPU gate; unit-test specifications added; requirements traceability matrix added; Advisory Role section added per operator instruction. |
@@ -891,9 +892,38 @@ class VoiceArbiter:
 > **Also:** v1.0's classifier never received CPA, TCPA or range, so it could not return
 > `no_conflict`. Gating is now §8.2's job and this module is pure geometry.
 
+> ### ⛔ DEFECT FOUND S160 — Rule 18 is not implemented. Same severity class as the v1.0 inversions.
+>
+> Rules 13/14/15 govern **two power-driven vessels**. The classifier assumes that and never
+> checks. **Rule 18(a)** (verified against the IMO text, S160):
+>
+> > *"Except where Rules 9, 10 and 13 otherwise require: (a) A power-driven vessel underway
+> > shall keep out of the way of: (i) a vessel not under command; (ii) a vessel restricted in
+> > her ability to manoeuvre; (iii) a vessel engaged in fishing; (iv) a sailing vessel."*
+>
+> So when the target is a sailing vessel, a fishing vessel, not under command, or restricted
+> in her ability to manoeuvre, **our power-driven vessel gives way regardless of the crossing
+> geometry.** As written, §8.4 would announce *"You are Stand-On"* to a captain who is in fact
+> obliged to keep clear. That is the same failure as the original Rule 13 inversion, and it is
+> still present.
+>
+> The `Except … Rules 9, 10 and 13` preamble means the existing Rule-13-first ordering is
+> already correct: being overtaken makes us stand-on whatever the other vessel is. Rule 18
+> inserts **after** Rule 13 and **before** Rules 14/15.
+>
+> **Data:** Signal K exposes `design.aisShipType` (id + name) and `navigation.state`. Neither
+> is currently read anywhere in the codebase — confirmed by grep, S160. Two hard limits:
+> Class B AIS position reports (type 18) carry **no** navigational status, and static data
+> (types 5 and 24) arrives infrequently, so the field is often **absent or stale**.
+>
+> **Therefore the safety rule: never assert Stand-On on an unidentified target.** Stand-On is
+> the dangerous verdict — it tells the captain to hold course. Give-Way is conservative. When
+> the target's type and status are unknown, the system must say so rather than assert a role
+> it cannot support. Guarded by `test_colregs_classifier.py::C11`–`C13`.
+
 ```python
 # colregs_classifier.py
-"""COLREGs Rules 13/14/15 geometric classification. Pure; no gating, no I/O.
+"""COLREGs Rules 13/14/15/18 classification. Pure; no gating, no I/O.
 
 Relative bearing convention: degrees clockwise from own COG.
 0 = dead ahead, 90 = starboard beam, 180 = astern, 270 = port beam.
@@ -925,14 +955,33 @@ def _relative_bearing_of_me_from_target(own_cog, tgt_cog, rb):
     return (true_brg_me_from_tgt - tgt_cog) % 360.0
 
 
-def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing):
+# Rule 18(a): a power-driven vessel keeps clear of these regardless of geometry.
+# Normalised from design.aisShipType and navigation.state -- map the raw AIS
+# enumerations against ITU-R M.1371 at implementation time (§11).
+RULE18_OUTRANKS_US = frozenset({
+    'not-under-command',
+    'restricted-manoeuverability',
+    'engaged-in-fishing',
+    'sailing',
+})
+
+
+def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing,
+             tgt_class=None):
     """Returns one of:
-         'rule13_being_overtaken'  we are STAND-ON; hold course and speed
-         'rule13_overtaking'       we are GIVE-WAY; keep clear
-         'rule14_headon'           both alter to starboard
-         'rule15_giveway'          target on our starboard; we give way
-         'rule15_standon'          target on our port; we stand on
+         'rule13_being_overtaken'      we are STAND-ON; Rule 13 overrides Rule 18
+         'rule13_overtaking'           we are GIVE-WAY; keep clear
+         'rule18_giveway'              target outranks us; we give way whatever the geometry
+         'rule14_headon'               both alter to starboard
+         'rule15_giveway'              target on our starboard; we give way
+         'rule15_standon'              target on our port; we stand on
+         'rule15_standon_unconfirmed'  geometry says stand-on, target type unknown
          'no_situation'
+
+    tgt_class: normalised target category, or None when AIS has not supplied
+        it. None is common -- Class B position reports carry no navigational
+        status and static data is infrequent -- so it must never be treated as
+        "power-driven".
     """
     rb = relative_bearing % 360.0
     cdiff = _course_diff(own_cog, tgt_cog)
@@ -947,6 +996,11 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing):
                 and own_sog - tgt_sog > OVERTAKE_SOG_DEADBAND_KTS):
             return 'rule13_overtaking'               # we overtake them -> we give way
 
+    # --- Rule 18(a): target outranks us. Sits after Rule 13 (whose preamble
+    #     excepts it) and before Rules 14/15, which it overrides entirely. ---
+    if tgt_class in RULE18_OUTRANKS_US:
+        return 'rule18_giveway'
+
     # --- Rule 14: reciprocal courses AND target roughly ahead ---
     if cdiff > HEADON_COURSE_MIN and (rb <= HEADON_BEARING_TOL
                                       or rb >= 360.0 - HEADON_BEARING_TOL):
@@ -956,6 +1010,11 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing):
     if rb <= ABAFT_STBD:
         return 'rule15_giveway'                      # target to starboard
     if rb >= ABAFT_PORT:
+        # Stand-On is the dangerous verdict: it tells the captain to hold
+        # course. Never assert it for a target whose type we cannot confirm --
+        # it may be a sailing or fishing vessel that outranks us under Rule 18.
+        if tgt_class is None:
+            return 'rule15_standon_unconfirmed'
         return 'rule15_standon'                      # target to port
     return 'no_situation'
 
@@ -984,6 +1043,16 @@ VOICE_PHRASES = {
                               'COLREGs require you to hold course and speed.',
     'rule13_overtaking':      'Warning. You are overtaking. You are Give-Way. '
                               'COLREGs require you to keep clear.',
+
+    # NEW v1.4 — Rule 18(a). Target outranks a power-driven vessel.
+    'rule18_giveway':         'Warning. {target_kind} ahead. You are Give-Way. '
+                              'COLREGs require you to keep clear.',
+
+    # NEW v1.4 — geometry says Stand-On but the target type is unknown, which is
+    # the common case for Class B AIS. Does not assert a role it cannot support.
+    'rule15_standon_unconfirmed':
+                              'Alert. Crossing target to port. Vessel type unconfirmed. '
+                              'COLREGs may require you to give way. Monitor.',
 
     'critical':               'Critical collision risk. Target {bearing}. CPA {cpa_m} metres.',
 }
@@ -1389,7 +1458,12 @@ Flagged by external review, S160.
 | C3 | 090 / 10.0 | 270 / 10.0 | 000 | `rule14_headon` | **v1.0 returned crossing** |
 | C4 | 090 / 10.0 | 095 / 10.0 | 045 | `rule15_giveway`, **not** `rule14_headon` | **v1.0 returned head-on for same-course vessels** |
 | C5 | 000 / 10.0 | 270 / 10.0 | 045 | `rule15_giveway` | starboard crossing |
-| C6 | 000 / 10.0 | 090 / 10.0 | 315 | `rule15_standon` | port crossing |
+| C6 | 000 / 10.0 | 090 / 10.0 | 315 | `rule15_standon` (`tgt_class='power-driven'`) | port crossing, type confirmed |
+| C11 | 000 / 10.0 | 090 / 6.0 | 315 | `rule18_giveway` for each of 4 classes | **Rule 18(a) overrides crossing geometry** |
+| C11b | 090 / 10.0 | 090 / 12.0, sailing | 180 | `rule13_being_overtaken` | Rule 13 still overrides Rule 18 |
+| C12 | 000 / 10.0 | 090 / 10.0, power-driven | 315 | `rule15_standon` | Rule 18 must not swallow ordinary Rule 15 |
+| C13 | 000 / 10.0 | 090 / 10.0, **unknown** | 315 | `rule15_standon_unconfirmed` | **never assert Stand-On on an unidentified target** |
+| C13c | — | `tgt_class` omitted | 315 | `rule15_standon_unconfirmed` | a forgetful caller must fail safe |
 | C7 | 090 / 10.0 | 090 / 10.0 | 113 | `no_situation` | no Rule 13 without a speed differential |
 | C8–C8c | — | — | — | phrasing invariants | imperatives, safety claims, missing phrases |
 | C9 | 090 / 10.0 | 090 / 10.2 | 180 | `no_situation` | **SOG dead-band — anti-flap** |
@@ -1581,7 +1655,94 @@ Neither would have been caught by review of the document alone.
 > advice to a captain, which §1 identifies as the worst outcome this system can produce.
 > A document correction does not prevent recurrence; a failing test does.
 
-### 12.3 Domain validation gate — what this document's review process cannot establish
+### 12.3 Domain validation — what AI review cannot establish, and what to do instead
+
+> **v1.3's gate item 6 was wrong and is withdrawn.** It required *"a human with maritime
+> credentials to review and bless the §8.4 rule boundaries."* The operator's objection,
+> S160, is correct and decisive: **nobody will sign that without seeing the whole system,
+> and anyone who signs it assumes liability.** So it would never be satisfied. A gate that
+> cannot be satisfied is worse than no gate — it either blocks the project permanently or
+> gets quietly dropped, and the second is what actually happens.
+>
+> Seeking a *signature* was the error. What is needed is *assurance*, and assurance is
+> obtainable three ways that require nobody to underwrite anything. Gate item 6 is replaced
+> by 6a/6b/6c below.
+
+#### The limits, stated plainly
+
+§8.4 has been reviewed by three AI models: written by Sonnet 4.6, corrected by Opus 5,
+checked by two further reviewers who traced C1–C7 and G1–G8 by hand. That found real
+defects and was worth every pass. It established:
+
+- the code is internally self-consistent;
+- the code matches its own test tables;
+- the implementation satisfies operator policies D02-3 … D02-6.
+
+It did **not** establish that the classification is correct COLREGs. Several models
+agreeing on arithmetic is the same arithmetic checked repeatedly.
+
+#### 6a — Trace every constant to regulation text (no signature required)
+
+Most of what v1.3 called "judgment calls" are not judgment at all — they are quoted from
+the regulations. This was verifiable without asking anyone, and should have been done first.
+
+| Constant | Value | Source | Status |
+|---|---|---|---|
+| `ABAFT_STBD` / `ABAFT_PORT` | 112.5° / 247.5° | **Rule 13(b)** — *"more than 22.5 degrees abaft her beam… she would be able to see only the sternlight"* | **Regulation text.** Not a choice. |
+| `OVERTAKE_COURSE_MAX` | 67.5° | **Rule 21(c)** — sternlight arc is 135°, *"67.5 degrees from right aft on either side"* | **Regulation-derived.** |
+| Rule 15 sector edges | 112.5° / 247.5° | **Rule 21(b)** — sidelight arc, 112.5° each side | **Regulation-derived.** |
+| `HEADON_BEARING_TOL` | 22.5° | **Rule 14(b)** says *"ahead or nearly ahead"* with **no number** | ⚠ **Tuning parameter.** |
+| `HEADON_COURSE_MIN` | 165° (±15° of reciprocal) | **Rule 14(a)** says *"reciprocal or nearly reciprocal"* with **no number** | ⚠ **Tuning parameter.** |
+| `OVERTAKE_SOG_DEADBAND_KTS` | 0.5 kt | Anti-flap engineering choice. No regulatory basis. | ⚠ **Tuning parameter.** |
+| Tier CPA/TCPA/range | §8.2 | Operator policy D02-3. No regulatory basis — Rule 7 defines *risk of collision* qualitatively. | ⚠ **Operator policy.** |
+
+So the honest position is far better than v1.3 claimed: **three sector constants are
+regulation text, and exactly four values are tunable.** Those four are now named, isolated,
+and documented as tunable — which is a reviewable surface a mariner can comment on in
+minutes without endorsing a system.
+
+#### 6b — Ask for challenge, never for endorsement
+
+Post to the existing Navigation & Charts thread on atmyboat.com (SafeHelm was already
+framed there as a concept gauge, S77). **Do not ask anyone to approve, sign off, validate
+or bless anything.** Ask the opposite:
+
+> *"Here are four numbers we had to choose because the regulations don't give one, and ten
+> worked scenarios with what the system would say. We are not asking anyone to approve
+> this — we are asking you to tell us where it's wrong. If any of these would have you
+> reaching for the throttle, say so."*
+
+Nobody underwrites anything. Respondents describe their own practice, which is not advice
+and carries no liability. Disagreement is the signal. This is usability testing on a
+decision table, and it is the cheapest real-world check available.
+
+#### 6c — Explainability, so the captain can catch a wrong call in real time
+
+The strongest mitigation is not upstream validation — it is making the system's reasoning
+visible so a wrong classification is *catchable at the helm*. The widget SHALL show the
+inputs behind the verdict, not just the verdict:
+
+```
+Rule 13 — you are STAND-ON
+  target bearing 160° (abaft your beam)
+  target SOG 12.0 kt vs yours 10.0 kt (+2.0)
+```
+
+A captain who can see *why* in one glance can overrule it. A captain shown only
+"You are Stand-On" cannot. This also answers open question #5 from the S77 SafeHelm
+concept (*"Is explainability a requirement before deployment?"*) — **yes, on safety
+grounds, not transparency grounds.**
+
+#### Revised gate item 6
+
+| | Requirement | Status |
+|---|---|---|
+| 6a | Every §8.4 constant traced to regulation text or explicitly marked tunable | ✅ **DONE** — table above |
+| 6b | Challenge request posted; responses triaged; no endorsement sought | ⬜ **OPEN** — operator action |
+| 6c | Widget shows the reasoning behind each verdict | ⬜ **OPEN** — build task, D02 |
+
+Honest status of §8.4: **"regulation-traced, with four named tuning parameters; not
+domain-endorsed and not seeking endorsement."**
 
 **This must be stated plainly, because the review history invites the wrong conclusion.**
 
@@ -1640,5 +1801,94 @@ system is advisory; they do not excuse shipping a rule boundary nobody qualified
 
 ---
 
-*End of V09995-SOL-001 v1.3 — APPROVED for implementation, subject to §12.1 items 5 and 6.*
+---
+
+## 13. Disclaimer, Limitations and Non-Certification
+
+**Operator instruction, S160:** *"We need to make a note and disclaimer about that."*
+
+This section exists because §12.3's original plan — obtaining a maritime professional's
+sign-off — is not achievable: nobody will endorse a rule boundary without reviewing the
+whole system, and anyone who does assumes liability. Since the system therefore ships
+without domain endorsement, that fact must be **stated to the captain**, not buried.
+
+### 13.1 Required disclaimer text
+
+This text is normative. It SHALL appear in the four places listed in §13.3, unaltered in
+substance.
+
+> **SafeHelm is an advisory aid. It is not a navigation system.**
+>
+> SafeHelm watches AIS traffic and suggests which COLREGs situation may apply. It is
+> decision-support for the person conning the vessel. It does not navigate, steer, or
+> decide, and it has no connection to any steering or autopilot system.
+>
+> **The captain remains solely responsible** for the safe navigation of the vessel,
+> including the obligation under COLREGs Rule 5 to keep a proper look-out by sight and
+> hearing, and under Rule 2 for the ordinary practice of seamen. SafeHelm does not
+> discharge, reduce or satisfy any part of those duties. **SafeHelm is not a look-out.**
+>
+> **What it cannot see:**
+> - **Vessels without AIS are completely invisible to it.** Most small craft, most
+>   sailing boats, tenders, kayaks, paddleboards, swimmers, floating debris, navigation
+>   marks and every unlit obstruction do not appear.
+> - There is no radar and no camera input to this function.
+> - It relies on what each target transmits about itself. That data may be absent, stale
+>   or wrong. Class B AIS does not report navigational status at all, and vessel-type data
+>   arrives infrequently.
+> - It depends on your own GPS. Loss or degradation of a fix degrades or disables it.
+>
+> **Silence does not mean the water is clear.** It means no AIS target currently meets the
+> alert thresholds. It is not an all-clear and must never be read as one.
+>
+> **Not certified.** SafeHelm is not type-approved, wheelmark-certified or approved under
+> SOLAS, IMO or MED. It is not an ARPA (Automatic Radar Plotting Aid) and must not be used
+> or described as one. It is not approved for commercial or carriage-requirement use. The
+> COLREGs rule boundaries it applies have been traced to the published regulation text
+> (§12.3) but have **not** been endorsed by any maritime authority or credentialled
+> professional.
+>
+> **No warranty.** SafeHelm is provided without warranty of any kind for navigational use,
+> including fitness for purpose. Use it as one input among many, and never as the basis
+> for a collision-avoidance decision on its own.
+
+### 13.2 Why the non-certification wording is specific
+
+Two terms are chosen deliberately and must not be softened in marketing copy:
+
+- **"ARPA"** is a defined, type-approved class of equipment. Implying equivalence would be
+  a material misrepresentation, not a stylistic choice. The word appears only in the
+  negative.
+- **"Not a look-out"** maps directly onto Rule 5, which is the duty most likely to be
+  assumed discharged by a screen that appears to be watching the water.
+
+COLREGs **Rule 7(c)** is the most relevant regulation to this system's central weakness:
+*"Assumptions shall not be made on the basis of scanty information, especially scanty radar
+information."* AIS-only traffic data is scanty information. The disclaimer says so in plain
+language rather than citing the rule at the captain.
+
+### 13.3 Where it must appear
+
+| Surface | Form | Requirement |
+|---|---|---|
+| SafeHelm widget | One line, always visible (ADV-1) | *"Advisory only — AIS targets only. Captain remains responsible for lookout and navigation."* |
+| First enable of SafeHelm | Full §13.1 text, with an explicit acknowledgement the operator must accept once | Must not be skippable; records date accepted |
+| Dashboard `/hardware` page | Full §13.1 text under the SafeHelm feature entry (ADV-3) | Reachable in one click from the feature |
+| User manual + atmyboat.com feature page | Full §13.1 text | Before any description of capability |
+
+Guarded by `test_v0995_config_guards.py::S4`–`S6`.
+
+> **Outside my competence — flag for the operator.** I can state the technical limitations
+> accurately, and §13.1 does. **Whether this wording is legally sufficient is a question
+> for a lawyer, not for me or for any AI review.** d3kOS is sold commercially with paid
+> tiers, which raises consumer-protection and product-liability questions that vary by
+> jurisdiction (Canada, and anywhere the image is downloaded). Before v0.9.9.5 ships with
+> D02 enabled, have §13.1 reviewed by someone qualified in product liability for
+> recreational marine equipment. Treat this as a release gate, not as polish — and note it
+> is a cheaper and more obtainable review than the sign-off §12.3 abandoned, because a
+> lawyer is being asked to do their own job rather than to underwrite someone else's.
+
+---
+
+*End of V09995-SOL-001 v1.4 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*

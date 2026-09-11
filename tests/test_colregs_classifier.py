@@ -110,10 +110,16 @@ def test_c5_target_on_starboard_means_we_give_way(cc):
 
 
 def test_c6_target_on_port_means_we_stand_on(cc):
-    """C6: crossing target to port -> we hold course and speed (Rule 15/17)."""
+    """C6: crossing target to port -> we hold course and speed (Rule 15/17).
+
+    tgt_class must be stated. Since v1.4 an unconfirmed target cannot be told
+    it is Stand-On, because it may be a sailing or fishing vessel that outranks
+    us under Rule 18 -- see C13. The unconfirmed path is asserted separately.
+    """
     assert cc.classify(own_cog=0, own_sog=10,
                        tgt_cog=90, tgt_sog=10,
-                       relative_bearing=315) == 'rule15_standon'
+                       relative_bearing=315,
+                       tgt_class='power-driven') == 'rule15_standon'
 
 
 # --------------------------------------------------------------------------
@@ -212,3 +218,84 @@ def test_c10b_no_flapping_across_a_noisy_sog_sequence(cc):
         for jitter in (-0.3, -0.15, 0.0, 0.15, 0.3)
     }
     assert len(results) == 1, f'classification flapped across SOG noise: {results}'
+
+
+# --------------------------------------------------------------------------
+# C11-C13 -- Rule 18(a) responsibilities between vessels. Added v1.4.
+#
+# Rules 13/14/15 govern two POWER-DRIVEN vessels. v1.3 assumed that and never
+# checked. Rule 18(a), verified against the IMO text S160:
+#   "Except where Rules 9, 10 and 13 otherwise require: (a) A power-driven
+#    vessel underway shall keep out of the way of: (i) a vessel not under
+#    command; (ii) a vessel restricted in her ability to manoeuvre;
+#    (iii) a vessel engaged in fishing; (iv) a sailing vessel."
+#
+# So v1.3 would have announced "You are Stand-On" to a captain obliged to keep
+# clear -- the same failure as the original Rule 13 inversion.
+# --------------------------------------------------------------------------
+
+RULE18_CLASSES = ['sailing', 'engaged-in-fishing',
+                  'not-under-command', 'restricted-manoeuverability']
+
+
+@pytest.mark.parametrize('tgt_class', RULE18_CLASSES)
+def test_c11_rule18_target_overrides_crossing_geometry(cc, tgt_class):
+    """C11: geometry says we stand on; Rule 18 says we give way. Rule 18 wins.
+
+    Target to port (rb 315) would be rule15_standon between two power-driven
+    vessels. It is not, if the target outranks us.
+    """
+    assert cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=6,
+                       relative_bearing=315,
+                       tgt_class=tgt_class) == 'rule18_giveway'
+
+
+def test_c11b_rule18_does_not_override_rule_13(cc):
+    """C11b: Rule 18's own preamble excepts Rule 13.
+
+    If a sailing vessel is overtaking us, Rule 13(a) still makes the overtaking
+    vessel keep clear, so we remain STAND-ON. Ordering matters: Rule 13 is
+    evaluated before Rule 18.
+    """
+    assert cc.classify(own_cog=90, own_sog=10, tgt_cog=90, tgt_sog=12,
+                       relative_bearing=180,
+                       tgt_class='sailing') == 'rule13_being_overtaken'
+
+
+def test_c12_confirmed_power_driven_target_still_gives_stand_on(cc):
+    """C12: Rule 18 must not swallow the ordinary Rule 15 stand-on case."""
+    assert cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
+                       relative_bearing=315,
+                       tgt_class='power-driven') == 'rule15_standon'
+
+
+def test_c13_unknown_target_type_never_asserts_stand_on(cc):
+    """C13: THE SAFETY GUARD. Stand-On is the dangerous verdict.
+
+    Stand-On tells the captain to hold course. Give-Way is conservative. An
+    unknown target may be a sailing or fishing vessel that outranks us under
+    Rule 18 -- and unknown is the COMMON case, because Class B AIS position
+    reports carry no navigational status and static data is infrequent.
+    """
+    result = cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
+                         relative_bearing=315, tgt_class=None)
+    assert result != 'rule15_standon', (
+        'asserted Stand-On for a target whose type could not be confirmed')
+    assert result == 'rule15_standon_unconfirmed'
+
+
+def test_c13b_unconfirmed_phrase_does_not_assert_a_role(cc):
+    """C13b: the unconfirmed phrase must hedge, not claim Stand-On."""
+    phrase = cc.VOICE_PHRASES['rule15_standon_unconfirmed'].lower()
+    assert 'unconfirmed' in phrase
+    assert 'may require' in phrase, 'phrase must hedge the role, not assert it'
+    assert 'you are stand-on' not in phrase
+
+
+def test_c13c_tgt_class_defaults_to_unknown(cc):
+    """C13c: omitting tgt_class must behave as unknown, never as power-driven.
+
+    A caller that forgets the argument must fail safe.
+    """
+    assert cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
+                       relative_bearing=315) == 'rule15_standon_unconfirmed'
