@@ -948,25 +948,20 @@ VOICE_PHRASES = {
     'rule15_standon':         'Alert. Crossing target to port. You are Stand-On. Monitor.',
 
     # NEW in v1.1 — replaces v1.0's inverted single 'rule13_overtake' phrase.
-    # SUGGESTED REWORD — awaiting approval. These two are the only remaining
-    # imperatives ("Hold course and speed", "Keep clear") and D02-6's liability
-    # reasoning applies to them identically. Proposed advisory forms:
-    #   rule13_being_overtaken: 'Alert. Vessel overtaking from astern. You are
-    #                            Stand-On. COLREGs require you to hold course and speed.'
-    #   rule13_overtaking:      'Warning. You are overtaking. You are Give-Way.
-    #                            COLREGs require you to keep clear.'
-    # NOT APPLIED — operator ruled on Rule 14 only. Do not substitute silently.
-    'rule13_being_overtaken': 'Alert. Vessel overtaking from astern. '
-                              'You are Stand-On. Hold course and speed.',
-    'rule13_overtaking':      'Warning. You are overtaking. You are Give-Way. Keep clear.',
+    # D02-6 advisory form applied to both, operator-approved S160.
+    'rule13_being_overtaken': 'Alert. Vessel overtaking from astern. You are Stand-On. '
+                              'COLREGs require you to hold course and speed.',
+    'rule13_overtaking':      'Warning. You are overtaking. You are Give-Way. '
+                              'COLREGs require you to keep clear.',
 
     'critical':               'Critical collision risk. Target {bearing}. CPA {cpa_m} metres.',
 }
 ```
 
-> **SUGGESTION** — apply D02-6's reasoning to the two Rule 13 phrases above, which are the
-> only remaining imperatives. They are new in v1.1 and have never been approved in any
-> form, so there is no legacy wording to preserve. **Apply the proposed advisory forms?**
+**No imperative remains in the voice set.** Every phrase now either states a fact, states
+the captain's role, or states what COLREGs requires. `test_colregs_classifier.py::C8`
+enforces this: it asserts no phrase begins an imperative clause with `Alter`, `Hold`,
+`Keep`, `Turn` or `Reduce`. Adding an imperative phrase in future will fail the suite.
 
 ### 8.5 CPA engine and alert state machine
 
@@ -1275,9 +1270,15 @@ TDD, per the Master Standard: these are written and failing before the code.
 | G3 | cpa 450, tcpa 540, range 3500 | `advisory`, `voice is None` | Tier 1 must be silent |
 | G4 | cpa 100, tcpa **−180**, range 900 | `None` | **lower-bound defect in the supplied policy** |
 | G5 | cpa 100, tcpa `inf`, range 900 | `None` | v1.0 stationary-target permanent alert |
-| G6 | cpa 250, tcpa 480, range 2000, `is_headon=True` | `warning` | +2 min head-on bonus |
-| G7 | cpa 250, tcpa 480, range 2000, `is_headon=False` | `None` | bonus not applied otherwise |
+| G6 | cpa 250, tcpa 480, range 2000, `is_headon=True` | `warning` (voice `once`) | +2 min head-on bonus |
+| G7 | cpa 250, tcpa 480, range 2000, `is_headon=False` | `advisory`, `voice is None` | bonus not applied — must **not** reach a voice tier |
 | G8 | cpa 100, tcpa 120, range **4000** | `None` | range must gate independently |
+
+> **v1.1 table correction.** G7 was listed as expecting `None`. Working the numbers while
+> writing the test showed it returns `advisory`: cpa 250 ≤ 500, tcpa 480 ≤ 600,
+> range 2000 ≤ 3704 all hold. The meaningful assertion is that without the head-on bonus
+> it does **not** reach `warning` — i.e. it stays silent. Corrected above. This is the
+> second defect found by writing tests rather than prose.
 
 ### 10.3 `test_cpa_engine.py`
 
@@ -1374,17 +1375,59 @@ closed; a defect with only a corrected document is not.
 
 ### 12.1 Pre-implementation gate — blocks the first line of D17 code
 
-All of the following must be true before any implementation file in §5–§8 is created:
+| # | Condition | Status |
+|---|---|---|
+| 1 | Every test file in §10 exists and runs | ✅ **DONE S160** — 7 files, 86 cases |
+| 2 | Every case **fails** for the right reason — assertion failure, not import error | ✅ **DONE S160** — 86 failed, 0 errors |
+| 3 | Every case **passes** against a correct implementation | ✅ **DONE S160** — see §12.2 |
+| 4 | `./tests/run-all.sh` picks them up | ✅ **DONE S160** — matches its `tests/test_*.py` glob |
+| 5 | §9 traceability matrix completed for the remaining REQ-HCD IDs | ⬜ **OPEN** |
 
-1. Every test file in §10 exists and runs.
-2. Every case in the tables above **fails** for the right reason (assertion failure, not
-   import error). A test that errors out proves nothing.
-3. `./tests/run-all.sh` executes them — it is the only trusted runner; per-suite green
-   counts have historically been subsets.
-4. §9's traceability matrix is completed for the remaining REQ-HCD IDs.
-
-Only then does D17 implementation begin. This is the "solution prior to implementing"
+Item 5 is the only remaining blocker. Items 1–4 are the "solution prior to implementing"
 the operator required, made checkable.
+
+**Test files (86 cases, all red):**
+
+| File | Cases | Guards |
+|---|---|---|
+| `tests/test_colregs_classifier.py` | 10 | C1–C8c — both safety inversions, advisory-language rule |
+| `tests/test_alert_gate.py` | 14 | G1–G8c — gating matrix, TCPA lower bound, head-on bonus |
+| `tests/test_cpa_engine.py` | 8 | P1–P5b — geometry, `inf`/negative TCPA, course convention |
+| `tests/test_alert_manager.py` | 16 | M1–M8 — `cpa_at_ack`, clear hysteresis, ACK scope, preemption |
+| `tests/test_voice_arbiter.py` | 8 | A1–A6 — rate caps, priority, D02-5 preemption |
+| `tests/test_feature_gate.py` | 16 | F1–F8 — fail-open, RAM units, fail-closed, mtime reload |
+| `tests/test_v0995_config_guards.py` | 14 | S1–S3, U1–U5b — SK port, restart storms, binds, credentials, udev, timer |
+
+`tests/conftest.py` carries the harness. `require_module` must be called from a **test
+body**, never a fixture: pytest reports a fixture-time `pytest.fail()` as an ERROR, which
+condition 2 forbids. Stateful suites therefore use factory fixtures, and pure-function
+suites use the `lazy_module` proxy which imports on first attribute access.
+
+### 12.2 Both-directions validation (S160)
+
+A red test is worthless if it would also fail against a correct implementation. The §5–§8
+algorithms were therefore materialised in a scratch directory, the suites run against
+them, and the scratch discarded:
+
+```
+PYTHONPATH=<scratch> pytest  ->  72 passed, 0 failed     (6 module suites)
+scratch removed              ->  86 failed, 0 errors     (all 7 suites)
+```
+
+This proves the tests are correct **and** that the §5–§8 algorithms are self-consistent
+and satisfy policies D02-3 through D02-6. The 14 config guards stay red by design until
+the unit and YAML files are written; they assert file content, not behaviour.
+
+**Two defects were found by writing the tests rather than prose:**
+
+1. **§10.2 case G7 had the wrong expected value.** Listed as `None`; it actually returns
+   `advisory` (cpa 250 ≤ 500, tcpa 480 ≤ 600, range 2000 ≤ 3704 all hold). The meaningful
+   assertion is that without the head-on bonus it does not reach a *voice* tier. Corrected.
+2. **The §12.1 gate contradicted its own harness.** The first draft resolved modules inside
+   fixtures, so all 72 module cases reported as ERROR — precisely what condition 2 forbids.
+   Fixed by moving resolution into the test body.
+
+Neither would have been caught by review of the document alone.
 
 > **Why this gate and not a BUG row:** every one of the eleven defects above is mechanically
 > detectable. Two of them — the COLREGs inversions — would have shipped wrong right-of-way
