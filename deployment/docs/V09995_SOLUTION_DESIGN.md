@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.9
+**Version:** 1.10
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.10 | 2026-09-11 | **Gates 7c and 5 closed.** §8.9 implements **Rule 17** — v1.9 said *"You are Stand-On. Monitor."* and stopped, but 17(a)(ii) unlocks permission once the give-way vessel visibly is not acting, and **17(b) creates a duty** when collision can no longer be avoided by that vessel alone. A stand-on vessel holding course into a collision is the failure mode in much of the case law. Three-stage escalation, failing safe toward *hold* on thin track data but firing 17(b) on proximity alone; 17(c) composes exactly with Rule 15 (the target is to port by definition, so *"advise against altering to port"* always applies). §9 traceability matrix completed for all 63 REQ-HCD IDs, which itself found **three gaps** — REQ-HCD-032 (gated services do not watch the profile → **HCD-6**), REQ-HCD-097 (probe failure leaves no profile → **HCD-7**), REQ-HCD-096 (deployed default profile could overwrite operator data) — and one stated deviation (065, mtime rather than `probe_version`, because an in-process counter cannot work across processes). **Record correction: HCD-REQ-001 has 63 requirements, not 97** — the IDs run to 097 with block gaps and someone counted the highest ID. Fixed in four records. Suite: 158 cases across 9 files. |
 | 1.9 | 2026-09-11 | **§13.4 sensor coverage + §13.5 alert-authority principle + D19-1 every boot.** Operator: *"you do not have full awareness — you have AIS and cameras. This is a limited view for safety and cannot be solely dependent on d3kOS… to make this wider acceptable you need radar or something similar."* §13.4 states it comparatively as a table: **no radar at all**, non-AIS vessels invisible, no sound-signal or light/shape interpretation, cameras present but unused by D02, depth and position hardware-dependent and outside the collision logic. §13.5 draws the design principle out: **alert authority must be proportional to sensor coverage** — which is the real reason D02-6 advisory phrasing and §14.3 option B are right, and it makes radar (**D20**) the gate on any stronger alerting rather than better software. **D19-1: dialogue on EVERY boot** (operator decision, made with the dark-helm concern on the record), mitigated by a tiered form — full scroll-gated text on first boot / version change / text-hash change, abbreviated one-tap re-acknowledgement otherwise. Suite: 147 cases. |
 | 1.8 | 2026-09-11 | **§15 D19 boot-time acceptance gate** per operator instruction — experimental-software dialogue with **Shutdown or Accept**. Offering Shutdown is what makes it consent rather than an announcement. Renders §13.1 verbatim (single source); acceptance recorded with a **sha256 of the rendered text** so the terms cannot change without re-consent. ⚠ **CONCERN RAISED:** implemented as accept-once-per-version rather than every boot, because a modal blocking the dashboard on every boot would leave the captain with a dark helm on an underway reboot — this project has already shipped BUG-106 (kiosk never launched, blank screen) and two restart storms. Every-boot is one config flag away; **operator decision pending.** Shutdown and accept endpoints are loopback-only (the dashboard is reachable from boat Wi-Fi, so an open poweroff endpoint would let any guest kill the helm display). §15.6: the §14 **Rule 9 and Rule 12** gaps reduce to two questions nobody has ever asked the operator — own-vessel type and length class — so they go in the first-boot wizard as a real fix rather than a disclaimer dodge. Suite: 140 cases. |
 | 1.7 | 2026-09-11 | **Operator decision D02-7: option B now, option A in v0.9.9.6.** Gate 7b closed. Closing option B properly exposed a hole in v1.6: gating only Rule 15's stand-on branch left **Rule 13 — which is also in Section II — free to assert Stand-On on an unconfirmed target.** Both branches are now gated, and the unconfirmed variant returns Rule 19(d)(ii) guidance (*avoid altering towards a vessel abaft the beam*) rather than a bare refusal, since that holds under either rule set. Option A recorded as **D18** in PART 20 for v0.9.9.6. Rule 17(b) remains required for v0.9.9.5 (gate 7c) — option B keeps Stand-On reachable once confirmed, and any Stand-On verdict owes the captain the 17(b) escalation. Suite: 132 cases. |
@@ -1294,6 +1295,87 @@ class SafeHelmAlertManager:
         self._spoken_this_episode = True
 ```
 
+### 8.9 Rule 17 — the stand-on vessel's own duties (gate 7c)
+
+**Closes gate 7c.** §14 found this: we said *"You are Stand-On. Monitor."* and stopped.
+Rule 17 does not stop there, and **a stand-on vessel holding course into a collision is the
+failure mode in much of the collision case law.** Text verified against the IMO source, S160:
+
+| | Text | Meaning for us |
+|---|---|---|
+| 17(a)(i) | *"the other shall keep her course and speed"* | The default. What we already say. |
+| 17(a)(ii) | *"may however take action… as soon as it becomes apparent… that the vessel required to keep out of the way is not taking appropriate action"* | **Permission** unlocks. We must tell the captain when. |
+| 17(b) | *"finds herself so close that collision cannot be avoided by the action of the give-way vessel alone, she **shall** take such action as will best aid to avoid collision"* | **Duty.** Not optional. |
+| 17(c) | *"shall… not alter course to port for a vessel on her own port side"* | Directly actionable: in a Rule 15 stand-on, the target **is** to port. |
+| 17(d) | *"does not relieve the give-way vessel of her obligation"* | Informational. Not our output. |
+
+Note 17(c) composes perfectly with Rule 15 stand-on: the target is on our port side by
+definition, so the advice is always *"COLREGs advise against altering to port."*
+
+```python
+# standon_escalation.py — pure. History lives with the caller.
+STAGE_HOLD     = 'hold'       # 17(a)(i)
+STAGE_MAY_ACT  = 'may_act'    # 17(a)(ii)
+STAGE_MUST_ACT = 'must_act'   # 17(b)
+
+# Rule 8(b) requires alterations "large enough to be readily apparent to another
+# vessel observing visually or by radar". Tunables #6-#8 (§12.3 6a).
+APPARENT_COURSE_CHANGE_DEG = 10.0
+APPARENT_SPEED_CHANGE_FRAC = 0.20
+NO_ACTION_WINDOW_S         = 60.0
+MUST_ACT_TCPA_S            = 120.0
+
+
+def _ang_diff(a, b):
+    return abs((b - a + 180.0) % 360.0 - 180.0)
+
+
+def target_has_manoeuvred(track, now, window_s=NO_ACTION_WINDOW_S):
+    """track: [(t, cog, sog)] oldest first. Did the target visibly act?
+
+    FAILS SAFE TOWARDS 'yes'. On thin data we must not accuse the other vessel
+    of inaction: that would push the captain to manoeuvre while 17(a)(i) still
+    says hold course, which is its own hazard.
+    """
+    recent = [p for p in track if now - p[0] <= window_s]
+    if len(recent) < 2:
+        return True
+    t0, cog0, sog0 = recent[0]
+    turned = max(_ang_diff(cog0, c) for _, c, _ in recent) >= APPARENT_COURSE_CHANGE_DEG
+    slowed = (max(abs(s - sog0) for _, _, s in recent) / max(sog0, 0.1)
+              >= APPARENT_SPEED_CHANGE_FRAC)
+    return turned or slowed
+
+
+def escalation_stage(tier, tcpa_s, track, now):
+    """Rule 17 stage. Call ONLY when we hold a stand-on role."""
+    # 17(b) is proximity alone and does NOT depend on track data -- it must
+    # fire even for a target we have only just acquired.
+    if (tier == 'critical' and tcpa_s is not None
+            and 0.0 <= tcpa_s <= MUST_ACT_TCPA_S):
+        return STAGE_MUST_ACT
+    if not target_has_manoeuvred(track, now):
+        return STAGE_MAY_ACT
+    return STAGE_HOLD
+```
+
+**Voice phrases.** `must_act` is the most urgent output the system has — more urgent than
+the Critical alert itself — and preempts accordingly.
+
+```python
+STANDON_PHRASES = {
+    STAGE_MAY_ACT:  'Warning. Give-way vessel is not altering. You may now take action. '
+                    'COLREGs advise against altering to port.',          # 17(a)(ii)+17(c)
+    STAGE_MUST_ACT: 'Danger. Collision cannot be avoided by the other vessel alone. '
+                    'COLREGs require you to act now.',                    # 17(b)
+}
+```
+
+Both remain advisory in form (D02-6) while conveying that the duty has changed — which is
+the distinction Rule 17 actually draws between *may* and *shall*.
+
+Guarded by `test_standon_escalation.py` (E1–E8).
+
 ### 8.8 Orchestration loop — the glue between per-target and global state
 
 **v1.2 omitted this entirely.** `SafeHelmAlertManager` and `VoiceArbiter` each track their
@@ -1486,27 +1568,69 @@ be applied to text (seizure risk and legibility).
 
 ---
 
-## 9. Requirements Traceability
+## 9. Requirements Traceability — HCD-REQ-001
 
-v1.0 cited spec section ranges but had no REQ-ID mapping, which is how REQ-HCD-027 came to
-be missed. This matrix is the coverage evidence.
+Completes gate 5. v1.0 cited section ranges with no REQ-ID mapping, which is how
+REQ-HCD-027 came to be missed. Every ID in HCD-REQ-001 is accounted for below.
 
-| Requirement | Design section | Status |
-|---|---|---|
-| REQ-HCD-009 HAT probed at boot + each scheduled re-probe | §5 HCD-1 + timer | Covered |
-| REQ-HCD-020 udev attach/detach, no polling | §5 HCD-2 | Covered |
-| REQ-HCD-026…028 scheduled re-probe every 15 min | §5 HCD-1 `.timer` | **Added in v1.1** |
-| REQ-HCD-050 manifest at `config/capabilities-manifest.json` | §5 HCD-3 | Covered |
-| ADV-1…ADV-4 advisory role | §1, §8.4, §8.7 | **New in v1.1** |
-| D02-3 gating matrix | §8.2 | **New in v1.1** |
-| D02-4 rate caps | §8.3 | **New in v1.1** |
-| SH-15 Phase 2 gate | §8.6 | Covered |
+> **Record correction.** HCD-REQ-001 is described as *"97 requirements"* in
+> `PROJECT_CHECKLIST.md`, `DEPLOYMENT_INDEX.md` and MEMORY.md. It contains **63**.
+> The IDs run to REQ-HCD-097 but the numbering is blocked with gaps (no 017–019, 029,
+> 035–039, 045–049, 054–059, 066–069, 080–089), and someone read the highest ID as the
+> count. Corrected in all four records S160.
 
-**Outstanding:** the remaining REQ-HCD IDs in HCD-REQ-001 (97 total) are not yet
-individually mapped. **Complete this matrix before HCD-1 implementation starts** — it is
-the only mechanism that proves coverage, and it already caught one miss.
+| Block | IDs | Design | Status |
+|---|---|---|---|
+| 2.1 Platform detection | 001–004 | §5 HCD-1 | ✅ |
+| 2.2 HAT detection | 005–009 | §5 HCD-1 | ✅ 009 (probe at boot + each scheduled re-probe) satisfied by the timer |
+| 2.3 Accelerator detection | 010–016 | §5 HCD-1 | ✅ |
+| 3.1 Hot-plug | 020–025 | §5 HCD-2 | ✅ 020 ≤5 s met via `systemd-run --no-block` |
+| 3.2 Scheduled re-probe | 026–028 | §5 HCD-1 `.timer` | ✅ **added v1.1 — the miss that motivated this matrix** |
+| 3.3 Change notification | 030–034 | §5 HCD-2, HCD-4 | ⚠ **032 GAP** — see below |
+| 4.1 Profile file | 040–044 | §5 HCD-1 | ⚠ **096, 097 GAPs** — see below |
+| 5.1 Manifest file | 050–053 | §5 HCD-3 | ✅ |
+| 6.1 Gate logic | 060–065 | §5 HCD-3 | ⚠ **065 deviation** — see below |
+| 7.1 Setup description | 070–074 | §5 HCD-4, HCD-5 | ✅ |
+| 7.3 Section rules | 075–079 | §5 HCD-4 | ✅ |
+| 9 Non-functional | 090–097 | various | ⚠ **096, 097 GAPs** |
 
----
+### 9.1 Gaps and deviations found by building this matrix
+
+**⚠ REQ-HCD-032 — NOT IMPLEMENTED.** *"Each d3kOS systemd service that is feature-gated
+SHALL watch `hardware-profile.json` for changes (via `inotifywait` or equivalent) and
+re-evaluate its enabled state on change."* The design has the **dashboard** receiving a
+webhook; individual gated services (SafeHelm, marine-vision) never watch the file. The
+`os.stat()` mtime check in §5 HCD-3 makes this cheap — a gated service re-checking
+`feature_available()` on its own loop satisfies "or equivalent" — but nothing currently
+requires it to, so a service could keep running after its accelerator is unplugged.
+Interacts with REQ-HCD-034 (graceful stop on removal). **Build task: HCD-6.**
+
+**⚠ REQ-HCD-097 — NOT SATISFIED.** *"A probe failure SHALL produce a valid
+`hardware-profile.json` with all unknown fields set to safe defaults — it SHALL NOT leave
+the profile file absent."* The §5 HCD-1 script uses `trap 'rm -f "$TMP"' EXIT`, so a `jq`
+failure removes the temp and leaves the previous profile — or on first boot, none at all.
+Needs a fallback that writes a minimal valid profile with `pi_gen: 0`, `ram_mb: 0`,
+`accelerator.present: false`. The gate failing closed (§5 HCD-3) is the correct second
+line of defence, but the profile should never be absent in the first place.
+
+**⚠ REQ-HCD-096 — AT RISK.** *"`hardware-profile.json` SHALL survive a d3kOS software
+update — it is operator data, not application data."* The §5.1 file structure listed
+`opt/d3kos/config/hardware-profile.json` in the deployed tree as a *"default empty
+profile"*. If an update rsyncs `config/`, it overwrites live operator data. **Remove it
+from the deployed tree**; the probe creates it, and REQ-HCD-097's fallback covers the
+first-boot case.
+
+**ℹ REQ-HCD-065 — DELIBERATE DEVIATION, stated per AAO.** The requirement says invalidate
+the cache *"when `probe_version` changes"*. §5 HCD-3 invalidates on the profile file's
+**mtime** instead. The letter differs; the intent is exceeded. An in-memory
+`probe_version` comparison cannot work across processes — the dashboard, SafeHelm and
+marine-vision are separate processes, and v1.0's attempt to poke
+`feature_gate._cached_version` from the dashboard could never have reached them. The
+atomic-rename write makes mtime the reliable cross-process signal. `SHALL NOT read the
+JSON file on every call` is satisfied: a bare `stat()` is not a read of the JSON, and
+`json.load()` runs only when the file has actually changed. REQ-HCD-094's ≤5 ms budget is
+met with large margin. **Operator: accept the deviation, or require literal
+`probe_version` comparison?**
 
 ## 10. Test Specifications
 
@@ -1660,7 +1784,7 @@ closed; a defect with only a corrected document is not.
 | 2 | Every case **fails** for the right reason — assertion failure, not import error | ✅ **DONE S160** — 92 failed, 0 errors |
 | 3 | Every case **passes** against a correct implementation | ✅ **DONE S160** — see §12.2 |
 | 4 | `./tests/run-all.sh` picks them up **and cannot report a non-collecting file as green** | ✅ **DONE S160** — BUG-124 fixed |
-| 5 | §9 traceability matrix completed for the remaining REQ-HCD IDs | ⬜ **OPEN** |
+| 5 | §9 traceability matrix completed for the remaining REQ-HCD IDs | ✅ **DONE S160** — all 63 IDs; found 3 gaps (HCD-6, HCD-7) + 1 stated deviation |
 | 6 | **Human maritime sign-off on the §8.4 rule boundaries** | ⬜ **OPEN — see §12.3** |
 
 Items 5 and 6 are the remaining blockers. Items 1–4 are the "solution prior to
@@ -2133,7 +2257,7 @@ a vessel abaft the beam) holds whether or not Section II applies. Guarded by C19
 |---|---|---|
 | 7a | Part B enumerated; every rule marked implemented / out of scope / gap | ✅ **DONE** — §14 |
 | 7b | Operator decision on A / B / C above | ✅ **DONE S160 — D02-7: B now, A in v0.9.9.6** |
-| 7c | Rule 17(b) stand-on escalation implemented | ⬜ **OPEN — blocks D02** |
+| 7c | Rule 17(b) stand-on escalation implemented | ✅ **DONE S160** — §8.9, guarded by E1–E8 |
 | 7d | Rules 9, 12 assessed for the reference vessel (under 20 m, power-driven) | ⬜ **OPEN** |
 
 ### 14.4 Sources
@@ -2294,5 +2418,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.9 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.10 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*
