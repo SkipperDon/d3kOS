@@ -274,3 +274,56 @@ def test_s11_disclaimer_page_carries_the_required_statements(claim, needle):
     not-a-replacement-for-the-captain, plus the §15.6 vessel assumptions."""
     src = require_file(f'{DASH}/templates/disclaimer.html', '§15.2')
     assert needle in src.lower(), f'disclaimer is missing its "{claim}" statement'
+
+
+# --------------------------------------------------------------------------
+# S12-S14 -- D19-1 every-boot gate and sensor honesty. Added v1.9.
+#
+# Operator decision D19-1: the dialogue appears on EVERY boot, not once per
+# version. Mitigated with a tiered form -- full text with a scroll gate on
+# first boot / version change / text change, abbreviated one-tap
+# re-acknowledgement otherwise -- so an underway reboot costs one touch.
+# --------------------------------------------------------------------------
+
+def test_s12_gate_arms_on_every_boot():
+    """S12: D19-1. Acceptance must NOT be treated as permanent.
+
+    The guard is that the gate is not short-circuited by a stored
+    "accepted: true" -- it re-arms each boot and uses the record only to
+    decide full vs abbreviated form.
+    """
+    src = require_file(f'{DASH}/app.py', '§15.0')
+    low = src.lower()
+    assert 'every_boot' in low or 'require_every_boot' in low, (
+        'no every-boot behaviour -- D19-1 requires the dialogue each boot (§15.0)')
+    assert 'abbreviated' in low or 'full_text' in low, (
+        'no tiered dialogue -- an underway reboot must clear in one tap (§15.0)')
+
+
+def test_s13_full_text_is_forced_when_terms_or_version_change():
+    """S13: §15.0 -- abbreviation must never hide changed terms.
+
+    A hash or version change has to escalate back to the full scroll-gated
+    read, or the abbreviation becomes a way to slip new terms past the captain.
+    """
+    src = require_file(f'{DASH}/app.py', '§15.0')
+    low = src.lower()
+    assert 'sha256' in low, 'no text hash comparison (§15.3)'
+    assert 'version' in low, 'no version comparison (§15.0)'
+
+
+@pytest.mark.parametrize('claim,needle', [
+    ('no radar',            'no radar'),
+    ('non-AIS invisible',   'invisible'),
+    ('one input among',     'one input among'),
+    ('never depend alone',  'never depend on it alone'),
+])
+def test_s14_disclaimer_states_the_sensor_limits(claim, needle):
+    """S14: §13.4 -- the limited view is the most important limitation.
+
+    Operator, S160: "you have AIS and cameras. This is a limited view for
+    safety and cannot be solely dependent on d3kOS." It must be in the text
+    the captain actually reads, not only in the design document.
+    """
+    src = require_file(f'{DASH}/templates/disclaimer.html', '§13.4')
+    assert needle in src.lower(), f'disclaimer is missing its "{claim}" statement'

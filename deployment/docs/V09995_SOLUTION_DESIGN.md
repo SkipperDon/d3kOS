@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.8
+**Version:** 1.9
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.9 | 2026-09-11 | **§13.4 sensor coverage + §13.5 alert-authority principle + D19-1 every boot.** Operator: *"you do not have full awareness — you have AIS and cameras. This is a limited view for safety and cannot be solely dependent on d3kOS… to make this wider acceptable you need radar or something similar."* §13.4 states it comparatively as a table: **no radar at all**, non-AIS vessels invisible, no sound-signal or light/shape interpretation, cameras present but unused by D02, depth and position hardware-dependent and outside the collision logic. §13.5 draws the design principle out: **alert authority must be proportional to sensor coverage** — which is the real reason D02-6 advisory phrasing and §14.3 option B are right, and it makes radar (**D20**) the gate on any stronger alerting rather than better software. **D19-1: dialogue on EVERY boot** (operator decision, made with the dark-helm concern on the record), mitigated by a tiered form — full scroll-gated text on first boot / version change / text-hash change, abbreviated one-tap re-acknowledgement otherwise. Suite: 147 cases. |
 | 1.8 | 2026-09-11 | **§15 D19 boot-time acceptance gate** per operator instruction — experimental-software dialogue with **Shutdown or Accept**. Offering Shutdown is what makes it consent rather than an announcement. Renders §13.1 verbatim (single source); acceptance recorded with a **sha256 of the rendered text** so the terms cannot change without re-consent. ⚠ **CONCERN RAISED:** implemented as accept-once-per-version rather than every boot, because a modal blocking the dashboard on every boot would leave the captain with a dark helm on an underway reboot — this project has already shipped BUG-106 (kiosk never launched, blank screen) and two restart storms. Every-boot is one config flag away; **operator decision pending.** Shutdown and accept endpoints are loopback-only (the dashboard is reachable from boat Wi-Fi, so an open poweroff endpoint would let any guest kill the helm display). §15.6: the §14 **Rule 9 and Rule 12** gaps reduce to two questions nobody has ever asked the operator — own-vessel type and length class — so they go in the first-boot wizard as a real fix rather than a disclaimer dodge. Suite: 140 cases. |
 | 1.7 | 2026-09-11 | **Operator decision D02-7: option B now, option A in v0.9.9.6.** Gate 7b closed. Closing option B properly exposed a hole in v1.6: gating only Rule 15's stand-on branch left **Rule 13 — which is also in Section II — free to assert Stand-On on an unconfirmed target.** Both branches are now gated, and the unconfirmed variant returns Rule 19(d)(ii) guidance (*avoid altering towards a vessel abaft the beam*) rather than a bare refusal, since that holds under either rule set. Option A recorded as **D18** in PART 20 for v0.9.9.6. Rule 17(b) remains required for v0.9.9.5 (gate 7c) — option B keeps Stand-On reachable once confirmed, and any Stand-On verdict owes the captain the 17(b) escalation. Suite: 132 cases. |
 | 1.6 | 2026-09-11 | **§14 COLREGs Part B coverage enumeration — the structural finding.** Four reviews had each found another missing rule; the cause was that coverage was never enumerated. v1.0 implemented the three rules its heading named and treated that as the rule set. Part B is **sixteen** rules. Enumerating them found: ⛔ **Rule 11** — Rules 11–18 apply *only to vessels in sight of one another*, and radar/AIS does not count. SafeHelm cannot establish visual contact, and in restricted visibility **Rule 19 has no stand-on vessel at all**, so *"hold course and speed"* is the opposite of what applies. **Rule 19(d) is the rule that actually governs an AIS-only detector** and is implementable from the data we have. ⛔ **Rule 17(b)** — the stand-on vessel *must* act when collision cannot be avoided by the give-way vessel alone; we say "Monitor" and never escalate, which is the failure mode in much of the collision case law. ⚠ Gaps in Rules 8, 9, 10, 12, 16 (Rule 9 matters: the reference vessel is under 20 m, and Rule 13's preamble excepts Rules 9 and 10). Option **B** implemented now — Stand-On is never asserted without confirmed vessel type **and** confirmed visual contact; options A/B/C put to the operator as gate 7b. Suite: 128 cases. |
@@ -1886,33 +1887,62 @@ Scope is the **whole system**, not SafeHelm. d3kOS already shows depth, engine, 
 anchor watch, all of which a captain may lean on. A whole-product statement is more honest
 than gating D02 alone.
 
-### ⚠ CONCERN — raise before building, not after
+### 15.0 Operator decision D19-1 — every boot
 
-**A modal that blocks the dashboard on *every* boot is a net safety negative.**
+**Decided S160: the dialogue appears on EVERY boot of d3kOS.** Not once per version.
 
-The Pi reboots underway: brownouts, power glitches, OTA updates, the self-healing units.
-If the dashboard sits behind a modal needing a human tap, the captain loses depth, engine
-and AIS display at precisely the moment they may be in a tight spot — and this project has
-already shipped a dark-helm bug (BUG-106: kiosk never launched, blank grey touchscreen) and
-two restart storms (BUG-102, BUG-105). A boot-blocking modal is a third way to end up
-staring at a screen with nothing useful on it.
+I raised a concern before building, which the operator has now answered with full
+knowledge of it. Recording both, because the reasoning matters if this is ever revisited:
 
-| | Option | Assessment |
-|---|---|---|
-| **1** | Modal on **every** boot | Literal reading of the instruction. Maximum consent evidence. **Creates the dark-helm hazard above.** |
-| **2** | Modal until accepted; then boot straight through. Re-prompt on version change, on disclaimer-text change, and after factory reset. | **Recommended.** Same consent record, same first-boot experience, no hazard. Acceptance is a vessel-level fact, not a per-power-cycle ritual. |
+> **The concern.** A modal blocking the dashboard on every boot means the Pi rebooting
+> underway — brownout, OTA update, a self-healing unit — leaves the captain without depth,
+> engine or AIS display until someone taps the screen. This project has already shipped
+> BUG-106 (kiosk never launched, blank grey touchscreen) and two restart storms
+> (BUG-102, BUG-105). This is a third route to a dark helm.
+>
+> **The operator's answer: every boot.** Which is defensible — the whole point of §13.4 is
+> that this system must never be leaned on, and a per-boot reminder is the most direct way
+> to keep that in front of whoever is at the helm. Consent that lapses into a checkbox
+> someone clicked eighteen months ago is weaker than consent renewed each time the vessel
+> is powered up.
 
-**Implemented as option 2. Option 1 is one config flag away
-(`disclaimer.require_every_boot: true`). Which do you want?**
+**Mitigation, so the decision costs as little as possible.** Every boot shows a dialogue,
+but not the same dialogue:
+
+| Occasion | Form |
+|---|---|
+| First boot, **or** d3kOS version changed, **or** §13.1 text changed (hash mismatch) | **Full text.** Scroll-to-end required before ACCEPT enables. Full informed consent. |
+| Every subsequent boot | **Abbreviated re-acknowledgement.** The experimental + not-a-replacement-for-the-captain headline and the §13.4 one-line sensor summary. **No scroll gate — one large tap clears it.** |
+
+So the captain sees it every single boot, and on the fiftieth boot it costs one touch and
+under a second — while a genuine change to the terms or the software still forces the full
+read. That keeps the operator's intent without making an underway reboot dangerous.
+
+**Residual risk, accepted:** an unattended reboot still leaves the helm showing the
+dialogue rather than instruments until someone touches it. That is now a known, recorded
+consequence of D19-1 rather than an accident.
+
+**Rejected mitigations, and why:**
+
+- *Auto-continue after N seconds* — destroys consent. A dialogue that dismisses itself was
+  never a gate.
+- *Underway detection (skip if SOG > 1 kt)* — attractive, but GPS has no fix at cold boot,
+  which is exactly when it would be needed. Unreliable at the only moment it matters.
+- *Show instruments behind the modal* — defeats the gate and invites reading depth through
+  a legal notice, which is worse than either option alone.
 
 ### 15.1 Behaviour
 
 ```
-boot → kiosk launches → GET /  →  acceptance recorded for this version?
-                                   ├─ no  → /disclaimer  (blocking)
-                                   │         ├─ [ ACCEPT AND CONTINUE ]  → wizard or dashboard
-                                   │         └─ [ SHUT DOWN ]            → systemctl poweroff
-                                   └─ yes → wizard (if pending) → dashboard
+boot → kiosk launches → GET /  →  /disclaimer  (blocking, EVERY boot — D19-1)
+                                     │
+                                     ├─ first boot, or version changed, or text hash
+                                     │  changed → FULL text, scroll-to-end required
+                                     └─ otherwise → ABBREVIATED re-acknowledgement,
+                                                    one tap, no scroll gate
+                                     │
+                                     ├─ [ ACCEPT AND CONTINUE ] → wizard or dashboard
+                                     └─ [ SHUT DOWN ]           → systemctl poweroff
 ```
 
 The gate sits **before** the first-boot wizard: consent precedes configuration.
@@ -1933,6 +1963,12 @@ The dialogue renders **§13.1 verbatim**, with one addition at the top:
 then the full §13.1 body (not a look-out · AIS-only blindness · silence is not clearance ·
 not an ARPA · not certified · no warranty), then:
 
+> **It sees AIS traffic and nothing else.** No radar. Vessels that do not transmit AIS are
+> invisible to it — most small craft, most sailing boats, tenders, kayaks, swimmers, debris.
+> It does not interpret lights, shapes or sound signals. It is one input among several, and
+> you supply the rest: radar if fitted, the depth sounder, position and chart awareness, and
+> a proper look-out. **Never depend on it alone.**
+>
 > **It assumes the following about your vessel.** If any of these is wrong, the COLREGs
 > advice will be wrong: *{vessel_type}*, *{vessel_length_class}*. You can change these in
 > Settings.
@@ -2176,6 +2212,65 @@ COLREGs **Rule 7(c)** is the most relevant regulation to this system's central w
 information."* AIS-only traffic data is scanty information. The disclaimer says so in plain
 language rather than citing the rule at the captain.
 
+### 13.4 Sensor coverage — the limited view, stated comparatively
+
+**Operator instruction, S160:** *"the problem is that you do not have full awareness — you
+have AIS and cameras. This is a limited view for safety and cannot be solely dependent on
+d3kOS. This is still the captain's responsibility. To make this wider acceptable you need
+radar or something similar, depth and knowledge of where you are and other alternatives."*
+
+This is the most important limitation in the document and prose buries it. Stated as a table:
+
+| What a collision-avoidance picture needs | d3kOS | Reality |
+|---|---|---|
+| **Radar** | ❌ **None** | The primary collision-avoidance sensor. Sees vessels that transmit nothing, plus land, buoys, squalls. **Its absence is the single biggest gap.** |
+| Vessels transmitting AIS | ✅ AIS | Class A and B. This is what D02 runs on. |
+| Vessels **not** transmitting AIS | ❌ | Most small craft, most sailing boats, tenders, kayaks, paddleboards, swimmers, debris, unlit obstructions. **Invisible.** |
+| Visual watch | ⚠ 4 cameras | Cameras exist, but **D02 does not use them.** They are a separate feature, not a lookout, and nobody watches them continuously. |
+| Sound signals (Rules 32–35) | ❌ | No horn or whistle detection. A vessel signalling its intentions is unheard. |
+| Lights and shapes (Rules 20–31) | ❌ | Not interpreted. The system cannot tell a fishing vessel from a yacht by her lights. |
+| Depth | ⚠ Sounder via Signal K | Present **when the hardware is fitted and working** — and it is hardware-dependent and has failed before. Not part of the collision logic at all. |
+| Position and charts | ⚠ GPS + AvNav | Present when there is a fix. **The reference installation's o-charts licences expired 2026-04-01.** Not part of the collision logic. |
+| Own-vessel type and size | ❌ | Never asked. See §15.6 — Rules 9 and 12 hinge on it. |
+
+**What follows from this, plainly:** d3kOS sees one slice of the traffic picture and none of
+the rest. **It is one input among several, and the captain supplies the others** — radar if
+fitted, the depth sounder, position and chart awareness, a proper visual and audible
+look-out, and their own judgment. Nothing in this system replaces any of those, and nothing
+in it should be relied on alone.
+
+COLREGs makes the same point in its own terms. **Rule 7(b)** requires *proper use of radar
+equipment if fitted*, and **Rule 7(c)** forbids assumptions *"on the basis of scanty
+information."* AIS-only traffic data **is** scanty information. **Rule 6** makes safe speed
+depend on visibility, traffic density and the limitations of radar equipment — none of which
+this system knows.
+
+### 13.5 Design principle: alert authority must be proportional to sensor coverage
+
+There is a trap here that is worth naming, because it cuts against the instinct to make the
+product feel good.
+
+**The more confident and capable the voice alerts sound, the more a captain will lean on
+them — and the sensor coverage in §13.4 cannot support being leaned on.** A system that
+announces *"You are Stand-On"* in a firm, certain voice is implicitly claiming it can see the
+situation. It cannot. It can see the AIS targets.
+
+So the phrasing should sound like **a crew member calling something out**, not like an
+instrument giving a reading. That is the real justification for decision D02-6 (advisory
+rather than imperative phrasing) and for the §14.3 option-B gating — they are not legal
+hedging, they are the alert vocabulary matching the actual sensor coverage.
+
+| Principle | Consequence, already implemented |
+|---|---|
+| Never claim certainty the sensors cannot support | D02-6 advisory phrasing; `*_unconfirmed` classifications |
+| Never assert the verdict that tells the captain to stop acting | §14.3 option B — Stand-On requires confirmation |
+| Never imply the absence of an alert means anything | ADV-4; *"Silence does not mean the water is clear"* |
+| Adding a sensor is what earns more authority | **Radar (D20) is the gate on any stronger alerting**, not better software |
+
+**This means D20 is not a nice-to-have.** Any future request to make SafeHelm more
+assertive, more automatic, or connected to steering should be answered with: *what sensor
+was added?* If the answer is none, the answer to the request is no.
+
 ### 13.3 Where it must appear
 
 | Surface | Form | Requirement |
@@ -2199,5 +2294,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.8 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.9 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*
