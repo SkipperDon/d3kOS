@@ -10083,3 +10083,161 @@ failure_category       : none
 human_verified         : 0
 task_classification    : ARCHITECT — Tier 1 (cross-system solution design governing multiple build sessions)
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-11 (S160-cont-2)
+**Goal:** Operator asked for a review of `V09995_SOLUTION_DESIGN.md` v1.0 (written earlier the same day). The review found defects; the session became twelve revisions, a test suite, one new BUG, and six operator decisions.
+
+**Model note:** v1.0 was written by Sonnet 4.6 earlier in this same conversation. The operator switched to Opus 5 and asked for a review of that work. Every finding below was found by reviewing output produced earlier in the same session.
+
+**Completed:**
+
+*Review of v1.0 — six defects, two safety-critical*
+- **Rule 14 head-on test was inverted.** `course_diff = abs((tgt-own+180)%360-180)` yields **0 for parallel and 180 for reciprocal**; v1.0 tested `< 15`. It fired for vessels travelling TOGETHER and never for an actual head-on. Two boats cruising alongside would have heard *"Danger. Head-on situation. Alter course to starboard."*
+- **Rule 13 role was inverted.** Relative bearing 112.5–247.5 is abaft own beam; a target there is overtaking US, so Rule 13(a) makes us STAND-ON. v1.0 voiced *"You do not have right-of-way"* — telling the captain to give way while obliged to hold course.
+- **No alert gating at all.** `classify()` took no CPA/TCPA/range, so every AIS target voiced every 15 s.
+- **Feature gate failed open** — the accelerator whitelist sat inside `if ... and not present`, so a Coral satisfied a Hailo-only feature. Same shape as BUG-91.
+- **`ram_gb = ram_kb/1048576` truncates** — MemTotal excludes reserved memory, so a 4 GB Pi reads 3 and an 8 GB Pi reads 7. `ram_gb_min: 8` was unsatisfiable on 8 GB hardware.
+- **Signal K port written as 3000** — it is **8099**; `app.py` says so in capitals and it is tagged BUG-46. 3000 is the dashboard.
+- Also: `Restart=always` + hard exit on two new units (BUG-105 pattern); `0.0.0.0` binds publishing camera streams and an unauthenticated collision-alarm ACK endpoint to the boat Wi-Fi; camera credentials in a world-readable YAML; a CORS gap that made the widget unable to work as drawn; hardcoded `localhost` regressing BUG-48; REQ-HCD-027 (15-min re-probe) absent.
+
+*Guard-test suite — 160 cases, 9 files, all red, zero errors*
+- Operator direction: no BUG entry for design-review findings; have a solution before implementing. §12 maps each defect to a named guard test; §12.1 blocks the first line of code until every test exists and FAILS for the right reason.
+- **Validated in both directions.** Algorithms materialised in a scratch tree, suites run against them (green), scratch discarded (red). A red test that would also fail against a correct implementation guards nothing.
+- Writing the tests found four further errors, all mine: §10.2 case G7 had the wrong expected value; the first harness resolved modules inside fixtures so every case reported ERROR rather than FAILED, violating my own gate; C14c/C14d used `own_cog=000` vs `tgt_cog=270` and called it reciprocal (it is 90°).
+
+*BUG-124 — logged and fixed*
+- `tests/run-all.sh` reported a pytest file that collected **ZERO tests** as `✓ PASS`. The pytest arm inferred status by grepping the last output line for `failed|error`, never read pytest's exit code, and never populated `NOT_RUN` — so the runner's own header promise (*"a file that cannot run is not a pass"*) held for the Playwright and Node arms and never for Python. `awk '/PYTEST/,/TOTAL/' | grep -c NOT_RUN` returned 0.
+- Fixed: status routes on exit code; 5 (nothing collected), 124 (timeout), 2/3/4 (crash) → `NOT_RUN` + `FAILED=1`.
+- **`set -e` deliberately NOT added** despite an external review recommending it. `pipefail` was already set; `-e` would abort the loop on the first failing suite — the BUG-51 subset problem, and it would have made the §12.1 red-phase gate unverifiable.
+- Consequence recorded: any pytest green count before S160 is untrustworthy for a file that may not have collected.
+
+*Three external AI reviews triaged*
+- Review 2 (Gemini): confirmed prior rulings; its one technical recommendation (`set -eo pipefail`) was wrong for this script, but chasing it found BUG-124.
+- Review 3: **Rule 13(d) persistence was real and serious** — an established overtaking encounter must not be re-read as a crossing when the bearing moves; v1.4 would have flipped a captain from stand-on to give-way mid-encounter as a ferry drew forward of 112.5°. Reviewer cited 13(c); the IMO text puts it at **13(d)**, and checking that found **13(c)** as a separate unimplemented rule. Its second claim (a "blind starboard" gap) was **incorrect** — the cited scenario returns `rule13_overtaking`, and its proposed `no_situation` would have been wrong advice. Recorded as C16 so it is not re-litigated.
+- Review 4: voice `'once'|'repeat'` was declared in `alert_gate.TIERS` and **never read** — Critical repeated on the same 60 s cadence as Warning; the untested per-target↔global glue; Rule 13 SOG oscillation; C4 not pinning its own inputs. Four of five points were real.
+
+*§14 COLREGs Part B enumeration — the structural finding*
+- Four reviews had each found another missing rule. Cause: coverage was never enumerated. v1.0 implemented the three rules its heading named and treated that as the rule set. **Part B is sixteen rules; three were implemented.**
+- ⛔ **Rule 11** — Rules 11–18 apply only to vessels **in sight of one another**, and radar/AIS does not count. SafeHelm cannot establish visual contact. **In restricted visibility Rule 19 has no stand-on vessel at all**, so *"hold course and speed"* is the opposite of what applies. **Rule 19(d) is the rule that actually governs an AIS-only detector.** More serious than any single missing rule — Rule 18 and 13(d) were gaps within the right framework; this questions whether the framework applies.
+- ⛔ **Rule 17(b)** — the stand-on vessel *shall* act when collision cannot be avoided by the give-way vessel alone. We said "Monitor" and never escalated. This is the failure mode in much of the collision case law.
+- ⚠ Rules 8, 9, 10, 12, 16 gaps. Rule 9 matters: the reference vessel is under 20 m, and Rule 13's preamble excepts Rules 9 and 10.
+
+*§9 traceability matrix — completed for all 63 REQ-HCD IDs*
+- Found three more gaps: REQ-HCD-032 (gated services never watch the profile → HCD-6), REQ-HCD-097 (probe failure leaves no profile → HCD-7), REQ-HCD-096 (deployed default profile could overwrite operator data).
+- **Record correction: HCD-REQ-001 has 63 requirements, not 97.** IDs run to 097 with block gaps; someone read the highest ID as the count. Fixed in four records.
+- One deviation stated per AAO and accepted: REQ-HCD-065 asks for `probe_version` cache invalidation; design uses file mtime, because an in-process counter cannot work across the dashboard, SafeHelm and marine-vision processes.
+
+*Liability and honesty work, operator-driven*
+- §12.3 gate item 6 (maritime sign-off) **withdrawn as unobtainable** — the operator is right that nobody endorses a rule boundary without reviewing the whole system, and anyone who does assumes liability. Replaced with three achievable items: trace every constant to regulation text (three turn out to be Rule 13(b)/21(b)/21(c) verbatim; exactly four are tunable), ask for **challenge not endorsement**, and show the reasoning in the widget so a wrong call is catchable at the helm.
+- §13 **disclaimer** written. Non-ARPA and not-a-look-out wording deliberate. Legal sufficiency flagged as a lawyer question, not an AI one.
+- §13.4 **sensor coverage** stated comparatively per operator: no radar, non-AIS vessels invisible, no sound/light interpretation, cameras unused by D02, depth and position hardware-dependent and outside the collision logic.
+- §13.5 **alert authority must be proportional to sensor coverage** — the real justification for advisory phrasing and Stand-On gating, and it makes radar (D20) the gate on any stronger alerting rather than better software.
+- §15 **D19 boot-time acceptance gate**, every boot per D19-1, with a tiered dialogue so an underway reboot costs one tap.
+
+**Decisions (operator):**
+- D02-5 ACK scope per-target; a Critical on another target wins queue insertion immediately
+- D02-6 Rule 14 phrasing advisory, not imperative — an imperative shifts liability from captain to software. Extended to both Rule 13 phrases.
+- D17-1 keep `probe_version`-per-write **and** the `content_hash` guard
+- SH-11 marked SUPERSEDED → PART 20 (was contradicting D02-1)
+- D02-7 **option B now, option A (Rule 19(d) default) in v0.9.9.6** → D18
+- D19-1 dialogue on **every boot**, with the dark-helm concern on the record
+- D02-8 wizard questions for propulsion + length class (closes Rules 9/12 properly)
+- D02-9 **plugin-shaped now, publish v0.9.9.6, engine stays Python** — 1,608 lines of validated Python and 160 guard cases survive rather than being re-typed in JS
+- REQ-HCD-065 deviation accepted
+
+**New tasks added:** BUG-124 · D18 · D19 · D20 · HCD-6 · HCD-7 · HCD-8
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S160-cont-2) | Check console.anthropic.com → Usage → 2026-09-11. Long session, ~13 Helm-OS commits + 4 memory commits, 4,872 insertions | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- §12.3 6b — post the §8.4 challenge request (constants + worked cases) to the forum. **Operator action.**
+- §12.3 6c — widget shows its reasoning. D02 build task.
+- §13.3 — legal review of the disclaimer before D02 ships. **Operator action.**
+- HCD-6, HCD-7, HCD-8, D19 — new build tasks in D17/D19
+- D18, D20 — v0.9.9.6
+- D02-5 Critical-preemption interpretation (bypasses the 15 s global gap) — flagged, still open
+- GitHub Issue Sync for BUG-124 — **not run, awaiting operator approval** (externally visible step)
+- **No code implemented.** Build order D17 → D05 → D16 → D02, gated on §12.1.
+
+---
+
+QUALITY METRICS — 2026-09-11 (S160-cont-2)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+SCR: 12 operator-directed tasks, 12 completed, 0 actions outside scope. New checklist rows
+(BUG-124, D18–D20, HCD-6/7/8) were each a direct consequence of an operator instruction or a
+finding the standing bug/checklist rule requires logging.
+
+SGCR: 6 gates required, 6 honoured — BUG-124 logged before fixing (asked first); every-boot
+modal raised as a CONCERN and waited; the JS-vs-Python language issue raised before
+restructuring any files and waited; REQ-HCD-065 deviation stated and waited; D02-5
+preemption interpretation flagged and left open; no file restructure after the plugin
+decision until the operator confirmed the language.
+
+REC: 0. No git restore, checkout or rollback. Four of my own errors were caught by running
+the tests before commit (G7 expected value, the fixture-vs-test-body harness fault,
+C14c/C14d non-reciprocal courses) — that is the gate working as designed, not recovery.
+
+Trend (last 5: S156/S157/S158/S159/S160-cont-2): 100 / 100 / 100 / 100 / 100 → avg 100.0.
+All five at ceiling. Note the metrics measure scope, gates, recovery, memory and
+authorization — **not correctness**. This session's value was almost entirely in correctness
+work the SQS does not see.
+
+OIC SELF-REPORT: 95/100
+Basis:
+- Uncertainty flagged where uncertain: YES — go2rtc port map flagged ~90% and marked
+  verify-before-deploy; AIS enumeration values deliberately not asserted and deferred to
+  implementation; D20 radar feasibility explicitly "nothing asserted"; every regulation quote
+  verified against the IMO source before being written into the spec.
+- NOT COMPLETED section accurate: YES — no code was implemented and the log says so plainly;
+  eight open items listed including two that are operator actions I cannot do.
+- Work substantive: YES — six defects in v1.0 found and fixed, two safety-critical; a
+  seventh (Rule 18) and eighth (Rule 11) and ninth (Rule 13(d)) found by going to the
+  regulation text; BUG-124 found and fixed in the trusted test runner; 160 guard cases
+  validated in both directions.
+- Tests cover the failure case: YES — each of the eleven v1.0 defects has a named guard, and
+  the suite was proven green against a reference before being left red.
+Deductions: −5. I said the eight test suites "port across essentially unchanged" when
+discussing the Signal K plugin, while the operator's target layout was JavaScript and the
+suites are 1,608 lines of Python. The *scenarios* port; the files would need rewriting. I
+stated it with more confidence than it deserved and could have cost the operator a bad
+architecture decision. Self-caught and corrected the following turn, before any harm — but
+it was a false-confidence statement of exactly the kind §20.2 exists to prevent.
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-11 (S160-cont-2)
+─────────────────────────────────────────────────────
+session_duration_min   : ~240 (estimate — long multi-turn session)
+tasks_planned          : 12 (each introduced by an operator instruction mid-session)
+tasks_completed        : 12
+governing_doc_version  : CLAUDE.md 2026-09-09
+attributed_rec         : 0
+failure_category       : none (this session found and fixed defects; it did not introduce any that survived)
+human_verified         : 0
+task_classification    : ARCHITECT — Tier 1. Reason: cross-system safety design governing
+                         multiple future build sessions, plus regulation-text verification.
+notes                  : v1.0 was authored by Sonnet 4.6 earlier in this same conversation;
+                         the operator switched to Opus 5 and requested a review of it. Four
+                         external AI reviews were also triaged — three found real defects,
+                         one made a claim that was incorrect. The §14 enumeration exists
+                         because review-driven discovery was not converging: each round found
+                         another missing COLREGs rule until coverage was enumerated as a
+                         closed list.
+─────────────────────────────────────────────────────
