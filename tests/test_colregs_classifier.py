@@ -40,7 +40,8 @@ def test_c1_target_astern_and_faster_means_we_are_stand_on(cc):
     """
     assert cc.classify(own_cog=90, own_sog=10,
                        tgt_cog=90, tgt_sog=12,
-                       relative_bearing=180) == 'rule13_being_overtaken'
+                       relative_bearing=180,
+                       in_sight=True) == 'rule13_being_overtaken'
 
 
 def test_c2_we_are_faster_and_target_ahead_means_we_give_way(cc):
@@ -216,7 +217,8 @@ def test_c10_clear_speed_differential_still_registers(cc):
     """C10: the dead-band must not suppress a real overtaking situation."""
     assert cc.classify(own_cog=90, own_sog=10.0,
                        tgt_cog=90, tgt_sog=11.0,
-                       relative_bearing=180) == 'rule13_being_overtaken'
+                       relative_bearing=180,
+                       in_sight=True) == 'rule13_being_overtaken'
 
 
 def test_c10b_no_flapping_across_a_noisy_sog_sequence(cc):
@@ -271,8 +273,8 @@ def test_c11b_rule18_does_not_override_rule_13(cc):
     evaluated before Rule 18.
     """
     assert cc.classify(own_cog=90, own_sog=10, tgt_cog=90, tgt_sog=12,
-                       relative_bearing=180,
-                       tgt_class='sailing') == 'rule13_being_overtaken'
+                       relative_bearing=180, tgt_class='sailing',
+                       in_sight=True) == 'rule13_being_overtaken'
 
 
 def test_c12_confirmed_power_driven_target_still_gives_stand_on(cc):
@@ -344,12 +346,14 @@ def test_c14_overtaking_does_not_become_crossing_when_the_bearing_moves(cc):
     the v1.0 inversions, occurring at the worst possible moment.
     """
     established = cc.classify(own_cog=0, own_sog=10, tgt_cog=5, tgt_sog=18,
-                              relative_bearing=120, tgt_class='power-driven')
+                              relative_bearing=120, tgt_class='power-driven',
+                              in_sight=True)
     assert established == 'rule13_being_overtaken'
 
     still = cc.classify(own_cog=0, own_sog=10, tgt_cog=5, tgt_sog=18,
                         relative_bearing=95, tgt_class='power-driven',
-                        prior_rule=established, is_past_and_clear=False)
+                        prior_rule=established, is_past_and_clear=False,
+                        in_sight=True)
     assert still == 'rule13_being_overtaken', (
         'Rule 13(d) violated: a bearing change converted an overtaking '
         'situation into a crossing and flipped the captain to give-way')
@@ -495,3 +499,65 @@ def test_c18b_give_way_does_not_require_confirmation(cc):
     """
     assert cc.classify(own_cog=0, own_sog=10, tgt_cog=270, tgt_sog=10,
                        relative_bearing=45) == 'rule15_giveway'
+
+
+# --------------------------------------------------------------------------
+# C19 -- Rule 13 is in Section II, so Rule 11 gates it too. Added v1.7.
+#
+# Operator decision D02-7: option B now, option A in v0.9.9.6. Closing option
+# B properly means every Stand-On assertion is gated, and Rule 13's
+# being-overtaken branch asserts Stand-On just as Rule 15's does.
+# --------------------------------------------------------------------------
+
+def test_c19_being_overtaken_also_requires_confirmed_visual_contact(cc):
+    """C19: Rule 13 sits in Section II, so Rule 11 applies to it as well.
+
+    A faster target astern would be a Rule 13 stand-on case -- but only if the
+    vessels are in sight. Unconfirmed, Section II does not apply and Rule 19
+    has no stand-on vessel.
+    """
+    result = cc.classify(own_cog=90, own_sog=10, tgt_cog=90, tgt_sog=12,
+                         relative_bearing=180, tgt_class='power-driven')
+    assert result != 'rule13_being_overtaken', (
+        'asserted Stand-On via Rule 13 for a target not confirmed in sight -- '
+        'Rule 13 is in Section II and Rule 11 gates the whole section')
+    assert result == 'rule13_being_overtaken_unconfirmed'
+
+
+def test_c19b_unconfirmed_overtaken_phrase_gives_rule_19d_guidance(cc):
+    """C19b: unconfirmed must still be useful, not just a refusal.
+
+    Rule 19(d)(ii) -- avoid altering course towards a vessel abeam or abaft
+    the beam -- is valid whether or not Section II applies, so it is the right
+    thing to say when we cannot establish in-sight.
+    """
+    phrase = cc.VOICE_PHRASES['rule13_being_overtaken_unconfirmed'].lower()
+    assert 'not confirmed in sight' in phrase
+    assert 'towards it' in phrase, 'missing the Rule 19(d)(ii) guidance'
+    assert 'you are stand-on' not in phrase
+
+
+def test_c19c_giving_way_while_overtaking_needs_no_confirmation(cc):
+    """C19c: the give-way side stays unconditional.
+
+    Rule 19(d)(i) explicitly carves out "other than for a vessel being
+    overtaken", so overtaking guidance is consistent across both rule sets and
+    withholding it would suppress safe, useful output.
+    """
+    assert cc.classify(own_cog=90, own_sog=12, tgt_cog=90, tgt_sog=8,
+                       relative_bearing=0) == 'rule13_overtaking'
+
+
+def test_c19d_persistence_lock_covers_the_unconfirmed_variant(cc):
+    """C19d: Rule 13(d) must hold for the unconfirmed case too.
+
+    Otherwise an unconfirmed overtaking encounter could still be re-read as a
+    crossing when the bearing moves -- the v1.4 defect, reintroduced through
+    the new branch.
+    """
+    assert 'rule13_being_overtaken_unconfirmed' in cc.RULE13_LOCKED
+    still = cc.classify(own_cog=0, own_sog=10, tgt_cog=5, tgt_sog=18,
+                        relative_bearing=95, tgt_class='power-driven',
+                        prior_rule='rule13_being_overtaken_unconfirmed',
+                        is_past_and_clear=False)
+    assert still == 'rule13_being_overtaken_unconfirmed'
