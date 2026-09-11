@@ -112,14 +112,17 @@ def test_c5_target_on_starboard_means_we_give_way(cc):
 def test_c6_target_on_port_means_we_stand_on(cc):
     """C6: crossing target to port -> we hold course and speed (Rule 15/17).
 
-    tgt_class must be stated. Since v1.4 an unconfirmed target cannot be told
-    it is Stand-On, because it may be a sailing or fishing vessel that outranks
-    us under Rule 18 -- see C13. The unconfirmed path is asserted separately.
+    Both tgt_class AND in_sight must be stated. Since v1.4 an unconfirmed
+    target cannot be told it is Stand-On (Rule 18, C13), and since v1.6 neither
+    can a target not confirmed in sight (Rule 11, C17) -- Rules 11-18 apply
+    only to vessels in sight of one another. The unconfirmed paths are
+    asserted separately.
     """
     assert cc.classify(own_cog=0, own_sog=10,
                        tgt_cog=90, tgt_sog=10,
                        relative_bearing=315,
-                       tgt_class='power-driven') == 'rule15_standon'
+                       tgt_class='power-driven',
+                       in_sight=True) == 'rule15_standon'
 
 
 # --------------------------------------------------------------------------
@@ -276,7 +279,8 @@ def test_c12_confirmed_power_driven_target_still_gives_stand_on(cc):
     """C12: Rule 18 must not swallow the ordinary Rule 15 stand-on case."""
     assert cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
                        relative_bearing=315,
-                       tgt_class='power-driven') == 'rule15_standon'
+                       tgt_class='power-driven',
+                       in_sight=True) == 'rule15_standon'
 
 
 def test_c13_unknown_target_type_never_asserts_stand_on(cc):
@@ -427,3 +431,67 @@ def test_c16_faster_vessel_on_our_starboard_bow_is_overtaking_not_crossing(cc):
     assert cc.classify(own_cog=0, own_sog=12, tgt_cog=0, tgt_sog=8,
                        relative_bearing=45,
                        tgt_class='power-driven') == 'rule13_overtaking'
+
+
+# --------------------------------------------------------------------------
+# C17-C18 -- Rule 11 applicability. Added v1.6 from the §14 Part B enumeration.
+#
+# Rules 11-18 apply ONLY to vessels IN SIGHT OF ONE ANOTHER (Rule 11).
+# Radar -- and therefore AIS -- does not constitute being in sight. In
+# restricted visibility Rule 19 applies and THERE IS NO STAND-ON VESSEL, so
+# "You are Stand-On. Hold course and speed" is not merely unsupported in fog,
+# it is the opposite of what Rule 19 requires.
+#
+# Pending the operator's A/B/C decision (§14.3), option B is implemented:
+# Stand-On is never asserted without confirmation. Two independent reasons now
+# converge on that -- unknown vessel type (Rule 18) and unconfirmed visual
+# contact (Rule 11).
+# --------------------------------------------------------------------------
+
+def test_c17_stand_on_requires_confirmed_visual_contact(cc):
+    """C17: THE RULE 11 GUARD. Type confirmed is not sufficient on its own.
+
+    A power-driven target crossing from port is a Rule 15 stand-on case only
+    if the vessels are in sight of one another. Without that, Section II does
+    not apply at all.
+    """
+    result = cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
+                         relative_bearing=315, tgt_class='power-driven',
+                         in_sight=False)
+    assert result != 'rule15_standon', (
+        'asserted Stand-On for a target not confirmed to be in sight -- '
+        'Rule 11 means Section II does not apply, and Rule 19 has no '
+        'stand-on vessel at all')
+
+
+def test_c17b_in_sight_defaults_to_false(cc):
+    """C17b: omitting in_sight must fail safe, exactly as tgt_class does.
+
+    AIS never establishes visual contact, so unconfirmed is the correct
+    default and the common case.
+    """
+    result = cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
+                         relative_bearing=315, tgt_class='power-driven')
+    assert result != 'rule15_standon'
+
+
+def test_c18_confirmed_in_sight_and_type_permits_stand_on(cc):
+    """C18: with both confirmations, ordinary Rule 15 stand-on is available.
+
+    The guard must not make Stand-On unreachable -- only unassertable on
+    unconfirmed data.
+    """
+    assert cc.classify(own_cog=0, own_sog=10, tgt_cog=90, tgt_sog=10,
+                       relative_bearing=315, tgt_class='power-driven',
+                       in_sight=True) == 'rule15_standon'
+
+
+def test_c18b_give_way_does_not_require_confirmation(cc):
+    """C18b: give-way advice is conservative under both rule sets.
+
+    Rule 15 give-way and Rule 19(d) avoiding action point the same way, so
+    withholding give-way advice pending confirmation would suppress useful
+    and safe output for no benefit.
+    """
+    assert cc.classify(own_cog=0, own_sog=10, tgt_cog=270, tgt_sog=10,
+                       relative_bearing=45) == 'rule15_giveway'

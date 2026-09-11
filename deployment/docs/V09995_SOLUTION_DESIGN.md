@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.5
+**Version:** 1.6
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.6 | 2026-09-11 | **§14 COLREGs Part B coverage enumeration — the structural finding.** Four reviews had each found another missing rule; the cause was that coverage was never enumerated. v1.0 implemented the three rules its heading named and treated that as the rule set. Part B is **sixteen** rules. Enumerating them found: ⛔ **Rule 11** — Rules 11–18 apply *only to vessels in sight of one another*, and radar/AIS does not count. SafeHelm cannot establish visual contact, and in restricted visibility **Rule 19 has no stand-on vessel at all**, so *"hold course and speed"* is the opposite of what applies. **Rule 19(d) is the rule that actually governs an AIS-only detector** and is implementable from the data we have. ⛔ **Rule 17(b)** — the stand-on vessel *must* act when collision cannot be avoided by the give-way vessel alone; we say "Monitor" and never escalate, which is the failure mode in much of the collision case law. ⚠ Gaps in Rules 8, 9, 10, 12, 16 (Rule 9 matters: the reference vessel is under 20 m, and Rule 13's preamble excepts Rules 9 and 10). Option **B** implemented now — Stand-On is never asserted without confirmed vessel type **and** confirmed visual contact; options A/B/C put to the operator as gate 7b. Suite: 128 cases. |
 | 1.5 | 2026-09-11 | **Third external review — one claim real and serious, one incorrect.** ⛔ **Rule 13(d) was not implemented:** an established overtaking encounter must persist *"until she is finally past and clear"*, and a bearing change cannot convert it into a crossing. v1.4 re-read geometry every tick with no memory, so a ferry overtaking us would flip the captain from stand-on to give-way the moment its bearing slid forward of 112.5° — mid-encounter, at the worst possible moment. Fixed with a `prior_rule` lock threaded through `advisory_tick`; the classifier stays pure. The reviewer cited this as 13(c); the IMO text puts it at **13(d)**. ⚠ **13(c) turned out to be a separate unimplemented requirement** — *"when in any doubt as to whether she is overtaking… assume that this is the case"* — now applied, and it **supersedes the v1.3 symmetric dead-band on the give-way side**, resolving the flapping deterministically instead of by suppression. 13(c) biases toward the give-way role only; it never manufactures a stand-on claim. ✅ **The review's second claim (a "blind starboard" gap) was incorrect** — the cited scenario returns `rule13_overtaking`, not `rule15_giveway`, and its proposed `no_situation` would have been wrong advice. Documented as C16 so it is not re-litigated. Suite: 124 cases across 8 files. |
 | 1.4 | 2026-09-11 | **Gate item 6 withdrawn and replaced; disclaimer added; Rule 18 defect found.** The operator rejected v1.3's maritime sign-off gate as unobtainable — nobody endorses a rule boundary without reviewing the whole system, and anyone who does assumes liability. Correct, and a gate that cannot be satisfied is worse than none. Replaced by §12.3 items **6a** (every §8.4 constant traced to regulation text — three turn out to be Rule 13(b)/21(b)/21(c) verbatim, and exactly **four** values are tunable), **6b** (ask for challenge, never endorsement — nobody underwrites anything), **6c** (widget shows its reasoning so a wrong call is catchable at the helm). **§13 Disclaimer added** per operator instruction, with the non-ARPA and not-a-look-out wording deliberate, plus a flagged legal review. **⛔ While verifying the regulation text, found Rule 18(a) was not implemented at all** — Rules 13/14/15 govern two power-driven vessels, and v1.3 would have told a captain "You are Stand-On" against a sailing or fishing vessel that outranks them. Same severity class as the v1.0 inversions. Fixed, plus the safety rule that **Stand-On is never asserted for a target whose type AIS has not confirmed** (the common case — Class B carries no nav status). Suite: 117 cases across 8 files. |
 | 1.3 | 2026-09-11 | **Third-party AI review (S160) — five findings, four were real defects.** (1) §10.1 case C4 did not state its SOGs, leaving its expected output undetermined; every classifier row now states both. (2) **`voice: 'once' \| 'repeat'` was declared in `alert_gate.TIERS` and never read** — `wants_audio()` applied one 60 s gap to every tier, so Critical was no more insistent than Warning. Cadence now differentiated: Tier 2 once per 120 s episode, Tier 3 every 60 s. (3) The per-target ↔ global glue was never specified or tested; §8.8 now defines `advisory_tick()` and `test_advisory_loop.py` guards the winner-only `mark_spoken()` invariant. (4) Rule 13 used a strict SOG `>` with no hysteresis, so near-equal speeds could flap between classifications under AIS noise; added `OVERTAKE_SOG_DEADBAND_KTS = 0.5`. (5) Domain correctness is not establishable by AI review — added §12.3 and gate item 6 requiring human maritime sign-off on §8.4. Also fixes **BUG-124** in `tests/run-all.sh`, found while building the suite. Suite: 92 cases across 8 files. |
@@ -978,7 +979,8 @@ RULE18_OUTRANKS_US = frozenset({
 
 
 def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing,
-             tgt_class=None, prior_rule=None, is_past_and_clear=False):
+             tgt_class=None, prior_rule=None, is_past_and_clear=False,
+             in_sight=False):
     """Returns one of:
          'rule13_being_overtaken'      we are STAND-ON; Rule 13 overrides Rule 18
          'rule13_overtaking'           we are GIVE-WAY; keep clear
@@ -1043,9 +1045,15 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing,
         return 'rule15_giveway'                      # target to starboard
     if rb >= ABAFT_PORT:
         # Stand-On is the dangerous verdict: it tells the captain to hold
-        # course. Never assert it for a target whose type we cannot confirm --
-        # it may be a sailing or fishing vessel that outranks us under Rule 18.
-        if tgt_class is None:
+        # course. Two independent reasons forbid asserting it on unconfirmed
+        # data (§14.3 option B):
+        #   Rule 18 -- an unidentified target may be a sailing or fishing
+        #     vessel that outranks us.
+        #   Rule 11 -- Rules 11-18 apply only to vessels IN SIGHT of one
+        #     another, and AIS never establishes that. In restricted
+        #     visibility Rule 19 applies and there is no stand-on vessel,
+        #     so "hold course and speed" would be actively wrong.
+        if tgt_class is None or not in_sight:
             return 'rule15_standon_unconfirmed'
         return 'rule15_standon'                      # target to port
     return 'no_situation'
@@ -1844,6 +1852,108 @@ system is advisory; they do not excuse shipping a rule boundary nobody qualified
 
 ---
 
+## 14. COLREGs Part B — Rule Coverage Enumeration
+
+**Why this exists.** Four successive reviews each found another unimplemented rule: two
+inversions → an unread `voice` field → Rule 18 absent → Rule 13(d) absent. That is not
+converging. The cause was never enumerated: v1.0 implemented the three rules its own
+heading named (13, 14, 15) and treated that as the rule set. Part B is **sixteen rules**.
+
+All rule text below was verified against the IMO source in S160 (see Sources, §14.4).
+
+### 14.1 Section I — any condition of visibility (Rules 4–10)
+
+| Rule | Subject | Status |
+|---|---|---|
+| 4 | Application — Section I applies in **any** visibility | n/a (scoping rule) |
+| 5 | Look-out | **OUT OF SCOPE by nature.** Cannot be implemented. Disclaimed in §13.1 — *"SafeHelm is not a look-out."* |
+| 6 | Safe speed | **OUT OF SCOPE.** Depends on visibility, traffic density, manoeuvrability, sea state, draught vs depth — almost none available. Disclaim. |
+| 7 | Risk of collision | **PARTIAL.** The §8.2 CPA/TCPA/range gate *is* a risk-of-collision determination. 7(c) — *"assumptions shall not be made on the basis of scanty information"* — is cited in §13.2. |
+| 8 | Action to avoid collision | ⚠ **GAP (minor).** 8(b) requires alterations *"large enough to be readily apparent"*; 8(c) warns against *"a succession of small alterations"*. Voice phrases convey neither. Phrase-level fix. |
+| 9 | Narrow channels | ⚠ **GAP.** **Rule 13's own preamble excepts Rule 9**, so overtaking analysis changes in a channel. 9(b): a vessel **under 20 m** or under sail *"shall not impede the passage of a vessel which can safely navigate only within a narrow channel"* — the reference vessel is a 26 ft Monterey, i.e. under 20 m, so own vessel is frequently the one required not to impede. |
+| 10 | Traffic separation schemes | ⚠ **GAP.** Also excepted by Rule 13's preamble. Lower priority for coastal/inland recreational use, but TSS exist near major ports. |
+
+### 14.2 Section II — in sight of one another (Rules 11–18)
+
+| Rule | Subject | Status |
+|---|---|---|
+| **11** | **Application** | ⛔ **CRITICAL GAP — see §14.3.** Rules 11–18 apply **only to vessels in sight of one another**, and radar/AIS observation alone does **not** constitute being in sight. Never established. |
+| 12 | Sailing vessels | ⚠ **GAP (conditional).** Applies when both vessels are under sail. Own vessel is assumed power-driven and never checked; d3kOS ships to sailors. |
+| 13 | Overtaking | ✅ **IMPLEMENTED** — (a), (b), (c), (d) as of v1.5. |
+| 14 | Head-on | ✅ **IMPLEMENTED** — with two tunable tolerances (§12.3 6a). |
+| 15 | Crossing | ✅ **IMPLEMENTED.** |
+| 16 | Action by give-way vessel | ⚠ **GAP (minor).** *"Early and substantial action to keep well clear."* Phrases say "keep clear" without conveying early or substantial. |
+| **17** | **Action by stand-on vessel** | ⛔ **CRITICAL GAP.** 17(a)(i) hold course and speed — that is all we say. But 17(a)(ii) permits action when it becomes apparent the give-way vessel is not acting, and **17(b) *requires* the stand-on vessel to act when collision cannot be avoided by the give-way vessel alone.** We say *"You are Stand-On. Monitor."* and never escalate. **This is the failure mode in much of the collision case law: the stand-on vessel holding course into the collision.** |
+| 18 | Responsibilities between vessels | ✅ **18(a) IMPLEMENTED** (v1.4). 18(b)/(c) concern sailing and fishing own-vessels; 18(d) constrained-by-draught not handled. |
+
+### 14.3 Section III — restricted visibility (Rule 19)
+
+| Rule | Subject | Status |
+|---|---|---|
+| **19** | Conduct in restricted visibility | ⛔ **NOT IMPLEMENTED — and 19(d) is the rule that actually governs this system.** |
+
+> ### ⛔ The structural finding: we may be applying the wrong rule set by default
+>
+> **Rule 11:** Rules 11–18 apply only to vessels **in sight of one another**. Two vessels
+> are in sight when one can be observed **visually** from the other; radar — and therefore
+> AIS — does not count.
+>
+> **SafeHelm cannot establish visual contact.** AIS tells us a target exists; it says
+> nothing about whether the captain can see it. At night, in haze, or at 2 NM, frequently
+> not. And seeing targets you cannot see visually is the system's entire value proposition.
+>
+> **In restricted visibility there is no stand-on vessel at all.** Rule 19 creates no
+> right-of-way hierarchy; both vessels must act. So *"You are Stand-On. Hold course and
+> speed"* is not merely unsupported in fog — **it is the opposite of what Rule 19 requires**,
+> which may be to slow to bare steerageway.
+>
+> **Rule 19(d) is the correct rule for an AIS-only detector**, and it is concrete:
+>
+> > *"A vessel which detects by radar alone the presence of another vessel shall determine
+> > if a close-quarters situation is developing and/or risk of collision exists. If so, she
+> > shall take avoiding action in ample time, provided that when such action consists of an
+> > alteration of course, so far as possible the following shall be avoided: (i) an
+> > alteration of course to port for a vessel forward of the beam, other than for a vessel
+> > being overtaken; (ii) an alteration of course towards a vessel abeam or abaft the beam."*
+>
+> That is implementable from exactly the data we have: relative bearing and CPA/TCPA.
+>
+> **This is more serious than any single missing rule.** Rule 18 and Rule 13(d) were gaps
+> *within* the right framework. This questions whether the framework applies.
+
+#### Options — operator decision required, D02 should not be built until this is settled
+
+| | Approach | Assessment |
+|---|---|---|
+| **A** | **Rule 19(d) is the default; Section II engages only on confirmation.** AIS targets get 19(d)-shaped advice. Rules 13/14/15/18 activate when the operator confirms visual contact (a tap per target) plus a global visibility mode. | **Most defensible, and the correct end state.** Material product change. |
+| **B** | **Never assert Stand-On; keep Section II phrasing for give-way roles only.** | **Recommended now.** Small change that removes the affirmatively-wrong output. Give-way advice is conservative and safe under both rule sets; Stand-On is both the dangerous claim *and* the one Rule 19 abolishes. Composes with the v1.4 Rule 18 unknown-type rule — two independent reasons converge on never saying Stand-On without confirmation. |
+| **C** | Global visibility toggle only, switching rule sets wholesale. | Simpler than A but relies on the operator keeping it accurate, and gets it wrong in the common mixed case (one target visible, another not). |
+
+**Recommendation: implement B now and treat A as the target for v0.9.9.6.** Rule 17(b) needs
+building regardless — even in sight, a stand-on vessel must eventually act — and that work
+is a prerequisite for A being safe.
+
+### Revised gate item 7
+
+| | Requirement | Status |
+|---|---|---|
+| 7a | Part B enumerated; every rule marked implemented / out of scope / gap | ✅ **DONE** — §14 |
+| 7b | Operator decision on A / B / C above | ⬜ **OPEN — blocks D02** |
+| 7c | Rule 17(b) stand-on escalation implemented | ⬜ **OPEN — blocks D02** |
+| 7d | Rules 9, 12 assessed for the reference vessel (under 20 m, power-driven) | ⬜ **OPEN** |
+
+### 14.4 Sources
+
+Rule text verified S160 against:
+[IMO COLREG convention page](https://www.imo.org/en/about/conventions/pages/colreg.aspx) ·
+[Rule 11 Application](https://ialacolreg.com/en/colreg/rule-11) ·
+[Rule 13 Overtaking](https://www.cultofsea.com/colregs/part-b-steering-and-sailing-rules-4-19/rule13-overtaking/) ·
+[Rule 18 Responsibilities](https://www.cultofsea.com/colregs/part-b-steering-and-sailing-rules-4-19/rule-18-responsibilities-between-vessels/) ·
+[Rule 19 Restricted visibility](https://ecolregs.com/index.php?option=com_k2&view=item&layout=item&id=59&Itemid=392&lang=en) ·
+[USCG Navigation Rules (amalgamated)](https://www.navcen.uscg.gov/navigation-rules-amalgamated)
+
+---
+
 ## 13. Disclaimer, Limitations and Non-Certification
 
 **Operator instruction, S160:** *"We need to make a note and disclaimer about that."*
@@ -1931,5 +2041,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.5 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.6 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*
