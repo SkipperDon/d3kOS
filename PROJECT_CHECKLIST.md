@@ -524,7 +524,7 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 | SH-08 | Startup health check | `[ ]` | Verify Signal K reachable, GPS fix, AIS receiving before operating. Alert captain if not. |
 | SH-09 | Connect depth sounder to Safety Envelope | `[ ]` | Pipeline from SK depth path into `shallow_water_depth_m` check. |
 | SH-10 | Incident logging spec | `[ ]` | File, format, fields, review UI. Required for post-incident verification. |
-| SH-11 | Phase 1 Shadow Mode build | `[ ]` | Log-only — no alarms, no autopilot. CPA/TCPA + COLREGs classifier working. |
+| SH-11 | Phase 1 Shadow Mode build | `[–]` **SUPERSEDED S160 2026-09-11 → PART 20 / D02 (v0.9.9.5)** | **Shadow Mode constraints overridden by explicit active output mandate defined in PART 20 for build milestone v0.9.9.5.** Operator ruling S160: *"I do not want shadow."* v0.9.9.5 builds **Advisory Mode** directly — CPA/TCPA engine + COLREGs classifier + voice via ai_bridge + AvNav widget overlay, gated by the 3-tier alert policy (D02-3) and rate caps (D02-4). A shadow *logger* is retained (`shadow_logger.py`) recording every classification including gate-suppressed ones — that is a diagnostic log, not Shadow Mode. Original text: *"Log-only — no alarms, no autopilot. CPA/TCPA + COLREGs classifier working."* Build spec: `deployment/docs/V09995_SOLUTION_DESIGN.md` v1.2 §8. **Do not re-open as an open task.** |
 | SH-12 | Phase 2 Advisory Mode build | `[ ]` | Voice alerts via ai_bridge + AvNav widget. Sea trial validation. |
 | SH-13 | Phase 3 Conflict Solver build | `[ ]` | Multi-vessel graph, non-compliant vessel detection, defensive mode. |
 | SH-14 | Phase 4 pypilot integration | `[ ]` | Only after Phase 2 sea trial confirms advisory accuracy. High risk — do not rush. |

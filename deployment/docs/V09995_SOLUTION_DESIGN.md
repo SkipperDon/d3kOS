@@ -1,9 +1,10 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
-**Status:** DRAFT — pending operator review. Not approved.
+**Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
+Subject to the pre-implementation gate in §12.
 
 > **v1.0 was not safe to implement.** It contained two safety-critical defects in the
 > COLREGs classifier, a model-hosting design that did the opposite of decision D05-1,
@@ -17,6 +18,7 @@
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.2 | 2026-09-11 | **Operator rulings on all four v1.1 open decisions (§2).** ACK scope = per-target, with Critical from another target winning queue insertion immediately (D02-5). SH-11 marked SUPERSEDED in the checklist (applied). `content_hash` guard approved, `probe_version` stays per-spec (D17-1). Rule 14 phrase changed to advisory language — *"COLREGs require starboard alteration"* — because an imperative shifts liability from captain to software (D02-6). Adds §12 Defect Closure: no BUG entry; the v1.0 defects are closed by named guard tests that must exist and fail before implementation. |
 | 1.1 | 2026-09-11 | **Opus 5 review.** Fixed: Rule 14 inversion (fired on *same*-course vessels, never on head-on); Rule 13 role inversion (told captain to give way while stand-on); alert gating policy added (v1.0 had none — every AIS target would voice every 15 s); SK-FW-1 rewritten to actually bundle the model; Signal K port corrected to 8099 (BUG-46); feature-gate accelerator whitelist fail-open fixed; `ram_gb` truncation fixed (8 GB Pi read as 7); REQ-HCD-027 15-minute re-probe added; restart-storm patterns removed from both units; credential and bind-address exposure closed; CORS gap closed; D16 stitch deferred behind a CPU gate; unit-test specifications added; requirements traceability matrix added; Advisory Role section added per operator instruction. |
 
 ---
@@ -64,20 +66,22 @@ This section is normative. It constrains every design decision in D02 and D16.
 | D02-4 | **Alert rate caps** | Per-target 60 s; global 15 s between spoken sentences; priority by lowest TCPA. | Operator S160 |
 | D16-1 | go2rtc vs camera_stream_manager | **Option A — alongside.** camera_stream_manager stays on 8084, untouched. | Operator S159 |
 | D05-1 | YOLOv8n model hosting | **Option C — bundled asset.** Committed to the repo, shipped in the npm tarball. **No download at install or at runtime.** | Operator S159 |
-| D05-2 | OpenPlotter test (SK-FW-2) | **Split — see §4.2.** Signal K plugin-contract test runs on the lab Pi now; OpenPlotter-specific validation deferred to a field trial. | Opus S160, revising S159 |
+| D05-2 | OpenPlotter test (SK-FW-2) | **Split — see §6.2.** Signal K plugin-contract test runs on the lab Pi now; OpenPlotter-specific validation deferred to a field trial. | Opus S160, revising S159 |
+| D02-5 | **ACK queue scope** | **Per-target.** ACK clears only *"the active audio queue segment associated exclusively with that target's ID."* If another target reaches Critical while one is being acknowledged, **the Critical payload immediately wins queue insertion.** | Operator S160 |
+| D02-6 | **Rule 14 phrasing** | **Advisory, not imperative:** *"Danger. Head-on situation. COLREGs require starboard alteration."* An imperative command shifts liability from the captain to the software. | Operator S160 |
+| D17-1 | `probe_version` invalidation | **`probe_version` increments on every write (per HCD-REQ-001) AND `content_hash` is retained.** Consumers verify in microseconds that the payload did not change, avoiding 96 forced cache clears a day on a marine telemetry bus. | Operator S160 |
 
-### 2.1 Recorded conflict — SH-11 vs D02-1 (needs operator ruling)
+### 2.1 Resolved conflict — SH-11 superseded (ruling applied)
 
-`PROJECT_CHECKLIST.md:527` **SH-11** defines Phase 1 as *"Phase 1 Shadow Mode build —
-Log-only — no alarms, no autopilot."* Decision D02-1 skips that stage entirely.
+`PROJECT_CHECKLIST.md:527` **SH-11** defined Phase 1 as *"Log-only — no alarms, no
+autopilot."* Decision D02-1 skips that stage. Two governance records disagreeing is the
+failure mode that produced BUG-15 (bug file said OPEN, checklist said FIXED, code said
+otherwise), so it was not left open.
 
-This is a live contradiction between two governance records, which is the failure mode
-that produced BUG-15 (bug file said OPEN, checklist said FIXED, code said otherwise).
-It must be resolved in the records, not left for a future session to trip over.
-
-**Recommendation:** amend SH-11 to `[–] SUPERSEDED S160 — Shadow Mode skipped by operator
-decision D02-1; Advisory Mode built directly in v0.9.9.5` rather than leaving it open.
-**Not applied — requires operator approval, as it edits an approved checklist row.**
+**Applied S160 under operator ruling.** SH-11 is now `[–] SUPERSEDED S160 → PART 20 / D02
+(v0.9.9.5)` with the justification *"Shadow Mode constraints overridden by explicit active
+output mandate defined in PART 20 for build milestone v0.9.9.5,"* the original text
+preserved inline, and a pointer to PART 20. Marked **do not re-open as an open task.**
 
 The shadow *logger* is retained (`shadow_logger.py`) as a diagnostic record of every
 classification, including those suppressed by the gate. That is a log, not Shadow Mode.
@@ -241,12 +245,11 @@ mv "$TMP" "$PROFILE"          # atomic replace
 chmod 644 "$PROFILE"
 ```
 
-> **CONCERN (raised, not acted on).** HCD-REQ-001 specifies `probe_version` increments on
-> **every** write, and REQ-HCD-027 mandates a probe every 15 minutes. Together those
-> invalidate every consumer's cache 96 times a day even when no hardware changed.
-> Implemented as specified. `content_hash` is added so consumers *may* skip recomputation
-> when nothing changed. **Options: (1) keep as specified, (2) bump `probe_version` only
-> when `content_hash` changes. Which do you prefer?**
+> **RESOLVED — decision D17-1 (operator, S160).** Keep both. `probe_version` increments on
+> every write, exactly as HCD-REQ-001 specifies, so the strict system rule is intact; and
+> `content_hash` is retained so consumers verify in microseconds that the payload did not
+> actually change. REQ-HCD-027's 15-minute probe would otherwise force 96 cache clears a
+> day and produce needless CPU spikes on a marine telemetry bus. Implemented as written.
 
 **Units — HCD-1**
 
@@ -788,40 +791,62 @@ def classify_tier(cpa_m, tcpa_s, range_m, is_headon=False):
 | Cap | Value | Notes |
 |---|---|---|
 | Per-target | 60 s between spoken alerts for one MMSI | **Bypassed** on escalation into Tier 3 Critical |
-| Global | 15 s between any two spoken sentences | System-wide |
-| Priority | Lowest TCPA speaks first | Others queue |
+| Global | 15 s between any two spoken sentences | System-wide. **Bypassed by a Critical preemption — D02-5** |
+| Priority | **Critical before Warning, then lowest TCPA** | Others queue |
 
 > **Supersedes the operator-supplied `AlertManager`.** Its `> 15` throttle was
 > **per target**; policy D02-4 makes per-target 60 s and 15 s **global**. The constant
 > changes to 60 and a separate global arbiter is added.
+
+**ACK scope — decision D02-5.** Acknowledging one target clears *"the active audio queue
+segment associated exclusively with that target's ID."* It never silences, drops or delays
+any other target. And if another target reaches Critical while one is being acknowledged,
+the Critical **immediately wins queue insertion** — it does not wait behind the 15 s global
+gap. That bypass is the only way "immediately" is meaningful, and it is one-shot per
+escalation event so a Critical cannot monopolise the audio channel.
 
 ```python
 # voice_arbiter.py
 import time
 
 class VoiceArbiter:
+    """Global audio arbiter. One spoken sentence at a time, system-wide (D02-4).
+
+    Ordering is Critical before Warning, then lowest TCPA. A candidate flagged
+    preempt=True has just escalated into Critical and bypasses the global gap,
+    per D02-5: a Critical on target B must win queue insertion immediately even
+    while target A is being acknowledged.
+    """
+
     GLOBAL_MIN_GAP_S = 15.0
+    TIER_RANK = {'critical': 0, 'warning': 1, 'advisory': 2}
 
     def __init__(self):
         self._last_spoken = 0.0
 
+    def _order(self, c):
+        return (self.TIER_RANK.get(c['tier'], 9), c['tcpa_s'])
+
     def select(self, candidates):
-        """candidates: [{'tcpa_s','target_id','phrase','tier'}]. Returns one or None."""
+        """candidates: [{'tcpa_s','target_id','phrase','tier','preempt'}] -> one or None."""
         if not candidates:
             return None
+        preempting = [c for c in candidates if c.get('preempt')]
+        if preempting:
+            return min(preempting, key=self._order)      # bypasses the global gap
         if time.time() - self._last_spoken < self.GLOBAL_MIN_GAP_S:
             return None
-        return min(candidates, key=lambda c: c['tcpa_s'])
+        return min(candidates, key=self._order)
 
     def mark_spoken(self):
         self._last_spoken = time.time()
 ```
 
-> **Open decision — ACK scope.** The supplied policy says ACK *"clears the audio queue"*.
-> Clearing the **whole** queue would let an ACK on target A discard a pending Critical for
-> target B. Implemented as **per-target**: ACK clears only that target's pending audio and
-> leaves all others queued. **Options: (1) per-target as implemented, (2) global clear.
-> Confirm — this one has a safety consequence.**
+> **Interpretation flagged.** D02-5 says a Critical *"must immediately win queue
+> insertion."* Implemented as: Critical sorts first **and** bypasses the 15 s global gap
+> once per escalation. If you intended queue-order priority only — Critical goes to the
+> head of the queue but still waits out the 15 s gap — say so and I will drop the bypass.
+> Everything else about D02-5 is implemented exactly as ruled.
 
 ### 8.4 COLREGs classifier — both v1.0 bugs fixed
 
@@ -907,27 +932,41 @@ def classify(own_cog, own_sog, tgt_cog, tgt_sog, relative_bearing):
 HEADON_RULES = frozenset({'rule14_headon'})          # drives the +2 min TCPA bonus
 ```
 
-**Voice phrases.** Rules 14 and 15 keep the operator-approved strings verbatim. Rule 13
-needs two new strings because v1.0's single phrase asserted the wrong role, and the roles
-now split. Per ADV-4, no phrase claims water is clear.
+**Voice phrases.** Per ADV-4, no phrase claims water is clear.
+
+**Decision D02-6 (operator, S160):** the Rule 14 phrase is **advisory, not imperative.**
+An advisory system issuing a command (*"Alter course to starboard"*) shifts liability from
+the captain to the software. The phrase now states the legal requirement and leaves the
+action to the captain.
 
 ```python
 VOICE_PHRASES = {
-    'rule14_headon':          'Danger. Head-on situation. Alter course to starboard.',
+    # D02-6 — advisory form. Was: 'Danger. Head-on situation. Alter course to starboard.'
+    'rule14_headon':          'Danger. Head-on situation. '
+                              'COLREGs require starboard alteration.',
     'rule15_giveway':         'Warning. Crossing target to starboard. You are Give-Way.',
     'rule15_standon':         'Alert. Crossing target to port. You are Stand-On. Monitor.',
-    # NEW in v1.1 — replaces v1.0's inverted 'rule13_overtake'
+
+    # NEW in v1.1 — replaces v1.0's inverted single 'rule13_overtake' phrase.
+    # SUGGESTED REWORD — awaiting approval. These two are the only remaining
+    # imperatives ("Hold course and speed", "Keep clear") and D02-6's liability
+    # reasoning applies to them identically. Proposed advisory forms:
+    #   rule13_being_overtaken: 'Alert. Vessel overtaking from astern. You are
+    #                            Stand-On. COLREGs require you to hold course and speed.'
+    #   rule13_overtaking:      'Warning. You are overtaking. You are Give-Way.
+    #                            COLREGs require you to keep clear.'
+    # NOT APPLIED — operator ruled on Rule 14 only. Do not substitute silently.
     'rule13_being_overtaken': 'Alert. Vessel overtaking from astern. '
                               'You are Stand-On. Hold course and speed.',
     'rule13_overtaking':      'Warning. You are overtaking. You are Give-Way. Keep clear.',
+
     'critical':               'Critical collision risk. Target {bearing}. CPA {cpa_m} metres.',
 }
 ```
 
-> **SUGGESTION:** the Rule 14 phrase *"Alter course to starboard"* is imperative, while §1
-> frames every output as advice. A softer *"Recommend alter course to starboard"* would
-> match the advisory role. **You approved the current wording, so it stands unchanged.
-> Apply the change?**
+> **SUGGESTION** — apply D02-6's reasoning to the two Rule 13 phrases above, which are the
+> only remaining imperatives. They are new in v1.1 and have never been approved in any
+> form, so there is no legacy wording to preserve. **Apply the proposed advisory forms?**
 
 ### 8.5 CPA engine and alert state machine
 
@@ -1021,6 +1060,7 @@ class SafeHelmAlertManager:
         self.cpa_at_ack = None
         self.last_audio_played = 0.0
         self._ungated_ticks = 0
+        self._preempt = False
 
     def update_metrics(self, cpa, tcpa, tier):
         """tier is alert_gate.classify_tier(...) or None."""
@@ -1036,19 +1076,25 @@ class SafeHelmAlertManager:
         escalated = tier['tier'] == 'critical' and self.tier != 'critical'
         self.tier = tier['tier']
 
+        if escalated:
+            # D02-5: a fresh Critical wins queue insertion immediately, even if
+            # another target is mid-acknowledgement. One-shot; cleared on speaking.
+            self._preempt = True
+            self.last_audio_played = 0.0        # also bypasses the per-target cap
+
         if self.state is AlertState.ACKNOWLEDGED_MUTED:
             snoozed_out = time.time() - self.ack_time > self.SNOOZE_TIMEOUT_S
             degraded = (self.cpa_at_ack is not None
                         and self.cpa < self.cpa_at_ack * self.DEGRADE_FRACTION)
             if snoozed_out or degraded or escalated:
                 self.state = AlertState.ACTIVE_UNACKED
-        elif escalated:
-            self.last_audio_played = 0.0        # Critical bypasses the per-target cap
 
     def execute_ui_acknowledgement(self):
+        """D02-5: clears ONLY this target's audio segment. Never touches another target."""
         self.state = AlertState.ACKNOWLEDGED_MUTED
         self.ack_time = time.time()
         self.cpa_at_ack = self.cpa
+        self._preempt = False
 
     def wants_audio(self) -> bool:
         """True if this target is eligible to speak. The global arbiter decides who does."""
@@ -1056,10 +1102,16 @@ class SafeHelmAlertManager:
             return False
         if self.tier == 'advisory':
             return False                        # Tier 1 is visual only (D02-3)
+        if self._preempt:
+            return True                         # D02-5 preemption ignores the per-target cap
         return time.time() - self.last_audio_played > self.PER_TARGET_MIN_GAP_S
+
+    def preempts(self) -> bool:
+        return self._preempt
 
     def mark_spoken(self):
         self.last_audio_played = time.time()
+        self._preempt = False                   # one-shot
 ```
 
 ### 8.6 Phase feature flag — SH-15
@@ -1274,12 +1326,13 @@ instruction. Every browser-facing gate above needs a Playwright assertion.
 
 ## 11. Open Items
 
+All four v1.1 decisions were ruled by the operator in S160 and are now closed — see §2
+(D02-5, D02-6, D17-1) and §2.1 (SH-11 superseded, applied to the checklist).
+
 | Item | Needed for | Action |
 |---|---|---|
-| **SH-11 vs D02-1 contradiction** | Records integrity | Operator ruling on §2.1 — mark SH-11 superseded? |
-| **`probe_version` on every write** | HCD-1 | Operator choice: as-specified, or bump only on `content_hash` change (§5 HCD-1) |
-| **ACK queue scope** | D02 safety | Operator choice: per-target (implemented) or global clear (§8.3) |
-| **Rule 14 phrasing** | ADV alignment | Operator choice: keep *"Alter course to starboard"* or *"Recommend alter…"* (§8.4) |
+| **Rule 13 phrasing** | ADV alignment | Operator choice: apply D02-6's advisory form to the two Rule 13 phrases? (§8.4 SUGGESTION) |
+| **Critical preemption scope** | D02 safety | Confirm the D02-5 reading: Critical bypasses the 15 s global gap, or priority-order only? (§8.3) |
 | Signal K systemd unit name | SK-FW-2a, D02 | Read on lab Pi: `systemctl list-units '*signalk*'`. Not guessed. |
 | go2rtc default port map | D16 | Verify against the pinned go2rtc README before deploy (§7.3) |
 | Bow camera height above waterline | D16 rings | Tape measure at next boat visit. 1.35 m default, rings labelled *"Estimated"* until then |
@@ -1289,5 +1342,56 @@ instruction. Every browser-facing gate above needs a Playwright assertion.
 
 ---
 
-*End of V09995-SOL-001 v1.1 — DRAFT, pending operator review.*
+---
+
+## 12. Defect Closure — no BUG entry, guard tests instead
+
+**Operator ruling S160:** *"the bug entry — let's not create more bugs, but have a solution
+for this one prior to implementing it."*
+
+**No BUG number is assigned.** The v1.0 defects were caught in design review, before any
+code existed, on any platform. Nothing was deployed and nothing regressed. Logging a BUG
+would add a record without adding a control. The bug tracker stays for defects found in
+running software.
+
+**What replaces it:** each defect is closed by a named test that must exist and **fail**
+before the corresponding implementation is written. A defect with a failing guard test is
+closed; a defect with only a corrected document is not.
+
+| v1.0 defect | Closed by | Guard test | Gate |
+|---|---|---|---|
+| Rule 14 fired on same-course vessels, never on head-on | §8.4 `course_diff > 165` | `test_colregs_classifier.py::C3`, `::C4` | Must fail before `colregs_classifier.py` exists |
+| Rule 13 role inverted — advised give-way while stand-on | §8.4 split into `being_overtaken` / `overtaking` | `::C1`, `::C2` | Must fail before `colregs_classifier.py` exists |
+| No alert gating — every AIS target voiced | §8.2 3-tier matrix (D02-3) | `test_alert_gate.py::G1`–`G8` | Must fail before `alert_gate.py` exists |
+| Feature gate failed open on accelerator whitelist | §5 HCD-3 `_accel_ok()` | `test_feature_gate.py::F1` | Must fail before `d3kos_feature_gate.py` exists |
+| `ram_gb` truncation — 8 GB Pi read as 7 | §5 HCD-1 `ram_mb` | `::F5`, `::F6` | Must fail before `hardware-probe.sh` exists |
+| Signal K port written as 3000 | §8 header — **8099** (BUG-46) | `test_safehelm_config.py::S1` asserts no `:3000` in any SK URL | Must fail before `signalk_client.py` exists |
+| Stationary target could never clear | §8.5 gate rejects `inf` / negative TCPA | `::G4`, `::G5`, `test_alert_manager.py::M4` | Must fail before `alert_manager.py` exists |
+| 20 % re-trigger measured against previous tick | §8.5 `cpa_at_ack` | `test_alert_manager.py::M2` | Must fail before `alert_manager.py` exists |
+| `Restart=always` + hard exit → restart loop | §7.3, §8.6 `on-failure` + `StartLimitBurst` | `test_units.py::U1` greps both units | Must fail before either unit ships |
+| `0.0.0.0` binds, camera creds world-readable | §7.3, §8.7 loopback + `chmod 600` | `test_units.py::U2`, `::U3` | Must fail before `configure-go2rtc.sh` ships |
+| Hardcoded `localhost` in front-end (BUG-48) | §7.4 `window.location.hostname` | existing `bug48-no-hardcoded-localhost.spec.ts` | Already in the suite — must stay green |
+
+### 12.1 Pre-implementation gate — blocks the first line of D17 code
+
+All of the following must be true before any implementation file in §5–§8 is created:
+
+1. Every test file in §10 exists and runs.
+2. Every case in the tables above **fails** for the right reason (assertion failure, not
+   import error). A test that errors out proves nothing.
+3. `./tests/run-all.sh` executes them — it is the only trusted runner; per-suite green
+   counts have historically been subsets.
+4. §9's traceability matrix is completed for the remaining REQ-HCD IDs.
+
+Only then does D17 implementation begin. This is the "solution prior to implementing"
+the operator required, made checkable.
+
+> **Why this gate and not a BUG row:** every one of the eleven defects above is mechanically
+> detectable. Two of them — the COLREGs inversions — would have shipped wrong right-of-way
+> advice to a captain, which §1 identifies as the worst outcome this system can produce.
+> A document correction does not prevent recurrence; a failing test does.
+
+---
+
+*End of V09995-SOL-001 v1.2 — APPROVED for implementation, subject to §12.1.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*
