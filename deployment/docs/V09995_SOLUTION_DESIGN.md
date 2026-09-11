@@ -1,6 +1,6 @@
 # v0.9.9.5 — Solution Design
 **Document:** V09995-SOL-001
-**Version:** 1.11
+**Version:** 1.12
 **Date:** 2026-09-11
 **Author:** Claude Opus 5 (S160) — architectural review and correction of v1.0 (Claude Sonnet 4.6, S160)
 **Status:** APPROVED for implementation — all four v1.1 open decisions ruled by operator, S160.
@@ -18,6 +18,7 @@ Subject to the pre-implementation gate in §12.
 | Ver | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-11 | Initial design (Sonnet 4.6). Marked APPROVED in error — operator had approved the five *decisions*, not the document. |
+| 1.12 | 2026-09-11 | **D02-9: plugin-shaped now, publish v0.9.9.6, engine stays PYTHON.** The operator's first layout sketch was JavaScript; Signal K plugins are Node, so the host was right, but the engine is 1,608 lines of validated Python and 158 guard cases, and every one of the six S160 defects lived in logic a rewrite would re-type. Shape: a ~150-line Node shim around the Python engine, **JSON lines over a pipe** — no port, no CORS, no bind address, which is the entire class of problem §7.3 and §8.7 had to solve. Three corrections to the sketch: **ai_bridge already exists and works in Python** (call it, do not rewrite it in Node); **no new Node service in d3kOS** (the Flask dashboard is already the consumer); and the module split belongs on the **classification-vs-presentation** seam, not an arbitrary one — plugin emits *what is happening*, consumer decides *how loudly to say it*. ⚠ **A dead engine must be loud:** §13.1 tells the captain silence means no qualifying target, so silence from a crash is indistinguishable from clear water. Heartbeat + `alarm` notification + bounded restart, guarded by E9–E10. Adds `tests/fixtures/colregs_scenarios.json` — a language-neutral table so any future port is verifiable rather than hopeful, and the executable form of the decision table §12.3 6b asks mariners to challenge. Suite: 160 cases. |
 | 1.11 | 2026-09-11 | **REQ-HCD-065 deviation accepted** (mtime rather than `probe_version`; requirement not amended, design records why it departs). **D02-8: HCD-8 wizard questions approved** — propulsion and length class, no defaults and no skip, closing the §14 Rule 12 and Rule 9 gaps properly rather than by disclaimer. Three length bands because 12 m is its own threshold in Rules 25 and 35. **§8.0 opens the Signal K plugin question** raised by the operator: recommendation is **build plugin-shaped in v0.9.9.5, publish in v0.9.9.6** — a published plugin is the best answer yet to the §12.3 6b domain-challenge problem, but `npm install` is not informed consent and escapes D19, HCD-8 and §13.1 entirely, so **D18 Rule 19(d) becomes a publish precondition rather than a v0.9.9.6 nicety.** Engine emits Signal K `notifications.*`; d3kOS layers voice and widget on top. Building plugin-shaped now costs ~nothing and deletes `signalk_client.py`, the reconnect logic and the port question; retrofitting later is a rewrite of the most safety-critical component. **Blocks the §8.1 file layout.** |
 | 1.10 | 2026-09-11 | **Gates 7c and 5 closed.** §8.9 implements **Rule 17** — v1.9 said *"You are Stand-On. Monitor."* and stopped, but 17(a)(ii) unlocks permission once the give-way vessel visibly is not acting, and **17(b) creates a duty** when collision can no longer be avoided by that vessel alone. A stand-on vessel holding course into a collision is the failure mode in much of the case law. Three-stage escalation, failing safe toward *hold* on thin track data but firing 17(b) on proximity alone; 17(c) composes exactly with Rule 15 (the target is to port by definition, so *"advise against altering to port"* always applies). §9 traceability matrix completed for all 63 REQ-HCD IDs, which itself found **three gaps** — REQ-HCD-032 (gated services do not watch the profile → **HCD-6**), REQ-HCD-097 (probe failure leaves no profile → **HCD-7**), REQ-HCD-096 (deployed default profile could overwrite operator data) — and one stated deviation (065, mtime rather than `probe_version`, because an in-process counter cannot work across processes). **Record correction: HCD-REQ-001 has 63 requirements, not 97** — the IDs run to 097 with block gaps and someone counted the highest ID. Fixed in four records. Suite: 158 cases across 9 files. |
 | 1.9 | 2026-09-11 | **§13.4 sensor coverage + §13.5 alert-authority principle + D19-1 every boot.** Operator: *"you do not have full awareness — you have AIS and cameras. This is a limited view for safety and cannot be solely dependent on d3kOS… to make this wider acceptable you need radar or something similar."* §13.4 states it comparatively as a table: **no radar at all**, non-AIS vessels invisible, no sound-signal or light/shape interpretation, cameras present but unused by D02, depth and position hardware-dependent and outside the collision logic. §13.5 draws the design principle out: **alert authority must be proportional to sensor coverage** — which is the real reason D02-6 advisory phrasing and §14.3 option B are right, and it makes radar (**D20**) the gate on any stronger alerting rather than better software. **D19-1: dialogue on EVERY boot** (operator decision, made with the dark-helm concern on the record), mitigated by a tiered form — full scroll-gated text on first boot / version change / text-hash change, abbreviated one-tap re-acknowledgement otherwise. Suite: 147 cases. |
@@ -1365,8 +1366,76 @@ weeks it is a rewrite of the most safety-critical component in the release.
 > plugin must never emit anything that could reach a bus. Verify before publish; this is the
 > AIS-isolation concern wearing a different hat.
 
-**Operator decision required — this blocks the D02 file layout in §8.1.** My recommendation
-is build-as-plugin now, publish at v0.9.9.6.
+#### ✅ DECIDED S160 (D02-9): plugin-shaped now, publish v0.9.9.6 — **engine stays Python**
+
+The operator's first layout sketch was JavaScript (`cpa_engine.js`, `colregs.test.js`).
+Signal K plugins are Node, so that instinct was right about the host — but **the engine is
+1,608 lines of validated Python plus 158 guard cases**, and every one of the six defects
+found in S160 review lived in logic a rewrite would re-type. Operator ruling: **Python.**
+
+**Shape: a thin Node shim around the Python engine.**
+
+```
+signalk-safehelm/                     # npm package, published v0.9.9.6
+├── package.json                      # declares the Python 3.9+ requirement
+├── index.js                          # ~150 lines. SK plugin lifecycle only:
+│                                     #   subscribe vessels.* → feed engine →
+│                                     #   publish notifications.* → handle stop()
+├── engine/                           # the validated Python, shipped inside the package
+│   ├── serve.py                      # JSON-lines over stdin/stdout
+│   ├── cpa_engine.py                 # §8.5
+│   ├── colregs_classifier.py         # §8.4  (Rules 11/13/14/15/18)
+│   ├── alert_gate.py                 # §8.2
+│   └── standon_escalation.py         # §8.9  (Rule 17)
+└── test/
+    └── fixtures/colregs_scenarios.json   ← shared with the pytest suite
+```
+
+**IPC is JSON lines over a pipe.** No port, no CORS, no auth surface, no bind address to
+get wrong — which is the whole class of problem §8.7 and §7.3 had to solve. One long-lived
+process holds the per-target classification state (the Rule 13(d) lock, clear hysteresis),
+so there is no per-tick spawn cost. AIS updates arrive a few times a second; a pipe is
+orders of magnitude faster than needed.
+
+> ⚠ **A dead engine must be loud, not silent.** If the Python process exits, the plugin
+> produces no notifications — and §13.1 already tells the captain that silence means no
+> qualifying target. Silence caused by a crash is therefore indistinguishable from silence
+> caused by clear water, which is the worst failure this system can have.
+> The shim SHALL emit `notifications.safehelm.engineFailure` at `alarm` severity, restart
+> with a start limit (BUG-105: never unbounded), and d3kOS SHALL speak
+> *"SafeHelm engine stopped. Collision advisory is not running."* **Guarded by E9–E10.**
+
+#### Three corrections to the proposed layout
+
+**1. `ai_bridge.js` — do not rewrite it.** ai_bridge already exists as a working Python
+service on port 3002 with `speak_urgent`, espeak-ng, the mute file and the speaking file.
+The consumer **calls** `POST /webhook/alert`; it does not reimplement it in Node.
+
+**2. No `d3kOS-alerts/` Node package.** The d3kOS consumer is the **existing Flask
+dashboard**, which already talks to Signal K and already serves the widget. Adding a Node
+service means a new runtime, a new systemd unit, a new restart policy and a new failure
+mode, for no gain.
+
+**3. The module split should fall on a different seam.** The sketch put only
+`cpa_engine` and `colregs_classifier` in the plugin. The right boundary is
+**classification vs. presentation**:
+
+| Layer | Modules | Why |
+|---|---|---|
+| **Plugin (engine)** | `cpa_engine`, `colregs_classifier`, `alert_gate`, `standon_escalation` | Pure situation assessment. Emits *what is happening and how bad it is*. |
+| **Consumer (d3kOS Flask)** | `alert_manager`, `voice_arbiter`, voice client, widget | ACK, snooze, rate caps, cadence. **Output policy** — another Signal K user will want different behaviour. |
+
+The plugin says *"Rule 15, you are give-way, tier warning."* The consumer decides how loudly
+and how often to say it. That is also the idiomatic Signal K split: plugins emit
+notifications, clients decide presentation.
+
+#### The fixture is the port contract
+
+`tests/fixtures/colregs_scenarios.json` extracts every classifier, gate and CPA scenario
+into a language-neutral table. It exists so that **if the engine is ever ported — to JS, or
+to anything else — the port is verifiable rather than hopeful.** Both implementations run
+the same table; disagreement means one is wrong. Even staying in Python it is useful: it is
+the executable form of the §8.4 decision table that §12.3 6b asks mariners to challenge.
 
 ### 8.9 Rule 17 — the stand-on vessel's own duties (gate 7c)
 
@@ -2512,5 +2581,5 @@ Guarded by `test_v0995_config_guards.py::S4`–`S6`.
 
 ---
 
-*End of V09995-SOL-001 v1.11 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
+*End of V09995-SOL-001 v1.12 — APPROVED for implementation, subject to §12.1 items 5, 6b, 6c and the §13.3 legal review.*
 *Implementation order: D17 → D05 → D16 → D02. Tests in §10 precede code.*

@@ -152,3 +152,32 @@ def test_e8_phrases_stay_advisory_but_convey_the_change_in_duty(esc):
 
     assert 'may' in may, '17(a)(ii) is permission -- the phrase must say so'
     assert 'require' in must, '17(b) is a duty -- the phrase must convey that'
+
+
+# --------------------------------------------------------------------------
+# E9-E10 -- engine liveness (§8.0). Added v1.12 with the plugin decision.
+#
+# The plugin shim runs the Python engine as a child process. If it dies the
+# plugin emits nothing -- and §13.1 tells the captain that silence means no
+# qualifying target. Silence from a crash is then indistinguishable from
+# silence from clear water, which is the worst failure this system can have.
+# --------------------------------------------------------------------------
+
+def test_e9_engine_exposes_a_liveness_signal(esc):
+    """E9: the engine must be able to say it is alive, so absence is detectable."""
+    assert hasattr(esc, 'HEARTBEAT_INTERVAL_S'), (
+        'no heartbeat interval — the shim cannot distinguish a dead engine '
+        'from a quiet one (§8.0)')
+    assert esc.HEARTBEAT_INTERVAL_S <= 10.0, (
+        'heartbeat too slow to catch a crash before the captain relies on silence')
+
+
+def test_e10_engine_failure_phrase_states_the_advisory_is_not_running(esc):
+    """E10: the failure announcement must say the advisory has STOPPED.
+
+    "SafeHelm error" would leave a captain assuming it is still watching.
+    """
+    phrase = esc.STANDON_PHRASES.get('engine_failure', '').lower()
+    assert phrase, 'no engine-failure phrase (§8.0)'
+    assert 'not running' in phrase or 'stopped' in phrase, (
+        'failure phrase does not tell the captain the advisory has stopped')
