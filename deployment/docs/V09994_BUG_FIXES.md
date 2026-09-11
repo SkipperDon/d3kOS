@@ -8298,3 +8298,102 @@ The column is present with a default, so `generate-reg-token.php`'s omission of 
 **Remaining:** `install-schema.php` is the creating script, which is strong evidence but still not a live read of production (the S135 rule: a document is not a live read; a *creating script* is closer but a later `ALTER` could have diverged — `PROJECT_CHECKLIST_ARCHIVE.md:262` records seven historical `ALTER TABLE` statements against these tables). One `SHOW CREATE TABLE amboat_reg_tokens` closes it. **Downgraded from blocking gate G2 to a confirmation item** — it no longer blocks the registration spec.
 
 **Same source resolves BUG-119's schema question:** `d3kos_pairings` is defined at `install-schema.php:112` as `id, user_id, pi_id CHAR(36), device_token CHAR(36) NULL, vessel_name VARCHAR(80) DEFAULT '', vessel_type VARCHAR(50) DEFAULT 'powerboat', is_primary TINYINT(1) DEFAULT 0, paired_at DATETIME DEFAULT CURRENT_TIMESTAMP`, with **`UNIQUE KEY pi_id (pi_id)`** and `KEY user_id (user_id)`. The unique key is on `pi_id` **alone**, which enforces registration-spec D4 at the database level: a Pi can belong to exactly one account. See BUG-119 for the design consequence.
+
+---
+
+## BUG-122 — Live functions.php corrupted by S158 canonical-tag fix — site HTTP 500
+
+**Logged:** S159 2026-09-11 | **Severity:** CRITICAL | **Platform:** HostPapa live (atmyboat.com)
+**Status:** `[x]` FIXED S159 2026-09-11
+
+### Symptom
+atmyboat.com returned HTTP 500 from some time after S158 (2026-09-10) until fixed S159 (2026-09-11). Full site down — all pages affected.
+
+### Root Cause
+S158 (claude-haiku-4-5) was tasked with fixing duplicate canonical tags for Bing SEO. It edited `/wp-content/themes/twentytwenty-child/functions.php` directly on the live HostPapa server via FTP, applying three successive PHP code approaches:
+1. `remove_action( 'wp_head', 'rel_canonical' )` — reported "no effect"
+2. **Output buffer filtering with regex callback** — this is the fatal approach
+3. `remove_action( 'wp_head', [ 'WPSEO_Frontend', 'canonical' ], 19 )` — reported "no effect"
+
+The output buffer approach (#2) introduced a fatal PHP error (likely a syntax error in the callback or unclosed buffer), causing WordPress to return 500 on every request.
+
+**Compounding failure:** S158 did not commit the changed `functions.php` to the local git repo. The local `atmyboat-forum/` copy remained at the last-known-good state (commit `1cb0e94`). The live/repo divergence was undetected until the 500 was reported.
+
+### Affected Files
+- Live: `/wp-content/themes/twentytwenty-child/functions.php` (HostPapa)
+- Local repo: `atmyboat-forum/wp-content/themes/twentytwenty-child/functions.php` (was clean)
+
+### Fix
+Restored the known-good `functions.php` from local git (commit `1cb0e94`) to the live server via FTPS (Python ftplib). Upload size matched (39,496 bytes both ends). HTTP 200 confirmed within 3 seconds of upload completion.
+
+### Verification
+```
+curl -s -o /dev/null -w "HTTP %{http_code}" https://atmyboat.com/ → HTTP 200
+```
+
+### Prevention Notes
+- S158 pattern (FTP deploy without git commit) is a standing risk for future sessions.
+- The canonical duplicate (both pointing to same URL) is non-blocking and should be left alone. Bing ignores duplicate canonicals when both targets match.
+- Do NOT attempt further canonical-removal code on functions.php.
+
+---
+
+## BUG-123 — SSH host keys deleted during image prep — sshd fails on every boot
+
+**Logged:** S160 2026-09-11 | **Severity:** HIGH (lab/dev) / LOW (end user) | **Platform:** Lab Pi + any Pi imaged from v0.9.9.4.2
+**Status:** `[ ]` OPEN
+
+### Symptom
+SSH (port 22) actively refused on lab Pi since 2026-09-09 13:08. Every boot produces:
+```
+sshd: no hostkeys available -- exiting.
+```
+Systemd retries 5 times in ~2 seconds, hits start-limit, and sshd stays permanently failed. All other d3kOS services (dashboard, ai-bridge, gemini-nav, AvNav, SignalK) remain healthy.
+
+### Root Cause
+Image prep for v0.9.9.4.2 stripped `/etc/ssh/ssh_host_*` keys — standard practice to avoid shipping a known private key in a distributable image. The first-boot regeneration mechanism (BUG-39, deferred) was never implemented. On reboot at 13:08:30 Sep 09, sshd found no host keys and could not start.
+
+**Journal evidence (verbatim):**
+```
+Sep 09 13:08:31 d3kOS sshd[1104]: sshd: no hostkeys available -- exiting.
+Sep 09 13:08:33 d3kOS systemd[1]: ssh.service: Start request repeated too quickly.
+Sep 09 13:08:33 d3kOS systemd[1]: Failed to start ssh.service - OpenBSD Secure Shell server.
+```
+Reproduced identically on two subsequent reboots (13:08 and 20:20 Sep 09).
+
+### Design Note — SSH is optional for end users
+For lab and development: SSH is a hard requirement. Must always work.
+For end users: SSH is optional. They may never need terminal access to the Pi.
+
+**Implication for the fix:**
+- The first-boot script must ALWAYS regenerate host keys (`ssh-keygen -A`) — this is zero-cost and ensures SSH CAN be used if the user ever needs it.
+- Whether `sshd` is **enabled** (starts on boot) is a separate product decision — could be off by default with a wizard toggle to enable it.
+- For the lab image: sshd must be enabled and host keys present at every boot.
+
+### Affected Files
+- `/etc/ssh/ssh_host_rsa_key`, `ssh_host_ecdsa_key`, `ssh_host_ed25519_key` — missing on Pi
+- First-boot script (not yet written — BUG-39 deferred): `deployment/v0.9.9.4/opt/d3kos/scripts/first-boot.sh` (path to be confirmed)
+
+### Lab Immediate Fix
+Run at the Pi console:
+```bash
+sudo ssh-keygen -A
+sudo systemctl start ssh
+```
+`ssh-keygen -A` generates all missing host key types. sshd then starts normally.
+
+### Image-Level Fix (deferred — part of BUG-39)
+The first-boot script must include:
+```bash
+# Regenerate SSH host keys (stripped during image prep)
+sudo ssh-keygen -A
+sudo systemctl enable ssh   # or leave disabled if SSH is opt-in for users
+sudo systemctl start ssh
+```
+This runs once on first boot after flashing the image, before the wizard starts.
+
+### Verification
+```bash
+ssh -i ~/.ssh/id_d3kos d3kos@192.168.1.237 "echo SSH OK"
+# Expected: SSH OK
+```
