@@ -1,5 +1,5 @@
 # v0.9.9.5 — Research & Discussion Backlog
-**Version:** 1.3 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-10 S156 — v0.9.9.5 scope reduced; v0.9.9.6 defined | **Status:** DISCUSSION / PRE-APPROVAL
+**Version:** 1.5 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-12 S161 — **§17 D21 Extended AIS (internet overlay) NOT APPROVED — operator ruling. §18 D22 AIS receive-chain upgrade APPROVED as research (release TBD): Q1 rtl_ais channel config, Q2 on-boat antenna height, Q3 receiver value, Q4 transceiver — and Q4 makes SH-15 a blocking prerequisite, since a transmitting unit could broadcast synthetic SafeHelm/WiBoat targets to other vessels.** | Prior: 1.4 — S161 §17 logged, four premises corrected, hard constraint against feeding D02 recorded | Prior: 1.3 — 2026-09-10 S156 v0.9.9.5 scope reduced; v0.9.9.6 defined | **Status:** DISCUSSION / PRE-APPROVAL
 **Owner:** Donald Moskaluk — AtMyBoat.com / d3kOS
 
 > **Purpose:** Captures every idea, research topic, and architectural discussion that has been
@@ -816,6 +816,140 @@ Formula: for a ring at distance d, with camera height h and vertical FOV θ_v:
 
 ---
 
+## 17. Extended AIS (Internet-Sourced) Overlay — "God's Eye View"
+
+**Status:** ⛔ `[NOT APPROVED]` — **operator ruling S161 2026-09-12: "gods eye view is not approved."** Proposed, reviewed and declined in the same session. **No release assigned. No code written. Do not re-enter as an open build task.**
+**Build group:** none. Retained as a research record only — the findings below are *why* it was declined, and should not be re-litigated without new information (e.g. AISStream materially changing its coverage, or a use case that is genuinely harbour-bound).
+**Superseded in intent by:** **§18 / D22** — the receive-chain upgrade, which is the sensor improvement the operator was actually reaching for.
+**Source document:** `d3kos-extended-ais-requirements-architecture.md` (operator-supplied, prepared against `bilawalsidhu/gods-eye-view`)
+
+**What was proposed (S161 2026-09-12):**
+
+The operator currently receives AIS on a USB device and asked about adding "something larger." The draft specifies a supplementary layer that pulls **terrestrial AIS from AISStream.io** over a websocket held server-side, exposes it to the frontend on a same-origin REST endpoint, and renders it as a visually distinct overlay alongside onboard-receiver contacts. Ten functional and eight non-functional requirements, a four-phase rollout, and an API contract are drafted.
+
+### The core finding — this is not a receiver upgrade
+
+The operator's framing ("AIS as a USB device … thinking of something larger") suggests a **sensor** improvement. Extended AIS is not one. It is a *different data source with different failure modes*, and the gain is much smaller than the draft implies:
+
+| | Onboard RTL-SDR receiver | AISStream.io |
+|---|---|---|
+| Range | 15–25 nm, VHF line-of-sight | **~40 nm from shore stations** |
+| Offshore | Works everywhere | **Nothing** — no satellite coverage |
+| Latency | Real-time | 15–30 s+, and messages are **dropped** to slow consumers |
+| Internet | None required | Hard dependency |
+| Trustworthy for collision avoidance | Yes | **No** |
+
+The draft's §2.2 cites "roughly 200 km near well-instrumented coastlines." AISStream's own documentation states vessels more than **~40 nm offshore disappear from the feed**. So the real marginal gain is a thin coastal band — roughly 15–25 nm out to ~40 nm — and **zero gain in exactly the water where a skipper is most exposed.**
+
+A genuinely "larger" AIS capability is a **hardware** question: a dedicated dual-channel AIS receiver in place of the SDR dongle, and above all **antenna height**, which is what actually sets VHF line-of-sight. That is a separate item and has not been researched. *Uncertainty flag: no specific receiver or antenna has been evaluated — nothing is asserted about products or cost.*
+
+### Premises in the draft that are wrong for d3kOS
+
+Verified against the canonical tree `deployment/v0.9.9.4/` this session. **Do not build from the draft as written.**
+
+1. **§2.1 — "AIS targets arrive via NMEA 2000/0183 hardware (CX5106 gateway or PiCAN-M HAT)." Wrong.** AIS comes from an **RTL-SDR USB dongle**: `etc/systemd/system/rtl-ais.service` runs `rtl_ais -T -P 10108`, feeding Signal K on **10108** — a dedicated port chosen precisely because Signal K itself owns 10110 as its NMEA0183 *output* (BUG-32; BUG-12 is closed with a standing "never re-enable the `ais` client provider on 10110"). The CX5106 is the **engine** gateway (resistance senders → N2K) and appears nowhere in the AIS path.
+2. **§7.2 / §8 — markers cannot be drawn on "the existing chart layer" from a new `extendedAisLayer.js`.** AvNav is served on :8080 inside a **cross-origin iframe** (`#avnav-frame`, `opt/d3kos/services/dashboard/templates/index.html:194`). d3kOS cannot reach into its map. The only route proven in this project is the **BUG-19/BUG-20 pattern**: publish contacts into Signal K and let AvNav render them via `AVNSignalKHandler`. **That route trips the SH-15 hard gate** — PART 18 requires an explicit `transmitPGNs` whitelist on the Signal K canboat-js provider *before any synthetic AIS injection ships*, so nothing outbound can reach the boat's real N2K bus or a transmitting AIS unit.
+3. **§7.2 file paths are not this repo.** `server/services/`, `server/routes/`, `.env.example` do not exist here. The canonical tree mirrors Pi paths (`opt/d3kos/services/...`), and the key-storage convention is `api-keys.json` / `config/*.env` — both gitignored, both covered by the pre-commit secret hook.
+4. **The websocket must not live in the dashboard Flask process.** That process drives the helm kiosk; a blocking or crashing websocket there is BUG-105-class severity. Project pattern is a **separate systemd unit on its own port** (gemini-proxy :8097, ai-bridge :3002, camera :8084). NFR2's "no crash of the Flask process" is only achievable by not putting it there.
+
+### Hard constraint — must never feed SafeHelm
+
+⛔ **Extended-AIS contacts must be excluded from the D02 CPA/TCPA engine and the COLREGs classifier entirely — not merely styled differently or captioned with a disclaimer.**
+
+This follows from the **§13.5 ruling (S160): alert authority must be proportional to sensor coverage.** A 15–30 s-delayed, droppable, internet-dependent position is not a basis for a give-way or stand-on call, and D20 records that the answer to "make SafeHelm more assertive" is "what sensor was added?" — an internet feed is not one.
+
+The draft's **FR5** walks straight into this: it routes a tap into Helm Assistant so the user can ask *"how close will this vessel pass me"* — a CPA question answered from delayed data. FR5 needs an **explicit refusal path** ("this contact is internet-sourced; I can't compute a passing distance from it"), not a banner. The draft's NG1 states the feature "must not be marketed as" collision-avoidance-grade but contains **no requirement forbidding the data from entering the collision logic.** That gap is the single most important correction.
+
+### Other gaps found
+
+- **FR9 (Boat Log state transitions) is not currently implementable.** **BUG-24** is open: there is no server-side Boat Log capture service; `boatlog-engine.js` loads on `boat-log.html` only. FR9 needs the service that BUG-24 identified as an unmade design decision.
+- **§10 Q4 overstates i18n.** Multi-language is **v1.1 deferred** — Layers 1, 2, 4 and 5 are all "not started" and four pages already lack translations. There is no live "18-language i18n system" to route through.
+- **NG3 references a "Nine Tools grid."** *Uncertainty flag: I could not confirm that this is d3kOS terminology — it may have been carried in from another product. Verify before quoting it in any spec.*
+- **AISStream terms for a commercial helm product are unresolved** (NFR8, §10.1). This is an operator/legal call, not an AI one. Note one term already confirmed and in the draft's favour: **direct browser connections are prohibited**, so the server-side proxy is mandatory rather than merely good practice.
+
+### What the draft gets right
+
+Server-side proxy and key isolation (G2/NFR1); bbox subscription centred on GPS rather than a global feed (FR1); off by default with explicit opt-in (FR7); dedup with the **onboard receiver taking rendering precedence** (FR10) — exactly the right precedence; a Pi-appropriate render cap of 500 against the reference project's 12,000 (NFR3); silence watchdog and reconnect (NFR4); low-bandwidth mode for metered links (NFR5); and the refusal to import the reference project's CCTV/FLIR cosmetic skins (NG3). The phased rollout is sensibly ordered.
+
+### Fit with D17
+
+Good fit. The feature needs internet and no accelerator, so it runs on the existing Pi 4 and would register in `capabilities-manifest.json` gated on connectivity — exercising D17's feature gate for a non-hardware capability, which nothing else in scope currently does.
+
+### Scope concern
+
+v0.9.9.5 currently holds **D02, D05, D16, D17 — 11 build tasks, none started**, and D02 alone carries 160 guard tests plus a COLREGs gap of 13 unimplemented rules out of 16. Adding a networked, credentialed, ToS-encumbered fourth data source to that release competes with the safety work already queued and is the kind of addition that turns a release into a rolling scope. **Recommendation was: v0.9.9.6, after D02 ships and after the ToS question is answered.** **Operator decision S161 2026-09-12: neither — leave as RESEARCH with no release assigned.** v0.9.9.5 keeps its four items; nothing is scheduled for D21.
+
+**What would trigger moving to PROJECT_CHECKLIST.md:**
+- AISStream ToS reviewed and confirmed acceptable for a commercial marine product (operator action)
+- A value decision made with the real coverage numbers above, not the draft's ~200 km figure
+- The hard constraint (no path into D02) written into the spec as a testable requirement with a guard test, per §12.1
+- Operator assigns a release
+
+---
+
+## 18. AIS Receive Chain — Real Sensor Upgrade (Receiver + Antenna Height)
+
+**Status:** `[APPROVED — RESEARCH, release TBD]` — approved S161 2026-09-12 by operator decision, applying the S161 suggestion after D21 was declined.
+**Build group:** none yet — needs a release assignment once Q1/Q2 are answered.
+**Scope:** research and measurement. **NOT procurement.** No code.
+
+**Why this item exists:**
+
+The operator's original ask (S161) was *"I have ais as usb device connected to d3kos but was thinking of something larger."* That is a **sensor** question. D21 answered it with an internet data source, which gave a thin coastal improvement and **zero additional coverage offshore** — so it was declined. This item is the sensor question, properly separated: what would actually extend what d3kOS sees, with no internet dependency.
+
+> ⚠ **Nothing in this section is a hardware recommendation.** No receiver, antenna, cable, price or range figure has been researched. Per the Hardware Claim Protocol, every specific below is an **open question requiring a sourced answer** before anything is recommended, and no physical action should be taken on the basis of this section as written.
+
+### Q1 — What is the existing receive chain actually doing?
+
+Established from the canonical tree: `etc/systemd/system/rtl-ais.service` runs `rtl_ais -T -P 10108`, feeding Signal K on port 10108 (dedicated, because Signal K owns 10110 — BUG-32).
+
+Open: does this configuration receive **both** AIS channels (161.975 and 162.025 MHz) or only one, and what does `-T` do?
+
+`[UNVERIFIED INFERENCE — source not confirmed]` I do not know what the `-T` flag means and will not guess. This must be read from the rtl_ais documentation or its source before any conclusion is drawn about single- vs dual-channel reception. **This is the cheapest question here and it may turn out to be the whole answer** — a receiver that is only watching one of two channels is missing roughly half the traffic for free, and no hardware purchase would be needed to fix it.
+
+### Q2 — What antenna is on it, and how high?
+
+Antenna height above the waterline is the dominant term in VHF line-of-sight. A receiver upgrade cannot beat an antenna that is mounted too low.
+
+Open, and **requires an on-boat measurement** (add to OPERATOR / ON-BOAT TASKS at the next visit — pairs with the D16 bow-camera height measurement already pending):
+- Height of the AIS antenna above the waterline
+- Antenna type, and whether it is AIS-specific or a general VHF antenna
+- Dedicated, or shared with the VHF radio through a splitter
+- Cable type and run length
+
+### Q3 — Would a dedicated dual-channel AIS receiver measurably beat the SDR *in this installation*?
+
+**Unanswerable until Q1 and Q2 are known.** If the limiting factor is antenna height, cable loss, or a single-channel configuration, a new receiver buys nothing — which is exactly the mistake D21 made in a different direction: reaching for new equipment before measuring the existing chain. Answer Q1 and Q2 first.
+
+### Q4 — Receive-only, or a Class B transceiver?
+
+Being **seen** by other vessels is plausibly a larger safety gain than seeing further, and it speaks to the gap recorded in D20 — COLREGs Rule 7(c) treats AIS-only traffic data as "scanty information," and the reference vessel is currently invisible to other AIS-equipped traffic.
+
+⛔ **If a transmitting transceiver is ever fitted, the SH-15 hard gate stops being a pending task and becomes critical.**
+
+SH-15 requires an explicit `transmitPGNs` whitelist on the Signal K canboat-js provider. Today that gate protects against synthetic AIS reaching the boat's own N2K bus. With a transceiver fitted, it is the **only** thing standing between synthetic targets — SafeHelm classifications, WiBoat's 998xxxxxx virtual MMSIs (PART 19 WB-10), D11 camera detections — and being **broadcast to other vessels as real AIS traffic.**
+
+**Transmitting a phantom target to other vessels is a materially worse defect than displaying one on our own screen.** It would put false contacts on someone else's chartplotter. **SH-15 must be closed before any transceiver is connected**, and that ordering is not negotiable on schedule grounds.
+
+### Q5 — Regulatory
+
+MMSI registration and any licensing required for a transmitting unit in Canadian waters. **Operator/legal question — not an AI one.** Nothing asserted.
+
+### Relationship to §13.5 and D20
+
+Unlike D21, this is a genuine sensor addition, so under the S160 §13.5 principle — *alert authority must be proportional to sensor coverage* — it is the kind of change that could justify stronger alerting. Two caveats:
+
+1. A better AIS receiver still cannot see vessels that transmit nothing: most small craft, tenders, kayaks, swimmers, debris. **Radar (D20) remains the larger gap.**
+2. Any future request to make SafeHelm more assertive must still be answered with "what sensor was added?" — D22 is a legitimate answer to that question in a way D21 was not, but it is a partial one.
+
+**What would trigger moving to PROJECT_CHECKLIST.md as a build task:**
+- Q1 answered from documentation (desk research, no boat needed)
+- Q2 measured on the boat
+- Q3 answerable, and the answer is "yes, measurably"
+- If Q4 goes toward a transceiver: **SH-15 closed first**
+
+---
+
 ## Prioritization Discussion (not decided — for Don's review)
 
 | # | Item | Complexity | Dependency | Value |
@@ -839,6 +973,8 @@ Formula: for a ring at distance d, with camera height h and vertical FOV θ_v:
 | 14 | Unclean-shutdown hardening (D14) — full self-healing audit | High | An actual corruption event being captured | Unproven — no corruption ever observed |
 | 15 | Universal device health framework (D15, ex BUG-11) | High | **BUG-50 fixed first** — it is the reference implementation | Owner can tell if their AIS/GPS/mic/speaker works |
 | 16 | **3D Surround Situational Awareness (D16)** | Medium (~6–10h) | Don chooses display mode (bird's eye vs. 3D perspective) | Tesla-style helm view; pairs with D11 + WiBoat |
+| ~~17~~ | ~~Extended AIS internet overlay (D21)~~ | — | — | ⛔ **NOT APPROVED S161** — declined by operator. Zero coverage gain offshore |
+| 17 | **AIS receive chain — receiver + antenna height (D22)** | Q1 desk research: Low. Q3 onward: unknown | Q1 (rtl_ais channel config) → Q2 (on-boat antenna measurement) → Q3. **Q4 transceiver requires SH-15 closed first** | The real sensor upgrade — extends coverage with no internet. Q1 may be free |
 
 ---
 
