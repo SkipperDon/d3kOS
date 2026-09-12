@@ -10316,3 +10316,132 @@ failure_category       : none
 human_verified         : 0
 task_classification    : IMPLEMENT — Tier 3
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-12 (S161-cont — Opus 5)
+**Goal:** Author the v0.9.9.5 atomic specs so Tier 2 (Sonnet) can drive Tier 3 (Haiku) to build all four items, under AAO §25.
+
+**Handoff:** session switched to Sonnet at the end of this entry. **Start by reading `deployment/docs/atomic-specs/V09995-ORCHESTRATION.md`** — it is a standalone Tier 2 playbook and links the rest.
+
+**Completed:**
+
+*Five atomic specs — `deployment/docs/atomic-specs/`*
+- `V09995-ORCHESTRATION.md` — Tier 2 playbook: the §25.9 loop, escalation routing (§24.5), the four-check verification pass, the red→green tracking table, deploy authority per target, failure triage.
+- `V09995-D17-HARDWARE.md` (HCD-1…7) · `V09995-D05-FORWARD-WATCH.md` (SK-FW-1/2a/3) · `V09995-D16-SURROUND-VIEW.md` (gated) · `V09995-D02-SAFEHELM.md`
+- Each carries: exact file paths, `[T1]`/`[T3]` partition per §25.7.1(5), invariant tables tied to named test cases, a concrete ESCALATE-IF list per §25.6, pre-flight self-check, paste-ready dispatch block, and a "what Tier 2 checks" section naming the specific likely failure modes.
+
+*Two document contradictions of the same class — found and closed*
+- **Gate item 6.** v1.4 withdrew the maritime sign-off requirement as unobtainable; the v1.3 text was never deleted. From v1.4 to v1.12 the doc simultaneously said *"not seeking endorsement"* and *"must review and bless before D02 ships"*, 33 lines apart. Under one reading D02 was blocked pending paid review; under the other it was buildable. **Operator ruling:** withdrawal governs, two-phase split (option B now, Rule 19(d)/D18 in v0.9.9.6). Stale text removed; **§12.4** added with a do-not-re-raise marker.
+- **D02 file layout.** §8.1 said flat `safehelm/`; D02-9 (§8.0, v1.12) said plugin-shaped and *"deletes `signalk_client.py`"*; the 160 guard tests encode §8.1 and **test S1 requires that very file**. §8.1 carried a dangling v1.11 note *"Blocks the §8.1 file layout"* — flagged for revision, never revised. **Tier-1 ruling, operator-confirmed:** plugin-**ready** in v0.9.9.5 (`signalk_client.py` built, engine in `safehelm/`), plugin-**shaped** in v0.9.9.6. D02-9 not overridden — only the timing of the transport swap is pinned. **§8.1 marked CONFIRMED CANONICAL, §8.1.1 added.** No test changes; all 160 stay valid.
+
+*Design doc was verified against the live repos, and was wrong twice*
+- **D05/SK-FW-1 is ALREADY DONE.** §6.1 prescribes exporting and committing `assets/models/yolov8n.onnx`. Reality: **`models/forward-watch.onnx`** (12.3 MB, **custom-trained** from `best.pt` via `export_onnx.bat`, not stock YOLOv8) is already tracked in git, already shipped by `npm pack`, already loaded from `__dirname`. **No `postinstall` ever existed**; no `scripts/`; no `lib/` (the code is in `plugin/`). D05 reduces to one existence guard, a version bump and a README edit. ⚠ **Licence flag:** the model is a YOLOv8 fine-tune (AGPL-3.0) inside a package declaring `"license": "Apache-2.0"` — ships today at 0.2.3. Blocks `npm publish` in v0.9.9.6, not v0.9.9.5.
+- **go2rtc is not installed anywhere in the project** (`grep -rl go2rtc deployment/v0.9.9.4/` → nothing). D16 therefore has three prerequisites, not one: the §7.2 CPU/RTSP measurement, the go2rtc install, and the ~90 %-confident port map.
+
+*Self-introduced defect, caught and fixed*
+- Writing §8.1.1 grew the design doc ~47 lines, **invalidating all ten code-block line ranges the D02 spec cites.** Haiku would have transcribed the wrong code into safety-critical modules. All ten recomputed and each verified against the anchor it should land on. **D02 §3.1 added: locate blocks by grep anchor, treat the line number as a hint** — with the grep commands supplied, since this will drift again. D17/D16 cite lines below 726 and were unaffected.
+
+*Handoff prep*
+- Committed so the tree is clean — Sonnet's own Pre-Edit Snapshot Rule would otherwise have made it **halt on start**.
+- D05 §2.1 pre-clears the plugin repo's 8 pre-existing untracked operator notes (baseline `74e57be`) so the same rule does not stop D05.
+- **Orchestration §8.1 grants Tier 2 lab-Pi deploy authority** (operator ruling). Boat Pi and HostPapa still need explicit current-session approval. Tier 3 never touches a host.
+
+**Decisions (operator, S161):**
+- Gate item 6 — withdrawal governs; two-phase split; do not re-raise maritime sign-off
+- D02 §2.1 layout ruling — **confirmed**
+- Verification of Sonnet's work by Opus — required
+- **Playwright deferred** — Sonnet builds/tests/verifies/deploys on the pytest suite; Opus then decides which Playwright specs are needed
+- Tier 2 authorised to deploy to the lab Pi
+
+**NOT COMPLETED / DEFERRED:**
+- **No code written for any of the four items.** Specs only. Build order D17 → D05 → D16 → D02.
+- **Playwright specs not authored** — deferred by operator decision, not an oversight.
+- `PROJECT_CHECKLIST.md` PART 20 and `DEPLOYMENT_INDEX.md` not updated with the five new spec files — next session should add them.
+- D16 blocked on three operator-side prerequisites.
+
+**KNOWN GAPS OR UNCERTAINTIES:**
+- ⚠ **Deferring Playwright leaves the AODA 18px requirement unverified** on the hardware page and wizard. A pytest content guard confirms a string is in a template; only computed style confirms what the browser renders, and reading CSS tokens instead is exactly how S115 produced a false pass. Specs instruct Sonnet to report *"pytest green, computed style not measured"* — **never "verified"** — so Opus can tell where a Playwright spec is genuinely required.
+- The four §8.4 tuning constants remain **regulation-traced but not domain-endorsed** (§12.3 6a). That is the accepted position, not a gap to close.
+- go2rtc port map ~90 % confident — verify against the pinned README before deploy.
+- ITU-R M.1371 enumeration values for `aisShipType`/`navigation.state` are deliberately **not asserted** anywhere; D02 §5 forbids inventing them.
+
+**OPERATOR ACTIONS REQUIRED:**
+1. **D16 P1** — run the §7.2 CPU/thermal/RTSP-client measurement on the lab Pi. Blocks all D16 code.
+2. **D16 P2** — obtain and install the go2rtc binary. Has lead time; D16 is third in build order.
+3. **§12.3 6b** — post the challenge request (four tunable constants + worked cases) to the forum. Challenge, never endorsement. Does **not** gate code.
+4. **§13.3** — legal review of the disclaimer before D02 ships.
+5. **D05 licence** — AGPL-3.0 fine-tune inside an Apache-2.0 package. Decide before any v0.9.9.6 publish.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S161-cont, Opus 5 1M) | console.anthropic.com → Usage → 2026-09-12. Long spec-authoring session; 4 commits | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:** all five operator actions above; D17/D05/D02 dispatchable now.
+
+---
+
+QUALITY METRICS — 2026-09-12 (S161-cont)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+SCR: operator asked for specs ordered for a Sonnet→Haiku pipeline; five specs produced. The
+two design-doc edits were the operator's own rulings applied. No file outside
+`deployment/docs/` touched.
+
+SGCR: the D02 layout ruling was flagged for confirmation rather than applied silently, and
+the lab-Pi deploy permission change was stated explicitly rather than buried.
+
+REC: 0. The line-range drift was caught by my own verification step before handoff — that is
+the gate working, not recovery.
+
+OIC SELF-REPORT: 90/100
+Basis:
+- Uncertainty flagged where uncertain: YES — go2rtc port map carried forward as ~90%; ITU-R
+  values explicitly not asserted; the AODA verification gap from deferring Playwright stated
+  plainly rather than glossed.
+- NOT COMPLETED section accurate: YES — no code written, Playwright not authored, checklist
+  and deployment index not updated, D16 blocked. All stated.
+- Work substantive: YES — five specs; two document contradictions found and closed; two
+  design-doc factual errors caught by reading the live repos instead of the document.
+- Tests cover the failure case: N/A — specs only; the 160 existing cases were verified red
+  (160 failed, 0 errors) and were not modified.
+Deductions:
+- −5. Asked the operator which reading of gate item 6 governed when the revision history
+  I had already read this session answered it (v1.4: "Gate item 6 withdrawn and replaced").
+  Operator flagged it. I had the evidence and asked anyway.
+- −5. My own §8.1.1 edit silently invalidated all ten line ranges in the D02 spec, which
+  would have sent Tier 3 to the wrong code in the most safety-critical modules in the
+  project. Self-caught and fixed before handoff, and the spec now uses drift-proof anchors —
+  but I introduced it.
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-12 (S161-cont)
+─────────────────────────────────────────────────────
+session_duration_min   : ~90 (estimate)
+tasks_planned          : 4 (answer feasibility; write all specs; confirm D02 §2.1; handoff)
+tasks_completed        : 4
+governing_doc_version  : CLAUDE.md 2026-09-09
+attributed_rec         : 0
+failure_category       : none (this session found and closed defects; none introduced survived)
+human_verified         : 0
+task_classification    : ARCHITECT — Tier 1. Reason: atomic specs govern multiple future
+                         build sessions and define the cross-model delegation pipeline.
+notes                  : First session to read AAO §24/§25 in full rather than the condensed
+                         .claude/instructions summaries — prompted by the operator asking
+                         whether the criteria had been read. §25 turned out to prescribe the
+                         exact pipeline requested, including the pre-partition mechanism
+                         (§25.7.1(5)) that makes handing COLREGs logic to a small model safe.
+─────────────────────────────────────────────────────
