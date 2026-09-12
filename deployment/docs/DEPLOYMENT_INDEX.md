@@ -1405,6 +1405,9 @@ No new files deployed this session. Checklist and governance updates only:
 | `tests/test_v0995_config_guards.py` | **[NEW — S160]** 32 cases. S1–S14, U1–U5b: SK port, restart storms, 0.0.0.0 binds, camera credentials, udev, probe timer, D19 disclaimer gate. |
 | `tests/fixtures/colregs_scenarios.json` | **[NEW — S160]** 38 language-neutral scenarios. The port contract and the executable form of the §8.4 decision table for the §12.3 6b mariner challenge. |
 | `tests/run-all.sh` | **[FIXED — S160]** BUG-124. Pytest arm reported a file collecting ZERO tests as `✓ PASS`; now routes on exit code with 5/124/2/3/4 → `NOT_RUN`. `set -e` deliberately NOT added. |
+| `deployment/docs/atomic-specs/V09995-ORCHESTRATION.md` + `V09995-D17-HARDWARE.md` + `V09995-D05-FORWARD-WATCH.md` + `V09995-D16-SURROUND-VIEW.md` + `V09995-D02-SAFEHELM.md` | **[NEW — S161-cont]** Five atomic specs for the Tier1→Tier2→Tier3 build pipeline (AAO §25). D17/D05/D02 dispatchable; D16 gated on the §7.2 CPU measurement + go2rtc install. |
+| `deployment/v0.9.9.4/etc/systemd/system/rtl-ais.service` | **[FIXED — S161-cont-2]** BUG-125. Device-bound (`BindsTo=dev-rtlsdr_ais.device`), `ConditionPathExists`, `StartLimitBurst=5`, `[Install]` removed. No longer restart-loops when the AIS SDR is absent. Verified through two full reboots on the lab Pi. |
+| `deployment/v0.9.9.4/etc/udev/rules.d/99-marine-usb.rules` | **[NEW (repo) / FIXED (live) — S161-cont-2]** BUG-125. Previously live-only, now tracked. Added `TAG+="systemd"`/`SYSTEMD_WANTS` hot-plug hook on the AIS device match, mirroring `gpsd`'s own USBAUTO pattern. |
 ---
 
 ### SafeHelm Collision Avoidance — S76 2026-05-11
