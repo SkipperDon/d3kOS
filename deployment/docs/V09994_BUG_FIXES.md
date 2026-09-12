@@ -8487,7 +8487,7 @@ output text.
 
 ## BUG-125 — `rtl-ais.service` loops forever when the AIS SDR dongle is absent; no operator notification
 
-**Status:** `[~]` RESTART-LOOP FIXED + DEPLOYED (lab Pi) S161 2026-09-12. Notification NOT built — see Fix section.
+**Status:** `[x]` CLOSED S161 2026-09-12. Restart-loop fixed + deployed (lab Pi), verified through a full cold boot with AIS+GPS+touchscreen all connected. **Operator ruling (S161): the intermittent enumeration failure and the dashboard notification are both explicitly not required at this time.** See "Honest open item" and "Deferred" sections below for what that covers.
 **Severity:** MEDIUM (sustained CPU tax + operator confusion; not data-loss, not safety-critical, but same defect class as BUG-105 — an unbounded restart loop)
 **Platform:** Lab Pi (`192.168.1.237`) — `rtl-ais.service`
 **Found:** S161, while investigating why the lab Pi's load average would not settle after a fresh boot. Not user-reported as a symptom; found via root-cause investigation of a different question.
@@ -8681,15 +8681,15 @@ the file.)*
 before the fix, load never settled and sat at 3.1–3.2 for the full observation window on a
 4-core Pi; after the fix, at a comparable 5-minute post-boot mark load had settled to 1.02.
 
-### Honest open item — not fully closed
+### Enumeration failure — operator ruling, not required at this time (S161)
 
 One enumeration failure occurred and did not reproduce on retest, including the most
 realistic scenario (cold boot, everything already connected). The root cause was **not**
 conclusively pinned to a power-budget limit on the shared internal hub versus a one-off
-connector/negotiation glitch. **Flagged for attention during actual sea trials — not
-treated as a closed question by lab testing alone.** If it recurs on the boat with all
-of AIS + GPS + cameras + touchscreen drawing simultaneously, a powered USB hub for the
-AIS/GPS pair is the standard next step.
+connector/negotiation glitch. **Operator reviewed this finding and ruled it is not
+required to be resolved at this time — BUG-125 is closed as-is.** If it recurs on the boat
+with AIS + GPS + cameras + touchscreen drawing simultaneously, a powered USB hub for the
+AIS/GPS pair is the standard next step; log as a new bug if it does.
 
 ### Prevention
 
@@ -8698,11 +8698,12 @@ BUG-125) rather than a one-off. Any new hardware-dependent unit on this project 
 modelled on `gpsd`'s device-bound/socket-activated shape from the start, not assume the
 device is present at boot.
 
-### Deferred — not part of this fix
+### Operator-facing notification — operator ruling, not required at this time (S161)
 
-**Operator-facing notification** ("USB GPS/AIS not detected — plug in to enable
-reception") was explicitly scoped out of this fix. No SSE/toast mechanism exists on the
-dashboard at all yet — `d3kos-notifications.service` is Telegram-only (marine-vision fish
-capture alerts), not a generic UI channel, and the D17 HCD-4 toast pattern that would be
-the natural fit is still spec-only, unbuilt. Building a new notification subsystem was not
-attempted as part of this live fix. Separate follow-up work.
+**"USB GPS/AIS not detected" dashboard notification was explicitly scoped out of this
+fix**, and the **operator has ruled it is not required at this time** — not a gap left
+open by omission. No SSE/toast mechanism exists on the dashboard at all yet —
+`d3kos-notifications.service` is Telegram-only (marine-vision fish capture alerts), not a
+generic UI channel, and the D17 HCD-4 toast pattern that would be the natural fit is still
+spec-only, unbuilt. If this becomes wanted later, it is new feature work against D17
+HCD-4's toast mechanism once that exists, not a continuation of BUG-125.
