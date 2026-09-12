@@ -8482,3 +8482,149 @@ test_import_crash.py      rc=2  -> ! pytest exit 2 — CANNOT RUN       (was ✗
 The cannot-execute rule now holds for all three harnesses. Any future harness arm added to
 `run-all.sh` must populate `NOT_RUN` on a cannot-execute condition, not infer status from
 output text.
+
+---
+
+## BUG-125 — `rtl-ais.service` loops forever when the AIS SDR dongle is absent; no operator notification
+
+**Status:** `[ ]` OPEN S161 2026-09-12
+**Severity:** MEDIUM (sustained CPU tax + operator confusion; not data-loss, not safety-critical, but same defect class as BUG-105 — an unbounded restart loop)
+**Platform:** Lab Pi (`192.168.1.237`) — `rtl-ais.service`
+**Found:** S161, while investigating why the lab Pi's load average would not settle after a fresh boot. Not user-reported as a symptom; found via root-cause investigation of a different question.
+
+### Symptom
+
+Lab Pi rebooted, uptime ~17 minutes, load average sitting at **3.11–3.24** on a 4-core Pi
+and not settling downward — this is on top of an already-heavy baseline (a chromium kiosk
+running the dashboard, plus 37 `d3kos-*` services). `journalctl -b -p warning` showed:
+
+```
+Sep 12 16:00:09 d3kOS systemd[1]: rtl-ais.service: Failed with result 'exit-code'.
+Sep 12 16:00:19 d3kOS systemd[1]: rtl-ais.service: Failed with result 'exit-code'.
+Sep 12 16:00:30 d3kOS systemd[1]: rtl-ais.service: Failed with result 'exit-code'.
+... (repeating every ~10s)
+```
+
+`systemctl show rtl-ais.service -p NRestarts --value` → **99** restarts in 17 minutes of
+uptime — consistent with a restart occurring on every `RestartSec=10` interval since boot,
+indefinitely, with no sign of it ever stopping.
+
+### Root cause
+
+```
+$ systemctl status rtl-ais.service
+Active: activating (auto-restart) (Result: exit-code) since ...; 159ms ago
+Process: ExecStart=/usr/bin/rtl_ais -T -P 10108 -n (code=exited, status=1/FAILURE)
+
+$ journalctl -u rtl-ais.service -n 5
+... rtl_ais: No supported devices found.
+... systemd: Main process exited, code=exited, status=1/FAILURE
+```
+
+The RTL-SDR USB dongle used for AIS reception is not physically present on this Pi.
+Confirmed via `lsusb` (only the internal hub and the touchscreen enumerate — no RTL2832U)
+and `dmesg | grep -i usb` (no RTL2832U attach event since boot).
+
+The unit itself makes this unbounded rather than bounded:
+
+```ini
+# deployment/v0.9.9.4/etc/systemd/system/rtl-ais.service — confirmed identical on the live Pi
+[Service]
+Type=simple
+ExecStart=/usr/bin/rtl_ais -T -P 10108 -n
+Restart=always
+RestartSec=10
+```
+
+`Restart=always` with **no `StartLimitBurst` / `StartLimitIntervalSec`** in `[Unit]` means
+systemd never gives up — it retries every 10 seconds forever, for as long as the Pi runs
+without that dongle attached. Each attempt does real work (opens the device, sets up
+capture buffers, fails) before dying, so it is a small but continuous CPU cost layered onto
+an already-loaded system, indefinitely.
+
+**This is the same *defect class* as BUG-105** (an unbounded restart loop with no start
+limit) though a different *signature* — BUG-105 was ~40 restarts/sec with no rate limit at
+all; this is a bounded 1-per-10s cadence but *unbounded duration*. Both share the root
+cause the project has a standing rule against: `Restart=always` without a start limit,
+paired with a failure mode that can persist indefinitely.
+
+### Contrast — `gpsd.service` already solves this correctly, on the same Pi
+
+```ini
+# /usr/lib/systemd/system/gpsd.service
+Type=forking
+Requires=gpsd.socket
+ExecStart=/usr/sbin/gpsd $GPSD_OPTIONS $OPTIONS $DEVICES
+# no Restart= line at all — nothing to restart-loop
+```
+
+```ini
+# /usr/lib/systemd/system/gpsd.socket
+[Socket]
+ListenStream=/run/gpsd.sock
+ListenStream=127.0.0.1:2947
+```
+
+```
+# /etc/default/gpsd
+DEVICES="/dev/ttyACM0"
+USBAUTO="true"     # automatically hot add/remove USB GPS devices via gpsdctl
+```
+
+`gpsd.service` shows `inactive dead` on this Pi right now — **not failed, not looping** —
+because it is socket-activated and only starts when something connects to the control
+socket, and `USBAUTO` wires actual USB add/remove events (via udev + `gpsdctl`) to starting
+and stopping the daemon. Absence of the GPS dongle produces silence, not a restart storm.
+
+`/etc/udev/rules.d/99-marine-usb.rules` already defines device rules for **both** devices:
+
+```
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a7", SYMLINK+="gps", GROUP="dialout", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", MODE="0666", GROUP="plugdev", SYMLINK+="rtlsdr_ais"
+```
+
+The GPS rule participates in gpsd's `USBAUTO` hot-plug mechanism. The AIS rule creates the
+`rtlsdr_ais` symlink but **nothing hooks it to starting or stopping `rtl-ais.service`** —
+the unit is simply enabled at `multi-user.target` and assumes the hardware is present at
+boot.
+
+### No operator-facing notification exists
+
+Checked `issue_detector.py` (`/opt/d3kos/services/self-healing/`) for an existing
+"hardware missing" alert pattern — no hits for `usb`, `device`, `hardware`, `missing`, or
+`notif`. There is currently **no mechanism telling the operator that the USB GPS and/or
+AIS SDR dongle is not detected.** The only visible symptom today is the restart loop in
+the journal, which no operator would be expected to check.
+
+### Consequence
+
+- Continuous small CPU/scheduling tax for as long as the dongle is absent — indefinitely,
+  not just at boot.
+- No degraded-but-functional state communicated to the operator: the captain has no way to
+  know AIS reception is unavailable because hardware isn't plugged in, versus some other
+  failure.
+- Same architectural gap likely exists for any future USB-hardware-dependent service that
+  is not modelled on `gpsd`'s pattern.
+
+### Fix
+
+**Not yet implemented — pending operator direction on solution shape (S161).** Candidate
+elements, none applied yet:
+
+1. Convert `rtl-ais.service` to gate on device presence rather than assuming it — either
+   socket/udev-activation matching `gpsd`'s pattern, or a `ConditionPathExists=/dev/rtlsdr_ais`
+   guard (systemd reports this as `condition-not-met`/inactive, not `failed`, so it does not
+   count toward `Restart=` or `StartLimitBurst` at all).
+2. Add `StartLimitBurst`/`StartLimitIntervalSec` regardless, as defence in depth matching
+   the project's own standing rule (BUG-105 pattern), so that *any* future service failure
+   mode on this unit is bounded, not just this specific cause.
+3. Hook `99-marine-usb.rules`' existing `rtlsdr_ais` add/remove events to start/stop the
+   service — mirroring `gpsd`'s `USBAUTO`/`gpsdctl` mechanism rather than inventing a new one.
+4. Surface a dashboard/operator notification ("USB GPS/AIS receiver not detected — plug in
+   to enable reception") through the **existing** `d3kos-notifications.service`/dashboard
+   toast channel (the same SSE mechanism specified for D17 HCD-4's hardware hot-plug
+   toasts) — not a new notification path.
+
+### Prevention
+
+None yet — fix not implemented.
