@@ -254,9 +254,26 @@ let it grep the tree.
 ## 8. Standing constraints (every task, no exceptions)
 
 - **Never `git push`.** Local `main` is 823 commits ahead of origin and contains a sudoers
-  map. A push exposes it irreversibly.
-- **Never deploy to the Pi or HostPapa** without explicit operator approval *in the current
-  session*. Prior-session approval does not carry.
+  map. A push exposes it irreversibly. `gh issue` is the approved sync channel.
+
+### 8.1 Deploy authority — who may touch what
+
+| Target | Who | Approval |
+|---|---|---|
+| **Lab Pi** `192.168.1.237` (user `d3kos`, key `~/.ssh/id_d3kos`) | **You (Tier 2).** | ✅ **Authorised — operator ruling S161.** State the action and the rollback path before each deploy (AAO Medium risk). |
+| **Boat Pi** `172.20.10.8` | operator | ⛔ Explicit approval, current session. Normally unreachable; it is on the boat's hotspot. |
+| **HostPapa** live or staging | operator | ⛔ **Explicit approval in the CURRENT session, every time.** Prior-session approval does **not** carry. Non-negotiable. |
+| **Tier 3 (Haiku)** | — | ⛔ **Never.** No `ssh`, no `scp`, no `systemctl` against any host. Every spec says so. Haiku leaves changes in the working tree; you deploy. |
+
+**Before each lab-Pi deploy, produce the Release Package Manifest** (AAO §9.3) — version,
+update type, the changed-file table with Pi paths and partition, pre/post-install steps,
+rollback, health check, and plain-language release notes. It goes in `SESSION_LOG.md`. Any
+session that deploys to a Pi must produce one before it closes.
+
+⚠ **A deploy record is not evidence.** After deploying, verify by **live read** —
+compare a fix marker or an md5 against the served file. `version.txt` is a stale label and
+`check-drift.sh` returning green does **not** mean current. This has caught this project
+out before.
 - **Single canonical tree:** `deployment/v0.9.9.5/`. `pi_source` and `d3kOS/dashboard` are
   read-only.
 - **18px minimum on all text. 48×48px touch targets.** AODA, zero exceptions. Verify from
