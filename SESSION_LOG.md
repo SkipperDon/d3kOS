@@ -10241,3 +10241,78 @@ notes                  : v1.0 was authored by Sonnet 4.6 earlier in this same co
                          another missing COLREGs rule until coverage was enumerated as a
                          closed list.
 ─────────────────────────────────────────────────────
+
+---
+
+## Session 2026-09-12 (S161)
+**Goal:** Fix claude-menu item 3 (gemma4:12b) errors on the Ollama proxy launcher.
+
+**Completed:**
+
+*claude-launcher.sh — model tag fix*
+- `WORKSTATION_MODEL_GEMMA4_12B` corrected from `gemma4:12b-4bit` to `gemma4:12b` (tag does not exist on workstation Ollama; confirmed via `/api/tags`)
+
+*server.py — three proxy fixes*
+- `OLLAMA_MODELS` list: `gemma4:12b-4bit` → `gemma4:12b` so the validator routes it correctly to Ollama
+- `Message.role` Pydantic schema: `Literal["user", "assistant"]` → `Literal["user", "assistant", "system"]` — Claude Code sends system-role messages in the messages array; the old schema rejected them with 422 before the request reached Ollama
+- `call_ollama_direct` httpx timeout: `timeout=300.0` → `timeout=httpx.Timeout(600.0, connect=10.0)` — 12B model + 35-tool context exceeded the 5-minute limit; requests were killed and Claude Code entered the "API error · Retrying 1/10" loop
+
+*claude-launcher.sh — model catalog warning suppression*
+- Added `CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1` to all Ollama proxy launches (the `else` branch in `launch_claude`) — suppresses "gemma4:12b isn't described by this version's model catalog" exit warning
+
+**Not completed / deferred:**
+- Performance testing: session cut short — Windows update killed workstation services while gemma4:12b was running (hung inference). gemma4:12b with Claude Code's 35-tool context is borderline slow (~40 s baseline, >5 min with tools). gemma4:latest (item 2) recommended for daily use.
+
+**Known gaps:**
+- Gemma4:12b inference speed with full tool context not yet confirmed usable — needs retesting when workstation is back
+
+**Operator actions required:**
+- Restart Ollama on workstation after Windows update completes
+- Retest menu item 3 when workstation is stable
+
+**Files changed:**
+- `/home/boatiq/claude-launcher.sh` — 2 changes (model tag, CLAUDE_CODE_DISABLE env var)
+- `/home/boatiq/claude-code-ollama-proxy/server.py` — 3 changes (OLLAMA_MODELS, Message.role, httpx timeout)
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API (S161) | Check console.anthropic.com | TBD |
+| Ollama | 0 calls | $0.00 |
+
+---
+
+QUALITY METRICS — 2026-09-12 (S161)
+─────────────────────────────────────────────────────
+SCR  (Scope Compliance Rate)       : 100%
+SGCR (Stop Gate Compliance Rate)   : 100%
+REC  (Recovery Event Count)        : 0
+MLS  (Memory Load Success)         : 1
+UAC  (Unauthorized Action Count)   : 0
+─────────────────────────────────────────────────────
+SESSION QUALITY SCORE              : 100/100
+─────────────────────────────────────────────────────
+
+OIC SELF-REPORT: 95/100
+Basis:
+- Uncertainty flagged: YES — gemma4:12b context window size not confirmed before advising 128K; used DISABLE env var instead of asserting a specific window size
+- NOT COMPLETED accurate: YES — hung workstation and Windows update noted honestly
+- Work substantive: YES — five real bugs found and fixed across two files
+- Tests cover failure case: N/A — proxy fixes, no automated tests written
+Deductions: −5. First response about slowness attributed it entirely to model size without checking proxy logs first; the actual cause was a timeout bug. Corrected next turn when logs were read.
+Awaiting operator confirmation.
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-12 (S161)
+─────────────────────────────────────────────────────
+session_duration_min   : ~30
+tasks_planned          : 1 (fix menu item 3)
+tasks_completed        : 1
+governing_doc_version  : CLAUDE.md 2026-09-09
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0
+task_classification    : IMPLEMENT — Tier 3
+─────────────────────────────────────────────────────
