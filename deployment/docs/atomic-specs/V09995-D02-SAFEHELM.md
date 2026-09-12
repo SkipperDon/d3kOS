@@ -83,10 +83,19 @@ consumer on 8099).** Reasons:
 So: **plugin-*ready* in v0.9.9.5, plugin-*shaped* in v0.9.9.6.** No test changes. No new
 runtime. Every one of the 160 cases stays valid.
 
-> 🔺 **OPERATOR CONFIRMATION REQUESTED.** D02-9 is a recorded **operator** decision, and the
-> ruling above interprets its scope rather than following its literal wording. **The engine
-> work in §4 is unaffected either way and may proceed now.** Only §5 (the transport layer)
-> depends on this. Tier 2: dispatch §4 immediately; hold §5 until the operator confirms.
+> ✅ **CONFIRMED BY THE OPERATOR, S161 2026-09-12.** The ruling stands. Recorded in
+> `V09995_SOLUTION_DESIGN.md` **§8.1 / §8.1.1**, where the §8.1 layout is now marked
+> canonical and the v1.11 *"blocks the §8.1 file layout"* note is discharged. **D02-9 is not
+> overridden** — its engine-stays-Python ruling and its plugin target both stand; only the
+> *timing* of the transport swap is fixed to v0.9.9.6.
+>
+> **§5 is UNBLOCKED. All of D02 may be dispatched.**
+>
+> ⛔ The one constraint this ruling creates: **`signalk_client.py` must remain the only I/O
+> boundary for AIS data.** Signal K access must never leak into `cpa_engine`,
+> `colregs_classifier`, `alert_gate` or `standon_escalation`. Their purity is the entire
+> reason the v0.9.9.6 port is a copy rather than a rewrite — losing it would force exactly
+> the rewrite D02-9 was chosen to avoid. Verified by the §12 purity grep.
 
 ---
 
@@ -104,18 +113,18 @@ Module import names are **exact** — the tests import them by name:
 
 | # | File | Tier | Source (copy verbatim) | Flips |
 |---|---|---|---|---|
-| 1 | `safehelm/cpa_engine.py` | `[T1]` | §8.5 **lines 1136–1173** | `test_cpa_engine.py` **8** |
-| 2 | `safehelm/colregs_classifier.py` | `[T1]` | §8.4 **lines 933–1079** + `VOICE_PHRASES` **1088–1121** | `test_colregs_classifier.py` **38** |
-| 3 | `safehelm/alert_gate.py` | `[T1]` | §8.2 **lines 793–818** | `test_alert_gate.py` **14** |
-| 4 | `safehelm/alert_manager.py` | `[T1]` | §8.5 **lines 1183–1297** | `test_alert_manager.py` **20** |
-| 5 | `safehelm/voice_arbiter.py` | `[T1]` | §8.3 **lines 840–874** | `test_voice_arbiter.py` **8** |
-| 6 | `safehelm/standon_escalation.py` | `[T1]` | §8.9 **lines 1457–1501** + `STANDON_PHRASES` **1507–1513** | `test_standon_escalation.py` **14** |
-| 7 | `safehelm/safehelm.py` | **mixed** | `advisory_tick` §8.8 **lines 1533–1594** is `[T1]`; Flask scaffolding is `[T3]` | `test_advisory_loop.py` **6** |
-| 8 | `safehelm/signalk_client.py` | `[T3]` | §5 below — **gated on §2.1** | S1 |
+| 1 | `safehelm/cpa_engine.py` | `[T1]` | §8.5 **lines 1183–1219** | `test_cpa_engine.py` **8** |
+| 2 | `safehelm/colregs_classifier.py` | `[T1]` | §8.4 **lines 980–1124** + `VOICE_PHRASES` **1135–1167** | `test_colregs_classifier.py` **38** |
+| 3 | `safehelm/alert_gate.py` | `[T1]` | §8.2 **lines 840–864** | `test_alert_gate.py` **14** |
+| 4 | `safehelm/alert_manager.py` | `[T1]` | §8.5 **lines 1230–1343** | `test_alert_manager.py` **20** |
+| 5 | `safehelm/voice_arbiter.py` | `[T1]` | §8.3 **lines 887–920** | `test_voice_arbiter.py` **8** |
+| 6 | `safehelm/standon_escalation.py` | `[T1]` | §8.9 **lines 1504–1547** + `STANDON_PHRASES` **1554–1559** | `test_standon_escalation.py` **14** |
+| 7 | `safehelm/safehelm.py` | **mixed** | `advisory_tick` §8.8 **lines 1579–1640** is `[T1]`; Flask scaffolding is `[T3]` | `test_advisory_loop.py` **6** |
+| 8 | `safehelm/signalk_client.py` | `[T3]` | §5 below | S1 |
 | 9 | `safehelm/voice_client.py` | `[T3]` | §6 | — |
 | 10 | `safehelm/shadow_logger.py` | `[T3]` | §7 | — |
 | 11 | `safehelm/static/safehelm-widget.{js,css}` | `[T3]` | §8 | S2 |
-| 12 | `etc/systemd/system/d3kos-safehelm.service` | `[T1]` | §8.6 **lines 1634–1653** | U1 |
+| 12 | `etc/systemd/system/d3kos-safehelm.service` | `[T1]` | §8.6 **lines 1682–1699** | U1 |
 | 13 | `dashboard/app.py` | `[T3]` **edit** | §9 proxy routes | — |
 | 14 | `dashboard/templates/setup.html` | `[T3]` **edit** | §10 HCD-8 | — |
 
@@ -123,6 +132,33 @@ Module import names are **exact** — the tests import them by name:
 
 ⚠ The `deployment/v0.9.9.5/` tree is created by D17. If D17 has not run, create the
 directories with `mkdir -p` — do not escalate about it.
+
+---
+
+### 3.1 ⚠ Locate each block by its ANCHOR, not by trusting the line number
+
+Line numbers are correct as of **S161 2026-09-12** but they **drift whenever the design doc
+is edited** — they already shifted ~47 lines once this session when §8.1.1 was written.
+**Confirm each block with its anchor before copying.** If the anchor is not within a few
+lines of the stated number, the doc has moved and the line number is stale — trust the
+anchor.
+
+```bash
+cd /home/boatiq/Helm-OS
+D=deployment/docs/V09995_SOLUTION_DESIGN.md
+grep -n '^# cpa_engine\.py'          $D     # file 1
+grep -n '^# colregs_classifier\.py'  $D     # file 2
+grep -n '^VOICE_PHRASES'             $D     # file 2, phrases
+grep -n '^# alert_gate\.py'          $D     # file 3
+grep -n '^# alert_manager\.py'       $D     # file 4
+grep -n '^# voice_arbiter\.py'       $D     # file 5
+grep -n '^# standon_escalation'      $D     # file 6
+grep -n '^STANDON_PHRASES'           $D     # file 6, phrases
+grep -n '^def advisory_tick'         $D     # file 7
+grep -n '^SAFEHELM_PHASE = int'      $D     # §11.1
+```
+
+Each block runs from its anchor to the next closing ``` fence.
 
 ---
 
@@ -190,9 +226,7 @@ re-copy, do not patch.**
 
 ---
 
-## 5. `[T3]` — `signalk_client.py` ⚠ GATED on §2.1
-
-**Hold until the operator confirms the §2.1 ruling.**
+## 5. `[T3]` — `signalk_client.py`  ✅ UNBLOCKED (§2.1 confirmed S161)
 
 - WebSocket to `ws://<host>:8099/signalk/v1/stream`.
 - ⛔ **Port 8099. NEVER 3000.** `app.py` carries the comment *"CRITICAL: Signal K WebSocket is
@@ -244,7 +278,7 @@ is the 2.6 GB BUG-105 lesson in a different costume.
 
 ## 8. `[T3]` — widget, including gate item 6c
 
-Copy the layout from §8.7 **lines 1681–1694**.
+Copy the layout from §8.7 **lines 1728–1740**.
 
 ### 8.1 Gate item 6c — explainability. **Required, not polish.**
 
@@ -316,7 +350,7 @@ silently. Persist to `config/vessel.env` alongside the existing wizard gate.
 
 ### 11.1 SH-15 / phase flag
 
-Copy §8.6 **lines 1604–1626**. `SAFEHELM_PHASE=1`. Phase 2 code does not execute, so the
+Copy §8.6 **lines 1651–1672**. `SAFEHELM_PHASE=1`. Phase 2 code does not execute, so the
 SH-15 whitelist is never required.
 
 ⛔ **No compile-time bypass. No stub returning `true`.** §3 of the design doc rejects
@@ -399,7 +433,7 @@ grep -nE "'(Alter|Hold|Keep|Turn|Reduce)" colregs_classifier.py             # ex
 
 | Condition | Type |
 |---|---|
-| The §2.1 layout ruling has **not** been operator-confirmed and you are about to start §5 | **BLOCKED — CLARIFICATION** |
+| Signal K access is creeping into `cpa_engine` / `colregs_classifier` / `alert_gate` / `standon_escalation` | **STOP** — §2.1 forbids it; `signalk_client.py` is the only I/O boundary |
 | A design-doc line range in §3 is not the Python block named | **CLARIFICATION** — wrong range |
 | Any invariant in §4.1–§4.5 cannot be satisfied by verbatim copy | **SOLUTION-REQUEST** |
 | A `[T1]` block looks logically wrong to you | **SOLUTION-REQUEST → Tier 1.** Never edit it. |
@@ -462,8 +496,8 @@ queued, the ADV-1 footer is always visible, and a 30-target simulation respects 
 
 ## 18. Tier 3 Dispatch Prompt
 
-⚠ **Tier 2: dispatch §4 (the engine) now. HOLD §5 until the operator confirms the §2.1
-ruling.** Everything else is unblocked.
+✅ **Tier 2: all of D02 is dispatchable. The §2.1 ruling was confirmed by the operator on
+S161** and recorded in `V09995_SOLUTION_DESIGN.md` §8.1.1.
 
 ---
 
@@ -489,8 +523,7 @@ captain *"You do not have right-of-way"* while they were legally obliged to **ho
 That is why this partition exists. It is not about your ability — it is that this logic has
 already fooled a careful reader once.
 
-YOUR TASK — D02. Files 1–7 and 9–14 in §3. **NOT file 8 (`signalk_client.py`) until Tier 2
-tells you the operator has confirmed §2.1.**
+YOUR TASK — D02. **All of files 1–14 in §3**, including file 8 (`signalk_client.py`).
 
 Not D17, not D05, not D16. No Node plugin shim. No Shadow Mode. No Signal K write path.
 
@@ -542,5 +575,5 @@ WHEN DONE, RETURN the five items in §16.
 
 ---
 
-*Authored by Claude Opus 5 (Tier 1), S161 2026-09-12. §2.1 is a Tier-1 architectural ruling
-awaiting operator confirmation; the engine work is unaffected by it.*
+*Authored by Claude Opus 5 (Tier 1), S161 2026-09-12. §2.1 architectural ruling CONFIRMED by
+the operator S161; recorded canonically in `V09995_SOLUTION_DESIGN.md` §8.1.1.*

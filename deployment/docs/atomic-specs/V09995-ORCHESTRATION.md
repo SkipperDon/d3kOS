@@ -35,15 +35,16 @@ D16  3D Surround View (Phase 1)       ← BLOCKED until the §7.2 CPU gate passe
 D02  SafeHelm Advisory Mode           ← largest; engine is [T1]-authored
 ```
 
-D05 has no dependency on D17 and **may run in parallel** if you want throughput. D16 and
-D02 may not start early — each has a hard prerequisite in §3.
+D05 has no dependency on D17 and **may run in parallel** if you want throughput.
+**D16 is the only item with an outstanding prerequisite** (§3.2 — the measurement gate and
+the go2rtc install). D17, D05 and D02 are all clear.
 
 | Spec file | Covers | Status |
 |---|---|---|
 | `V09995-D17-HARDWARE.md` | HCD-1 … HCD-7 | ✅ ready to dispatch |
 | `V09995-D05-FORWARD-WATCH.md` | SK-FW-1, 2a, 3 | ✅ ready to dispatch |
 | `V09995-D16-SURROUND-VIEW.md` | go2rtc, `/3d-view` | ⛔ gated — §3.2 |
-| `V09995-D02-SAFEHELM.md` | engine + consumer | ⚠ partially gated — §3.3 |
+| `V09995-D02-SAFEHELM.md` | engine + consumer | ✅ ready to dispatch — §3.3 closed |
 
 ---
 
@@ -93,16 +94,17 @@ decision** — §7.2 says do not make that change unilaterally. Escalate to Tier
 Also unresolved: the **go2rtc default port map** is flagged ~90 % confident in §7.3.
 Verify against the pinned go2rtc README before any deploy.
 
-### 3.3 D02 — engine is cleared; the consumption layer is NOT
+### 3.3 D02 — CLEARED
 
 - ✅ **Gate item 6 is CLOSED.** Resolved S161 — see `V09995_SOLUTION_DESIGN.md` §12.4.
   Maritime sign-off was withdrawn as unobtainable and replaced by the two-phase split
   (option B now, Rule 19(d)/D18 in v0.9.9.6). 6b is an operator action that does not gate
   code; 6c is a build task inside D02. **Do not re-raise maritime sign-off.**
-- ⛔ **OPEN — D02 file layout.** §8.1 and D02-9 (§8.0) disagree, and the 160 guard tests
-  encode §8.1. Details and the recommended resolution are in `V09995-D02-SAFEHELM.md` §2.
-  The **engine modules** are unaffected and may be built now. The **Signal K consumption
-  layer** may not. Escalate to Tier 1 for the ruling before dispatching that sub-task.
+- ✅ **CLOSED — D02 file layout.** §8.1 and D02-9 (§8.0) disagreed and the 160 guard tests
+  encoded §8.1. Ruled and **operator-confirmed S161**: engine modules live at
+  `opt/d3kos/services/safehelm/` and `signalk_client.py` is built this release
+  (plugin-*ready* now, plugin-*shaped* in v0.9.9.6). Canonical record:
+  `V09995_SOLUTION_DESIGN.md` §8.1.1. **All of D02 is dispatchable — no test changes.**
 
 ---
 

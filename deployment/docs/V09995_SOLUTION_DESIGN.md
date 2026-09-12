@@ -723,27 +723,73 @@ function toggleAvNav3D() {
 > tagged **BUG-46**, and three existing front-end files already use 8099. Listing this as
 > unknown re-opened a settled, previously-bugged question.
 
-### 8.1 File structure
+### 8.1 File structure — **CONFIRMED CANONICAL, operator ruling S161**
+
+> ✅ **The v1.11 note *"Blocks the §8.1 file layout"* is DISCHARGED.** From v1.11 to v1.12
+> this section and §8.0/D02-9 described **two different layouts**, and the 160 guard tests
+> encode the one below — `tests/conftest.py` puts
+> `deployment/v0.9.9.5/opt/d3kos/services/safehelm` on `sys.path`, and **test S1 requires
+> `signalk_client.py`** to exist and reference 8099. Resolved S161: **this layout is
+> canonical for v0.9.9.5.** See §8.1.1.
 
 ```
 deployment/v0.9.9.5/opt/d3kos/services/safehelm/
   safehelm.py              ← Flask (127.0.0.1:8095) + orchestration loop
   cpa_engine.py            ← CPA/TCPA geometry (pure)
-  colregs_classifier.py    ← Rules 13/14/15 geometry (pure, no gating)
+  colregs_classifier.py    ← Rules 13/14/15/18 geometry (pure, no gating)
   alert_gate.py            ← 3-tier threshold matrix (pure)
+  standon_escalation.py    ← Rule 17 stage machine (pure)
   voice_arbiter.py         ← global rate cap + priority queue
   alert_manager.py         ← per-target state machine
-  signalk_client.py        ← WebSocket consumer (:8099)
-  voice_client.py          ← ai_bridge wrapper
+  signalk_client.py        ← WebSocket consumer (:8099) — v0.9.9.5 data path
+  voice_client.py          ← ai_bridge wrapper (POST :3002/webhook/alert)
   shadow_logger.py         ← records every classification, including suppressed
   static/safehelm-widget.{js,css}
-tests/
-  test_cpa_engine.py  test_colregs_classifier.py
-  test_alert_gate.py  test_alert_manager.py
+tests/                     ← 160 guard cases, 9 files (§12.1)
 ```
 
-`cpa_engine`, `colregs_classifier` and `alert_gate` are pure functions with no I/O. That is
-deliberate: they are the safety-critical parts and they must be unit-testable in isolation.
+`cpa_engine`, `colregs_classifier`, `alert_gate` and `standon_escalation` are pure functions
+with no I/O. That is deliberate: they are the safety-critical parts and they must be
+unit-testable in isolation.
+
+#### 8.1.1 Relationship to D02-9 — plugin-*ready* now, plugin-*shaped* in v0.9.9.6
+
+**Operator ruling, S161.** D02-9 (§8.0) selected a plugin shape and stated that building it
+*"deletes `signalk_client.py`, the reconnect logic and the port question outright."* That
+describes the **end state once the plugin is the data path**, which is **v0.9.9.6**. It is
+not a v0.9.9.5 deliverable. Two statements in §8.0 settle it:
+
+- *"**v0.9.9.5 — Build plugin-shaped, do not publish.** Same code, running inside d3kOS's own
+  Signal K."* Nothing is published this release.
+- §8.0 correction #2: *"**No `d3kOS-alerts/` Node package.** The d3kOS consumer is the
+  **existing Flask dashboard**… Adding a Node service means a new runtime, a new systemd
+  unit, a new restart policy and a new failure mode, **for no gain.**"*
+
+Building the Node shim and pipe IPC now would incur exactly those four costs this release
+and deliver nothing, because there is no external consumer until publication.
+
+**What actually makes the v0.9.9.6 port cheap is the *purity* of the engine modules, not
+their directory.** A module with no I/O is copied into a shim's `engine/` directory
+unchanged — no rewrite, and all 160 guard cases follow it. That is precisely what operator
+ruling D02-9 protected when it held that the engine stays Python.
+
+| Release | Data path | Engine location |
+|---|---|---|
+| **v0.9.9.5** | `signalk_client.py` — Python WebSocket on **8099**, consumed by the Flask dashboard | `opt/d3kos/services/safehelm/` |
+| **v0.9.9.6** | Node plugin shim, JSON lines over a pipe; `signalk_client.py` **retired** | same modules, copied into `signalk-safehelm/engine/` |
+
+**Consequences of this ruling:**
+
+- **No guard test changes.** All 160 cases stay valid, including **S1**, which guards
+  **BUG-46** (the 8099-vs-3000 defect). Retiring S1 now would drop a guard on a
+  previously-shipped bug for no reason.
+- **No new runtime, unit, or restart policy** in v0.9.9.5.
+- **D02-9 is not overridden** — its engine-stays-Python ruling and its plugin target both
+  stand. Only the *timing* of the transport swap is fixed to v0.9.9.6.
+- ⛔ **`signalk_client.py` must remain the only I/O boundary for AIS data.** Do not let
+  Signal K access leak into `cpa_engine`, `colregs_classifier`, `alert_gate` or
+  `standon_escalation` — that purity is the whole reason the v0.9.9.6 port is cheap, and
+  losing it would force the rewrite D02-9 was chosen to avoid.
 
 ### 8.2 Alert gating policy (decision D02-3) — closes the v1.0 gap
 
