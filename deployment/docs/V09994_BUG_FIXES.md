@@ -8487,7 +8487,7 @@ output text.
 
 ## BUG-125 — `rtl-ais.service` loops forever when the AIS SDR dongle is absent; no operator notification
 
-**Status:** `[ ]` OPEN S161 2026-09-12
+**Status:** `[~]` RESTART-LOOP FIXED + DEPLOYED (lab Pi) S161 2026-09-12. Notification NOT built — see Fix section.
 **Severity:** MEDIUM (sustained CPU tax + operator confusion; not data-loss, not safety-critical, but same defect class as BUG-105 — an unbounded restart loop)
 **Platform:** Lab Pi (`192.168.1.237`) — `rtl-ais.service`
 **Found:** S161, while investigating why the lab Pi's load average would not settle after a fresh boot. Not user-reported as a symptom; found via root-cause investigation of a different question.
@@ -8606,25 +8606,103 @@ the journal, which no operator would be expected to check.
 - Same architectural gap likely exists for any future USB-hardware-dependent service that
   is not modelled on `gpsd`'s pattern.
 
-### Fix
+### Fix — implemented and verified live on the lab Pi, S161 2026-09-12
 
-**Not yet implemented — pending operator direction on solution shape (S161).** Candidate
-elements, none applied yet:
+Operator approved implementing directly on the lab Pi. Applied, tested, then verified
+surviving a real reboot before being copied back into the repo.
 
-1. Convert `rtl-ais.service` to gate on device presence rather than assuming it — either
-   socket/udev-activation matching `gpsd`'s pattern, or a `ConditionPathExists=/dev/rtlsdr_ais`
-   guard (systemd reports this as `condition-not-met`/inactive, not `failed`, so it does not
-   count toward `Restart=` or `StartLimitBurst` at all).
-2. Add `StartLimitBurst`/`StartLimitIntervalSec` regardless, as defence in depth matching
-   the project's own standing rule (BUG-105 pattern), so that *any* future service failure
-   mode on this unit is bounded, not just this specific cause.
-3. Hook `99-marine-usb.rules`' existing `rtlsdr_ais` add/remove events to start/stop the
-   service — mirroring `gpsd`'s `USBAUTO`/`gpsdctl` mechanism rather than inventing a new one.
-4. Surface a dashboard/operator notification ("USB GPS/AIS receiver not detected — plug in
-   to enable reception") through the **existing** `d3kos-notifications.service`/dashboard
-   toast channel (the same SSE mechanism specified for D17 HCD-4's hardware hot-plug
-   toasts) — not a new notification path.
+**1. `rtl-ais.service` rewritten to be device-bound, not boot-bound:**
+
+```ini
+[Unit]
+Description=RTL-SDR AIS Receiver
+After=network.target signalk.service dev-rtlsdr_ais.device
+Wants=signalk.service
+BindsTo=dev-rtlsdr_ais.device
+ConditionPathExists=/dev/rtlsdr_ais
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=d3kos
+ExecStart=/usr/bin/rtl_ais -T -P 10108 -n
+Restart=on-failure
+RestartSec=10
+```
+
+`[Install] WantedBy=multi-user.target` was **removed entirely** — the unit is no longer
+pulled in at boot at all (confirmed `systemctl is-enabled` → `static`, and
+`systemctl list-dependencies multi-user.target` no longer lists it). The only way this
+unit ever starts is the udev hook below. `BindsTo=dev-rtlsdr_ais.device` means systemd
+automatically stops the service the instant that device unit disappears — no crash, no
+`Restart=` involvement, a clean `Deactivated successfully`. `ConditionPathExists` is a
+second, independent guard: even if something calls `systemctl start` directly with no
+device present, the unit reports `inactive (dead)` rather than launching the binary.
+`Restart=` changed `always` → `on-failure`, since a device removal is now handled by
+`BindsTo`, not by the service's own restart policy; `on-failure` still covers `rtl_ais`
+crashing while the device is genuinely present.
+
+⚠ **Caught mid-fix:** removing `[Install]` from the unit *file* does not remove the
+`multi-user.target.wants/` enablement symlink from a prior `systemctl enable` — that
+required an explicit `systemctl disable rtl-ais.service`. Left undone, the stale symlink
+would still have pulled the unit into the boot target despite the rewritten file.
+
+**2. `99-marine-usb.rules` — one line added, mirroring `gpsd`'s own pattern:**
+
+```
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", MODE="0666", GROUP="plugdev", SYMLINK+="rtlsdr_ais", TAG+="systemd", ENV{SYSTEMD_WANTS}+="rtl-ais.service"
+```
+
+`TAG+="systemd"` makes the kernel's udev device generate a corresponding
+`dev-rtlsdr_ais.device` systemd unit; `ENV{SYSTEMD_WANTS}` asks systemd to start
+`rtl-ais.service` the moment that device unit appears. No custom control script needed —
+this is the same idiom `gpsd`'s `USBAUTO`/`gpsdctl` mechanism implements, just expressed
+directly in the udev rule.
+
+*(Also incidentally cleaned two stray trailing lines of garbage text that were sitting at
+the end of the original rule file — no functional udev syntax, but removed while rewriting
+the file.)*
+
+### Verification — every scenario tested live, in order
+
+| Scenario | Result |
+|---|---|
+| Device absent, unit reloaded live | `NRestarts` frozen at 0, settled `inactive/dead` |
+| Device absent, **real reboot** | Zero journal entries for the unit at all — never even attempted |
+| Manual `systemctl start` with device absent | `Dependency failed` — clean, no process spawned, no `Restart=` triggered |
+| AIS dongle hot-plugged alone | Auto-started via udev hook, tuned, listening on TCP 10108 |
+| AIS dongle hot-plugged alongside GPS + touchscreen (first attempt) | ⚠ **Enumeration failure** — kernel logged `error -71` / `"Cannot enable. Maybe the USB cable is bad?"` / `"unable to enumerate USB device"`. Confirmed via `lsusb -t` that both ports tried are downstream of the Pi 4B's single onboard USB2 hub (per Raspberry Pi Foundation docs — all four ports funnel USB2-speed devices through one internal hub in the VL805). Unit itself did **not** loop; `NRestarts` stayed 0 — the failure never got far enough for udev to even see the device's vendor/product ID. |
+| GPS unplugged, AIS alone retried | Enumerated cleanly, `rtl-ais.service` active, receiving on 10108 |
+| GPS plugged back in, both together (sequential hot-plug) | Both stable, `NRestarts=0` both |
+| **Full cold reboot, AIS + GPS + touchscreen all connected from power-on** | **Both `rtl-ais.service` and `gpsd.service` came up clean on the first attempt. `NRestarts=0` both.** |
+
+**Load average, before/after (same ~5–17 min post-boot window, same kiosk baseline):**
+before the fix, load never settled and sat at 3.1–3.2 for the full observation window on a
+4-core Pi; after the fix, at a comparable 5-minute post-boot mark load had settled to 1.02.
+
+### Honest open item — not fully closed
+
+One enumeration failure occurred and did not reproduce on retest, including the most
+realistic scenario (cold boot, everything already connected). The root cause was **not**
+conclusively pinned to a power-budget limit on the shared internal hub versus a one-off
+connector/negotiation glitch. **Flagged for attention during actual sea trials — not
+treated as a closed question by lab testing alone.** If it recurs on the boat with all
+of AIS + GPS + cameras + touchscreen drawing simultaneously, a powered USB hub for the
+AIS/GPS pair is the standard next step.
 
 ### Prevention
 
-None yet — fix not implemented.
+`Restart=always` without a start limit is now a **known, named pattern** (BUG-105,
+BUG-125) rather than a one-off. Any new hardware-dependent unit on this project should be
+modelled on `gpsd`'s device-bound/socket-activated shape from the start, not assume the
+device is present at boot.
+
+### Deferred — not part of this fix
+
+**Operator-facing notification** ("USB GPS/AIS not detected — plug in to enable
+reception") was explicitly scoped out of this fix. No SSE/toast mechanism exists on the
+dashboard at all yet — `d3kos-notifications.service` is Telegram-only (marine-vision fish
+capture alerts), not a generic UI channel, and the D17 HCD-4 toast pattern that would be
+the natural fit is still spec-only, unbuilt. Building a new notification subsystem was not
+attempted as part of this live fix. Separate follow-up work.

@@ -1,14 +1,15 @@
-  [Unit]
-  Description=RTL-SDR AIS Receiver
-  After=network.target signalk.service
-  Wants=signalk.service
+[Unit]
+Description=RTL-SDR AIS Receiver
+After=network.target signalk.service dev-rtlsdr_ais.device
+Wants=signalk.service
+BindsTo=dev-rtlsdr_ais.device
+ConditionPathExists=/dev/rtlsdr_ais
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
-  [Service]
-  Type=simple
-  User=d3kos
-  ExecStart=/usr/bin/rtl_ais -T -P 10108 -n
-  Restart=always
-  RestartSec=10
-
-  [Install]
-  WantedBy=multi-user.target
+[Service]
+Type=simple
+User=d3kos
+ExecStart=/usr/bin/rtl_ais -T -P 10108 -n
+Restart=on-failure
+RestartSec=10
