@@ -2110,29 +2110,46 @@ What it did **not** and cannot establish:
   suppresses the common form of this — matched course and speed gives `tcpa = inf`, which
   the gate rejects — but a small speed differential produces a finite TCPA and can alert.
 
-**Gate item 6, therefore: a human with maritime credentials must review and bless the
-§8.4 rule boundaries before D02 ships.** Not as polish. §1 states that wrong right-of-way
-advice is the worst thing this system can produce, and §12's whole premise is that a
-mechanically-detectable defect gets a mechanical guard. Domain correctness is not
-mechanically detectable, so it needs the other kind of check.
+### 12.4 Gate item 6 — the single governing reading (operator ruling, S161)
 
-Suggested routes, cheapest first:
+> ⛔ **STALE TEXT REMOVED S161.** Everything above in §12.3 up to and including the 6a/6b/6c
+> table is current. A block that followed it — re-asserting *"a human with maritime
+> credentials must review and bless the §8.4 rule boundaries before D02 ships"*, listing a
+> paid-review route, and declaring §8.4 *"not domain-validated"* — was **v1.3 text that
+> v1.4 had already withdrawn** (see Revision History, v1.4). It was never deleted, so from
+> v1.4 to v1.12 the document carried **two contradictory readings of the gate that decides
+> whether D02 can be built**, 33 lines apart. That is precisely the two-records-disagree
+> failure named in §2.1 as the cause of BUG-15. Found and removed S161.
 
-1. **The existing forum thread.** SafeHelm was already posted to Navigation & Charts on
-   atmyboat.com as a concept gauge with six categories of open questions (S77). Post the
-   §8.4 decision table — the seven sector and threshold constants, in plain language, with
-   the worked C1–C10 cases — and ask holders of COLREGs tickets to mark any they disagree
-   with. Real boaters, zero cost, already an audience.
-2. **One paid review hour** from a licensed captain, RYA/MCA instructor, or marine
-   surveyor. The deliverable is narrow: sign or challenge seven constants and ten worked
-   cases. This is a cheap hour against the liability of shipping a wrong stand-on call.
-3. **Cross-check against a published reference implementation** of COLREGs CPA
-   classification, if one with a compatible licence can be found. Weaker than 1 or 2 —
-   it substitutes another implementer's judgment for a mariner's — but better than nothing.
+**The governing reading — confirmed by the operator, S161:**
 
-Until item 6 is signed off, the honest status of §8.4 is **"logically verified, not
-domain-validated."** The ADV-1 footer and ADV-2 announcement already tell the captain the
-system is advisory; they do not excuse shipping a rule boundary nobody qualified has read.
+Maritime sign-off was established as **unobtainable** (nobody endorses a rule boundary
+without reviewing the whole system, and anyone who does assumes liability). It is **not**
+a gate, not "deferred", and **not to be re-raised in a future session.** The domain-risk
+problem was solved structurally instead, by splitting the rule framework across two
+releases:
+
+| Phase | Release | Framework |
+|---|---|---|
+| **Phase 1** | **v0.9.9.5 — build now** | §14.3 **option B.** Stand-On is never asserted without confirmed vessel type **and** confirmed visual contact, on both the Rule 15 and Rule 13 branches. Give-way advice unconditional. |
+| **Phase 2** | v0.9.9.6 — **D18** | Option A. Rule 19(d) becomes the default framework, which is what actually governs an AIS-only detector. |
+
+Option B is the mitigation: the dangerous verdict (*hold course*) is structurally
+unreachable on unconfirmed data, so a wrong classification cannot produce a wrong
+stand-on call. That is a mechanical control, which is what §12 requires — not a signature.
+
+**Gate item 6 final status:**
+
+| | Requirement | Status |
+|---|---|---|
+| 6a | Every §8.4 constant traced to regulation text or marked tunable | ✅ **DONE** — §12.3 table. Three constants are regulation text; exactly four are tunable. |
+| 6b | Challenge request posted — challenge, never endorsement | ⬜ **OPEN — operator action. Does NOT block D02.** |
+| 6c | Widget shows the reasoning behind each verdict | ⬜ **OPEN — D02 build task.** In scope for v0.9.9.5. |
+
+**D02 is cleared to build.** 6b is an operator action that does not gate code; 6c is a
+named build task inside D02. Honest status of §8.4 stands as §12.3 states it:
+*"regulation-traced, with four named tuning parameters; not domain-endorsed and not
+seeking endorsement."*
 
 ---
 
