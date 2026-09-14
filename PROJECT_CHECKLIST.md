@@ -607,3 +607,5 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 
 *Completed work archived in: `PROJECT_CHECKLIST_ARCHIVE.md`*
 *Do not delete entries — update status or move to archive only.*
+
+| BUG-130 | Signal K providers configured but CAN engine data not reaching API endpoints | `[ ]` **OPEN S162 2026-09-14.** CAN bus active (PGN 65024 flowing). Signal K shows "Successfully connected to can0". Dashboard requests `/signalk/v1/api/vessels/self/propulsion/port` return HTTP 404. Engine data on bus but not converted to API paths. Related to BUG-126 and BUG-128. | CAN provider may not be parsing PGNs or populating Signal K data model. Verify: (1) canboat-js plugin parsing PGN 65024; (2) Signal K internal data store has propulsion/tank values; (3) API path routing working. |

@@ -9080,3 +9080,72 @@ Until the fix, users must manually configure cameras:
 - BUG-127 (setup wizard not appearing) — if wizard appears, this camera credential step should be part of it
 - Marine Vision module expects pre-configured cameras with known credentials; design assumes `d3kos/d3kos2026` universally
 
+
+---
+
+## BUG-130 — Signal K providers configured but CAN data not reaching API endpoints
+
+**Status:** `[ ]` OPEN S162 2026-09-14  
+**Severity:** CRITICAL (engine data pipeline broken; gauges non-functional)  
+**Platforms affected:** d3kOS v0.9.9.4.2 boat Pi  
+**Related:** BUG-126 (providers deployed), BUG-128 (false engine-off alerts)  
+
+### Symptoms
+
+- CAN bus active: PGN 65024 (Engine Parameters, Rapid Update) flowing every ~100ms
+- Signal K logs: `"Successfully connected to can0"`
+- Dashboard requests data: `GET /signalk/v1/api/vessels/self/propulsion/port` → **HTTP 404**
+- Dashboard requests data: `GET /signalk/v1/api/vessels/self/tanks/fuel/0` → **HTTP 404**
+- Engine gauges show 0 with false CRITICAL alerts (see BUG-128)
+- Data is on the NMEA 2000 bus but NOT being converted to Signal K API paths
+
+### Root Cause (Investigation Needed)
+
+The signal flow is broken somewhere after CAN reception:
+
+```
+CAN Bus (PGN 65024)
+    ↓ ✓ Data flowing
+Signal K CAN0 Provider (canboat-js)
+    ↓ ✗ NOT parsing/populating data model
+Signal K Internal Data Store (propulsion, tanks, etc.)
+    ↓ ✗ Paths not populated
+Signal K REST API (/signalk/v1/api/vessels/self/propulsion/port)
+    ↓ 404 NOT FOUND
+```
+
+**Candidates:**
+1. **canboat-js plugin not configured** — may not have PGN 65024 decode rules
+2. **PGN parsing disabled** — provider may be receiving but not parsing the CAN frames
+3. **Signal K data model paths** — paths populated at wrong location (e.g., `vessels.urn:mrn:signalk:uuid:...` instead of `vessels/self`)
+4. **First-boot initialization** — Signal K may need first-time setup for data model population
+
+### Verification Steps (Next)
+
+Run on boat Pi:
+
+```bash
+# 1. Check canboat-js plugin status
+systemctl status signalk | grep -i canboat
+
+# 2. Query Signal K internal tree for propulsion data
+curl -s http://localhost:3000/signalk/v1/api/ | grep -i propulsion
+
+# 3. Check Signal K logs for PGN decode errors
+journalctl -u signalk | grep -i "pgn\|parse\|error" | tail -20
+
+# 4. Verify CAN provider is in active provider list
+curl -s http://localhost:3000/signalk/v1/ | jq '.self.sources'
+```
+
+### Impact
+
+- Operator cannot see engine parameters on dashboard
+- Engine gauges show false data (0 with critical alerts)
+- No way to monitor engine health during operation
+- Related to BUG-128 (false critical alerts when engine off)
+
+### Workaround
+
+None — requires Signal K data pipeline to be fixed.
+
