@@ -8812,3 +8812,83 @@ The lab Pi (v0.9.9.4.2 built S152) was never deployed to the boat until today (S
 
 **Deployment note:** v0.9.9.4.2 image build should include verification that `~/.signalk/settings.json` contains the three providers at image time (or force a first-boot template deployment if absent).
 
+
+---
+
+## BUG-127 — First-boot setup wizard not triggered; dashboard loads directly with previous config persisted
+
+**Status:** `[ ]` OPEN S162 2026-09-14  
+**Severity:** MEDIUM (onboarding broken; circumvented by manual reset)  
+**Platforms affected:** d3kOS v0.9.9.4.2 on boat Pi  
+
+### Symptoms
+
+- Boat Pi powered on for the first time with v0.9.9.4.2 image
+- Dashboard appeared immediately instead of initial setup wizard
+- Menu → Settings showed boat information (name, etc.) already configured
+- QR code / registration page was in the state the operator had left it in the previous session
+- Setup wizard was completely bypassed; no first-boot flow appeared
+
+### Expected Behavior
+
+Per BUG-106/BUG-107 fixes, first boot with no `cloud-config.json` / unconfigured state should:
+1. Block dashboard access with a modal "Initial Setup" screen
+2. Take operator through wizard steps (vessel name, password, etc.)
+3. Emit "Please set up your boat information" before allowing any other function
+4. Only unlock dashboard after wizard completion
+
+### Root Cause (Investigation Needed)
+
+The boat Pi appears to have retained configuration state from a previous session or build instead of starting fresh. Candidates:
+
+1. **`cloud-config.json` not cleared during image prep** — if this file persists on the SD card, the system believes it is already configured (Tier 0 first-boot gate never triggers)
+
+2. **Vessel config files persisted** — `config/vessel.env`, `config/hardware-profile.json`, or dashboard database entries survived imaging
+
+3. **First-boot detection not working** — systemd `ConditionFirstBoot=yes` or `/etc/os-release` first-boot flag not set correctly at image time
+
+4. **Previous session state in browser local storage** — if operator accessed dashboard via browser before deployment, cached wizard state may be re-loading (unlikely given a full power cycle, but possible if storage is shared)
+
+### Investigation Steps
+
+From boat Pi SSH:
+```bash
+# Check if configured
+cat /opt/d3kos/config/vessel.env 2>/dev/null || echo "vessel.env missing"
+cat /opt/d3kos/config/cloud-config.json 2>/dev/null || echo "cloud-config.json missing"
+
+# Check first-boot detection
+systemctl is-system-running
+cat /etc/os-release | grep FIRST_BOOT
+systemctl list-units --state=exited | grep -i first
+
+# Check dashboard config state
+sqlite3 ~/.d3kos/db.sqlite "SELECT key,value FROM settings WHERE key LIKE '%boat%' OR key LIKE '%configured%';" 2>/dev/null || echo "No DB config found"
+```
+
+### Design Request (v0.9.9.5+)
+
+Per operator guidance (S162):
+
+> *"On the next version initial setup needs to be reset and the first boot it needs to appear as the first thing to do if not configured"*
+
+**Action items for v0.9.9.5 image build:**
+1. Verify `cloud-config.json` is completely absent from final image (or empty/null)
+2. Verify vessel config directory is blank or reset to defaults
+3. Verify first-boot detection is armed (systemd or OS-level flag)
+4. Add image-time smoke test: **boot new image, confirm wizard appears before dashboard**
+5. Test with and without browser cache cleared (simulate true first-time operator)
+
+### Workaround (Current Session)
+
+Operator can manually reset setup:
+```bash
+# Clear the config that's causing the bypass
+rm -f /opt/d3kos/config/cloud-config.json
+# Restart relevant services to re-detect unconfigured state
+systemctl restart d3kos-dashboard
+# Next dashboard access should show setup wizard
+```
+
+---
+
