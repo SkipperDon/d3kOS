@@ -8892,3 +8892,75 @@ systemctl restart d3kos-dashboard
 
 ---
 
+
+---
+
+## BUG-128 — Oil pressure and fuel gauges show blinking CRITICAL alerts when engine is off
+
+**Status:** `[ ]` OPEN S162 2026-09-14  
+**Severity:** HIGH (false critical alerts; operator unable to assess real engine status)  
+**Platforms affected:** d3kOS v0.9.9.4.2 on boat Pi  
+
+### Symptoms
+
+- Engine is **OFF** (not running, not started)
+- **Coolant temperature:** 32°C (displays normally, no alert) ✓
+- **Oil pressure:** 0 PSI with **blinking CRITICAL red alert** ⚠
+- **Fuel level:** 0 with **blinking CRITICAL red alert** ⚠
+- **Problem:** These alerts are false. Oil pressure 0 PSI is normal when engine is off; should not trigger critical.
+
+### Root Cause
+
+The gauge alert logic does not check engine running state before applying pressure/fuel thresholds. The code compares raw CAN0 values against fixed thresholds (e.g., oil pressure < 20 PSI = critical) without gating the alert on whether the engine is actually running.
+
+**Normal engine-off state:**
+- Oil pressure = 0 PSI (pump not running) ← **should NOT alert**
+- Fuel = empty or not reporting (engine not consuming) ← **should NOT alert**
+- Coolant = ambient or last-shutdown temp (correct, no alert)
+
+**Alert logic must add:**
+```
+IF engine_running == false THEN
+  skip pressure/fuel alert logic
+  allow display of raw values without alert styling
+ELSE
+  apply normal thresholds
+```
+
+### Why This Appeared Now
+
+Prior to BUG-126 fix, Signal K had no data sources — all CAN0 values were zeros/null, and the gauges showed hardcoded demo values. The alert logic was never exercised with real data from a real-off engine.
+
+Now that Signal K is wired to CAN0 (BUG-126 fixed), real NMEA2000 data is flowing, exposing this alert-logic defect.
+
+### Expected Behavior
+
+When engine is OFF:
+- Display current readings (oil pressure 0, fuel level 0, etc.) in **normal styling** (not red)
+- Do NOT show any critical alert
+- Operator can see the values but knows they are expected for engine-off state
+
+When engine is RUNNING:
+- Apply normal threshold logic
+- Oil pressure < 20 PSI = critical (or engine-specific threshold)
+- Fuel critically low = critical (per fuel tank capacity)
+- Show alerts with red styling and blinking
+
+### Investigation Required
+
+1. **Find the alert threshold logic** — likely in `instruments.js` or engine gauge component
+2. **Identify the engine running state signal** — Signal K path for engine running (e.g., `propulsion.port.running`, `propulsion.port.revolutions`, or similar)
+3. **Add engine-state gate** — skip alert thresholds if engine is not running
+
+### Files Likely Involved
+
+- `deployment/v0.9.9.4/opt/d3kos/services/dashboard/static/js/instruments.js` (gauge logic)
+- `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/engine-status.html` (alert display)
+- Related: BUG-16 (gauge dialog showing hardcoded data) — may share alert-logic code
+
+### User Request (Operator Guidance)
+
+> *"if no data is showing it should default to 0 and not make things up"*
+
+Interpretation: Display the actual value, but don't invent an alert state that doesn't apply. If engine is off, the value 0 is the truth; don't dress it as critical.
+
