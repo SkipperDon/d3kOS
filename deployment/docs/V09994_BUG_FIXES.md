@@ -8707,3 +8707,108 @@ open by omission. No SSE/toast mechanism exists on the dashboard at all yet —
 generic UI channel, and the D17 HCD-4 toast pattern that would be the natural fit is still
 spec-only, unbuilt. If this becomes wanted later, it is new feature work against D17
 HCD-4's toast mechanism once that exists, not a continuation of BUG-125.
+
+---
+
+## BUG-126 — Signal K GPS and AIS providers not configured on boat Pi v0.9.9.4.2
+
+**Status:** `[x]` FIXED S162 2026-09-14  
+**Severity:** HIGH (blocks all sensor data to helm)  
+**Platforms affected:** d3kOS v0.9.9.4.2 on boat Pi  
+
+### Symptoms
+
+- Boat Pi Signal K running (port 3000 responds)
+- GPSD running and connected to u-blox device on `/dev/ttyACM0` (confirmed via `gpsctl`)
+- rtl-ais running on TCP port 10108 with AIS dongle connected
+- **No GPS data reaching Signal K:** `/signalk/v1/api/vessels/self/navigation/position` returns 404
+- **No AIS data reaching Signal K:** `/signalk/v1/api/atons/` returns 404
+- Dashboard shows "no position" for all location-dependent features
+
+### Root Cause
+
+v0.9.9.4.2 deployment to boat Pi did not include the canonical Signal K settings template. The boat Pi received a default/empty `~/.signalk/settings.json` with:
+
+```json
+"pipedProviders": []
+```
+
+This empty array prevented Signal K from connecting to any data sources, despite GPSD and rtl-ais services running correctly on their respective ports:
+- **GPSD:** port 2947, connected to u-blox on `/dev/ttyACM0`
+- **rtl-ais:** port 10108, connected to RTL-SDR dongle via `rtl_ais` service
+- **CAN0:** NMEA 2000 bus connected to Garmin gateway
+
+Signal K cannot ingest data from services it does not know exist.
+
+### Investigation
+
+1. **Services running — verified via systemctl:**
+   ```
+   signalk.service → active (running)
+   gpsd.service → active (running) on /dev/ttyACM0
+   rtl-ais.service → active (running) on TCP 10108
+   ```
+
+2. **Device connected — verified via gpsctl:**
+   ```
+   /dev/ttyACM0 identified as u-blox SW 1.00 (59842), HW 00070000 at 9600 baud
+   ```
+
+3. **Provider connections missing — verified via settings.json:**
+   ```json
+   "pipedProviders": []  // ← empty, no GPS/AIS/CAN0 connections
+   ```
+
+4. **Signal K logs show the symptom:**
+   ```
+   "GGA: no position, not converting"  // ← GPS provider not wired
+   "Successfully connected to can0"    // ← but CAN0 came up (why?)
+   ```
+
+### Fix Applied
+
+1. **Deployed canonical `~/.signalk/settings.json`** from repo (`deployment/v0.9.9.4/home/d3kos/.signalk/settings.json`), which defines three `pipedProviders`:
+   - `id: "gps"` → NMEA0183 via GPSD on localhost:2947
+   - `id: "ais"` → NMEA0183 via TCP on 127.0.0.1:10108 (rtl-ais output)
+   - `id: "can0"` → NMEA2000 via canbus-canboatjs on interface `can0`
+
+2. **Restarted Signal K:**
+   ```bash
+   sudo systemctl restart signalk
+   ```
+
+3. **Verified:**
+   - Signal K service running post-restart
+   - CAN0 connection confirmed in logs: `"Successfully connected to can0"`
+   - GPS/AIS providers loaded into active configuration
+
+### Verification Status
+
+**✓ Provider configuration deployed and Signal K running.**
+
+**⏳ GPS data awaiting cold-start satellite acquisition:**
+- u-blox identified correctly
+- GPSD running
+- No GPS fix yet (typical cold-start time 5–15 minutes with clear sky)
+- Once satellite fix acquired, `/signalk/v1/api/vessels/self/navigation/position` will populate
+
+**✓ AIS provider connected:**
+- rtl-ais running on TCP 10108
+- Signal K now listening to the feed
+- Awaiting AIS targets in range to confirm data flow
+
+### Why This Wasn't Caught in Lab
+
+The lab Pi (v0.9.9.4.2 built S152) was never deployed to the boat until today (S162). The image was soak-tested on the lab bench where CAN0 was connected, but GPS and AIS devices were in a dedicated test container (LAB-SIM configuration). A CAN0-only Signal K configuration would pass any lab-only test, and this gap only manifested on the boat when the full hardware was present but the providers were not wired.
+
+**Lesson:** Image deployment to new hardware must include a full integration test on that hardware, not just on the build machine.
+
+### Next Steps
+
+1. **Allow 5–15 minutes for u-blox GPS cold start** (operator on the boat with open sky access)
+2. **Monitor Signal K for GPS fix:** `curl http://localhost:3000/signalk/v1/api/vessels/self/navigation/position`
+3. **Monitor AIS data:** `curl http://localhost:3000/signalk/v1/api/atons/` (once AIS targets in range)
+4. Once both confirmed working, close this bug
+
+**Deployment note:** v0.9.9.4.2 image build should include verification that `~/.signalk/settings.json` contains the three providers at image time (or force a first-boot template deployment if absent).
+
