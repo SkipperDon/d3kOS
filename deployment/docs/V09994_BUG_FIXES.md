@@ -9090,14 +9090,64 @@ Until the fix, users must manually configure cameras:
 **Platforms affected:** d3kOS v0.9.9.4.2 boat Pi  
 **Related:** BUG-126 (providers deployed), BUG-128 (false engine-off alerts)  
 
+### Detailed Observations
+
+**WHAT IS FLOWING:**
+
+1. **CAN Bus Layer (Layer 1 — Hardware)**
+   - Interface: `can0` status = UP, LOWER_UP (active)
+   - Traffic observed: `cansniffer` captured continuous frames
+   - PGN ID: `09F20040` (NMEA 2000 PGN 65024 = Engine Parameters, Rapid Update)
+   - Data payload: `00 00 00 96 05 00 FF FF` (repeating every ~100ms)
+   - **✓ Confirmed: Raw CAN data is flowing**
+
+2. **Signal K Provider Layer (Layer 2 — Provider Connection)**
+   - Service: `signalk.service` status = active (running)
+   - CAN0 provider: Connected ✓
+   - Signal K logs: `"Successfully connected to can0"` (appears after restart)
+   - **✓ Confirmed: Signal K is accepting CAN frames**
+
+**WHAT IS NOT REACHING THE DASHBOARD:**
+
+3. **Signal K Data Model Layer (Layer 3 — Data Parsing/Population)**
+   - Dashboard requests: `GET /signalk/v1/api/vessels/self/propulsion/port` 
+   - Response: **HTTP 404 Not Found** (no data, no path exists)
+   - Dashboard requests: `GET /signalk/v1/api/vessels/self/tanks/fuel/0`
+   - Response: **HTTP 404 Not Found** (no data, no path exists)
+   - Dashboard requests: `GET /signalk/v1/api/self`
+   - Response: **HTTP 404 Not Found** (entire self object missing)
+   - **✗ Confirmed: Data is NOT being parsed into Signal K's internal data model**
+
+4. **Dashboard Gauge Layer (Layer 4 — UI Display)**
+   - Propulsion (RPM/Throttle): **showing nothing** (no data to display)
+   - Oil pressure: **showing 0 PSI with CRITICAL alert** (placeholder value, not real data)
+   - Fuel level: **showing 0 with CRITICAL alert** (placeholder value, not real data)
+   - Coolant temperature: **showing 32°C normally** (this may be a default/cached value)
+   - **✗ Confirmed: Dashboard is falling back to placeholder/zero values because Signal K API returns 404**
+
+### Signal Flow Breakdown
+
+```
+LAYER 1 (CAN Hardware)          LAYER 2 (Provider)       LAYER 3 (Data Model)    LAYER 4 (API/Dashboard)
+─────────────────────          ─────────────────        ──────────────────      ──────────────────────
+
+Engine transmitting:            Signal K canboat-js:     Signal K data tree:     Dashboard requests:
+├─ PGN 65024 (0x09F204)        ├─ Receives frames ✓     ├─ propulsion.port ?    ├─ /propulsion/port
+│  RPM data                     ├─ Parses PGN? ✗        ├─ tanks.fuel ? ✗       │   → 404 NOT FOUND ✗
+├─ 96 05 (RPM bytes)            ├─ Decodes bytes? ✗     └─ vessels.self? ✗     └─ /tanks/fuel/0
+└─ Every 100ms                  └─ Populates paths? ✗                             → 404 NOT FOUND ✗
+
+RESULT: Data physically present but LOST in translation
+```
+
 ### Symptoms
 
-- CAN bus active: PGN 65024 (Engine Parameters, Rapid Update) flowing every ~100ms
-- Signal K logs: `"Successfully connected to can0"`
-- Dashboard requests data: `GET /signalk/v1/api/vessels/self/propulsion/port` → **HTTP 404**
-- Dashboard requests data: `GET /signalk/v1/api/vessels/self/tanks/fuel/0` → **HTTP 404**
-- Engine gauges show 0 with false CRITICAL alerts (see BUG-128)
-- Data is on the NMEA 2000 bus but NOT being converted to Signal K API paths
+- CAN bus active: PGN 65024 (Engine Parameters, Rapid Update) flowing every ~100ms ✓
+- Signal K logs: `"Successfully connected to can0"` ✓
+- Dashboard requests data: `GET /signalk/v1/api/vessels/self/propulsion/port` → **HTTP 404** ✗
+- Dashboard requests data: `GET /signalk/v1/api/vessels/self/tanks/fuel/0` → **HTTP 404** ✗
+- Engine gauges show 0 with false CRITICAL alerts (see BUG-128) ✗
+- Data is on the NMEA 2000 bus but NOT being converted to Signal K API paths ✗
 
 ### Root Cause (Investigation Needed)
 
@@ -9148,4 +9198,26 @@ curl -s http://localhost:3000/signalk/v1/ | jq '.self.sources'
 ### Workaround
 
 None — requires Signal K data pipeline to be fixed.
+
+
+### What SHOULD vs. What IS Showing on Dashboard
+
+**Engine Running with CAN data on bus:**
+
+| Gauge | Expected Data | What Dashboard Shows |
+|-------|----------------|----------------------|
+| **RPM** | ~1000+ RPM (from PGN 65024 bytes 3-4) | **NOTHING** (404 → no data) |
+| **Oil Pressure** | ~30-40 PSI at running (from PGN 65024) | **0 PSI with CRITICAL alert** (false) |
+| **Fuel Level** | Tank % or gallons available | **0 with CRITICAL alert** (false) |
+| **Coolant Temp** | ~185-195°F operating | **32°C** (stale/default value) |
+| **Throttle** | % if transmitted | **NOTHING** (404 → no data) |
+
+**Operator Impact:** 
+- Engine running, but gauges appear dead
+- Oil pressure 0 PSI with RED BLINKING ALERT (incorrect—should be 30+ PSI at running RPM)
+- Fuel 0 with RED BLINKING ALERT (incorrect—should show tank level)
+- Cannot assess engine health during operation
+- No way to monitor engine parameters for safety
+
+**The core problem:** Signal K is receiving raw CAN frames (PGN 65024 with valid data bytes) but the frame is never being decoded/parsed into the Signal K data model. The propulsion/tank paths that the dashboard expects don't exist in Signal K's internal tree, so every query returns 404.
 
