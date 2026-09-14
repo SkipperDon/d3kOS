@@ -8970,3 +8970,113 @@ When engine is RUNNING:
 
 Interpretation: Display the actual value, but don't invent an alert state that doesn't apply. If engine is off, the value 0 is the truth; don't dress it as critical.
 
+
+---
+
+## BUG-129 — Camera discovery fails silently with no user guidance on credential setup
+
+**Status:** `[ ]` OPEN S162 2026-09-14  
+**Severity:** HIGH (cameras cannot be set up; user blocked on onboarding)  
+**Platforms affected:** d3kOS v0.9.9.4.2 boat Pi / camera setup flow  
+
+### Symptoms
+
+- User runs camera discovery
+- System finds 3 Reolink cameras on network: `10.42.0.63`, `10.42.0.100`, `10.42.0.181` (port 554 RTSP)
+- Discovery then fails: `✗ No Reolink cameras found that respond to RTSP`
+- Error message: `"Found cameras with RTSP port open, but could not connect. Please check camera credentials (default: d3kos/d3kos2026)"`
+- **User has no way to enter or change camera credentials in the dashboard UI**
+- Setup blocked; user cannot proceed
+
+### Root Cause
+
+The camera discovery and setup flow is incomplete:
+
+1. **Discovery assumes credentials are already set** — it tries to connect to RTSP using hardcoded defaults but provides no UI for the user to configure camera credentials first
+2. **No credential configuration step in the setup wizard** — onboarding never asks the user for camera IP addresses or login credentials
+3. **Dashboard has no "Camera Settings" page** — there is no place to enter camera IP, username, password before discovery
+4. **Script just fails** — `camera_discovery.py` reports the error but does not guide the user to resolve it
+
+### Expected User Flow
+
+**What should happen:**
+
+1. User powers on Pi
+2. Setup wizard should include step: **"Configure your cameras"**
+3. User enters for each camera:
+   - IP address (or auto-scan and select)
+   - Username (default: `admin`)
+   - Password (default: `admin` or user-specified)
+4. System tests RTSP connection with provided credentials
+5. If successful, saves credentials and proceeds to camera positioning
+6. If failed, guides user to check camera web interface and try again
+
+**What actually happens:**
+
+1. Discovery runs blindly with hardcoded `d3kos/d3kos2026`
+2. Cameras don't have those credentials (default Reolink is `admin/admin`)
+3. Discovery fails with a message the user doesn't know how to act on
+4. No dashboard UI to configure it
+5. Setup is stuck
+
+### Investigation Details
+
+**Cameras found by discovery (S162):**
+```
+10.42.0.63:554   ← RTSP port open, awaiting auth
+10.42.0.100:554  ← RTSP port open, awaiting auth
+10.42.0.181:554  ← RTSP port open, awaiting auth
+```
+
+**Attempted connection with defaults:**
+```
+d3kos/d3kos2026  ← Fails 401 Unauthorized (not the camera's credentials)
+```
+
+**Likely camera credentials** (standard Reolink defaults):
+```
+admin/admin
+```
+
+### Fix Required (Scope)
+
+**Minimum fix (v0.9.9.4 hotfix):**
+- Add dashboard page: **"Camera Credentials"**
+- Form to enter IP, username, password for each camera
+- Test RTSP connection; save if successful
+- Update `camera_discovery.py` to read credentials from config before scanning
+
+**Complete fix (v0.9.9.5+):**
+- Integrate camera credential setup into the initial setup wizard (Step X: "Configure Cameras")
+- Auto-scan for cameras, allow user to select and enter credentials for each
+- Show real-time RTSP test results
+- Save successful configs to `cameras.json`
+- Only proceed to camera positioning/calibration after all cameras verified
+
+### User Guidance (Current Workaround)
+
+Until the fix, users must manually configure cameras:
+
+1. **Find camera IP** (use discovery output above): `10.42.0.63`, etc.
+2. **Open camera web interface** in a browser:
+   ```
+   http://10.42.0.63:8080
+   ```
+3. **Log in with default Reolink credentials:**
+   ```
+   Username: admin
+   Password: admin
+   ```
+4. **Change credentials to:**
+   ```
+   Username: d3kos
+   Password: d3kos2026
+   ```
+5. **Save and repeat for each camera**
+6. **Run camera discovery again** — should now find all three and configure them
+
+### Related Issues
+
+- BUG-127 (setup wizard not appearing) — if wizard appears, this camera credential step should be part of it
+- Marine Vision module expects pre-configured cameras with known credentials; design assumes `d3kos/d3kos2026` universally
+
