@@ -8765,9 +8765,9 @@ Signal K cannot ingest data from services it does not know exist.
    "Successfully connected to can0"    // ← but CAN0 came up (why?)
    ```
 
-### Fix Applied
+### Fix Applied — Boat Pi (S162)
 
-1. **Deployed canonical `~/.signalk/settings.json`** from repo (`deployment/v0.9.9.4/home/d3kos/.signalk/settings.json`), which defines three `pipedProviders`:
+1. **Deployed canonical `~/.signalk/settings.json`** from repo (`deployment/v0.9.9.4/home/d3kos/.signalk/settings.json`) to boat Pi, which defines three `pipedProviders`:
    - `id: "gps"` → NMEA0183 via GPSD on localhost:2947
    - `id: "ais"` → NMEA0183 via TCP on 127.0.0.1:10108 (rtl-ais output)
    - `id: "can0"` → NMEA2000 via canbus-canboatjs on interface `can0`
@@ -8797,9 +8797,15 @@ Signal K cannot ingest data from services it does not know exist.
 - Signal K now listening to the feed
 - Awaiting AIS targets in range to confirm data flow
 
-### Why This Wasn't Caught in Lab
+### Lab Pi Status (TBD)
 
-The lab Pi (v0.9.9.4.2 built S152) was never deployed to the boat until today (S162). The image was soak-tested on the lab bench where CAN0 was connected, but GPS and AIS devices were in a dedicated test container (LAB-SIM configuration). A CAN0-only Signal K configuration would pass any lab-only test, and this gap only manifested on the boat when the full hardware was present but the providers were not wired.
+The fix was deployed to the **boat Pi only** (S162 2026-09-14). Lab Pi v0.9.9.4.2 status is unconfirmed — it may have the same empty `pipedProviders` issue or the canonical settings.json may have already been deployed to it during image build. Verify lab Pi by running:
+
+```bash
+ssh -i ~/.ssh/id_d3kos d3kos@192.168.1.237 'cat ~/.signalk/settings.json | python3 -m json.tool | grep -A5 pipedProviders'
+```
+
+If empty on lab Pi, apply same fix: `scp` the canonical settings.json and restart Signal K.
 
 **Lesson:** Image deployment to new hardware must include a full integration test on that hardware, not just on the build machine.
 
