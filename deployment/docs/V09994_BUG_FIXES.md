@@ -9221,3 +9221,45 @@ None — requires Signal K data pipeline to be fixed.
 
 **The core problem:** Signal K is receiving raw CAN frames (PGN 65024 with valid data bytes) but the frame is never being decoded/parsed into the Signal K data model. The propulsion/tank paths that the dashboard expects don't exist in Signal K's internal tree, so every query returns 404.
 
+
+---
+
+### S162 UPDATE: CRITICAL FINDING — Depth IS Working (Pipeline Functional!)
+
+**Operator observation:** Depth gauge IS working on the dashboard after Garmin was turned on.
+
+**This proves:**
+- ✓ Signal K CAN0 provider IS parsing NMEA 2000 frames
+- ✓ Signal K IS populating data model paths (depth showing)
+- ✓ Signal K API IS returning JSON (dashboard fetching it successfully)
+- ✓ Dashboard IS displaying Signal K data correctly
+
+**Pipeline IS working. The issue is specific to propulsion/engine data.**
+
+**Refined Root Cause:**
+
+The canboat-js provider works for **some PGNs** (Garmin depth) but **NOT for PGN 65024** (Engine Parameters, Rapid Update from CX5106). 
+
+Revised candidates:
+
+1. **PGN 65024 not in canboat-js decode rules** — Garmin PGNs are enabled, but CX5106 engine PGN may be missing from the provider's parser configuration
+2. **Engine data path mapping disabled** — canboat-js may have depth path mapping (`environment.depth.belowTransducer` → works) but no propulsion path mapping (`propulsion.port.revolutions`, `propulsion.port.oilPressure`, etc. → missing)
+3. **CX5106 PGN transmission vs. expected PGN mismatch** — CX5106 may transmit engine data under a different PGN than 65024, and canboat-js doesn't have a decode rule for it
+4. **Source mapping conflict** — Garmin is the "accepted" source for NMEA 2000; CX5106 engine data may be rejected due to source priority rules in Signal K
+
+**Why Garmin Fixed Depth:**
+- Garmin is now online, transmitting depth (likely PGN 128267)
+- CAN bus link proven working (Signal K receives and parses it)
+- But CX5106 engine data is still not appearing in the data model
+
+**Next Investigation:**
+1. Check which PGN the CX5106 actually transmits for engine data (may not be 65024)
+2. Verify canboat-js has a decode rule for that PGN
+3. Check Signal K's source priority — is CX5106 rejected in favor of Garmin?
+4. Verify propulsion paths are enabled in Signal K configuration
+
+**Implication:** The data IS on the bus (we saw PGN 65024 in cansniffer), but either:
+- It's being transmitted under a different PGN than expected, OR
+- Signal K's canboat-js has no parser for that specific PGN, OR
+- The propulsion path mapping is not configured in Signal K
+
