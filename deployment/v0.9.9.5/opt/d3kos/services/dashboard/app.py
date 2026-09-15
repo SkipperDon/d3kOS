@@ -1116,16 +1116,17 @@ def go2rtc_proxy(subpath):
 
 
 # ── D02 SafeHelm Proxy Routes ─────────────────────────────────────────────
-# SafeHelm binds 127.0.0.1:8095 (loopback only). Dashboard proxies it so
-# the browser never needs to reach 8095 directly — avoids CORS, keeps
-# 8095 off the boat Wi-Fi. BUG-48: all SafeHelm URLs use window.location.hostname.
+# SafeHelm binds 127.0.0.1:8096 (loopback only). Dashboard proxies it so
+# the browser never needs to reach 8096 directly — avoids CORS, keeps
+# 8096 off the boat Wi-Fi. BUG-48: all SafeHelm URLs use window.location.hostname.
+# Note: 8095 is boatlog-export-api.py (_BOATLOG_API_BASE above).
 
-SAFEHELM_BASE = 'http://127.0.0.1:8095'
+SAFEHELM_BASE = 'http://127.0.0.1:8096'
 
 
 @app.route('/api/safehelm/sse')
 def safehelm_sse_proxy():
-    """SSE proxy: browser subscribes here, request forwarded to SafeHelm :8095/sse."""
+    """SSE proxy: browser subscribes here, request forwarded to SafeHelm :8096/sse."""
     from flask import Response as FlaskResponse
     try:
         r = requests.get(f'{SAFEHELM_BASE}/sse', stream=True, timeout=None)
@@ -1139,7 +1140,7 @@ def safehelm_sse_proxy():
 
 @app.route('/api/safehelm/ack', methods=['POST'])
 def safehelm_ack_proxy():
-    """ACK proxy: MMSI validation + forward to SafeHelm :8095/ack. D02-5."""
+    """ACK proxy: MMSI validation + forward to SafeHelm :8096/ack. D02-5."""
     data = request.get_json(silent=True) or {}
     mmsi = str(data.get('mmsi', '')).strip()
     if not mmsi.isdigit() or not (7 <= len(mmsi) <= 9):
@@ -1153,7 +1154,7 @@ def safehelm_ack_proxy():
 
 @app.route('/api/safehelm/dismiss', methods=['POST'])
 def safehelm_dismiss_proxy():
-    """Dismiss proxy: MMSI validation + forward to SafeHelm :8095/dismiss. D02-5."""
+    """Dismiss proxy: MMSI validation + forward to SafeHelm :8096/dismiss. D02-5."""
     data = request.get_json(silent=True) or {}
     mmsi = str(data.get('mmsi', '')).strip()
     if not mmsi.isdigit() or not (7 <= len(mmsi) <= 9):

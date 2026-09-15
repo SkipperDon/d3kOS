@@ -1,5 +1,5 @@
 # safehelm.py — SafeHelm Advisory Mode, d3kOS v0.9.9.5
-# Port 8095, 127.0.0.1 only (proxied via dashboard :3000).
+# Port 8096, 127.0.0.1 only (proxied via dashboard :3000). 8095 = boatlog-export-api.py.
 import json
 import logging
 import os
@@ -304,4 +304,4 @@ if __name__ == '__main__':
     loop_thread = threading.Thread(target=_advisory_loop, daemon=True)
     loop_thread.start()
     # BUG-48: bind to 127.0.0.1 only — proxied by dashboard
-    app.run(host='127.0.0.1', port=8095, threaded=True)
+    app.run(host='127.0.0.1', port=8096, threaded=True)
