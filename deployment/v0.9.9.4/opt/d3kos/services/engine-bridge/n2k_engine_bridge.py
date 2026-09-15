@@ -17,6 +17,7 @@ standard and the CX5106 variant.
 
 import json
 import logging
+import os
 import socket
 import struct
 import sys
@@ -31,7 +32,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-CAN_INTERFACE = 'can0'
+CAN_INTERFACE = os.environ.get('D3KOS_CAN_INTERFACE', 'can0')
 SK_WS_URL     = 'ws://localhost:8099/signalk/v1/stream?subscribe=none'
 
 # CAN frame struct: can_id(uint32 LE), dlc(uint8), 3-byte pad, 8-byte data
@@ -200,7 +201,8 @@ def main():
                 continue
 
             rpm = decoded.get('rpm')
-            log.debug(f'PGN {pgn_num} (DP={dp} SA={sa}): RPM={rpm:.0f if rpm is not None else "N/A"}')
+            rpm_str = f'{rpm:.0f}' if rpm is not None else 'N/A'
+            log.debug(f'PGN {pgn_num} (DP={dp} SA={sa}): RPM={rpm_str}')
 
             delta = _build_delta(decoded)
             if delta:
