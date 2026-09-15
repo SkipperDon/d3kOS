@@ -1,0 +1,7 @@
+# /etc/udev/rules.d/99-d3kos-accelerator.rules
+# Coral USB Accelerator (9302) and Coral USB Mini (9303).
+# Hand off to systemd — never block the udev worker.
+ACTION=="add|remove", SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", \
+    ATTR{idProduct}=="9302|9303", \
+    RUN+="/usr/bin/systemd-run --no-block --unit=d3kos-hw-reprobe-$env{SEQNUM} \
+          /opt/d3kos/scripts/hardware-probe.sh"

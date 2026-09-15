@@ -1,0 +1,15 @@
+[Unit]
+Description=d3kOS Hardware Probe
+Before=d3kos-dashboard.service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/d3kos/scripts/hardware-probe.sh
+ExecStartPost=-/opt/d3kos/scripts/notify-hardware-change.sh
+RemainAfterExit=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

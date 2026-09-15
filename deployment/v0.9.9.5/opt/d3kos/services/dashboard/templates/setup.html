@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>d3kOS &mdash; Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { font-family: 'Chakra Petch', sans-serif; }
+
+  :root {
+    --bg:    #FFFFFF;
+    --panel: #F0F4F0;
+    --cell:  #FFFFFF;
+    --ink:   #040C04;
+    --ink2:  rgba(4,12,4,.52);
+    --ink3:  rgba(4,12,4,.28);
+    --g:     #003A00;
+    --g-txt: #004400;
+    --g-dim: rgba(0,58,0,.06);
+    --g-bdr: rgba(0,58,0,.20);
+    --bar:   #003200;
+    --rule:  rgba(0,0,0,.08);
+    --adv-bg: #FFF6DC; --adv-bdr: #C47B00; --adv-num: #7A4400;
+    --alrt-bg: #FFF2EC; --alrt-bdr: #C03A00; --alrt-num: #8B2A00;
+  }
+
+  [data-night] {
+    --bg:    #020702;
+    --panel: #070E07;
+    --cell:  #0B130B;
+    --ink:   #D6EDD6;
+    --ink2:  rgba(214,237,214,.55);
+    --ink3:  rgba(214,237,214,.30);
+    --g:     #00C400;
+    --g-txt: #00CC00;
+    --g-dim: rgba(0,196,0,.08);
+    --g-bdr: rgba(0,196,0,.22);
+    --bar:   #001A00;
+    --rule:  rgba(255,255,255,.08);
+    --adv-bg: rgba(255,149,0,.14); --adv-bdr: rgba(255,149,0,.55); --adv-num: #FF9A00;
+    --alrt-bg: rgba(255,85,0,.14); --alrt-bdr: rgba(255,85,0,.6);  --alrt-num: #FF5A00;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--ink); }
+
+  /* ── Status bar ── */
+  #sb {
+    height: 56px; background: var(--bar);
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,.3); position: relative; z-index: 10;
+  }
+  .sb-back {
+    display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px;
+    background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.22);
+    border-radius: 10px; color: #fff; font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px; font-weight: 700; letter-spacing: .06em; cursor: pointer;
+    transition: background .15s; flex-shrink: 0; text-decoration: none;
+  }
+  .sb-back:hover  { background: rgba(255,255,255,.22); }
+  .sb-back:active { background: rgba(255,255,255,.30); }
+  .sb-back.disabled { opacity: .35; cursor: default; pointer-events: none; }
+  .sb-brand { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .15em; color: #fff; }
+  .sb-sep   { width: 1px; height: 28px; background: rgba(255,255,255,.2); }
+  .sb-title { font-size: 20px; font-weight: 600; letter-spacing: .08em; color: rgba(255,255,255,.75); flex: 1; }
+  .sb-counter { font-size: 18px; color: rgba(255,255,255,.45); flex-shrink: 0; }
+
+  /* ── Scroll area ── */
+  #setup-scroll { position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+  /* ── Outer wrapper ── */
+  #setup-wrap { display: flex; align-items: flex-start; justify-content: center;
+    padding: 0 0 60px; min-height: 100%; }
+
+  /* ── Card ── */
+  #setup-card { width: 100%; max-width: 1100px; background: var(--cell); }
+
+  /* ── Progress bar ── */
+  .wiz-progress { background: var(--panel); border-bottom: 1px solid var(--rule);
+    padding: 14px 28px 12px; display: flex; align-items: center; gap: 8px; }
+  .wiz-dot { flex: 1; height: 5px; border-radius: 3px; background: var(--rule); transition: background .3s; }
+  .wiz-dot.done { background: var(--g-txt); }
+  .wiz-dot.act  { background: var(--g-bdr); }
+  .wiz-step-lbl { font-size: 20px; font-weight: 700; letter-spacing: .18em;
+    color: var(--ink3); margin-left: 12px; flex-shrink: 0; font-family: 'Chakra Petch', sans-serif; }
+
+  /* ── Step panels ── */
+  .wiz-step { display: none; }
+  .wiz-step.active { display: block; }
+
+  /* ── Card head ── */
+  .card-head { background: var(--panel); border-bottom: 1px solid var(--rule); padding: 28px 36px 22px; }
+  .card-head-over { font-size: 20px; font-weight: 700; letter-spacing: .2em; color: var(--ink3); margin-bottom: 6px; }
+  .card-head-title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: .1em;
+    color: var(--g-txt); line-height: 1.1; }
+  .card-head-sub { font-size: 20px; color: var(--ink2); margin-top: 10px; line-height: 1.7; }
+  .card-body { padding: 28px 36px 32px; }
+
+  /* ── Welcome bullets ── */
+  .welcome-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+  .wl-item { display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;
+    background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 10px; }
+  .wl-icon { font-size: 26px; flex-shrink: 0; margin-top: 1px; }
+  .wl-text { font-size: 20px; color: var(--ink2); line-height: 1.6; }
+  .wl-text strong { color: var(--ink); font-weight: 700; }
+
+  /* ── Error banner ── */
+  .error-banner { background: var(--alrt-bg); border: 1px solid var(--alrt-bdr);
+    border-radius: 8px; padding: 14px 18px; font-size: 20px; color: var(--alrt-num); margin-bottom: 22px; }
+
+  /* ── Form fields ── */
+  .field { margin-bottom: 22px; }
+  .field label { display: block; font-size: 22px; font-weight: 700; letter-spacing: .14em;
+    color: var(--ink3); margin-bottom: 10px; text-transform: uppercase; }
+  .field input, .field select { display: block; width: 100%; height: 60px; padding: 0 18px;
+    font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 500; color: var(--ink);
+    background: var(--bg); border: 2px solid var(--rule); border-radius: 10px; outline: none;
+    appearance: none; transition: border-color .2s; }
+  .field input:focus, .field select:focus { border-color: var(--g-txt); }
+  .field .hint { font-size: 20px; color: var(--ink3); margin-top: 8px; letter-spacing: .03em; line-height: 1.5; }
+  .field input[type="password"] { letter-spacing: .1em; }
+  .field input[type="number"] { -moz-appearance: textfield; }
+  .field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* ── Side-by-side fields ── */
+  .field-row { display: flex; gap: 16px; }
+  .field-row .field { flex: 1; min-width: 0; }
+
+  /* ── Section divider ── */
+  .sec-div { font-size: 20px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--g-txt); margin: 24px 0 16px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--g-bdr); }
+
+  /* ── Toggle row (twin engines) ── */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 10px; margin-bottom: 18px; cursor: pointer; user-select: none; }
+  .toggle-row-lbl { font-size: 22px; font-weight: 700; color: var(--ink); }
+  .toggle-row-sub { font-size: 20px; color: var(--ink3); margin-top: 2px; }
+  .tgl { width: 56px; height: 30px; border-radius: 15px; background: var(--rule);
+    border: 2px solid var(--ink3); position: relative; transition: background .2s, border-color .2s; flex-shrink: 0; }
+  .tgl.on { background: var(--g-txt); border-color: var(--g-txt); }
+  .tgl::after { content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--ink3); transition: left .2s, background .2s; }
+  .tgl.on::after { left: 29px; background: #fff; }
+
+  /* ── Engine 2 block ── */
+  .engine2-block { display: none; background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 20px; margin-bottom: 18px; }
+  .engine2-block.visible { display: block; }
+  .engine2-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: .08em;
+    color: var(--g-txt); margin-bottom: 16px; }
+
+  /* ── QR / pairing ── */
+  .pairing-box { text-align: center; background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 12px; padding: 28px; margin-bottom: 22px; }
+  #qr-canvas { display: inline-block; background: #fff; padding: 14px; border-radius: 8px; margin-bottom: 18px; }
+  #qr-canvas img, #qr-canvas canvas { display: block; }
+  .pairing-uuid { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: .2em;
+    color: var(--g-txt); background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 8px; padding: 12px 18px; margin: 0 auto 14px; cursor: pointer; word-break: break-all; }
+  .pairing-sub { font-size: 20px; color: var(--ink3); line-height: 1.7; }
+  .pairing-copied { display: none; font-size: 20px; font-weight: 700; color: var(--g-txt); margin-top: 8px; }
+
+  /* ── DIP switch section ── */
+  .dip-block { background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; font-size: 18px; }
+  .dip-block-title { font-size: 20px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--g-txt); margin-bottom: 16px; }
+  .dip-switches { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; font-size: 18px; }
+  .dip-sw { width: 52px; height: 72px; border-radius: 6px; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; padding: 8px 4px;
+    border: 2px solid var(--rule); transition: all .2s; font-size: 18px; }
+  .dip-sw.on  { background: var(--g-txt); border-color: var(--g-txt); }
+  .dip-sw.off { background: var(--bg); border-color: var(--ink3); }
+  .dip-sw-num { font-size: 18px; font-weight: 700; }
+  .dip-sw.on  .dip-sw-num   { color: #fff; }
+  .dip-sw.off .dip-sw-num   { color: var(--ink3); }
+  .dip-sw-state { font-size: 18px; font-weight: 900; letter-spacing: .04em; }
+  .dip-sw.on  .dip-sw-state { color: #fff; }
+  .dip-sw.off .dip-sw-state { color: var(--ink3); }
+  .dip-key { font-size: 19px; color: var(--ink2); line-height: 2; }
+  .dip-key strong { color: var(--g-txt); }
+
+  /* ── DIP "why" box ── */
+  .dip-why { background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 10px;
+    padding: 18px 22px; margin-bottom: 16px; font-size: 18px; }
+  .dip-why-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .08em;
+    color: var(--g-txt); margin-bottom: 12px; }
+  .dip-why-body { font-size: 20px; color: var(--ink2); line-height: 1.8; }
+  .dip-why-body p { margin-bottom: 8px; }
+  .dip-why-body strong { color: var(--ink); }
+
+  /* ── DIP install steps ── */
+  .dip-install { background: var(--adv-bg); border: 1px solid var(--adv-bdr); border-radius: 10px;
+    padding: 16px 22px; margin-bottom: 16px; font-size: 18px; }
+  .dip-install-title { font-size: 20px; font-weight: 700; color: var(--adv-num); margin-bottom: 10px; }
+  .dip-install ol { padding-left: 22px; }
+  .dip-install ol li { font-size: 20px; color: var(--adv-num); line-height: 1.8; }
+
+  /* ── DIP context header ── */
+  .dip-context { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 22px; margin-bottom: 20px; font-size: 18px; }
+  .dip-context-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: .08em;
+    color: var(--g-txt); margin-bottom: 6px; }
+  .dip-context-sub { font-size: 20px; color: var(--ink2); line-height: 1.6; }
+
+  /* ── Notice box ── */
+  .notice-box { background: var(--adv-bg); border: 1px solid var(--adv-bdr);
+    border-radius: 10px; padding: 16px 20px; font-size: 20px; color: var(--adv-num);
+    line-height: 1.7; margin-bottom: 16px; }
+
+  /* ── No gateway notice ── */
+  .no-gw-box { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 32px 28px; text-align: center; margin-bottom: 16px; }
+  .no-gw-icon { font-size: 48px; margin-bottom: 14px; }
+  .no-gw-text { font-size: 22px; color: var(--ink2); line-height: 1.7; }
+
+  /* ── API key step ── */
+  .key-steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+  .key-step { display: flex; gap: 16px; align-items: flex-start; }
+  .key-num { width: 30px; height: 30px; border-radius: 50%; background: var(--g-dim);
+    border: 2px solid var(--g-bdr); color: var(--g-txt); font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .key-txt { font-size: 20px; color: var(--ink2); line-height: 1.7; padding-top: 2px; }
+  .key-txt strong { color: var(--ink); }
+  .key-skip-row { text-align: right; margin-top: -8px; margin-bottom: 10px; }
+  .key-skip { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px; font-weight: 700; letter-spacing: .06em; color: var(--ink3); cursor: pointer; padding: 4px 0; }
+  .key-skip:hover { color: var(--ink2); }
+
+  /* ── Done step ── */
+  .done-icon { text-align: center; font-size: 64px; margin-bottom: 18px; }
+  .done-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+  .done-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+    background: var(--g-dim); border: 1px solid var(--g-bdr); border-radius: 8px;
+    font-size: 20px; font-weight: 600; color: var(--ink); }
+  .done-item .di-tick { color: var(--g-txt); font-size: 20px; flex-shrink: 0; }
+  .done-item .di-skip { color: var(--ink3); font-size: 20px; flex-shrink: 0; }
+
+  /* ── Chart info ── */
+  .chart-info { background: var(--g-dim); border: 1px solid var(--g-bdr);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 22px; }
+  .chart-info-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .chart-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--g-dim);
+    border: 2px solid var(--g-bdr); flex-shrink: 0; transition: background .3s, border-color .3s; }
+  .chart-dot.ok { background: var(--g-txt); border-color: var(--g-txt); }
+  .chart-label { font-size: 20px; font-weight: 700; letter-spacing: .16em; color: var(--g-txt); }
+  .chart-source { font-size: 20px; color: var(--ink2); padding: 4px 0; letter-spacing: .02em; }
+  .chart-note   { font-size: 20px; color: var(--ink3); margin-top: 8px; letter-spacing: .03em; line-height: 1.5; }
+
+  /* ── Tier warning ── */
+  .tier-warn { background: var(--adv-bg); border: 1px solid var(--adv-bdr);
+    border-radius: 10px; padding: 18px 20px; margin-bottom: 22px;
+    font-size: 20px; color: var(--adv-num); line-height: 1.7; }
+  .tier-warn strong { display: block; margin-bottom: 4px; }
+
+  /* ── Recovery panel ── */
+  .recover-btn { width: 100%; height: 54px; margin-top: 14px; background: none;
+    border: 2px solid var(--g-bdr); border-radius: 12px; color: var(--g-txt);
+    font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
+    letter-spacing: .08em; cursor: pointer; transition: background .15s; }
+  .recover-btn:hover { background: var(--g-dim); }
+  .recover-panel { display: none; margin-top: 20px; background: var(--panel);
+    border: 1px solid var(--g-bdr); border-radius: 12px; padding: 24px 28px; }
+  .recover-panel.visible { display: block; }
+  .recover-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px;
+    letter-spacing: .08em; color: var(--g-txt); margin-bottom: 8px; }
+  .recover-sub { font-size: 20px; color: #595E59; line-height: 1.6; margin-bottom: 18px; }
+  .recover-status { font-size: 20px; margin-bottom: 14px; padding: 12px 16px;
+    border-radius: 8px; display: none; }
+  .recover-status.err { background: var(--alrt-bg); border: 1px solid var(--alrt-bdr); color: var(--alrt-num); display: block; }
+  .recover-status.ok  { background: var(--g-dim);   border: 1px solid var(--g-bdr);   color: var(--g-txt);   display: block; }
+  .recover-cancel { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px; color: #595E59; cursor: pointer; margin-top: 10px; padding: 4px 0; }
+  .recover-cancel:hover { color: var(--ink2); }
+  [data-night] .recover-cancel { color: #9CB89C; }
+  [data-night] .recover-sub    { color: #9CB89C; }
+
+  /* ── Buttons ── */
+  .btn-submit { width: 100%; height: 68px; background: var(--g-txt); color: #fff; border: none;
+    border-radius: 12px; font-family: 'Chakra Petch', sans-serif; font-size: 22px;
+    font-weight: 700; letter-spacing: .12em; cursor: pointer; transition: opacity .15s; }
+  .btn-submit:active { opacity: .85; }
+  .btn-back { width: 100%; height: 54px; margin-top: 12px; background: none;
+    border: 2px solid var(--rule); border-radius: 12px; color: var(--ink3);
+    font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
+    letter-spacing: .08em; cursor: pointer; transition: all .15s; }
+  .btn-back:hover { border-color: var(--g-bdr); color: var(--ink2); }
+  .btn-skip-step { background: none; border: none; font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px; font-weight: 700; color: var(--ink3); cursor: pointer;
+    display: block; margin: 14px auto 0; letter-spacing: .06em; padding: 14px 0; min-height: 48px; min-width: 48px; }
+  .btn-skip-step:hover { color: var(--ink2); }
+
+  /* ── Security pre-step ── */
+  .sec-head { background: var(--alrt-bg); border-bottom: 1px solid var(--alrt-bdr); padding: 28px 36px 22px; }
+  .sec-head-over  { font-size: 20px; font-weight: 700; letter-spacing: .2em; color: var(--alrt-num); margin-bottom: 6px; }
+  .sec-head-title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: .1em;
+    color: var(--alrt-num); line-height: 1.1; }
+  .sec-head-sub   { font-size: 20px; color: var(--alrt-num); margin-top: 10px; line-height: 1.7; opacity: .85; }
+  .pw-error { min-height: 28px; font-size: 20px; color: var(--alrt-num); margin-bottom: 8px; font-weight: 600; }
+
+  /* ── Locked screen ── */
+  .locked-wrap { display: flex; align-items: flex-start; justify-content: center;
+    padding: 48px 20px 60px; min-height: calc(100vh - 56px); }
+  .locked-card { width: 100%; max-width: 520px; background: var(--cell);
+    border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; }
+  .locked-head { background: var(--adv-bg); border-bottom: 1px solid var(--adv-bdr); padding: 30px 30px 24px; }
+  .locked-head-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px;
+    letter-spacing: .1em; color: var(--adv-num); line-height: 1.1; }
+  .locked-head-sub { font-size: 20px; color: var(--adv-num); margin-top: 10px; line-height: 1.7; opacity: .85; }
+  .locked-body { padding: 26px 30px 30px; }
+  .locked-cta { display: flex; align-items: center; justify-content: center; gap: 10px;
+    height: 60px; background: var(--adv-bdr); color: #fff; border: none; border-radius: 12px;
+    width: 100%; font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
+    letter-spacing: .1em; cursor: pointer; text-decoration: none; margin-bottom: 14px; }
+  .locked-go { display: block; width: 100%; height: 54px; background: none;
+    border: 2px solid var(--rule); border-radius: 12px; color: var(--ink3);
+    font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 700;
+    letter-spacing: .06em; cursor: pointer; transition: all .15s;
+    text-align: center; line-height: 50px; text-decoration: none; }
+  .locked-go:hover { border-color: var(--g-bdr); color: var(--ink2); }
+  /* AODA Track B */
+  .skip-link{position:absolute;top:-100px;left:0;background:var(--bar);color:#fff;padding:8px 16px;font-size:18px;font-weight:700;z-index:9999;text-decoration:none;border-radius:0 0 8px 0;transition:top .15s;}
+  .skip-link:focus{top:0;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div id="sb">
+  {% if run_count > 0 %}
+  <a href="/" class="sb-back" title="Return to dashboard">&#8592; DASHBOARD</a>
+  {% else %}
+  <span class="sb-back disabled" title="Complete setup to access the dashboard">&#8592; DASHBOARD</span>
+  {% endif %}
+  <div class="sb-sep"></div>
+  <div class="sb-brand">d3kOS</div>
+  <div class="sb-sep"></div>
+  <div class="sb-title">Setup Wizard</div>
+  {% if run_count > 0 %}
+  <div class="sb-counter">{{ run_count }}/{{ run_limit }} runs used</div>
+  {% endif %}
+</div>
+
+<span id="main-content"></span>
+<h1 class="sr-only">d3kOS Setup Wizard</h1>
+
+{% if run_count >= run_limit %}
+<!-- ═══════════════ TIER 0 LOCKED ═══════════════ -->
+<div id="setup-scroll">
+<div class="locked-wrap">
+  <div class="locked-card">
+    <div class="locked-head">
+      <div class="card-head-over">Tier 0 Limit Reached</div>
+      <div class="locked-head-title">Setup Wizard<br>Locked</div>
+      <div class="locked-head-sub">
+        You have run the setup wizard {{ run_count }} times (Tier 0 limit: {{ run_limit }}).
+        Settings can still be changed from the Settings page.
+        Upgrade to Tier 1 or higher to unlock unlimited wizard access.
+      </div>
+    </div>
+    <div class="locked-body">
+      <a href="https://atmyboat.com" class="locked-cta" target="_blank">
+        Upgrade at AtMyBoat.com &rarr;
+      </a>
+      <a href="/" class="locked-go">Continue to Dashboard</a>
+    </div>
+  </div>
+</div>
+</div>
+
+{% else %}
+<!-- ═══════════════ WIZARD ═══════════════ -->
+<div id="setup-scroll">
+<div id="setup-wrap">
+<div id="setup-card">
+
+  <!-- Progress — 8 steps -->
+  <div class="wiz-progress" id="wiz-progress">
+    <div class="wiz-dot act" id="dot-1"></div>
+    <div class="wiz-dot"     id="dot-2"></div>
+    <div class="wiz-dot"     id="dot-3"></div>
+    <div class="wiz-dot"     id="dot-4"></div>
+    <div class="wiz-dot"     id="dot-5"></div>
+    <div class="wiz-dot"     id="dot-6"></div>
+    <div class="wiz-dot"     id="dot-7"></div>
+    <div class="wiz-dot"     id="dot-8"></div>
+    <div class="wiz-dot"     id="dot-9"></div>
+    <div class="wiz-step-lbl" id="step-lbl">STEP 1 OF 9</div>
+  </div>
+
+  <form id="wiz-form" method="POST" action="/setup">
+
+    <!-- ═══ PASSWORD PRE-STEP — hidden until default password detected ═══ -->
+    <div class="wiz-step" id="wiz-password" style="display:none;">
+      <div class="sec-head">
+        <div class="sec-head-over">Security Setup Required</div>
+        <div class="sec-head-title">Change your<br>default password</div>
+        <div class="sec-head-sub">
+          Your device is using the factory default password. You must set a new password
+          before the setup wizard can continue. This protects your system from
+          unauthorised access on your boat&rsquo;s network.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="pw-new">New Password</label>
+          <input type="password" id="pw-new" placeholder="Minimum 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasswordChange();}">
+          <div class="hint">Must be at least 8 characters. Cannot be the default password.</div>
+        </div>
+        <div class="field">
+          <label for="pw-confirm">Confirm Password</label>
+          <input type="password" id="pw-confirm" placeholder="Re-enter your password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasswordChange();}">
+        </div>
+        <div class="pw-error" id="pw-error" role="alert" aria-live="polite"></div>
+        <button type="button" class="btn-submit" onclick="submitPasswordChange()">SET PASSWORD &amp; CONTINUE &rsaquo;</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 1 — WELCOME ═══ -->
+    <div class="wiz-step active" id="wiz-1">
+      <div class="card-head">
+        <div class="card-head-over">Welcome to d3kOS</div>
+        <div class="card-head-title">Your marine<br>navigation hub</div>
+        <div class="card-head-sub">
+          This wizard takes about 5 minutes. It personalises your dashboard,
+          configures your NMEA gateway DIP switches, and sets up your AI First Officer.
+          Every step except your vessel name is optional — skip anything you don&rsquo;t know yet.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="welcome-list">
+          <div class="wl-item">
+            <div class="wl-icon">🧭</div>
+            <div class="wl-text"><strong>Live navigation</strong> — AvNav charts, Signal K instruments, waypoint tracking.</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-icon">🤖</div>
+            <div class="wl-text"><strong>HELM AI First Officer</strong> — marine AI that watches your instruments and speaks up when needed.</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-icon">🔧</div>
+            <div class="wl-text"><strong>NMEA 2000 DIP switch setup</strong> — complete CX5106 configuration diagram generated from your engine and region.</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-icon">📱</div>
+            <div class="wl-text"><strong>Mobile companion</strong> — check your vessel from anywhere via the d3kOS mobile app.</div>
+          </div>
+        </div>
+        {% if run_count > 0 %}
+        <div class="tier-warn">
+          <strong>Re-running setup</strong>
+          You have run this wizard {{ run_count }} time{% if run_count != 1 %}s{% endif %} before.
+          {{ run_limit - run_count }} run{% if run_limit - run_count != 1 %}s{% endif %} remaining in Tier 0.
+        </div>
+        {% endif %}
+        <button type="button" class="btn-submit" onclick="goTo(2)">GET STARTED &rsaquo;</button>
+
+        <button type="button" class="recover-btn" onclick="showRecoverPanel()">RECOVER EXISTING Pi &rsaquo;</button>
+
+        <!-- ── Recovery panel (hidden until "Recover Existing Pi" tapped) ── -->
+        <div id="recover-panel" class="recover-panel">
+          <div class="recover-title">Restore Your Pi</div>
+          <div class="recover-sub">
+            Enter your Recovery Key to restore all your configuration from the cloud.
+            Your Recovery Key is the Device ID shown in <strong>Settings</strong> on
+            your original Pi, or in the <strong>d3kOS mobile app</strong>.
+          </div>
+          <div id="recover-status" class="recover-status"></div>
+          <div class="field">
+            <label for="recover-token">Recovery Key</label>
+            <input type="text" id="recover-token"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              autocomplete="off" spellcheck="false" autocorrect="off"
+              autocapitalize="none" maxlength="36"
+              oninput="formatUUID(this)"
+              style="font-family:'Bebas Neue',sans-serif;letter-spacing:.12em;">
+            <div class="hint">36-character UUID &mdash; write this on a label and stick it to your Pi.</div>
+          </div>
+          <button type="button" class="btn-submit" id="recover-btn-go" onclick="doRecover()">RESTORE Pi &rsaquo;</button>
+          <button type="button" class="recover-cancel" onclick="hideRecoverPanel()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 2 — VESSEL IDENTITY ═══ -->
+    <div class="wiz-step" id="wiz-2">
+      <div class="card-head">
+        <div class="card-head-over">Step 2 of 8 &mdash; Vessel Identity</div>
+        <div class="card-head-title">Tell us about<br>your vessel</div>
+        <div class="card-head-sub">
+          Used in AI prompts, voyage logs, and manual searches.
+          <strong>Vessel name is required.</strong> All other fields can be skipped.
+        </div>
+      </div>
+      <div class="card-body">
+        {% if error %}
+        <div class="error-banner">{{ error }}</div>
+        {% endif %}
+
+        <div class="field">
+          <label for="vessel_name">Vessel Name <span style="color:var(--alrt-num)">*</span></label>
+          <input type="text" id="vessel_name" name="vessel_name"
+                 placeholder="e.g. MV Serenity" autocomplete="off"
+                 value="{{ request.form.get('vessel_name', '') }}">
+          <div class="hint">Shown in the status bar and used in AI prompts.</div>
+        </div>
+
+        <div class="field">
+          <label for="home_port">Home Port</label>
+          <input type="text" id="home_port" name="home_port"
+                 placeholder="e.g. Kingston, ON" autocomplete="off"
+                 value="{{ request.form.get('home_port', '') }}">
+        </div>
+
+        <div class="field">
+          <label for="ui_lang">Dashboard Language</label>
+          <select id="ui_lang" name="ui_lang">
+            <option value="en-GB" {% if request.form.get('ui_lang','en-GB')=='en-GB' %}selected{% endif %}>English (UK)</option>
+            <option value="en-US" {% if request.form.get('ui_lang')=='en-US' %}selected{% endif %}>English (US)</option>
+            <option value="fr-FR" {% if request.form.get('ui_lang')=='fr-FR' %}selected{% endif %}>Fran&ccedil;ais</option>
+            <option value="de-DE" {% if request.form.get('ui_lang')=='de-DE' %}selected{% endif %}>Deutsch</option>
+            <option value="es-ES" {% if request.form.get('ui_lang')=='es-ES' %}selected{% endif %}>Espa&ntilde;ol</option>
+            <option value="it-IT" {% if request.form.get('ui_lang')=='it-IT' %}selected{% endif %}>Italiano</option>
+            <option value="pt-PT" {% if request.form.get('ui_lang')=='pt-PT' %}selected{% endif %}>Portugu&ecirc;s</option>
+            <option value="nl-NL" {% if request.form.get('ui_lang')=='nl-NL' %}selected{% endif %}>Nederlands</option>
+            <option value="sv-SE" {% if request.form.get('ui_lang')=='sv-SE' %}selected{% endif %}>Svenska</option>
+            <option value="no-NO" {% if request.form.get('ui_lang')=='no-NO' %}selected{% endif %}>Norsk</option>
+            <option value="da-DK" {% if request.form.get('ui_lang')=='da-DK' %}selected{% endif %}>Dansk</option>
+            <option value="fi-FI" {% if request.form.get('ui_lang')=='fi-FI' %}selected{% endif %}>Suomi</option>
+            <option value="ja-JP" {% if request.form.get('ui_lang')=='ja-JP' %}selected{% endif %}>&#26085;&#26412;&#35486;</option>
+            <option value="zh-CN" {% if request.form.get('ui_lang')=='zh-CN' %}selected{% endif %}>&#20013;&#25991;&#65288;&#31616;&#20307;&#65289;</option>
+            <option value="ar-SA" {% if request.form.get('ui_lang')=='ar-SA' %}selected{% endif %}>&#1575;&#1604;&#1593;&#1585;&#1576;&#1610;&#1577;</option>
+            <option value="uk-UA" {% if request.form.get('ui_lang')=='uk-UA' %}selected{% endif %}>&#1059;&#1082;&#1088;&#1072;&#1111;&#1085;&#1089;&#1100;&#1082;&#1072;</option>
+            <option value="ru-RU" {% if request.form.get('ui_lang')=='ru-RU' %}selected{% endif %}>&#1056;&#1091;&#1089;&#1089;&#1082;&#1080;&#1081;</option>
+            <option value="el-GR" {% if request.form.get('ui_lang')=='el-GR' %}selected{% endif %}>&#917;&#955;&#955;&#951;&#957;&#953;&#954;&#940;</option>
+          </select>
+          <div class="hint">Sets HELM voice recognition language (BCP 47 tag).</div>
+        </div>
+
+        <div class="sec-div">Boat Particulars &mdash; Optional</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s2_boat_make">Manufacturer</label>
+            <input type="text" id="s2_boat_make" placeholder="e.g. Regal, Sea Ray" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="s2_boat_year">Year</label>
+            <input type="number" id="s2_boat_year" placeholder="e.g. 2019" min="1950" max="2026">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s2_boat_model">Model</label>
+            <input type="text" id="s2_boat_model" placeholder="e.g. 2600, 3260 XO" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="s2_boat_loa">Length (ft)</label>
+            <input type="number" id="s2_boat_loa" placeholder="e.g. 26" min="6" max="200" step="0.5">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s2_boat_type">Boat Type</label>
+            <select id="s2_boat_type">
+              <option value="">Select&hellip;</option>
+              <option value="power-single">Power — Single Engine</option>
+              <option value="power-twin">Power — Twin Engine</option>
+              <option value="sail">Sail</option>
+              <option value="cat-power">Catamaran — Power</option>
+              <option value="cat-sail">Catamaran — Sail</option>
+              <option value="rib">Inflatable (RIB)</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="s2_boat_region">Region Sold</label>
+            <select id="s2_boat_region">
+              <option value="">Select&hellip;</option>
+              <option value="north-america">North America</option>
+              <option value="europe">Europe</option>
+              <option value="australia">Australia / NZ</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chart-info">
+          <div class="chart-info-head">
+            <div class="chart-dot" id="chartDot"></div>
+            <div class="chart-label">FREE CHARTS CONFIGURED</div>
+          </div>
+          <div class="chart-source">&bull; OpenStreetMap &mdash; global coverage, all zoom levels</div>
+          <div class="chart-source">&bull; OpenSeaMap &mdash; nautical marks, lights &amp; hazards overlay</div>
+          <div class="chart-note" id="chartNote">Charts stream live when internet is connected.</div>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="validateStep2()">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(1)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 3 — ENGINE & DRIVE ═══ -->
+    <div class="wiz-step" id="wiz-3">
+      <div class="card-head">
+        <div class="card-head-over">Step 3 of 8 &mdash; Engine &amp; Drive</div>
+        <div class="card-head-title">Engine<br>configuration</div>
+        <div class="card-head-sub">
+          Used to calibrate engine monitor baselines, find your manuals,
+          and compute NMEA gateway DIP switch settings.
+          <strong>Skip if you don&rsquo;t have your engine specs — add them later in Settings.</strong>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <div class="sec-div">Engine 1 &mdash; Primary / Single</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s3_eng_make">Make</label>
+            <select id="s3_eng_make">
+              <option value="">Select&hellip;</option>
+              <option>Mercury Marine</option>
+              <option>MerCruiser</option>
+              <option>Yamaha Marine</option>
+              <option>Volvo Penta</option>
+              <option>Yanmar</option>
+              <option>Cummins Marine</option>
+              <option>Detroit Diesel</option>
+              <option>Caterpillar Marine</option>
+              <option>John Deere Marine</option>
+              <option>Perkins Marine</option>
+              <option>Suzuki Marine</option>
+              <option>Honda Marine</option>
+              <option>Tohatsu</option>
+              <option>Evinrude / BRP</option>
+              <option>OMC / Johnson</option>
+              <option>Crusader Engines</option>
+              <option>Indmar Marine</option>
+              <option>PCM Marine</option>
+              <option>Ilmor Marine</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="s3_eng_year">Year</label>
+            <input type="number" id="s3_eng_year" placeholder="e.g. 2018" min="1950" max="2026">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="s3_eng_model">Model / Spec</label>
+          <input type="text" id="s3_eng_model" placeholder="e.g. 5.0L MPI Alpha, 4JH4-HTE" autocomplete="off">
+          <div class="hint">Include displacement and series if known — used for manual search.</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s3_eng_hp">Horsepower</label>
+            <input type="number" id="s3_eng_hp" placeholder="e.g. 220" min="1" max="3000">
+          </div>
+          <div class="field">
+            <label for="s3_eng_cyl">Cylinders</label>
+            <select id="s3_eng_cyl">
+              <option value="">Select&hellip;</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="6">6</option>
+              <option value="8">8</option>
+              <option value="12">12</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s3_eng_fuel">Fuel Type</label>
+            <select id="s3_eng_fuel">
+              <option value="">Select&hellip;</option>
+              <option value="gasoline">Gasoline (4-stroke)</option>
+              <option value="diesel">Diesel (4-stroke)</option>
+              <option value="outboard-4s">Outboard (4-stroke)</option>
+              <option value="outboard-2s">Outboard (2-stroke)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="s3_eng_induction">Induction</label>
+            <select id="s3_eng_induction">
+              <option value="na">Naturally Aspirated</option>
+              <option value="turbo">Turbocharged</option>
+              <option value="super">Supercharged</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="s3_eng_idle">Idle RPM</label>
+            <input type="number" id="s3_eng_idle" placeholder="e.g. 700" min="200" max="1500">
+          </div>
+          <div class="field">
+            <label for="s3_eng_maxrpm">Max RPM (WOT)</label>
+            <input type="text" id="s3_eng_maxrpm" placeholder="e.g. 4800&ndash;5200" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="sec-div">Engine Count</div>
+
+        <div class="toggle-row" onclick="toggleTwin()" id="twin-toggle-row">
+          <div>
+            <div class="toggle-row-lbl">Twin engines</div>
+            <div class="toggle-row-sub">Port and starboard — affects NMEA DIP switch settings</div>
+          </div>
+          <div class="tgl" id="twin-tgl"></div>
+        </div>
+
+        <div class="engine2-block" id="engine2-block">
+          <div class="engine2-title">&#9875; Engine 2 &mdash; Starboard</div>
+          <div class="field-row">
+            <div class="field">
+              <label for="s3_eng2_make">Make</label>
+              <select id="s3_eng2_make">
+                <option value="">Select&hellip;</option>
+                <option>Mercury Marine</option>
+                <option>MerCruiser</option>
+                <option>Yamaha Marine</option>
+                <option>Volvo Penta</option>
+                <option>Yanmar</option>
+                <option>Cummins Marine</option>
+                <option>Detroit Diesel</option>
+                <option>Caterpillar Marine</option>
+                <option>John Deere Marine</option>
+                <option>Perkins Marine</option>
+                <option>Suzuki Marine</option>
+                <option>Honda Marine</option>
+                <option>Tohatsu</option>
+                <option>Evinrude / BRP</option>
+                <option>OMC / Johnson</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="s3_eng2_year">Year</label>
+              <input type="number" id="s3_eng2_year" placeholder="e.g. 2018" min="1950" max="2026">
+            </div>
+          </div>
+          <div class="field">
+            <label for="s3_eng2_model">Model / Spec</label>
+            <input type="text" id="s3_eng2_model" placeholder="e.g. 5.0L MPI Alpha" autocomplete="off">
+          </div>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="goTo(4)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(2)">&larr; Back</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(4)">Skip &mdash; I&rsquo;ll add engine details later &rsaquo;</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 4 — ELECTRONICS & NMEA ═══ -->
+    <div class="wiz-step" id="wiz-4">
+      <div class="card-head">
+        <div class="card-head-over">Step 4 of 8 &mdash; Electronics &amp; NMEA</div>
+        <div class="card-head-title">Nav gear &amp;<br>NMEA gateway</div>
+        <div class="card-head-sub">
+          Select your chartplotter, VHF, and NMEA 2000 gateway.
+          The next step will show your complete gateway configuration.
+          <strong>Skip if your gateway is not installed yet.</strong>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <div class="field">
+          <label for="s4_chartplotter">Chart Plotter / MFD</label>
+          <input type="text" id="s4_chartplotter" placeholder="e.g. Garmin GPSMap 1242xsv" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="s4_vhf">VHF Radio</label>
+          <input type="text" id="s4_vhf" placeholder="e.g. Standard Horizon GX2400" autocomplete="off">
+        </div>
+
+        <div class="sec-div">NMEA 2000 Gateway</div>
+
+        <div class="field">
+          <label for="s4_gateway">Gateway Model</label>
+          <select id="s4_gateway" onchange="saveState()">
+            <option value="none">None / Not installed</option>
+            <option value="cx5106">Matsutec CX5106</option>
+            <option value="emu1">Actisense EMU-1</option>
+            <option value="ydab">Yacht Devices YDAB-01</option>
+            <option value="garmin">Garmin NMEA 2000</option>
+            <option value="other">Other</option>
+          </select>
+          <div class="hint">Connects your engine ECU to NMEA 2000 / Signal K. Next step shows the full configuration for your selection.</div>
+        </div>
+
+        <!-- Tank sender standard — needed for CX5106 row 2, collected here, used in step 5 -->
+        <div class="field" id="tank-sender-field" style="display:none;">
+          <label for="s4_tank_sender">Fuel / Level Sender Standard</label>
+          <select id="s4_tank_sender" onchange="saveState()">
+            <option value="north-america">North America &mdash; 240&ndash;33 &Omega; (high to low)</option>
+            <option value="europe">Europe / International &mdash; 0&ndash;190 &Omega; (low to high)</option>
+          </select>
+          <div class="hint">Matches the resistance range of your fuel and water tank senders.</div>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="goTo(5)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(3)">&larr; Back</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(5)">Skip &mdash; No gateway yet &rsaquo;</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 5 — GATEWAY CONFIGURATION (DIP SWITCHES) ═══ -->
+    <div class="wiz-step" id="wiz-5">
+      <div class="card-head">
+        <div class="card-head-over">Step 5 of 8 &mdash; Gateway Configuration</div>
+        <div class="card-head-title" id="dip-step-title">NMEA Gateway<br>DIP Switches</div>
+        <div class="card-head-sub" id="dip-step-sub">
+          Complete configuration for your selected NMEA 2000 gateway,
+          computed from your engine and region settings.
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- CX5106 content -->
+        <div id="dip-cx5106-content" style="display:none;">
+
+          <!-- Context header — engine / region summary -->
+          <div class="dip-context" id="dip-context-header">
+            <div class="dip-context-title" id="dip-context-title">CX5106 Configuration</div>
+            <div class="dip-context-sub" id="dip-context-sub"></div>
+          </div>
+
+          <!-- PORT / single engine block -->
+          <div class="dip-block">
+            <div class="dip-block-title" id="dip-port-title">&#128261; Block A &mdash; Engine Configuration (7 switches)</div>
+            <div class="dip-switches" id="dip-port-row1"></div>
+            <div class="dip-key" id="dip-port-key1"></div>
+            <div style="margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;">
+              <div class="dip-block-title" style="font-size:19px;margin-bottom:12px;">Row 2 &mdash; Regional &amp; Position (2 switches)</div>
+              <div class="dip-switches" id="dip-port-row2"></div>
+              <div class="dip-key" id="dip-port-key2"></div>
+            </div>
+          </div>
+
+          <!-- STARBOARD engine block (twin only) -->
+          <div id="dip-stbd-block" class="dip-block" style="display:none;">
+            <div class="dip-block-title">&#128261; Block A &mdash; Starboard Engine (7 switches)</div>
+            <div class="dip-switches" id="dip-stbd-row1"></div>
+            <div class="dip-key" id="dip-stbd-key1"></div>
+            <div style="margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;">
+              <div class="dip-block-title" style="font-size:19px;margin-bottom:12px;">Row 2 &mdash; Regional &amp; Position (2 switches)</div>
+              <div class="dip-switches" id="dip-stbd-row2"></div>
+              <div class="dip-key" id="dip-stbd-key2"></div>
+            </div>
+          </div>
+
+          <!-- Why these settings -->
+          <div class="dip-why" id="dip-why-box">
+            <div class="dip-why-title">Why These Settings?</div>
+            <div class="dip-why-body" id="dip-why-body"></div>
+          </div>
+
+          <!-- Installation steps -->
+          <div class="dip-install">
+            <div class="dip-install-title">&#9888; Before Changing DIP Switches</div>
+            <ol>
+              <li>Power off the CX5106 before touching any switches</li>
+              <li>Use a small flat-head screwdriver or pen tip to flip each switch</li>
+              <li>Take a photo of this screen or write down the settings</li>
+              <li>Reconnect power — changes take effect immediately</li>
+              <li>Verify data is flowing in Signal K at localhost:8099</li>
+            </ol>
+          </div>
+
+        </div><!-- /#dip-cx5106-content -->
+
+        <!-- EMU-1 content -->
+        <div class="notice-box" id="notice-emu1" style="display:none;">
+          <strong style="font-size:22px;display:block;margin-bottom:10px;">Actisense EMU-1 — Software Configuration</strong>
+          DIP switches on the EMU-1 are configured using <strong>Actisense NMEA Reader</strong> software on a Windows PC.
+          Refer to the EMU-1 Quick Reference Card included in the box.<br><br>
+          Key settings to configure:
+          <ul style="margin:10px 0 0 22px;">
+            <li>Cylinder count: <strong id="emu1-cyl">see Step 3</strong></li>
+            <li>Engine instance: <strong>0</strong> for single/port &mdash; <strong>1</strong> for starboard</li>
+            <li>Tank sender standard: <strong id="emu1-tank">see Step 4</strong></li>
+          </ul>
+        </div>
+
+        <!-- Other gateways -->
+        <div class="notice-box" id="notice-other" style="display:none;">
+          <strong style="font-size:22px;display:block;margin-bottom:10px;">NMEA 2000 Gateway Configuration</strong>
+          Refer to the configuration guide included with your gateway.<br><br>
+          Key parameters to set:
+          <ul style="margin:10px 0 0 22px;">
+            <li>Engine instance: <strong>0</strong> for single/port &mdash; <strong>1</strong> for starboard</li>
+            <li>Cylinder count: <strong id="other-cyl">see Step 3</strong></li>
+            <li>Fuel/level sender resistance range for your region</li>
+          </ul>
+        </div>
+
+        <!-- No gateway -->
+        <div class="no-gw-box" id="notice-none" style="display:none;">
+          <div class="no-gw-icon">&#128225;</div>
+          <div class="no-gw-text">
+            No NMEA 2000 gateway selected.<br>
+            You can add one later from <strong>Settings &rarr; Engine Configuration</strong>.<br>
+            The DIP switch diagram will be generated when you add a gateway.
+          </div>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="goTo(6)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(4)">&larr; Back</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(6)">Skip &rsaquo;</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 6 — MOBILE PAIRING ═══ -->
+    <div class="wiz-step" id="wiz-6">
+      <div class="card-head">
+        <div class="card-head-over">Step 6 of 8 &mdash; Mobile Pairing</div>
+        <div class="card-head-title">Connect your<br>mobile phone</div>
+        <div class="card-head-sub">
+          Connecting the d3kOS mobile app to this Pi is <strong>free</strong>. However,
+          connecting will share information about your Pi with AtMyBoat.com.<br><br>
+          <strong>If you do not connect, your Pi stays completely anonymous.</strong><br>
+          Skip this to continue without sharing any information.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="pairing-box">
+          <div id="qr-canvas"></div>
+          <div id="qr-fallback" style="display:none; font-size: 20px; color:var(--ink3); margin-bottom:14px;">
+            QR library unavailable &mdash; use the ID below.
+          </div>
+          <div class="pairing-uuid" id="uuid-display" onclick="copyUUID()" title="Tap to copy">
+            Support ID (diagnostic only): {{ device_uuid }}
+          </div>
+          <div class="pairing-copied" id="uuid-copied">Copied!</div>
+          <div class="pairing-sub" id="reg-state-loading" style="font-size:18px;">Contacting AtMyBoat.com&hellip;<br><small style="font-size:18px;">Registration is optional — d3kOS works fully without an account.</small></div>
+
+          <div class="pairing-sub" id="reg-state-code" style="display:none;font-size:18px;">
+            <p style="font-size:18px;">Scan this QR code with your phone camera to create your free AtMyBoat.com account and link this Pi in one step.</p>
+            <p style="font-size:18px;"><a id="reg-register-link" href="#" style="font-size:18px;word-break:break-all;"></a></p>
+            <p style="font-size:18px;">Or type this code at <strong>atmyboat.com/register</strong>:</p>
+            <p id="reg-code-display" style="font-family:'Chakra Petch',monospace;font-size:28px;letter-spacing:.18em;font-weight:700;"></p>
+            <p style="font-size:18px;">Code expires in <span id="reg-expiry-display"></span>.</p>
+            <p style="font-size:18px;"><em>Registration is optional &mdash; d3kOS works fully without an account. Tier 1 is free and adds the mobile app, cameras, voice assistant, anchor alerts, cloud sync, and data export.</em></p>
+          </div>
+
+          <div class="pairing-sub" id="reg-state-pending" style="display:none;font-size:18px;">
+            <p style="font-size:18px;">This Pi is enrolled with AtMyBoat.com and is waiting to be approved.</p>
+            <p style="font-size:18px;">You will receive an email when your Pi is approved. Once approved, open <strong>Settings &rarr; Community</strong> to get your registration code.</p>
+            <p style="font-size:18px;"><em>Registration is optional &mdash; d3kOS works fully without an account. Your Pi stays completely anonymous if you skip this.</em></p>
+          </div>
+
+          <div class="pairing-sub" id="reg-state-offline" style="display:none;font-size:18px;">
+            <p style="font-size:18px;">Registration needs an internet connection.</p>
+            <p style="font-size:18px;">You can do this later from <strong>Settings &rarr; Community</strong> once this Pi is online.</p>
+            <p style="font-size:18px;"><em>Registering is optional &mdash; d3kOS works fully without an account. If you do not connect, your Pi stays completely anonymous.</em></p>
+          </div>
+
+          <div class="pairing-sub" id="reg-state-error" style="display:none;font-size:18px;">
+            <p style="font-size:18px;"><span id="reg-state-error-msg"></span></p>
+            <p style="font-size:18px;"><button type="button" onclick="_regRequested=false;initQR();" style="font-size:18px;min-height:48px;min-width:48px;padding:8px 16px;">Retry</button></p>
+            <p style="font-size:18px;"><em>Registration is optional &mdash; you can skip this step.</em></p>
+          </div>
+        </div>
+        <button type="button" class="btn-submit" onclick="goTo(7)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(5)">&larr; Back</button>
+        <button type="button" class="btn-skip-step" onclick="goTo(7)">Skip this to continue &rsaquo;</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 7 — GEMINI API KEY ═══ -->
+    <div class="wiz-step" id="wiz-7">
+      <div class="card-head">
+        <div class="card-head-over">Step 7 of 8 &mdash; AI Key</div>
+        <div class="card-head-title">Gemini API<br>Key</div>
+        <div class="card-head-sub">
+          HELM uses Google Gemini for marine AI. A free API key gives you
+          generous daily limits. You can skip this and add it later in Settings.
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="key-steps">
+          <div class="key-step">
+            <div class="key-num">1</div>
+            <div class="key-txt">Open <strong>aistudio.google.com</strong> from any browser</div>
+          </div>
+          <div class="key-step">
+            <div class="key-num">2</div>
+            <div class="key-txt">Click <strong>Get API Key &rarr; Create API Key</strong></div>
+          </div>
+          <div class="key-step">
+            <div class="key-num">3</div>
+            <div class="key-txt">Copy the key (starts with <strong>AIzaSy&hellip;</strong>) and paste below</div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="gemini_api_key">Gemini API Key</label>
+          <input type="password" id="gemini_api_key" name="gemini_api_key"
+                 placeholder="AIzaSy&hellip;" autocomplete="off" spellcheck="false">
+          <div class="hint">Stored securely on this Pi &mdash; never shared or committed to git.</div>
+        </div>
+        <div class="key-skip-row">
+          <button type="button" class="key-skip" onclick="document.getElementById('gemini_api_key').value=''; goTo(8)">
+            Skip for now
+          </button>
+        </div>
+        <button type="button" class="btn-submit" onclick="goTo(8)">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(6)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 8 — DONE ═══ -->
+    <div class="wiz-step" id="wiz-8">
+      <div class="card-head">
+        <div class="card-head-over">Step 8 of 8 &mdash; All done</div>
+        <div class="card-head-title">Ready to<br>set sail</div>
+        <div class="card-head-sub">Your vessel is configured. Tap Launch to start d3kOS.</div>
+      </div>
+      <div class="card-body">
+        <div class="done-icon">&#9875;</div>
+        <div class="done-list" id="done-summary"></div>
+        <div style="background:var(--panel);border:2px solid var(--g-bdr);border-radius:14px;padding:20px 24px;margin:18px 0;text-align:left;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.08em;color:var(--g-txt);margin-bottom:8px;">&#128249; Camera Setup</div>
+          <div style="font-size:20px;color:var(--ink2);line-height:1.6;margin-bottom:16px;">
+            Set up your cameras now — or any time from <strong>Settings &rarr; Camera Setup</strong>.
+            Opening camera setup will not interrupt your wizard — it opens in a new tab.
+          </div>
+          <div class="camera-help" style="background:#0a1a2e;border-left:4px solid #2c7be5;padding:12px 16px;margin:12px 0;border-radius:4px;">
+            <p style="font-size:18px;font-weight:600;margin:0 0 8px 0;">Camera RTSP URL Format</p>
+            <p style="font-size:18px;margin:0 0 6px 0;">Most IP cameras use:</p>
+            <code style="font-size:18px;display:block;background:#0d2244;padding:8px;border-radius:3px;margin-bottom:8px;">rtsp://admin:password@192.168.1.x:554/stream</code>
+            <p style="font-size:18px;margin:0 0 4px 0;"><strong>Common defaults:</strong></p>
+            <ul style="font-size:18px;margin:0 0 8px 0;padding-left:20px;">
+              <li>Hikvision: <code>rtsp://admin:admin@[IP]:554/Streaming/Channels/101</code></li>
+              <li>Dahua: <code>rtsp://admin:admin@[IP]:554/cam/realmonitor?channel=1&amp;subtype=0</code></li>
+              <li>Reolink: <code>rtsp://admin:[pass]@[IP]:554/h264Preview_01_main</code></li>
+            </ul>
+            <p style="font-size:18px;margin:0;color:#aaa;">Find your camera IP in your router connected-devices list. Port 554 is standard.</p>
+          </div>
+          <button type="button" class="btn-submit" style="margin:0;"
+            onclick="window.open('/settings?from=setup#s-camera', '_blank')">
+            Set Up Cameras (new tab) &rsaquo;
+          </button>
+        </div>
+        <button type="button" class="btn-submit" onclick="goTo(9); loadHardwareStep()">NEXT &rsaquo;</button>
+        <button type="button" class="btn-back" onclick="goTo(7)">&larr; Back</button>
+      </div>
+    </div>
+
+    <!-- ─── Step 9: Your Hardware Profile (HCD-5) ─── -->
+    <div class="wiz-step" id="wiz-9">
+      <h2 style="font-size:28px;color:var(--g-txt);margin-bottom:8px;">&#128187; Your d3kOS Hardware Profile</h2>
+      <p style="font-size:18px;color:#aaa;margin-bottom:16px;">d3kOS detected the following hardware. Features are gated to what your hardware can run.</p>
+      <div id="hw-step-content" style="margin-bottom:20px;">
+        <p style="font-size:18px;color:#666;">Loading hardware profile&hellip;</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <button type="button" id="hw-reprobe-btn"
+          style="background:#00CC00;color:#000;font-size:18px;font-weight:700;padding:12px 24px;border:none;border-radius:6px;cursor:pointer;min-height:48px;"
+          onclick="wizReprobe()">&#128260; Re-probe Hardware</button>
+      </div>
+      <button type="submit" class="btn-submit" onclick="assembleFinalData()">LAUNCH d3kOS &rsaquo;</button>
+      <button type="button" class="btn-back" onclick="goTo(8)">&larr; Back</button>
+    </div>
+
+    <!-- Hidden fields assembled by JS before submit -->
+    <input type="hidden" name="equipment_notes" id="equipment_notes">
+    <input type="hidden" name="boat_make"        id="h_boat_make">
+    <input type="hidden" name="boat_year"        id="h_boat_year">
+    <input type="hidden" name="boat_model"       id="h_boat_model">
+    <input type="hidden" name="boat_type"        id="h_boat_type">
+    <input type="hidden" name="boat_loa"         id="h_boat_loa">
+    <input type="hidden" name="boat_region"      id="h_boat_region">
+    <input type="hidden" name="engine_make"      id="h_engine_make">
+    <input type="hidden" name="engine_model"     id="h_engine_model">
+    <input type="hidden" name="engine_year"      id="h_engine_year">
+    <input type="hidden" name="engine_hp"        id="h_engine_hp">
+    <input type="hidden" name="engine_cylinders" id="h_engine_cylinders">
+    <input type="hidden" name="engine_fuel"      id="h_engine_fuel">
+    <input type="hidden" name="engine_induction" id="h_engine_induction">
+    <input type="hidden" name="engine_idle_rpm"  id="h_engine_idle_rpm">
+    <input type="hidden" name="engine_max_rpm"   id="h_engine_max_rpm">
+    <input type="hidden" name="engine_count"     id="h_engine_count" value="single">
+    <input type="hidden" name="engine2_make"     id="h_engine2_make">
+    <input type="hidden" name="engine2_model"    id="h_engine2_model">
+    <input type="hidden" name="engine2_year"     id="h_engine2_year">
+    <input type="hidden" name="nmea_gateway"     id="h_nmea_gateway">
+    <input type="hidden" name="chartplotter"     id="h_chartplotter">
+    <input type="hidden" name="vhf_radio"        id="h_vhf_radio">
+
+  </form>
+</div><!-- #setup-card -->
+</div><!-- #setup-wrap -->
+</div><!-- #setup-scroll -->
+{% endif %}
+
+<script src="/static/js/qrcode.min.js"
+  onerror="document.getElementById('qr-fallback').style.display='block'"></script>
+<script>
+  /* Night mode */
+  (function () {
+    var h = new Date().getHours();
+    if (h < 7 || h >= 20) document.body.setAttribute('data-night', '');
+  })();
+
+  var currentStep = 1;
+  var STEPS       = 9;
+  var DEVICE_UUID = '{{ device_uuid }}';
+  var twinEnabled = false;
+  var WIZ_KEY     = 'd3kos_wiz_v3';
+
+  /* ── Helpers ── */
+  function gv(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+  function sv(id, val) { var e = document.getElementById(id); if (e) e.value = val || ''; }
+  function sel(id, val) {
+    var e = document.getElementById(id);
+    if (!e || !val) return;
+    for (var i = 0; i < e.options.length; i++) {
+      if (e.options[i].value === val || e.options[i].text === val) { e.selectedIndex = i; break; }
+    }
+  }
+
+  /* ── Show/hide tank sender field when gateway changes ── */
+  document.getElementById('s4_gateway').addEventListener('change', function() {
+    var gw = this.value;
+    document.getElementById('tank-sender-field').style.display = (gw === 'cx5106') ? 'block' : 'none';
+    saveState();
+  });
+
+  /* ── localStorage save ── */
+  function saveState() {
+    try {
+      localStorage.setItem(WIZ_KEY, JSON.stringify({
+        step: currentStep, twin: twinEnabled,
+        vessel_name: gv('vessel_name'), home_port: gv('home_port'), ui_lang: gv('ui_lang'),
+        s2_boat_make: gv('s2_boat_make'), s2_boat_year: gv('s2_boat_year'),
+        s2_boat_model: gv('s2_boat_model'), s2_boat_loa: gv('s2_boat_loa'),
+        s2_boat_type: gv('s2_boat_type'), s2_boat_region: gv('s2_boat_region'),
+        s3_eng_make: gv('s3_eng_make'), s3_eng_year: gv('s3_eng_year'),
+        s3_eng_model: gv('s3_eng_model'), s3_eng_hp: gv('s3_eng_hp'),
+        s3_eng_cyl: gv('s3_eng_cyl'), s3_eng_fuel: gv('s3_eng_fuel'),
+        s3_eng_induction: gv('s3_eng_induction'), s3_eng_idle: gv('s3_eng_idle'),
+        s3_eng_maxrpm: gv('s3_eng_maxrpm'),
+        s3_eng2_make: gv('s3_eng2_make'), s3_eng2_year: gv('s3_eng2_year'),
+        s3_eng2_model: gv('s3_eng2_model'),
+        s4_gateway: gv('s4_gateway'), s4_tank_sender: gv('s4_tank_sender'),
+        s4_chartplotter: gv('s4_chartplotter'), s4_vhf: gv('s4_vhf')
+      }));
+    } catch(e) {}
+  }
+
+  /* ── localStorage restore ── */
+  function restoreState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(WIZ_KEY) || 'null');
+      if (!s) return;
+      sv('vessel_name',    s.vessel_name);
+      sv('home_port',      s.home_port);
+      sel('ui_lang',       s.ui_lang);
+      sv('s2_boat_make',   s.s2_boat_make);
+      sv('s2_boat_year',   s.s2_boat_year);
+      sv('s2_boat_model',  s.s2_boat_model);
+      sv('s2_boat_loa',    s.s2_boat_loa);
+      sel('s2_boat_type',  s.s2_boat_type);
+      sel('s2_boat_region',s.s2_boat_region);
+      sel('s3_eng_make',   s.s3_eng_make);
+      sv('s3_eng_year',    s.s3_eng_year);
+      sv('s3_eng_model',   s.s3_eng_model);
+      sv('s3_eng_hp',      s.s3_eng_hp);
+      sel('s3_eng_cyl',    s.s3_eng_cyl);
+      sel('s3_eng_fuel',   s.s3_eng_fuel);
+      sel('s3_eng_induction', s.s3_eng_induction);
+      sv('s3_eng_idle',    s.s3_eng_idle);
+      sv('s3_eng_maxrpm',  s.s3_eng_maxrpm);
+      sel('s3_eng2_make',  s.s3_eng2_make);
+      sv('s3_eng2_year',   s.s3_eng2_year);
+      sv('s3_eng2_model',  s.s3_eng2_model);
+      sel('s4_gateway',    s.s4_gateway);
+      sel('s4_tank_sender',s.s4_tank_sender);
+      sv('s4_chartplotter',s.s4_chartplotter);
+      sv('s4_vhf',         s.s4_vhf);
+      /* restore tank sender visibility */
+      var gw = gv('s4_gateway');
+      if (gw === 'cx5106') document.getElementById('tank-sender-field').style.display = 'block';
+      /* restore twin */
+      if (s.twin) {
+        twinEnabled = true;
+        document.getElementById('twin-tgl').classList.add('on');
+        document.getElementById('engine2-block').classList.add('visible');
+        document.getElementById('h_engine_count').value = 'twin';
+      }
+      if (s.step && s.step > 1) goTo(s.step);
+    } catch(e) {}
+  }
+
+  /* ── Navigation ── */
+  function goTo(n) {
+    var from = document.getElementById('wiz-' + currentStep);
+    var to   = document.getElementById('wiz-' + n);
+    if (!to) return;
+    if (from) from.classList.remove('active');
+    to.classList.add('active');
+    currentStep = n;
+    updateProgress(n);
+    if (n === 5) renderDIP();
+    if (n === 6) initQR();
+    if (n === 8) buildSummary();
+    document.getElementById('setup-scroll').scrollTop = 0;
+    saveState();
+  }
+
+  function updateProgress(n) {
+    for (var i = 1; i <= STEPS; i++) {
+      var dot = document.getElementById('dot-' + i);
+      if (!dot) continue;
+      dot.className = 'wiz-dot';
+      if (i < n)       dot.classList.add('done');
+      else if (i === n) dot.classList.add('act');
+    }
+    var lbl = document.getElementById('step-lbl');
+    if (lbl) lbl.textContent = 'STEP ' + n + ' OF ' + STEPS;
+  }
+
+  /* ── Step 2 validation ── */
+  function validateStep2() {
+    var name = document.getElementById('vessel_name').value.trim();
+    if (!name) {
+      document.getElementById('vessel_name').focus();
+      document.getElementById('vessel_name').style.borderColor = 'var(--alrt-bdr)';
+      return;
+    }
+    document.getElementById('vessel_name').style.borderColor = '';
+    goTo(3);
+  }
+
+  /* ── QR code ── */
+  /* BUG-112: Step 6 is a REGISTRATION screen, not a mobile-pairing screen.
+     Operator decision S150 — one event: redeeming the code creates the account AND
+     links this Pi, so registering IS the pairing. The old d3kos:// deep link had no
+     handler on a phone camera, which is why scanning it reported "no data found". */
+  var _regRequested = false;
+  function initQR() {
+    if (_regRequested) return;
+    _regRequested = true;
+    _regSetState('loading');
+    fetch('/api/generate-reg-token', { method: 'POST' })
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) { _regSetState('pending'); return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        if (!data.success) { _regSetState('error', data.error || 'Unknown error.'); return; }
+        var d = data.data;
+        _regSetState('code', d);
+        var canvas = document.getElementById('qr-canvas');
+        if (canvas && typeof QRCode !== 'undefined') {
+          new QRCode(canvas, {
+            text: d.register_url, width: 200, height: 200,
+            colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+          });
+        } else if (canvas) {
+          document.getElementById('qr-fallback').style.display = 'block';
+        }
+        // Fill in the bare code and link
+        var codeEl = document.getElementById('reg-code-display');
+        var linkEl = document.getElementById('reg-register-link');
+        var expiryEl = document.getElementById('reg-expiry-display');
+        var bareCode = String(d.token).replace(/^R-/, '');
+        if (codeEl) codeEl.textContent = bareCode;
+        if (linkEl) { linkEl.href = d.register_url; linkEl.textContent = d.register_url; }
+        if (expiryEl) expiryEl.textContent = d.expires_min + ' minutes';
+      })
+      .catch(function () { _regSetState('offline'); });
+  }
+
+  function _regSetState(state, payload) {
+    var states = ['loading', 'code', 'pending', 'offline', 'error'];
+    states.forEach(function(s) {
+      var el = document.getElementById('reg-state-' + s);
+      if (el) el.style.display = (s === state) ? '' : 'none';
+    });
+    if (state === 'error' && payload) {
+      var msgEl = document.getElementById('reg-state-error-msg');
+      if (msgEl) msgEl.textContent = payload;
+    }
+  }
+
+  /* ── Copy UUID ── */
+  function copyUUID() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(DEVICE_UUID).then(showCopied).catch(fallbackCopy);
+    } else { fallbackCopy(); }
+  }
+  function fallbackCopy() {
+    var el = document.createElement('textarea');
+    el.value = DEVICE_UUID; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el); showCopied();
+  }
+  function showCopied() {
+    var el = document.getElementById('uuid-copied');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () { el.style.display = 'none'; }, 2000);
+  }
+
+  /* ── Twin engine toggle ── */
+  function toggleTwin() {
+    twinEnabled = !twinEnabled;
+    document.getElementById('twin-tgl').classList.toggle('on', twinEnabled);
+    document.getElementById('engine2-block').classList.toggle('visible', twinEnabled);
+    document.getElementById('h_engine_count').value = twinEnabled ? 'twin' : 'single';
+    saveState();
+  }
+
+  /* ── DIP switch renderer (CX5106) — BUG-81 corrected model ──
+   * Block A — 7 positions, ONE binary field: the RPM speed ratio.
+   * sw1 = LSB.  ratio = 1 + (sw1*1 + sw2*2 + sw3*4 + sw4*8 + sw5*16 + sw6*32 + sw7*64)
+   * Source: CX5106 leaflet sheet D2026-B section 6, verified against every fully
+   * printed row of its table (ratios 1-16 and 125-128).
+   * There is NO engine-instance, RPM-sensor-type, cylinder-count, stroke-type or
+   * gear-ratio field on this device. Those were fabricated. See BUG-81.
+   * Engine instance / PORT-STBD is Block B switch 2 - see buildDIPRow2.
+   *
+   * Block B — 2 positions (Regional)
+   *   sw1 : Tank sender  1=North America (240-33Ω)  0=Europe (0-190Ω)
+   *   sw2 : Position     0=primary/port  1=starboard
+   */
+  /* Three separate lookups - one per engine family. Transcribed from the
+   * leaflet via docs/CX5106_DIP_SWITCH.md section 6.
+   * NOTE: outboard is keyed on POLES, not cylinders. Diesel has no table at
+   * all - the leaflet says only "Speed Ratio = Gear Number" and never defines
+   * the term. Do NOT collapse these into one cylinder-keyed map: that is
+   * correct for petrol inboards and silently wrong for everything else. */
+  var RATIO_INBOARD_GAS = { '4':2, '6':3, '8':4, '10':5, '12':6 };   /* cylinders, 4-cycle */
+  var RATIO_OUTBOARD    = { '4':2, '6':3, '8':4, '10':5, '12':6 };   /* POLES, not cylinders */
+
+  function ratioForEngine(family, cylinders, poles, gearNumber) {
+    if (family === 'inboard-gas') return RATIO_INBOARD_GAS[String(cylinders)] || null;
+    if (family === 'outboard')    return RATIO_OUTBOARD[String(poles)]        || null;
+    if (family === 'diesel')      return (gearNumber > 0) ? gearNumber : null;
+    return null;                  /* null = unknown -> route to the empirical
+                                   * method (guide section 10). NEVER guess. */
+  }
+
+  function encodeRatio(ratio) {
+    if (!(ratio >= 1 && ratio <= 128)) return null;
+    var n = ratio - 1, out = [];
+    for (var i = 0; i < 7; i++) { out.push((n >> i) & 1); }
+    return out;                             /* 7 elements, sw1 first */
+  }
+
+  function buildDIPBlockA(cylinders, isTwoStroke) {
+    /* Legacy call signature retained for callers that pass (cylinders, isTwoStroke).
+     * Inboard gasoline only - outboard and diesel route to empirical method upstream. */
+    var r = ratioForEngine('inboard-gas', cylinders, null, 0);
+    return r === null ? null : encodeRatio(r);
+  }
+
+  /* buildDIPRow1 retained as alias for backward-compat with twin-engine call sites
+   * at lines 1349 and 1358. Both pass (cylinders, isTwoStroke, instance).
+   * Block A takes no instance argument - instance is on Block B (buildDIPRow2).
+   * BUG-81: for twin engines both gateways get the same Block A; only Block B sw2 differs. */
+  function buildDIPRow1(cylinders, isTwoStroke, instance) {
+    var row = buildDIPBlockA(cylinders, isTwoStroke);
+    if (!row) row = [0,0,0,0,0,0,0];       /* unknown ratio: display all-OFF, text explains */
+    return row;
+  }
+  function buildDIPRow2(tankSender, instance) {
+    return [(tankSender === 'north-america') ? 1 : 0, (instance === 1) ? 1 : 0];
+  }
+
+  function renderSwitches(containerId, states) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = states.map(function(v, i) {
+      var on = v === 1;
+      return '<div class="dip-sw ' + (on ? 'on' : 'off') + '">' +
+             '<span class="dip-sw-num">' + (i+1) + '</span>' +
+             '<span class="dip-sw-state">' + (on ? 'ON' : 'OFF') + '</span></div>';
+    }).join('');
+  }
+
+  function buildRow1Key(cylinders, isTwoStroke, instance) {
+    /* BUG-81: Block A is one binary ratio field, not 4 independent fields.
+     * The ratio table (inboard-gas only - outboard/diesel need empirical method). */
+    var ratio = RATIO_INBOARD_GAS[String(cylinders)] || null;
+    if (!ratio) {
+      return '<strong>Block A (7 switches):</strong> RPM speed ratio — <em>cannot determine automatically for this engine type. Use the empirical method.</em>';
+    }
+    var bits = encodeRatio(ratio);
+    var onSwitches = bits.map(function(v,i){ return v ? (i+1) : null; }).filter(Boolean);
+    var onStr = onSwitches.length ? 'sw' + onSwitches.join(', sw') + ' ON' : 'all OFF';
+    return '<strong>Block A (7 switches):</strong> RPM speed ratio ' + ratio +
+           ' &mdash; ' + onStr + '; others OFF' +
+           ' &bull; Derived from ' + cylinders + '-cylinder inboard gasoline (leaflet section 6.1)';
+  }
+  function buildRow2Key(tankSender, instance) {
+    var t = (tankSender === 'north-america') ? 'North America 240&ndash;33 &Omega;' : 'Europe 0&ndash;190 &Omega;';
+    var p = (instance === 1) ? 'Starboard' : 'Primary / Port';
+    return '<strong>SW 1:</strong> ' + t + ' tank senders &bull; <strong>SW 2:</strong> ' + p + ' engine';
+  }
+
+  function buildWhyText(cylinders, fuel, tankSender, isTwoStroke, twin) {
+    /* BUG-81: Block A is one binary field (RPM speed ratio), not 5 independent fields.
+     * SW1-8 / engine-instance / RPM-sensor / cylinder-count / stroke / gear-ratio do not exist.
+     * Only the tank-sender paragraph below is preserved — it was always correct. */
+    var tankLabel = (tankSender === 'north-america') ? 'North American (240&ndash;33 &Omega;)' : 'European (0&ndash;190 &Omega;)';
+    var ratio = RATIO_INBOARD_GAS[String(cylinders)] || null;
+    var html = '';
+    html += '<p><strong>Block A (7 switches) — RPM Speed Ratio:</strong> ';
+    if (ratio) {
+      html += 'Ratio ' + ratio + ' derived from ' + cylinders + '-cylinder inboard gasoline engine ';
+      html += '(CX5106 leaflet section 6.1). ';
+      html += 'Block A encodes a single binary number — sw1 is the LSB. ';
+      html += 'There are no separate engine-instance, RPM-source, cylinder-count, stroke, or gear-ratio fields on this device.</p>';
+    } else {
+      html += '<em>Could not determine automatically. Use the empirical method: ';
+      html += 'run at a known steady RPM, start at ratio 2, adjust until displayed matches your analogue tachometer. ';
+      html += 'A ratio error is a constant factor — if the error changes with RPM, the ratio is not the problem.</em></p>';
+    }
+    if (twin) {
+      html += '<p><strong>Block B sw 2 (Port / Starboard):</strong> ';
+      html += 'Port gateway = OFF, Starboard gateway = ON. ';
+      html += 'Both gateways get the same Block A (same engine type = same ratio). Only Block B sw2 differs.</p>';
+    }
+    html += '<p><strong>Block B sw 1 (Tank Sender):</strong> ' + tankLabel + ' resistance standard. ';
+    html += 'Ensures correct fuel, fresh water, and waste tank readings. Wrong setting inverts the reading.</p>';
+    return html;
+  }
+
+  function renderDIP() {
+    var gw         = gv('s4_gateway') || 'none';
+    var cylinders  = gv('s3_eng_cyl')     || '4';
+    var fuel       = gv('s3_eng_fuel')    || 'gasoline';
+    var tankSender = gv('s4_tank_sender') || 'north-america';
+    var engMake    = gv('s3_eng_make');
+    var engModel   = gv('s3_eng_model');
+    var engYear    = gv('s3_eng_year');
+    var region     = gv('s2_boat_region') || gv('s4_tank_sender') || 'north-america';
+    var isTwoStroke = (fuel === 'outboard-2s');
+
+    /* Hide all panels first */
+    document.getElementById('dip-cx5106-content').style.display = 'none';
+    document.getElementById('notice-emu1').style.display  = 'none';
+    document.getElementById('notice-other').style.display = 'none';
+    document.getElementById('notice-none').style.display  = 'none';
+
+    if (gw === 'cx5106') {
+      document.getElementById('dip-cx5106-content').style.display = 'block';
+
+      /* Context header */
+      var ctxTitle = 'CX5106 &mdash; Complete Configuration';
+      var ctxSub   = '';
+      var parts = [];
+      if (engMake || engModel) parts.push([engYear, engMake, engModel].filter(Boolean).join(' '));
+      if (cylinders) parts.push(cylinders + ' cyl');
+      if (fuel)      parts.push(fuel.replace('outboard-2s','outboard 2-stroke').replace('outboard-4s','outboard 4-stroke'));
+      if (tankSender === 'north-america') parts.push('North American senders');
+      else if (tankSender === 'europe')   parts.push('European senders');
+      if (twinEnabled) parts.push('Twin engines');
+      ctxSub = parts.join(' &bull; ') || 'Engine details from Step 3';
+      document.getElementById('dip-context-title').innerHTML = ctxTitle;
+      document.getElementById('dip-context-sub').innerHTML   = ctxSub;
+
+      /* Step title adaptation */
+      document.getElementById('dip-step-title').textContent = twinEnabled
+        ? 'CX5106 DIP Switches\u2014Port & Stbd'
+        : 'CX5106 DIP\nSwitch Settings';
+
+      /* Port / single */
+      var portTitle = document.getElementById('dip-port-title');
+      portTitle.textContent = twinEnabled ? '⚓ Port Engine — Block A (7 switches)' : '⚓ Block A — Engine Configuration (7 switches)';
+      renderSwitches('dip-port-row1', buildDIPRow1(cylinders, isTwoStroke, 0));
+      renderSwitches('dip-port-row2', buildDIPRow2(tankSender, 0));
+      document.getElementById('dip-port-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 0);
+      document.getElementById('dip-port-key2').innerHTML = buildRow2Key(tankSender, 0);
+
+      /* Starboard (twin) */
+      var stbdBlock = document.getElementById('dip-stbd-block');
+      if (twinEnabled) {
+        stbdBlock.style.display = 'block';
+        renderSwitches('dip-stbd-row1', buildDIPRow1(cylinders, isTwoStroke, 1));
+        renderSwitches('dip-stbd-row2', buildDIPRow2(tankSender, 1));
+        document.getElementById('dip-stbd-key1').innerHTML = buildRow1Key(cylinders, isTwoStroke, 1);
+        document.getElementById('dip-stbd-key2').innerHTML = buildRow2Key(tankSender, 1);
+      } else {
+        stbdBlock.style.display = 'none';
+      }
+
+      /* Why these settings */
+      document.getElementById('dip-why-body').innerHTML =
+        buildWhyText(cylinders, fuel, tankSender, isTwoStroke, twinEnabled);
+
+      /* Update EMU-1/Other cylinder display */
+    } else if (gw === 'emu1') {
+      document.getElementById('notice-emu1').style.display = 'block';
+      document.getElementById('emu1-cyl').textContent  = cylinders ? cylinders + ' cylinders' : 'see Step 3';
+      document.getElementById('emu1-tank').textContent = (tankSender === 'north-america') ? 'North America 240-33Ω' : 'Europe 0-190Ω';
+    } else if (gw === 'none') {
+      document.getElementById('notice-none').style.display = 'block';
+    } else {
+      document.getElementById('notice-other').style.display = 'block';
+      document.getElementById('other-cyl').textContent = cylinders ? cylinders + ' cylinders' : 'see Step 3';
+    }
+  }
+
+  /* ── Assemble hidden fields before submit ── */
+  function assembleFinalData() {
+    document.getElementById('h_boat_make').value   = gv('s2_boat_make');
+    document.getElementById('h_boat_year').value   = gv('s2_boat_year');
+    document.getElementById('h_boat_model').value  = gv('s2_boat_model');
+    document.getElementById('h_boat_loa').value    = gv('s2_boat_loa');
+    document.getElementById('h_boat_type').value   = gv('s2_boat_type');
+    document.getElementById('h_boat_region').value = gv('s2_boat_region');
+    document.getElementById('h_engine_make').value      = gv('s3_eng_make');
+    document.getElementById('h_engine_model').value     = gv('s3_eng_model');
+    document.getElementById('h_engine_year').value      = gv('s3_eng_year');
+    document.getElementById('h_engine_hp').value        = gv('s3_eng_hp');
+    document.getElementById('h_engine_cylinders').value = gv('s3_eng_cyl');
+    document.getElementById('h_engine_fuel').value      = gv('s3_eng_fuel');
+    document.getElementById('h_engine_induction').value = gv('s3_eng_induction');
+    document.getElementById('h_engine_idle_rpm').value  = gv('s3_eng_idle');
+    document.getElementById('h_engine_max_rpm').value   = gv('s3_eng_maxrpm');
+    document.getElementById('h_engine2_make').value  = gv('s3_eng2_make');
+    document.getElementById('h_engine2_model').value = gv('s3_eng2_model');
+    document.getElementById('h_engine2_year').value  = gv('s3_eng2_year');
+    document.getElementById('h_nmea_gateway').value = gv('s4_gateway');
+    document.getElementById('h_chartplotter').value = gv('s4_chartplotter');
+    document.getElementById('h_vhf_radio').value    = gv('s4_vhf');
+
+    var parts = [];
+    var em = gv('s3_eng_make'); var emo = gv('s3_eng_model');
+    if (em||emo) parts.push('Engine: ' + [em,emo].filter(Boolean).join(' '));
+    if (twinEnabled) { var m2=gv('s3_eng2_make'); var mo2=gv('s3_eng2_model'); if(m2||mo2) parts.push('Engine2: '+[m2,mo2].filter(Boolean).join(' ')); }
+    if (gv('s4_chartplotter')) parts.push('Chartplotter: '+gv('s4_chartplotter'));
+    if (gv('s4_vhf'))          parts.push('VHF: '+gv('s4_vhf'));
+    if (gv('s4_gateway') && gv('s4_gateway') !== 'none') parts.push('NMEA: '+gv('s4_gateway'));
+    document.getElementById('equipment_notes').value = parts.join('; ');
+
+    try { localStorage.removeItem(WIZ_KEY); } catch(e) {}
+  }
+
+  /* ── Done summary ── */
+  function buildSummary() {
+    var name    = gv('vessel_name') || '—';
+    var port    = gv('home_port')   || '—';
+    var langEl  = document.getElementById('ui_lang');
+    var langTxt = langEl && langEl.options ? langEl.options[langEl.selectedIndex].text : '—';
+    var engStr  = [gv('s3_eng_make'), gv('s3_eng_model')].filter(Boolean).join(' ') || null;
+    var gateway = gv('s4_gateway');
+    var gemini  = gv('gemini_api_key');
+    var boatStr = [gv('s2_boat_year'), gv('s2_boat_make'), gv('s2_boat_model')].filter(Boolean).join(' ') || null;
+
+    var hasDIP = (gateway === 'cx5106');
+    var items = [
+      { t: 'Vessel: <strong>'+name+'</strong>, home port <strong>'+port+'</strong>', ok: !!name },
+      { t: boatStr ? 'Boat: <strong>'+boatStr+'</strong>' : 'Boat particulars skipped', ok: !!boatStr },
+      { t: engStr ? 'Engine: <strong>'+engStr+'</strong>'+(twinEnabled?' (Twin)':'') : 'Engine step skipped', ok: !!engStr },
+      { t: hasDIP ? 'CX5106 DIP switches computed' : (gateway && gateway!=='none' ? 'Gateway: <strong>'+gateway.toUpperCase()+'</strong>' : 'No NMEA gateway'), ok: !!(gateway && gateway!=='none') },
+      { t: 'Language: <strong>'+langTxt+'</strong>', ok: true },
+      { t: 'Mobile pairing ID ready', ok: true },
+      { t: gemini ? 'Gemini API key saved' : 'Gemini key skipped &mdash; add in Settings', ok: !!gemini },
+    ];
+    document.getElementById('done-summary').innerHTML = items.map(function(it) {
+      return '<div class="done-item"><span class="'+(it.ok?'di-tick':'di-skip')+'">'+(it.ok?'&#10003;':'&mdash;')+'</span><span>'+it.t+'</span></div>';
+    }).join('');
+  }
+
+  /* ── AvNav chart readiness check ── */
+  (function () {
+    fetch('/status').then(function(r){return r.json();}).then(function(d){
+      if (d && d.avnav) {
+        var dot = document.getElementById('chartDot');
+        var note = document.getElementById('chartNote');
+        if (dot) dot.classList.add('ok');
+        if (note) note.textContent = 'Chart system ready \u2014 AvNav connected at :8080.';
+      }
+    }).catch(function(){});
+  })();
+
+  /* ── FI4 Recovery panel ── */
+  var CLOUD_RESTORE_URL = '/setup/recover';
+
+  function formatUUID(el) {
+    // Strip everything except hex digits, then insert hyphens at UUID positions
+    var raw = el.value.replace(/[^0-9a-fA-F]/g, '');
+    var out = '';
+    for (var i = 0; i < raw.length && i < 32; i++) {
+      if (i === 8 || i === 12 || i === 16 || i === 20) out += '-';
+      out += raw[i];
+    }
+    el.value = out;
+  }
+
+  function showRecoverPanel() {
+    document.getElementById('recover-panel').classList.add('visible');
+    document.getElementById('recover-token').focus();
+  }
+
+  function hideRecoverPanel() {
+    document.getElementById('recover-panel').classList.remove('visible');
+    var st = document.getElementById('recover-status');
+    st.className = 'recover-status';
+    st.textContent = '';
+    document.getElementById('recover-token').value = '';
+    var btn = document.getElementById('recover-btn-go');
+    btn.disabled = false;
+    btn.textContent = 'RESTORE Pi \u203a';
+  }
+
+  function setRecoverStatus(msg, type) {
+    var el = document.getElementById('recover-status');
+    el.className = 'recover-status ' + type;
+    el.textContent = msg;
+  }
+
+  function doRecover() {
+    var token = document.getElementById('recover-token').value.trim().toLowerCase();
+    if (!token) { setRecoverStatus('Please enter your Recovery Key.', 'err'); return; }
+    if (token.length < 8 || token.length > 64) {
+      setRecoverStatus('Recovery Key looks invalid \u2014 check you have the full UUID.', 'err');
+      return;
+    }
+    var btn = document.getElementById('recover-btn-go');
+    btn.disabled = true;
+    btn.textContent = 'Restoring\u2026';
+    setRecoverStatus('Contacting cloud \u2014 please wait\u2026', 'ok');
+
+    fetch(CLOUD_RESTORE_URL + '?token=' + encodeURIComponent(token))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success) {
+          setRecoverStatus(
+            data.error === 'No backup found'
+              ? 'No backup found for this Recovery Key. Check the key and try again.'
+              : (data.error || 'Restore failed. Try again.'),
+            'err'
+          );
+          btn.disabled = false;
+          btn.textContent = 'RESTORE Pi \u203a';
+          return null;
+        }
+        setRecoverStatus('Backup found \u2014 writing config files\u2026', 'ok');
+        return fetch('/setup/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config_json: data.config_json, version: data.version })
+        });
+      })
+      .then(function(r) { return r ? r.json() : null; })
+      .then(function(result) {
+        if (!result) return;
+        if (!result.ok) {
+          setRecoverStatus('Error writing config files: ' + (result.error || 'unknown error'), 'err');
+          btn.disabled = false;
+          btn.textContent = 'RESTORE Pi \u203a';
+          return;
+        }
+        setRecoverStatus('Config restored \u2014 loading dashboard\u2026', 'ok');
+        setTimeout(function() { window.location.href = '/'; }, 1500);
+      })
+      .catch(function(err) {
+        setRecoverStatus('Connection error: ' + err.message, 'err');
+        btn.disabled = false;
+        btn.textContent = 'RESTORE Pi \u203a';
+      });
+  }
+
+  /* ── Restore saved state on page load ── */
+  window.addEventListener('DOMContentLoaded', function() {
+    restoreState();
+    checkDefaultPassword();
+  });
+
+  /* ── First-boot password gate ── */
+  function checkDefaultPassword() {
+    fetch('/network/check-default-password')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.default) return; /* already changed — proceed normally */
+        /* Show password step, hide progress bar and step 1 */
+        var wiz1 = document.getElementById('wiz-1');
+        var wizPw = document.getElementById('wiz-password');
+        var progress = document.getElementById('wiz-progress');
+        if (wiz1)    wiz1.classList.remove('active');
+        if (wizPw)   { wizPw.style.display = ''; wizPw.classList.add('active'); }
+        if (progress) progress.style.display = 'none';
+        setTimeout(function() {
+          var inp = document.getElementById('pw-new');
+          if (inp) inp.focus();
+        }, 100);
+      })
+      .catch(function() { /* endpoint unavailable — proceed normally */ });
+  }
+
+  async function submitPasswordChange() {
+    var pw  = document.getElementById('pw-new').value;
+    var pw2 = document.getElementById('pw-confirm').value;
+    var err = document.getElementById('pw-error');
+    err.textContent = '';
+    if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+    if (pw !== pw2)    { err.textContent = 'Passwords do not match.'; return; }
+    err.textContent = 'Setting password\u2026';
+    var btn = document.querySelector('#wiz-password .btn-submit');
+    if (btn) btn.disabled = true;
+    try {
+      var r = await fetch('/network/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: pw })
+      });
+      var d = await r.json();
+      if (d.success) {
+        /* Password set — restore progress bar and advance to step 1 */
+        var wizPw   = document.getElementById('wiz-password');
+        var progress = document.getElementById('wiz-progress');
+        if (wizPw)   { wizPw.classList.remove('active'); wizPw.style.display = 'none'; }
+        if (progress) progress.style.display = '';
+        goTo(1);
+      } else {
+        err.textContent = 'Error: ' + (d.error || 'Unknown error — try again.');
+        if (btn) btn.disabled = false;
+      }
+    } catch(e) {
+      err.textContent = 'Network error — try again.';
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  {% if error %}
+  goTo(2);
+  {% endif %}
+
+  /* ── Step 9: Hardware Profile (HCD-5) ── */
+  function loadHardwareStep() {
+    var el = document.getElementById('hw-step-content');
+    if (!el) return;
+    fetch('/hardware-summary')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { renderHwStep(d, el); })
+      .catch(function() {
+        el.innerHTML = '<p style="font-size:18px;color:#ff9999;">&#9888; Could not load hardware profile. You can still launch — run Re-probe after setup.</p>';
+      });
+  }
+
+  function renderHwStep(d, el) {
+    var featureNames = {
+      surround_view: '3D Surround View',
+      forward_watch: 'Forward Watch AI',
+      safehelm: 'SafeHelm',
+      marine_vision_ai: 'Marine Vision AI'
+    };
+    var html = '';
+    if (d.error) {
+      html += '<div style="background:#1a0000;border:2px solid #cc3333;border-radius:8px;padding:16px;font-size:18px;color:#ff9999;margin-bottom:16px;">&#9888; ' + d.error + '</div>';
+    }
+    if (d.platform) {
+      html += '<div style="background:#111;border:1px solid #333;border-radius:8px;padding:16px;margin-bottom:16px;">';
+      html += '<p style="font-size:18px;font-weight:700;color:#00CC00;margin:0 0 10px 0;">Platform</p>';
+      html += '<p style="font-size:18px;margin:4px 0;"><span style="color:#aaa;">Model:</span> ' + d.platform.pi_model + '</p>';
+      html += '<p style="font-size:18px;margin:4px 0;"><span style="color:#aaa;">RAM:</span> ' + d.platform.ram_gb_nominal + ' GB</p>';
+      html += '</div>';
+    }
+    if (d.enabled && d.enabled.length) {
+      html += '<div style="background:#011801;border:1px solid #00CC00;border-radius:8px;padding:16px;margin-bottom:16px;">';
+      html += '<p style="font-size:18px;font-weight:700;color:#00CC00;margin:0 0 10px 0;">&#9989; Features Available</p>';
+      d.enabled.forEach(function(k) { html += '<p style="font-size:18px;margin:4px 0;">&#8226; ' + (featureNames[k] || k) + '</p>'; });
+      html += '</div>';
+    }
+    if (d.locked && d.locked.length) {
+      html += '<div style="background:#1a0000;border:1px solid #553333;border-radius:8px;padding:16px;margin-bottom:16px;">';
+      html += '<p style="font-size:18px;font-weight:700;color:#cc6666;margin:0 0 10px 0;">&#128274; Locked Features (hardware upgrade needed)</p>';
+      d.locked.forEach(function(k) { html += '<p style="font-size:18px;margin:4px 0;">&#8226; ' + (featureNames[k] || k) + '</p>'; });
+      html += '</div>';
+    }
+    el.innerHTML = html || '<p style="font-size:18px;color:#666;">No hardware profile available — run Re-probe.</p>';
+  }
+
+  function wizReprobe() {
+    var btn = document.getElementById('hw-reprobe-btn');
+    btn.disabled = true;
+    btn.textContent = 'Probing…';
+    fetch('/api/hardware/reprobe', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          setTimeout(function() {
+            btn.disabled = false;
+            btn.innerHTML = '&#128260; Re-probe Hardware';
+            loadHardwareStep();
+          }, 2500);
+        } else {
+          btn.disabled = false;
+          btn.textContent = '⚠ Probe failed — retry';
+        }
+      })
+      .catch(function() {
+        btn.disabled = false;
+        btn.textContent = '⚠ Error — retry';
+      });
+  }
+</script>
+</body>
+</html>

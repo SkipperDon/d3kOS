@@ -1,0 +1,10 @@
+[Unit]
+Description=d3kOS Hardware Probe — 15-minute belt-and-suspenders re-probe (REQ-HCD-027)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
