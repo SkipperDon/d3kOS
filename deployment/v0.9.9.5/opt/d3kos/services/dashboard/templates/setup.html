@@ -592,6 +592,58 @@
           </div>
         </div>
 
+        <!-- ── HCD-8 SafeHelm COLREGs Questions (D02-8, required — no skip) ── -->
+        <div class="sec-div">SafeHelm Collision Advisory &mdash; Required</div>
+        <p style="font-size:18px;color:#888;margin-bottom:14px;">
+          SafeHelm classifies collision situations under COLREGs. The applicable rules differ by
+          propulsion type and vessel length. These two questions are required and cannot be skipped.
+        </p>
+
+        <div class="field">
+          <label style="font-size:18px;font-weight:600;margin-bottom:8px;display:block;">
+            Propulsion type when underway
+            <span style="color:var(--alrt-num)">*</span>
+          </label>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <label style="font-size:18px;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:48px;">
+              <input type="radio" name="propulsion_type" id="prop_power" value="power-driven"
+                     style="width:22px;height:22px;accent-color:#00CC00;" required>
+              Power-Driven &mdash; engine propels the vessel
+            </label>
+            <label style="font-size:18px;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:48px;">
+              <input type="radio" name="propulsion_type" id="prop_sail" value="sailing"
+                     style="width:22px;height:22px;accent-color:#00CC00;">
+              Under Sail &mdash; sailing vessel (no engine when underway)
+            </label>
+          </div>
+          <div class="hint">Determines which COLREGs rules apply (Rule 12 governs two sailing vessels).</div>
+        </div>
+
+        <div class="field">
+          <label style="font-size:18px;font-weight:600;margin-bottom:8px;display:block;">
+            Vessel overall length class
+            <span style="color:var(--alrt-num)">*</span>
+          </label>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <label style="font-size:18px;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:48px;">
+              <input type="radio" name="vessel_length_class" id="len_under12" value="under_12m"
+                     style="width:22px;height:22px;accent-color:#00CC00;" required>
+              Under 12 m (&lt; 40 ft) — small vessel
+            </label>
+            <label style="font-size:18px;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:48px;">
+              <input type="radio" name="vessel_length_class" id="len_12_20" value="12_to_20m"
+                     style="width:22px;height:22px;accent-color:#00CC00;">
+              12 m – 20 m (40 – 65 ft) — medium vessel
+            </label>
+            <label style="font-size:18px;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:48px;">
+              <input type="radio" name="vessel_length_class" id="len_over20" value="over_20m"
+                     style="width:22px;height:22px;accent-color:#00CC00;">
+              Over 20 m (&gt; 65 ft) — large vessel
+            </label>
+          </div>
+          <div class="hint">12 m is a threshold in COLREGs Rules 25 and 35. 20 m applies to Rule 9 (narrow channels).</div>
+        </div>
+
         <div class="chart-info">
           <div class="chart-info-head">
             <div class="chart-dot" id="chartDot"></div>
@@ -1101,6 +1153,7 @@
     <input type="hidden" name="nmea_gateway"     id="h_nmea_gateway">
     <input type="hidden" name="chartplotter"     id="h_chartplotter">
     <input type="hidden" name="vhf_radio"        id="h_vhf_radio">
+    <!-- HCD-8 SafeHelm COLREGs fields (D02-8) — populated directly by radio inputs -->
 
   </form>
 </div><!-- #setup-card -->

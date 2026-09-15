@@ -1,0 +1,110 @@
+/* safehelm-widget.css — ADV-1 footer widget, d3kOS v0.9.9.5 */
+/* AODA: 18px minimum, 48×48px touch targets */
+
+#safehelm-widget {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  background: #0a0a0a;
+  border-top: 2px solid #1a1a1a;
+  font-family: 'Chakra Petch', 'Bebas Neue', monospace;
+  font-size: 18px;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 4px 12px;
+  gap: 12px;
+  transition: border-color 0.15s;
+}
+
+/* 2 Hz border flash for critical alerts */
+#safehelm-widget.flash-critical {
+  animation: sh-flash 0.5s step-end infinite;
+}
+@keyframes sh-flash {
+  0%, 100% { border-top-color: #ff2222; }
+  50%       { border-top-color: #1a1a1a; }
+}
+
+#safehelm-widget.flash-warning {
+  border-top-color: #ffaa00;
+}
+
+#sh-status {
+  flex: 0 0 auto;
+  font-size: 18px;
+  color: #00CC00;
+  white-space: nowrap;
+}
+
+#sh-alerts {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  overflow: hidden;
+}
+
+.sh-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #111;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 18px;
+  border: 1px solid #333;
+  min-height: 48px;
+}
+
+.sh-alert.critical { border-color: #ff2222; color: #ff6666; }
+.sh-alert.warning  { border-color: #ffaa00; color: #ffcc44; }
+.sh-alert.advisory { border-color: #2255aa; color: #88aaff; }
+
+.sh-alert-mmsi   { font-size: 18px; opacity: 0.75; }
+.sh-alert-rule   { font-size: 18px; font-weight: bold; }
+.sh-alert-cpa    { font-size: 18px; opacity: 0.85; }
+
+/* ACK / dismiss buttons — 48×48px touch targets */
+.sh-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #aaa;
+  font-size: 18px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sh-btn:active { background: #1a1a1a; }
+
+/* Explainability panel — shown on tap */
+.sh-explain {
+  display: none;
+  position: fixed;
+  bottom: 56px;
+  left: 8px;
+  right: 8px;
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 18px;
+  color: #ccc;
+  z-index: 901;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.sh-explain.visible { display: block; }
+
+#sh-no-alerts {
+  font-size: 18px;
+  color: #00CC00;
+  opacity: 0.7;
+}

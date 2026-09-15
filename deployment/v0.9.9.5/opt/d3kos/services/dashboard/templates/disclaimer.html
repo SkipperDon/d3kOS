@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>d3kOS &mdash; Experimental Software Notice</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Chakra Petch', sans-serif;
+    background: #020702; color: #D6EDD6;
+    height: 100%; font-size: 18px; line-height: 1.7;
+  }
+  #top-bar {
+    background: #001A00; padding: 14px 20px;
+    font-size: 22px; font-weight: 700; letter-spacing: .12em; color: #00CC00;
+    border-bottom: 2px solid #003300;
+  }
+  #scroll-area {
+    position: fixed; top: 56px; left: 0; right: 0; bottom: 80px;
+    overflow-y: scroll; padding: 24px 24px 32px;
+  }
+  h2 { font-size: 20px; color: #ffcc44; margin: 24px 0 10px; letter-spacing: .08em; }
+  p  { font-size: 18px; margin-bottom: 14px; }
+  ul { padding-left: 20px; margin-bottom: 14px; }
+  li { font-size: 18px; margin-bottom: 8px; }
+  .warn { color: #ffaa00; font-weight: 600; }
+
+  #footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #001A00; border-top: 2px solid #003300;
+    padding: 12px 20px; display: flex; align-items: center; gap: 14px;
+  }
+  #scroll-hint { font-size: 18px; color: #88aa88; flex: 1; }
+  #btn-accept {
+    font-size: 18px; font-weight: 700; padding: 10px 28px;
+    background: #004400; color: #00CC00; border: 2px solid #00AA00;
+    border-radius: 8px; cursor: pointer; min-height: 48px; min-width: 120px;
+    letter-spacing: .06em;
+  }
+  #btn-accept:disabled { opacity: .4; cursor: not-allowed; }
+  #btn-accept:not(:disabled):active { background: #006600; }
+  #btn-shutdown {
+    font-size: 18px; padding: 10px 20px; background: transparent;
+    color: #ff6666; border: 2px solid #883333; border-radius: 8px;
+    cursor: pointer; min-height: 48px; min-width: 100px; letter-spacing: .06em;
+  }
+</style>
+</head>
+<body>
+
+<div id="top-bar">d3kOS &mdash; Experimental Software Notice</div>
+
+<div id="scroll-area" id="disclaimer-text">
+
+  <h2>EXPERIMENTAL SOFTWARE</h2>
+  <p>
+    d3kOS is experimental software. It is provided at your own risk and
+    is not a replacement for the captain's judgement, professional seamanship,
+    or any flag-state approved navigation system.
+  </p>
+  <p>
+    The software assumes you are operating a power-driven vessel under 20 m.
+    If your vessel is different, some advisory outputs may not apply.
+    You can change the vessel type and length class in Setup.
+  </p>
+
+  <h2>SENSOR LIMITATIONS</h2>
+  <p>
+    d3kOS has no radar. It receives AIS position reports only. Vessels
+    without AIS are completely invisible to it — including the majority of small
+    craft, sailing boats, tenders, kayaks, swimmers, and floating debris.
+  </p>
+  <p>
+    SafeHelm is one input among many. You must never depend on it alone.
+    Silence from the system does not mean clear water; it means no qualifying
+    AIS target was detected within the configured range gates.
+  </p>
+
+  <h2>NOT A LOOK-OUT</h2>
+  <p>
+    d3kOS is not a look-out and does not satisfy the look-out requirement
+    of COLREGs Rule 5. A proper look-out by sight and hearing is always required.
+  </p>
+
+  <h2>NOT ARPA / NOT TYPE-APPROVED</h2>
+  <p>
+    SafeHelm Collision Advisory is not an ARPA (Automatic Radar Plotting Aid)
+    and is not type-approved under any IMO performance standard, flag-state
+    requirement, or classification society rule. It does not meet the
+    requirements of SOLAS Chapter V for collision avoidance equipment.
+  </p>
+
+  <h2>CAPTAIN'S RESPONSIBILITY</h2>
+  <p>
+    The captain remains solely responsible for the safe navigation of the vessel
+    at all times, including collision avoidance, keeping a proper look-out, and
+    compliance with the International Regulations for Preventing Collisions at Sea.
+    d3kOS provides advisory information only; it does not issue commands and
+    does not override the captain's authority or duty.
+  </p>
+
+  <h2>ACCEPTANCE</h2>
+  <p>
+    By tapping ACCEPT you confirm that you have read and understood this notice.
+    Your acceptance will be recorded along with the current d3kOS version and a
+    hash of this text so that any future change to these terms requires a fresh
+    acknowledgement.
+  </p>
+  <p id="scroll-sentinel">&nbsp;</p>
+
+</div>
+
+<div id="footer">
+  <span id="scroll-hint">Scroll to the end to enable ACCEPT</span>
+  <button id="btn-shutdown" onclick="fetch('/api/shutdown',{method:'POST'})">Shutdown</button>
+  <button id="btn-accept" disabled onclick="submitAccept()">ACCEPT</button>
+</div>
+
+<script>
+  /* Scroll gate: ACCEPT is disabled until the user scrolls to the bottom. */
+  var scrollArea = document.getElementById('scroll-area');
+  var btnAccept  = document.getElementById('btn-accept');
+  var scrollHint = document.getElementById('scroll-hint');
+
+  function checkScroll() {
+    var atBottom = scrollArea.scrollHeight - scrollArea.scrollTop
+                   <= scrollArea.clientHeight + 40;
+    if (atBottom) {
+      btnAccept.disabled = false;
+      scrollHint.textContent = '';
+    }
+  }
+  scrollArea.addEventListener('scroll', checkScroll);
+  checkScroll();   /* in case content fits without scrolling */
+
+  function submitAccept() {
+    fetch('/api/disclaimer/accept', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({accepted: true})
+    }).then(function(r) {
+      if (r.ok) window.location.href = '/';
+    });
+  }
+</script>
+</body>
+</html>

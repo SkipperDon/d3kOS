@@ -1,0 +1,18 @@
+[Unit]
+Description=d3kOS SafeHelm — Collision Avoidance Advisory
+After=network-online.target d3kos-ai-bridge.service
+Wants=d3kos-ai-bridge.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+WorkingDirectory=/opt/d3kos/services/safehelm
+ExecStart=/opt/d3kos/venv/bin/python safehelm.py
+Environment=SAFEHELM_PHASE=1
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=10
+User=d3kos
+
+[Install]
+WantedBy=multi-user.target

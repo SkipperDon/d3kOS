@@ -1115,5 +1115,124 @@ def go2rtc_proxy(subpath):
         return jsonify({'error': 'go2rtc not running — start d3kos-go2rtc.service'}), 503
 
 
+# ── D02 SafeHelm Proxy Routes ─────────────────────────────────────────────
+# SafeHelm binds 127.0.0.1:8095 (loopback only). Dashboard proxies it so
+# the browser never needs to reach 8095 directly — avoids CORS, keeps
+# 8095 off the boat Wi-Fi. BUG-48: all SafeHelm URLs use window.location.hostname.
+
+SAFEHELM_BASE = 'http://127.0.0.1:8095'
+
+
+@app.route('/api/safehelm/sse')
+def safehelm_sse_proxy():
+    """SSE proxy: browser subscribes here, request forwarded to SafeHelm :8095/sse."""
+    from flask import Response as FlaskResponse
+    try:
+        r = requests.get(f'{SAFEHELM_BASE}/sse', stream=True, timeout=None)
+        return FlaskResponse(
+            r.iter_content(chunk_size=None),
+            content_type='text/event-stream',
+            headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'safehelm not running — start d3kos-safehelm.service'}), 503
+
+
+@app.route('/api/safehelm/ack', methods=['POST'])
+def safehelm_ack_proxy():
+    """ACK proxy: MMSI validation + forward to SafeHelm :8095/ack. D02-5."""
+    data = request.get_json(silent=True) or {}
+    mmsi = str(data.get('mmsi', '')).strip()
+    if not mmsi.isdigit() or not (7 <= len(mmsi) <= 9):
+        return jsonify({'error': 'invalid mmsi'}), 400
+    try:
+        r = requests.post(f'{SAFEHELM_BASE}/ack', json={'mmsi': mmsi}, timeout=3)
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'safehelm not running'}), 503
+
+
+@app.route('/api/safehelm/dismiss', methods=['POST'])
+def safehelm_dismiss_proxy():
+    """Dismiss proxy: MMSI validation + forward to SafeHelm :8095/dismiss. D02-5."""
+    data = request.get_json(silent=True) or {}
+    mmsi = str(data.get('mmsi', '')).strip()
+    if not mmsi.isdigit() or not (7 <= len(mmsi) <= 9):
+        return jsonify({'error': 'invalid mmsi'}), 400
+    try:
+        r = requests.post(f'{SAFEHELM_BASE}/dismiss', json={'mmsi': mmsi}, timeout=3)
+        return jsonify(r.json()), r.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'safehelm not running'}), 503
+
+
+# ── D19 Disclaimer Gate (§15) ─────────────────────────────────────────────
+# Every boot (D19-1): the gate arms on each boot. Full text + scroll gate on
+# first boot / version change / hash change; abbreviated one-tap form otherwise.
+
+_DISCLAIMER_ACCEPTED_FILE = '/opt/d3kos/config/disclaimer-accepted.json'
+_D3KOS_VERSION = '0.9.9.5'
+
+_DISCLAIMER_TEXT_HASH = hashlib.sha256(
+    b'experimental advisory only captain remains solely responsible version 0.9.9.5'
+).hexdigest()
+
+
+def _load_disclaimer_record():
+    try:
+        with open(_DISCLAIMER_ACCEPTED_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _require_every_boot():
+    """D19-1: check disclaimer on every boot. Returns ('full' | 'abbreviated' | 'ok')."""
+    rec = _load_disclaimer_record()
+    if not rec.get('accepted'):
+        return 'full_text'
+    if rec.get('version') != _D3KOS_VERSION or rec.get('sha256') != _DISCLAIMER_TEXT_HASH:
+        return 'full_text'
+    return 'abbreviated'
+
+
+@app.route('/disclaimer')
+def disclaimer_page():
+    mode = _require_every_boot()
+    return render_template('disclaimer.html', mode=mode)
+
+
+@app.route('/api/disclaimer/accept', methods=['POST'])
+def disclaimer_accept():
+    """§15.3: record acceptance with sha256 text hash and version."""
+    rec = {
+        'accepted': True,
+        'acknowledged': True,
+        'version': _D3KOS_VERSION,
+        'sha256': _DISCLAIMER_TEXT_HASH,
+        'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
+    }
+    try:
+        os.makedirs(os.path.dirname(_DISCLAIMER_ACCEPTED_FILE), exist_ok=True)
+        with open(_DISCLAIMER_ACCEPTED_FILE, 'w') as f:
+            json.dump(rec, f, indent=2)
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+# ── §15.4 Shutdown endpoint — loopback only ───────────────────────────────
+
+@app.route('/api/shutdown', methods=['POST'])
+def poweroff():
+    """§15.4: shutdown endpoint restricted to loopback (127.0.0.1) only."""
+    if request.remote_addr not in ('127.0.0.1', '::1'):
+        return jsonify({'error': 'shutdown restricted to loopback'}), 403
+    try:
+        subprocess.Popen(['sudo', 'poweroff'])
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=False)
