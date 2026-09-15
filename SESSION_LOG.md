@@ -11131,3 +11131,62 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0 (test suite green; UI requires Pi browser test)
 ─────────────────────────────────────────────────────
+
+## Session S167 2026-09-15
+**Goal:** Deploy D02 SafeHelm Advisory Mode to lab Pi.
+
+**Completed:**
+- SSH connectivity confirmed: lab Pi 192.168.1.237, Python 3.13.5, Flask + requests + websocket-client all present, no venv (system Python used)
+- Discovered safehelm directory absent on Pi — created `/opt/d3kos/services/safehelm/static/`
+- Deployed all 10 Python modules + 2 static files (safehelm-widget.css, safehelm-widget.js)
+- Deployed systemd unit with corrected ExecStart: `/usr/bin/python3` not `/opt/d3kos/venv/bin/python` (no venv on lab Pi)
+- **Port conflict resolved:** boatlog-export-api.py has occupied :8095 since v0.9.2; solution design assigned SafeHelm to the same port in error. Moved SafeHelm to **:8096** — updated safehelm.py, dashboard/app.py, committed as `ab841b32`
+- Deployed updated app.py and templates (disclaimer.html, hardware.html, setup.html) to dashboard
+- Service enabled and running: `{"status":"ok","phase":1}` — advisory mode, Signal K WebSocket connected
+- Disclaimer gate verified: `/disclaimer` → 200; `POST /api/disclaimer/accept` → `{"ok":true}`; disclaimer-accepted.json written with version `0.9.9.5` + sha256; `/` → 200 after acceptance
+- SSE stream verified: `data: {"type":"connected"}` + keepalive heartbeat through dashboard proxy (`:3000/api/safehelm/sse` → `:8096/sse`)
+- Dashboard restarted after template deploy — confirmed active
+
+**Decisions:**
+- SafeHelm port changed from 8095 → 8096. The solution design had a port collision; boatlog-export-api.py has seniority. This is a permanent port assignment for SafeHelm in v0.9.9.5.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-15 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- UI-level widget test: open browser to lab Pi, accept disclaimer, verify SafeHelm widget overlay renders on main page
+- D23 OTA agent — approved S163, not started
+- SK-FW-2 — OpenPlotter test (requires hardware)
+- D16 boat validation — slots.json bow slot, ring heights, go2rtc
+- BUG-130 boat validation — engine running test
+- Playwright full suite — `./tests/run-all.sh --workers=1`
+- GitHub Issue Sync — pending operator approval
+
+---
+
+SQS — S167 2026-09-15
+─────────────────────────────────────────────────────
+tasks_planned          : 1 (D02 lab Pi deploy)
+tasks_completed        : 1 (service running, disclaimer verified, SSE confirmed)
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 97/100 (−3: UI widget render not verified in browser — requires Pi display or VNC)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-15
+─────────────────────────────────────────────────────
+session_duration_min   : ~20
+tasks_planned          : 1
+tasks_completed        : 1
+governing_doc_version  : 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0 (curl-verified; browser UI test pending)
+─────────────────────────────────────────────────────
