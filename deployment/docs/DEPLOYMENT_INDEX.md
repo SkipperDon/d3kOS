@@ -1926,3 +1926,28 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `atmyboat-forum/wp-content/themes/twentytwenty-child/page-manual.php` | **[UPDATED — S154]** Version v0.9.9.4 → v0.9.9.4.2. Section count 16 → 17. Section 17 (AtMyBoat.com Account & Registration) added to TOC. PDF/HTML links updated v2.3.0 → v2.5.0. Deployed to HostPapa live. |
 | `atmyboat-forum/wp-content/themes/twentytwenty-child/downloads/D3KOS_USER_MANUAL_v2.5.0.pdf` | **[NEW — S154]** Generated via pandoc + weasyprint from updated markdown. 121 KB. Deployed to HostPapa live. ⚠ Plain default styling — professional CSS styling deferred to S155. |
 | `atmyboat-forum/wp-content/themes/twentytwenty-child/downloads/D3KOS_USER_MANUAL_v2.5.0.html` | **[NEW — S154]** Standalone HTML generated via pandoc from updated markdown. Deployed to HostPapa live. |
+
+## S155 — 2026-09-10 — Manual CSS + PDF v2.5.0
+
+| File / Location | Change |
+|---|---|
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` (public-release) | **[UPDATED — S155]** Header corrected to v0.9.9.4.2 / 2.5.0. Professional CSS applied. |
+| `atmyboat-forum/.../downloads/D3KOS_USER_MANUAL_v2.5.0.pdf` | **[UPDATED — S155]** Regenerated with manual-style.css — d3kOS brand, 18px AODA minimum. 164 KB. |
+| `atmyboat-forum/.../manual-style.css` | **[NEW — S155]** Professional CSS template for d3kOS manual PDF generation. |
+
+## S161 — 2026-09-12 — v0.9.9.5 Build Pipeline Handoff
+
+| File / Location | Change |
+|---|---|
+| `deployment/docs/V09995_DISCUSSION_PLAN.md` | **[UPDATED — S161]** §17 D21 Extended AIS NOT APPROVED; §18 D22 AIS receive-chain APPROVED as research (no release assigned). Version 1.4 → 1.5. |
+| `deployment/docs/atomic-specs/V09995-ORCHESTRATION.md` | **[UPDATED — S161]** D17 ordering, Tier constraints, Q-queue protocol confirmed active. |
+
+## S163 — 2026-09-15 — BUG-130 N2K Engine Bridge + D23 OTA approved
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.4/opt/d3kos/services/engine-bridge/n2k_engine_bridge.py` | **[NEW — S163]** BUG-130 fix — Python bridge bypasses canboat-js for CX5106 PGN 193024 (DP=1). Reads raw SocketCAN frames, filters PF=0xF2/GE=0x00, decodes PGN 127488 payload (RPM + boost pressure), injects `propulsion.port.revolutions` etc. into Signal K via WebSocket delta. Lab Pi integration test PASS: vcan0 synthetic frame → SK 23.333 Hz (1400 RPM). `D3KOS_CAN_INTERFACE` env var for test/production switching. |
+| `deployment/v0.9.9.4/etc/systemd/system/d3kos-n2k-engine-bridge.service` | **[NEW — S163]** BUG-130 systemd unit — `After=signalk.service`, `Restart=on-failure`, `User=d3kos`. Deployed + enabled on lab Pi (inactive: no can0 hardware on lab Pi — correct). |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S163]** BUG-130 S163 update: PGN corrected from "65024" (wrong) to 193024 (Python-verified). SK filtering analysis added (no whitelist — decode-only issue). Path B deployed + vcan0 test PASS noted. |
+| `deployment/docs/V09995_DISCUSSION_PLAN.md` | **[UPDATED — S163]** D23 OTA incremental update added to v0.9.9.5 build table. Version 1.5 → 1.6. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S163]** BUG-130 status `[ ]` → `[~]` PATH B DEPLOYED LAB. D23 OTA added to PART 20. Version 3.84 → 3.85. |

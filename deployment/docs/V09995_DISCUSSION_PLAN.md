@@ -1,5 +1,5 @@
 # v0.9.9.5 — Research & Discussion Backlog
-**Version:** 1.5 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-12 S161 — **§17 D21 Extended AIS (internet overlay) NOT APPROVED — operator ruling. §18 D22 AIS receive-chain upgrade APPROVED as research (release TBD): Q1 rtl_ais channel config, Q2 on-boat antenna height, Q3 receiver value, Q4 transceiver — and Q4 makes SH-15 a blocking prerequisite, since a transmitting unit could broadcast synthetic SafeHelm/WiBoat targets to other vessels.** | Prior: 1.4 — S161 §17 logged, four premises corrected, hard constraint against feeding D02 recorded | Prior: 1.3 — 2026-09-10 S156 v0.9.9.5 scope reduced; v0.9.9.6 defined | **Status:** DISCUSSION / PRE-APPROVAL
+**Version:** 1.6 | **Created:** 2026-06-23 S92 | **Updated:** 2026-09-15 S163 — **§17 D21 Extended AIS (internet overlay) NOT APPROVED — operator ruling. §18 D22 AIS receive-chain upgrade APPROVED as research (release TBD): Q1 rtl_ais channel config, Q2 on-boat antenna height, Q3 receiver value, Q4 transceiver — and Q4 makes SH-15 a blocking prerequisite, since a transmitting unit could broadcast synthetic SafeHelm/WiBoat targets to other vessels.** | Prior: 1.4 — S161 §17 logged, four premises corrected, hard constraint against feeding D02 recorded | Prior: 1.3 — 2026-09-10 S156 v0.9.9.5 scope reduced; v0.9.9.6 defined | **Status:** DISCUSSION / PRE-APPROVAL
 **Owner:** Donald Moskaluk — AtMyBoat.com / d3kOS
 
 > **Purpose:** Captures every idea, research topic, and architectural discussion that has been
@@ -30,9 +30,11 @@ Runs on the existing d3kOS Pi (RPi 4B). No new hardware required.
 | D02 SafeHelm | Python collision avoidance service :8095, COLREGs engine, voice + AvNav integration |
 | D05 signalk-forward-watch v0.2.4 | Three small improvements to existing Signal K plugin |
 | D16 3D Surround Situational Awareness | Tesla-style 3D helm view in Chromium; existing 4 cameras; no new hardware |
+| D17 Hardware Capability Detection | udev hot-plug + boot probe + 15-min timer → `hardware-profile.json`; feature gate `d3kos_feature_gate.py` |
+| D23 OTA Incremental Update | Pi-side cloud-agent polls HostPapa PHP+MySQL command queue → downloads + installs update over internet; T1+ only |
 | Bug corrections | All open v0.9.9.4 bugs carried forward |
 
-**Hardware to procure for v0.9.9.5:** None — all three items run on existing hardware.
+**Hardware to procure for v0.9.9.5:** None — all items run on existing hardware.
 
 ---
 

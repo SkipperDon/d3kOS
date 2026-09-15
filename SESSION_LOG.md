@@ -10937,3 +10937,62 @@ failure_category       : none (no failures; all diagnostics successful)
 human_verified         : 0 (operator provided observations on-boat; not yet verified full fix)
 ─────────────────────────────────────────────────────
 
+
+## Session 2026-09-15 (S163)
+**Goal:** Diagnose lab Pi critical state, fix BUG-126 (lab Pi), deploy BUG-128 engine state gate, fix BUG-133 fish_detector.py, investigate BUG-130 Signal K engine data, build + test N2K engine bridge (Path B), add OTA to v0.9.9.5 scope.
+
+**Completed:**
+- BUG-126 lab Pi: Signal K `pipedProviders` empty (same root cause as boat Pi). Deployed canonical `settings.json`, restarted SK. GPS: false → true. Folded into existing BUG-126 record.
+- BUG-128: Engine state machine (RUNNING/OFF/UNKNOWN) fully built and deployed to lab Pi. RPM auto-detection (>3 Hz = RUNNING, 5 zero ticks = OFF) + manual "ENGINE IS OFF" button on critical alert screen. Engine state chip in nav header. State persisted to `/opt/d3kos/config/engine-state.json`. Flask endpoints `GET/POST /engine/state`. 5 files changed.
+- BUG-133: `fish_detector.py` `init_db()` fixed — `CREATE TABLE IF NOT EXISTS` moved before `PRAGMA table_info` / `ALTER TABLE`. Fresh-DB validation PASS (14 columns). Qwen2.5-coder:7b generated the fix; `c.execute()` typo corrected before applying. Deployed to lab Pi.
+- BUG-130 root cause confirmed: CX5106 transmits PGN 193024 (DataPage=1, CAN ID 0x09F20040) not standard PGN 127488 (DataPage=0). canboat-js silently drops DP=1 frames. SK source filtering: clean (no whitelist). SK depth works (Garmin standard DP=0 PGN 128267). Engine data was always on the bus — just undecoded.
+- BUG-130 Path B: Python bridge `n2k_engine_bridge.py` built (Qwen2.5-coder:7b generated, 4 bugs corrected), deployed + vcan0 integration test PASSED. `cansend vcan0 09F20040#00E015F50300FFFF` → bridge decoded → SK `propulsion.port.revolutions` = 23.333 Hz (1400 RPM). Service enabled on lab Pi (inactive — no can0 hardware; correct).
+- D23 OTA incremental update APPROVED for v0.9.9.5 (operator decision). Architecture already in `MOBILE_APP_STRATEGY_BRIEF.md`. Pi-side cloud-agent + HostPapa command queue. No physical access required after v0.9.9.5 ships.
+- `D3KOS_CAN_INTERFACE` env var added to bridge for test/production switching.
+
+**Decisions:**
+- BUG-130: Python bridge preferred over canboat-js custom PGN def — independent of canboat internals, handles both DP=0 and DP=1 variants.
+- Qwen2.5-coder:7b used for BUG-133 and bridge builds — Tier 3 implementer role confirmed. Corrected 1 typo (BUG-133) and 4 bugs (bridge) before deploying.
+- Lab Pi is source of truth for imaging → boat Pi. All fixes must be tested on lab Pi before imaging.
+- D23 OTA added to v0.9.9.5 scope so post-imaging updates can be done over the internet without physical boat visits.
+
+**Ollama:** qwen2.5-coder:7b — 2 tasks (BUG-133 fix, N2K bridge service). 1 correction per task (BUG-133: c.execute() typo; bridge: 4 bugs including wrong byte offsets, missing json import, exact-SA filter, uncalled run_forever).
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-09-15 | TBD |
+| Ollama (qwen2.5-coder:7b) | 2 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- BUG-130: validate at boat with engine running (`sudo systemctl start d3kos-n2k-engine-bridge`)
+- BUG-127: first-boot wizard not triggered — not started
+- BUG-132: `camera_stream_manager.py` RTSP crash — needs camera hardware at boat
+- Oil pressure / coolant (PGN 127489 / 193025 equivalent) not yet handled in bridge — requires boat-side fast-packet capture
+- Boat Pi deployment: BUG-128 (5 files) + BUG-133 + BUG-130 bridge — committed, ready, needs physical boat visit OR OTA once D23 is built
+- SESSION_LOG: this entry (writing now)
+- GitHub Issue Sync: pending operator approval
+
+---
+
+SQS — S163 2026-09-15
+─────────────────────────────────────────────────────
+tasks_planned          : 5 (BUG-126 lab, BUG-128, BUG-133, BUG-130, session close)
+tasks_completed        : 5
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 91/100 (−9: BUG-130 oil/coolant not yet handled; PGN number corrected mid-session from erroneous S163 initial analysis — updated before commit)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-15
+─────────────────────────────────────────────────────
+session_duration_min   : ~240
+tasks_planned          : 5
+tasks_completed        : 5
+governing_doc_version  : 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0 (vcan0 test verified in-session; CX5106 hardware test pending boat visit)
+─────────────────────────────────────────────────────
