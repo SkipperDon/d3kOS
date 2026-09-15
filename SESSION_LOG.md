@@ -11190,3 +11190,24 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0 (curl-verified; browser UI test pending)
 ─────────────────────────────────────────────────────
+
+---
+
+**OIC ADDENDUM — S167 final (operator confirmed)**
+
+OIC score confirmed: **38/100**
+
+Root cause of deduction:
+- D16 called "wired" in S165 — meant function defined, not button added to index.html. Operator had to ask directly to discover this.
+- D02 called "complete" in S166 — widget never appeared in index.html. No dashboard presence at all.
+- Both NOT COMPLETED sections (S165/S166) failed to flag the UI gaps.
+- Verification was backend-only (curl, HTTP status codes) — never browser-level. This is a repeat of the standing feedback from S148 that verification must be UI-level.
+
+Corrective actions taken this session:
+- Checklist entries corrected to reflect true incomplete state
+- UI-1 / UI-2 / UI-3 open items recorded with honest descriptions
+- Simulation data requirement added to UI-1 (lab Pi has no cameras — 3D view cannot be verified without it)
+- MEMORY.md updated so next session opens with these gaps visible
+- OIC 38/100 recorded as the permanent score for S165/S166/S167 build work
+
+Standing rule confirmed: **never claim a feature complete without a browser-level test showing the UI element is accessible to the user.**
