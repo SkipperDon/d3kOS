@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.9.9.5] — D02 SafeHelm Advisory Mode — 2026-09-15
+
+### Added
+
+- **D02 SafeHelm Collision Avoidance Advisory Mode** — complete 14-module implementation. Port 8095, 127.0.0.1 only, proxied by dashboard. COLREGs Rules 13/14/15/18 classifier, 3-tier alert gate (critical/warning/advisory), CPA/TCPA engine, per-target alert manager with REPEAT/ONCE/SNOOZE/CLEAR state machine, voice arbiter with 15 s global gap, stand-on escalation (Rule 17 3-stage), SSE widget overlay, shadow logger. Voice via ai_bridge :3002. BUG-46 compliant (Signal K ws://host:8099). BUG-105 compliant (Restart=on-failure). AODA 18px/48px compliant. Advisory-only language (D02-6). Commit c8bef316.
+
+- **D19 Boot Disclaimer Gate** — scroll-gated full disclaimer on first boot / version change; abbreviated form on repeat boots. sha256 + d3kOS version recorded on acceptance. Required fields: 'experimental', 'not a replacement', 'own risk', 'no radar', 'invisible', 'never depend on it alone', 'silence does not mean', 'not a look-out', 'not type-approved', 'remains solely responsible'. Accepts via `/api/disclaimer/accept`.
+
+- **HCD-8 Vessel Setup Wizard** — propulsion type (power-driven/sailing) + length class (under 12 m / 12–20 m / over 20 m) mandatory questions added to setup.html step 2. No defaults, no skip. Feeds COLREGs classifier in v0.9.9.6 (D18).
+
+---
+
 ## [signalk-forward-watch v0.2.3] — 2026-04-21
 
 ### Fixed

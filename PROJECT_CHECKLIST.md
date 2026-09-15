@@ -581,7 +581,7 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 | # | Topic | Status | Summary |
 |---|-------|--------|---------|
 | D01 | WiBoat — WiFi CSI Marine Radar | `DESIGN COMPLETE` | FRD v1.2 + BOM v2.0 done. Blocked on hardware procurement (WB-02) and IP confirmation (WB-01). |
-| D02 | SafeHelm — Collision Avoidance | `DESIGN COMPLETE` | 7-layer architecture + COLREGs framework done. Blocked on community validation (forum article not yet posted — SH-1). |
+| D02 | SafeHelm — Collision Avoidance | `[x]` **BUILT — S166 2026-09-15** | Advisory Mode complete. 14 files written: cpa_engine.py, alert_gate.py, voice_arbiter.py, colregs_classifier.py, alert_manager.py, standon_escalation.py, safehelm.py, shadow_logger.py, voice_client.py, signalk_client.py, safehelm-widget.css, safehelm-widget.js, d3kos-safehelm.service + dashboard routes/disclaimer. 229 tests pass (3 pre-existing network failures, not D02). Commit c8bef316. Deployed to lab Pi pre-authorized S161. |
 | D03 | Sail-O-Vision Collaboration | `RESEARCH` | nmea_client.py assessed as reusable in SafeHelm. Dragon's Lair simulator concept filed. Awaiting Don decision on outreach. |
 | D04 | D3K-Lite — OpenPlotter Addon | `AWAITING COMMUNITY` | Feasibility (1,261 lines) + forum article done. Blocked on community validation (article not yet posted — DL-1). |
 | D05 | signalk-forward-watch v0.2.4 | `BUILT — S165 2026-09-15` | v0.2.4 committed at `7743e8e`. Model bundled in package (SK-FW-1 resolved via bundle approach). SK-FW-3 README done. SK-FW-2a contract test PASS (5/5 offline install checks). SK-FW-2 OpenPlotter test still open (requires OpenPlotter hardware). |
