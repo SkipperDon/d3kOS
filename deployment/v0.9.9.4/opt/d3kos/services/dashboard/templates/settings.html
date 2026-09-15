@@ -264,6 +264,20 @@
           <button class="btn btn-primary" style="padding:6px 14px;min-height:0;" onclick="camScan()">&#128269; Scan</button>
         </div>
 
+        <!-- Camera RTSP URL guidance (BUG-129) -->
+        <div class="camera-help" style="background:#0a1a2e;border-left:4px solid #2c7be5;padding:12px 16px;margin:0 0 14px;border-radius:4px;">
+          <p style="font-size:18px;font-weight:600;margin:0 0 8px 0;">Camera RTSP URL Format</p>
+          <p style="font-size:18px;margin:0 0 6px 0;">Most IP cameras use:</p>
+          <code style="font-size:18px;display:block;background:#0d2244;padding:8px;border-radius:3px;margin-bottom:8px;">rtsp://admin:password@192.168.1.x:554/stream</code>
+          <p style="font-size:18px;margin:0 0 4px 0;"><strong>Common defaults:</strong></p>
+          <ul style="font-size:18px;margin:0 0 8px 0;padding-left:20px;">
+            <li>Hikvision: <code>rtsp://admin:admin@[IP]:554/Streaming/Channels/101</code></li>
+            <li>Dahua: <code>rtsp://admin:admin@[IP]:554/cam/realmonitor?channel=1&amp;subtype=0</code></li>
+            <li>Reolink: <code>rtsp://admin:[pass]@[IP]:554/h264Preview_01_main</code></li>
+          </ul>
+          <p style="font-size:18px;margin:0;color:#aaa;">Find your camera IP in your router connected-devices list. Port 554 is standard.</p>
+        </div>
+
         <!-- Wizard states -->
         <div id="cam-scanning" style="display:none;padding:20px;text-align:center;font-size:20px;color:var(--ink2);">
           &#128269; Scanning for cameras&hellip;

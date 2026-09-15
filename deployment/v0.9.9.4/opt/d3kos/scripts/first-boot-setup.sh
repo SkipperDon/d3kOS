@@ -220,6 +220,15 @@ if [ ! -f "$CONVERSATION_DB" ]; then
     chmod 644 "$CONVERSATION_DB"
 fi
 
+# Cameras configuration (BUG-129 — ensure file exists so Marine Vision doesn't fail)
+CAMERAS_CONFIG="/opt/d3kos/config/cameras-config.json"
+if [ ! -f "$CAMERAS_CONFIG" ]; then
+    log "  Creating cameras configuration file..."
+    echo '{"cameras": []}' > "$CAMERAS_CONFIG"
+    chown d3kos:d3kos "$CAMERAS_CONFIG"
+    chmod 644 "$CAMERAS_CONFIG"
+fi
+
 # ==============================================================================
 # STEP 6: Set permissions
 # ==============================================================================
@@ -234,6 +243,17 @@ chown -R d3kos:d3kos /home/d3kos/ 2>/dev/null || warn "Could not set ownership o
 # mode 600 set in STEP 2 survives. This explicit set guards against future STEP 2 regressions.
 if [ -f "/opt/d3kos/config/license.json" ]; then
     chmod 600 /opt/d3kos/config/license.json
+fi
+
+# ==============================================================================
+# STEP 6b: Regenerate SSH host keys (BUG-123 — stripped by sanitize.sh)
+# ==============================================================================
+
+if ! ls /etc/ssh/ssh_host_*_key > /dev/null 2>&1; then
+    log "STEP 6b: Regenerating SSH host keys..."
+    ssh-keygen -A
+    systemctl restart ssh 2>/dev/null || true
+    log "  SSH host keys regenerated"
 fi
 
 # ==============================================================================

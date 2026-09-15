@@ -158,7 +158,7 @@ for user_home in /root /home/*; do
     fi
 done
 
-# Remove host keys (will be regenerated on first boot)
+# SSH host keys stripped here; first-boot-setup.sh regenerates via ssh-keygen -A (BUG-123 fix)
 log "  Removing SSH host keys..."
 rm -f /etc/ssh/ssh_host_*_key*
 
@@ -376,6 +376,12 @@ fi
 if [ -f "/opt/d3kos/config/.identity-regenerated" ]; then
     log "  Removing .identity-regenerated sentinel..."
     rm -f /opt/d3kos/config/.identity-regenerated
+fi
+
+# Remove vessel.env so wizard fires on first boot (BUG-127 fix)
+if [ -f "/opt/d3kos/config/vessel.env" ]; then
+    log "  Removing vessel.env (wizard gate — BUG-127)..."
+    rm -f /opt/d3kos/config/vessel.env
 fi
 
 # ==============================================================================
