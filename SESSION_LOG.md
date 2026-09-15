@@ -11211,3 +11211,8 @@ Corrective actions taken this session:
 - OIC 38/100 recorded as the permanent score for S165/S166/S167 build work
 
 Standing rule confirmed: **never claim a feature complete without a browser-level test showing the UI element is accessible to the user.**
+
+**Methodology check — S167 final**
+Q3/Q4: FAIL — risk not classified before scp/systemctl/sudo deploy actions. Recurring gap in deploy sessions. Remediation: classify and pre-state before all deploy commands same as code edits.
+Q6: PASS after remediation — 144 D02 tests pass after port change. No regressions.
+Session formally closed.
