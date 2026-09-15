@@ -1,0 +1,20 @@
+[Unit]
+Description=d3kOS N2K Engine Bridge — CX5106 to Signal K (BUG-130)
+Documentation=https://github.com/SkipperDon/d3kOS
+After=network.target signalk.service
+Wants=signalk.service
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/engine-bridge
+ExecStart=/usr/bin/python3 /opt/d3kos/services/engine-bridge/n2k_engine_bridge.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=d3kos-n2k-bridge
+
+[Install]
+WantedBy=multi-user.target

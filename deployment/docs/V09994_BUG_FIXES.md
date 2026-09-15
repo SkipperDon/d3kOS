@@ -9283,6 +9283,54 @@ Revised candidates:
 
 ---
 
+### S163 UPDATE 2026-09-15: ROOT CAUSE CONFIRMED + PATH B DEPLOYED TO LAB PI
+
+**Investigation performed:** CAN ID 0x09F20040 decoded mathematically. Lab Pi SSH confirmed SK source filtering is NOT the cause. Qwen2.5-coder:7b built the bridge service; bugs corrected before deployment.
+
+**Corrected PGN analysis (S162 entry had wrong PGN number):**
+
+CAN ID `0x09F20040` decodes as:
+- Priority=2, Reserved=0, **DataPage=1**, PF=0xF2, GE=0x00, SA=64
+- PGN = (DP=1 << 17) | (0xF2 << 8) | 0x00 = **193024** (0x2F200)
+
+Standard PGN 127488 (Engine Parameters, Rapid Update) uses DP=0:
+- Same PF/GE but DP=0 → CAN ID 0x08F20040 → PGN 127488
+
+**The CX5106 transmits with DP=1, producing PGN 193024 — which is NOT in canboat-js's standard pgns.json (which only contains DP=0 PGNs).**
+
+canboat-js silently discards PGN 193024 frames → no SK path created → 404.
+
+**Payload layout confirmed (PGN 127488 / 193024 field format — 8 bytes):**
+- Byte 0: Engine Instance (0=port, 1=starboard, 0xFF=N/A)
+- Bytes 1–2 LE uint16: Speed raw (× 0.25 = RPM; 0xFFFF=N/A) — `0x0000` = 0 RPM (engine off at observation)
+- Bytes 3–4 LE uint16: Boost Pressure (hPa; 0xFFFF=N/A) — `0x0596` = 1430 hPa (atmospheric, engine off)
+- Byte 5: Tilt/Trim (%; 0xFF=N/A)
+- Bytes 6–7: Spare (0xFF)
+
+**SK filtering ruled out:** No source priority or input whitelist in `~/.signalk/defaults.json`. Active SK sources on lab Pi: defaults, freeboard-sk, gps (no can0 source — expected, no hardware). The issue is purely at the decode layer.
+
+**Path B — Python bridge service — DEPLOYED to lab Pi S163:**
+
+File: `/opt/d3kos/services/engine-bridge/n2k_engine_bridge.py`
+Service: `/etc/systemd/system/d3kos-n2k-engine-bridge.service` (enabled, inactive — no can0 hardware on lab Pi)
+Deployment tree: `Helm-OS/deployment/v0.9.9.4/opt/d3kos/services/engine-bridge/`
+
+The bridge:
+1. Opens SocketCAN `can0` directly (no canboat-js dependency)
+2. Filters for PF=0xF2, GE=0x00 (catches both DP=0 PGN 127488 AND DP=1 PGN 193024 from CX5106)
+3. Decodes payload using the field layout above
+4. Injects `propulsion.port.revolutions` and `propulsion.0.revolutions` (both forms) into Signal K via WebSocket delta
+5. Handles reconnection, can0 unavailability, missing websocket-client gracefully
+
+**What still needs verification at the boat (with engine running):**
+1. Start the service: `sudo systemctl start d3kos-n2k-engine-bridge`
+2. Watch logs: `journalctl -u d3kos-n2k-bridge -f`
+3. Confirm RPM appears in SK: `curl -s http://localhost:8099/signalk/v1/api/vessels/self/propulsion/port/revolutions`
+4. If RPM appears → dashboard engine gauges should populate
+5. Oil pressure / coolant temp (PGN 127489 / 193025) not yet handled — requires boat-side investigation of CX5106 fast-packet output
+
+---
+
 ## BUG-131 — Cameras working, Marine Vision (fish detector) not — device-token.json missing, Tier fell to 0
 
 **Status:** `[x] FIXED S162-cont 2026-09-14 — all 3 tier-gate layers resolved. Uncovers BUG-132/BUG-133 underneath — see those entries; camera/vision apps still not fully working end-to-end.`
