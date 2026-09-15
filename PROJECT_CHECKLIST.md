@@ -606,6 +606,16 @@ Stand at normal helm position (~1 metre from the 10.1" screen):
 
 ---
 
+## UI WIRING — OPEN ITEMS (recorded S167 2026-09-15)
+
+| # | Item | Status | Description |
+|---|------|--------|-------------|
+| UI-1 | D16 3D Surround View — dashboard entry point | `OPEN` | `toggleAvNav3D()` is defined in `panel-toggle.js` and the `/3d-view` route exists, but no button or menu item in `index.html` calls it. Page is only reachable by typing URL. **Next session: add 3D toggle button to index.html.** |
+| UI-2 | D02 SafeHelm — dashboard widget | `OPEN` | Backend service running on :8096, SSE stream live. But SafeHelm alert widget (SSE listener, alert panel, ACK/dismiss buttons) was never added to `index.html`. No visible dashboard presence. **Next session: wire SafeHelm widget into index.html.** |
+| UI-3 | Marine Vision — UI/UX review | `OPEN — OPERATOR CONCERN S167` | Operator noted Marine Vision layout does not look like part of d3kOS (wiring diagram style does not match d3kOS design language). Full UI review needed — look at the dashboard layout holistically before building further. **Do not build new UI panels without this review.** |
+
+---
+
 *Completed work archived in: `PROJECT_CHECKLIST_ARCHIVE.md`*
 *Do not delete entries — update status or move to archive only.*
 
