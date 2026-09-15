@@ -151,6 +151,30 @@ function closeCrit() {
   if (typeof window._oilCritAcknowledged !== 'undefined') window._oilCritAcknowledged = true;
 }
 
+/* ── ENGINE STATE CHIP (BUG-128) ── */
+function _updateEngineStateChip() {
+  const chip = document.getElementById('engStateChip');
+  if (!chip) return;
+  const s = window._d3kEngineState || 'UNKNOWN';
+  chip.textContent = s === 'OFF' ? 'ENG: OFF' : (s === 'RUNNING' ? 'ENG: ON' : '');
+  chip.style.display = (s === 'OFF' || s === 'RUNNING') ? 'inline-block' : 'none';
+  chip.className = 'eng-state-chip' + (s === 'OFF' ? ' eng-state-off' : ' eng-state-on');
+}
+
+/* BUG-128: operator marks engine as OFF from the critical alert screen.
+   Suppresses oil/fuel alerts until engine restarts (auto-detected via RPM). */
+function markEngineOff() {
+  window._d3kEngineState = 'OFF';
+  localStorage.setItem('d3kEngineState', 'OFF');
+  fetch('/engine/state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state: 'OFF' })
+  }).catch(() => {});
+  closeCrit();
+  _updateEngineStateChip();
+}
+
 /* ── POSITION REPORT ── */
 function showPosRpt() {
   document.getElementById('posRpt').classList.add('show');

@@ -133,6 +133,26 @@ let _skFirstConnectAt = null;  // BUG-45: timestamp of WebSocket onopen, gates 3
 window._oilCritAcknowledged = false;  // BUG-42: set true by closeCrit(), prevents re-fire
 let _unitPrefs = { temp: 'F', depth: 'ft' };  // BUG-43: default imperial — loaded from localStorage in _init()
 
+// BUG-128: engine running state — 'UNKNOWN' | 'RUNNING' | 'OFF'
+// Loaded from backend on init; updated by RPM auto-detection and operator button.
+window._d3kEngineState = 'UNKNOWN';
+let _engOffTicks = 0;
+const _ENG_RUNNING_HZ = 3.0;  // 180 RPM — engine considered running
+const _ENG_OFF_TICKS  = 5;    // 5 consecutive zero-RPM updates (~5s) to confirm off
+
+function _setEngineRunning(state) {
+  if (window._d3kEngineState === state) return;
+  window._d3kEngineState = state;
+  localStorage.setItem('d3kEngineState', state);
+  fetch('/engine/state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state })
+  }).catch(() => {});
+  if (typeof _updateEngineStateChip === 'function') _updateEngineStateChip();
+  if (state === 'RUNNING') window._oilCritAcknowledged = false;  // re-arm crit on engine start
+}
+
 function _renderDepth(v, source) {
   // belowKeel always wins; never let a transducer value overwrite it
   if (source === 'transducer' && _depthSource === 'keel') return;
@@ -217,9 +237,12 @@ const SK_HANDLERS = {
     const psi = Math.round(v * 0.000145038);
     window._d3kEngData.oil_psi = psi;
     _setVal('cellOil', psi.toString());
-    const state = _evalBelow(psi, THR.oil);
+    const rawState = _evalBelow(psi, THR.oil);
+    // BUG-128: suppress oil alerts when engine is confirmed OFF (0 PSI = normal when off)
+    const state = window._d3kEngineState === 'OFF' && (rawState === 'crit' || rawState === 'alrt')
+      ? '' : rawState;
     _setCellState('cellOil', state);
-    _setUnit('cellOil', state ? 'PSI · ' + state : 'PSI · normal');
+    _setUnit('cellOil', state ? 'PSI · ' + state : (window._d3kEngineState === 'OFF' ? 'PSI · engine off' : 'PSI · normal'));
     if (state === 'crit') {
       _setAlertTicker('⛔ CRITICAL — OIL PRESSURE ' + psi + ' PSI — TAKE ACTION NOW');
       // BUG-45: only fire after 30s boot debounce (startup spike from Pangoo)
@@ -230,10 +253,10 @@ const SK_HANDLERS = {
       }
     } else if (state) {
       _setAlertTicker('⚠ ' + state.toUpperCase() + ' — OIL PRESSURE ' + psi + ' PSI');
-      window._oilCritAcknowledged = false;  // reset latch when pressure recovers to advisory
+      window._oilCritAcknowledged = false;
     } else {
       _clearAlertTicker('OIL PRESSURE');
-      window._oilCritAcknowledged = false;  // reset latch when pressure returns to normal
+      window._oilCritAcknowledged = false;
     }
   },
 
@@ -241,6 +264,13 @@ const SK_HANDLERS = {
     window._d3kEngData.rpm = Math.round(v * 60);
     _setVal('cellRpm', Math.round(v * 60).toString());
     _setUnit('cellRpm', 'rev / min');
+    // BUG-128: auto-detect engine state from RPM
+    if (v > _ENG_RUNNING_HZ) {
+      _engOffTicks = 0;
+      _setEngineRunning('RUNNING');
+    } else {
+      if (++_engOffTicks >= _ENG_OFF_TICKS) _setEngineRunning('OFF');
+    }
   },
 
   'propulsion.0.trimTabPosition': (v) => {
@@ -253,7 +283,10 @@ const SK_HANDLERS = {
     const pct = Math.round(v * 100);
     window._d3kEngData.fuel_pct = v;
     const litres = Math.round(v * FUEL_CAP_L);
-    const state = _evalBelow(v, THR.fuel);
+    const rawState = _evalBelow(v, THR.fuel);
+    // BUG-128: suppress fuel crit/alrt when engine off (tank sensor may read 0 when unpowered)
+    const state = window._d3kEngineState === 'OFF' && (rawState === 'crit' || rawState === 'alrt')
+      ? '' : rawState;
     _setVal('cellFuel', pct + '%');
     _setCellState('cellFuel', state);
     if (state) {
@@ -607,6 +640,14 @@ function _init() {
     if (saved.temp  === 'C' || saved.temp  === 'F')  _unitPrefs.temp  = saved.temp;
     if (saved.depth === 'm' || saved.depth === 'ft') _unitPrefs.depth = saved.depth;
   } catch (_) {}
+  // BUG-128: load persisted engine state — backend is authoritative, localStorage is fallback
+  const localState = localStorage.getItem('d3kEngineState');
+  if (localState) window._d3kEngineState = localState;
+  fetch('/engine/state').then(r => r.json()).then(d => {
+    window._d3kEngineState = d.state || 'UNKNOWN';
+    localStorage.setItem('d3kEngineState', window._d3kEngineState);
+    if (typeof _updateEngineStateChip === 'function') _updateEngineStateChip();
+  }).catch(() => {});
   showRow('both');
   _markAllDash();       // clear demo values — SK will fill in once connected
   _connectSK();

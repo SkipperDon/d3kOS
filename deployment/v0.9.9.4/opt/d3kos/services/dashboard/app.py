@@ -936,6 +936,30 @@ def anchor_advice_proxy():
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
 
+_ENGINE_STATE_FILE = Path('/opt/d3kos/config/engine-state.json')
+
+@app.route('/engine/state')
+def engine_state_get():
+    """BUG-128: return persisted engine running state (RUNNING | OFF | UNKNOWN)."""
+    try:
+        data = json.loads(_ENGINE_STATE_FILE.read_text())
+        return jsonify({'state': data.get('state', 'UNKNOWN')})
+    except Exception:
+        return jsonify({'state': 'UNKNOWN'})
+
+@app.route('/engine/state', methods=['POST'])
+def engine_state_set():
+    """BUG-128: persist engine state set by operator or auto-detected via RPM."""
+    data = request.get_json(silent=True) or {}
+    state = data.get('state', 'UNKNOWN')
+    if state not in ('RUNNING', 'OFF', 'UNKNOWN'):
+        return jsonify({'ok': False, 'error': 'invalid state'}), 400
+    try:
+        _ENGINE_STATE_FILE.write_text(json.dumps({'state': state}))
+        return jsonify({'ok': True, 'state': state})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
 @app.route('/helm/mute', methods=['POST'])
 def helm_mute_proxy():
     """Proxy HELM mute toggle to ai_bridge (same origin via Flask:3000 avoids CORS)."""

@@ -103,7 +103,7 @@
       <div class="row-pill">
         <button class="row-pill-btn on" id="rpBoth"   onclick="showRow('both')">&#9881; + &#129517; BOTH</button>
         <button class="row-pill-btn"    id="rpEngine" onclick="showRow('engine')">
-          &#9881; ENGINE<span class="rp-alert" id="engineAlert"></span>
+          &#9881; ENGINE<span class="rp-alert" id="engineAlert"></span><span id="engStateChip" style="display:none" class="eng-state-chip"></span>
         </button>
         <button class="row-pill-btn"    id="rpNav"    onclick="showRow('nav')">
           &#129517; NAV<span class="rp-alert" id="navAlert"></span>
@@ -416,6 +416,7 @@
       Possible oil pump failure or catastrophic oil loss
     </div>
     <button class="crit-ack" onclick="closeCrit()">ACKNOWLEDGE &mdash; TAKING ACTION NOW</button>
+    <button class="crit-off" onclick="markEngineOff()">ENGINE IS OFF &mdash; STOP ALERTING</button>
   </div>
 </div>
 
