@@ -10996,3 +10996,59 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0 (vcan0 test verified in-session; CX5106 hardware test pending boat visit)
 ─────────────────────────────────────────────────────
+
+## Session 2026-09-15 (S165)
+**Goal:** Complete D16 3D Surround View Phase 1, complete D05 signalk-forward-watch v0.2.4, complete D17 guard tests + deployment, assess qwen2.5-coder:7b, deploy D17 and D05 to Pi.
+
+**Completed:**
+- **D17 Hardware Capability Detection — COMPLETE + DEPLOYED TO LAB PI.** All 5 HCD tasks built (HCD-1 probe, HCD-2 udev, HCD-3 feature gate, HCD-4 hardware.html + Flask routes, HCD-5 setup.html wizard step 9). 27 guard tests written and GREEN. `hardware.html` corrected from qwen output: Font Awesome → Unicode, `data.success` → `d.ok`. Reprobe endpoint missing `sudo` found during health check; fixed in `app.py` and sudoers rule added on Pi (`6d783efe`). Initial probe ran on Pi (probe_version=2). Commits: `b9de0f45` (11 files), `6d783efe` (sudo fix).
+- **D05 signalk-forward-watch v0.2.4 — COMPLETE.** Version bumped 0.2.3→0.2.4. Model bundled in npm package (files array). `index.js` guard: fails fast if model missing (never downloads). README Step 2 (wget) removed, Step 3 renumbered, SK-FW-3 platform wording added. SK-FW-2a contract test: 5/5 PASS including offline install (default route dropped). Commit: `7743e8e`.
+- **D16 3D Surround View Phase 1 — COMPLETE + DEPLOYED TO LAB PI.** 6 files: `go2rtc-d16.yaml`, `d3kos-go2rtc.service`, `configure-go2rtc.sh`, `app.py` (routes), `3d-view.html`, `panel-toggle.js` (with `toggleAvNav3D()` verbatim from spec §7.3). Guard tests U1/U2/U2b/U2c/U3 PASS. P1 thermal 10-min measurement: load 0.73–1.79, temp 31.6–33.1°C — within budget. Deployed to Pi: `/3d-view` 200, `/api/go2rtc` 503 (correct — no camera), `d3kos-go2rtc.service` enabled+inactive (correct for lab). Commit: `a1c13807`.
+- qwen2.5-coder:7b assessed: effective for narrow boilerplate with supervision; not suitable for d3kOS-specific code. Decision: use for scaffold only; direct edits for anything touching project architecture. Haiku available as fallback when qwen is problematic.
+- P1 background measurement completed (10/10 min captured after context compaction).
+
+**Decisions:**
+- qwen: T3 role confirmed for narrow boilerplate, not d3kOS-specific code. Haiku as fallback.
+- D16 go2rtc service stays enabled but inactive on lab Pi until boat visit (no forward_watch slot in slots.json).
+- Range rings are "Estimated — uncalibrated" label mandatory; boat visit will calibrate with actual camera height.
+
+**Ollama:** qwen2.5-coder:7b — 1 task (hardware.html scaffold, defects corrected before writing). Direct edits for all other files.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | Check console.anthropic.com → Usage → 2026-09-15 | TBD |
+| Ollama (qwen2.5-coder:7b) | 1 call (hardware.html) | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D02 SafeHelm — largest item, 160 guard tests (most still RED by design), implementation pending
+- D23 OTA agent — approved S163, spec at `MOBILE_APP_STRATEGY_BRIEF.md`; implementation not started
+- SK-FW-2 — OpenPlotter test (requires hardware)
+- D16 boat validation: configure slots.json bow slot, measure camera height, activate go2rtc
+- BUG-130 boat validation: engine running test for N2K bridge
+- Run Playwright `./tests/run-all.sh --workers=1` after full deployment
+- GitHub Issue Sync: pending operator approval
+
+---
+
+SQS — S165 2026-09-15
+─────────────────────────────────────────────────────
+tasks_planned          : 4 (D17 deploy, D05, D16 build+deploy, checklist+log)
+tasks_completed        : 4
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 93/100 (−7: ring calibration deferred to boat visit; D02/D23 not started)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-15
+─────────────────────────────────────────────────────
+session_duration_min   : ~180 (continuation session)
+tasks_planned          : 4
+tasks_completed        : 4
+governing_doc_version  : 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0 (Pi routes verified curl in-session; UI requires browser on Pi)
+─────────────────────────────────────────────────────
