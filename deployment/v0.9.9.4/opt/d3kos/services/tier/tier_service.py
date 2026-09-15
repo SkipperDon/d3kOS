@@ -193,9 +193,14 @@ def device_is_paired_and_approved() -> bool:
     try:
         from device_sign import sign_device_request
         import requests as req_lib
-        path = '/wp-json/amboat-device/v1/status'
-        headers = sign_device_request(path)
-        resp = req_lib.get(f'{base_url}{path}', headers=headers, timeout=10)
+        # Signed message must use the route as WordPress's REST API sees it
+        # (no /wp-json prefix — that's the REST mount point, not part of the route).
+        # auto_enrol.py signs '/amboat-device/v1/enrol' the same way; that call verifies.
+        route = '/amboat-device/v1/status'
+        request_path = f'/wp-json{route}'
+        headers = sign_device_request(route)
+        headers['User-Agent'] = 'd3kOS/0.9.9.4 (tier-check)'
+        resp = req_lib.get(f'{base_url}{request_path}', headers=headers, timeout=10)
         resp.raise_for_status()
         status = resp.json().get('status', 'unknown')
         approved = (status == 'approved')

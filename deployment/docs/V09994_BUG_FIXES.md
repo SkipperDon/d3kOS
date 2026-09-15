@@ -1,5 +1,5 @@
 # v0.9.9.4 Bug Fixes — Investigation & Status
-**Version:** 1.14.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-07-28 S109 | **Status:** IN PROGRESS
+**Version:** 1.15.0 | **Created:** 2026-04-21 S65 | **Updated:** 2026-09-14 S162-cont | **Status:** IN PROGRESS
 
 > **S107 ON-BOAT PHASE A EVIDENCE (2026-07-27) — READ FIRST.** Live SSH investigation on the boat
 > Pi (`172.20.10.8`) with the engine running and the Garmin connected to the NMEA 2000 bus.
@@ -8710,11 +8710,11 @@ HCD-4's toast mechanism once that exists, not a continuation of BUG-125.
 
 ---
 
-## BUG-126 — Signal K GPS and AIS providers not configured on boat Pi v0.9.9.4.2
+## BUG-126 — Signal K GPS and AIS providers not configured (both Pis)
 
-**Status:** `[x]` FIXED S162 2026-09-14  
+**Status:** `[x]` FIXED — Boat Pi: S162 2026-09-14 | Lab Pi: S163 2026-09-15  
 **Severity:** HIGH (blocks all sensor data to helm)  
-**Platforms affected:** d3kOS v0.9.9.4.2 on boat Pi  
+**Platforms affected:** d3kOS v0.9.9.4.2 on boat Pi (172.20.10.8) and lab Pi (192.168.1.237)  
 
 ### Symptoms
 
@@ -8797,17 +8797,35 @@ Signal K cannot ingest data from services it does not know exist.
 - Signal K now listening to the feed
 - Awaiting AIS targets in range to confirm data flow
 
-### Lab Pi Status (TBD)
+### Fix Applied — Lab Pi (S163 2026-09-15)
 
-The fix was deployed to the **boat Pi only** (S162 2026-09-14). Lab Pi v0.9.9.4.2 status is unconfirmed — it may have the same empty `pipedProviders` issue or the canonical settings.json may have already been deployed to it during image build. Verify lab Pi by running:
+Lab Pi confirmed to have the same empty `pipedProviders: []` issue on S163 2026-09-15. Dashboard was showing `gps: false` (critical indicator) despite gpsd running with u-blox connected at `/dev/ttyACM0` (14 satellites in view, mode 1 — no fix yet as expected indoors).
 
-```bash
-ssh -i ~/.ssh/id_d3kos d3kos@192.168.1.237 'cat ~/.signalk/settings.json | python3 -m json.tool | grep -A5 pipedProviders'
-```
+1. **Confirmed empty providers on lab Pi:**
+   ```bash
+   cat ~/.signalk/settings.json
+   # → "pipedProviders": []
+   ```
 
-If empty on lab Pi, apply same fix: `scp` the canonical settings.json and restart Signal K.
+2. **Deployed canonical settings.json** (same template, all 3 providers):
+   ```bash
+   scp -i ~/.ssh/id_d3kos deployment/v0.9.9.4/home/d3kos/.signalk/settings.json \
+     d3kos@192.168.1.237:~/.signalk/settings.json
+   ```
 
-**Lesson:** Image deployment to new hardware must include a full integration test on that hardware, not just on the build machine.
+3. **Restarted Signal K on lab Pi:**
+   ```bash
+   sudo systemctl restart signalk
+   ```
+
+4. **Verified — dashboard status after restart:**
+   ```json
+   { "gps": true, "ais": "no_targets", "signalk": true, ... }
+   ```
+   Signal K serving `/signalk/v1/api/vessels/self/navigation/position` HTTP 200.
+   Note: `can0` provider will fail to connect on lab Pi (no N2K hardware) — Signal K handles this gracefully; GPS and AIS providers are unaffected.
+
+**Lesson:** Image deployment to new hardware must include verification that `~/.signalk/settings.json` contains the three providers. The empty-providers state is the default Signal K initial config and will appear on any Pi that didn't receive the deployment template.
 
 ### Next Steps
 
@@ -9262,4 +9280,146 @@ Revised candidates:
 - It's being transmitted under a different PGN than expected, OR
 - Signal K's canboat-js has no parser for that specific PGN, OR
 - The propulsion path mapping is not configured in Signal K
+
+---
+
+## BUG-131 — Cameras working, Marine Vision (fish detector) not — device-token.json missing, Tier fell to 0
+
+**Status:** `[x] FIXED S162-cont 2026-09-14 — all 3 tier-gate layers resolved. Uncovers BUG-132/BUG-133 underneath — see those entries; camera/vision apps still not fully working end-to-end.`
+**Severity:** MEDIUM (feature loss, no safety impact — camera hardware itself unaffected)
+**Platforms affected:** d3kOS v0.9.9.4.2 boat Pi (`172.20.10.8`) ONLY — **NOT the lab Pi (`192.168.1.237`), which never had this file deleted.** Do not port this fix as a code change; it is a boat-Pi-only data restoration.
+
+### Symptom
+
+Operator reported: all 4 cameras confirmed streaming, but Marine Vision (AI fish/object detection overlay) shows nothing. Re-running the setup wizard's camera step did not resolve it. Previously worked.
+
+### Root Cause (confirmed via live SSH read — not inferred)
+
+1. `d3kos-fish-detector.service` and `d3kos-camera-stream.service` both gate on `ExecCondition` that polls `GET http://localhost:8093/tier/feature/camera` (see BUG-102 comment in the unit file) — a non-`true` response silently skips the unit every restart cycle (no failure state, no journal error beyond "Skipped due to 'exec-condition'").
+2. `tier_service.py::device_is_paired_and_approved()` returns `False` immediately, before any network call, when `/opt/d3kos/config/device-token.json` does not exist — logged every ~3–5 min as `tier1-check: device-token.json absent — Tier 0 (device not enrolled)`.
+3. `/opt/d3kos/config/device-token.json` **was missing** from the boat Pi. `detect_tier()` explicitly does **not** trust `license.json` (BUG-77/T8 trust-anchor hardening — "forged too easily"), so the cached `"tier": 2` in `license.json` had no effect. Tier 2 also requires an OpenCPN path to exist, and Tier 3 requires `subscription.key` — neither present on this boat Pi — so the chain fell all the way to Tier 0, where `FEATURE_MATRIX[0]['camera'] = False`.
+4. The device *was* previously enrolled: `/opt/d3kos/config/enrol-state.json` (untouched, `{"status": "pending", "enrolled_at": ...}`) and the Ed25519 `device-signing.key`/`.pub` pair (untouched, dated 2026-09-05 13:53) both correspond to device_token `d8ab359f-2b16-486e-8701-b0e41445461a`, per `/var/log/d3kos-identity-regen.log`:
+   ```
+   2026-09-05T13:53:27-04:00 Regenerating device-token.json
+   2026-09-05T13:53:27-04:00   New device_token: d8ab359f-2b16-486e-8701-b0e41445461a
+   2026-09-05T13:53:27-04:00   New created_at: 2026-09-05T17:53:27.248445Z
+   ```
+5. The one-shot identity-regeneration script (`identity/regenerate-identity.sh`, BUG-39) is sentinel-gated (`.identity-regenerated`, present since 2026-09-05) and will **not** run again automatically — so whatever deleted `device-token.json` after 2026-09-06 (log's last entry: "identity already regenerated, nothing to do") did so outside that script, with no backup written (the script only creates a `.pre-regen` backup when it itself overwrites an existing file). Most likely trigger: the wizard's camera reconfiguration step run today, though the exact deleting code path was not isolated — noted as a residual gap below.
+
+### Fix Applied — Layer 1 (file loss)
+
+Restored two of the three missing config files on the boat Pi, both confirmed via `sanitize.sh`'s own `D3K_SECRETS` grouping (STEP 7b) as files that are meant to be regenerated together, and cross-verified against still-intact identity artifacts (`enrol-state.json`, `device-signing.key`/`.pub`, both dated 2026-09-05, unchanged):
+
+- `/opt/d3kos/config/device-token.json` (owner `d3kos:d3kos`, mode `644`) — restored to its exact original value, recovered from `/var/log/d3kos-identity-regen.log`:
+  ```json
+  {"device_token": "d8ab359f-2b16-486e-8701-b0e41445461a", "created_at": "2026-09-05T17:53:27.248445Z"}
+  ```
+- `/opt/d3kos/config/cloud-config.json` — recreated with **only** the one non-secret field `tier_service.py` actually reads (`amboat_base_url`), confirmed against the placeholder template `deployment/v0.9.4/pi_source/cloud-config.json` and the code's own `.get('amboat_base_url', 'https://atmyboat.com')` default:
+  ```json
+  {"amboat_base_url": "https://atmyboat.com"}
+  ```
+
+**Deliberately NOT restored — do not fabricate:** `amboat_api_key` (fleet-wide secret, needed by `cloud_agent.py`/`fix_my_pi.py`, NOT by the tier/camera check) and `/opt/d3kos/config/api-keys.json` (also missing, also a secrets file). No real value for either is available in the repo or in any backup found on the boat Pi. **`d3kos-cloud-agent.service` and Fix My Pi remain degraded on the boat Pi until Don restores these from his own records.**
+
+This layer is a **data restoration, not a code fix** — `detect_tier()` re-evaluates on every request (no restart required).
+
+### Fix Applied — Layer 2 (nginx UA block, confirmed + fixed)
+
+Even with both files restored, `/tier/feature/camera` still returned `false`. Live log showed the approval check reaching `https://atmyboat.com/wp-json/amboat-device/v1/status` and getting an **nginx-level `400 Bad Request`** (nginx HTML error page, not a WordPress JSON response — request never reached the application). Manually replaying the exact signed request with `requests`' default User-Agent reproduced the 400; adding a custom `User-Agent` (matching the pattern already used in `auto_enrol.py` for the same server) changed the response to a WordPress-level `401`, confirming nginx was blocking on User-Agent alone.
+
+**Code fix applied:** `tier_service.py::device_is_paired_and_approved()` — added `headers['User-Agent'] = 'd3kOS/0.9.9.4 (tier-check)'` before the live status call (line ~198), matching `auto_enrol.py`'s existing pattern for the same endpoint family. Deployed to boat Pi with a timestamped `.bak` left alongside the original; `d3kos-tier.service` restarted, syntax-checked (`ast.parse`) before restart, confirmed `active`.
+
+### Layer 3 — FIXED — client-side path-signing bug, not a server-side pairing issue
+
+With both the file restoration and the UA fix in place, the live call still reached WordPress and returned:
+```json
+{"code":"signature_failed","message":"Ed25519 signature verification failed","data":{"status":401}}
+```
+Initially suspected as a server-side pairing/public-key mismatch — ruled out locally: Pi clock correct (no skew); `device-signing.key`/`.pub` unchanged since 2026-09-05 (same pair used for the original `/enrol` POST that produced the still-present `enrol-state.json` "pending" record). **Operator asked to re-run the wizard's pairing step; root cause was investigated first instead of burning an enrolment cycle on a hypothesis.**
+
+**Real root cause**, found by comparing `device_sign.py`'s two callers: `auto_enrol.py` signs the message with route `/amboat-device/v1/enrol` (no `/wp-json` prefix), and that call verifies successfully server-side. `tier_service.py`'s `/status` check signed `/wp-json/amboat-device/v1/status` (**with** the prefix) while requesting that same full URL — but WordPress's REST API strips `/wp-json` internally before the route reaches signature verification, so the server was checking the signature against `/amboat-device/v1/status` while the Pi had signed a different string entirely. Same key, same device, wrong signed message → guaranteed failure, on every device, unrelated to pairing state.
+
+**Fix:** split the signed route from the requested URL path in `tier_service.py::device_is_paired_and_approved()` — sign `/amboat-device/v1/status` (matching `auto_enrol.py`'s working pattern), still request the full `https://{base_url}/wp-json/amboat-device/v1/status` URL. Deployed to boat Pi, `d3kos-tier.service` restarted. **Confirmed: `/tier/feature/camera` → `{"enabled":true}`; `/tier/status` → `"tier":1`, `camera:true` plus several other Tier-1 features now correctly enabled.** No re-pairing needed — the existing device_token and Ed25519 identity were valid the whole time.
+
+**Correction (confirmed S162-cont, on-boat):** the tier gate blocks `d3kos-camera-stream.service` itself — `camera_stream_manager.py`, the Marine Vision app that serves the camera UI on **port 8084** (not just an AI-only overlay). `d3kos-fish-detector.service` (AI detection) is a separate, additionally-gated service on top. With the tier bug fixed, both services' `ExecCondition` now passes — but see **BUG-132**/**BUG-133** below for the two new, previously-hidden application bugs this uncovered.
+
+### Affected Files
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `device-token.json` | `/opt/d3kos/config/device-token.json` | user-data | Recreated with original token value (was missing) |
+| `cloud-config.json` | `/opt/d3kos/config/cloud-config.json` | user-data | Recreated, minimal (non-secret field only; was missing) |
+| `tier_service.py` | `/opt/d3kos/services/tier/tier_service.py` | base | Added `User-Agent` header (L2) + fixed signed-route/request-path split (L3) |
+
+Repo file changed: `deployment/v0.9.9.4/opt/d3kos/services/tier/tier_service.py` — both L2 and L3 fixes are real code fixes, applicable to all platforms; should be applied to the lab Pi and any future image build, unlike the L1 file-restoration layer (boat-Pi-instance-specific data, not portable).
+
+### Verification
+`curl http://localhost:8093/tier/feature/camera` on the boat Pi progressed through every layer with a live re-check before moving on: `device-token.json absent` (L1) → `cloud-config.json unreadable` (L1, second file) → nginx `400` (L2) → WordPress `401 signature_failed` (L3) → **`{"enabled":true}`, tier 1** (all layers fixed). No layer was assumed fixed without confirming the next one live.
+
+### Known Gaps
+1. The exact process/script that deleted `device-token.json` + `cloud-config.json` + `api-keys.json` together (2026-09-06 to 2026-09-14) was not identified — narrowed to "not `sanitize.sh`" (that would also have wiped `device-signing.key`/`subscription.key`, which survived). Suspect the wizard's camera-reconfiguration or a re-pair action; the specific code path was not isolated.
+2. The L2 User-Agent gap and the L3 path-signing bug may affect other live-server calls beyond `tier_service.py` — not audited this session, scope was limited to the camera/tier path. Worth a full audit of every `device_sign.py` caller.
+3. `amboat_api_key`/`api-keys.json` restoration is still outstanding — **operator action required**, not something Claude can complete without the real key values.
+4. Fixing the tier gate uncovered two new application-level bugs blocking the actual camera/vision services — see **BUG-132** and **BUG-133** immediately below. Marine Vision is still not fully functional end-to-end as of this entry.
+
+---
+
+## BUG-132 — camera_stream_manager.py: port-camera RTSP connection refused crashes the whole service, port 8084 never binds
+
+**Status:** `[ ]` OPEN S162-cont 2026-09-14 — logged only, NOT fixed
+**Severity:** HIGH (Marine Vision app fully unavailable even with BUG-131's tier gate now fixed)
+**Platforms affected:** d3kOS v0.9.9.4.2 boat Pi (172.20.10.8). Not yet checked on lab Pi.
+
+### Symptom
+With BUG-131's tier gate fixed and `d3kos-camera-stream.service` finally allowed to start, `systemctl status` shows the service "active (running)" but port 8084 never actually binds (`ss -tlnp` shows nothing; `curl localhost:8084/` → connection refused / HTTP 000).
+
+### Root Cause (confirmed via live journal read)
+Startup log for `camera_stream_manager.py`:
+```
+✓ Frame grabber: hw_ec_71_db_f9_7c_7c (10.42.0.100)   [bow — OK]
+✓ Frame grabber: hw_ec_71_db_99_78_04 (10.42.0.63)    [helm — OK]
+[tcp @ ...] Connection to tcp://10.42.0.133:554?timeout=0 failed: Connection refused
+[ WARN] OpenCV(4.10.0) cap_images.cpp:244: error: (-5:Bad argument) CAP_IMAGES:
+  error, expected '0?[1-9][du]' pattern, got:
+  rtsp://admin:d3kos2026%24@10.42.0.133:554/h264Preview_01_sub in function 'icvExtractPattern'
+✓ Frame grabber: hw_ec_71_db_43_ef_c1 (10.42.0.133)   [port — logged OK despite the error above]
+[tcp @ ...] Connection to tcp://10.42.0.133:554?timeout=0 failed: Connection refused
+[ WARN] OpenCV(4.10.0) cap_images.cpp:244: error: ... same error, second attempt
+```
+The **port camera** (MAC `ec:71:db:43:ef:c1`, `10.42.0.133`, per the DHCP reservation table in `memory/pi-system.md`) refuses the RTSP TCP connection outright. When OpenCV's `VideoCapture` fails to open an RTSP stream, it appears to fall back to its "image sequence" backend (`CAP_IMAGES`), which then throws a `Bad Argument` exception trying to parse the RTSP URL as a numbered-image-sequence filename pattern — this is OpenCV's own fallback misbehaving on a connection failure, not a d3kOS bug in the exception-handling logic *per se*, but the *d3kOS* code does not appear to catch this exception per-camera and continue — it needs to be confirmed whether this exception is fatal to the whole process (preventing Flask's `app.run()` from ever being reached) or whether the process survives but some other issue blocks the bind. Log shows the "starboard" camera (4th, MAC `ec:71:db:be:0b:7b`) is never even reached/logged, consistent with a fatal crash partway through camera initialization.
+
+**Contradicts the operator's earlier observation ("all four cameras are working")** — either the port camera has since gone offline/lost power on the boat, or "working" was assessed via a different path (e.g. an NVR or direct viewer) that doesn't reflect `camera_stream_manager.py`'s own connection attempt.
+
+### Candidates (not yet confirmed — needs code read + on-boat camera check)
+1. Port camera physically offline / network issue right now (check power, check `ping 10.42.0.133`, check DHCP lease) — an environmental issue, not a code bug
+2. `camera_stream_manager.py` doesn't wrap each camera's `VideoCapture` open attempt in its own try/except — one bad camera takes down the whole service instead of degrading gracefully (loading 3 of 4)
+3. Whether the process actually crashes (exits) vs. hangs before reaching `app.run(port=8084)` — not yet distinguished
+
+### Fix Status
+Not attempted. Needs: (1) confirm whether port camera is actually reachable right now (on-boat network check), (2) read `camera_stream_manager.py`'s camera-init loop to see if it's missing per-camera exception isolation, (3) decide fix based on findings — likely wrap each camera's init in try/except so one dead camera doesn't block the other three + Flask startup.
+
+---
+
+## BUG-133 — fish_detector.py: `ALTER TABLE captures ADD COLUMN` fails with "no such table: captures", crash-loops on every start
+
+**Status:** `[ ]` OPEN S162-cont 2026-09-14 — logged only, NOT fixed
+**Severity:** HIGH (AI fish detection fully unavailable — separate from BUG-132's camera-viewing app)
+**Platforms affected:** d3kOS v0.9.9.4.2 boat Pi (172.20.10.8). Not yet checked on lab Pi.
+
+### Symptom
+With BUG-131's tier gate fixed, `d3kos-fish-detector.service` starts, loads its YOLOv8n + 483-species classification models successfully, then crashes immediately and loops (`Restart=on-failure`, restart counter incrementing every ~17s).
+
+### Root Cause (confirmed via live journal read)
+```
+Upgrading database schema for species identification...
+Traceback (most recent call last):
+  File "/opt/d3kos/services/marine-vision/fish_detector.py", line 171, in <module>
+    init_db()
+  File "/opt/d3kos/services/marine-vision/fish_detector.py", line 140, in init_db
+    c.execute('ALTER TABLE captures ADD COLUMN species_confidence REAL')
+sqlite3.OperationalError: no such table: captures
+```
+`init_db()`'s schema-migration step (line 140) unconditionally runs `ALTER TABLE captures ADD COLUMN ...`, assuming the `captures` table already exists from a prior run. On this boat Pi, the table doesn't exist (fresh DB file, or DB file itself is one of the config files lost alongside BUG-131's L1 finding — not yet confirmed which). The migration code has no guard for "table doesn't exist yet — create it first."
+
+### Fix Status
+Not attempted. Needs a read of `fish_detector.py` lines ~100–170 to see the full `init_db()` function and add a `CREATE TABLE IF NOT EXISTS captures (...)` (with the correct full original schema, not guessed) before the `ALTER TABLE` migration step, or wrap the `ALTER` in a try/except that's tolerant of a fresh table.
 
