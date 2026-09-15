@@ -1071,7 +1071,7 @@ def hardware_profile_updated():
 def hardware_reprobe():
     try:
         subprocess.run(
-            ['systemctl', 'start', 'd3kos-hardware-probe.service'],
+            ['sudo', 'systemctl', 'start', 'd3kos-hardware-probe.service'],
             check=True, timeout=10)
         return jsonify({'ok': True}), 200
     except Exception as exc:
