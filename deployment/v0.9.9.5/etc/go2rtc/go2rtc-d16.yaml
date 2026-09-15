@@ -1,0 +1,12 @@
+# /etc/go2rtc/go2rtc-d16.yaml   —   chmod 600, root:d3kos
+api:
+  listen: "127.0.0.1:1984"      # loopback only; dashboard proxies to it
+rtsp:
+  listen: "127.0.0.1:8554"      # loopback only
+webrtc:
+  candidates: ["127.0.0.1:8555"]
+streams:
+  d16_forward:
+    - "{BOW_SUBSTREAM_RTSP_URL}#video=copy"   # passthrough, no transcode
+log:
+  level: warn

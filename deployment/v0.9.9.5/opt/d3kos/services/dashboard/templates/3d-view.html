@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>d3kOS — 3D Surround View</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #000; color: #fff; font-size: 18px; font-family: 'Chakra Petch', 'Bebas Neue', sans-serif; }
+
+    /* ── Top bar ── */
+    #top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #0a0a0a; border-bottom: 1px solid #222;
+      padding: 8px 16px; height: 52px;
+    }
+    #top-bar .title { font-size: 22px; color: #00CC00; letter-spacing: .1em; }
+    #btn-back-charts {
+      background: transparent; border: 2px solid #444; color: #aaa;
+      font-size: 18px; padding: 8px 18px; border-radius: 6px;
+      cursor: pointer; min-height: 48px; min-width: 48px;
+    }
+    #btn-back-charts:active { background: #111; }
+
+    /* ── Main panels ── */
+    #panels {
+      display: flex; flex-direction: row;
+      height: calc(100% - 52px);
+    }
+
+    /* Forward panel — 65% */
+    #fwd-panel {
+      position: relative; flex: 0 0 65%; height: 100%;
+      background: #050505; border-right: 2px solid #1a3a1a;
+      overflow: hidden;
+    }
+    #fwd-panel .panel-label {
+      position: absolute; top: 10px; left: 12px; z-index: 10;
+      font-size: 18px; color: #00CC00; letter-spacing: .06em; opacity: .85;
+    }
+    #fw-video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    #fw-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #444; font-size: 18px; text-align: center; padding: 20px;
+    }
+    #fw-placeholder p { margin: 8px 0; }
+
+    /* SVG range ring overlay */
+    #ring-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 5;
+    }
+    .ring-line { stroke: rgba(0,204,0,0.55); stroke-width: 1.5; fill: none; stroke-dasharray: 6 4; }
+    .ring-label { fill: #00CC00; font-size: 18px; font-family: 'Chakra Petch', monospace; opacity: .85; }
+    #ring-uncal-label {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      font-size: 18px; color: #ffcc44; opacity: .9; letter-spacing: .04em; z-index: 6;
+      white-space: nowrap;
+    }
+
+    /* Bird's-eye panel — 35% */
+    #birdseye-panel {
+      flex: 1; height: 100%;
+      background: #070707; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    #birdseye-panel .panel-label {
+      padding: 8px 12px; font-size: 18px; color: #00CC00;
+      border-bottom: 1px solid #222; letter-spacing: .06em; flex-shrink: 0;
+    }
+    #cam-grid-3d {
+      flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr; gap: 4px; padding: 4px; overflow: hidden;
+    }
+    .cam-cell {
+      position: relative; background: #0a0a0a; border: 1px solid #1a1a1a;
+      border-radius: 4px; overflow: hidden;
+    }
+    .cam-cell img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .cam-cell-label {
+      position: absolute; bottom: 4px; left: 6px;
+      font-size: 18px; color: rgba(255,255,255,.75);
+      text-shadow: 0 1px 3px #000; letter-spacing: .04em;
+    }
+    .cam-cell-err {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; color: #444; font-size: 18px; text-align: center; padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="top-bar">
+    <div class="title">&#128247; 3D Surround View</div>
+    <button id="btn-back-charts" onclick="backToCharts()">&#9664; Charts</button>
+  </div>
+
+  <div id="panels">
+
+    <!-- ── Forward panel (65%) ── -->
+    <div id="fwd-panel">
+      <div class="panel-label">BOW — FORWARD WATCH</div>
+
+      <!-- WebRTC video element -->
+      <video id="fw-video" autoplay muted playsinline style="display:none;"></video>
+
+      <!-- Shown while WebRTC connecting -->
+      <div id="fw-placeholder">
+        <p>&#128249; Connecting to bow camera&hellip;</p>
+        <p style="color:#555;font-size:18px;">go2rtc WebRTC relay</p>
+      </div>
+
+      <!-- SVG range rings: ring_y = H × (0.5 − atan(h/d)/θv), h=1.35m, θv=48° -->
+      <svg id="ring-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- d=10 m  → y ≈ 34.0% -->
+        <line class="ring-line" x1="0" y1="34.0" x2="100" y2="34.0"/>
+        <text class="ring-label" x="1.5" y="33.2">10 m</text>
+        <!-- d=25 m  → y ≈ 43.6% -->
+        <line class="ring-line" x1="0" y1="43.6" x2="100" y2="43.6"/>
+        <text class="ring-label" x="1.5" y="42.8">25 m</text>
+        <!-- d=50 m  → y ≈ 46.8% -->
+        <line class="ring-line" x1="0" y1="46.8" x2="100" y2="46.8"/>
+        <text class="ring-label" x="1.5" y="46.0">50 m</text>
+      </svg>
+
+      <div id="ring-uncal-label">&#9888; Estimated &mdash; uncalibrated</div>
+    </div>
+
+    <!-- ── Bird's-eye panel (35%) ── -->
+    <div id="birdseye-panel">
+      <div class="panel-label">&#128065; BIRD&rsquo;S EYE — ALL CAMERAS</div>
+      <div id="cam-grid-3d">
+        <div class="cam-cell" id="cell-bow">
+          <div class="cam-cell-err">Loading&hellip;</div>
+          <div class="cam-cell-label">Bow</div>
+        </div>
+        <div class="cam-cell" id="cell-helm">
+          <div class="cam-cell-err">Loading&hellip;</div>
+          <div class="cam-cell-label">Helm</div>
+        </div>
+        <div class="cam-cell" id="cell-port">
+          <div class="cam-cell-err">Loading&hellip;</div>
+          <div class="cam-cell-label">Port</div>
+        </div>
+        <div class="cam-cell" id="cell-starboard">
+          <div class="cam-cell-err">Loading&hellip;</div>
+          <div class="cam-cell-label">Starboard</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panels -->
+
+  <script>
+    /* ── BUG-48: never hardcode localhost — resolve from window.location ── */
+    var HOST     = window.location.hostname;
+    var CAM_API  = 'http://' + HOST + ':8084';
+    var DASH_API = 'http://' + HOST + ':3000';
+    var AVNAV_URL = 'http://' + HOST + ':8080';
+
+    /* ── Back-to-charts: swap iframe in parent, or navigate directly ── */
+    function backToCharts() {
+      if (window.parent && window.parent !== window && typeof window.parent.toggleAvNav3D === 'function') {
+        window.parent.toggleAvNav3D();
+      } else {
+        window.location.href = '/';
+      }
+    }
+
+    /* ── WebRTC — go2rtc via dashboard proxy /api/go2rtc/ ── */
+    (function initWebRTC() {
+      var pc = new RTCPeerConnection({ iceServers: [] });
+      pc.addTransceiver('video', { direction: 'recvonly' });
+
+      pc.ontrack = function(e) {
+        var vid = document.getElementById('fw-video');
+        var ph  = document.getElementById('fw-placeholder');
+        vid.srcObject = e.streams[0];
+        vid.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+      };
+
+      pc.createOffer()
+        .then(function(offer) {
+          return pc.setLocalDescription(offer).then(function() { return offer; });
+        })
+        .then(function(offer) {
+          return fetch(DASH_API + '/api/go2rtc/api/webrtc?src=d16_forward', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: offer.sdp
+          });
+        })
+        .then(function(r) {
+          if (!r.ok) throw new Error('go2rtc SDP error ' + r.status);
+          return r.text();
+        })
+        .then(function(sdp) {
+          return pc.setRemoteDescription({ type: 'answer', sdp: sdp });
+        })
+        .catch(function(err) {
+          var ph = document.getElementById('fw-placeholder');
+          if (ph) ph.innerHTML = '<p>&#9888; Camera stream unavailable</p>'
+            + '<p style="color:#555;font-size:18px;">Start d3kos-go2rtc.service and ensure the bow camera is reachable.</p>';
+        });
+    })();
+
+    /* ── Bird's-eye grid — polls :8084/camera/frame/<slot> every 500 ms ── */
+    var SLOTS = [
+      { id: 'bow',       label: 'Bow' },
+      { id: 'helm',      label: 'Helm' },
+      { id: 'port',      label: 'Port' },
+      { id: 'starboard', label: 'Starboard' }
+    ];
+    var _gridIntervals = [];
+
+    function startGrid() {
+      _gridIntervals.forEach(function(t) { clearInterval(t); });
+      _gridIntervals = [];
+
+      SLOTS.forEach(function(slot) {
+        var cell = document.getElementById('cell-' + slot.id);
+        if (!cell) return;
+
+        /* build img element */
+        var img = document.createElement('img');
+        img.alt = slot.label;
+        img.onerror = function() {
+          img.style.display = 'none';
+          var e = cell.querySelector('.cam-cell-err');
+          if (e) { e.style.display = 'flex'; e.textContent = slot.label + ' unavailable'; }
+        };
+        img.onload = function() {
+          img.style.display = 'block';
+          var e = cell.querySelector('.cam-cell-err');
+          if (e) e.style.display = 'none';
+        };
+        /* clear loading placeholder, insert img */
+        var err = cell.querySelector('.cam-cell-err');
+        if (err) err.textContent = 'Connecting…';
+        cell.insertBefore(img, cell.querySelector('.cam-cell-label'));
+
+        function refresh() {
+          img.src = CAM_API + '/camera/frame/' + slot.id + '?t=' + Date.now();
+        }
+        refresh();
+        _gridIntervals.push(setInterval(refresh, 500));
+      });
+    }
+
+    startGrid();
+  </script>
+</body>
+</html>

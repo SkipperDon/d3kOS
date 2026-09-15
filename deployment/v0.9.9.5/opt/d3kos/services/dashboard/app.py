@@ -1084,5 +1084,36 @@ def health():
     return jsonify({'ok': True, 'service': 'd3kos-dashboard'}), 200
 
 
+# ── D16 Surround View ────────────────────────────────────────────────────────
+
+@app.route('/3d-view')
+def surround_view():
+    """Phase 1 3D Surround View — go2rtc WebRTC forward panel + 4-up camera grid."""
+    return render_template('3d-view.html')
+
+
+@app.route('/api/go2rtc/<path:subpath>', methods=['GET', 'POST', 'OPTIONS'])
+def go2rtc_proxy(subpath):
+    """Proxy to go2rtc API at 127.0.0.1:1984 (loopback-only, not reachable by browser directly)."""
+    from flask import Response as FlaskResponse
+    go2rtc_url = f'http://127.0.0.1:1984/{subpath}'
+    try:
+        if request.method == 'POST':
+            r = requests.post(
+                go2rtc_url,
+                params=request.args,
+                data=request.get_data(),
+                headers={'Content-Type': request.content_type or 'application/x-www-form-urlencoded'},
+                timeout=10)
+        else:
+            r = requests.get(go2rtc_url, params=request.args, timeout=10)
+        content_type = r.headers.get('Content-Type', 'application/octet-stream')
+        return FlaskResponse(r.content, status=r.status_code,
+                             headers={'Content-Type': content_type,
+                                      'Access-Control-Allow-Origin': '*'})
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'go2rtc not running — start d3kos-go2rtc.service'}), 503
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=False)

@@ -1,0 +1,20 @@
+[Unit]
+Description=d3kOS go2rtc RTSP/WebRTC relay (D16 Surround View)
+After=network-online.target d3kos-dashboard.service
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStartPre=/opt/d3kos/scripts/configure-go2rtc.sh
+ExecStart=/opt/d3kos/bin/go2rtc -config /etc/go2rtc/go2rtc-d16.yaml
+Restart=on-failure
+RestartSec=10
+User=d3kos
+SupplementaryGroups=video
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
