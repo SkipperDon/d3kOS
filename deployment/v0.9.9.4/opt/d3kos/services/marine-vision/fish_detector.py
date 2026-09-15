@@ -129,27 +129,8 @@ def init_db():
 
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    
-    # Check if species_confidence column exists
-    c.execute("PRAGMA table_info(captures)")
-    columns = [col[1] for col in c.fetchall()]
-    
-    if 'species_confidence' not in columns:
-        # Add new columns for species identification
-        print("Upgrading database schema for species identification...")
-        c.execute('ALTER TABLE captures ADD COLUMN species_confidence REAL')
-        c.execute('ALTER TABLE captures ADD COLUMN species_top3 TEXT')
-        print("✓ Database schema upgraded")
 
-    if 'slot_id' not in columns:
-        c.execute('ALTER TABLE captures ADD COLUMN slot_id TEXT')
-        print("✓ Added slot_id column to captures table")
-
-    if 'gemini_species' not in columns:
-        c.execute('ALTER TABLE captures ADD COLUMN gemini_species TEXT')
-        c.execute('ALTER TABLE captures ADD COLUMN gemini_response TEXT')
-        print("✓ Added gemini_species / gemini_response columns to captures table")
-
+    # Create table first so ALTER TABLE below never runs against a missing table
     c.execute('''CREATE TABLE IF NOT EXISTS captures
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   timestamp TEXT NOT NULL,
@@ -165,6 +146,27 @@ def init_db():
                   slot_id TEXT,
                   gemini_species TEXT,
                   gemini_response TEXT)''')
+    conn.commit()
+
+    # Migrate existing databases that predate newer columns
+    c.execute("PRAGMA table_info(captures)")
+    columns = [col[1] for col in c.fetchall()]
+
+    if 'species_confidence' not in columns:
+        print("Upgrading database schema for species identification...")
+        c.execute('ALTER TABLE captures ADD COLUMN species_confidence REAL')
+        c.execute('ALTER TABLE captures ADD COLUMN species_top3 TEXT')
+        print("✓ Database schema upgraded")
+
+    if 'slot_id' not in columns:
+        c.execute('ALTER TABLE captures ADD COLUMN slot_id TEXT')
+        print("✓ Added slot_id column to captures table")
+
+    if 'gemini_species' not in columns:
+        c.execute('ALTER TABLE captures ADD COLUMN gemini_species TEXT')
+        c.execute('ALTER TABLE captures ADD COLUMN gemini_response TEXT')
+        print("✓ Added gemini_species / gemini_response columns to captures table")
+
     conn.commit()
     conn.close()
 
