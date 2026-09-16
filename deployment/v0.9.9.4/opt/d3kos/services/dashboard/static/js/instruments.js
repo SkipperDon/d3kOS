@@ -510,6 +510,7 @@ function triggerRouteAnalysis() {
 /* ── ROW TOGGLE — Both / Engine / Nav / WX ── */
 function showRow(which) {
   const isWx = which === 'wx';
+  const is3d = which === '3d';
 
   /* Stop WX fullscreen when leaving it */
   if (!isWx) _wxFsStop();
@@ -519,26 +520,40 @@ function showRow(which) {
   document.getElementById('rowEngine').classList.toggle('hidden', !showE);
   document.getElementById('rowNav').classList.toggle('hidden', !showN);
 
-  /* Show/hide main area vs WX fullscreen */
-  document.getElementById('main').style.display  = isWx ? 'none' : '';
+  /* Show/hide main area vs WX fullscreen vs 3D fullscreen */
+  document.getElementById('main').style.display  = (isWx || is3d) ? 'none' : '';
   document.getElementById('wxFs').style.display  = isWx ? 'flex' : 'none';
+  const d3dFs = document.getElementById('d3dFs');
+  if (d3dFs) {
+    d3dFs.style.display = is3d ? 'flex' : 'none';
+    if (is3d) {
+      const f = document.getElementById('d3dFrame');
+      if (f && f.src === 'about:blank') f.src = '/3d-view';
+    }
+  }
 
   document.getElementById('rpBoth').classList.toggle('on',   which === 'both');
   document.getElementById('rpEngine').classList.toggle('on', which === 'engine');
   document.getElementById('rpNav').classList.toggle('on',    which === 'nav');
   document.getElementById('rpWx').classList.toggle('on',     which === 'wx');
+  const rp3d = document.getElementById('rp3d');
+  if (rp3d) rp3d.classList.toggle('on', is3d);
 
   const hints = {
     both:   'Engine + Nav',
     engine: 'Engine instruments',
     nav:    'Navigation instruments',
     wx:     'Weather fullscreen',
+    '3d':   '3D Surround View',
   };
   document.getElementById('rowHint').textContent = hints[which] || '';
 
   if (isWx) _wxFsStart();
-  else updateAlertDots();
+  else if (!is3d) updateAlertDots();
 }
+
+/* Called by backToCharts() in 3d-view.html when embedded as iframe */
+window.toggleAvNav3D = function () { showRow('both'); };
 
 /* ── WX FULLSCREEN ── */
 let _wxFsCountdownTmr = null;

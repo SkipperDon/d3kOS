@@ -111,6 +111,9 @@
         <button class="row-pill-btn"    id="rpWx"     onclick="showRow('wx')">
           &#127780; WX
         </button>
+        <button class="row-pill-btn"    id="rp3d"     onclick="showRow('3d')">
+          &#127919; 3D
+        </button>
       </div>
       <div class="rtb-label" id="rowHint">Both rows</div>
     </div>
@@ -280,6 +283,12 @@
       <div id="wxFsCountdown">Update in 15:00</div>
       <button id="wxFsDayNight" onclick="wxFsToggleDayNight()">&#9728;&#65039; DAY</button>
     </div>
+  </div>
+
+  <!-- ══ 3c · 3D SURROUND FULLSCREEN ══ -->
+  <div id="d3dFs" style="display:none;flex:1;flex-direction:column;min-height:0;">
+    <iframe id="d3dFrame" src="about:blank" title="3D Surround View"
+            style="flex:1;min-height:0;width:100%;border:none;" allowfullscreen></iframe>
   </div>
 
   <!-- ══ 4 · BOTTOM NAV ══ -->
