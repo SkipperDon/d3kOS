@@ -9646,3 +9646,33 @@ ExecCondition=/bin/bash -c 'R=$(curl -sf --max-time 15 http://localhost:8093/tie
 ### Fix Status
 Fixed S168 2026-09-16 in same deploy as BUG-134. Requires `systemctl daemon-reload && systemctl restart d3kos-fish-detector` on Pi after deploy. Note: BUG-133 (SQL migration crash in fish_detector.py) is a separate blocking bug — even with the ExecCondition fixed, fish-detector will crash on startup until BUG-133 is resolved.
 
+---
+
+## BUG-137 — d3kos-go2rtc.service: Permission denied writing /etc/go2rtc/go2rtc-d16.yaml on boot — triggers false Critical Pi alert
+
+### Symptom
+After reboot the `d3kos-go2rtc` service fails immediately with:
+```
+configure-go2rtc.sh: line 39: /etc/go2rtc/go2rtc-d16.yaml: Permission denied
+```
+Service enters failed state after 5 rapid retries. The Pi health monitor detects the failed service and raises a **Critical Pi** alert on the dashboard header, alarming the operator.
+
+### Root Cause
+`/etc/go2rtc/` directory is owned by `root:root` with mode `755`. The service runs as user `d3kos` (`User=d3kos` in the unit file). The `ExecStartPre` config script writes `go2rtc-d16.yaml` into that directory — `d3kos` does not have write permission. The go2rtc binary itself exists correctly at `/opt/d3kos/bin/go2rtc`.
+
+### Affected Files
+| File | Pi Path | Change |
+|---|---|---|
+| `/etc/go2rtc/` (directory) | `/etc/go2rtc/` | `chgrp d3kos` + `chmod g+w` so d3kos user can create the YAML |
+
+### Fix
+```bash
+sudo chgrp d3kos /etc/go2rtc
+sudo chmod g+w /etc/go2rtc
+sudo systemctl reset-failed d3kos-go2rtc
+sudo systemctl start d3kos-go2rtc
+```
+
+### Fix Status
+Fixed S168 2026-09-16. Lab Pi only. Boat Pi pending.
+
