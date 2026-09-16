@@ -9413,7 +9413,7 @@ Repo file changed: `deployment/v0.9.9.4/opt/d3kos/services/tier/tier_service.py`
 
 ## BUG-132 — camera_stream_manager.py: port-camera RTSP connection refused crashes the whole service, port 8084 never binds
 
-**Status:** `[ ]` OPEN S162-cont 2026-09-14 — logged only, NOT fixed
+**Status:** `[~]` FIXED LAB S168 2026-09-16 — three targeted changes to camera_stream_manager.py; pending Pi deploy + validation
 **Severity:** HIGH (Marine Vision app fully unavailable even with BUG-131's tier gate now fixed)
 **Platforms affected:** d3kOS v0.9.9.4.2 boat Pi (172.20.10.8). Not yet checked on lab Pi.
 
@@ -9442,8 +9442,15 @@ The **port camera** (MAC `ec:71:db:43:ef:c1`, `10.42.0.133`, per the DHCP reserv
 2. `camera_stream_manager.py` doesn't wrap each camera's `VideoCapture` open attempt in its own try/except — one bad camera takes down the whole service instead of degrading gracefully (loading 3 of 4)
 3. Whether the process actually crashes (exits) vs. hangs before reaching `app.run(port=8084)` — not yet distinguished
 
-### Fix Status
-Not attempted. Needs: (1) confirm whether port camera is actually reachable right now (on-boat network check), (2) read `camera_stream_manager.py`'s camera-init loop to see if it's missing per-camera exception isolation, (3) decide fix based on findings — likely wrap each camera's init in try/except so one dead camera doesn't block the other three + Flask startup.
+### Fix Applied (S168 2026-09-16)
+Root cause confirmed: `_open_cap()` is called synchronously in the main thread inside `start_grabber()`, which is called from `start_all_grabbers()` before `app.run()`. For a camera that doesn't immediately refuse the connection (timeout rather than refused), the main thread blocks indefinitely and Flask never reaches `app.run(port=8084)`.
+
+Three changes made to `camera_stream_manager.py`:
+1. **`_open_cap()`** — wrapped in try/except; any OpenCV backend exception (e.g. CAP_IMAGES Bad Argument) is caught per-camera and returns None instead of propagating.
+2. **`start_grabber()`** — `'cap'` initialised to `None` instead of calling `_open_cap()` in the main thread. The frame-grabber thread's reconnect loop already handles `cap=None` on its first iteration (see lines 196–202 — `last_attempt=0.0` → reconnect fires immediately on thread start). Flask now binds port 8084 without waiting for any camera connection.
+3. **`start_all_grabbers()`** — per-camera try/except; one bad camera can never prevent others or Flask startup.
+
+Pending Pi deploy + `systemctl restart d3kos-camera-stream`. After deploy: online cameras (bow, helm) connect within ~2 s; offline port camera retries every 10 s silently.
 
 ---
 

@@ -156,10 +156,13 @@ def _clear_exclusive_role(role: str, except_slot_id: str) -> None:
 # ── Frame buffer ───────────────────────────────────────────────────────────────
 
 def _open_cap(rtsp_url: str) -> Optional[cv2.VideoCapture]:
-    cap = cv2.VideoCapture(rtsp_url)
-    if cap.isOpened():
-        return cap
-    cap.release()
+    try:
+        cap = cv2.VideoCapture(rtsp_url)
+        if cap.isOpened():
+            return cap
+        cap.release()
+    except Exception:
+        pass
     return None
 
 
@@ -210,8 +213,11 @@ def start_grabber(hardware_id: str) -> None:
     if hardware_id in hw_state:
         return  # already running
 
+    # cap starts None — the grabber thread opens the connection asynchronously.
+    # Never call _open_cap() here: it blocks the main thread per camera, which
+    # delays app.run() and prevents port 8084 from binding (BUG-132).
     state = {
-        'cap':       _open_cap(hw['rtsp_url']),
+        'cap':       None,
         'frame':     None,
         'lock':      Lock(),
         'connected': False,
@@ -226,7 +232,10 @@ def start_grabber(hardware_id: str) -> None:
 
 def start_all_grabbers() -> None:
     for hw_id in hardware:
-        start_grabber(hw_id)
+        try:
+            start_grabber(hw_id)
+        except Exception as e:
+            print(f'⚠ Frame grabber skipped for {hw_id}: {e}')
 
 
 # ── Frame helpers ──────────────────────────────────────────────────────────────
