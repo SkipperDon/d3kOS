@@ -13,6 +13,8 @@
 2. [Initial Setup Wizard](#2-initial-setup-wizard)
     - [First-Boot Password Setup](#first-boot-password-setup)
 3. [Main Dashboard](#3-main-dashboard)
+    - [Instrument Row Ribbon (BOTH/ENGINE/NAV/WX/3D)](#instrument-row-ribbon)
+    - [3D Surround View](#3d-surround-view)
 4. [Weather Panel](#4-weather-panel)
 5. [Marine Vision — Camera System](#5-marine-vision--camera-system)
 6. [Engine Dashboard & Predictive Maintenance](#6-engine-dashboard--predictive-maintenance)
@@ -20,6 +22,8 @@
 8. [Boat Log](#8-boat-log)
 9. [Mobile Companion App](#9-mobile-companion-app)
 10. [Fix My Pi & OTA Updates](#10-fix-my-pi--ota-updates)
+    - [OTA Software Updates (D23)](#ota-software-updates-d23)
+    - [Automatic Rollback](#automatic-rollback)
     - [Config Backup & Recovery (T1+)](#config-backup--recovery-t1)
 11. [Fleet Management (T3)](#11-fleet-management-t3)
 12. [Settings](#12-settings)
@@ -283,6 +287,33 @@ The dashboard displays real-time data in instrument cells arranged in a grid. Ea
 When a critical alert fires, a red ticker banner appears at the bottom of the screen with a plain-language message (e.g. `⛔ CRITICAL — COOLANT 108°C — REDUCE RPM NOW`). Helm speaks the alert aloud through the Pi's speakers.
 
 Tapping a coolant or oil pressure cell while in alert state opens the **AI Engine Diagnostic** overlay — Helm analyses the live sensor readings and provides a specific recommendation for your engine model.
+
+---
+
+### Instrument Row Ribbon
+
+A row of tab buttons runs across the dashboard below the status bar. These switch which instrument data rows are visible and what fills the chart area beneath them:
+
+| Button | What it shows |
+|--------|--------------|
+| **⚙ + 🧭 BOTH** | Engine row + Navigation row — standard underway view |
+| **🔧 ENGINE** | Engine instruments only (coolant, oil, RPM, voltage) |
+| **🧭 NAV** | Navigation instruments only (speed, course, depth, waypoint) |
+| **🌤 WX** | Full-screen weather view (Windy wind/wave + radar overlay) |
+| **🎯 3D** | Full-screen 3D Surround View (see §3D below) |
+
+The ribbon stays visible in every mode — including WX and 3D — so you can switch between views with a single tap at any time.
+
+#### 3D Surround View
+
+Tap **🎯 3D** to enter the D16 3D Surround View. This feature combines your Reolink camera feeds into a composite 360° overhead-perspective display — useful for docking, narrow channel navigation, and verifying the area around the vessel.
+
+- The AvNav chart hides and the 3D view fills the available screen space
+- The instrument ribbon stays visible — tap any other button to return instantly
+- Camera feeds are live — they are not recorded in this view
+- The view requires the d3kos-go2rtc service to be running (check **Settings → Services** if the view is blank)
+
+**3D Surround View requires:** all cameras connected and streaming; d3kos-go2rtc service active.
 
 ---
 
@@ -687,21 +718,49 @@ Fix My Pi is a remote diagnostic and repair service. When d3kOS is misbehaving a
 - GPS antenna disconnections
 - Camera hardware faults
 
-### OTA Software Updates
+### OTA Software Updates (D23)
 
-OTA (Over-the-Air) updates allow you to upgrade your d3kOS installation remotely without touching the Pi, removing the SD card, or connecting a keyboard.
+OTA (Over-the-Air) updates allow you to upgrade your d3kOS installation remotely without touching the Pi, removing the SD card, or connecting a keyboard. The OTA system is implemented by the **D23 OTA Update Agent** (`d3kos-ota-agent` service) running on your Pi.
 
-**Available for:** T1, T2, and T3 subscribers.
+**Available for:** T1, T2, and T3 subscribers. T0 (free tier) requires a physical SD card swap.
 
 **Triggering an OTA update:**
 1. In the d3kOS app, go to **Settings → System → Check for Updates**
 2. If an update is available, the version number and release notes are shown
 3. Tap **Install Update**
-4. The update is queued. On the Pi's next sync, it downloads and installs automatically
-5. The Pi reboots once installation is complete — typically takes 5–10 minutes
-6. Your app shows "Update complete" when the Pi is back online
+4. The update is queued in AtMyBoat's OTA command queue
+5. Your Pi polls for pending commands every 60 seconds — it picks up the command on the next poll
+6. The Pi downloads the update archive, verifies its SHA-256 checksum, and installs it
+7. Your app shows "Update complete" when the Pi confirms success
 
 **What OTA updates can change:** application code, dashboard templates, Python services, and configuration defaults. OTA updates never touch your personal data, vessel configuration, boat log, or API keys.
+
+#### What Happens During Installation
+
+The D23 agent performs the following steps automatically. You do not need to take any action — the process runs in the background.
+
+1. **Download** — the release archive is downloaded from the d3kOS release server
+2. **Checksum verify** — SHA-256 hash is verified before anything is installed. A mismatch aborts the update immediately — nothing is changed on your Pi
+3. **Backup** — the current `/opt/d3kos` directory is copied to `/opt/d3kos.ota-rollback` before any change is made
+4. **Stop services** — all d3kOS services pause briefly during the file swap (typically 10–30 seconds of downtime)
+5. **Install** — the new version is copied into place
+6. **Restart services** — all services are restarted
+7. **Health check** — the agent verifies the dashboard responds correctly. It makes 5 attempts over 25 seconds
+
+#### Automatic Rollback
+
+If the health check fails after installation, the D23 agent rolls back automatically:
+
+- The failed version is removed
+- The pre-update backup is restored in place
+- All services restart from the backup
+- A "rollback complete" result is posted to your app so you know what happened
+
+**You will see a notification in your app** if a rollback occurred. In that case, your Pi is still running the previous version correctly — no data is lost.
+
+#### OTA Security
+
+Each OTA request is authenticated with your Pi's Ed25519 device signature — the same cryptographic identity used for all Pi→AtMyBoat communication. A command addressed to your Pi cannot be replayed or forged. The archive download URL and SHA-256 hash are both provided in the signed command — the hash is verified independently of the server.
 
 ### Config Backup & Recovery (T1+)
 
@@ -1549,5 +1608,5 @@ sudo systemctl restart d3kos-safehelm
 
 ---
 
-*d3kOS User Manual v0.9.9.4.2 — Document version 2.7.0 — September 16, 2026*
+*d3kOS User Manual v0.9.9.4.2 — Document version 2.8.0 — September 16, 2026*
 *AtMyBoat.com — Open-source marine intelligence*

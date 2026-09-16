@@ -1,0 +1,19 @@
+[Unit]
+Description=d3kOS OTA Update Agent (D23)
+After=network-online.target signalk.service d3kos-dashboard.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=d3kos
+Group=d3kos
+WorkingDirectory=/opt/d3kos/services/ota
+ExecStart=/usr/bin/python3 /opt/d3kos/services/ota/d3kos-ota-agent.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=d3kos-ota-agent
+
+[Install]
+WantedBy=multi-user.target
