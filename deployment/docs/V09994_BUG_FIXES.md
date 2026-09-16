@@ -9413,7 +9413,7 @@ Repo file changed: `deployment/v0.9.9.4/opt/d3kos/services/tier/tier_service.py`
 
 ## BUG-132 — camera_stream_manager.py: port-camera RTSP connection refused crashes the whole service, port 8084 never binds
 
-**Status:** `[~]` FIXED LAB S168 2026-09-16 — three targeted changes to camera_stream_manager.py; pending Pi deploy + validation
+**Status:** `[~]` FIXED + LAB VALIDATED S168 2026-09-16 — deployed to lab Pi (192.168.1.237); port 8084 binds immediately; all 4 frame grabbers start without blocking; pending boat-Pi deploy
 **Severity:** HIGH (Marine Vision app fully unavailable even with BUG-131's tier gate now fixed)
 **Platforms affected:** d3kOS v0.9.9.4.2 boat Pi (172.20.10.8). Not yet checked on lab Pi.
 
@@ -9482,7 +9482,7 @@ sqlite3.OperationalError: no such table: captures
 
 ## BUG-134 — d3kos-camera-stream.service: ExecCondition tier gate fails closed when tier API or internet is unavailable — camera service blocked even when subscription is valid
 
-**Status:** `[~]` FIXED LAB S168 2026-09-16 — ExecCondition replaced with fail-open logic; pending Pi deploy + validation
+**Status:** `[~]` FIXED + LAB VALIDATED S168 2026-09-16 — deployed to lab Pi; ExecCondition runs in 55ms; correctly allows when tier API unreachable, correctly blocks when tier returns enabled:false; pending boat-Pi deploy
 **Severity:** HIGH (Marine Vision fully unavailable whenever Pi is offshore or atmyboat.com is unreachable)
 **Platforms affected:** d3kOS v0.9.9.4.x boat Pi + lab Pi. All platforms using the tier-gated camera service unit.
 
@@ -9619,7 +9619,7 @@ Not attempted. Requires on-boat diagnosis first — run the four diagnostic comm
 
 ## BUG-136 — d3kos-fish-detector.service: same ExecCondition fail-closed bug as BUG-134 — fish detector blocked when tier API is unreachable
 
-**Status:** `[~]` FIXED LAB S168 2026-09-16 — ExecCondition replaced with fail-open logic; deployed with BUG-134 in same Pi deploy
+**Status:** `[~]` FIXED + LAB VALIDATED S168 2026-09-16 — deployed to lab Pi with BUG-134; pending boat-Pi deploy
 **Severity:** HIGH (fish detection entirely unavailable whenever Pi is offshore or atmyboat.com is unreachable)
 **Platforms affected:** d3kOS v0.9.9.4.x boat Pi + lab Pi.
 
