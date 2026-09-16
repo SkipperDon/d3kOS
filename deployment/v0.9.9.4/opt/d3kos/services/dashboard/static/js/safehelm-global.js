@@ -22,51 +22,51 @@
   var style = document.createElement('style');
   style.textContent =
     '#sh-pill{display:inline-flex;align-items:center;gap:6px;' +
-    'padding:0 14px;height:38px;min-width:48px;border-radius:19px;cursor:pointer;' +
-    'font-family:\'Chakra Petch\',monospace;font-size:18px;font-weight:700;' +
-    'background:#0d0d0d;border:2px solid #1e4d1e;color:#00CC00;' +
-    'white-space:nowrap;flex-shrink:0;transition:border-color .2s,color .2s;' +
+    'padding:0 16px;height:40px;min-width:48px;border-radius:20px;cursor:pointer;' +
+    'font-family:\'Chakra Petch\',monospace;font-size:20px;font-weight:700;' +
+    'background:#111;border:2px solid #00aa00;color:#ffffff;' +
+    'white-space:nowrap;flex-shrink:0;transition:border-color .2s;' +
     'user-select:none;-webkit-user-select:none;}' +
 
-    '#sh-pill.sh-warn{border-color:#ffaa00;color:#ffcc44;}' +
-    '#sh-pill.sh-crit{border-color:#ff2222;color:#ff5555;' +
+    '#sh-pill.sh-warn{border-color:#ffaa00;color:#ffffff;}' +
+    '#sh-pill.sh-crit{border-color:#ff2222;color:#ffffff;' +
     'animation:sh-pill-flash 0.5s step-end infinite;}' +
-    '@keyframes sh-pill-flash{0%,100%{color:#ff5555}50%{color:#661111}}' +
-    '#sh-pill.sh-off{color:#444;border-color:#2a2a2a;}' +
-    '#sh-pill.sh-err{color:#ff8800;border-color:#553300;}' +
+    '@keyframes sh-pill-flash{0%,100%{background:#330000}50%{background:#111}}' +
+    '#sh-pill.sh-off{color:#888;border-color:#444;}' +
+    '#sh-pill.sh-err{color:#ffffff;border-color:#ff6600;}' +
 
     '#sh-panel{display:none;position:fixed;left:0;right:0;' +
-    'background:#0d0d0d;border-bottom:2px solid #1a1a1a;z-index:1001;' +
-    'font-family:\'Chakra Petch\',monospace;font-size:18px;color:#ccc;' +
-    'padding:10px 16px;flex-direction:column;gap:8px;' +
-    'box-shadow:0 4px 16px rgba(0,0,0,.5);}' +
+    'background:#111;border-bottom:3px solid #222;z-index:1001;' +
+    'font-family:\'Chakra Petch\',monospace;font-size:20px;color:#ffffff;' +
+    'font-weight:700;padding:12px 16px;flex-direction:column;gap:10px;' +
+    'box-shadow:0 6px 20px rgba(0,0,0,.7);}' +
     '#sh-panel.open{display:flex;}' +
 
-    '.sh-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;' +
-    'background:#111;border-radius:5px;padding:6px 12px;' +
-    'border:1px solid #333;min-height:52px;}' +
-    '.sh-row.critical{border-color:#ff2222;}' +
-    '.sh-row.warning{border-color:#ffaa00;}' +
-    '.sh-row.advisory{border-color:#2255aa;}' +
-    '.sh-mmsi{font-size:18px;opacity:.75;}' +
-    '.sh-rule{font-size:18px;font-weight:700;}' +
-    '.sh-cpa{font-size:18px;opacity:.85;margin-right:auto;}' +
-    '.sh-btn{background:transparent;border:1px solid #444;color:#aaa;' +
-    'font-size:18px;min-width:52px;min-height:48px;padding:4px 12px;' +
-    'border-radius:4px;cursor:pointer;white-space:nowrap;font-family:inherit;}' +
-    '.sh-btn:active{background:#1a1a1a;}' +
+    '.sh-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;' +
+    'background:#1a1a1a;border-radius:6px;padding:8px 14px;' +
+    'border:2px solid #444;min-height:56px;}' +
+    '.sh-row.critical{border-color:#ff2222;background:#1a0000;}' +
+    '.sh-row.warning{border-color:#ffaa00;background:#1a1000;}' +
+    '.sh-row.advisory{border-color:#2266cc;background:#00001a;}' +
+    '.sh-mmsi{font-size:18px;font-weight:700;color:#ffffff;}' +
+    '.sh-rule{font-size:22px;font-weight:700;color:#ffffff;}' +
+    '.sh-cpa{font-size:20px;font-weight:700;color:#ffffff;margin-right:auto;}' +
+    '.sh-btn{background:#222;border:2px solid #555;color:#ffffff;' +
+    'font-size:20px;font-weight:700;min-width:60px;min-height:48px;padding:4px 16px;' +
+    'border-radius:6px;cursor:pointer;white-space:nowrap;font-family:inherit;}' +
+    '.sh-btn:active{background:#333;}' +
 
-    '#sh-adv{font-size:18px;color:#555;padding:2px 0;}' +
+    '#sh-adv{font-size:18px;font-weight:700;color:#aaaaaa;padding:2px 0;}' +
 
-    '#sh-dis-btn{align-self:flex-start;background:transparent;' +
-    'border:1px solid #2a2a2a;color:#555;font-family:inherit;' +
-    'font-size:18px;min-height:48px;padding:4px 18px;border-radius:4px;cursor:pointer;}' +
-    '#sh-dis-btn:active{color:#888;}' +
+    '#sh-dis-btn{align-self:flex-start;background:#1a1a1a;' +
+    'border:2px solid #555;color:#ffffff;font-family:inherit;font-weight:700;' +
+    'font-size:18px;min-height:48px;padding:4px 20px;border-radius:6px;cursor:pointer;}' +
+    '#sh-dis-btn:active{background:#333;}' +
 
-    '#sh-ena-btn{align-self:flex-start;background:transparent;' +
-    'border:1px solid #1e4d1e;color:#00CC00;font-family:inherit;' +
-    'font-size:18px;min-height:48px;padding:4px 18px;border-radius:4px;cursor:pointer;}' +
-    '#sh-ena-btn:active{color:#fff;}';
+    '#sh-ena-btn{align-self:flex-start;background:#1a1a1a;' +
+    'border:2px solid #00aa00;color:#ffffff;font-family:inherit;font-weight:700;' +
+    'font-size:18px;min-height:48px;padding:4px 20px;border-radius:6px;cursor:pointer;}' +
+    '#sh-ena-btn:active{background:#333;}';
 
   document.head.appendChild(style);
 
@@ -151,7 +151,7 @@
     pill.setAttribute('aria-label', 'SafeHelm disabled — tap to re-enable');
     pill.classList.remove('sh-warn', 'sh-crit', 'sh-err');
     pill.classList.add('sh-off');
-    rows.innerHTML = '<div style="font-size:18px;color:#555;">SafeHelm is disabled for this session.</div>';
+    rows.innerHTML = '<div style="font-size:20px;font-weight:700;color:#aaaaaa;">SafeHelm is disabled for this session.</div>';
     disBtn.style.display = 'none';
     enaBtn.style.display = '';
   }
@@ -203,7 +203,7 @@
 
     if (mmsis.length === 0) {
       pill.textContent = '⛵ SafeHelm';
-      rows.innerHTML = '<div style="font-size:18px;color:#00CC00;opacity:.7;">No qualifying traffic</div>';
+      rows.innerHTML = '<div style="font-size:20px;font-weight:700;color:#ffffff;">No qualifying traffic</div>';
       return;
     }
 
