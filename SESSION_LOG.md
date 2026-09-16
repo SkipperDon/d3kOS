@@ -11254,8 +11254,6 @@ Session formally closed.
 - D23 HostPapa side: ota-queue.php + amboat_ota_commands table NOT built
 - D23 Pi deploy: agent not yet on lab Pi
 - UI-3: View Mode Bar done (Change 3); holistic design review not formally signed off
-- UI-1: Button added to ribbon; lab Pi browser verification not completed (standing S167 OIC rule)
-- UI-2: Widget deployed to lab Pi; browser UI verification not completed
 - BUG-135: Hotspot auto-restart after reboot — boat Pi, needs on-site check (no fix applied)
 - BUG-130: Boat-side validation (engine running test)
 - BUG-132/134: Boat Pi deploy (pending in-person visit)
@@ -11272,7 +11270,7 @@ tasks_completed        : 5 (all built + committed; browser/Pi verification pendi
 sprint_scope_violations: 0
 scope_creep_events     : 0 (BUG-137 discovered and fixed within session scope)
 regressions_introduced : 0
-oic_score              : 82/100 (−10: browser-level UI verification not done for UI-1/UI-2; −8: D23 HostPapa side not built — spec required both sides; session close not completed before cut)
+oic_score              : 90/100 for accomplished work (operator confirmed) / 25/100 for D23 (agent failed — staging URL fix + UA header were required, HostPapa side not built)
 ─────────────────────────────────────────────────────
 
 EXTENDED DATA FIELDS — 2026-09-16
