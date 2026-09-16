@@ -9471,3 +9471,139 @@ sqlite3.OperationalError: no such table: captures
 ### Fix Status
 Not attempted. Needs a read of `fish_detector.py` lines ~100–170 to see the full `init_db()` function and add a `CREATE TABLE IF NOT EXISTS captures (...)` (with the correct full original schema, not guessed) before the `ALTER TABLE` migration step, or wrap the `ALTER` in a try/except that's tolerant of a fresh table.
 
+---
+
+## BUG-134 — d3kos-camera-stream.service: ExecCondition tier gate fails closed when tier API or internet is unavailable — camera service blocked even when subscription is valid
+
+**Status:** `[ ]` OPEN S168 2026-09-16 — logged, proposed fix below
+**Severity:** HIGH (Marine Vision fully unavailable whenever Pi is offshore or atmyboat.com is unreachable)
+**Platforms affected:** d3kOS v0.9.9.4.x boat Pi + lab Pi. All platforms using the tier-gated camera service unit.
+
+### Symptom
+Marine Vision shows "Camera service unavailable (:8084)" even on a Tier 1 subscription. The camera service silently never starts. `systemctl status d3kos-camera-stream` shows `inactive (condition)` — the ExecCondition check failed.
+
+This symptom appears identical to BUG-131 (tier gate blocking due to auth bugs) but can occur even after BUG-131 is fully fixed: if `atmyboat.com` is unreachable (offshore, marina Wi-Fi down, DNS failure), the tier API at `:8093` cannot contact the server and returns an error or empty response, which the ExecCondition interprets as "camera disabled."
+
+### Root Cause
+Current ExecCondition in `d3kos-camera-stream.service`:
+```bash
+ExecCondition=/bin/bash -c 'for i in 1 2 3 4 5; do \
+  curl -sf http://localhost:8093/tier/feature/camera 2>/dev/null \
+  | jq -e ".enabled == true" >/dev/null 2>&1 && exit 0; \
+  sleep 3; done; exit 1'
+```
+The gate retries 5 times over 15 seconds, then `exit 1` (skip the unit). `exit 1` on an ExecCondition causes systemd to skip the unit silently — no failure, no restart, no log entry beyond "condition failed." This is correct behaviour for a genuine Tier 0 denial, but it is **wrong** for the case where the tier API is temporarily unreachable. A boat at sea is a valid operating environment where internet connectivity cannot be guaranteed.
+
+**Architectural problem:** the tier gate is fail-closed. Any network interruption = cameras offline = Marine Vision dead. For a vessel safety and situational awareness system, this is the wrong default.
+
+**Comparison to v0.9.2:** the `d3kos-camera-stream.service` in v0.9.2 had no tier gate — the service started unconditionally. Marine Vision worked in all connectivity conditions. The tier gate was added in v0.9.9.4 (BUG-102 fix) to prevent Tier 0 users accessing camera features, but it introduced this fail-closed regression.
+
+### Proposed Fix — Fail-Open ExecCondition
+
+The gate should distinguish three cases:
+- Tier API reachable AND returns `enabled: false` → **block** (user genuinely has no camera entitlement)
+- Tier API reachable AND returns `enabled: true` → **allow**
+- Tier API unreachable OR returns malformed response → **allow** (fail-open, last known state assumed)
+
+```bash
+ExecCondition=/bin/bash -c '
+  RESULT=$(curl -sf --max-time 15 http://localhost:8093/tier/feature/camera 2>/dev/null)
+  RC=$?
+  # Tier API unreachable or curl error → fail-open (allow)
+  if [ $RC -ne 0 ] || [ -z "$RESULT" ]; then exit 0; fi
+  # Explicitly disabled → block
+  echo "$RESULT" | jq -e ".enabled == false" >/dev/null 2>&1 && exit 1
+  # Explicitly enabled or any other response → allow
+  exit 0
+'
+```
+
+**Security note:** fail-open means a Tier 0 user who deliberately takes the Pi offline could start the camera service. Mitigation: the tier service caches the last known tier level to `/opt/d3kos/config/tier-cache.json` on every successful server response. A better long-term fix is to read `tier-cache.json` as the fallback when the server is unreachable, so offline Tier 0 users are still blocked. This is the preferred fix but requires confirming `tier-cache.json` exists and is written reliably by `tier_service.py` — verify before implementing the cache-read path.
+
+### Affected Files
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `d3kos-camera-stream.service` | `/etc/systemd/system/d3kos-camera-stream.service` | base | Replace ExecCondition with fail-open logic |
+
+### Fix Status
+Proposed above. Before applying: confirm whether `tier_service.py` writes a `tier-cache.json` on successful auth (if yes, use cache-read fallback rather than unconditional fail-open). Requires redeploy + `systemctl daemon-reload && systemctl restart d3kos-camera-stream`.
+
+---
+
+## BUG-135 — d3kOS camera hotspot (wlan0 "d3kOS") does not reliably auto-restart after service changes or Pi reboot — Reolink app loses camera visibility
+
+**Status:** `[ ]` OPEN S168 2026-09-16 — logged, not yet diagnosed on-boat
+**Severity:** HIGH (all IP cameras go offline; Marine Vision and Reolink app lose all camera visibility)
+**Platforms affected:** d3kOS v0.9.9.4.x boat Pi (172.20.10.8).
+
+### Symptom
+After BUG-131 correction work on the boat (S162-cont 2026-09-14), the Reolink app on the operator's phone stopped seeing any cameras. Before the corrections, all cameras were visible and connections established via Reolink. The cameras themselves have not been physically changed.
+
+### Background — network topology
+The Pi creates a Wi-Fi hotspot (SSID "d3kOS", connection name "d3kos") on `wlan0` using NetworkManager. Reolink IP cameras connect to this hotspot and receive DHCP leases in `10.42.0.x` (dnsmasq, lease file: `/var/lib/NetworkManager/dnsmasq-wlan0.leases`). The operator's Reolink phone app must also be connected to "d3kOS" to see the cameras directly. The Pi's `network-api.py` (port 8101) manages hotspot/WiFi switching; its `wifi/connect` endpoint explicitly deactivates the hotspot before switching to WiFi client mode.
+
+### Root Cause (not yet confirmed — requires on-boat live read)
+
+**Hypothesis A (most likely):** During BUG-131 corrections, the Pi was restarted or services were reloaded. NetworkManager did not auto-restart the "d3kos" hotspot connection on reboot — either because `connection.autoconnect` is not set to `yes` on the d3kos connection, or a competing remembered Wi-Fi network has higher autoconnect-priority and NetworkManager chose it over the hotspot. Cameras came back up on boot but had nothing to connect to; DHCP leases expired; cameras dropped off.
+
+**Hypothesis B:** The `wifi/connect` endpoint or an equivalent nmcli command was accidentally or inadvertently triggered during the BUG-131 work, switching the Pi to WiFi client mode. The hotspot was never switched back before the operator left the boat.
+
+**Hypothesis C:** DHCP lease expiry only — hotspot is actually up but cameras got new IPs that no longer match `hardware.json`'s stored entries. `camera_stream_manager.py` would try to connect to stale IPs.
+
+### ⚠ OPERATOR ACTION REQUIRED — check on next boat visit
+
+Run these diagnostics via SSH from the lab (requires boat Pi reachable on 172.20.10.8):
+
+```bash
+# 1. Is the hotspot connection active?
+nmcli connection show --active
+# Expected: line showing "d3kos | 802-11-wireless | wlan0" with mode "ap"
+# If absent: hotspot is down → Hypothesis A or B confirmed
+
+# 2. Are cameras currently connected?
+cat /var/lib/NetworkManager/dnsmasq-wlan0.leases
+# Expected: 3–4 entries with Reolink MAC addresses and 10.42.0.x IPs
+# If empty: no cameras connected to hotspot
+
+# 3. Is autoconnect enabled on the hotspot connection?
+nmcli -f connection.autoconnect,connection.autoconnect-priority con show d3kos
+# Expected: autoconnect = yes; if no → this is the fix needed
+
+# 4. If hotspot is down — restore it:
+sudo nmcli connection up d3kos
+# Then re-check leases: cameras should reconnect within ~60s
+```
+
+### Proposed Fix
+Once Hypothesis A/B/C is confirmed:
+
+**If autoconnect is off (Hypothesis A):**
+```bash
+sudo nmcli connection modify d3kos connection.autoconnect yes connection.autoconnect-priority 100
+sudo nmcli connection up d3kos
+```
+The priority 100 ensures the d3kOS hotspot wins over any remembered WiFi networks on reboot.
+
+**If a competing network is overriding (Hypothesis A variant):**
+```bash
+# List all autoconnect connections and their priorities
+nmcli -f NAME,TYPE,AUTOCONNECT,AUTOCONNECT-PRIORITY connection show
+# Lower the priority of competing WiFi connections below 100
+sudo nmcli connection modify "<competing-ssid>" connection.autoconnect-priority 50
+```
+
+**If hotspot was manually switched off (Hypothesis B):**
+Same fix as Hypothesis A — force autoconnect on with high priority so reboots always restore hotspot mode.
+
+**If stale IPs in hardware.json (Hypothesis C):**
+Open Marine Vision → Camera Setup → Scan. The discovery scan will find cameras at their new IPs and update `hardware.json`. No code change needed.
+
+### Affected Files
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| nmcli d3kos connection | NetworkManager persistent config | runtime | Set autoconnect=yes, priority=100 |
+| `hardware.json` | `/opt/d3kos/config/hardware.json` | runtime | Re-scan if IPs changed (Hypothesis C) |
+
+### Fix Status
+Not attempted. Requires on-boat diagnosis first — run the four diagnostic commands above. Fix follows directly from confirmed hypothesis.
+
