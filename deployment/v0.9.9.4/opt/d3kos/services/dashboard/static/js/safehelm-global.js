@@ -108,9 +108,10 @@
   function injectDOM() {
     var sbRight  = document.querySelector('.sb-right');   /* index.html */
     var hdrRight = document.querySelector('.hdr-right');  /* marine-vision.html */
-    var clock    = document.getElementById('clock') || document.getElementById('clk');
     var sb       = document.getElementById('sb') || document.getElementById('status-bar');
     var header   = document.querySelector('header');
+    var dnInSb   = sb && sb.querySelector('.dn');         /* engine-monitor, anchor-watch */
+    var clock    = document.getElementById('clock') || document.getElementById('clk');
 
     if (sbRight) {
       /* index.html: pill between ticker and Pi health */
@@ -118,6 +119,9 @@
     } else if (hdrRight) {
       /* marine-vision.html: pill before DAY/NGT buttons */
       hdrRight.insertBefore(pill, hdrRight.firstChild);
+    } else if (dnInSb) {
+      /* engine-monitor, anchor-watch: pill before the .dn day/night container */
+      sb.insertBefore(pill, dnInSb);
     } else if (clock) {
       clock.parentNode.insertBefore(pill, clock);
     } else if (sb) {
