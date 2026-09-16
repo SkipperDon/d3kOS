@@ -3,7 +3,7 @@
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.5.0 — September 9, 2026
+**Document version:** 2.6.0 — September 16, 2026
 
 ---
 
@@ -390,17 +390,22 @@ Two tabs at the top of the weather screen: **WINDY** and **RADAR**. Tap to switc
 
 Marine Vision manages your onboard cameras. It provides live feeds, recording, and AI-powered fish detection.
 
-### Camera Grid
+### View Mode Bar
 
-The main Marine Vision screen shows a grid of all configured camera slots. Each cell displays:
-- **Live feed** (if camera is connected and streaming)
-- **Camera name** (as assigned in Settings → Cameras)
-- **Status indicator** — green dot (live), amber (connecting), red (offline)
+The View Mode Bar runs across the top of the Marine Vision screen. It is divided into two groups:
 
-Tap any camera cell to open it full-screen. In full-screen view:
-- Pinch to zoom
-- **Record** button starts/stops clip recording for that camera
-- **Back** returns to the grid
+**Left group — Camera Slots**
+Each connected camera appears as a labelled button (e.g. Bow, Helm, Port, Stbd). Tap a button to switch to that camera's live feed. The active camera button is highlighted. An offline camera is dimmed and cannot be selected. A reconnecting camera is shown at reduced opacity but remains tappable.
+
+**Right group — View Modes**
+
+| Button | What it does |
+|--------|-------------|
+| **⊞ GRID** | Shows all cameras simultaneously in a 2×2 tile layout. Tap GRID again to return to single-camera view. |
+| **⬡ 3D SURROUND** | Opens the D16 3D Surround View — a composite 360° overhead view built from the Reolink cameras. Tap again to return to live feed. |
+| **⚠ AI OVERLAY** | Activates the SafeHelm AI collision-avoidance overlay. An amber status strip appears over the live feed showing the current hazard assessment. Tap again to dismiss. |
+
+Only one view mode (GRID, 3D SURROUND, or AI OVERLAY) is active at a time. Selecting a new mode automatically exits the previous one.
 
 ### Camera Slots
 

@@ -76,14 +76,66 @@ h1 {
   padding: 10px;
 }
 
-/* ── CAMERA SELECTOR ── */
-.camera-selector {
+/* ── VIEW MODE BAR ── */
+.vmb {
   display: flex;
+  align-items: flex-start;
   gap: 10px;
   margin-bottom: 10px;
+}
+
+.vmb-slots {
+  display: flex;
+  flex: 1;
+  gap: 10px;
   flex-wrap: wrap;
   align-items: center;
+  min-width: 0;
 }
+
+.vmb-modes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.view-btn {
+  padding: 0 16px;
+  height: 64px;
+  min-width: 48px;
+  background: var(--g-dim);
+  border: 2px solid var(--g-bdr);
+  border-radius: 8px;
+  color: var(--g-txt);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.view-btn:active { opacity: .75; }
+.view-btn.active {
+  background: var(--g-txt);
+  color: var(--bg);
+  border-color: var(--g-txt);
+}
+
+.view-3d {
+  background: rgba(0,80,200,.1);
+  border-color: rgba(0,136,255,.4);
+  color: #4499FF;
+}
+.view-3d.active { background: rgba(0,136,255,.25); border-color: #4499FF; color: #4499FF; }
+
+.view-ai {
+  background: var(--adv-bg);
+  border-color: var(--adv-bdr);
+  color: var(--adv);
+}
+.view-ai.active { background: rgba(180,100,0,.15); border-color: var(--adv-bdr); }
 
 .cam-btn {
   padding: 0 28px;
@@ -122,23 +174,6 @@ h1 {
   opacity: .65;
 }
 
-.grid-btn {
-  padding: 0 28px;
-  height: 56px;
-  background: rgba(0,100,200,.1);
-  border: 2px solid rgba(0,136,255,.4);
-  border-radius: 8px;
-  color: #4499FF;
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: .05em;
-  transition: background .15s;
-}
-.grid-btn:active { opacity: .75; }
-.grid-btn.active { background: rgba(0,136,255,.25); border-color: #4499FF; }
-
 /* ── FEED CONTAINER ── */
 .camera-container {
   background: var(--g-dim);
@@ -146,6 +181,31 @@ h1 {
   border-radius: 8px;
   padding: 8px;
   margin-bottom: 10px;
+  position: relative;
+}
+
+#frame3D {
+  width: 100%;
+  min-height: 300px;
+  border: none;
+  border-radius: 8px;
+  display: none;
+}
+
+.sh-overlay {
+  position: absolute;
+  top: 44px;
+  left: 18px;
+  right: 18px;
+  background: rgba(0,0,0,.65);
+  border: 2px solid var(--adv-bdr);
+  border-radius: 6px;
+  padding: 10px 16px;
+  color: #FFF6DC;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .feed-label {
@@ -388,15 +448,24 @@ h1 {
 
 <div class="container" id="main-content">
 
-  <!-- Camera selector -->
-  <div class="camera-selector" id="cameraSelector">
-    <span class="empty-msg" style="padding:0;">Loading cameras&hellip;</span>
+  <!-- View Mode Bar -->
+  <div class="vmb">
+    <div class="vmb-slots" id="cameraSelector">
+      <span class="empty-msg" style="padding:0;">Loading cameras&hellip;</span>
+    </div>
+    <div class="vmb-modes">
+      <button class="view-btn" id="btnGrid" onclick="toggleGrid()" aria-label="Grid view all cameras">&#8862; GRID</button>
+      <button class="view-btn view-3d" id="btn3D" onclick="toggle3D()" aria-label="3D Surround View">&#11041; 3D SURROUND</button>
+      <button class="view-btn view-ai" id="btnAI" onclick="toggleAIOverlay()" aria-label="AI collision overlay">&#9888; AI OVERLAY</button>
+    </div>
   </div>
 
   <!-- Feed -->
   <div class="camera-container">
     <div class="feed-label" id="feedLabel">Active Camera</div>
     <img id="cameraFeed" alt="Camera Feed">
+    <iframe id="frame3D" src="" title="3D Surround View"></iframe>
+    <div class="sh-overlay" id="shOverlay" style="display:none;"></div>
     <div class="cam-grid" id="camGrid" style="display:none;"></div>
     <div class="loading-message" id="loadingMsg">Connecting to camera&hellip;</div>
     <div class="controls">
@@ -481,6 +550,9 @@ var isRecording = false;
 var feedInterval = null;
 var gridIntervals = [];
 var gridMode     = false;
+var mode3D       = false;
+var aiActive     = false;
+var shSSE        = null;
 var activeSlotId = null;
 var allSlots     = [];
 
@@ -538,9 +610,6 @@ function renderSelector(slots) {
                         + (isConnecting ? ' connecting' : '');
     html += '<button class="' + cls + '" onclick="switchCamera(\'' + s.slot_id + '\')">' + s.label + '</button>';
   });
-  if (slots.length > 1) {
-    html += '<button class="grid-btn' + (gridMode ? ' active' : '') + '" onclick="toggleGrid()">Grid View</button>';
-  }
   sel.innerHTML = html;
 }
 
@@ -561,7 +630,16 @@ function switchCamera(slotId) {
 /* ── GRID TOGGLE ── */
 function toggleGrid() {
   gridMode = !gridMode;
+  if (gridMode && mode3D) {
+    mode3D = false;
+    var f3 = document.getElementById('frame3D');
+    if (f3) { f3.style.display = 'none'; f3.src = ''; }
+    var b3 = document.getElementById('btn3D');
+    if (b3) b3.classList.remove('active');
+  }
   renderSelector(allSlots);
+  var bg = document.getElementById('btnGrid');
+  if (bg) bg.classList.toggle('active', gridMode);
   if (gridMode) {
     document.getElementById('cameraFeed').style.display = 'none';
     document.getElementById('camGrid').style.display    = 'grid';
@@ -812,6 +890,66 @@ function identifyCapture(captureId) {
       idBtn.textContent = '&#128270; Try Again';
       idBtn.disabled    = false;
     });
+}
+
+/* ── 3D SURROUND VIEW ── */
+function toggle3D() {
+  mode3D = !mode3D;
+  var btn    = document.getElementById('btn3D');
+  var iframe = document.getElementById('frame3D');
+  var feed   = document.getElementById('cameraFeed');
+  var grid   = document.getElementById('camGrid');
+  if (btn) btn.classList.toggle('active', mode3D);
+  if (mode3D) {
+    if (gridMode) {
+      gridMode = false;
+      stopGridFeed();
+      var bg = document.getElementById('btnGrid');
+      if (bg) bg.classList.remove('active');
+    }
+    stopSingleFeed();
+    if (iframe) { iframe.src = '/3d-view'; iframe.style.display = 'block'; }
+    if (feed)   feed.style.display = 'none';
+    if (grid)   grid.style.display = 'none';
+    document.getElementById('feedLabel').textContent = '3D Surround View';
+  } else {
+    if (iframe) { iframe.style.display = 'none'; iframe.src = ''; }
+    startFeed();
+    document.getElementById('feedLabel').textContent = 'Active Camera';
+  }
+}
+
+/* ── AI OVERLAY (SafeHelm) ── */
+function toggleAIOverlay() {
+  aiActive = !aiActive;
+  var btn     = document.getElementById('btnAI');
+  var overlay = document.getElementById('shOverlay');
+  if (btn) btn.classList.toggle('active', aiActive);
+  if (aiActive) {
+    if (overlay) overlay.style.display = 'block';
+    startSafeHelmSSE();
+  } else {
+    if (overlay) { overlay.style.display = 'none'; overlay.textContent = ''; }
+    if (shSSE)   { shSSE.close(); shSSE = null; }
+  }
+}
+
+function startSafeHelmSSE() {
+  if (shSSE) { shSSE.close(); shSSE = null; }
+  var overlay = document.getElementById('shOverlay');
+  shSSE = new EventSource('/api/safehelm/sse');
+  shSSE.onmessage = function(e) {
+    var data;
+    try { data = JSON.parse(e.data); } catch(ex) { return; }
+    if (!overlay) return;
+    var level = data.level || 'info';
+    var msg   = data.message || '';
+    overlay.textContent = '⚠ SafeHelm: ' + msg;
+    overlay.style.borderColor = level === 'danger' ? 'var(--crit-bdr)' : 'var(--adv-bdr)';
+  };
+  shSSE.onerror = function() {
+    if (overlay) overlay.textContent = '⚠ SafeHelm: connecting…';
+  };
 }
 
 /* ── RECORD / CAPTURE ── */
