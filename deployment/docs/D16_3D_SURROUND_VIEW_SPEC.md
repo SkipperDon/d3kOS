@@ -2,8 +2,9 @@
 ## d3kOS Feature Specification
 
 **Document:** `D16_3D_SURROUND_VIEW_SPEC.md`
-**Version:** 1.0
+**Version:** 1.1
 **Created:** 2026-09-10 S156
+**Updated:** 2026-09-16 S168 — Phase 2 expanded: IMU dynamic ring correction added (§12)
 **Status:** APPROVED FOR BUILD — v0.9.9.5
 **Owner:** Donald Moskaluk — AtMyBoat.com / d3kOS
 **Target Platform:** Raspberry Pi 4B · d3kOS v0.9.9.5
@@ -16,9 +17,11 @@
 A surround situational awareness display rendered in Chromium at the helm. Uses the existing 4 cameras (bow, helm/stern, port, starboard — all Reolink RLC-810A/820A, confirmed installed S112). Accessible from the d3kOS dashboard via a single toggle that switches between AvNav (:8080) and this view.
 
 This is Phase 1 of three phases:
-- **Phase 1 (v0.9.9.5):** Base view — camera stitching, range rings, no AI. Builds independently.
-- **Phase 2 (v0.9.9.6):** D11 AI overlays — detection boxes + bearing markers on the view.
-- **Phase 3 (v0.9.9.6):** WiBoat range integration — positionally accurate range rings from measured distances.
+- **Phase 1 (v0.9.9.5):** Base view — camera stitching, range rings (estimated, uncalibrated). Builds independently.
+- **Phase 2 (v0.9.9.6):** Two parallel tracks:
+  - **P2-A** — D11 AI overlays: detection boxes + bearing markers on the forward view.
+  - **P2-B** — IMU dynamic ring correction: real-time pitch/trim compensation so rings remain accurate at planing speed (see §12).
+- **Phase 3 (v0.9.9.6+):** WiBoat range integration — positionally accurate range rings from measured distances.
 
 ---
 
@@ -199,3 +202,74 @@ Bow camera mount detail (S147 photo):
 | hanifizzudinrahman surround view | 4-camera OpenCV surround on RPi 3 with fisheye cameras — confirms approach works on Pi hardware. | — |
 | Garmin Surround View | Only production marine multi-camera surround system. Six through-hull cameras. Closed commercial. Validates marine use case. | Commercial |
 | dyfcalid/CameraCalibration | Python + OpenCV homography reference — used as design reference only. **GPL-3.0 — not included as dependency.** | GPL-3.0 ⚠ |
+
+---
+
+## 12. Phase 2-B — IMU Dynamic Ring Correction (v0.9.9.6)
+
+**Logged:** 2026-09-16 S168. **Owner decision:** operator, session S168.
+
+### 12.1 Problem Statement
+
+The Phase 1 range rings are computed from two static inputs: camera mount height `h` and vertical FOV `θv`. This is accurate at rest but breaks at planing speed.
+
+On a Monterey 265 at WOT the bow rises 3–5° (trim angle `φ`). A bow-mounted camera pitches up with the hull. The effective depression angle below horizontal drops from `atan(h/d)` to `atan(h/d) − φ`, moving the water-surface intersection significantly further out:
+
+```
+At rest  (φ=0°): camera looks down atan(2.0/10) = 11.3° → water at 10 m  ✓
+At speed (φ=4°): effective angle = 7.3°             → water at 15.6 m  ✗
+```
+
+Error at the 10 m ring: **+56%** at planing speed. The "⚠ Estimated — uncalibrated" warning in Phase 1 is therefore correct and must remain until Phase 2-B is deployed.
+
+The height change between rest and speed (≈ 2.0 m → 2.1 m) produces only ≈ 3% ring shift and is secondary to pitch.
+
+### 12.2 Requirement
+
+The ring positions SHALL be recalculated on every frame using the real-time pitch angle sourced from an IMU or SignalK attitude path, so that rings remain accurate across the full speed range from displacement to WOT.
+
+**Corrected ring formula:**
+
+```
+effective_angle(d) = atan(h / d) − φ_pitch
+ring_y(d) = image_height × (0.5 − effective_angle(d) / θv)
+```
+
+Where:
+- `h` = camera mount height above waterline (m), set in config once
+- `d` = target distance (10 m, 25 m, 50 m)
+- `φ_pitch` = real-time bow-up trim angle (radians, positive = bow up)
+- `θv` = camera vertical FOV (radians), set in config once
+
+When `φ_pitch` is unavailable (IMU offline), fall back to `φ_pitch = 0` and display the "⚠ Estimated" warning. When IMU is live and φ is known, suppress the warning.
+
+### 12.3 IMU / Attitude Source
+
+Preferred source in priority order:
+
+1. **SignalK path `navigation.attitude.pitch`** — already consumed by d3kOS; no new hardware if a compatible sensor is fitted.
+2. **MPU-6050 / ICM-42688 on I²C** — low-cost IMU on the Pi GPIO header; feeds a lightweight Python service that publishes to SignalK via delta WebSocket.
+3. **PWA phone accelerometer** — last resort; phone must be mounted rigidly at helm and level-calibrated; accuracy ±1–2°.
+
+### 12.4 Front-End Changes Required (3d-view.html)
+
+- Subscribe to `ws://HOST:3000/api/signalk/stream` or a lightweight SSE endpoint for `navigation.attitude.pitch`.
+- On each attitude update, recalculate `ring_y` for all three rings and update SVG `y1`/`y2`/`y` attributes in-place (no DOM rebuild — just attribute writes).
+- Show "⚠ Estimated" label when `φ_pitch` source is absent or stale (>5 s old).
+- Hide "⚠ Estimated" label when IMU data is fresh.
+
+### 12.5 Out of Scope for Phase 2-B
+
+- Roll compensation (rings stay horizontal; roll affects only perceived barrel distortion)
+- Heave compensation
+- Camera lens distortion correction (Phase 3)
+
+### 12.6 Acceptance Criteria
+
+| # | Criterion |
+|---|-----------|
+| AC-1 | At rest with IMU live: rings at 10/25/50 m match field-measured buoy positions ±1 m |
+| AC-2 | At 25 knots: rings update within 200 ms of attitude change; no visible lag |
+| AC-3 | IMU offline: "⚠ Estimated" warning appears; rings fall back to φ=0 |
+| AC-4 | IMU restored: warning clears within 6 s |
+| AC-5 | No ring positions outside `[0, image_height]` at any trim angle up to 10° |
