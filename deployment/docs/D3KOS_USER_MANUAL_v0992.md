@@ -3,7 +3,7 @@
 
 **System:** d3kOS — AI-powered marine navigation hub
 **Hardware:** Raspberry Pi 4, 10.1" touchscreen, 1280×800
-**Document version:** 2.6.0 — September 16, 2026
+**Document version:** 2.7.0 — September 16, 2026
 
 ---
 
@@ -29,6 +29,7 @@
 15. [Troubleshooting](#15-troubleshooting)
 16. [Quick Reference Card](#16-quick-reference-card)
 17. [AtMyBoat.com Account](#17-atmyboatcom-account)
+18. [AI-SafeHelm — Collision Advisory System](#18-ai-safehelm--collision-advisory-system)
 
 ---
 
@@ -1323,5 +1324,230 @@ After verifying your email and logging in, go to **atmyboat.com/pair-device/** t
 
 ---
 
-*d3kOS User Manual v0.9.9.3 — Document version 2.4.1 — September 2026*
+---
+
+## 18. AI-SafeHelm — Collision Advisory System
+
+> **⚠ EXPERIMENTAL SYSTEM — READ THIS CHAPTER IN FULL BEFORE USE**
+>
+> AI-SafeHelm is a decision-support tool. It does not replace the watch, the radar, the VHF, or the judgment of a qualified mariner. The captain remains solely and completely responsible for the safe navigation of the vessel at all times. SafeHelm provides information — it does not give orders.
+
+---
+
+### What AI-SafeHelm Does
+
+AI-SafeHelm monitors vessels in your area using AIS (Automatic Identification System) data received by your onboard AIS receiver. For each tracked vessel it continuously calculates:
+
+- **CPA** — Closest Point of Approach (metres): how close the vessel will pass if both ships hold their current course and speed
+- **TCPA** — Time to Closest Point of Approach (seconds): how long until that closest point is reached
+- **COLREGs classification** — which International Regulations for Preventing Collisions at Sea rule applies to your situation with that vessel
+
+When a developing situation reaches a defined threshold — CPA below your configured limit, TCPA within your configured window — SafeHelm raises an advisory alert in the header bar visible on every d3kOS page.
+
+SafeHelm does **not** sound an alarm, take control of the helm, or transmit any signal to any other vessel. It observes and advises, nothing more.
+
+---
+
+### The SafeHelm Pill
+
+On every operational d3kOS page, a small indicator pill appears in the header bar alongside the DAY / NGT buttons:
+
+```
+  ⛵ SafeHelm
+```
+
+This pill is always visible while SafeHelm is active. Its colour and label change to reflect the current situation:
+
+| Pill appearance | Meaning |
+|---|---|
+| `⛵ SafeHelm` — green border, white text | Connected — no qualifying traffic in the alert zone |
+| `⛵ 1 !` — amber border | One vessel at Warning level — monitor the situation |
+| `⛵ 2 ⚠` — red border, flashing | One or more vessels at Critical level — immediate attention required |
+| `⛵` — grey border, grey text | SafeHelm disabled for this session |
+| `⚠ SafeHelm` — orange border | SafeHelm service offline — attempting to reconnect |
+
+**The pill does not make noise and does not flash the screen.** It is a visual indicator only. You must be looking at the screen to see it.
+
+---
+
+### Tapping the Pill — Expand Panel
+
+Tap the pill at any time to open the **Alert Panel**, which drops down immediately below the header bar. The panel is divided into three areas:
+
+**1 — Alert rows (one per vessel)**
+
+Each tracked vessel in alert state appears as a row:
+
+```
+  123456789   Head-On   CPA 420m   [ ACK ]  [ ✕ ]
+```
+
+| Column | What it means |
+|---|---|
+| MMSI number | The vessel's unique Maritime Mobile Service Identity |
+| Rule label | The COLREGs rule governing the encounter (see table below) |
+| CPA | Closest Point of Approach in metres at current courses and speeds |
+| ACK button | Acknowledge — you have seen this alert; voice repetition is suppressed |
+| ✕ button | Dismiss this vessel from the current alert episode |
+
+**2 — Advisory line**
+
+> *Advisory only — captain remains responsible*
+
+This line is always shown. It cannot be removed. It is a permanent reminder of the system's advisory-only status.
+
+**3 — Disable button**
+
+> *Disable SafeHelm (this session)*
+
+Tap this to shut SafeHelm off completely for the current session. See the Disabling section below.
+
+---
+
+### COLREGs Rules Displayed
+
+SafeHelm classifies each encounter using the International Regulations for Preventing Collisions at Sea (COLREGs — COLREG 1972, as amended). The following rule labels may appear:
+
+| Label shown | COLREGs Rule | Situation |
+|---|---|---|
+| **Head-On** | Rule 14 | Both vessels approaching head-on or nearly so — both must alter course to starboard |
+| **Give-Way →** | Rule 15 | You are the give-way vessel in a crossing situation — you must keep clear |
+| **Stand-On ←** | Rule 15 | You are the stand-on vessel in a crossing situation — maintain course and speed; give-way vessel should be altering |
+| **Stand-On? ←** | Rule 15 | You appear to be the stand-on vessel but the give-way vessel's intentions are unconfirmed — maintain course but watch closely |
+| **Overtaken** | Rule 13 | Another vessel is overtaking you from astern — the overtaking vessel is give-way |
+| **Overtaking** | Rule 13 | You are overtaking another vessel — you are give-way and must keep clear |
+| **Overtaken?** | Rule 13 | An overtaking situation is developing but not yet confirmed |
+| **R18 Give-Way** | Rule 18 | A power-driven vessel must keep clear of sailing vessels, vessels not under command, or vessels restricted in their ability to manoeuvre |
+
+**Important:** SafeHelm classifies based on AIS-reported course and speed only. It has no knowledge of vessel type, length, draught, or local traffic separation schemes. Rule 18 classification may be incorrect if AIS vessel-type data is absent or wrong.
+
+---
+
+### Alert Tiers
+
+SafeHelm uses three alert tiers. Thresholds are set based on your vessel's speed and the calculated TCPA:
+
+| Tier | Pill colour | Condition |
+|---|---|---|
+| **Advisory** | No change to pill | CPA below limit but TCPA is long — situation to watch |
+| **Warning** | Amber border | CPA below limit, TCPA closing — action may be needed soon |
+| **Critical** | Red border, flashing | CPA very close, TCPA short — immediate attention required |
+
+The pill always shows the **highest tier** across all active alerts. Open the panel to see the individual tier for each vessel.
+
+---
+
+### ACK and Dismiss
+
+**ACK — Acknowledge**
+
+Tapping ACK tells SafeHelm that you have seen this alert and are aware of the vessel. The alert remains active in the display (the pill does not change) but voice repetition — if voice advisory is enabled — is suppressed. If the CPA worsens significantly after acknowledgement, the alert may escalate back to unacknowledged.
+
+**✕ — Dismiss**
+
+Tapping ✕ removes this vessel from the current alert episode. SafeHelm stops tracking this vessel for alerts until the vessel's CPA clears the alert zone and subsequently re-enters it. Use dismiss when you have assessed the situation and determined there is no collision risk — for example, because you have already altered course or because the other vessel's AIS data is known to be erratic.
+
+Neither ACK nor Dismiss alters your course, signals the other vessel, or changes anything outside the d3kOS display.
+
+---
+
+### Disabling SafeHelm
+
+To disable SafeHelm completely for the current session:
+
+1. Tap the `⛵ SafeHelm` pill in the header
+2. In the panel that opens, tap **Disable SafeHelm (this session)**
+3. The pill turns grey and shows `⛵` only
+4. The SSE connection to the SafeHelm service closes
+5. No further alerts are shown for the remainder of the session
+
+**This setting is session-only.** It resets automatically when you close the browser or restart the Pi. SafeHelm will be fully active again on the next session. There is no permanent disable switch.
+
+To re-enable during the same session:
+
+1. Tap the grey `⛵` pill
+2. Tap **Re-enable SafeHelm**
+3. The connection reopens and alerts resume immediately
+
+---
+
+### Technical Requirements
+
+SafeHelm requires the following to operate:
+
+| Requirement | Notes |
+|---|---|
+| AIS receiver | Must be connected to the Pi and outputting NMEA sentences to Signal K. SafeHelm reads AIS from Signal K — not directly from the receiver. |
+| Signal K server | Must be running (`d3kos-signalk` service). SafeHelm subscribes to the Signal K WebSocket stream. |
+| Own vessel GPS | Your own position is required to compute CPA. SafeHelm uses the GPS position that Signal K receives from your GPS receiver. |
+| Own vessel COG/SOG | Your own course and speed are required for COLREGs classification. These also come from Signal K. |
+| Internet | Not required. SafeHelm runs entirely on the Pi. No data leaves your vessel. |
+
+If any of these requirements are not met, the pill shows `⚠ SafeHelm` in orange and attempts to reconnect every 5 seconds.
+
+---
+
+### What SafeHelm Cannot See
+
+AIS coverage has fundamental limitations that every operator must understand:
+
+- **Vessels without AIS are invisible.** Fishing vessels under 15 metres, recreational vessels, military vessels, and many small commercial craft are not required to carry AIS and many do not. A clear SafeHelm display does not mean the water ahead is clear.
+- **AIS data may be delayed.** AIS updates depend on the transmitting vessel's update rate (typically 2–10 seconds for vessels underway) and your receiver's ability to decode the signal. In congested areas, receiver overload can cause missed updates.
+- **AIS data may be wrong.** Vessels sometimes transmit incorrect COG, SOG, or position due to equipment faults. SafeHelm cannot verify the accuracy of AIS data it receives.
+- **SafeHelm does not know about bridges, shoals, traffic separation schemes, or local regulations.** It computes open-water CPA only.
+- **SafeHelm does not account for vessel manoeuvring lag.** CPA calculations assume both vessels maintain current course and speed until the closest point. Real vessels take time to respond to helm input.
+- **At anchor or slow speed, classifications may be unreliable.** COLREGs rules apply to vessels underway and making way. SafeHelm may misclassify situations when your own speed is very low or when COG is undefined.
+
+---
+
+### ⚠ Critical Safety Cautions
+
+Read and understand these cautions before relying on SafeHelm in any way.
+
+**CAUTION 1 — EXPERIMENTAL SYSTEM**
+AI-SafeHelm is an experimental feature under active development. It has not been certified, type-approved, or approved by any maritime authority including Transport Canada, USCG, MCA, or IMO. It must not be used as a primary collision-avoidance tool.
+
+**CAUTION 2 — ADVISORY ONLY**
+Every alert SafeHelm produces is advisory. The system recommends nothing and commands nothing. The decision to alter course, reduce speed, sound a signal, or take any other action rests entirely with the officer of the watch. SafeHelm's classification of a COLREGs rule does not constitute legal or navigational advice.
+
+**CAUTION 3 — PROPER LOOKOUT IS YOUR LEGAL OBLIGATION**
+COLREGs Rule 5 requires every vessel to maintain a proper lookout by sight and hearing at all times. A glowing green pill does not satisfy this obligation. Do not reduce your watchkeeping because SafeHelm shows no alerts.
+
+**CAUTION 4 — AIS IS NOT RADAR**
+SafeHelm sees only AIS-equipped vessels. It does not detect vessels by radar return. In poor visibility, restricted waterways, or areas with high small-craft traffic, the majority of collision risk may come from vessels SafeHelm cannot see at all.
+
+**CAUTION 5 — DO NOT DELEGATE THE WATCH TO SOFTWARE**
+SafeHelm is a supplementary awareness tool. It is appropriate to glance at the pill as part of a broader scan. It is not appropriate to reduce watch frequency, reduce speed less cautiously in fog, or make manoeuvring decisions based solely on what SafeHelm shows.
+
+**CAUTION 6 — PHASE 1 LIMITATIONS**
+The current version (Phase 1) uses COLREGs rules based on geometry and relative motion only. It does not implement Rule 19 (restricted visibility) in full, does not account for vessel characteristics reported in AIS Type 21 (aids to navigation) messages, and does not handle traffic separation schemes. These limitations will be addressed in future versions.
+
+---
+
+### SafeHelm and COLREGs — A Note for the Captain
+
+The COLREGs rules that SafeHelm references are international law, enacted in Canada under the *Collision Regulations* (CRC, c 1416) and applicable in all Canadian waters. Familiarity with Rules 5 (Lookout), 7 (Risk of Collision), 8 (Action to Avoid Collision), 13 (Overtaking), 14 (Head-on Situation), 15 (Crossing Situation), 16 (Action by Give-way Vessel), 17 (Action by Stand-on Vessel), and 18 (Responsibilities Between Vessels) is assumed for any operator using this feature.
+
+SafeHelm is designed to reduce cognitive load during a busy watch — not to substitute for the trained seamanship that those rules require.
+
+---
+
+### Service Status and Reconnection
+
+The SafeHelm service (`d3kos-safehelm`) runs continuously in the background on the Pi. The header pill connects to it automatically when any d3kOS page loads. If the service is temporarily unavailable:
+
+- The pill shows `⚠ SafeHelm` in orange
+- The system attempts to reconnect every 5 seconds automatically
+- No action is required from the operator — connection restores when the service recovers
+- If the service remains offline, check **Settings → Services** or use **Fix My Pi** to diagnose
+
+To restart SafeHelm manually via the Pi terminal:
+
+```
+sudo systemctl restart d3kos-safehelm
+```
+
+---
+
+*d3kOS User Manual v0.9.9.4.2 — Document version 2.7.0 — September 16, 2026*
 *AtMyBoat.com — Open-source marine intelligence*
