@@ -130,13 +130,6 @@ h1 {
 }
 .view-3d.active { background: rgba(0,136,255,.25); border-color: #4499FF; color: #4499FF; }
 
-.view-ai {
-  background: var(--adv-bg);
-  border-color: var(--adv-bdr);
-  color: var(--adv);
-}
-.view-ai.active { background: rgba(180,100,0,.15); border-color: var(--adv-bdr); }
-
 .cam-btn {
   padding: 0 28px;
   height: 56px;
@@ -192,107 +185,7 @@ h1 {
   display: none;
 }
 
-/* ── SAFEHELM WIDGET — fixed footer, shown when AI OVERLAY active ── */
-#safehelm-widget {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 900;
-  background: #0a0a0a;
-  border-top: 2px solid #1a1a1a;
-  font-family: 'Chakra Petch', monospace;
-  font-size: 18px;
-  color: #ccc;
-  display: flex;
-  align-items: center;
-  min-height: 52px;
-  padding: 4px 12px;
-  gap: 12px;
-  transition: border-color 0.15s;
-}
-
-#safehelm-widget.flash-critical {
-  animation: sh-flash 0.5s step-end infinite;
-}
-@keyframes sh-flash {
-  0%, 100% { border-top-color: #ff2222; }
-  50%       { border-top-color: #1a1a1a; }
-}
-
-#safehelm-widget.flash-warning { border-top-color: #ffaa00; }
-
-#sh-status {
-  flex: 0 0 auto;
-  font-size: 18px;
-  color: #00CC00;
-  white-space: nowrap;
-}
-
-#sh-alerts {
-  flex: 1;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  overflow: hidden;
-}
-
-.sh-alert {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #111;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 18px;
-  border: 1px solid #333;
-  min-height: 48px;
-}
-
-.sh-alert.critical { border-color: #ff2222; color: #ff6666; }
-.sh-alert.warning  { border-color: #ffaa00; color: #ffcc44; }
-.sh-alert.advisory { border-color: #2255aa; color: #88aaff; }
-
-.sh-alert-mmsi { font-size: 18px; opacity: 0.75; }
-.sh-alert-rule { font-size: 18px; font-weight: bold; }
-.sh-alert-cpa  { font-size: 18px; opacity: 0.85; }
-
-/* ACK / Dismiss — 48×48 touch targets */
-.sh-btn {
-  background: transparent;
-  border: 1px solid #444;
-  color: #aaa;
-  font-size: 18px;
-  min-width: 48px;
-  min-height: 48px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.sh-btn:active { background: #1a1a1a; }
-
-/* Tap-to-explain panel — floats above the widget */
-.sh-explain {
-  display: none;
-  position: fixed;
-  bottom: 56px;
-  left: 8px;
-  right: 8px;
-  background: #0d0d0d;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 12px 16px;
-  font-size: 18px;
-  color: #ccc;
-  z-index: 901;
-  max-height: 40vh;
-  overflow-y: auto;
-}
-.sh-explain.visible { display: block; }
-
-#sh-no-alerts { font-size: 18px; color: #00CC00; opacity: 0.7; }
+/* SafeHelm widget CSS injected by safehelm-global.js at runtime */
 
 .feed-label {
   font-family: 'Chakra Petch', sans-serif;
@@ -542,7 +435,6 @@ h1 {
     <div class="vmb-modes">
       <button class="view-btn" id="btnGrid" onclick="toggleGrid()" aria-label="Grid view all cameras">&#8862; GRID</button>
       <button class="view-btn view-3d" id="btn3D" onclick="toggle3D()" aria-label="3D Surround View">&#11041; 3D SURROUND</button>
-      <button class="view-btn view-ai" id="btnAI" onclick="toggleAIOverlay()" aria-label="AI-SafeHelm collision advisory">&#9888; AI-SafeHelm</button>
     </div>
   </div>
 
@@ -636,7 +528,6 @@ var feedInterval = null;
 var gridIntervals = [];
 var gridMode     = false;
 var mode3D       = false;
-var aiActive     = false;
 var activeSlotId = null;
 var allSlots     = [];
 
@@ -1003,179 +894,6 @@ function toggle3D() {
   }
 }
 
-/* ── AI OVERLAY (SafeHelm full widget) ── */
-function toggleAIOverlay() {
-  aiActive = !aiActive;
-  var btn     = document.getElementById('btnAI');
-  var widget  = document.getElementById('safehelm-widget');
-  var explain = document.getElementById('sh-explain');
-  if (btn) btn.classList.toggle('active', aiActive);
-  if (aiActive) {
-    if (widget) widget.style.display = 'flex';
-    initSafeHelmWidget();
-  } else {
-    destroySafeHelmWidget();
-    if (widget)  widget.style.display = 'none';
-    if (explain) explain.classList.remove('visible');
-  }
-}
-
-/* ── SAFEHELM WIDGET JS — inlined from safehelm-widget.js, demand-activated ── */
-(function () {
-  'use strict';
-  var HOST        = window.location.hostname;
-  var SSE_URL     = 'http://' + HOST + ':3000/api/safehelm/sse';
-  var ACK_URL     = 'http://' + HOST + ':3000/api/safehelm/ack';
-  var DISMISS_URL = 'http://' + HOST + ':3000/api/safehelm/dismiss';
-  var _state      = {};
-  var _es         = null;
-  var _advAdded   = false;
-
-  function getEl(id) { return document.getElementById(id); }
-
-  function connectSSE() {
-    if (_es) { _es.close(); _es = null; }
-    var statusEl = getEl('sh-status');
-    _es = new EventSource(SSE_URL);
-    _es.onopen = function () {
-      if (statusEl) { statusEl.textContent = '⛵ SafeHelm'; statusEl.style.color = '#00CC00'; }
-    };
-    _es.onmessage = function (e) {
-      try {
-        var msg = JSON.parse(e.data);
-        if (msg.type === 'state') handleState(msg);
-      } catch (_) {}
-    };
-    _es.onerror = function () {
-      if (statusEl) { statusEl.textContent = '⚠ SafeHelm offline'; statusEl.style.color = '#ff4444'; }
-      _es.close(); _es = null;
-      setTimeout(function () {
-        var w = getEl('safehelm-widget');
-        if (w && w.style.display !== 'none') connectSSE();
-      }, 5000);
-    };
-  }
-
-  function handleState(msg) {
-    _state = {};
-    (msg.alerts || []).forEach(function (a) { _state[a.mmsi] = a; });
-    render();
-  }
-
-  function render() {
-    var alertsDiv = getEl('sh-alerts');
-    var widget    = getEl('safehelm-widget');
-    if (!alertsDiv || !widget) return;
-    alertsDiv.innerHTML = '';
-    var mmsis = Object.keys(_state);
-    if (mmsis.length === 0) {
-      var noAlert = document.createElement('span');
-      noAlert.id = 'sh-no-alerts';
-      noAlert.textContent = 'No qualifying traffic';
-      alertsDiv.appendChild(noAlert);
-      widget.classList.remove('flash-critical', 'flash-warning');
-      return;
-    }
-    var topTier = 'advisory';
-    mmsis.forEach(function (mmsi) {
-      var a = _state[mmsi];
-      if (a.tier === 'critical') topTier = 'critical';
-      else if (a.tier === 'warning' && topTier !== 'critical') topTier = 'warning';
-      var div = document.createElement('div');
-      div.className = 'sh-alert ' + a.tier;
-      div.innerHTML =
-        '<span class="sh-alert-mmsi">' + mmsi + '</span>' +
-        '<span class="sh-alert-rule">' + ruleLabel(a.rule) + '</span>' +
-        '<span class="sh-alert-cpa">CPA ' + Math.round(a.cpa_m) + 'm</span>' +
-        '<button class="sh-btn" onclick="shAck(\'' + mmsi + '\')">ACK</button>' +
-        '<button class="sh-btn" onclick="shDismiss(\'' + mmsi + '\')">✕</button>';
-      div.addEventListener('click', function (e) {
-        if (e.target.classList.contains('sh-btn')) return;
-        showExplain(a);
-      });
-      alertsDiv.appendChild(div);
-    });
-    widget.classList.remove('flash-critical', 'flash-warning');
-    if (topTier === 'critical') widget.classList.add('flash-critical');
-    else if (topTier === 'warning') widget.classList.add('flash-warning');
-  }
-
-  function showExplain(a) {
-    var el = getEl('sh-explain');
-    if (!el) return;
-    el.textContent = ruleLabel(a.rule) + ' — MMSI ' + a.mmsi +
-      ' | CPA ' + Math.round(a.cpa_m) + ' m | TCPA ' + Math.round(a.tcpa_s) + ' s' +
-      ' | State: ' + a.state;
-    el.classList.add('visible');
-  }
-
-  document.addEventListener('click', function (e) {
-    var el = getEl('sh-explain');
-    var ad = getEl('sh-alerts');
-    if (el && ad && !el.contains(e.target) && !ad.contains(e.target)) {
-      el.classList.remove('visible');
-    }
-  });
-
-  function ruleLabel(rule) {
-    return ({
-      rule14_headon:                     'Head-On',
-      rule15_giveway:                    'Give-Way →',
-      rule15_standon:                    'Stand-On ←',
-      rule15_standon_unconfirmed:        'Stand-On? ←',
-      rule13_being_overtaken:            'Overtaken',
-      rule13_overtaking:                 'Overtaking',
-      rule13_being_overtaken_unconfirmed:'Overtaken?',
-      rule18_giveway:                    'R18 Give-Way',
-    })[rule] || rule;
-  }
-
-  window.shAck = function (mmsi) {
-    fetch(ACK_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({mmsi: mmsi})
-    });
-  };
-  window.shDismiss = function (mmsi) {
-    fetch(DISMISS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({mmsi: mmsi})
-    });
-  };
-
-  window.initSafeHelmWidget = function () {
-    var widget = getEl('safehelm-widget');
-    if (!widget) return;
-    if (!_advAdded) {
-      var adv = document.createElement('div');
-      adv.id = 'sh-adv-line';
-      adv.style.cssText = 'font-size:18px;color:#888;white-space:nowrap;flex-shrink:0;';
-      adv.textContent = 'Advisory only — captain remains responsible';
-      widget.appendChild(adv);
-      _advAdded = true;
-    }
-    connectSSE();
-  };
-
-  window.destroySafeHelmWidget = function () {
-    if (_es) { _es.close(); _es = null; }
-    _state = {};
-    var alertsDiv = getEl('sh-alerts');
-    if (alertsDiv) {
-      alertsDiv.innerHTML =
-        '<span id="sh-no-alerts" style="font-size:18px;color:#00CC00;opacity:0.7;">No qualifying traffic</span>';
-    }
-    var statusEl = getEl('sh-status');
-    if (statusEl) { statusEl.textContent = '⛵ SafeHelm'; statusEl.style.color = '#00CC00'; }
-    var explain  = getEl('sh-explain');
-    if (explain)  explain.classList.remove('visible');
-    var widget   = getEl('safehelm-widget');
-    if (widget)   widget.classList.remove('flash-critical', 'flash-warning');
-  };
-})();
-
 /* ── RECORD / CAPTURE ── */
 function updateRecordBtn() {
   var btn = document.getElementById('btnRecord');
@@ -1252,13 +970,6 @@ function loadRecordings() {
 }
 </script>
 
-<!-- SafeHelm widget — fixed footer, shown when AI OVERLAY active -->
-<div id="safehelm-widget" style="display:none;" aria-label="SafeHelm Collision Advisory">
-  <span id="sh-status">&#9925; SafeHelm</span>
-  <div id="sh-alerts">
-    <span id="sh-no-alerts">No qualifying traffic</span>
-  </div>
-</div>
-<div class="sh-explain" id="sh-explain"></div>
+<script src="{{ url_for('static', filename='js/safehelm-global.js') }}"></script>
 </body>
 </html>
