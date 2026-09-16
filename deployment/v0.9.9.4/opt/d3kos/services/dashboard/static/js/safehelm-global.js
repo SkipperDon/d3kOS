@@ -198,10 +198,24 @@
       body: JSON.stringify({mmsi: mmsi}) });
   };
 
-  /* ── Auto-connect ── */
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', connect);
-  } else {
+  /* ── Position bar above any existing fixed bottom element ── */
+  function positionBar() {
+    var bot      = document.getElementById('bot');       /* index.html nav bar */
+    var inputBar = document.getElementById('input-bar'); /* ai-navigation.html */
+    var offset = 0;
+    if (bot)      offset = bot.offsetHeight;
+    else if (inputBar) offset = inputBar.offsetHeight;
+    widget.style.bottom = offset ? offset + 'px' : '0';
+  }
+
+  /* ── Auto-connect and position ── */
+  function init() {
+    positionBar();
     connect();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
