@@ -97,7 +97,7 @@
 
   <div id="top-bar">
     <div class="title">&#128247; 3D Surround View</div>
-    <button id="btn-back-charts" onclick="backToCharts()">&#9664; Charts</button>
+    <button id="btn-back-charts" onclick="backToCharts()">&#9664; Back</button>
   </div>
 
   <div id="panels">
@@ -165,8 +165,14 @@
 
     /* ── Back-to-charts: swap iframe in parent, or navigate directly ── */
     function backToCharts() {
-      if (window.parent && window.parent !== window && typeof window.parent.toggleAvNav3D === 'function') {
-        window.parent.toggleAvNav3D();
+      if (window.parent && window.parent !== window) {
+        if (typeof window.parent.toggle3D === 'function') {
+          window.parent.toggle3D();          /* Marine Vision iframe context */
+        } else if (typeof window.parent.toggleAvNav3D === 'function') {
+          window.parent.toggleAvNav3D();     /* Charts page iframe context (UI-1) */
+        } else {
+          window.history.back();
+        }
       } else {
         window.location.href = '/';
       }
