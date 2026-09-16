@@ -1,102 +1,179 @@
-/* safehelm-global.js — persistent SafeHelm collision advisory widget.
+/* safehelm-global.js — SafeHelm collision advisory, status-bar pill.
  * Self-injecting: one <script> tag on any d3kOS page activates it.
- * Always-on: auto-connects to SSE on load, no toggle required.
+ * Pill sits in the header — no fixed bottom bar, no content coverage.
  * BUG-48: host resolved from window.location — never hardcoded.
- * AODA: all text ≥18px, ACK/Dismiss buttons ≥48×48px.
+ * AODA: all text ≥18px, buttons ≥48×48px.
  */
 (function () {
   'use strict';
 
-  /* Skip if already injected on this page */
-  if (document.getElementById('safehelm-widget')) return;
+  if (document.getElementById('sh-pill')) return;
 
-  /* ── Inject CSS ── */
-  var style = document.createElement('style');
-  style.textContent =
-    '#safehelm-widget{position:fixed;bottom:0;left:0;right:0;z-index:900;' +
-    'background:#0a0a0a;border-top:2px solid #1a1a1a;' +
-    'font-family:\'Chakra Petch\',monospace;font-size:18px;color:#ccc;' +
-    'display:flex;align-items:center;min-height:52px;padding:4px 12px;' +
-    'gap:12px;transition:border-color 0.15s;}' +
-    '#safehelm-widget.flash-critical{animation:sh-flash 0.5s step-end infinite;}' +
-    '@keyframes sh-flash{0%,100%{border-top-color:#ff2222}50%{border-top-color:#1a1a1a}}' +
-    '#safehelm-widget.flash-warning{border-top-color:#ffaa00;}' +
-    '#sh-status{flex:0 0 auto;font-size:18px;color:#00CC00;white-space:nowrap;}' +
-    '#sh-alerts{flex:1;display:flex;gap:8px;flex-wrap:wrap;align-items:center;overflow:hidden;}' +
-    '.sh-alert{display:flex;align-items:center;gap:6px;background:#111;border-radius:4px;' +
-    'padding:4px 8px;font-size:18px;border:1px solid #333;min-height:48px;}' +
-    '.sh-alert.critical{border-color:#ff2222;color:#ff6666;}' +
-    '.sh-alert.warning{border-color:#ffaa00;color:#ffcc44;}' +
-    '.sh-alert.advisory{border-color:#2255aa;color:#88aaff;}' +
-    '.sh-alert-mmsi{font-size:18px;opacity:0.75;}' +
-    '.sh-alert-rule{font-size:18px;font-weight:bold;}' +
-    '.sh-alert-cpa{font-size:18px;opacity:0.85;}' +
-    '.sh-btn{background:transparent;border:1px solid #444;color:#aaa;font-size:18px;' +
-    'min-width:48px;min-height:48px;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;}' +
-    '.sh-btn:active{background:#1a1a1a;}' +
-    '.sh-explain{display:none;position:fixed;bottom:56px;left:8px;right:8px;' +
-    'background:#0d0d0d;border:1px solid #333;border-radius:6px;padding:12px 16px;' +
-    'font-size:18px;color:#ccc;z-index:901;max-height:40vh;overflow-y:auto;}' +
-    '.sh-explain.visible{display:block;}' +
-    '#sh-no-alerts{font-size:18px;color:#00CC00;opacity:0.7;}' +
-    '#sh-dismiss{background:transparent;border:none;color:#555;font-size:22px;' +
-    'min-width:48px;min-height:48px;cursor:pointer;flex-shrink:0;padding:0 8px;}' +
-    '#sh-dismiss:active{color:#aaa;}';
-  document.head.appendChild(style);
-
-  var _dismissed = false;   /* user hid the bar; re-shows on new alert */
-
-  /* ── Inject widget HTML ── */
-  var widget = document.createElement('div');
-  widget.id = 'safehelm-widget';
-  widget.setAttribute('aria-label', 'SafeHelm Collision Advisory');
-  widget.innerHTML =
-    '<span id="sh-status">⛵ SafeHelm</span>' +
-    '<div id="sh-alerts"><span id="sh-no-alerts">No qualifying traffic</span></div>';
-
-  /* ADV-1 — always visible per W1 requirement */
-  var adv = document.createElement('div');
-  adv.id = 'sh-adv-line';
-  adv.style.cssText = 'font-size:18px;color:#888;white-space:nowrap;flex-shrink:0;';
-  adv.textContent = 'Advisory only — captain remains responsible';
-  widget.appendChild(adv);
-
-  /* Dismiss button — hides bar; auto-restores on new alert */
-  var dismissBtn = document.createElement('button');
-  dismissBtn.id = 'sh-dismiss';
-  dismissBtn.setAttribute('aria-label', 'Hide SafeHelm bar');
-  dismissBtn.title = 'Hide (reappears on new alerts)';
-  dismissBtn.textContent = '−';   /* − */
-  dismissBtn.addEventListener('click', function () {
-    _dismissed = true;
-    widget.style.display = 'none';
-  });
-  widget.appendChild(dismissBtn);
-
-  var explain = document.createElement('div');
-  explain.className = 'sh-explain';
-  explain.id = 'sh-explain';
-
-  document.body.appendChild(widget);
-  document.body.appendChild(explain);
-
-  /* ── Endpoints — BUG-48 compliant ── */
   var HOST        = window.location.hostname;
   var SSE_URL     = 'http://' + HOST + ':3000/api/safehelm/sse';
   var ACK_URL     = 'http://' + HOST + ':3000/api/safehelm/ack';
   var DISMISS_URL = 'http://' + HOST + ':3000/api/safehelm/dismiss';
   var _state      = {};
   var _es         = null;
+  var _disabled   = false;   /* session-only; resets on page reload */
+  var _panelOpen  = false;
 
-  function getEl(id) { return document.getElementById(id); }
+  /* ── Inject CSS ── */
+  var style = document.createElement('style');
+  style.textContent =
+    '#sh-pill{display:inline-flex;align-items:center;gap:6px;' +
+    'padding:0 14px;height:38px;min-width:48px;border-radius:19px;cursor:pointer;' +
+    'font-family:\'Chakra Petch\',monospace;font-size:18px;font-weight:700;' +
+    'background:#0d0d0d;border:2px solid #1e4d1e;color:#00CC00;' +
+    'white-space:nowrap;flex-shrink:0;transition:border-color .2s,color .2s;' +
+    'user-select:none;-webkit-user-select:none;}' +
 
-  /* ── SSE connection with auto-reconnect ── */
-  function connect() {
+    '#sh-pill.sh-warn{border-color:#ffaa00;color:#ffcc44;}' +
+    '#sh-pill.sh-crit{border-color:#ff2222;color:#ff5555;' +
+    'animation:sh-pill-flash 0.5s step-end infinite;}' +
+    '@keyframes sh-pill-flash{0%,100%{color:#ff5555}50%{color:#661111}}' +
+    '#sh-pill.sh-off{color:#444;border-color:#2a2a2a;}' +
+    '#sh-pill.sh-err{color:#ff8800;border-color:#553300;}' +
+
+    '#sh-panel{display:none;position:fixed;left:0;right:0;' +
+    'background:#0d0d0d;border-bottom:2px solid #1a1a1a;z-index:1001;' +
+    'font-family:\'Chakra Petch\',monospace;font-size:18px;color:#ccc;' +
+    'padding:10px 16px;flex-direction:column;gap:8px;' +
+    'box-shadow:0 4px 16px rgba(0,0,0,.5);}' +
+    '#sh-panel.open{display:flex;}' +
+
+    '.sh-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;' +
+    'background:#111;border-radius:5px;padding:6px 12px;' +
+    'border:1px solid #333;min-height:52px;}' +
+    '.sh-row.critical{border-color:#ff2222;}' +
+    '.sh-row.warning{border-color:#ffaa00;}' +
+    '.sh-row.advisory{border-color:#2255aa;}' +
+    '.sh-mmsi{font-size:18px;opacity:.75;}' +
+    '.sh-rule{font-size:18px;font-weight:700;}' +
+    '.sh-cpa{font-size:18px;opacity:.85;margin-right:auto;}' +
+    '.sh-btn{background:transparent;border:1px solid #444;color:#aaa;' +
+    'font-size:18px;min-width:52px;min-height:48px;padding:4px 12px;' +
+    'border-radius:4px;cursor:pointer;white-space:nowrap;font-family:inherit;}' +
+    '.sh-btn:active{background:#1a1a1a;}' +
+
+    '#sh-adv{font-size:18px;color:#555;padding:2px 0;}' +
+
+    '#sh-dis-btn{align-self:flex-start;background:transparent;' +
+    'border:1px solid #2a2a2a;color:#555;font-family:inherit;' +
+    'font-size:18px;min-height:48px;padding:4px 18px;border-radius:4px;cursor:pointer;}' +
+    '#sh-dis-btn:active{color:#888;}' +
+
+    '#sh-ena-btn{align-self:flex-start;background:transparent;' +
+    'border:1px solid #1e4d1e;color:#00CC00;font-family:inherit;' +
+    'font-size:18px;min-height:48px;padding:4px 18px;border-radius:4px;cursor:pointer;}' +
+    '#sh-ena-btn:active{color:#fff;}';
+
+  document.head.appendChild(style);
+
+  /* ── Build pill ── */
+  var pill = document.createElement('div');
+  pill.id = 'sh-pill';
+  pill.setAttribute('role', 'button');
+  pill.setAttribute('aria-label', 'SafeHelm — tap to expand');
+  pill.textContent = '⛵ SafeHelm';
+  pill.addEventListener('click', togglePanel);
+
+  /* ── Build expand panel ── */
+  var panel = document.createElement('div');
+  panel.id = 'sh-panel';
+
+  var rows = document.createElement('div');
+  rows.id = 'sh-rows';
+  panel.appendChild(rows);
+
+  var adv = document.createElement('div');
+  adv.id = 'sh-adv';
+  adv.textContent = 'Advisory only — captain remains responsible';
+  panel.appendChild(adv);
+
+  var disBtn = document.createElement('button');
+  disBtn.id = 'sh-dis-btn';
+  disBtn.textContent = 'Disable SafeHelm (this session)';
+  disBtn.addEventListener('click', function (e) { e.stopPropagation(); disable(); });
+  panel.appendChild(disBtn);
+
+  var enaBtn = document.createElement('button');
+  enaBtn.id = 'sh-ena-btn';
+  enaBtn.textContent = 'Re-enable SafeHelm';
+  enaBtn.style.display = 'none';
+  enaBtn.addEventListener('click', function (e) { e.stopPropagation(); enable(); });
+  panel.appendChild(enaBtn);
+
+  /* ── Inject into DOM ── */
+  function injectDOM() {
+    /* Pill: on index.html insert before .sb-right; on other pages before #clock */
+    var sbRight = document.querySelector('.sb-right');
+    var clock   = document.getElementById('clock') || document.getElementById('clk');
+    var sb      = document.getElementById('sb') || document.getElementById('status-bar');
+
+    if (sbRight) {
+      sbRight.parentNode.insertBefore(pill, sbRight);
+    } else if (clock) {
+      clock.parentNode.insertBefore(pill, clock);
+    } else if (sb) {
+      sb.appendChild(pill);
+    } else {
+      document.body.insertBefore(pill, document.body.firstChild);
+    }
+
+    /* Panel is fixed — append to body; set top to status bar height */
+    document.body.appendChild(panel);
+    panel.style.top = ((sb && sb.offsetHeight) || 48) + 'px';
+
+    connect();
+  }
+
+  /* ── Panel toggle ── */
+  function togglePanel() {
+    _panelOpen = !_panelOpen;
+    panel.classList.toggle('open', _panelOpen);
+  }
+
+  document.addEventListener('click', function (e) {
+    if (_panelOpen && !pill.contains(e.target) && !panel.contains(e.target)) {
+      _panelOpen = false;
+      panel.classList.remove('open');
+    }
+  });
+
+  /* ── Disable / Enable (session-only) ── */
+  function disable() {
+    _disabled = true;
     if (_es) { _es.close(); _es = null; }
-    var statusEl = getEl('sh-status');
+    _panelOpen = false;
+    panel.classList.remove('open');
+    pill.textContent = '⛵';
+    pill.setAttribute('aria-label', 'SafeHelm disabled — tap to re-enable');
+    pill.classList.remove('sh-warn', 'sh-crit', 'sh-err');
+    pill.classList.add('sh-off');
+    rows.innerHTML = '<div style="font-size:18px;color:#555;">SafeHelm is disabled for this session.</div>';
+    disBtn.style.display = 'none';
+    enaBtn.style.display = '';
+  }
+
+  function enable() {
+    _disabled = false;
+    _panelOpen = false;
+    panel.classList.remove('open');
+    pill.classList.remove('sh-off');
+    pill.setAttribute('aria-label', 'SafeHelm — tap to expand');
+    disBtn.style.display = '';
+    enaBtn.style.display = 'none';
+    connect();
+  }
+
+  /* ── SSE ── */
+  function connect() {
+    if (_disabled) return;
+    if (_es) { _es.close(); _es = null; }
     _es = new EventSource(SSE_URL);
     _es.onopen = function () {
-      if (statusEl) { statusEl.textContent = '⛵ SafeHelm'; statusEl.style.color = '#00CC00'; }
+      pill.classList.remove('sh-err', 'sh-off');
     };
     _es.onmessage = function (e) {
       try {
@@ -105,9 +182,11 @@
       } catch (_) {}
     };
     _es.onerror = function () {
-      if (statusEl) { statusEl.textContent = '⚠ SafeHelm offline'; statusEl.style.color = '#ff4444'; }
+      pill.textContent = '⚠ SafeHelm';
+      pill.classList.remove('sh-warn', 'sh-crit');
+      pill.classList.add('sh-err');
       _es.close(); _es = null;
-      setTimeout(connect, 5000);
+      if (!_disabled) setTimeout(connect, 5000);
     };
   }
 
@@ -118,104 +197,69 @@
   }
 
   function render() {
-    var alertsDiv = getEl('sh-alerts');
-    var w         = getEl('safehelm-widget');
-    if (!alertsDiv || !w) return;
-    alertsDiv.innerHTML = '';
+    if (_disabled) return;
     var mmsis = Object.keys(_state);
+    pill.classList.remove('sh-warn', 'sh-crit');
+
     if (mmsis.length === 0) {
-      var noAlert = document.createElement('span');
-      noAlert.id = 'sh-no-alerts';
-      noAlert.textContent = 'No qualifying traffic';
-      alertsDiv.appendChild(noAlert);
-      w.classList.remove('flash-critical', 'flash-warning');
-      return;   /* leave bar hidden if user dismissed it with no active alerts */
+      pill.textContent = '⛵ SafeHelm';
+      rows.innerHTML = '<div style="font-size:18px;color:#00CC00;opacity:.7;">No qualifying traffic</div>';
+      return;
     }
-    /* New alert — restore bar even if user dismissed it */
-    if (_dismissed) { _dismissed = false; w.style.display = 'flex'; }
+
     var topTier = 'advisory';
     mmsis.forEach(function (mmsi) {
-      var a = _state[mmsi];
-      if (a.tier === 'critical') topTier = 'critical';
-      else if (a.tier === 'warning' && topTier !== 'critical') topTier = 'warning';
-      var div = document.createElement('div');
-      div.className = 'sh-alert ' + a.tier;
-      div.innerHTML =
-        '<span class="sh-alert-mmsi">' + mmsi + '</span>' +
-        '<span class="sh-alert-rule">' + ruleLabel(a.rule) + '</span>' +
-        '<span class="sh-alert-cpa">CPA ' + Math.round(a.cpa_m) + 'm</span>' +
+      var t = _state[mmsi].tier;
+      if (t === 'critical') topTier = 'critical';
+      else if (t === 'warning' && topTier !== 'critical') topTier = 'warning';
+    });
+
+    pill.textContent = '⛵ ' + mmsis.length + (topTier === 'critical' ? ' ⚠' : topTier === 'warning' ? ' !' : '');
+    if (topTier === 'critical') pill.classList.add('sh-crit');
+    else if (topTier === 'warning') pill.classList.add('sh-warn');
+
+    rows.innerHTML = '';
+    mmsis.forEach(function (mmsi) {
+      var a   = _state[mmsi];
+      var row = document.createElement('div');
+      row.className = 'sh-row ' + a.tier;
+      row.innerHTML =
+        '<span class="sh-mmsi">' + mmsi + '</span>' +
+        '<span class="sh-rule">' + ruleLabel(a.rule) + '</span>' +
+        '<span class="sh-cpa">CPA ' + Math.round(a.cpa_m) + 'm</span>' +
         '<button class="sh-btn" onclick="shAck(\'' + mmsi + '\')">ACK</button>' +
         '<button class="sh-btn" onclick="shDismiss(\'' + mmsi + '\')">✕</button>';
-      div.addEventListener('click', function (e) {
-        if (e.target.classList.contains('sh-btn')) return;
-        showExplain(a);
-      });
-      alertsDiv.appendChild(div);
+      rows.appendChild(row);
     });
-    w.classList.remove('flash-critical', 'flash-warning');
-    if (topTier === 'critical') w.classList.add('flash-critical');
-    else if (topTier === 'warning') w.classList.add('flash-warning');
   }
 
-  function showExplain(a) {
-    var el = getEl('sh-explain');
-    if (!el) return;
-    el.textContent = ruleLabel(a.rule) + ' — MMSI ' + a.mmsi +
-      ' | CPA ' + Math.round(a.cpa_m) + ' m | TCPA ' + Math.round(a.tcpa_s) + ' s' +
-      ' | State: ' + a.state;
-    el.classList.add('visible');
-  }
-
-  document.addEventListener('click', function (e) {
-    var el = getEl('sh-explain');
-    var ad = getEl('sh-alerts');
-    if (el && ad && !el.contains(e.target) && !ad.contains(e.target)) {
-      el.classList.remove('visible');
-    }
-  });
-
-  function ruleLabel(rule) {
+  function ruleLabel(r) {
     return ({
-      rule14_headon:                     'Head-On',
-      rule15_giveway:                    'Give-Way →',
-      rule15_standon:                    'Stand-On ←',
-      rule15_standon_unconfirmed:        'Stand-On? ←',
-      rule13_being_overtaken:            'Overtaken',
-      rule13_overtaking:                 'Overtaking',
-      rule13_being_overtaken_unconfirmed:'Overtaken?',
-      rule18_giveway:                    'R18 Give-Way',
-    })[rule] || rule;
+      rule14_headon:                      'Head-On',
+      rule15_giveway:                     'Give-Way →',
+      rule15_standon:                     'Stand-On ←',
+      rule15_standon_unconfirmed:         'Stand-On? ←',
+      rule13_being_overtaken:             'Overtaken',
+      rule13_overtaking:                  'Overtaking',
+      rule13_being_overtaken_unconfirmed: 'Overtaken?',
+      rule18_giveway:                     'R18 Give-Way',
+    })[r] || r;
   }
 
   window.shAck = function (mmsi) {
     fetch(ACK_URL, { method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({mmsi: mmsi}) });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mmsi: mmsi }) });
   };
   window.shDismiss = function (mmsi) {
     fetch(DISMISS_URL, { method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({mmsi: mmsi}) });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mmsi: mmsi }) });
   };
 
-  /* ── Position bar above any existing fixed bottom element ── */
-  function positionBar() {
-    var bot      = document.getElementById('bot');       /* index.html nav bar */
-    var inputBar = document.getElementById('input-bar'); /* ai-navigation.html */
-    var offset = 0;
-    if (bot)      offset = bot.offsetHeight;
-    else if (inputBar) offset = inputBar.offsetHeight;
-    widget.style.bottom = offset ? offset + 'px' : '0';
-  }
-
-  /* ── Auto-connect and position ── */
-  function init() {
-    positionBar();
-    connect();
-  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', injectDOM);
   } else {
-    init();
+    injectDOM();
   }
 })();
