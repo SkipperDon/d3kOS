@@ -9475,7 +9475,7 @@ Not attempted. Needs a read of `fish_detector.py` lines ~100–170 to see the fu
 
 ## BUG-134 — d3kos-camera-stream.service: ExecCondition tier gate fails closed when tier API or internet is unavailable — camera service blocked even when subscription is valid
 
-**Status:** `[ ]` OPEN S168 2026-09-16 — logged, proposed fix below
+**Status:** `[~]` FIXED LAB S168 2026-09-16 — ExecCondition replaced with fail-open logic; pending Pi deploy + validation
 **Severity:** HIGH (Marine Vision fully unavailable whenever Pi is offshore or atmyboat.com is unreachable)
 **Platforms affected:** d3kOS v0.9.9.4.x boat Pi + lab Pi. All platforms using the tier-gated camera service unit.
 
@@ -9526,7 +9526,7 @@ ExecCondition=/bin/bash -c '
 | `d3kos-camera-stream.service` | `/etc/systemd/system/d3kos-camera-stream.service` | base | Replace ExecCondition with fail-open logic |
 
 ### Fix Status
-Proposed above. Before applying: confirm whether `tier_service.py` writes a `tier-cache.json` on successful auth (if yes, use cache-read fallback rather than unconditional fail-open). Requires redeploy + `systemctl daemon-reload && systemctl restart d3kos-camera-stream`.
+**FIXED S168 2026-09-16.** Confirmed tier_service.py writes cache to `/opt/d3kos/state/tier1-approval.json` on every successful auth — tier service handles offline Tier 1 transparently via its own cache layer. ExecCondition replaced with fail-open logic (curl error or empty body → allow; explicit `enabled:false` → block only). Simple fail-open is the correct approach; no separate cache read needed in the shell script. Requires Pi deploy + `systemctl daemon-reload && systemctl restart d3kos-camera-stream`. Lab Pi deploy pending operator instruction.
 
 ---
 

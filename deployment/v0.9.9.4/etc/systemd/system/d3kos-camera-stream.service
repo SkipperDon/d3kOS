@@ -9,11 +9,13 @@ StartLimitBurst=3
 Type=simple
 User=d3kos
 WorkingDirectory=/opt/d3kos/services/marine-vision
-# Tier gate (BUG-102). ExecCondition, not ExecStartPre: a non-zero exit SKIPS the unit
-# (final state 'inactive', no failure, no Restart) instead of failing it. At Tier 0 this
-# unit must be a silent no-op — d3kOS runs without cameras. d3kos-tier-gated.timer re-tries.
-# Retries 5x3s because the tier API may not be listening yet at boot.
-ExecCondition=/bin/bash -c 'for i in 1 2 3 4 5; do curl -sf http://localhost:8093/tier/feature/camera 2>/dev/null | jq -e ".enabled == true" >/dev/null 2>&1 && exit 0; sleep 3; done; exit 1'
+# Tier gate (BUG-102, fail-open fix BUG-134). ExecCondition, not ExecStartPre: a non-zero
+# exit SKIPS the unit (final state 'inactive', no failure, no Restart) instead of failing it.
+# At Tier 0 this unit must be a silent no-op — d3kOS runs without cameras.
+# Fail-open logic: tier API unreachable or returns no body → ALLOW (vessel may be at sea).
+# Only block when the API is reachable AND explicitly returns enabled:false.
+# tier_service.py caches the last-known tier on successful auth — offline Tier 1 = allow.
+ExecCondition=/bin/bash -c 'R=$(curl -sf --max-time 15 http://localhost:8093/tier/feature/camera 2>/dev/null); RC=$?; if [ $RC -ne 0 ] || [ -z "$R" ]; then exit 0; fi; echo "$R" | jq -e ".enabled == false" >/dev/null 2>&1 && exit 1; exit 0'
 
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/usr/bin/python3 /opt/d3kos/services/marine-vision/camera_stream_manager.py
