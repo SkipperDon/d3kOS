@@ -106,13 +106,18 @@
 
   /* ── Inject into DOM ── */
   function injectDOM() {
-    /* Pill: on index.html insert before .sb-right; on other pages before #clock */
-    var sbRight = document.querySelector('.sb-right');
-    var clock   = document.getElementById('clock') || document.getElementById('clk');
-    var sb      = document.getElementById('sb') || document.getElementById('status-bar');
+    var sbRight  = document.querySelector('.sb-right');   /* index.html */
+    var hdrRight = document.querySelector('.hdr-right');  /* marine-vision.html */
+    var clock    = document.getElementById('clock') || document.getElementById('clk');
+    var sb       = document.getElementById('sb') || document.getElementById('status-bar');
+    var header   = document.querySelector('header');
 
     if (sbRight) {
+      /* index.html: pill between ticker and Pi health */
       sbRight.parentNode.insertBefore(pill, sbRight);
+    } else if (hdrRight) {
+      /* marine-vision.html: pill before DAY/NGT buttons */
+      hdrRight.insertBefore(pill, hdrRight.firstChild);
     } else if (clock) {
       clock.parentNode.insertBefore(pill, clock);
     } else if (sb) {
@@ -121,9 +126,10 @@
       document.body.insertBefore(pill, document.body.firstChild);
     }
 
-    /* Panel is fixed — append to body; set top to status bar height */
+    /* Panel is fixed — append to body; set top to header/status-bar height */
     document.body.appendChild(panel);
-    panel.style.top = ((sb && sb.offsetHeight) || 48) + 'px';
+    var topEl = sb || header;
+    panel.style.top = ((topEl && topEl.offsetHeight) || 48) + 'px';
 
     connect();
   }
