@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.9.9.5] — D23 OTA + SafeHelm UI + Marine Vision View Mode Bar — 2026-09-16
+
+### Added
+
+- **D23 OTA Incremental Update Agent** — Pi-side agent polls HostPapa command queue every 60 s; downloads versioned archive, verifies SHA-256, backs up /opt/d3kos, stops all d3kos-* services, rsyncs new files, restarts services, health-checks with auto-rollback on failure (5 attempts, 25 s window). Ed25519 signed requests. T1+ gate (T0 requires physical access). `Restart=on-failure RestartSec=30` (BUG-105 compliant). Tests: 9/9 GREEN. HostPapa `ota-queue.php` + `amboat_ota_commands` table pending. Commit `4bcf2650`.
+
+- **SafeHelm Global Persistent Widget** — `safehelm-global.js` self-injecting widget deployed to all 6 operational dashboard pages. Always-on SSE connection to :8096; status-bar pill visible at all times; dismisses on tap, reappears on next alert. ADV-1 advisory-only footer. AODA 18px/48px compliant. BUG-48 compliant host resolution. Commits `5dd8c47e` + refinements.
+
+- **Marine Vision View Mode Bar** — Replaced flat camera selector row with a two-group VMB: left = camera slot buttons (Bow/Helm/Port/Stbd), right = GRID / 3D SURROUND / AI-SafeHelm mode buttons. Commit `90e90061`.
+
+- **D16 3D Surround Row-Ribbon Button** — Toggle button added to instrument row-pill ribbon in `index.html`. Commit `26552488`.
+
+### Fixed
+
+- **BUG-132** — `camera_stream_manager.py` port 8084 blocking: RTSP init was synchronous in main thread, blocking Flask startup. Frame grabbers now start non-blocking. Commit `0faf9fc4`.
+- **BUG-134** — `d3kos-camera-stream.service` ExecCondition tier gate failed closed on network issues. Replaced with fail-open: only explicit `enabled:false` blocks service. Commit `c6abd40c`.
+- **BUG-136** — `d3kos-fish-detector.service` same fail-closed ExecCondition. Same fail-open fix applied. Commit `fd4e2fd8`.
+- **BUG-137** — `d3kos-go2rtc.service` permission denied on `/opt/d3kos/config/go2rtc-d16.yaml` at boot → false Critical Pi alert. Fixed. Commit `354c00fa`.
+
+---
+
 ## [v0.9.9.5] — D02 SafeHelm Advisory Mode — 2026-09-15
 
 ### Added

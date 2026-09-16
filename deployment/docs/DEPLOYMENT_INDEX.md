@@ -1956,6 +1956,30 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `deployment/docs/V09995_DISCUSSION_PLAN.md` | **[UPDATED — S161]** §17 D21 Extended AIS NOT APPROVED; §18 D22 AIS receive-chain APPROVED as research (no release assigned). Version 1.4 → 1.5. |
 | `deployment/docs/atomic-specs/V09995-ORCHESTRATION.md` | **[UPDATED — S161]** D17 ordering, Tier constraints, Q-queue protocol confirmed active. |
 
+## S168 — 2026-09-16 — UI wiring (UI-1/UI-2/UI-3) + BUG-132/134/136/137 + D23 OTA Pi agent
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.5/opt/d3kos/services/ota/d3kos-ota-agent.py` | **[NEW — S168]** D23 OTA Pi agent — 60 s poll loop, Ed25519 signed, T1+ gate, download→SHA256→backup→rsync→health-check, auto-rollback. 392 lines. 9/9 guard tests GREEN. Commit `4bcf2650`. Not yet deployed to Pi. |
+| `deployment/v0.9.9.5/etc/systemd/system/d3kos-ota-agent.service` | **[NEW — S168]** D23 OTA systemd unit — `Restart=on-failure RestartSec=30` (BUG-105 compliant). |
+| `tests/test_d23_ota_agent.py` | **[NEW — S168]** 9 guard tests: tier gate T0/T1/missing-file, SHA-256 pass/fail, schema valid/wrong-type, result payload keys, rollback on health fail. All GREEN. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/static/js/safehelm-global.js` | **[NEW — S168]** UI-2 SafeHelm global widget — self-injecting, always-on SSE, status-bar pill, dismiss/reappear, ADV-1 footer, AODA 18px/48px, BUG-48 compliant. 207 lines. Deployed to lab Pi. Commit `5dd8c47e`. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/index.html` | **[UPDATED — S168]** SafeHelm global script tag + D16 3D Surround row-pill button added. Commits `5dd8c47e`, `26552488`. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/marine-vision.html` | **[UPDATED — S168]** View Mode Bar replacing flat camera selector (two groups: slots + GRID/3D/AI-SafeHelm). SafeHelm global script tag (replaced inline IIFE). Commits `90e90061`, `5dd8c47e`. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/engine-monitor.html` | **[UPDATED — S168]** SafeHelm global script tag + pill injection fix for .dn container. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/ai-navigation.html` | **[UPDATED — S168]** SafeHelm global script tag. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/anchor-watch.html` | **[UPDATED — S168]** SafeHelm global script tag + pill injection fix for .dn container. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/helm-assistant.html` | **[UPDATED — S168]** SafeHelm global script tag. |
+| `deployment/v0.9.9.5/opt/d3kos/services/camera/camera_stream_manager.py` | **[UPDATED — S168]** BUG-132 fix — RTSP init moved off main thread; port 8084 now binds immediately. Commit `0faf9fc4`. |
+| `deployment/v0.9.9.5/etc/systemd/system/d3kos-camera-stream.service` | **[UPDATED — S168]** BUG-134 fix — fail-open ExecCondition tier gate. Commit `c6abd40c`. |
+| `deployment/v0.9.9.5/etc/systemd/system/d3kos-fish-detector.service` | **[UPDATED — S168]** BUG-136 fix — same fail-open ExecCondition. Commit `fd4e2fd8`. |
+| `deployment/v0.9.9.5/etc/systemd/system/d3kos-go2rtc.service` | **[UPDATED — S168]** BUG-137 fix — permission denied on go2rtc-d16.yaml at boot; false Critical Pi alert eliminated. Commit `354c00fa`. |
+| `deployment/docs/D3KOS_USER_MANUAL_v0992.md` | **[UPDATED — S168]** v2.6.0: Marine Vision View Mode Bar section. v2.7.0: Chapter 18 AI-SafeHelm. v2.8.0: Row Ribbon section (BOTH/ENGINE/NAV/WX/3D) + OTA Chapter 10 expanded (D23 install flow, auto-rollback, security). |
+| `deployment/docs/atomic-specs/V09995-D16-3D-SURROUND.md` | **[UPDATED — S168]** Spec v1.1 — Phase 2-B IMU dynamic ring correction requirement added. Commit `9e23cadf`. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S168]** BUG-132, BUG-134, BUG-135, BUG-136, BUG-137 entries added. BUG-133 stale OPEN status corrected to FIXED. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S169 close]** Version 3.85→3.86. UI-1/UI-2 status updated. UI-3 status updated. D23 status updated. BUG-137 row added. |
+| `Helm-OS/CHANGELOG.md` | **[UPDATED — S169 close]** v0.9.9.5 D23/SafeHelm-UI/VMB entry added above the D02 entry. |
+
 ## S163 — 2026-09-15 — BUG-130 N2K Engine Bridge + D23 OTA approved
 
 | File / Location | Change |

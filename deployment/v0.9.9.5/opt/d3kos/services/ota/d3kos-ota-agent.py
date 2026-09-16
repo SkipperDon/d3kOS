@@ -38,7 +38,7 @@ HARDWARE_PROFILE    = Path('/opt/d3kos/config/hardware-profile.json')
 DEPLOY_ROOT         = Path('/opt/d3kos')
 ROLLBACK_DIR        = Path('/opt/d3kos.ota-rollback')
 HEALTH_URL          = 'http://localhost:3000/health'
-OTA_PHP_PATH        = '/wp-content/themes/twentytwenty-child/mobile/ota-queue.php'
+OTA_PHP_SUFFIX      = '/wp-content/themes/twentytwenty-child/mobile/ota-queue.php'
 POLL_INTERVAL       = 60   # seconds
 REQUEST_TIMEOUT     = 30   # seconds
 
@@ -64,15 +64,32 @@ def _check_tier() -> bool:
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-def _load_base_url() -> str | None:
+def _load_base_url() -> tuple[str, str] | tuple[None, None]:
+    """Return (origin, ota_php_path) derived from cloud-config.json.
+
+    origin   = scheme + netloc only (e.g. 'https://atmyboat.com')
+    php_path = full URI path including any environment prefix
+               (e.g. '/staging/wp-content/.../ota-queue.php' for staging,
+                     '/wp-content/.../ota-queue.php' for production)
+
+    _peek / _ack / _post_result construct the final URL as origin + php_path.
+    The signed path equals php_path, which matches REQUEST_URI on the server.
+    """
     try:
         with open(CLOUD_CONFIG_FILE) as f:
             cfg = json.load(f)
         url = cfg.get('amboat_base_url', '').rstrip('/')
-        return url if url else None
+        if not url:
+            return None, None
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        origin   = f'{parsed.scheme}://{parsed.netloc}'
+        prefix   = parsed.path.rstrip('/')
+        php_path = prefix + OTA_PHP_SUFFIX
+        return origin, php_path
     except Exception as e:
         logger.error(f'Failed to read cloud-config.json: {e}')
-        return None
+        return None, None
 
 
 def _get_hardware_profile_version() -> str:
@@ -128,19 +145,22 @@ def _build_result_payload(command_id: int, pi_id: str, status: str,
 
 # ── HostPapa HTTP helpers ─────────────────────────────────────────────────────
 
-def _signed_headers() -> dict:
+def _signed_headers(php_path: str) -> dict:
     """Ed25519 headers for Pi→HostPapa request."""
-    return sign_device_request(OTA_PHP_PATH)
+    hdrs = sign_device_request(php_path)
+    hdrs['User-Agent'] = 'Mozilla/5.0'  # nginx on HostPapa blocks python-requests UA (BUG-56)
+    hdrs['Content-Type'] = 'application/json'
+    return hdrs
 
 
-def _peek(base_url: str, pi_id: str) -> dict | None:
+def _peek(base_url: str, php_path: str, pi_id: str) -> dict | None:
     """Fetch oldest pending command. Returns raw dict or None."""
-    url = base_url + OTA_PHP_PATH
+    url = base_url + php_path
     try:
         r = requests.get(
             url,
             params={'action': 'peek', 'pi_id': pi_id},
-            headers=_signed_headers(),
+            headers=_signed_headers(php_path),
             timeout=REQUEST_TIMEOUT,
         )
         if r.status_code == 200:
@@ -156,26 +176,26 @@ def _peek(base_url: str, pi_id: str) -> dict | None:
     return None
 
 
-def _ack(base_url: str, command_id: int) -> None:
-    url = base_url + OTA_PHP_PATH
+def _ack(base_url: str, php_path: str, command_id: int) -> None:
+    url = base_url + php_path
     try:
         requests.post(
             url,
             json={'action': 'ack', 'command_id': command_id},
-            headers=_signed_headers(),
+            headers=_signed_headers(php_path),
             timeout=REQUEST_TIMEOUT,
         )
     except Exception as e:
         logger.warning(f'ack error (non-fatal): {e}')
 
 
-def _post_result(base_url: str, payload: dict) -> None:
-    url = base_url + OTA_PHP_PATH
+def _post_result(base_url: str, php_path: str, payload: dict) -> None:
+    url = base_url + php_path
     try:
         requests.post(
             url,
             json={'action': 'result', **payload},
-            headers=_signed_headers(),
+            headers=_signed_headers(php_path),
             timeout=REQUEST_TIMEOUT,
         )
     except Exception as e:
@@ -241,7 +261,7 @@ def _rollback(units: list[str], detail: str) -> None:
 
 # ── Install flow (§3.3) ───────────────────────────────────────────────────────
 
-def _install(base_url: str, pi_id: str, cmd: dict) -> None:
+def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
     command_id = cmd['command_id']
     payload    = cmd['payload']
     version    = payload['version']
@@ -251,14 +271,14 @@ def _install(base_url: str, pi_id: str, cmd: dict) -> None:
     # Step 2: T1+ gate
     if not _check_tier():
         logger.warning('OTA blocked: tier insufficient (T0)')
-        _post_result(base_url, _build_result_payload(
+        _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'tier_insufficient',
             detail='OTA requires Tier 1 or higher. Visit atmyboat.com to upgrade.',
         ))
         return
 
     # Step 3: ACK
-    _ack(base_url, command_id)
+    _ack(base_url, php_path, command_id)
 
     # Step 4: Download
     archive = Path(tempfile.gettempdir()) / f'd3kos-ota-{version}.tar.gz'
@@ -271,7 +291,7 @@ def _install(base_url: str, pi_id: str, cmd: dict) -> None:
                     f.write(chunk)
     except Exception as e:
         logger.error(f'Download failed: {e}')
-        _post_result(base_url, _build_result_payload(
+        _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'download_fail', detail=str(e),
         ))
         archive.unlink(missing_ok=True)
@@ -280,7 +300,7 @@ def _install(base_url: str, pi_id: str, cmd: dict) -> None:
     # Step 5: SHA-256 verify
     if not _verify_sha256(archive, sha256):
         logger.error('SHA-256 mismatch — aborting install')
-        _post_result(base_url, _build_result_payload(
+        _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'checksum_fail',
             detail='Archive SHA-256 did not match the expected value.',
         ))
@@ -303,7 +323,7 @@ def _install(base_url: str, pi_id: str, cmd: dict) -> None:
             tf.extractall(stage)
     except Exception as e:
         logger.error(f'Extraction failed: {e}')
-        _post_result(base_url, _build_result_payload(
+        _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'extract_fail', detail=str(e),
         ))
         shutil.rmtree(stage, ignore_errors=True)
@@ -335,7 +355,7 @@ def _install(base_url: str, pi_id: str, cmd: dict) -> None:
     if _health_check():
         # Step 13a: Success
         logger.info(f'OTA {version} installed successfully')
-        _post_result(base_url, _build_result_payload(
+        _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'success', version_installed=version,
         ))
         # Step 14: Cleanup
@@ -345,7 +365,7 @@ def _install(base_url: str, pi_id: str, cmd: dict) -> None:
     else:
         # Step 13b: Rollback
         _rollback(units, f'Health check failed after installing {version}')
-        _post_result(base_url, _build_result_payload(
+        _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'rollback_complete',
             detail=f'Health check failed after installing {version}; rolled back.',
         ))
@@ -360,11 +380,10 @@ def main() -> None:
 
     while True:
         try:
-            base_url = _load_base_url()
+            base_url, php_path = _load_base_url()
             if not base_url:
                 logger.warning('amboat_base_url not set — skipping poll')
             else:
-                # device_token is read inside sign_device_request / _peek
                 try:
                     from device_sign import _load_device_token
                     pi_id = _load_device_token()
@@ -373,7 +392,7 @@ def main() -> None:
                     pi_id = None
 
                 if pi_id:
-                    raw = _peek(base_url, pi_id)
+                    raw = _peek(base_url, php_path, pi_id)
                     if raw:
                         try:
                             cmd = _parse_command(raw)
@@ -381,7 +400,7 @@ def main() -> None:
                             logger.warning(f'Ignored command: {e}')
                             cmd = None
                         if cmd:
-                            _install(base_url, pi_id, cmd)
+                            _install(base_url, php_path, pi_id, cmd)
         except Exception as e:
             logger.error(f'Unexpected error in poll loop: {e}')
 

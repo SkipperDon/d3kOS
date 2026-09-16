@@ -193,6 +193,7 @@ def test_rollback_triggered_on_health_fail(tmp_path, monkeypatch):
     with patch('requests.get', return_value=fake_resp):
         agent._install(
             base_url='https://example.com',
+            php_path='/wp-content/themes/twentytwenty-child/mobile/ota-queue.php',
             pi_id='test-token',
             cmd={
                 'command_id': 1,

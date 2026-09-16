@@ -11216,3 +11216,72 @@ Standing rule confirmed: **never claim a feature complete without a browser-leve
 Q3/Q4: FAIL — risk not classified before scp/systemctl/sudo deploy actions. Recurring gap in deploy sessions. Remediation: classify and pre-state before all deploy commands same as code edits.
 Q6: PASS after remediation — 144 D02 tests pass after port change. No regressions.
 Session formally closed.
+
+## Session S168 2026-09-16
+**Goal:** UI-3 Marine Vision design review + UI-1/UI-2 dashboard wiring + BUG-132/134/136 fixes + D23 OTA agent build.
+
+**Completed:**
+- UI-3 Change 3: Marine Vision View Mode Bar — replaced flat camera selector row with two-group VMB: left = camera slot buttons (Bow/Helm/Port/Stbd); right = GRID / 3D SURROUND / AI OVERLAY mode buttons. Wired toggleGrid(), toggle3D(), toggleAIOverlay() to VMB buttons. Removed old grid-btn from renderSelector. Manual §5 updated (v2.6.0).
+- Marine Vision: renamed "AI OVERLAY" button to "AI-SafeHelm"; wired full SafeHelm widget into AI OVERLAY mode (commit 28da96da)
+- Marine Vision: fixed 3D Surround view reset caused by loadSlots() poll interrupting the panel toggle (commit 50fd66f8)
+- 3d-view.html: fixed Back button label and parent context routing (commit bfa4259e)
+- D16 spec v1.1: added Phase 2-B IMU dynamic ring correction requirement (commit 9e23cadf)
+- UI-2 SafeHelm global persistent widget: new safehelm-global.js self-injecting widget — always-on SSE, dismiss/reappear on alert, ADV-1 footer, AODA 18px/48px, BUG-48 compliant host resolution. Added script tag to all 6 operational pages (index.html, engine-monitor, ai-navigation, helm-assistant, anchor-watch, marine-vision). Deployed to lab Pi 192.168.1.237.
+- SafeHelm UI refinements: fixed fixed-bottom-bar layout → status-bar pill approach; bold white text + daylight contrast; inject logic for .dn day/night containers on engine-monitor and anchor-watch; inject into .hdr-right on marine-vision. (5 follow-on commits)
+- SafeHelm manual Chapter 18 added (v2.7.0 → part of D02 documentation)
+- UI-1: Added 3D Surround toggle button to row-pill ribbon in index.html (commit 26552488). Manual updated with Row Ribbon section (BOTH/ENGINE/NAV/WX/3D + 3D Surround detail, v2.8.0).
+- BUG-132: Fixed blocking RTSP init in main thread in camera_stream_manager.py — port 8084 now binds immediately on startup; frame grabbers start non-blocking. Lab Pi validated (commit 0faf9fc4, lab-validate commit 43d8166f).
+- BUG-134: Replaced ExecCondition tier gate with fail-open logic in d3kos-camera-stream.service — curl error or empty body = allow; only explicit `enabled:false` blocks. Lab Pi validated (commit c6abd40c).
+- BUG-136: Same fail-open ExecCondition applied to d3kos-fish-detector.service. Lab Pi validated (commit fd4e2fd8).
+- BUG-137 (new): d3kos-go2rtc permission denied on boot caused false Critical Pi alert. Fixed. Lab Pi validated (commit 354c00fa).
+- BUG-133 stale status corrected in V09994_BUG_FIXES.md (was showing OPEN; was actually FIXED in S163).
+- D23 OTA agent — Pi-side built and committed: d3kos-ota-agent.py (392 lines, Ed25519 signed, 60 s poll, T1+ gate, SHA-256 verify, backup+rsync+health-check, auto-rollback on failure, Restart=on-failure RestartSec=30), d3kos-ota-agent.service. Tests: test_d23_ota_agent.py — 9/9 GREEN. ⚠ HostPapa side (ota-queue.php + amboat_ota_commands table) NOT YET BUILT. Pi agent NOT yet deployed to Pi.
+
+**Decisions:**
+- SafeHelm moved from fixed bottom bar → status-bar pill injected into each page's header right zone — avoids nav-bar conflicts across all templates; consistent with existing header layout patterns.
+- D23 Pi agent scoped to Ed25519 signed requests using existing device_sign.py module rather than HMAC — consistent with existing Pi identity scheme.
+
+**Ollama:** 0 calls (all code written by Claude Sonnet directly; qwen2.5-coder not invoked)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-16 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D23 HostPapa side: ota-queue.php + amboat_ota_commands table NOT built
+- D23 Pi deploy: agent not yet on lab Pi
+- UI-3: View Mode Bar done (Change 3); holistic design review not formally signed off
+- UI-1: Button added to ribbon; lab Pi browser verification not completed (standing S167 OIC rule)
+- UI-2: Widget deployed to lab Pi; browser UI verification not completed
+- BUG-135: Hotspot auto-restart after reboot — boat Pi, needs on-site check (no fix applied)
+- BUG-130: Boat-side validation (engine running test)
+- BUG-132/134: Boat Pi deploy (pending in-person visit)
+- Playwright full suite: `./tests/run-all.sh --workers=1`
+- GitHub Issue Sync: pending operator approval
+- SESSION_LOG.md S168 entry was missing — written retroactively this session (S169)
+
+---
+
+SQS — S168 2026-09-16
+─────────────────────────────────────────────────────
+tasks_planned          : 5 (UI-3, UI-1, UI-2, BUG-132/134/136, D23)
+tasks_completed        : 5 (all built + committed; browser/Pi verification pending per standing rule)
+sprint_scope_violations: 0
+scope_creep_events     : 0 (BUG-137 discovered and fixed within session scope)
+regressions_introduced : 0
+oic_score              : 82/100 (−10: browser-level UI verification not done for UI-1/UI-2; −8: D23 HostPapa side not built — spec required both sides; session close not completed before cut)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-16
+─────────────────────────────────────────────────────
+session_duration_min   : unknown (session cut by operator — model stopped responding)
+tasks_planned          : 5
+tasks_completed        : 5 (code complete; verification pending)
+governing_doc_version  : 2026-09-12
+attributed_rec         : 0
+failure_category       : session_cut (model unresponsive — operator terminated)
+human_verified         : 0 (git commits confirmed; browser UI and Pi deploy not verified)
+─────────────────────────────────────────────────────
