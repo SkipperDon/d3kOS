@@ -672,7 +672,7 @@ function loadSlots() {
       renderSelector(slots);
       renderAllCamsGrid(slots);
       updateStatusFromSlots(slots);
-      if (!feedInterval && !gridMode) startFeed();
+      if (!feedInterval && !gridMode && !mode3D) startFeed();
     })
     .catch(function() {
       document.getElementById('cameraSelector').innerHTML =
