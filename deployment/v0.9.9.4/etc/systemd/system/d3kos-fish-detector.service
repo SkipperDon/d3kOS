@@ -7,8 +7,9 @@ Wants=d3kos-tier.service d3kos-camera-stream.service
 Type=simple
 User=d3kos
 WorkingDirectory=/opt/d3kos/services/marine-vision
-# Tier gate (BUG-102) — ExecCondition skips the unit cleanly at Tier 0; see d3kos-camera-stream.service
-ExecCondition=/bin/bash -c 'for i in 1 2 3 4 5; do curl -sf http://localhost:8093/tier/feature/camera 2>/dev/null | jq -e ".enabled == true" >/dev/null 2>&1 && exit 0; sleep 3; done; exit 1'
+# Tier gate (BUG-102, fail-open fix BUG-136). Same logic as d3kos-camera-stream.service.
+# Fail-open: tier API unreachable → allow. Only block on explicit enabled:false.
+ExecCondition=/bin/bash -c 'R=$(curl -sf --max-time 15 http://localhost:8093/tier/feature/camera 2>/dev/null); RC=$?; if [ $RC -ne 0 ] || [ -z "$R" ]; then exit 0; fi; echo "$R" | jq -e ".enabled == false" >/dev/null 2>&1 && exit 1; exit 0'
 ExecStart=/usr/bin/python3 /opt/d3kos/services/marine-vision/fish_detector.py
 Restart=on-failure
 RestartSec=15

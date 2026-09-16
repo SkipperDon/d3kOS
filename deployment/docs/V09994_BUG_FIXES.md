@@ -9607,3 +9607,35 @@ Open Marine Vision → Camera Setup → Scan. The discovery scan will find camer
 ### Fix Status
 Not attempted. Requires on-boat diagnosis first — run the four diagnostic commands above. Fix follows directly from confirmed hypothesis.
 
+
+---
+
+## BUG-136 — d3kos-fish-detector.service: same ExecCondition fail-closed bug as BUG-134 — fish detector blocked when tier API is unreachable
+
+**Status:** `[~]` FIXED LAB S168 2026-09-16 — ExecCondition replaced with fail-open logic; deployed with BUG-134 in same Pi deploy
+**Severity:** HIGH (fish detection entirely unavailable whenever Pi is offshore or atmyboat.com is unreachable)
+**Platforms affected:** d3kOS v0.9.9.4.x boat Pi + lab Pi.
+
+### Symptom
+`d3kos-fish-detector.service` stays `inactive (condition)` — fish detection never starts — under the same connectivity conditions that trigger BUG-134. The symptom is invisible to the user since Marine Vision shows no fish detection status rather than an explicit error.
+
+### Root Cause
+Identical to BUG-134. `d3kos-fish-detector.service` carries the same fail-closed ExecCondition:
+```bash
+ExecCondition=/bin/bash -c 'for i in 1 2 3 4 5; do curl -sf http://localhost:8093/tier/feature/camera 2>/dev/null | jq -e ".enabled == true" >/dev/null 2>&1 && exit 0; sleep 3; done; exit 1'
+```
+Any curl failure (tier service unreachable, boot race) causes `exit 1` → unit skipped silently.
+
+### Fix — same fail-open logic as BUG-134
+```bash
+ExecCondition=/bin/bash -c 'R=$(curl -sf --max-time 15 http://localhost:8093/tier/feature/camera 2>/dev/null); RC=$?; if [ $RC -ne 0 ] || [ -z "$R" ]; then exit 0; fi; echo "$R" | jq -e ".enabled == false" >/dev/null 2>&1 && exit 1; exit 0'
+```
+
+### Affected Files
+| File | Pi Path | Partition | Change |
+|------|---------|-----------|--------|
+| `d3kos-fish-detector.service` | `/etc/systemd/system/d3kos-fish-detector.service` | base | Replace ExecCondition with fail-open logic |
+
+### Fix Status
+Fixed S168 2026-09-16 in same deploy as BUG-134. Requires `systemctl daemon-reload && systemctl restart d3kos-fish-detector` on Pi after deploy. Note: BUG-133 (SQL migration crash in fish_detector.py) is a separate blocking bug — even with the ExecCondition fixed, fish-detector will crash on startup until BUG-133 is resolved.
+
