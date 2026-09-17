@@ -478,6 +478,16 @@ def ota_trigger():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/version')
+def api_version():
+    """Current installed d3kOS version from license.json."""
+    try:
+        data = json.loads(Path('/opt/d3kos/config/license.json').read_text())
+        return jsonify({'version': data.get('version', '0.0.0')})
+    except Exception:
+        return jsonify({'version': 'unknown'})
+
+
 @app.route('/agents/status')
 def agents_status():
     """

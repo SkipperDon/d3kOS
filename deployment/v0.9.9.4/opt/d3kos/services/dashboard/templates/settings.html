@@ -671,6 +671,86 @@
       </div>
 
 
+      <!-- ⑱ UPDATES -->
+      <div class="sec" id="s-updates">
+        <div class="sec-header">&#11015; Updates</div>
+        <div class="status-grid">
+          <div class="si"><div class="si-name">Current version</div><div class="si-val" id="upd-current">Loading…</div></div>
+          <div class="si"><div class="si-name">Available version</div><div class="si-val" id="upd-available">Checking…</div></div>
+          <div class="si"><div class="si-name">Last checked</div><div class="si-val" id="upd-last-check">—</div></div>
+        </div>
+        <div id="upd-msg" style="display:none; color:var(--ink2); font-size:18px; margin:16px 0; padding:12px; background:var(--bg2); border-radius:4px;"></div>
+        <div class="btn-group">
+          <button class="btn" onclick="updCheckNow()">&#128269; Check Now</button>
+          <div id="upd-install-wrap" style="display:none">
+            <button class="btn btn-primary" onclick="updInstallNow()">&#11015; Install Now</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        async function updLoad() {
+          try {
+            const statusResp = await fetch(`http://${window.location.hostname}:3000/api/ota/status`);
+            const statusData = await statusResp.json();
+
+            const versionResp = await fetch(`http://${window.location.hostname}:3000/api/version`);
+            const versionData = await versionResp.json();
+
+            document.getElementById('upd-current').textContent = versionData.version || 'unknown';
+
+            if (statusData.available) {
+              document.getElementById('upd-available').textContent = statusData.version || 'unknown';
+              document.getElementById('upd-install-wrap').style.display = 'block';
+            } else {
+              document.getElementById('upd-available').textContent = 'Up to date';
+              document.getElementById('upd-install-wrap').style.display = 'none';
+            }
+
+            if (statusData.updated) {
+              document.getElementById('upd-last-check').textContent = statusData.updated;
+            }
+          } catch (e) {
+            document.getElementById('upd-current').textContent = 'Error';
+            document.getElementById('upd-available').textContent = 'Error';
+            console.error('OTA status error:', e);
+          }
+        }
+
+        function updCheckNow() {
+          document.getElementById('upd-msg').style.display = 'none';
+          const msg = document.getElementById('upd-msg');
+          msg.textContent = 'Checking for updates…';
+          msg.style.display = 'block';
+          updLoad();
+          setTimeout(() => {
+            msg.style.display = 'none';
+          }, 2000);
+        }
+
+        async function updInstallNow() {
+          try {
+            const resp = await fetch(`http://${window.location.hostname}:3000/api/ota/trigger`, {
+              method: 'POST'
+            });
+            const data = await resp.json();
+            if (data.success) {
+              const msg = document.getElementById('upd-msg');
+              msg.textContent = 'Update triggered — installing…';
+              msg.style.display = 'block';
+              document.querySelector('#upd-install-wrap button').disabled = true;
+            } else {
+              showToast('Error triggering update: ' + (data.error || 'unknown'));
+            }
+          } catch (e) {
+            showToast('Error: ' + e.message);
+          }
+        }
+
+        // Load on page load
+        window.addEventListener('load', updLoad);
+      </script>
+
     </div><!-- /settings-content -->
     </div><!-- /settings-scroll-area -->
 
