@@ -180,20 +180,31 @@ class HealthAgent(AgentBase):
             return False
 
     def _count_log_errors(self) -> int:
-        """Count CRITICAL log entries across all .log files in the last 24h."""
+        """Count [ERROR]/[CRITICAL] log lines whose timestamp is within the last 24h."""
+        import re as _re
         count = 0
         cutoff = time.time() - 86400
+        ts_pat = _re.compile(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
         if not LOG_DIR.exists():
             return 0
         for log_file in LOG_DIR.glob('*.log'):
             try:
-                # Only scan files modified in last 24h
                 if log_file.stat().st_mtime < cutoff:
                     continue
                 with open(log_file, errors='replace') as f:
                     for line in f:
-                        if '[CRITICAL]' in line or '[ERROR]' in line:
-                            count += 1
+                        if '[CRITICAL]' not in line and '[ERROR]' not in line:
+                            continue
+                        m = ts_pat.match(line)
+                        if m:
+                            try:
+                                from datetime import datetime as _dt
+                                line_ts = _dt.strptime(m.group(1), '%Y-%m-%d %H:%M:%S').timestamp()
+                                if line_ts < cutoff:
+                                    continue
+                            except ValueError:
+                                pass
+                        count += 1
             except Exception:
                 pass
         return count
