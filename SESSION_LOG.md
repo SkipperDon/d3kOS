@@ -11353,3 +11353,56 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 0 (staging smoke-tested; full Pi end-to-end deferred)
 ─────────────────────────────────────────────────────
+
+## S171 2026-09-17
+**Goal:** Enable OTA agent on lab Pi, complete D24 boot splash, D25 AI Nav rename, debug D23 auth failure.
+
+**Completed:**
+- D24 DONE: Replaced `/usr/share/plymouth/themes/pix/splash.png` on lab Pi with custom 1024×768 RGBA PNG (navy #0a1628 background, AtMyBoat logo, welcome text, copyright, progress bar). Generated via Python/Pillow. Rebuilt `initramfs8`. Operator confirmed visible on reboot.
+- D25 DONE: Changed `index.html` line 73 from `HELM` to `AI Nav` in helm-pill div. Deployed to lab Pi, dashboard restarted. Operator confirmed.
+- D23 root cause identified: HostPapa staging has no libsodium and no OpenSSL Ed25519. The GMP pure-PHP fallback `_ed25519_gmp_verify()` in `device-auth.php` returns false for valid Python `cryptography` library Ed25519 signatures. Confirmed via diagnostic PHP uploaded and run from Pi against staging. Fix required in `device-auth.php`.
+- Lab Pi manually registered in staging `amboat_device_enrolments` (device_token `7eee5d04...`, pubkey `578ce9...`, status=approved, tier T2 via wpax_usermeta).
+
+**Decisions:**
+- D24: Used `pix` theme static PNG (not `d3kos` script theme) — script themes fail silently with `vc4-kms-v3d` KMS driver on Raspberry Pi.
+- D23: Fix is to correct `_ed25519_gmp_verify()` in `device-auth.php` — NOT a server config change.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-17 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D23 FIX: Correct `_ed25519_gmp_verify()` in `device-auth.php` and redeploy to staging
+- D23 end-to-end test after fix: Pi polls → receives command → installs
+- BUG-130: Boat-side N2K validation (engine running, on-site)
+- BUG-132/133: Marine Vision camera/fish detector (boat Pi)
+- D02/D05/D16/D17: v0.9.9.5 remaining build items
+
+---
+
+SQS — S171 2026-09-17
+─────────────────────────────────────────────────────
+tasks_planned          : 3 (D24, D25, D23 enable+test)
+tasks_completed        : 2 (D24, D25)
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 78/100 (D24/D25 complete and verified; D23 root cause found but not fixed; diagnosis took excessive time)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-17
+─────────────────────────────────────────────────────
+session_duration_min   : ~120
+tasks_planned          : 3
+tasks_completed        : 2
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 0
+failure_category       : slow_diagnosis
+human_verified         : 1 (D24 reboot confirmed; D25 UI confirmed)
+─────────────────────────────────────────────────────
+
