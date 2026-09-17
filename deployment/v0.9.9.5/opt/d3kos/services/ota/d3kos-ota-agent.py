@@ -39,6 +39,8 @@ DEPLOY_ROOT         = Path('/opt/d3kos')
 ROLLBACK_DIR        = Path('/opt/d3kos.ota-rollback')
 HEALTH_URL          = 'http://localhost:3000/health'
 OTA_PHP_SUFFIX      = '/wp-content/themes/twentytwenty-child/mobile/ota-queue.php'
+OTA_STATUS_FILE     = Path('/opt/d3kos/data/ota-status.json')
+OTA_TRIGGER_FILE    = Path('/opt/d3kos/data/ota-trigger')
 POLL_INTERVAL       = 60   # seconds
 REQUEST_TIMEOUT     = 30   # seconds
 
@@ -375,12 +377,44 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
         shutil.rmtree(stage, ignore_errors=True)
 
 
+# ── OTA status file helpers ───────────────────────────────────────────────────
+
+def _write_ota_status(state: str, version: str = '', notes: str = '') -> None:
+    try:
+        OTA_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        OTA_STATUS_FILE.write_text(json.dumps({
+            'available': state not in ('none', 'done'),
+            'state':     state,
+            'version':   version,
+            'notes':     notes,
+            'updated':   time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        }, indent=2))
+    except Exception as e:
+        logger.warning(f'Could not write OTA status file: {e}')
+
+
+def _clear_ota_status() -> None:
+    try:
+        OTA_STATUS_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
 # ── Main poll loop ────────────────────────────────────────────────────────────
 
 def main() -> None:
     logger.info('d3kOS OTA agent starting (D23)')
 
     while True:
+        # Consume trigger file (dashboard [Update d3kOS] button) — skip sleep
+        triggered = OTA_TRIGGER_FILE.exists()
+        if triggered:
+            try:
+                OTA_TRIGGER_FILE.unlink(missing_ok=True)
+            except Exception:
+                pass
+            logger.info('OTA trigger file detected — polling immediately')
+
         try:
             base_url, php_path = _load_base_url()
             if not base_url:
@@ -402,7 +436,14 @@ def main() -> None:
                             logger.warning(f'Ignored command: {e}')
                             cmd = None
                         if cmd:
+                            payload = cmd.get('payload', {})
+                            _write_ota_status('pending',
+                                              payload.get('version', ''),
+                                              payload.get('release_notes', ''))
                             _install(base_url, php_path, pi_id, cmd)
+                            _clear_ota_status()
+                    else:
+                        _clear_ota_status()
         except Exception as e:
             logger.error(f'Unexpected error in poll loop: {e}')
 

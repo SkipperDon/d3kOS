@@ -454,6 +454,30 @@ def update_status():
     return jsonify({'available': False})
 
 
+@app.route('/api/ota/status')
+def ota_status():
+    """D23 — OTA status for the dashboard update pill."""
+    path = Path('/opt/d3kos/data/ota-status.json')
+    if path.exists():
+        try:
+            return jsonify(json.loads(path.read_text()))
+        except Exception:
+            pass
+    return jsonify({'available': False, 'state': 'none'})
+
+
+@app.route('/api/ota/trigger', methods=['POST'])
+def ota_trigger():
+    """D23 — Write trigger file so OTA agent polls immediately (skip 60s wait)."""
+    try:
+        trigger = Path('/opt/d3kos/data/ota-trigger')
+        trigger.parent.mkdir(parents=True, exist_ok=True)
+        trigger.touch()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/agents/status')
 def agents_status():
     """
