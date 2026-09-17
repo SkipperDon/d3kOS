@@ -11406,3 +11406,58 @@ failure_category       : slow_diagnosis
 human_verified         : 1 (D24 reboot confirmed; D25 UI confirmed)
 ─────────────────────────────────────────────────────
 
+
+## Session S172 — 2026-09-17 (continuation)
+**Goal:** Fix D23 Ed25519 auth (`_ed25519_gmp_verify()`) on HostPapa staging and complete end-to-end OTA test
+**Completed:**
+- sodium_compat (paragonie v1.21.1) deployed to staging — pure-PHP polyfill for libsodium; fixes Ed25519 verify on HostPapa which has no native libsodium. `device-auth.php` updated with autoload guard.
+- V09995-D23-OTA.md §16 added: Tier 1 consultation (Opus) on sodium_compat approach, 9 GMP failure modes ranked, RFC 8032 test vectors, message canonicalization warning. Version bumped to v2.1.
+- BUG-139 logged: Admin Console CRM 404 (`/wp-json/d3k/v1/crm` doesn't exist; should call `crm-proxy.php`)
+- D23 end-to-end OTA test COMPLETE: lab Pi (command_id 8, 15:42 2026-09-17) downloaded, rsync-installed v0.9.9.4.3, health check passed, success reported to staging.
+- 5 OTA agent deployment issues found and fixed (all 5 in repo commit 85454c06):
+  1. ROLLBACK_DIR moved inside /opt/d3kos/ (root owns /opt/ parent)
+  2. systemctl stop/start/daemon-reload calls add sudo prefix + sudoers NOPASSWD rules
+  3. Download request adds User-Agent: Mozilla/5.0 (nginx blocks python-requests)
+  4. rsync adds --no-group (can't chgrp root-owned files)
+  5. rsync adds --exclude=.ota-rollback/ --exclude=backups/
+- ota-admin.php test-mode URL patch reverted on staging (github.com-only restored)
+**Decisions:**
+- sodium_compat approach (not GMP rewrite): Opus recommendation; GMP has 9 failure modes vs 1 risk (ImunifyAV PHP scanner). sodium_compat passes RFC 8032 test vectors. Bundle in repo, no Composer.
+- ROLLBACK_DIR inside /opt/d3kos/: avoids needing root permissions for backup dir creation
+- sudo for systemctl: OTA agent runs as d3kos user; system services require root; explicit NOPASSWD rules in sudoers rather than running agent as root
+**Ollama:** 0 calls
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com | TBD |
+| Ollama | 0 calls | $0.00 |
+| Opus fork (3 min) | 1 fork call | TBD |
+**Pending:**
+- BUG-139: Fix Admin Console VM config.json proxy_url (call crm-proxy.php not /wp-json/d3k/v1/crm)
+- BUG-130: Boat-side N2K engine bridge validation (on-site, engine running)
+- BUG-132/133: Marine Vision camera/fish detector (boat Pi)
+- D02/D05/D16/D17: v0.9.9.5 remaining build items
+- sodium_compat on HostPapa live (staging only; live deploy pending v0.9.9.4.3 release)
+
+---
+
+SQS — S172 2026-09-17
+─────────────────────────────────────────────────────
+tasks_planned          : 2 (D23 auth fix + e2e test)
+tasks_completed        : 2
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 82/100 (both tasks complete and verified; 5 deployment bugs found and fixed; session pacing feedback received twice — slow-diagnosis pattern repeated from S171)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-17
+─────────────────────────────────────────────────────
+session_duration_min   : ~180
+tasks_planned          : 2
+tasks_completed        : 2
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 1 (slow-diagnosis pattern — operator flagged twice)
+failure_category       : slow_diagnosis
+human_verified         : 1 (OTA success log confirmed at 15:43)
+─────────────────────────────────────────────────────
