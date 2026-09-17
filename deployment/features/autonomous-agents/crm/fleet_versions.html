@@ -56,6 +56,68 @@
   .filter-bar select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
                        font-size: 15px; background: #fff; color: #1e293b; }
   .filter-label  { font-size: 14px; color: #64748b; }
+
+  /* ── OTA column ──────────────────────────────────────────────────────────── */
+  .pill-ota-pending     { background: #dbeafe; color: #1e40af; padding: 3px 12px;
+                          border-radius: 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill-ota-in_progress { background: #fef9c3; color: #854d0e; padding: 3px 12px;
+                          border-radius: 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill-ota-done        { background: #dcfce7; color: #166534; padding: 3px 12px;
+                          border-radius: 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill-ota-failed      { background: #fee2e2; color: #991b1b; padding: 3px 12px;
+                          border-radius: 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill-ota-none        { background: #f1f5f9; color: #94a3b8; padding: 3px 12px;
+                          border-radius: 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .btn-ota-push { background: #3b82f6; color: #fff; border: none; border-radius: 6px;
+                  padding: 6px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+                  white-space: nowrap; min-height: 48px; min-width: 48px; }
+  .btn-ota-push:hover { background: #2563eb; }
+
+  /* ── OTA Modal ───────────────────────────────────────────────────────────── */
+  .ota-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+                       z-index: 1000; align-items: center; justify-content: center; }
+  .ota-modal-overlay.open { display: flex; }
+  .ota-modal { background: #fff; border-radius: 12px; padding: 28px 32px; width: 560px;
+               max-width: 96vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .ota-modal h3 { font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 6px; }
+  .ota-modal .subtitle { font-size: 14px; color: #64748b; margin-bottom: 22px; font-family: monospace; }
+  .ota-field { margin-bottom: 18px; }
+  .ota-field label { display: block; font-size: 18px; font-weight: 600; color: #374151;
+                     margin-bottom: 6px; }
+  .ota-field input, .ota-field textarea {
+      width: 100%; box-sizing: border-box;
+      padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 7px;
+      font-size: 18px; color: #1e293b; background: #fff; }
+  .ota-field input:focus, .ota-field textarea:focus {
+      outline: 2px solid #3b82f6; border-color: #3b82f6; }
+  .ota-field textarea { resize: vertical; min-height: 72px; }
+  .ota-sha-wrap { position: relative; }
+  .ota-sha-spinner { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                     font-size: 14px; color: #94a3b8; display: none; }
+  .ota-hint { font-size: 14px; color: #64748b; margin-top: 4px; }
+  .ota-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+  .btn-ota-cancel { background: #f1f5f9; color: #374151; border: 1px solid #cbd5e1;
+                    border-radius: 6px; padding: 10px 20px; font-size: 18px; font-weight: 600;
+                    cursor: pointer; min-height: 48px; }
+  .btn-ota-submit { background: #3b82f6; color: #fff; border: none; border-radius: 6px;
+                    padding: 10px 24px; font-size: 18px; font-weight: 700; cursor: pointer;
+                    min-height: 48px; }
+  .btn-ota-submit:hover { background: #2563eb; }
+  .btn-ota-submit:disabled { background: #93c5fd; cursor: not-allowed; }
+  .ota-msg { padding: 10px 14px; border-radius: 6px; font-size: 18px; margin-bottom: 16px;
+             display: none; }
+  .ota-msg.ok  { background: #dcfce7; color: #166534; display: block; }
+  .ota-msg.err { background: #fee2e2; color: #991b1b; display: block; }
+
+  /* ── History section inside modal ────────────────────────────────────────── */
+  .ota-history-section { margin-top: 28px; border-top: 1px solid #e2e8f0; padding-top: 18px; }
+  .ota-history-section h4 { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 12px; }
+  .ota-hist-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .ota-hist-table th { text-align: left; padding: 6px 10px; color: #64748b; font-size: 13px;
+                       font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+  .ota-hist-table td { padding: 8px 10px; color: #334155; border-bottom: 1px solid #f1f5f9;
+                       vertical-align: middle; }
+  .ota-hist-loading { color: #94a3b8; font-size: 15px; text-align: center; padding: 12px 0; }
 </style>
 
 <div class="page-header" style="margin-bottom: 24px;">
@@ -119,11 +181,13 @@
         <th>User</th>
         <th>Tier</th>
         <th>Current version</th>
+        <th>OTA Status</th>
         <th>Latest</th>
         <th>Status</th>
         <th>Hours since check</th>
         <th>Pi online</th>
         <th>Last seen</th>
+        <th>OTA</th>
       </tr>
     </thead>
     <tbody>
@@ -140,6 +204,21 @@
       </td>
       <td><span class="tier-badge">{{ d.tier }}</span></td>
       <td><span class="mono">{{ d.current_version }}</span></td>
+      <td>
+        {% set ota = ota_status.get(d.device_token, {}) %}
+        {% set ota_s = ota.get('status', 'none') %}
+        {% if ota_s == 'pending' %}
+          <span class="pill-ota-pending" title="Awaiting Pi poll">Pending v{{ ota.get('pending_version','?') }}</span>
+        {% elif ota_s == 'in_progress' %}
+          <span class="pill-ota-in_progress">Installing…</span>
+        {% elif ota_s == 'done' %}
+          <span class="pill-ota-done" title="{{ ota.get('install_timestamp','') }}">Installed v{{ ota.get('version_installed','?') }}</span>
+        {% elif ota_s == 'failed' %}
+          <span class="pill-ota-failed" title="{{ ota.get('detail','') }}">Failed</span>
+        {% else %}
+          <span class="pill-ota-none">—</span>
+        {% endif %}
+      </td>
       <td><span class="mono">{{ d.latest_version }}</span></td>
       <td><span class="pill-{{ d.version_status }}">{{ d.version_status | replace('_', ' ') | title }}</span></td>
       <td style="color:#475569;">
@@ -152,6 +231,17 @@
         {{ 'Online' if d.pi_online else 'Offline' }}
       </td>
       <td style="font-size:13px; color:#64748b; white-space:nowrap;">{{ d.last_seen }}</td>
+      <td>
+        {% if d.tier and d.tier != 'T0' %}
+        <button class="btn-ota-push"
+                onclick="otaOpenModal('{{ d.device_token }}', '{{ d.device_short }}', '{{ d.current_version }}')"
+                aria-label="Push OTA update to {{ d.device_short }}">
+          Push Update
+        </button>
+        {% else %}
+        <span style="font-size:13px; color:#94a3b8;">T0 — locked</span>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
     </tbody>
@@ -192,5 +282,174 @@ function filterTable() {
     row.style.display = (textMatch && statusMatch) ? '' : 'none';
   });
 }
+</script>
+
+{# ── OTA Push Modal ────────────────────────────────────────────────────────── #}
+<div class="ota-modal-overlay" id="otaOverlay" role="dialog" aria-modal="true"
+     aria-labelledby="otaModalTitle" onclick="if(event.target===this)otaCloseModal()">
+  <div class="ota-modal">
+    <h3 id="otaModalTitle">Push OTA Update</h3>
+    <p class="subtitle" id="otaDeviceLabel"></p>
+
+    <div class="ota-msg" id="otaMsg"></div>
+
+    <form id="otaForm" onsubmit="otaSubmit(event)">
+      <input type="hidden" id="otaPiId" name="pi_id">
+
+      <div class="ota-field">
+        <label for="otaVersion">Version <span style="color:#dc2626;">*</span></label>
+        <input type="text" id="otaVersion" name="version"
+               placeholder="0.9.9.5" pattern="^\d+\.\d+\.\d+\.\d+(\.\d+)?$"
+               title="Format: 0.9.9.X or 0.9.9.X.Y — no v prefix" required>
+        <div class="ota-hint">Format: 0.9.9.5 or 0.9.9.5.1 — no v prefix</div>
+      </div>
+
+      <div class="ota-field">
+        <label for="otaUrl">GitHub Release URL <span style="color:#dc2626;">*</span></label>
+        <input type="url" id="otaUrl" name="download_url"
+               placeholder="https://github.com/SkipperDon/d3kOS/releases/download/v0.9.9.5/d3kos-v0.9.9.5.tar.gz"
+               required onblur="otaFetchSha()">
+        <div class="ota-hint">Paste the .tar.gz asset URL — SHA-256 auto-fills from companion file</div>
+      </div>
+
+      <div class="ota-field">
+        <label for="otaSha256">SHA-256 <span style="color:#dc2626;">*</span></label>
+        <div class="ota-sha-wrap">
+          <input type="text" id="otaSha256" name="sha256"
+                 placeholder="64-character hex string" maxlength="64"
+                 pattern="[a-fA-F0-9]{64}" required>
+          <span class="ota-sha-spinner" id="otaShaSpinner">fetching…</span>
+        </div>
+      </div>
+
+      <div class="ota-field">
+        <label for="otaNotes">Release notes <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
+        <textarea id="otaNotes" name="release_notes"
+                  placeholder="One-liner shown in dashboard banner…"></textarea>
+      </div>
+
+      <div class="ota-actions">
+        <button type="button" class="btn-ota-cancel" onclick="otaCloseModal()">Cancel</button>
+        <button type="submit" class="btn-ota-submit" id="otaSubmitBtn">Push Update</button>
+      </div>
+    </form>
+
+    {# ── Install history ───────────────────────────────────────────────────── #}
+    <div class="ota-history-section">
+      <h4>Install History (last 5)</h4>
+      <div id="otaHistoryWrap">
+        <div class="ota-hist-loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function otaOpenModal(piId, shortLabel, currentVer) {
+  document.getElementById('otaPiId').value        = piId;
+  document.getElementById('otaDeviceLabel').textContent =
+    shortLabel + ' — current: ' + currentVer;
+  document.getElementById('otaVersion').value     = '';
+  document.getElementById('otaUrl').value         = '';
+  document.getElementById('otaSha256').value      = '';
+  document.getElementById('otaNotes').value       = '';
+  document.getElementById('otaMsg').className     = 'ota-msg';
+  document.getElementById('otaMsg').textContent   = '';
+  document.getElementById('otaSubmitBtn').disabled = false;
+  document.getElementById('otaOverlay').classList.add('open');
+  document.getElementById('otaVersion').focus();
+  otaLoadHistory(piId);
+}
+
+function otaCloseModal() {
+  document.getElementById('otaOverlay').classList.remove('open');
+}
+
+function otaLoadHistory(piId) {
+  const wrap = document.getElementById('otaHistoryWrap');
+  wrap.innerHTML = '<div class="ota-hist-loading">Loading…</div>';
+  fetch('/ota-history?pi_id=' + encodeURIComponent(piId))
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success || !data.history.length) {
+        wrap.innerHTML = '<div class="ota-hist-loading">No history yet.</div>';
+        return;
+      }
+      const rows = data.history.map(h => {
+        const statusLabel = h.result_status || h.status;
+        const ver = h.version_installed || h.target_version || '?';
+        const ts  = (h.install_timestamp || h.created_at || '').replace('T', ' ').substring(0, 16);
+        const detail = h.detail ? (' — ' + h.detail.substring(0, 60)) : '';
+        return `<tr>
+          <td>${ts}</td>
+          <td><span class="mono">${ver}</span></td>
+          <td>${statusLabel}${detail}</td>
+        </tr>`;
+      }).join('');
+      wrap.innerHTML = `<table class="ota-hist-table">
+        <thead><tr><th>When</th><th>Version</th><th>Result</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+    })
+    .catch(() => { wrap.innerHTML = '<div class="ota-hist-loading">Could not load history.</div>'; });
+}
+
+function otaFetchSha() {
+  const url = document.getElementById('otaUrl').value.trim();
+  if (!url.startsWith('https://github.com/') || !url.endsWith('.tar.gz')) return;
+  const spinner = document.getElementById('otaShaSpinner');
+  const field   = document.getElementById('otaSha256');
+  if (field.value.length === 64) return;   // already filled
+  spinner.style.display = 'inline';
+  fetch('/ota-fetch-sha256?url=' + encodeURIComponent(url))
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.sha256) field.value = data.sha256;
+    })
+    .catch(() => {})
+    .finally(() => { spinner.style.display = 'none'; });
+}
+
+function otaSubmit(event) {
+  event.preventDefault();
+  const btn = document.getElementById('otaSubmitBtn');
+  const msg = document.getElementById('otaMsg');
+  btn.disabled = true;
+  btn.textContent = 'Pushing…';
+  msg.className = 'ota-msg';
+  msg.textContent = '';
+
+  const form = document.getElementById('otaForm');
+  const data = new FormData(form);
+
+  fetch('/ota-push', { method: 'POST', body: data })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        msg.className = 'ota-msg ok';
+        msg.textContent = res.message || 'Update queued successfully.';
+        btn.textContent = '✓ Queued';
+        // Refresh history
+        otaLoadHistory(document.getElementById('otaPiId').value);
+        // Auto-close after 2 s
+        setTimeout(otaCloseModal, 2000);
+      } else {
+        msg.className = 'ota-msg err';
+        msg.textContent = res.error || 'Push failed.';
+        btn.disabled = false;
+        btn.textContent = 'Push Update';
+      }
+    })
+    .catch(e => {
+      msg.className = 'ota-msg err';
+      msg.textContent = 'Network error: ' + e.message;
+      btn.disabled = false;
+      btn.textContent = 'Push Update';
+    });
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') otaCloseModal();
+});
 </script>
 {% endblock %}
