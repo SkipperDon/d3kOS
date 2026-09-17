@@ -344,7 +344,7 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
         ['rsync', '--archive', '--no-group', '--delete',
          '--exclude=config/', '--exclude=data/',
          '--exclude=logs/', '--exclude=managed-documents/',
-         '--exclude=.ota-rollback/', '--exclude=backups/',
+         '--exclude=.ota-rollback/', '--exclude=backups/', '--exclude=.ota-backup/',
          str(stage) + '/', str(DEPLOY_ROOT) + '/'],
         check=True,
     )
@@ -402,21 +402,37 @@ def _clear_ota_status() -> None:
         pass
 
 
+# ── Wait for user to confirm install (dashboard Install Now button) ───────────
+
+def _wait_for_user_trigger(timeout_seconds: int = 600) -> bool:
+    """Write 'queued' status, then wait for the dashboard Install Now button.
+
+    Returns True when the trigger file appears (user pressed Install Now),
+    False if the timeout expires without a trigger.
+    The trigger file is consumed before returning True.
+    """
+    logger.info('OTA queued — waiting for user to press Install Now (timeout: %ds)',
+                timeout_seconds)
+    start = time.time()
+    while time.time() - start < timeout_seconds:
+        if OTA_TRIGGER_FILE.exists():
+            try:
+                OTA_TRIGGER_FILE.unlink(missing_ok=True)
+            except Exception:
+                pass
+            logger.info('Install Now pressed — proceeding with OTA install')
+            return True
+        time.sleep(5)
+    logger.warning('OTA install not confirmed within %ds — clearing queued status', timeout_seconds)
+    return False
+
+
 # ── Main poll loop ────────────────────────────────────────────────────────────
 
 def main() -> None:
     logger.info('d3kOS OTA agent starting (D23)')
 
     while True:
-        # Consume trigger file (dashboard [Update d3kOS] button) — skip sleep
-        triggered = OTA_TRIGGER_FILE.exists()
-        if triggered:
-            try:
-                OTA_TRIGGER_FILE.unlink(missing_ok=True)
-            except Exception:
-                pass
-            logger.info('OTA trigger file detected — polling immediately')
-
         try:
             base_url, php_path = _load_base_url()
             if not base_url:
@@ -439,10 +455,16 @@ def main() -> None:
                             cmd = None
                         if cmd:
                             payload = cmd.get('payload', {})
-                            _write_ota_status('pending',
+                            # Write 'queued' — dashboard pill shows Install Now button
+                            _write_ota_status('queued',
                                               payload.get('version', ''),
                                               payload.get('release_notes', ''))
-                            _install(base_url, php_path, pi_id, cmd)
+                            if _wait_for_user_trigger():
+                                # User pressed Install Now — proceed
+                                _write_ota_status('pending',
+                                                  payload.get('version', ''),
+                                                  payload.get('release_notes', ''))
+                                _install(base_url, php_path, pi_id, cmd)
                             _clear_ota_status()
                     else:
                         _clear_ota_status()

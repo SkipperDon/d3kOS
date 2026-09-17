@@ -171,9 +171,19 @@
       });
   }
 
-  /* ── Poll status every 30 seconds ── */
+  /* ── Poll: 5s while installing, 30s otherwise ── */
   function startPolling() {
     pollOnce();
+    _pollInterval = setInterval(pollOnce, 30000);
+  }
+
+  function setFastPoll() {
+    if (_pollInterval) clearInterval(_pollInterval);
+    _pollInterval = setInterval(pollOnce, 5000);
+  }
+
+  function setSlowPoll() {
+    if (_pollInterval) clearInterval(_pollInterval);
     _pollInterval = setInterval(pollOnce, 30000);
   }
 
@@ -181,8 +191,13 @@
     fetch(STATUS_URL)
       .then(function (res) { return res.json(); })
       .then(function (data) {
+        var wasInstalling = _installing;
         _state = data;
         render();
+        /* Install finished: agent removed ota-status.json → reload to show new version */
+        if (wasInstalling && !data.available) {
+          window.location.reload();
+        }
       })
       .catch(function (_) {
         /* Silently continue on network error; show nothing in pill. */
@@ -190,6 +205,24 @@
   }
 
   function render() {
+    var state = _state.state || '';
+
+    if (state === 'pending') {
+      /* Install in progress — lock UI, poll fast */
+      _installing = true;
+      pill.classList.add('ota-show');
+      pill.textContent = '⏳ Installing…';
+      msg.textContent  = 'Installing d3kOS v' + (_state.version || '') + '… do not turn off';
+      notes.textContent = '';
+      updateBtn.disabled  = true;
+      dismissBtn.disabled = true;
+      setFastPoll();
+      return;
+    }
+
+    /* Not installing any more — restore slow poll */
+    if (_installing) { _installing = false; setSlowPoll(); }
+
     if (isDismissed()) {
       pill.classList.remove('ota-show');
       return;
@@ -197,8 +230,11 @@
 
     if (_state.available) {
       pill.classList.add('ota-show');
-      msg.textContent = 'd3kOS ' + (_state.version || 'update') + ' available';
+      pill.textContent  = '🔄 Update Available';
+      msg.textContent   = 'd3kOS v' + (_state.version || 'update') + ' ready to install';
       notes.textContent = _state.notes || '';
+      updateBtn.disabled  = false;
+      dismissBtn.disabled = false;
     } else {
       pill.classList.remove('ota-show');
     }
