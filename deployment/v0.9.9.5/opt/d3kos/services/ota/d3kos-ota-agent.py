@@ -36,7 +36,7 @@ CLOUD_CONFIG_FILE   = Path('/opt/d3kos/config/cloud-config.json')
 LICENSE_PATH        = Path('/opt/d3kos/config/license.json')
 HARDWARE_PROFILE    = Path('/opt/d3kos/config/hardware-profile.json')
 DEPLOY_ROOT         = Path('/opt/d3kos')
-ROLLBACK_DIR        = Path('/opt/.d3kos-rollback')   # outside DEPLOY_ROOT so rmtree(DEPLOY_ROOT) doesn't destroy the backup
+ROLLBACK_DIR        = Path('/home/d3kos/.d3kos-rollback')  # user-writable; /opt parent is root-owned so mkdir/rmdir there requires root
 HEALTH_URL          = 'http://localhost:3000/health'
 OTA_PHP_SUFFIX      = '/wp-content/themes/twentytwenty-child/mobile/ota-queue.php'
 OTA_STATUS_FILE     = Path('/opt/d3kos/data/ota-status.json')
@@ -254,9 +254,14 @@ def _health_check(attempts: int = 5, interval: int = 5) -> bool:
 def _rollback(units: list[str], detail: str) -> None:
     logger.error(f'Health check failed — rolling back. {detail}')
     _stop_services(units)
-    shutil.rmtree(DEPLOY_ROOT, ignore_errors=True)
     if ROLLBACK_DIR.exists():
-        ROLLBACK_DIR.rename(DEPLOY_ROOT)
+        # rsync back into place — never rmtree DEPLOY_ROOT then rename, because
+        # /opt is root-owned so creating/renaming dir entries there requires root.
+        subprocess.run(
+            ['rsync', '-a', '--delete', '--no-group',
+             str(ROLLBACK_DIR) + '/', str(DEPLOY_ROOT) + '/'],
+            check=False,
+        )
     subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=False)
     _start_services(units)
 
@@ -310,11 +315,15 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
         archive.unlink(missing_ok=True)
         return
 
-    # Step 6: Backup
+    # Step 6: Backup — rsync into user-writable ROLLBACK_DIR (never rmtree+recreate
+    # inside /opt because /opt parent is root-owned and d3kos cannot mkdir there).
     logger.info('Backing up current deployment')
-    if ROLLBACK_DIR.exists():
-        shutil.rmtree(ROLLBACK_DIR)
-    shutil.copytree(DEPLOY_ROOT, ROLLBACK_DIR)
+    ROLLBACK_DIR.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ['rsync', '-a', '--delete', '--no-group',
+         str(DEPLOY_ROOT) + '/', str(ROLLBACK_DIR) + '/'],
+        check=True,
+    )
 
     # Step 7: Extract to staging
     stage = Path(tempfile.gettempdir()) / 'd3kos-ota-stage'
@@ -331,7 +340,7 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
         ))
         shutil.rmtree(stage, ignore_errors=True)
         archive.unlink(missing_ok=True)
-        shutil.rmtree(ROLLBACK_DIR, ignore_errors=True)
+        # Keep ROLLBACK_DIR — extraction failed before services stopped, nothing to roll back
         return
 
     # Step 8: Stop services
@@ -376,7 +385,7 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
         _post_result(base_url, php_path, _build_result_payload(
             command_id, pi_id, 'success', version_installed=version,
         ))
-        # Step 14: Cleanup
+        # Step 14: Cleanup — health confirmed, safe to discard rollback snapshot
         archive.unlink(missing_ok=True)
         shutil.rmtree(stage, ignore_errors=True)
         shutil.rmtree(ROLLBACK_DIR, ignore_errors=True)
