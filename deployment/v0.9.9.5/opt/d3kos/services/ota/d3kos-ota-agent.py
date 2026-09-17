@@ -336,9 +336,11 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
     logger.info(f'Stopping services: {units}')
     _stop_services(units)
 
-    # Step 9: rsync
+    # Step 9: rsync — excludes protect user data from --delete
     subprocess.run(
         ['rsync', '--archive', '--delete',
+         '--exclude=config/', '--exclude=data/',
+         '--exclude=logs/', '--exclude=managed-documents/',
          str(stage) + '/', str(DEPLOY_ROOT) + '/'],
         check=True,
     )
