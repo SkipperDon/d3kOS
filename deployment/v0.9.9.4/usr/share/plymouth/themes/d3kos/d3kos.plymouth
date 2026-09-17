@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=d3kOS
+Description=AtMyBoat d3kOS Marine Intelligence boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/d3kos
+ScriptFile=/usr/share/plymouth/themes/d3kos/d3kos.script
