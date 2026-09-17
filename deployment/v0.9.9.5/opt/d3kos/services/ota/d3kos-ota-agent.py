@@ -36,7 +36,7 @@ CLOUD_CONFIG_FILE   = Path('/opt/d3kos/config/cloud-config.json')
 LICENSE_PATH        = Path('/opt/d3kos/config/license.json')
 HARDWARE_PROFILE    = Path('/opt/d3kos/config/hardware-profile.json')
 DEPLOY_ROOT         = Path('/opt/d3kos')
-ROLLBACK_DIR        = Path('/opt/d3kos.ota-rollback')
+ROLLBACK_DIR        = Path('/opt/d3kos/.ota-rollback')
 HEALTH_URL          = 'http://localhost:3000/health'
 OTA_PHP_SUFFIX      = '/wp-content/themes/twentytwenty-child/mobile/ota-queue.php'
 OTA_STATUS_FILE     = Path('/opt/d3kos/data/ota-status.json')
@@ -227,13 +227,13 @@ def _d3kos_services() -> list[str]:
 
 def _stop_services(units: list[str]) -> None:
     if units:
-        subprocess.run(['systemctl', 'stop'] + units, check=False)
+        subprocess.run(['sudo', 'systemctl', 'stop'] + units, check=False)
 
 
 def _start_services(units: list[str]) -> None:
     if units:
-        subprocess.run(['systemctl', 'daemon-reload'], check=False)
-        subprocess.run(['systemctl', 'start'] + units, check=False)
+        subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=False)
+        subprocess.run(['sudo', 'systemctl', 'start'] + units, check=False)
 
 
 def _health_check(attempts: int = 5, interval: int = 5) -> bool:
@@ -257,7 +257,7 @@ def _rollback(units: list[str], detail: str) -> None:
     shutil.rmtree(DEPLOY_ROOT, ignore_errors=True)
     if ROLLBACK_DIR.exists():
         ROLLBACK_DIR.rename(DEPLOY_ROOT)
-    subprocess.run(['systemctl', 'daemon-reload'], check=False)
+    subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=False)
     _start_services(units)
 
 
@@ -286,7 +286,8 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
     archive = Path(tempfile.gettempdir()) / f'd3kos-ota-{version}.tar.gz'
     logger.info(f'Downloading OTA {version} from {url}')
     try:
-        with requests.get(url, stream=True, timeout=REQUEST_TIMEOUT) as r:
+        with requests.get(url, stream=True, timeout=REQUEST_TIMEOUT,
+                          headers={'User-Agent': 'Mozilla/5.0'}) as r:
             r.raise_for_status()
             with open(archive, 'wb') as f:
                 for chunk in r.iter_content(65536):
@@ -340,15 +341,16 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
 
     # Step 9: rsync — excludes protect user data from --delete
     subprocess.run(
-        ['rsync', '--archive', '--delete',
+        ['rsync', '--archive', '--no-group', '--delete',
          '--exclude=config/', '--exclude=data/',
          '--exclude=logs/', '--exclude=managed-documents/',
+         '--exclude=.ota-rollback/', '--exclude=backups/',
          str(stage) + '/', str(DEPLOY_ROOT) + '/'],
         check=True,
     )
 
     # Step 10: daemon-reload
-    subprocess.run(['systemctl', 'daemon-reload'], check=False)
+    subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=False)
 
     # Step 11: Start services
     logger.info('Starting services')
