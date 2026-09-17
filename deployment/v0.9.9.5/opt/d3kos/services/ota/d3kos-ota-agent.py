@@ -339,15 +339,27 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
     logger.info(f'Stopping services: {units}')
     _stop_services(units)
 
-    # Step 9: rsync — excludes protect user data from --delete
-    subprocess.run(
-        ['rsync', '--archive', '--no-group', '--delete',
-         '--exclude=config/', '--exclude=data/',
-         '--exclude=logs/', '--exclude=managed-documents/',
-         '--exclude=.ota-rollback/', '--exclude=backups/', '--exclude=.ota-backup/',
-         str(stage) + '/', str(DEPLOY_ROOT) + '/'],
-        check=True,
-    )
+    # Step 9: rsync — excludes protect user data and the running agent from --delete
+    try:
+        subprocess.run(
+            ['rsync', '--archive', '--no-group', '--delete',
+             '--exclude=config/', '--exclude=data/',
+             '--exclude=logs/', '--exclude=managed-documents/',
+             '--exclude=.ota-rollback/', '--exclude=backups/', '--exclude=.ota-backup/',
+             '--exclude=services/ota/', '--exclude=services/device_sign.py',
+             str(stage) + '/', str(DEPLOY_ROOT) + '/'],
+            check=True,
+        )
+    except Exception as e:
+        logger.error(f'rsync failed — triggering rollback: {e}')
+        _rollback(units, f'rsync failed during install of {version}: {e}')
+        _post_result(base_url, php_path, _build_result_payload(
+            command_id, pi_id, 'rollback_complete',
+            detail=f'rsync failed during install of {version}; rolled back.',
+        ))
+        archive.unlink(missing_ok=True)
+        shutil.rmtree(stage, ignore_errors=True)
+        return
 
     # Step 10: daemon-reload
     subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=False)
@@ -465,6 +477,15 @@ def main() -> None:
                                                   payload.get('version', ''),
                                                   payload.get('release_notes', ''))
                                 _install(base_url, php_path, pi_id, cmd)
+                            else:
+                                # Timeout — ACK + post cancelled so command leaves the queue
+                                _ack(base_url, php_path, cmd['command_id'])
+                                _post_result(base_url, php_path, _build_result_payload(
+                                    cmd['command_id'], pi_id, 'cancelled',
+                                    detail='User did not confirm install within 10 minutes.',
+                                ))
+                                logger.warning('OTA command %d cancelled — user timeout',
+                                               cmd['command_id'])
                             _clear_ota_status()
                     else:
                         _clear_ota_status()
