@@ -9710,3 +9710,40 @@ The current live endpoint is `crm-proxy.php` (deployed S58, path: `wp-content/th
 ### Fix Status
 OPEN. Root cause unconfirmed — VM `config.json` not yet readable (WSL cannot reach 192.168.236.5 host-only network). Access required from Windows host at `http://192.168.236.5:5000`.
 
+
+## BUG-140 — OTA watchdog cannot detect/repair corrupt services/ tree after failed install
+
+**Logged:** S172-cont 2026-09-17
+**Platform:** Lab Pi + boat Pi (all d3kOS installs with OTA agent)
+**Severity:** HIGH — Pi left dead with no self-healing recovery if OTA corrupts services tree
+**Status:** `[ ]` OPEN
+
+### Symptom
+During S172 interactive demo, a failed OTA install (ROLLBACK_DIR permission bug) wiped the `services/` directory tree. `d3kos-dashboard.service` failed with CHDIR error (working directory missing). All services dead. Pi had no automated recovery path — required operator SSH intervention.
+
+The two code bugs that caused the demo failure (ROLLBACK_DIR inside root-owned `/opt` + rsync `--delete` applied before backup) were fixed in commits `265171fb`, `b94e1e63`, `b29b1ce5`. But the watchdog still has no logic to detect a missing/empty `services/` tree and trigger recovery.
+
+### Root Cause
+`d3kos_watchdog.py` monitors running services but does not verify that the files those services depend on actually exist on disk. A corrupt install could wipe `services/` and the watchdog would see services failing without knowing WHY — and its current restart logic cannot recover from a missing working directory.
+
+### Affected Files
+- `deployment/v0.9.9.5/opt/d3kos/services/health/d3kos_watchdog.py` — needs critical-path verification logic
+- Design needed before implementation
+
+### Operator Note (S172-cont 2026-09-17)
+"make this part of self-healing"
+
+### Fix Path (design needed)
+1. Watchdog periodically verifies critical paths exist:
+   - `/opt/d3kos/services/dashboard/app.py`
+   - `/opt/d3kos/services/dashboard/templates/index.html`
+   - `/opt/d3kos/bin/` (key executables)
+2. If any critical path is missing: log `CRITICAL — services tree corrupt`, trigger baseline re-deploy from OTA rollback snapshot (`/home/d3kos/.d3kos-rollback/`) if it exists
+3. If no rollback snapshot: alert operator via log + dashboard status; do NOT attempt blind restart loop (BUG-105 pattern)
+
+### Related
+- BUG-105: self-healing runaway (Restart=always + hard exit → infinite loop). Fix: BUG-105 compliant restart policy in all service units.
+- D23 OTA agent (`d3kos-ota-agent.py`): ROLLBACK_DIR fix already committed. Watchdog integration is the remaining gap.
+
+### Fix Status
+OPEN. Root cause known. Design required before implementation.

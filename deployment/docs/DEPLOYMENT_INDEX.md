@@ -2006,3 +2006,12 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S163]** BUG-130 S163 update: PGN corrected from "65024" (wrong) to 193024 (Python-verified). SK filtering analysis added (no whitelist — decode-only issue). Path B deployed + vcan0 test PASS noted. |
 | `deployment/docs/V09995_DISCUSSION_PLAN.md` | **[UPDATED — S163]** D23 OTA incremental update added to v0.9.9.5 build table. Version 1.5 → 1.6. |
 | `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S163]** BUG-130 status `[ ]` → `[~]` PATH B DEPLOYED LAB. D23 OTA added to PART 20. Version 3.84 → 3.85. |
+
+## S172-cont — 2026-09-17 — D23 Interactive Demo Complete + ROLLBACK_DIR Fix
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.5/opt/d3kos/services/ota/d3kos-ota-agent.py` | **[UPDATED — S172-cont]** ROLLBACK_DIR final fix (commit `b29b1ce5`): moved from `/opt/d3kos/.ota-rollback` (fails — `/opt` is root-owned, d3kos user cannot mkdir/rmdir there) to `/home/d3kos/.d3kos-rollback` (always user-writable). Backup changed from `shutil.copytree` → `rsync -a --delete --no-group`. Rollback changed from `shutil.rmtree + rename` → rsync restore into existing DEPLOY_ROOT. Also: rollback dir moved outside DEPLOY_ROOT (commit `b94e1e63`), rsync partial-failure fix (commit `265171fb`), queued state + Install Now user confirmation (commit `5e5a40e1`). |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S172-cont]** BUG-140 logged: OTA watchdog cannot detect/repair corrupt `services/` tree after failed install. Design required before implementation. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S172-cont]** D23 status → DEMO COMPLETE. BUG-140 added to PART 17. Version 3.90 → 3.91. |
+| Lab Pi (7eee5d04) | **[DEMO VERIFIED — S172-cont]** Interactive OTA demo PASS: dashboard pill appeared → user pressed "Update d3kOS" → downloaded + rsync-installed demo tarball → health check PASS → AI Nav ★ visible on dashboard (command 20, 18:20 UTC-5 2026-09-17). |

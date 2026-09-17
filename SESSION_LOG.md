@@ -11461,3 +11461,61 @@ attributed_rec         : 1 (slow-diagnosis pattern — operator flagged twice)
 failure_category       : slow_diagnosis
 human_verified         : 1 (OTA success log confirmed at 15:43)
 ─────────────────────────────────────────────────────
+
+
+## S172-cont 2026-09-17 (after context compaction)
+**Goal:** Complete D23 interactive OTA demo (pill → install → AI Nav ★), fix ROLLBACK_DIR root cause, document D23 production plan and testing capabilities.
+
+**Completed:**
+- D23 INTERACTIVE DEMO COMPLETE: Lab Pi ran full OTA flow via dashboard pill. User pressed "Update d3kOS" button → Pi downloaded demo tarball → rsync installed → health check PASS → AI Nav ★ visible on dashboard. Command 20, 18:20 UTC-5 2026-09-17.
+- ROLLBACK_DIR root cause fix — commit `b29b1ce5`: moved from `/opt/d3kos/.ota-rollback` (inside root-owned parent `/opt`) to `/home/d3kos/.d3kos-rollback` (user-writable). Backup changed from `shutil.copytree` (fails on existing dir) to `rsync -a --delete --no-group`. Rollback changed from `shutil.rmtree + rename` (EACCES on `/opt`) to rsync restore into existing DEPLOY_ROOT.
+- Additional intermediate fixes in commits `265171fb` (rsync destroy fix) and `b94e1e63` (rollback dir outside DEPLOY_ROOT, --delete removed).
+- BUG-140 logged: OTA watchdog cannot detect/repair missing `services/` tree; self-healing design needed.
+- D23 production plan documented (chat): 4 steps — revert test-mode URL patch, deploy PHP to live, build tarball + GitHub Release, update boat Pi cloud-config.json.
+- Testing capabilities confirmed (chat): Playwright ✅, Allure ✅, Newman/Postman ✅, JMeter ✅ (conditional on Java), Jest/Vitest ✅. Newman + Playwright + Allure recommended for D23.
+
+**Decisions:**
+- ROLLBACK_DIR = `/home/d3kos/.d3kos-rollback` (not `/opt/d3kos/` subdirectory) — root-owned parent `/opt` prevents d3kos user from rmdir or mkdir there; home dir is always user-writable.
+- rsync backup/restore over shutil copy/rename — works with existing directory, avoids needing the parent dir to be writable, handles partial failures better.
+- Newman + Playwright + Allure is the recommended D23 test suite (JMeter deferred to fleet scale; Jest limited — OTA JS is thin).
+- Next session: build Newman + Playwright + Allure test suites for D23.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-17 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D23 test suites: Newman (API contract) + Playwright (e2e pill→install) + Allure (HTML reports)
+- D23 production deploy: revert test-mode URL patch in ota-admin.php, deploy to live HostPapa, build first GitHub Release tarball
+- D19: Boot-time acceptance gate — only remaining unbuilt v0.9.9.5 feature module
+- BUG-139: Admin Console VM config.json proxy_url update (crm-proxy.php)
+- BUG-140: Watchdog self-healing — detect missing services/ tree, restore from snapshot
+- BUG-130: Boat-side N2K validation (on-site, engine running)
+
+---
+
+SQS — S172-cont 2026-09-17
+─────────────────────────────────────────────────────
+tasks_planned          : 2 (ROLLBACK_DIR root fix, D23 interactive demo)
+tasks_completed        : 2
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 88/100 (both tasks complete + verified by operator; production plan delivered; test capability answered)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-17
+─────────────────────────────────────────────────────
+session_duration_min   : ~60
+tasks_planned          : 2
+tasks_completed        : 2
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 1 (AI Nav ★ confirmed by operator: "pill appeared, I pressed it it ran through it update and pill on ai nav has a *")
+─────────────────────────────────────────────────────
