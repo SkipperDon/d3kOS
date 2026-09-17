@@ -1980,6 +1980,23 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S169 close]** Version 3.85→3.86. UI-1/UI-2 status updated. UI-3 status updated. D23 status updated. BUG-137 row added. |
 | `Helm-OS/CHANGELOG.md` | **[UPDATED — S169 close]** v0.9.9.5 D23/SafeHelm-UI/VMB entry added above the D02 entry. |
 
+## S169/S170 — 2026-09-17 — D23 OTA Build Complete + HostPapa Staging Deploy
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.5/opt/d3kos/services/ota/d3kos-ota-agent.py` | **[UPDATED — S169]** D23 Step 1: rsync `--exclude=config/ --exclude=data/ --exclude=logs/ --exclude=managed-documents/` added. Commit `8af2137c`. |
+| `/opt/d3kos/config/license.json` (lab Pi live) | **[DATA FIX — S169]** BUG-138: `"version": "1.0.3"` → `"0.9.9.4.2"` via SSH sudo python3. No code change. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/mobile/ota-queue.php` | **[UPDATED — S169]** v1.0 → v2.0: ENUM adds `superseded`, flat result columns added (`result_status`, `version_installed`, `hardware_profile_version`, `install_timestamp`, `detail`). Commit `babad99`. |
+| `atmyboat-forum/wp-content/themes/twentytwenty-child/mobile/ota-admin.php` | **[NEW — S169]** D23 Admin CRM endpoint — Bearer auth, `status_all` / `history` / `push` (latest-only, supersedes pending) / `cancel`. Auto-creates `amboat_ota_commands` table. Commit `f1be4fa`. |
+| `deployment/features/autonomous-agents/crm/fleet_versions_routes.py` | **[UPDATED — S169]** D23 routes: `proxy_call_ota()` + `proxy_post_ota()` helpers; `fleet_versions()` passes `ota_status` to template; new routes `/ota-push`, `/ota-cancel`, `/ota-history`, `/ota-fetch-sha256`. Commit `2aa9deb8`. |
+| `deployment/features/autonomous-agents/crm/fleet_versions.html` | **[UPDATED — S169]** D23 OTA modal: OTA Status column, Push Update button (T1+ only), modal with version/URL/SHA-256 (auto-fetch)/notes fields, last-5 history accordion. Commit `2aa9deb8`. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/static/js/ota-update-pill.js` | **[NEW — S169]** D23 Step 5 dashboard update pill — 212-line self-injecting IIFE, 30 s poll `/api/ota/status`, amber pill (#f59e0b), localStorage dismiss, POST to `/api/ota/trigger`. Commit `37b4ccbc`. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/` (6 files) | **[UPDATED — S169]** D23 Step 5: `ota-update-pill.js` script tag added after `safehelm-global.js` in index, engine-monitor, ai-navigation, helm-assistant, anchor-watch, marine-vision. Commit `37b4ccbc`. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/app.py` | **[UPDATED — S169/S170]** D23: `/api/ota/status` (reads ota-status.json), `/api/ota/trigger` (creates trigger file) added S169 commit `37b4ccbc`; `/api/version` (reads license.json → version) added S170 commit `f9c2edd3`. |
+| `deployment/v0.9.9.4/opt/d3kos/services/dashboard/templates/settings.html` | **[UPDATED — S170]** D23 Step 6: `<!-- ⑱ UPDATES -->` section added — current version / available version / last checked / Check Now / Install Now buttons. AODA 18px. Commit `f9c2edd3`. |
+| `staging/wp-content/themes/twentytwenty-child/mobile/ota-queue.php` (HostPapa) | **[DEPLOYED — S170]** v2.0 deployed to HostPapa staging. 8,413 B. Smoke-tested: HTTP 401 on no-auth request ✅. |
+| `staging/wp-content/themes/twentytwenty-child/mobile/ota-admin.php` (HostPapa) | **[DEPLOYED — S170]** NEW deployed to HostPapa staging. 8,457 B. Smoke-tested: HTTP 401 on bad Bearer ✅. `amboat_ota_commands` table auto-creates on first authenticated call. |
+
 ## S163 — 2026-09-15 — BUG-130 N2K Engine Bridge + D23 OTA approved
 
 | File / Location | Change |

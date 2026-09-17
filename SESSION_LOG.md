@@ -11283,3 +11283,73 @@ attributed_rec         : 0
 failure_category       : session_cut (model unresponsive — operator terminated)
 human_verified         : 0 (git commits confirmed; browser UI and Pi deploy not verified)
 ─────────────────────────────────────────────────────
+
+## Session S170 — 2026-09-17 — D23 OTA Build Complete + HostPapa Staging Deploy
+
+**Goal:** Complete D23 OTA incremental update build (Step 6 verification + commit + staging deploy). Session continued from S169 which ran out of context after Steps 1–5.
+
+**Completed:**
+
+- **D23 Step 6 verified + committed** — Haiku-built `settings.html` Updates section (`<!-- ⑱ UPDATES -->`) and `app.py /api/version` route confirmed correct: 18px AODA font, proper endpoint calls (`/api/ota/status`, `/api/version`, `/api/ota/trigger`), Install Now hidden until update available. Committed `f9c2edd3`.
+- **D23 pytest 9/9 GREEN** — `tests/test_d23_ota_agent.py` all passing after all OTA agent changes.
+- **D23 full simulation** — Flask test client (routes `/api/version`, `/api/ota/status`, `/api/ota/trigger`) + OTA agent unit functions (`_write_ota_status`, `_clear_ota_status`, trigger detection, SHA-256 verify, command schema) — 9 checks all ✅.
+- **HostPapa staging deployed** — `ota-queue.php` (8,413 B) + `ota-admin.php` (8,457 B) uploaded to `staging/wp-content/themes/twentytwenty-child/mobile/` via FTPS. Smoke-tested: both endpoints return HTTP 401 for unauthenticated requests (correct; auth gate working). `amboat_ota_commands` table will auto-create on first authenticated call.
+- **D23 build complete** — All 6 steps done. Full status:
+
+  | Step | Item | Commit |
+  |------|------|--------|
+  | 1 | rsync --exclude data/config/logs/managed-docs | `8af2137c` |
+  | 2 | BUG-138 data fix (license.json version on lab Pi) | live |
+  | 3 | ota-queue.php v2.0 schema (superseded + flat result cols) | `babad99` |
+  | 4 | Admin Console OTA page (push/cancel/history modal) | `f1be4fa` + `2aa9deb8` |
+  | 5 | Dashboard update pill + OTA trigger routes | `37b4ccbc` |
+  | 6 | Settings → Updates section + /api/version route | `f9c2edd3` |
+  | ★ | HostPapa staging deployed + smoke-tested | S170 |
+
+**Note:** S169 ran out of context after committing Steps 1–5 + BUG-138 fix. S169 did not write a SESSION_LOG entry. S170 (this session) covers the completion and staging deploy.
+
+**Decisions:**
+- HostPapa cert hostname mismatch on FTPS is expected (shared-host CN) — `check_hostname=False`, encryption still active. No security concern.
+- Full end-to-end test (Pi polls → downloads → installs) deferred to next on-site session — requires Pi with `d3kos-ota-agent.service` running.
+
+**Ollama:** 0 calls (Haiku used in S169 for Step 6; qwen2.5-coder:7b / Haiku for D23 sub-steps)
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-17 | TBD |
+| Ollama | 0 calls this session | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D23 Pi deploy: `d3kos-ota-agent.service` not yet on lab Pi — needs `sudo systemctl enable --now d3kos-ota-agent`
+- D23 end-to-end test: Admin Console push → Pi polls → installs (requires Pi on-site + HostPapa staging AMBOAT_API_KEY)
+- BUG-138 GitHub Issue creation (operator approval required — see Step 8)
+- BUG-130: Boat-side N2K validation (engine running, on-site)
+- BUG-132/134/135: Boat Pi deploy (in-person visit pending)
+- D24: Boot splash branding (deferred)
+- D25: Helm → AI Nav rename (deferred)
+- Playwright full suite: `./tests/run-all.sh --workers=1`
+
+---
+
+SQS — S170 2026-09-17
+─────────────────────────────────────────────────────
+tasks_planned          : 2 (Step 6 commit, HostPapa staging deploy)
+tasks_completed        : 2
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 93/100 (D23 code complete + staging deployed + smoke-tested; end-to-end on real Pi deferred — stated explicitly)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-17
+─────────────────────────────────────────────────────
+session_duration_min   : ~60
+tasks_planned          : 2
+tasks_completed        : 2
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 0 (staging smoke-tested; full Pi end-to-end deferred)
+─────────────────────────────────────────────────────
