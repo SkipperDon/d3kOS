@@ -6,6 +6,14 @@
 // Two execution contexts:
 //   WordPress REST  → define('ABSPATH', ...) present → verify_device_signature(WP_REST_Request) available
 //   Standalone PHP  → config.php loaded before this file → verify_device_request_server() uses PDO
+//
+// Libsodium fallback: HostPapa shared hosting lacks the sodium extension.
+// paragonie/sodium_compat (pure-PHP polyfill, v1.21.1) is bundled at sodium_compat/autoload.php.
+// It defines sodium_crypto_sign_verify_detached() only when the native extension is absent,
+// so the rest of this file is unchanged and works on both environments.
+if (!function_exists('sodium_crypto_sign_verify_detached')) {
+    require_once __DIR__ . '/sodium_compat/autoload.php';
+}
 
 // ---------------------------------------------------------------------------
 // WordPress REST path — only registered when running inside WordPress
