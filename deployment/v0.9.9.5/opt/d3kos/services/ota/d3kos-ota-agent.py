@@ -36,7 +36,7 @@ CLOUD_CONFIG_FILE   = Path('/opt/d3kos/config/cloud-config.json')
 LICENSE_PATH        = Path('/opt/d3kos/config/license.json')
 HARDWARE_PROFILE    = Path('/opt/d3kos/config/hardware-profile.json')
 DEPLOY_ROOT         = Path('/opt/d3kos')
-ROLLBACK_DIR        = Path('/opt/d3kos/.ota-rollback')
+ROLLBACK_DIR        = Path('/opt/.d3kos-rollback')   # outside DEPLOY_ROOT so rmtree(DEPLOY_ROOT) doesn't destroy the backup
 HEALTH_URL          = 'http://localhost:3000/health'
 OTA_PHP_SUFFIX      = '/wp-content/themes/twentytwenty-child/mobile/ota-queue.php'
 OTA_STATUS_FILE     = Path('/opt/d3kos/data/ota-status.json')
@@ -339,14 +339,14 @@ def _install(base_url: str, php_path: str, pi_id: str, cmd: dict) -> None:
     logger.info(f'Stopping services: {units}')
     _stop_services(units)
 
-    # Step 9: rsync — excludes protect user data and the running agent from --delete
+    # Step 9: rsync — no --delete; OTA tarballs are additive patches not full replacements.
+    # Deleting absent files would wipe services not in the tarball.
     try:
         subprocess.run(
-            ['rsync', '--archive', '--no-group', '--delete',
+            ['rsync', '--archive', '--no-group',
              '--exclude=config/', '--exclude=data/',
              '--exclude=logs/', '--exclude=managed-documents/',
-             '--exclude=.ota-rollback/', '--exclude=backups/', '--exclude=.ota-backup/',
-             '--exclude=services/ota/', '--exclude=services/device_sign.py',
+             '--exclude=backups/', '--exclude=services/ota/', '--exclude=services/device_sign.py',
              str(stage) + '/', str(DEPLOY_ROOT) + '/'],
             check=True,
         )
