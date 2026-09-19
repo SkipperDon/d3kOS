@@ -220,7 +220,19 @@
       return;
     }
 
-    /* Not installing any more — restore slow poll */
+    if (state === 'queued' && _installing) {
+      /* User pressed Install Now — agent hasn't written 'pending' yet (< 5s window) */
+      pill.classList.add('ota-show');
+      pill.textContent = '⏳ Starting…';
+      msg.textContent  = 'Starting install — please wait…';
+      notes.textContent = '';
+      updateBtn.disabled  = true;
+      dismissBtn.disabled = true;
+      setFastPoll();
+      return;
+    }
+
+    /* Not installing — restore slow poll */
     if (_installing) { _installing = false; setSlowPoll(); }
 
     if (isDismissed()) {
