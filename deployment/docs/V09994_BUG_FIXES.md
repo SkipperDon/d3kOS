@@ -9746,7 +9746,7 @@ The two code bugs that caused the demo failure (ROLLBACK_DIR inside root-owned `
 - D23 OTA agent (`d3kos-ota-agent.py`): ROLLBACK_DIR fix already committed. Watchdog integration is the remaining gap.
 
 ### Fix Status
-OPEN. Root cause known. Design required before implementation.
+**FIXED S173 2026-09-19.** `d3kos_watchdog.py` updated with `services_tree_intact()` check and `attempt_rollback_restore()` function. Runs before the service check loop on every 5-minute cron tick. Critical paths: `services/dashboard/app.py`, `services/health/d3kos_watchdog.py`, `bin/`. Restore uses `rsync -a --no-group` (no `--delete`) to preserve config/ and data/ changes made after the backup. Cloud alert sent regardless of restore outcome. If no rollback snapshot exists: second alert sent, function returns early (avoids futile service restart loop — BUG-105 compliant). Deployed to lab Pi. Syntax clean. Boat Pi pending.
 
 ---
 

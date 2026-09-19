@@ -26,6 +26,18 @@ DEVICE_TOKEN_PATH  = Path('/opt/d3kos/config/device-token.json')
 STATE_PATH         = Path('/opt/d3kos/data/watchdog-state.json')
 LOG_PATH           = Path('/opt/d3kos/logs/watchdog.log')
 
+# BUG-140: rollback restore paths
+DEPLOY_ROOT   = Path('/opt/d3kos')
+ROLLBACK_DIR  = Path('/home/d3kos/.d3kos-rollback')
+
+# Files that MUST exist for d3kOS to run. If any are absent the services/ tree
+# is corrupt and a rollback restore is required before service checks begin.
+CRITICAL_PATHS = [
+    Path('/opt/d3kos/services/dashboard/app.py'),
+    Path('/opt/d3kos/services/health/d3kos_watchdog.py'),
+    Path('/opt/d3kos/bin'),
+]
+
 # ── Critical services — ordered by importance ─────────────────────────────────
 # (service_name, human_label, auto_restart)
 # auto_restart=False means alert only, never restart
@@ -105,6 +117,29 @@ def mark_alerted(service: str, state: dict):
     state['last_alerted'][service] = datetime.now().isoformat()
 
 
+# ── Filesystem integrity (BUG-140) ────────────────────────────────────────────
+
+def services_tree_intact() -> bool:
+    return all(p.exists() for p in CRITICAL_PATHS)
+
+
+def attempt_rollback_restore() -> bool:
+    """Restore from OTA rollback snapshot. No --delete: preserves config/ and data/ changes."""
+    if not ROLLBACK_DIR.exists():
+        log.error('CRITICAL: services tree corrupt AND no OTA rollback snapshot at %s', ROLLBACK_DIR)
+        return False
+    log.warning('Restoring from OTA rollback snapshot at %s', ROLLBACK_DIR)
+    result = subprocess.run(
+        ['rsync', '-a', '--no-group', str(ROLLBACK_DIR) + '/', str(DEPLOY_ROOT) + '/'],
+        capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        log.info('Rollback restore complete')
+        return True
+    log.error('Rollback restore failed: %s', result.stderr[:300])
+    return False
+
+
 # ── Service checks ────────────────────────────────────────────────────────────
 
 def is_active(service: str) -> bool:
@@ -168,6 +203,21 @@ def post_alert_to_cloud(cfg: dict, service: str, label: str, reason: str):
 def run():
     cfg   = load_cloud_config()
     state = load_state()
+
+    # BUG-140: verify services/ tree before checking individual services.
+    # A corrupt/missing tree means systemctl restart will never succeed — restore first.
+    if not services_tree_intact():
+        log.critical('CRITICAL: services tree corrupt or missing — critical paths absent')
+        post_alert_to_cloud(cfg, 'filesystem-integrity', 'Services Tree Corrupt',
+            'Critical paths missing from /opt/d3kos/services/. Attempting rollback restore.')
+        restored = attempt_rollback_restore()
+        if not restored:
+            post_alert_to_cloud(cfg, 'filesystem-integrity', 'Rollback Failed — Manual Intervention Required',
+                'services/ tree corrupt and no OTA rollback snapshot available. '
+                'SSH to Pi and redeploy manually.')
+            save_state(state)
+            return
+        time.sleep(5)  # Let filesystem settle before service loop
 
     failures  = []
     restarted = []
