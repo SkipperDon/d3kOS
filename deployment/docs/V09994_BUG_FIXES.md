@@ -9894,3 +9894,33 @@ Service exits with status 3 (NOTIMPLEMENTED — custom code for "already handled
 
 ### Fix Status
 OPEN. Non-blocking — lab Pi operates normally. Fix before shipping new image.
+
+---
+
+## BUG-147 — Chromium kiosk never launches on boot: Wayland env vars absent from launch-d3kos.sh
+
+**Logged:** S174 2026-09-19
+**Platform:** Lab Pi
+**Severity:** HIGH — physical Pi screen shows nothing after every reboot; required manual SSH kick
+**Status:** `[x]` FIXED S174 2026-09-19 — lab Pi validated (reboot confirmed Chromium auto-launches)
+
+### Symptom
+After Pi reboot, labwc compositor starts and Wayland socket is present, but Chromium never appears on screen. Physical display stays at grey wallpaper. `ps aux | grep chromium` shows nothing. Dashboard backend was fully healthy (HTTP 200) — only the browser was absent.
+
+### Root Cause
+`launch-d3kos.sh` is called from the labwc autostart subshell, which does not reliably inherit `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`, or `DBUS_SESSION_BUS_ADDRESS`. Without these, Chromium silently fails to connect to the Wayland compositor and exits immediately, leaving no process and no error in the journal.
+
+### Affected Files
+- `deployment/v0.9.9.4/opt/d3kos/scripts/launch-d3kos.sh` — added `export` of all three Wayland env vars using `${VAR:-default}` fallback at script top
+
+### Fix
+Added to top of `launch-d3kos.sh` before any Chromium flags:
+```bash
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+```
+Script is now self-contained regardless of caller environment.
+
+### Verification
+Rebooted lab Pi. Chromium launched automatically — no SSH intervention required. Committed `668dfbc5`.
