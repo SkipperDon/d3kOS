@@ -9747,3 +9747,143 @@ The two code bugs that caused the demo failure (ROLLBACK_DIR inside root-owned `
 
 ### Fix Status
 OPEN. Root cause known. Design required before implementation.
+
+---
+
+## BUG-141 — d3kos-live crash-loop: log file owned by root, service runs as d3kos
+
+**Logged:** S173 2026-09-19
+**Platform:** Lab Pi (found 24+ hours after last deploy)
+**Severity:** MEDIUM — WebRTC live session unavailable; crash-loop adds to system load
+**Status:** `[x]` FIXED S173 2026-09-19 — lab Pi validated
+
+### Symptom
+`d3kos-live.service` restart counter reached 120. Journal empty (output redirected to log file). Actual error: `PermissionError: [Errno 13] Permission denied: '/opt/d3kos/logs/live-session.log'` — log file created by root, service runs as `d3kos` user.
+
+### Root Cause
+`d3kos-live.service` used `StandardOutput=append:/opt/d3kos/logs/live-session.log`. The log file was created (or previously touched) as root, leaving `d3kos` user unable to open it for writing. Service exits with status 1 on startup before any WebRTC logic runs.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-live.service` — changed `StandardOutput/StandardError` from `append:/opt/d3kos/logs/live-session.log` to `journal` (consistent with all other d3kOS services)
+
+### Fix
+Changed to `StandardOutput=journal` / `StandardError=journal`. Also ran `sudo chown d3kos:d3kos /opt/d3kos/logs/live-session.log` on lab Pi. Service now starts and runs normally.
+
+### Fix Status
+Fixed. Lab Pi validated — `d3kos-live.service` active (running), restart counter reset.
+
+---
+
+## BUG-142 — d3kos-fish-detector crash-loop (restart #8826): ONNX model file not on lab Pi
+
+**Logged:** S173 2026-09-19
+**Platform:** Lab Pi
+**Severity:** HIGH — saturating all 4 Pi CPU cores; load average > 4.0 for 24+ hours
+**Status:** `[x]` FIXED S173 2026-09-19 — lab Pi validated
+
+### Symptom
+`d3kos-fish-detector.service` reached restart #8826. Load average 3.94 on 4-core Pi. Error: `onnxruntime: NoSuchFile — Load model /opt/d3kos/models/marine-vision/fish_detector.onnx failed. File doesn't exist`. The entire `/opt/d3kos/models/` directory was absent on lab Pi.
+
+### Root Cause
+BUG-136 ExecCondition fix (fail-open tier gate) was correctly deployed — tier check passed (Tier 1 registered). Service started, then crashed loading the ONNX model. No guard existed to skip the service when the model file is absent. `Restart=on-failure` with `RestartSec=15` and resetable `StartLimitBurst` allowed indefinite restart loops.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-fish-detector.service` — added `ConditionPathExists=/opt/d3kos/models/marine-vision/fish_detector.onnx` to `[Unit]` section
+
+### Fix
+Added `ConditionPathExists=/opt/d3kos/models/marine-vision/fish_detector.onnx`. When model absent, systemd skips ExecStart cleanly (service goes inactive, not failed). `Restart=on-failure` does not trigger on condition-skipped units.
+
+### Fix Status
+Fixed. Lab Pi: `start condition unmet — ConditionPathExists=... was not met`. Service stays inactive. Model absent → service self-disables. When Marine Vision model is deployed, service will start automatically.
+
+---
+
+## BUG-143 — d3kos-voice crash-loop: Vosk/Piper models absent on lab Pi
+
+**Logged:** S173 2026-09-19
+**Platform:** Lab Pi
+**Severity:** MEDIUM — adds to CPU load; voice unavailable on lab Pi (no audio device either)
+**Status:** `[x]` FIXED S173 2026-09-19 — lab Pi validated
+
+### Symptom
+`d3kos-voice.service` crash-looped until `StartLimitBurst=5` rate-limit hit. Error: Vosk model path missing (`/opt/d3kos/models/vosk/vosk-model-small-en-us-0.15`), Piper voice model missing, no audio capture device found (`arecord -l` empty).
+
+### Root Cause
+Voice ExecCondition (tier check for `voice_assistant`) passed on Tier 1 lab Pi — voice_assistant feature enabled at Tier 1. But voice models were never installed on lab Pi. Service started and immediately exited with status 1 on every attempt.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-voice.service` — added `ConditionPathExists=/opt/d3kos/models/vosk/vosk-model-small-en-us-0.15` to `[Unit]` section
+
+### Fix Status
+Fixed. `start condition unmet — ConditionPathExists=... was not met`. Service inactive, no crash-loop.
+
+---
+
+## BUG-144 — d3kos-voice-watchdog fails: voice-watchdog.sh script missing on lab Pi
+
+**Logged:** S173 2026-09-19
+**Platform:** Lab Pi
+**Severity:** LOW — watchdog fails at EXEC (203/EXEC), not a crash-loop; timer re-fires periodically
+**Status:** `[x]` FIXED S173 2026-09-19 — lab Pi validated
+
+### Symptom
+`d3kos-voice-watchdog.service: Failed at step EXEC spawning /opt/d3kos/scripts/voice-watchdog.sh: No such file or directory`
+
+### Root Cause
+`voice-watchdog.sh` script not deployed to lab Pi. Service has no guard.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-voice-watchdog.service` — added `ConditionPathExists=/opt/d3kos/scripts/voice-watchdog.sh`
+
+### Fix Status
+Fixed. Service skips cleanly when script absent.
+
+---
+
+## BUG-145 — d3kos-export-daily fails daily at 03:00: export-daily.sh script missing on lab Pi
+
+**Logged:** S173 2026-09-19
+**Platform:** Lab Pi (fires daily via timer)
+**Severity:** LOW — one-shot failure at 03:00, no crash-loop; export data not collected on lab Pi
+**Status:** `[x]` FIXED S173 2026-09-19 — lab Pi validated
+
+### Symptom
+`d3kos-export-daily.service: Failed at step EXEC spawning /opt/d3kos/scripts/export-daily.sh: No such file or directory` — fires at 03:00 every night.
+
+### Root Cause
+`export-daily.sh` script not deployed to lab Pi. Same missing-guard pattern as BUG-144.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-export-daily.service` — added `ConditionPathExists=/opt/d3kos/scripts/export-daily.sh`
+
+### Fix Status
+Fixed. Service skips cleanly on lab Pi. Will run correctly on boat Pi if script is present.
+
+---
+
+## BUG-146 — d3kos-auto-enrol HTTP 400: public_key format rejected by staging server
+
+**Logged:** S173 2026-09-19
+**Platform:** Lab Pi
+**Severity:** LOW — lab Pi already enrolled (tier:1 confirmed, OTA working); auto-enrol is a fallback for fresh installs only
+**Status:** `[ ]` OPEN
+
+### Symptom
+`auto_enrol: WARNING enrolment failed: HTTP 400 — public_key must be a 32-byte Ed25519 public key, base64-encoded`
+Service exits with status 3 (NOTIMPLEMENTED — custom code for "already handled / skip").
+
+### Root Cause (suspected)
+`device-token.json` on lab Pi contains a public key in a format that staging's `device-auth.php` does not accept — possibly wrong encoding (base64url vs standard base64, or hex vs base64). Lab Pi IS already enrolled (device_token `7eee5d04`, tier T2 via wpax_usermeta, staging). Auto-enrol would only matter for a fresh image that hasn't been enrolled yet.
+
+### Affected Files (TBD)
+- `auto_enrol.py` — public key serialization path
+- `device-auth.php` (staging) — validation logic
+- `device-token.json` on lab Pi — actual pubkey value
+
+### Fix Path
+1. SSH to lab Pi, read `device-token.json`, inspect public_key field encoding
+2. Compare against what `device-auth.php` expects (see sodium_compat/Ed25519 verify path)
+3. Either fix key encoding in `auto_enrol.py` or update `device-auth.php` to accept both formats
+
+### Fix Status
+OPEN. Non-blocking — lab Pi operates normally. Fix before shipping new image.

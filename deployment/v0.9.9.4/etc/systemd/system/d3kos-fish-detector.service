@@ -2,6 +2,8 @@
 Description=d3kOS Fish Detector Service - Marine Vision Phase 2
 After=network.target d3kos-tier.service d3kos-camera-stream.service
 Wants=d3kos-tier.service d3kos-camera-stream.service
+# BUG-142: skip cleanly when ONNX model not installed (lab Pi, fresh image before model deploy)
+ConditionPathExists=/opt/d3kos/models/marine-vision/fish_detector.onnx
 
 [Service]
 Type=simple

@@ -3,6 +3,8 @@ Description=d3kOS Hybrid Voice Assistant
 Documentation=https://github.com/d3kos/d3kos
 After=network.target sound.target d3kos-tier.service
 Wants=d3kos-tier.service
+# BUG-143: skip cleanly when Vosk model not installed (lab Pi, boat Pi before model deploy)
+ConditionPathExists=/opt/d3kos/models/vosk/vosk-model-small-en-us-0.15
 
 [Service]
 Type=simple

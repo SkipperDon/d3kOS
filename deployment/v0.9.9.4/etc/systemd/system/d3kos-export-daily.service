@@ -2,6 +2,8 @@
 Description=d3kOS Daily Scheduled Export
 After=network-online.target d3kos-export-manager.service d3kos-tier-api.service d3kos-export-manager.service
 Wants=network-online.target
+# BUG-145: skip cleanly when export script not present
+ConditionPathExists=/opt/d3kos/scripts/export-daily.sh
 
 [Service]
 Type=oneshot

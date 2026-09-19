@@ -14,8 +14,9 @@ WorkingDirectory=/opt/d3kos/services/live
 ExecStart=/usr/bin/python3 /opt/d3kos/services/live/live_session.py
 Restart=on-failure
 RestartSec=10
-StandardOutput=append:/opt/d3kos/logs/live-session.log
-StandardError=append:/opt/d3kos/logs/live-session.log
+# BUG-141: file-append logging fails if log owned by root; use journal like all other services
+StandardOutput=journal
+StandardError=journal
 Environment=PYTHONUNBUFFERED=1
 
 [Install]

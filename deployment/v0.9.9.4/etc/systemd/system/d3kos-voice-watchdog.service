@@ -2,6 +2,8 @@
 Description=d3kOS Voice Assistant Watchdog
 Documentation=https://github.com/d3kos/d3kos
 After=d3kos-voice.service
+# BUG-144: skip cleanly when watchdog script not present
+ConditionPathExists=/opt/d3kos/scripts/voice-watchdog.sh
 
 [Service]
 Type=oneshot
