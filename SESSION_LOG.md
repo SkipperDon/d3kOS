@@ -11519,3 +11519,58 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 1 (AI Nav ★ confirmed by operator: "pill appeared, I pressed it it ran through it update and pill on ai nav has a *")
 ─────────────────────────────────────────────────────
+
+## S173 2026-09-19
+
+**Goal:** Fix BUG-139 (Admin Console CRM 404), restore Pi dashboard after reboot, clear all Pi boot failures.
+
+**Completed:**
+- **BUG-139 FIXED**: Admin Console CRM 404 — root cause was WP REST endpoint `/wp-json/d3k/v1/crm` registered at S138 via direct FTP and lost on subsequent `functions.php` redeployment. Added full 12-action handler to `atmyboat-forum/wp-content/themes/twentytwenty-child/functions.php` and deployed to HostPapa live via FTPS. HTTP 200 confirmed. (atmyboat-forum commit `15d1346`)
+- **Pi dashboard restored**: After reboot, identity regen service overwrote `device-token.json` with new token. Restored original (`7eee5d04`) from `.pre-regen` backup. Locked sentinel `.identity-regenerated` to prevent repeat.
+- **Missing scripts deployed**: `tier-manager.sh`, `launch-d3kos.sh`, `voice-watchdog.sh`, `detect-opencpn.sh`, `first-boot-setup.sh`, `detect-timezone.sh` — all SCP'd to `/opt/d3kos/scripts/`.
+- **Safehelm deployed**: All 10 Python modules from v0.9.9.5 tree deployed to lab Pi `/opt/d3kos/services/safehelm/`. Service now active on port 8096, Signal K connected.
+- **BUG-147 FIXED**: `launch-d3kos.sh` never launched Chromium on boot — `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`, `DBUS_SESSION_BUS_ADDRESS` not inherited in autostart subshell. Added `export` with `${VAR:-default}` fallback. Reboot validated. (commit `668dfbc5`)
+- **d3kos-export-boot guard**: Added `ConditionPathExists` to skip cleanly when `export-on-boot.sh` absent. (commit `0165cef2`)
+- **BUG-137 FIXED (lab)**: `d3kos-go2rtc` failed on every boot — `slots.json` absent on lab Pi (no cameras). Added `ConditionPathExists=/opt/d3kos/config/slots.json` guard. (commit `ecf77d13`)
+- **Result**: Lab Pi went from 6 failed units to **0 failed units** — first time fully clean.
+
+**Decisions:**
+- BUG-141 confirmed already fixed (commit `0ac9a6a2`) before this session — tracker was correct, MEMORY.md pointer was stale. Protocol correction: live-check Pi before presenting any bug as open work.
+- go2rtc guard added to v0.9.9.5 tree (where the unit file lives), not v0.9.9.4.
+- Safehelm deployed from v0.9.9.5 tree — service unit was already installed on lab Pi, code was not.
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-19 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- BUG-146: auto-enrol HTTP 400 public key encoding (LOW, non-blocking)
+- BUG-130: N2K engine bridge boat-side validation (needs engine running)
+- BUG-132/133: fixed lab, pending boat Pi deploy (physical visit required)
+- BUG-135: camera hotspot (boat visit required)
+- D23 tests: Newman + Playwright + Allure (deferred)
+
+---
+
+SQS — S173 2026-09-19
+─────────────────────────────────────────────────────
+tasks_planned          : 2 (BUG-139, Pi dashboard restore)
+tasks_completed        : 2 + 5 additional boot failures cleared
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 90/100
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-19
+─────────────────────────────────────────────────────
+session_duration_min   : ~120
+tasks_planned          : 2
+tasks_completed        : 7
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 0
+failure_category       : stale-memory-pointer (BUG-141 reported as open when already fixed)
+human_verified         : 1 (zero failed units confirmed by operator)
+─────────────────────────────────────────────────────
