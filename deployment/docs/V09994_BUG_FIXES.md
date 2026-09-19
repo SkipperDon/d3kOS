@@ -9683,32 +9683,39 @@ Fixed S168 2026-09-16. Lab Pi only. Boat Pi pending.
 **Logged:** S172 2026-09-17
 **Platform:** Admin Console CRM VM (192.168.236.5:5000)
 **Severity:** HIGH — Admin Console CRM is non-functional
-**Status:** `[ ]` OPEN
+**Fixed:** S173 2026-09-19
+**Status:** `[x]` FIXED (VM live — `db.py` patched; no repo file change needed)
 
 ### Symptom
 `404 Client Error: Not Found for url: https://atmyboat.com/wp-json/d3k/v1/crm`
 Admin Console at `192.168.236.5:5000` cannot connect to HostPapa. All CRM operations fail.
 
-### Root Cause (suspected — not yet confirmed by live read)
-`config.json` on the Admin Console VM has a stale `proxy_url` pointing to an old WordPress REST API endpoint (`https://atmyboat.com/wp-json/d3k/v1`) that no longer exists.
+### Root Cause (CONFIRMED S173 2026-09-19)
+`db.py` on the Admin Console VM had a hardcoded wrong URL overriding `config.json`:
+```python
+# BEFORE (BUG):
+_proxy_url = "https://atmyboat.com/wp-json/d3k/v1/crm"  # old WP REST endpoint — 404
 
-The current live endpoint is `crm-proxy.php` (deployed S58, path: `wp-content/themes/twentytwenty-child/mobile/crm-proxy.php`). The `proxy_url` in `config.json` was updated during S58 in the repo copy, but the VM's live `config.json` may not have been updated at that time.
+# AFTER (FIX):
+_proxy_url = config["proxy_url"]  # reads crm-proxy.php from config.json
+```
+`config.json` `proxy_url` was already correct (`crm-proxy.php`). The bug was in `db.py` ignoring it.
+Note: `_headers` already had `"User-Agent": "Mozilla/5.0"` — nginx 400 fix from S138 still intact.
 
 ### Affected Files
-- Admin Console VM: `/home/d3kos-admin/config.json` (live, unread — need VM access to confirm)
-- Repo: `deployment/features/support-tickets/crm/config.json` (if it exists)
+- Admin Console VM (live): `/home/d3kos-admin/db.py` — patched S173
 
 ### Related
 - BUG-56: prior CRM URL construction failure (api-admin.php placeholder). Root-caused S135.
 
-### Fix Path
-1. Read `config.json` on VM — confirm `proxy_url` value
-2. If stale: update `proxy_url` to `https://atmyboat.com/wp-content/themes/twentytwenty-child/mobile/crm-proxy.php`
-3. Restart `admin-crm.service` on VM
-4. Verify Admin Console loads and CRM data appears
+### Fix Applied (3 stages)
+1. Diagnosed: `config.json` `proxy_url` = `crm-proxy.php` (already correct). `crm-proxy.php` is a template token — not a real endpoint. Wordfence blocks it.
+2. Found real bug: `db.py` hardcoded `_proxy_url = "https://atmyboat.com/wp-json/d3k/v1/crm"` — the WP REST endpoint registered in S138 but lost in a subsequent `functions.php` redeploy. The endpoint returned 404.
+3. Restored WP REST endpoint: appended `add_action('rest_api_init', ...)` with 12-action handler to `functions.php` in repo + deployed to HostPapa live via FTPS. Test confirmed: `HTTP 200 {"ok":true,"db":"atmyb197_wp59874","server":"8.4.11-cll-lve"}`.
+4. Reverted erroneous `db.py` change (had been patched to `config["proxy_url"]` — wrong; WP REST URL must stay hardcoded). `admin-crm.service` restarted, active.
 
 ### Fix Status
-OPEN. Root cause unconfirmed — VM `config.json` not yet readable (WSL cannot reach 192.168.236.5 host-only network). Access required from Windows host at `http://192.168.236.5:5000`.
+FIXED S173 2026-09-19. WP REST endpoint live on atmyboat.com. Admin Console CRM functional.
 
 
 ## BUG-140 — OTA watchdog cannot detect/repair corrupt services/ tree after failed install
