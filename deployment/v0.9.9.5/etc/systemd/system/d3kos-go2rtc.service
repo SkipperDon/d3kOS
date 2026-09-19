@@ -4,6 +4,7 @@ After=network-online.target d3kos-dashboard.service
 Wants=network-online.target
 StartLimitIntervalSec=300
 StartLimitBurst=5
+ConditionPathExists=/opt/d3kos/config/slots.json
 
 [Service]
 Type=simple
