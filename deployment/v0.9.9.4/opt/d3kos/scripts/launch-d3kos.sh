@@ -9,6 +9,12 @@
 # sits below Squeekboard. labwc strips decorations via rc.xml windowRules.
 # See: deployment/d3kOS/docs/D3KOS_UI_SPEC_ADDENDUM_01.md Section C
 
+# Ensure Wayland environment is set — script may be called from autostart subshell
+# before these vars are inherited. Without them Chromium silently fails to connect.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+
 # Prevent crash-restore prompt on next boot
 CHROMIUM_PREFS="$HOME/.config/chromium/Default/Preferences"
 if [ -f "$CHROMIUM_PREFS" ]; then
