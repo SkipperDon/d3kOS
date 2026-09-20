@@ -2015,3 +2015,18 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S172-cont]** BUG-140 logged: OTA watchdog cannot detect/repair corrupt `services/` tree after failed install. Design required before implementation. |
 | `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S172-cont]** D23 status → DEMO COMPLETE. BUG-140 added to PART 17. Version 3.90 → 3.91. |
 | Lab Pi (7eee5d04) | **[DEMO VERIFIED — S172-cont]** Interactive OTA demo PASS: dashboard pill appeared → user pressed "Update d3kOS" → downloaded + rsync-installed demo tarball → health check PASS → AI Nav ★ visible on dashboard (command 20, 18:20 UTC-5 2026-09-17). |
+
+## S175 — 2026-09-20 — Trixie OS Upgrade Regressions Fixed + D19 Disclaimer Gate + D24 Plymouth Restored
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/app.py` | **[UPDATED — S175]** D19 disclaimer gate: added Flask `session` import + `app.secret_key = os.urandom(24)`. `index()` now redirects to `/disclaimer` if `session['disclaimer_ok']` not set. `disclaimer_accept()` sets flag after writing acceptance file. Gate fires every kiosk boot (Chromium `--disable-restore-session-state` clears session). Commit `22344923`. |
+| `deployment/v0.9.9.5/usr/share/plymouth/themes/pix/splash.png` | **[NEW — S175]** D24 custom AtMyBoat boot splash copied into v0.9.9.5 tree (md5 `651a217c`). Was overwritten on Pi by `rpd-plym-splash` Trixie upgrade — restored from v0.9.9.4 tree, `initramfs` rebuilt on lab Pi for kernel 6.18.50. Commit `22344923`. |
+| `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/disclaimer.html` | **[UPDATED — S175]** All font sizes bumped: body/p/li/buttons/hints 18 px → 20 px; h2 20 px → 22 px; top-bar 22 px → 24 px. Matches d3kOS 20 px base. Exceeds AODA 18 px minimum. Commit `be3d5fcb`. |
+| `deployment/v0.9.9.4/etc/systemd/system/d3kos-fleet-push.service` | **[UPDATED — S175]** BUG-148: `ConditionPathExists=/opt/d3kos/services/fleet/config/fleet-push.env` added to `[Unit]`. Prevents storm-restart when env file absent. Commit `29f98e21`. |
+| `deployment/features/fleet-management/pi_source/d3kos-fleet-push.service` | **[UPDATED — S175]** BUG-148: same `ConditionPathExists` guard. Commit `29f98e21`. |
+| `deployment/v0.9.9.4/etc/systemd/system/d3kos-fish-detector.service` | **[UPDATED — S175]** BUG-149: `StartLimitIntervalSec=120` + `StartLimitBurst=3` moved from `[Service]` to `[Unit]` section. Commit `848a5399`. |
+| `deployment/v0.9.9.4/etc/systemd/system/d3kos-boatlog-api.service` | **[UPDATED — S175]** BUG-150: `MemoryLimit=256M` → `MemoryMax=256M`. Commit `848a5399`. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S175]** BUG-148, BUG-149, BUG-150, BUG-151 sections added. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S175]** BUG-148/149/150 marked `[x]` FIXED. BUG-151 added (OPEN). D23-ENH-01 appended to D23 "STILL TO BUILD" list. Version 3.92 → 3.93. |
+| Lab Pi (7eee5d04) | **[DEPLOYED — S175]** app.py (disclaimer gate), disclaimer.html (20 px), splash.png (D24 custom) deployed. `initramfs` rebuilt. Trixie fully upgraded. Kernel: `6.18.50+rpt-rpi-v8`. All 37 services running. Disclaimer gate verified post-reboot: `/ → 302 → /disclaimer`. |

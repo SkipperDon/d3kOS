@@ -11574,3 +11574,63 @@ attributed_rec         : 0
 failure_category       : stale-memory-pointer (BUG-141 reported as open when already fixed)
 human_verified         : 1 (zero failed units confirmed by operator)
 ─────────────────────────────────────────────────────
+
+## S175 2026-09-20
+
+**Goal:** Lab Pi health check after 12 h+ continuous operation; assist with Trixie OS upgrade; fix post-upgrade kiosk regressions; AODA disclaimer improvement.
+
+**Completed:**
+- **Health check (12 h+ uptime):** journalctl showed one warning source — BUG-148 (fleet-push storm restart). Two additional pre-existing systemd warnings discovered: BUG-149 (fish-detector `StartLimitIntervalSec` in wrong section) and BUG-150 (boatlog-api deprecated `MemoryLimit=`). All three logged and fixed.
+- **BUG-148 FIXED:** `d3kos-fleet-push.service` crash-looping every 10 s (missing `fleet-push.env` on lab Pi). Added `ConditionPathExists` guard — unit now skips silently when env file absent. Commit `29f98e21`.
+- **BUG-149 FIXED:** `d3kos-fish-detector.service` — `StartLimitIntervalSec=120` moved from `[Service]` to `[Unit]` section. `daemon-reload` warning eliminated, rate-limiting now active. Commit `848a5399`.
+- **BUG-150 FIXED:** `d3kos-boatlog-api.service` — `MemoryLimit=256M` → `MemoryMax=256M`. `daemon-reload` warning eliminated. Commit `848a5399`.
+- **Trixie OS upgrade assisted:** User hit Python 3.13 strict `=` dependency conflict in GUI package manager. Fix: `sudo apt dist-upgrade` + `--allow-change-held-packages` for python3.13 group + linux-image-rpi-v8 + nodejs. All 37 d3kOS services running after upgrade. Pi now fully current (0 upgradable). Kernel upgraded to `6.18.50+rpt-rpi-v8` (confirmed after reboot).
+- **D24 Plymouth splash restored (regression):** `rpd-plym-splash` upgrade overwrote `/usr/share/plymouth/themes/pix/splash.png` with stock RPi image (`65ff89ac`). Restored D24 custom AtMyBoat splash (`651a217c`) from `deployment/v0.9.9.4/` tree. `sudo update-initramfs -u` run on Pi — initramfs rebuilt for 6.18.50. Splash copied into `deployment/v0.9.9.5/usr/share/plymouth/themes/pix/` for future deploys. Commit `22344923`.
+- **D19 disclaimer gate fixed (regression):** After OS upgrade, disclaimer screen never appeared. Root cause: `index()` route in `app.py` had the `_require_every_boot()` gate function built and wired to `/disclaimer`, but `index()` itself never called it — check was simply missing. Fix: added Flask `session` import, `app.secret_key = os.urandom(24)`, and `if not session.get('disclaimer_ok'): return redirect('/disclaimer')` to `index()`. Set `session['disclaimer_ok'] = True` in `disclaimer_accept()` after file write. Chromium's `--disable-restore-session-state` ensures session clears on every reboot — gate fires every boot as designed. Verified post-reboot: `/ → 302 → /disclaimer`. Commit `22344923`.
+- **Disclaimer font size bump:** All body text 18 px → 20 px; h2 20 px → 22 px; top-bar 22 px → 24 px. Matches d3kOS 20 px base. Exceeds AODA 18 px minimum. All 8 font-size rules updated and verified live on Pi. Commit `be3d5fcb`.
+- **BUG-151 logged:** AODA violations — `hardware.html` (16 px probe labels ×2), `cameras.js` (12 px link text ×3), `remote-access.html` (16 px API key span + CSS rule ×2). Open for fix.
+- **D23-ENH-01 logged:** OTA rollback UI — "Revert to Previous Version" button in Settings > Updates. Rollback mechanism already exists (agent + ROLLBACK_DIR). Three pieces missing: `/api/ota/rollback` endpoint, button in settings.html, agent rollback command handler. Blocked on OTA agent lab Pi deploy.
+
+**Decisions:**
+- Flask session flag approach chosen for disclaimer gate (vs always-redirect pattern) — avoids circular redirect. Session expires on Chromium restart, which is exactly every kiosk boot.
+- Plymouth restored from v0.9.9.4 tree (not regenerated) — exact same D24 image, no rework needed.
+- Trixie `dist-upgrade` preferred over `apt upgrade` for future OS updates — handles changing dependencies that `upgrade` holds back.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-20 | TBD |
+| Ollama | 0 calls | $0.00 |
+
+**Pending:**
+- BUG-151 OPEN: AODA font violations in hardware.html, cameras.js, remote-access.html
+- D23-ENH-01: OTA rollback UI (blocked on agent deploy)
+- D23 production deploy: revert ota-admin.php test-mode URL, deploy PHP to live HostPapa, build GitHub Release tarball, update Pi cloud-config.json
+- BUG-146: auto-enrol HTTP 400 public key encoding (LOW, non-blocking)
+- BUG-130: N2K engine bridge — boat-side validation (engine running required)
+- BUG-132/133: boat Pi only (physical visit required)
+
+---
+
+SQS — S175 2026-09-20
+─────────────────────────────────────────────────────
+tasks_planned          : 3 (health check + bug fixes, Trixie upgrade assist, regression fixes)
+tasks_completed        : 3 + 2 additional (font bump, ENH-01 + BUG-151 logged)
+sprint_scope_violations: 0
+scope_creep_events     : 0
+regressions_introduced : 0
+oic_score              : 93/100
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-20
+─────────────────────────────────────────────────────
+session_duration_min   : ~180
+tasks_planned          : 3
+tasks_completed        : 8
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 1 (disclaimer gate + Plymouth confirmed by operator: "everything is working")
+─────────────────────────────────────────────────────
