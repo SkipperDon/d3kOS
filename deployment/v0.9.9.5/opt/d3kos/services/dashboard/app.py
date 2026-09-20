@@ -13,7 +13,7 @@ Port assignments (from d3kos-config.env):
 
 CRITICAL: Signal K WebSocket is ws://localhost:8099 — NOT ws://localhost:3000.
 """
-from flask import Flask, render_template, jsonify, request, redirect
+from flask import Flask, render_template, jsonify, request, redirect, session
 import json
 import os
 import sys
@@ -69,6 +69,7 @@ def _get_device_uuid() -> str:
     ).upper()
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)   # fresh each restart — sessions cleared on kiosk reboot by design
 
 AVNAV_PORT    = os.getenv('AVNAV_PORT',    '8080')
 GEMINI_PORT   = os.getenv('GEMINI_PORT',   '3001')
@@ -234,6 +235,11 @@ def index():
     # Security gate: force password change if still default
     if not _password_changed():
         return redirect('/setup?require_password=1')
+    # D19 disclaimer gate: require acknowledgement on every kiosk boot.
+    # session['disclaimer_ok'] is set by /api/disclaimer/accept and cleared
+    # when Chromium restarts (--disable-restore-session-state in launch script).
+    if not session.get('disclaimer_ok'):
+        return redirect('/disclaimer')
     return render_template(
         'index.html',
         avnav_port=AVNAV_PORT,
@@ -1250,6 +1256,7 @@ def disclaimer_accept():
         os.makedirs(os.path.dirname(_DISCLAIMER_ACCEPTED_FILE), exist_ok=True)
         with open(_DISCLAIMER_ACCEPTED_FILE, 'w') as f:
             json.dump(rec, f, indent=2)
+        session['disclaimer_ok'] = True
         return jsonify({'ok': True})
     except Exception as exc:
         return jsonify({'error': str(exc)}), 500
