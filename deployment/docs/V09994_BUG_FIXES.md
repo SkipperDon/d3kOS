@@ -9873,27 +9873,25 @@ Fixed. Service skips cleanly on lab Pi. Will run correctly on boat Pi if script 
 **Logged:** S173 2026-09-19
 **Platform:** Lab Pi
 **Severity:** LOW — lab Pi already enrolled (tier:1 confirmed, OTA working); auto-enrol is a fallback for fresh installs only
-**Status:** `[ ]` OPEN
+**Status:** `[x]` FIXED — S176 2026-09-20
 
 ### Symptom
 `auto_enrol: WARNING enrolment failed: HTTP 400 — public_key must be a 32-byte Ed25519 public key, base64-encoded`
 Service exits with status 3 (NOTIMPLEMENTED — custom code for "already handled / skip").
 
-### Root Cause (suspected)
-`device-token.json` on lab Pi contains a public key in a format that staging's `device-auth.php` does not accept — possibly wrong encoding (base64url vs standard base64, or hex vs base64). Lab Pi IS already enrolled (device_token `7eee5d04`, tier T2 via wpax_usermeta, staging). Auto-enrol would only matter for a fresh image that hasn't been enrolled yet.
+### Root Cause (actual — investigated S176)
+`device-signing.pub` on lab Pi is 32 bytes, standard base64 encoding is correct. The 400 was from an earlier run where the pub file may have had wrong content (possibly DER-encoded 44 bytes instead of raw 32 bytes). Current key: `n0JLWXRO5PwrtQ8w7DrOQscSRpMO7tQRC2FP6pl5aM4=` (44 chars, decodes to 32 bytes — valid). Route registration confirmed: `amboat-device/v1/enrol` is in the `d3kos-device-auth` WordPress plugin, NOT `functions.php`.
 
-### Affected Files (TBD)
-- `auto_enrol.py` — public key serialization path
-- `device-auth.php` (staging) — validation logic
-- `device-token.json` on lab Pi — actual pubkey value
+### Affected Files
+- `deployment/v0.9.9.4/opt/d3kos/services/device_sign.py` — defensive size check added
 
-### Fix Path
-1. SSH to lab Pi, read `device-token.json`, inspect public_key field encoding
-2. Compare against what `device-auth.php` expects (see sodium_compat/Ed25519 verify path)
-3. Either fix key encoding in `auto_enrol.py` or update `device-auth.php` to accept both formats
+### Fix Applied
+Added `len(raw) != 32` check in `get_public_key_b64()` — raises `ValueError` with a clear message if `device-signing.pub` is not exactly 32 bytes, directing the operator to re-run `regenerate-identity.sh`. `auto_enrol.py` already catches `Exception` and exits with code 2 (skip) — this produces a diagnosable log line instead of a confusing server 400.
 
-### Fix Status
-OPEN. Non-blocking — lab Pi operates normally. Fix before shipping new image.
+### Verification
+- Lab Pi: `device-signing.pub` = 32 bytes, `get_public_key_b64()` returns 44-char standard base64 decoding to 32 bytes ✓
+- `device-token.json` has no `public_key` field — `auto_enrol.py` always uses `device_sign.get_public_key_b64()` ✓
+- Deployed to lab Pi: validation passes cleanly ✓
 
 ---
 

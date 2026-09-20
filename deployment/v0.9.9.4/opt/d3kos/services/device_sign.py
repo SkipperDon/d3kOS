@@ -92,7 +92,13 @@ def get_public_key_b64() -> str:
     """
     if _SIGNING_PUB.exists():
         with open(_SIGNING_PUB, 'rb') as f:
-            return base64.b64encode(f.read()).decode()
+            raw = f.read()
+        if len(raw) != 32:
+            raise ValueError(
+                f'device-signing.pub is {len(raw)} bytes (expected 32 raw bytes) — '
+                'run regenerate-identity.sh to rebuild the signing keypair'
+            )
+        return base64.b64encode(raw).decode()
 
     # Fallback: derive from private key
     priv_key = _load_private_key()
