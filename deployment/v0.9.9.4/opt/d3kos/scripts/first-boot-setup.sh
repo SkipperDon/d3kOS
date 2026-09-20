@@ -257,6 +257,37 @@ if ! ls /etc/ssh/ssh_host_*_key > /dev/null 2>&1; then
 fi
 
 # ==============================================================================
+# STEP 6c: Protect d3kOS Plymouth boot splash from package upgrades (D24)
+# ==============================================================================
+# dpkg-divert tells the package manager to write rpd-plym-splash's future
+# splash.png to splash.png.distrib instead of the real path, so the d3kOS
+# branded splash survives every OS upgrade without an initramfs rebuild.
+# The master copy lives at /opt/d3kos/assets/plymouth/splash.png.
+
+SPLASH_PATH="/usr/share/plymouth/themes/pix/splash.png"
+SPLASH_ASSET="/opt/d3kos/assets/plymouth/splash.png"
+
+log ""
+log "STEP 6c: Protecting d3kOS Plymouth splash from package upgrades..."
+
+if dpkg-divert --list | grep -q "$SPLASH_PATH"; then
+    log "  dpkg-divert already applied — splash is protected."
+else
+    log "  Applying dpkg-divert for $SPLASH_PATH ..."
+    dpkg-divert --local --rename --add "$SPLASH_PATH"
+    log "  Divert applied."
+fi
+
+if [ -f "$SPLASH_ASSET" ]; then
+    cp "$SPLASH_ASSET" "$SPLASH_PATH"
+    log "  d3kOS branded splash restored from asset."
+    update-initramfs -u >> "$LOG_FILE" 2>&1
+    log "  initramfs rebuilt."
+else
+    warn "  Master splash not found at $SPLASH_ASSET — splash may show RPi branding."
+fi
+
+# ==============================================================================
 # STEP 7: Mark first boot as complete
 # ==============================================================================
 
