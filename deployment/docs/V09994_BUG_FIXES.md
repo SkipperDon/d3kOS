@@ -9924,3 +9924,37 @@ Script is now self-contained regardless of caller environment.
 
 ### Verification
 Rebooted lab Pi. Chromium launched automatically — no SSH intervention required. Committed `668dfbc5`.
+
+---
+
+## BUG-148 — d3kos-fleet-push.service crash-loops: missing env file causes storm restart every 10 s
+
+**Logged:** S175 2026-09-20
+**Platform:** Lab Pi (boat Pi unaffected — has `fleet-push.env` configured)
+**Severity:** MEDIUM — no data loss, no functional regression, but ~13,000 journal entries over 12 h and load avg 3.6 on 4-core Pi (elevated)
+**Status:** `[x]` FIXED S175 2026-09-20
+
+### Symptom
+After 12+ hours of continuous operation, `journalctl -p warning..emerg` shows only one warning source — `d3kos-fleet-push.service` failing every 10 seconds:
+```
+systemd[1]: d3kos-fleet-push.service: Failed to load environment files: No such file or directory
+systemd[1]: d3kos-fleet-push.service: Failed with result 'resources'.
+systemd[1]: Failed to start d3kos-fleet-push.service
+```
+6 failures/min × 720 min = ~4,320 failures; 3 journal lines each = ~13,000 entries. Load avg: 3.6/2.8/2.8 (4 cores).
+
+### Root Cause
+`d3kos-fleet-push.service` has `EnvironmentFile=/opt/d3kos/services/fleet/config/fleet-push.env` with `ignore_errors=no`. The config dir exists (`/opt/d3kos/services/fleet/config/`) and holds only `fleet-push.env.template` — the operator has not created the real env file (which contains `AMBOAT_API_KEY`). systemd fails to spawn the process before it starts, reporting `result 'resources'`. With `Restart=on-failure RestartSec=10`, the unit loops indefinitely and never appears in `systemctl list-units --state=failed` (it shows as `activating`, not `failed`), making it invisible to routine health checks.
+
+### Affected Files
+- `deployment/features/fleet-management/pi_source/d3kos-fleet-push.service`
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-fleet-push.service`
+
+### Fix
+Added `ConditionPathExists=/opt/d3kos/services/fleet/config/fleet-push.env` to `[Unit]` section of both files. When the env file is absent, systemd skips the unit entirely (inactive/dead, exit code 1 — not a failure). Same pattern used in BUG-137 (go2rtc/slots.json) and BUG-142 (fish-detector/onnx model).
+
+### Verification
+- `systemctl daemon-reload` on lab Pi
+- `systemctl status d3kos-fleet-push` → `inactive (dead)` — condition not met
+- `journalctl -p warning..emerg --since "now"` → no fleet-push entries
+- Load avg recovered

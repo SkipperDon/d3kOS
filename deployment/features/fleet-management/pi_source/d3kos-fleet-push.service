@@ -2,6 +2,7 @@
 Description=d3kOS Fleet Push — position + engine to HostPapa every 1 min (Port 8108)
 After=network.target d3kos-dashboard.service
 Wants=d3kos-dashboard.service
+ConditionPathExists=/opt/d3kos/services/fleet/config/fleet-push.env
 
 [Service]
 Type=simple
