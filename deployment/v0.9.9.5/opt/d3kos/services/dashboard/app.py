@@ -460,16 +460,32 @@ def update_status():
     return jsonify({'available': False})
 
 
+_ROLLBACK_DIR = Path('/home/d3kos/.d3kos-rollback')
+_DEPLOY_ROOT  = Path('/opt/d3kos')
+_OTA_UNITS = [
+    'd3kos-dashboard', 'd3kos-agents', 'd3kos-ai-bridge', 'd3kos-anchor-watch',
+    'd3kos-gemini-proxy', 'd3kos-gemini-nav', 'd3kos-boatlog-api',
+    'd3kos-health', 'd3kos-tier',
+]
+
+
 @app.route('/api/ota/status')
 def ota_status():
     """D23 — OTA status for the dashboard update pill."""
     path = Path('/opt/d3kos/data/ota-status.json')
+    data = {'available': False, 'state': 'none'}
     if path.exists():
         try:
-            return jsonify(json.loads(path.read_text()))
+            data = json.loads(path.read_text())
         except Exception:
             pass
-    return jsonify({'available': False, 'state': 'none'})
+    try:
+        data['rollback_available'] = (
+            _ROLLBACK_DIR.exists() and any(_ROLLBACK_DIR.iterdir())
+        )
+    except Exception:
+        data['rollback_available'] = False
+    return jsonify(data)
 
 
 @app.route('/api/ota/trigger', methods=['POST'])
@@ -482,6 +498,45 @@ def ota_trigger():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/ota/rollback', methods=['POST'])
+def ota_rollback():
+    """D23-ENH-01 — Manual rollback to previous version backed up in ROLLBACK_DIR."""
+    if not _ROLLBACK_DIR.exists():
+        return jsonify({'success': False, 'error': 'No rollback backup available'}), 400
+    try:
+        if not any(_ROLLBACK_DIR.iterdir()):
+            return jsonify({'success': False, 'error': 'Rollback directory is empty'}), 400
+    except Exception:
+        return jsonify({'success': False, 'error': 'Cannot read rollback directory'}), 500
+
+    import shutil
+    import subprocess
+    from threading import Thread
+
+    def _do_rollback():
+        import time
+        time.sleep(1)  # allow response to flush before dashboard restarts
+        svc = [u + '.service' for u in _OTA_UNITS]
+        subprocess.run(['sudo', 'systemctl', 'stop'] + svc,
+                       check=False, timeout=30)
+        subprocess.run(
+            ['rsync', '-a', '--delete', '--no-group',
+             str(_ROLLBACK_DIR) + '/', str(_DEPLOY_ROOT) + '/'],
+            check=False, timeout=120,
+        )
+        subprocess.run(['sudo', 'systemctl', 'daemon-reload'],
+                       check=False, timeout=30)
+        subprocess.run(['sudo', 'systemctl', 'start'] + svc,
+                       check=False, timeout=30)
+        shutil.rmtree(str(_ROLLBACK_DIR), ignore_errors=True)
+
+    Thread(target=_do_rollback, daemon=True).start()
+    return jsonify({
+        'success': True,
+        'message': 'Rollback initiated — dashboard will restart in ~2 s',
+    })
 
 
 @app.route('/api/version')
