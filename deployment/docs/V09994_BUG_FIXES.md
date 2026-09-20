@@ -9956,7 +9956,7 @@ Move `StartLimitIntervalSec=120` from `[Service]` to `[Unit]` section. Also add 
 **Logged:** S175 2026-09-20
 **Platform:** Lab Pi + boat Pi (all deployed files)
 **Severity:** MEDIUM — accessibility violation; CLAUDE.md rule: "NEVER use font sizes below 18px anywhere in CSS"
-**Status:** `[ ]` OPEN
+**Status:** `[x]` FIXED S175 2026-09-20
 
 ### Symptom
 Three files contain font sizes below the 18px AODA minimum enforced project-wide:
