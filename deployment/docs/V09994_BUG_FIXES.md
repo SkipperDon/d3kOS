@@ -9927,6 +9927,54 @@ Rebooted lab Pi. Chromium launched automatically — no SSH intervention require
 
 ---
 
+## BUG-149 — d3kos-fish-detector.service: StartLimitIntervalSec in wrong section
+
+**Logged:** S175 2026-09-20
+**Platform:** Lab Pi + boat Pi (both carry same unit file)
+**Severity:** LOW — no functional impact; key silently ignored; warning fires on every daemon-reload
+**Status:** `[ ]` OPEN
+
+### Symptom
+On every `systemctl daemon-reload`, journal emits:
+```
+systemd[1]: /etc/systemd/system/d3kos-fish-detector.service:18: Unknown key 'StartLimitIntervalSec' in section [Service], ignoring.
+```
+
+### Root Cause
+`StartLimitIntervalSec=120` is placed at line 18 inside the `[Service]` section. This key is only valid in `[Unit]`. Systemd silently ignores it, meaning the rate-limiting window has no effect.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-fish-detector.service` line 18
+
+### Fix
+Move `StartLimitIntervalSec=120` from `[Service]` to `[Unit]` section. Also add `StartLimitBurst=` if appropriate.
+
+---
+
+## BUG-150 — d3kos-boatlog-api.service: deprecated MemoryLimit= directive
+
+**Logged:** S175 2026-09-20
+**Platform:** Lab Pi + boat Pi (both carry same unit file)
+**Severity:** LOW — no functional impact; memory limit still enforced by older kernel path; warning fires on every daemon-reload
+**Status:** `[ ]` OPEN
+
+### Symptom
+On every `systemctl daemon-reload`, journal emits:
+```
+systemd[1]: /etc/systemd/system/d3kos-boatlog-api.service:18: Unit uses MemoryLimit=; please use MemoryMax= instead. Support for MemoryLimit= will be removed soon.
+```
+
+### Root Cause
+`MemoryLimit=256M` at line 18 in `[Service]` section. `MemoryLimit=` is a legacy cgroup v1 directive; modern systemd (cgroup v2) uses `MemoryMax=`.
+
+### Affected Files
+- `deployment/v0.9.9.4/etc/systemd/system/d3kos-boatlog-api.service` line 18
+
+### Fix
+Replace `MemoryLimit=256M` with `MemoryMax=256M` in the unit file.
+
+---
+
 ## BUG-148 — d3kos-fleet-push.service crash-loops: missing env file causes storm restart every 10 s
 
 **Logged:** S175 2026-09-20
