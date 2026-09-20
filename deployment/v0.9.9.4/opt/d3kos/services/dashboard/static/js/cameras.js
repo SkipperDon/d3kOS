@@ -45,13 +45,13 @@ async function loadCameras() {
     slots = await res.json();
   } catch {
     msgEl.innerHTML = 'Camera system unavailable &mdash; :8084 not reachable.<br>'
-      + '<a href="/settings#section6" style="color:var(--g-txt);font-size:12px;">Camera Setup in Settings &rarr;</a>';
+      + '<a href="/settings#section6" style="color:var(--g-txt);font-size:18px;">Camera Setup in Settings &rarr;</a>';
     return;
   }
 
   if (!Array.isArray(slots) || slots.length === 0) {
     msgEl.innerHTML = 'No camera slots defined.<br>'
-      + '<a href="/settings#section6" style="color:var(--g-txt);font-size:12px;">Camera Setup in Settings &rarr;</a>';
+      + '<a href="/settings#section6" style="color:var(--g-txt);font-size:18px;">Camera Setup in Settings &rarr;</a>';
     return;
   }
 
@@ -120,7 +120,7 @@ async function loadCameras() {
   if (!fwSlot && gridSlots.length === 0) {
     msgEl.style.display = 'flex';
     msgEl.innerHTML = 'No cameras configured for display.<br>'
-      + '<a href="/settings#section6" style="color:var(--g-txt);font-size:12px;">Camera Setup in Settings &rarr;</a>';
+      + '<a href="/settings#section6" style="color:var(--g-txt);font-size:18px;">Camera Setup in Settings &rarr;</a>';
   }
 }
 
