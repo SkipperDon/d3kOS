@@ -9951,6 +9951,35 @@ Move `StartLimitIntervalSec=120` from `[Service]` to `[Unit]` section. Also add 
 
 ---
 
+## BUG-151 — AODA font size violations: sub-18px text in hardware.html, cameras.js, remote-access.html
+
+**Logged:** S175 2026-09-20
+**Platform:** Lab Pi + boat Pi (all deployed files)
+**Severity:** MEDIUM — accessibility violation; CLAUDE.md rule: "NEVER use font sizes below 18px anywhere in CSS"
+**Status:** `[ ]` OPEN
+
+### Symptom
+Three files contain font sizes below the 18px AODA minimum enforced project-wide:
+
+| File | Location | Size | Count |
+|------|----------|------|-------|
+| `/opt/d3kos/services/dashboard/templates/hardware.html` | Inline style on `hw-label` + `hw-val` spans (probe version) | 16px | 2 |
+| `/opt/d3kos/services/dashboard/static/js/cameras.js` | Inline style on "Camera Setup in Settings →" link | 12px | 3 |
+| `/var/www/html/remote-access.html` | CSS rule + inline style on API key display span | 16px | 2 |
+
+### Root Cause
+Text was written below the project minimum during initial build without enforcement. The 18px floor in CLAUDE.md was established as an AODA requirement; these elements pre-date or slipped through the rule.
+
+### Affected Files
+- `deployment/v0.9.9.5/opt/d3kos/services/dashboard/templates/hardware.html`
+- `deployment/v0.9.9.5/opt/d3kos/services/dashboard/static/js/cameras.js`
+- `/var/www/html/remote-access.html` (nginx-served static, not in Flask tree)
+
+### Fix
+Raise all sub-18px font sizes to 18px minimum in the three files above. Verify no inline styles are missed.
+
+---
+
 ## BUG-150 — d3kos-boatlog-api.service: deprecated MemoryLimit= directive
 
 **Logged:** S175 2026-09-20
