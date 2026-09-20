@@ -4,6 +4,8 @@ After=network.target d3kos-tier.service d3kos-camera-stream.service
 Wants=d3kos-tier.service d3kos-camera-stream.service
 # BUG-142: skip cleanly when ONNX model not installed (lab Pi, fresh image before model deploy)
 ConditionPathExists=/opt/d3kos/models/marine-vision/fish_detector.onnx
+StartLimitIntervalSec=120
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -15,8 +17,6 @@ ExecCondition=/bin/bash -c 'R=$(curl -sf --max-time 15 http://localhost:8093/tie
 ExecStart=/usr/bin/python3 /opt/d3kos/services/marine-vision/fish_detector.py
 Restart=on-failure
 RestartSec=15
-StartLimitIntervalSec=120
-StartLimitBurst=3
 StandardOutput=journal
 StandardError=journal
 

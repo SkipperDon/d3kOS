@@ -9932,7 +9932,7 @@ Rebooted lab Pi. Chromium launched automatically — no SSH intervention require
 **Logged:** S175 2026-09-20
 **Platform:** Lab Pi + boat Pi (both carry same unit file)
 **Severity:** LOW — no functional impact; key silently ignored; warning fires on every daemon-reload
-**Status:** `[ ]` OPEN
+**Status:** `[x]` FIXED S175 2026-09-20
 
 ### Symptom
 On every `systemctl daemon-reload`, journal emits:
@@ -9956,7 +9956,7 @@ Move `StartLimitIntervalSec=120` from `[Service]` to `[Unit]` section. Also add 
 **Logged:** S175 2026-09-20
 **Platform:** Lab Pi + boat Pi (both carry same unit file)
 **Severity:** LOW — no functional impact; memory limit still enforced by older kernel path; warning fires on every daemon-reload
-**Status:** `[ ]` OPEN
+**Status:** `[x]` FIXED S175 2026-09-20
 
 ### Symptom
 On every `systemctl daemon-reload`, journal emits:
