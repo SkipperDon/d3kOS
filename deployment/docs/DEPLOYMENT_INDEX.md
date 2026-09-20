@@ -2030,3 +2030,13 @@ Post-compaction continuation of S110. Three bug groups specced, implemented, and
 | `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S175]** BUG-148, BUG-149, BUG-150, BUG-151 sections added. |
 | `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S175]** BUG-148/149/150 marked `[x]` FIXED. BUG-151 added (OPEN). D23-ENH-01 appended to D23 "STILL TO BUILD" list. Version 3.92 → 3.93. |
 | Lab Pi (7eee5d04) | **[DEPLOYED — S175]** app.py (disclaimer gate), disclaimer.html (20 px), splash.png (D24 custom) deployed. `initramfs` rebuilt. Trixie fully upgraded. Kernel: `6.18.50+rpt-rpi-v8`. All 37 services running. Disclaimer gate verified post-reboot: `/ → 302 → /disclaimer`. |
+
+## S176 — 2026-09-20 — BUG-146 Fix + GitHub Issue Sync
+
+| File / Location | Change |
+|---|---|
+| `deployment/v0.9.9.4/opt/d3kos/services/device_sign.py` | **[UPDATED — S176 BUG-146]** Added defensive `len(raw) != 32` check in `get_public_key_b64()`. Raises `ValueError` with clear "run regenerate-identity.sh" message if `device-signing.pub` is not exactly 32 raw bytes. Prevents bad key from reaching the server (HTTP 400). Commit `263b41fc`. |
+| `deployment/docs/V09994_BUG_FIXES.md` | **[UPDATED — S176]** BUG-146 status → FIXED. Root cause corrected (was wrong: suspected device-token.json; actual: potential wrong-size .pub file). Route registration fact added: `amboat-device/v1/enrol` is in the `d3kos-device-auth` plugin. |
+| `Helm-OS/PROJECT_CHECKLIST.md` | **[UPDATED — S176]** BUG-146 marked `[x]` FIXED S176. |
+| GitHub Issues (`SkipperDon/d3kOS`) | **[SYNCED — S176]** Created issues #123 (BUG-148), #124 (BUG-149), #125 (BUG-150), #126 (BUG-151), #127 (BUG-146) — all labeled `bug`+`fixed-lab`. |
+| Lab Pi (7eee5d04) | **[DEPLOYED — S176]** `device_sign.py` deployed. `get_public_key_b64()` validation confirmed: 32-byte key → 44-char standard base64 → clean pass. |

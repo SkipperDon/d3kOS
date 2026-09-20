@@ -11634,3 +11634,74 @@ attributed_rec         : 0
 failure_category       : none
 human_verified         : 1 (disclaimer gate + Plymouth confirmed by operator: "everything is working")
 ─────────────────────────────────────────────────────
+
+## S176 — 2026-09-20 — BUG-146 Fix + GitHub Issue Sync
+
+**Goal:** Fix BUG-146 (auto-enrol HTTP 400 — public_key format) and sync GitHub Issues for S175/S176 bugs.
+
+**Completed:**
+- BUG-146 FIXED: Added defensive `len(raw) != 32` check in `get_public_key_b64()` (`device_sign.py`). If `device-signing.pub` is not exactly 32 raw bytes, raises `ValueError` with clear "run regenerate-identity.sh" message. `auto_enrol.py` already catches this and exits code 2 (diagnosable skip) instead of sending a bad key to the server and getting an opaque 400.
+- Deployed `device_sign.py` to lab Pi (192.168.1.237). Verified: 32-byte key → 44-char standard base64 → decodes to 32 bytes. Validation check passes cleanly.
+- Root cause investigated via SSH: `device-signing.pub` is correct on lab Pi (32 bytes, `n0JLWXRO5PwrtQ8w7DrOQscSRpMO7tQRC2FP6pl5aM4=`). The 400 was from an earlier run with wrong key content. Route registration confirmed: `amboat-device/v1/enrol` lives in the `d3kos-device-auth` WordPress plugin — NOT `functions.php` as originally suspected.
+- Updated PROJECT_CHECKLIST.md PART 17 and V09994_BUG_FIXES.md: BUG-146 status → FIXED S176.
+- Commit `263b41fc`.
+- GitHub Issue Sync: Created 5 issues for bugs fixed in S175/S176:
+  - BUG-148 → #123 (fleet-push storm — ConditionPathExists)
+  - BUG-149 → #124 (fish-detector StartLimitIntervalSec wrong section)
+  - BUG-150 → #125 (boatlog-api deprecated MemoryLimit)
+  - BUG-151 → #126 (AODA font violations — 3 files)
+  - BUG-146 → #127 (auto-enrol HTTP 400 defensive check)
+
+**Decisions:**
+- BUG-146 suspected root cause (key in device-token.json) was WRONG — device-token.json has no public_key field. Real issue was potential wrong-size .pub file in earlier installs. Defensive check is the correct fix.
+- Route registration for `amboat-device/*` is in the plugin (`d3kos-device-auth/d3kos-device-auth.php`), confirmed via grep of both repos.
+
+**Ollama:** 0 calls
+
+**Costs:**
+| Source | Metric | Cost |
+|--------|--------|------|
+| Claude API | check console.anthropic.com → Usage → 2026-09-20 | TBD |
+| Ollama | 0 calls | $0.00 |
+| Session total | | TBD |
+
+**Pending:**
+- D23 production deploy (4 steps: revert ota-admin.php test-mode URL, deploy to live HostPapa, GitHub Release tarball, update boat Pi cloud-config.json)
+- D23-ENH-01: OTA rollback UI (blocked on lab Pi `d3kos-ota-agent.service enable`)
+- Newman + Playwright + Allure test suites for D23
+- BUG-130: boat-side N2K engine bridge validation (physical visit required)
+- BUG-132/133: boat Pi Marine Vision (physical visit required)
+
+---
+
+SQS — S176 2026-09-20
+─────────────────────────────────────────────────────
+ACCOMPLISHED THIS SESSION:
+- BUG-146 FIXED: defensive 32-byte size check in get_public_key_b64() — deployed, verified on lab Pi
+- GitHub Issue Sync complete: 5 issues created (#123–#127) for BUG-146/148/149/150/151
+
+NOT COMPLETED / DEFERRED:
+- D23 production deploy (4 steps) — deferred, requires operator action
+- D23-ENH-01 OTA rollback UI — blocked on ota-agent lab Pi deploy
+- Newman/Playwright test suites — deferred
+- BUG-130/132/133 — require physical boat visit
+
+KNOWN GAPS OR UNCERTAINTIES:
+- The original trigger for BUG-146's 400 (what specific key file content caused it) remains unknown — lab Pi current state is correct. Defensive check prevents future recurrence.
+- S174 session log entry is absent from SESSION_LOG.md (S173/S175/S176 present; S174 was BUG-139/BUG-147 fixes).
+
+OPERATOR ACTIONS REQUIRED:
+- Check console.anthropic.com for actual Claude API cost for 2026-09-20 (two sessions: S175 + S176)
+- D23 production deploy when ready (operator decision on timing)
+─────────────────────────────────────────────────────
+
+EXTENDED DATA FIELDS — 2026-09-20 S176
+─────────────────────────────────────────────────────
+session_duration_min   : ~45
+tasks_planned          : 1 (BUG-146)
+tasks_completed        : 1
+governing_doc_version  : CLAUDE.md 2026-09-12
+attributed_rec         : 0
+failure_category       : none
+human_verified         : 1 (lab Pi SSH confirmed 32-byte key)
+─────────────────────────────────────────────────────
