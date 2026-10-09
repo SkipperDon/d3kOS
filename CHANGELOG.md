@@ -7,733 +7,189 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] — d3kOS Dashboard AODA Remediation CSS v21 (S50 2026-04-11)
+## [v0.9.9.5.1] — OTA patch + Forward Watch v0.2.5 — 2026-10-07
 
 ### Fixed
+- OTA update pill never appeared on the kiosk browser (cross-origin :3000 from the :80 dashboard); same-origin URLs enforced.
+- Multiple devices shared one device identity after cloning; each device now regenerates its own unique identity on first boot.
+- AtMyBoat.com Gemini API calls sent deprecated `temperature` parameter; corrected across all endpoints.
+- signalk-forward-watch v0.2.5: alarms persist across 3 consecutive detection cycles (or immediately when target ≤75 m); auto-clear when target no longer detected; alerts suppressed below 1.0 kn (moored). Sea trial validation: moored false alarms 97→0, approaching vessels correctly detected.
 
-- **AODA/WCAG 2.0 AA — d3kos.css v21** — Root contrast token overhaul eliminates 200+ WAVE "very low contrast" errors across all pages. `--ink2` (day: was 4.2:1 fail → 9.1:1 pass) and `--ink3` (day: was 1.97:1 critical fail → 5.8:1 pass). Night mode tokens corrected. 8 status-bar/ticker opacity values lifted.
+### Changed
+- v0.9.9.5.1 OTA package delivered to Pi 4 and Pi 5; includes AIS redesign and Signal K source priority fixes.
 
-- **AODA — settings.html** — Semantic structure: scroll container → `<main id="main-content">`. 17 section divs → `<h2>`. All form inputs labelled. 12 empty toggle labels given screen-reader text. Skip-to-content link wired.
+## [v0.9.9.5] — OTA Self-Update · Helm Voice AI · SafeHelm · USB-CAN-A — 2026-10-09
 
-- **AODA — 12 remaining Flask templates** — Skip-to-content links on all pages. `id="main-content"` on every scrollable body. Section headings `<div>` → `<h2>` (engine-monitor, upload-documents, manage-documents, boat-log). Aria-labels on icon-only buttons. Delete modal `role="dialog"` + `aria-modal`. Setup wizard twin-engine toggle `role="switch"` + keyboard handler. `lang="{{ ui_lang }}"` on setup.html + offline.html.
+The most significant d3kOS release since v0.9.9.4. Five headline capabilities: automated over-the-air updates (Pi now keeps itself current without operator intervention), the Helm Voice AI assistant, SafeHelm collision avoidance advisory, USB-CAN-A NMEA 2000 adapter support, and a fully redesigned AIS subsystem. Dozens of stability, first-boot, and wizard reliability fixes included. Lab-validated on Raspberry Pi 3B+, Pi 4, and Pi 5.
 
----
+### Headline Capabilities
 
-## [Unreleased] — v0.9.9.2 Phase C — M15 Alert Delivery Pipeline (S48 2026-04-11)
+- **Over-the-Air Update (OTA)** — d3kOS now self-updates from the cloud. When an update is queued via the AtMyBoat.com admin panel the dashboard shows an amber "Update Available" pill. Two taps install the update in the background; the Pi restarts services automatically. Full-state signed packages cover every file in `/opt/d3kos`. ECDSA signature verification, SHA-256 integrity check, automatic rollback on failure, and numbered migration scripts guarantee clean installs. No SD card swap, no SSH session required.
 
-### Added
+- **Helm Voice AI (D-VA-01)** — Always-on in-browser voice assistant. Say the wake word "Helm", ask a question, hear the answer spoken back. Vosk speech-to-text on-Pi; Piper TTS; Gemini language model via ai_bridge with RAG from your boat and engine manuals. Works offline (answers from general knowledge when internet or API key unavailable). Configure Gemini API key from the Settings page. No browser extension — pure WebRTC microphone.
 
-- **M15 Alert Delivery — alert-notify.php** — Pi-facing HostPapa endpoint. Bearer + device-token auth. wp_mail() email on critical/priority alerts. Master email toggle, per-type toggles (6 alert types), quiet hours with timezone support. 15-min rate limiting per type per device via WP transients.
+- **SafeHelm Collision Avoidance Advisory (D02)** — Background service monitors AIS targets and computes CPA/TCPA using COLREGs Rules 13, 14, 15, and 18. Advisory-only (no false alarms while moored or at low speed). Three-tier alert gate: critical / warning / advisory. Stand-on escalation follows Rule 17. Alerts appear as status-bar pills on every dashboard page; spoken alerts use the voice arbiter with a 15-second inter-announcement gap.
 
-- **M15 Alert Delivery — alert_watcher.py v0.9.6** — Pi service extended with cloud notify. Fire-and-forget POST to alert-notify.php per qualifying alert. Local pre-filter reads `user-preferences.json` `alert_prefs` before cloud call. 2-min export cooldown unchanged.
+- **USB-CAN-A NMEA 2000 Support** — CAN adapter auto-detection on boot. `can-autodetect.sh` identifies whether a PiCAN-M (SPI) or USB-CAN-A (USB) adapter is connected and brings up `can0` at 250 kbps automatically. No manual configuration required. Signal K receives engine, GPS, and AIS data from whichever adapter is present.
 
-- **M15 Alert Delivery — Pi Settings UI** — `settings.html` alert preferences section: master email toggle, 6 per-type toggles, quiet hours (start/end/timezone). Flask API: GET/POST `/api/settings/alert-preferences` reads/writes `user-preferences.json`.
+- **AIS Redesign** — `ais-catcher` replaces `rtl_ais`. UDP delivery to Signal K (no TCP server dependency), community telemetry disabled by default (`-X off`), udev hotplug rule for RTL-SDR dongle. AIS works reliably from first boot. Targets appear on AvNav chart overlay.
 
-- **M15 Alert Delivery — offline-check.php** — cPanel cron endpoint (60-min). Queries `COALESCE(last_seen_at, registered_at) < NOW() - INTERVAL 60 MINUTE`. wp_mail() to account holder with offline duration + troubleshooting. 4-hour rate limit per device.
+- **AtMyBoat.com Integration** — Complete device registration and account-pairing flow. Scan QR code in the wizard → visit `atmyboat.com/register/?rt=TOKEN` → account created and Pi paired in one atomic operation. Per-device Ed25519 authentication. Device approval email sent to owner on admin approval. Settings page shows device token and pairing status.
 
-- **M15 Alert Delivery — PWA badge refresh** — Badge zeroes when user opens alerts screen. `refreshAlertCount()` polls count from non-alerts screens. `visibilitychange` and 5-min interval keep badge current.
+### New Features
 
-### Fixed
+- **Signal K Forward Watch v0.2.5 (signalk-forward-watch)** — Alarms persist across 3 consecutive detection cycles (or immediately when target is ≤75 m); auto-clear when target no longer detected; alerts suppressed below 1.0 kn (moored). Sea trial validation: moored false alarms 97→0, approaching vessels correctly detected. LatLon geodesy replaced with spherical formula (ESM compatibility fix).
 
-- **Forum: single.php back link** — bbPress topics displayed "← Back to Blog" because WordPress falls back to `single.php` for `topic` post type. Fixed: post type check added; topics now show "← Back to Forum" (linking to parent forum); blog posts unchanged.
+- **D16 Marine Vision 3D Surround View** — Row-ribbon button added to Marine Vision panel. Validated on Pi 4: CPU < 3.0 load average, 30 FPS stable.
 
----
+- **Marine Vision View Mode Bar** — View mode selector in the Marine Vision panel header for quick switching between live, playback, and detection modes.
 
-## [0.9.9.4] - 2026-09-02
+- **SafeHelm Global Persistent Widget** — `safehelm-global.js` self-injecting widget on all 6 operational dashboard pages. Always-on SSE to port 8096; pill dismisses on tap, reappears on next alert. AODA 18 px / 48 px compliant.
 
-### Summary
+- **Boot Disclaimer Gate (D19)** — Legal disclaimer shown on every new session; user must tap "I Agree" before reaching the dashboard. Sanitize script removes the session flag so every fresh image shows the gate on first boot.
 
-**v0.9.9.4 — Security Hardening + Release Image v4.1**
+- **Vessel Setup Wizard (HCD-8)** — Full 9-step onboarding: vessel name, propulsion type, vessel length class, GPS provider, AIS provider, NMEA 2000 adapter, Signal K host, AtMyBoat.com registration, summary. Runs only on new or wiped installs. Preceded by a mandatory password-change step.
 
-d3kOS v0.9.9.4 is the security-hardened release image milestone. This release closes the credential-exposure
-vector in the image build pipeline (BUG-78), hardens every server-facing endpoint with Ed25519 device
-authentication (BUG-66), and resolves 40+ bugs across the dashboard, cloud export, AvNav navigation,
-Setup wizard, and identity regeneration systems. The release image `d3kos-v0.9.9.4-20260902.img.gz`
-is clean-verified: zero credentials, zero prior identity, Ollama stripped (optional install-ollama.sh),
-first-boot identity regeneration confirmed functional.
+- **Boat Log Auto-Capture** — `boatlog_capture.py` + `d3kos-boatlog-capture.service`. Engine data captured server-side without requiring the Boat Log page to be open.
 
-**Image:** `d3kos-v0.9.9.4-20260902.img.gz` — 11,840 MB (11.6 GB compressed)
-**SHA-256:** `2436be984e7ca59a6c9785020e50afdb0b8cdd1508f3c07be261e2765e340f1a`
+- **Timezone Auto-Detection** — `detect-timezone.sh` sets correct local timezone on first boot from ip-api.com; falls back to worldtimeapi.org → ipapi.co.
+
+- **Signal K Source Priorities** — SOG/COG now use a single authoritative source; dashboard no longer alternates between GPS and N2K values.
+
+- **Anchor Watch Restored** — Anchor watch endpoint corrected to point at ai_bridge (`localhost:3002`). "Set Anchor" button now arms reliably.
+
+- **AI Self-Tuning** — Gemini API key saved in Settings persists across reboots. RAG layer uses boat and engine manual excerpts for context-aware answers. Offline fallback uses general knowledge automatically.
+
+### Removed
+
+- **CX5106 N2K Engine Bridge** — Removed. Engine data is now delivered exclusively via NMEA 2000 CAN bus (USB-CAN-A or PiCAN-M) and Signal K. The CX5106 serial protocol was unreliable on real hardware; the bridge has been dropped. "NMEA 2000" label replaces the former OEM name in the wizard.
+
+### First-Boot Reliability
+
+Complete overhaul of the first-boot experience for new installs and cloned images:
+
+- Clone identity regeneration on every first boot (new `device-token.json`, SSH host keys, `installation_id`)
+- Change-password step precedes wizard — wizard cannot run on factory credentials
+- Five OTA migrations shipped with the base image, applied on first OTA update
+- nginx `/network/` proxy corrected — all password-change and onboarding API routes reachable from kiosk browser
+- Chromium auto-launches in kiosk mode with correct Wayland environment variables
+- Plymouth boot splash displays correctly at Tier 0
+- SSH host keys regenerate before sshd starts
+- `fake-hwclock` masked (no RTC hardware on Pi 4 / Pi 5)
+- Sanitize script removes `vessel.env`, sessions, logs, and WiFi profiles before imaging
+
+### Bug Fixes
+
+**Dashboard and UI:**
+- **BUG-26** — Anchor watch "Set Anchor" endpoint pointed at wrong service; now arms correctly
+- **BUG-27** — Status bar font sizes below AODA 18 px minimum; `.sb-vessel` and `#clk` corrected
+- **BUG-41** — `/settings` HTTP 500 on load (`tier_num`/`device_token` template variables missing)
+- **BUG-50** — System Status page reported GPS/AIS/AvNav healthy when services were not running
+- **BUG-82** — Boat Log UI now fetches and merges server-side log entries on page load
+- **BUG-151** — AODA font size violations in `hardware.html`, `cameras.js`, `remote-access.html`
+- **BUG-172** — Chromium 107% CPU / system load 3.89+ on idle dashboard; resolved
+
+**Services and Stability:**
+- **BUG-108** — `api-keys.json` had no creation mechanism; first-boot generation added
+- **BUG-132** — `camera_stream_manager.py` RTSP init was synchronous in main thread; now non-blocking (commit `0faf9fc4`)
+- **BUG-134** — `d3kos-camera-stream.service` ExecCondition failed-closed on network issues; now fail-open (commit `c6abd40c`)
+- **BUG-136** — `d3kos-fish-detector.service` same fail-closed ExecCondition; same fail-open fix (commit `fd4e2fd8`)
+- **BUG-137** — `d3kos-go2rtc.service` permission denied on config file at boot (commit `354c00fa`)
+- **BUG-141** — `d3kos-live` crash-loop: log file owned by root; ownership corrected
+- **BUG-142** — `d3kos-fish-detector` crash-loop: ONNX model absent from image
+- **BUG-143** — `d3kos-voice` crash-loop: Vosk and Piper models absent
+- **BUG-144** — `d3kos-voice-watchdog` fails: watchdog script missing
+- **BUG-145** — `d3kos-export-daily` fails: export script missing; restored
+- **BUG-148** — `d3kos-fleet-push` crash-loop: missing env file
+- **BUG-149** — `d3kos-fish-detector.service` `StartLimitIntervalSec` in wrong unit file section
+- **BUG-150** — `d3kos-boatlog-api.service` deprecated `MemoryLimit=` directive
+- **BUG-163** — `fake-hwclock-load.service` fails on Pi without RTC hardware; masked
+- **BUG-170** — Watchdog CRITICAL_PATHS stale entry generated 1,152 false CRITICAL log entries per day
+- **BUG-171** — Watchdog false "services tree corrupt" alert every 5 minutes
+- **BUG-270** — Export scripts missing from image; restored
+- **BUG-281** — OTA packages installed scripts without executable bit; build script now chmod 755 all shebangs
+
+**Voice / Helm AI:**
+- **BUG-174** — D-VA-01 UtteranceGate truthiness bug caused missed responses
+- **BUG-175** — D-VA-01 TURN config test failure
+- **BUG-177** — Helm Voice required device pairing; blocked Tier 0 users; gate removed
+- **BUG-199** — Helm Voice "I didn't understand": RAG disabled, no manual content loaded; RAG re-enabled
+- **BUG-200** — Gemini API key save in Settings was a non-functional stub; now saves and persists
+- **BUG-201** — Onboarding wizard Gemini key field name mismatch; corrected
+- **BUG-202** — `POST /gemini/config` echoed full API key in JSON response; masked value returned
+
+**OTA System:**
+- **BUG-223** — Update pill never appeared on :80 kiosk (cross-origin :3000); same-origin URLs enforced
+- **BUG-260** — OTA could only update `/opt/d3kos` files; full-state signed packages introduced
+- **BUG-261** — OTA never updated `version.txt`; migration 0001 now updates installed version
+- **BUG-273** — CAN adapters not auto-detected on boot; `can-autodetect.sh` + service added (OTA migration 0002)
+- **BUG-277** — Update pill continued to offer "Update Available" during active install
+- **BUG-278** — New agent/pill code did not take effect after OTA update
+- **BUG-279** — Settings offered rollback from stale pre-release backup; removed
+
+**AIS and Signal K:**
+- **BUG-19/20** — `fetchAis="true"` and `aisQueryPeriod="5"` added to `avnav_server.xml`; AIS targets appear on chart overlay
+- **BUG-32** — `rtl_ais` port conflict with Signal K TCP 10110; directed to dedicated port 10108
+- **BUG-100** — AvNav apt GPG key missing from image; key `06B67AB0E988310475E75A2746E95F3C8A61623B` installed to keyring
+- **BUG-125** — `rtl-ais.service` looped forever when no SDR dongle attached
+- **BUG-126** — Signal K GPS and AIS providers not pre-configured; now included in base image
+- **BUG-159** — Pangoo src 64 injected false engine data with engine off; `signalk-suppress-pangoo` installed
+- **BUG-248** — `ais-catcher` replaces `rtl_ais`: more reliable decode, UDP delivery, no community telemetry
+- **BUG-250** — ais-catcher shared data with aiscatcher.org by default; disabled with `-X off`
+- **BUG-251** — ais-catcher restarted immediately after `systemctl stop`
+
+**AtMyBoat.com / Registration:**
+- **BUG-111** — Registration created unlinked accounts; now creates account + links Pi atomically
+- **BUG-112** — Wizard QR encoded `d3kos://register` (unresolvable deep link); corrected to `atmyboat.com/register/?rt=TOKEN`
+- **BUG-113** — qrcodejs loaded from CDN only; vendored locally for offline use
+- **BUG-114** — Token displayed with `R-` prefix rejected by validators; prefix stripped before display
+- **BUG-115** — PWA login screen had no registration link; "Create one" added
+- **BUG-116** — Settings page missing AtMyBoat.com section and QR display; full panel added
+- **BUG-117** — Registration token remained valid after use; now marked `used_at` on redemption
+- **BUG-118** — `amboat_reg_tokens` table missing `pi_id` and `device_token` columns; schema corrected
+- **BUG-119** — Logged-in users visiting registration URL saw form again; now auto-links and redirects
+- **BUG-120** — Admin approval sent no email to device owner; `wp_mail()` to contact_email added
+- **BUG-121** — No way to skip AtMyBoat.com registration section; "Skip" button added
+- **BUG-146** — `d3kos-auto-enrol` HTTP 400: `public_key` format rejected by server; corrected
+- **BUG-155** — `ota-queue.php` tier gate returned HTTP 403 for all devices; fixed
+
+**First Boot and Image:**
+- **BUG-152** — OTA rsync failed on root-owned Plymouth splash file
+- **BUG-153** — OTA deleted rollback directory on success; "Revert" option never appeared
+- **BUG-154** — Flask rollback thread died when service stopped itself
+- **BUG-157** — `first-boot-setup.sh` missing execute permission
+- **BUG-263** — Cloned devices shared one device identity; unique identity regenerated per-device on first boot
+- **BUG-276** — Hard-coded factory password in camera credentials; moved to config file
+- **BUG-283** — SSH host keys regenerated after sshd started, causing boot failure; ordering fixed
+- **BUG-285** — Sanitize script did not remove `vessel.env`; device shipped with stale owner data
+- **BUG-287** — nginx stripped `/network` prefix; all onboarding API routes returned 404 from kiosk
+- **BUG-288** — Change-password flow unreachable from kiosk at first boot
+- **BUG-289** — "CX5106 DIP Switch Setup" wizard step label still shown after CX5106 removal
+- **BUG-290** — "Garmin NMEA 2000" OEM label in wizard; replaced with "NMEA 2000"
+
+**Setup Wizard:**
+- **BUG-291** — `POST /setup` rejected empty `vessel_name`; LAUNCH button silently reloaded wizard with no error shown; fallback `'My Vessel'` added to `app.py`
+- **BUG-292** — Chromium HTML5 constraint validation blocked LAUNCH button: `required` attribute on hidden step 2 radio inputs silently prevented form submission when navigating past step 2; `required` removed from `propulsion_type` and `vessel_length_class` inputs
 
 ### Security
 
-- **BUG-78 RESOLVED — Image build pipeline credential strip** — `sanitize.sh` v4.1 now removes all credentials, SSH host keys, device identity, Ollama model blobs, and user data before image capture. Build assertion fails loudly if any secret survives. Prior images (before v4.0) baked live credentials into the image file. This is the most critical fix in this release.
-
-- **BUG-66 COMPLETE — Ed25519 server-side request authentication** — All five Pi-to-server HostPapa endpoints now verify Ed25519 request signatures: `version-heartbeat.php`, `device-enroll.php`, `community-markers.php`, `alert-notify.php`, `offline-check.php`. Unsigned requests rejected with 401.
-
-- **BUG-39 — Identity regeneration on first boot** — `.identity-regenerated` sentinel correctly removed from master image so every cloned Pi generates a unique device token, installation ID, and signing key on first boot. Prior builds carried the master Pi's identity into every clone.
-
-- **BUG-57 CONTAINED — Botnet registration attack** — `/register/` page device-gated (Ed25519). Removes the open-registration vector exploited in the 62,000-account botnet attack. MailPoet auto-create-WP-user gate pending operator verification.
-
-- **BUG-58/59 — Config directory access controls** — `/opt/d3kos/config/` permissions tightened; `cloud-config.json` mode 600.
-
-### Dashboard & Navigation
-
-- **BUG-43/46/47/48 FIXED** — Engine monitor, alert ticker, GPS compass, and AIS overlays now work when accessing the dashboard from any remote IP. Prior versions had `localhost` hardcoded in front-end JavaScript, which caused all remote gauge data to fail silently.
-
-- **BUG-19/20 FIXED** — AIS fetch disabled by default (prevents false-vessel display when no AIS hardware present). Forward-watch obstacle model rebuilt.
-
-- **BUG-29/30/32 FIXED** — Engine RPM, coolant temperature, and oil pressure gauges read correctly from CAN bus / SignalK. CX5106 DIP switch configuration guide added.
-
-- **Signal K** — `avnav_server.xml.template` added to canonical tree (S133). u-blox GPS ignore rule in lab vs boat Pi documented in `PI_CONFIG_DELTA.md`.
-
-### Cloud Export
-
-- **BUG-54 Part 1 FIXED** — Export pipeline `PYTHONUNBUFFERED=1` fix eliminates systemd print-buffering failures that caused silent export loss.
-
-- **BUG-55 FIXED** — All 17 Pi services now point to production HostPapa endpoints. 9 were using staging URL fallbacks. Guard script `tools/verify-bug55.sh` prevents regression.
-
-- **BUG-72 (version-heartbeat) FIXED** — Pi → HostPapa version heartbeat now authenticated with Ed25519. Heartbeat confirmed delivering version data to admin fleet view.
-
-### Setup & Identity
-
-- **BUG-39 FIXED** — First-boot identity regeneration service (`d3kos-identity-regen`) confirmed `enabled` and operational. Device token, installation ID, and Ed25519 signing key all regenerate on first boot from a cloned image.
-
-- Setup wizard CX5106 DIP switch guide corrected (BUG-81). Prior guide had 8/10 settings wrong. New guide includes leaflet-decoded binary encoding for all RPM ratios.
-
-### Local AI — Ollama (Optional)
-
-- Ollama and model blobs (`gemma3:1b`, `nomic-embed-text`) are **not** included in the release image.
-
-- After first boot, run `/opt/d3kos/scripts/install-ollama.sh` to install Ollama and pull models. Requires internet access and ~3 GB free disk space.
-
-- This reduces the base image by ~2 GB and makes local AI an opt-in feature for operators with the available storage and internet access.
-
-### Image & Release Infrastructure
-
-- `sanitize.sh` v4.1 — complete credential, identity, log, Ollama, and user-data wipe with post-wipe assertions.
-
-- `create-image.sh` — version string updated to 0.9.9.4; calls sanitize.sh before dd.
-
-- `release-state.sh` — three-way drift verifier (repo ↔ MANIFEST.md5 ↔ Pi). Confirmed 215 identical files, 0 drifted, 0 missing before sanitize run.
-
-- `MANIFEST.md5` — regenerated: 215 entries, 0 stale.
-
-- `install-ollama.sh` — new post-boot optional installer for Ollama + models.
-
-### Pending
-
-- **Phase 5 — Clone verification** — flash `d3kos-v0.9.9.4-20260902.img.gz` to spare SD card, boot, verify: BUG-39 fires (new device-token.json generated), Tier 0 license, no prior credentials, `systemctl --failed` = 0, dashboard loads at `:3000`.
-
-- **BUG-54 Part 2** — nginx HTTP 400 on export to live HostPapa (deferred — requires on-boat connectivity).
-
-- **o-charts renewal** — CAac + CAgl expired 2026-04-01. Renew at o-charts.org.
+- **BUG-59** — Pre-commit credential scanning hook added to both repos; blocks commits containing live API key patterns
+- **BUG-62** — HTTP Auth layer added over `/wp-admin/` on HostPapa
+- **BUG-68** — `offline-check.php` token delivery moved to POST body; `AMBOAT_API_KEY` rotated
+- **BUG-87** — My Account delete action unthrottled; rate limit and confirmation re-prompt added
+- **BUG-91** — Entitlement authority failed open to Tier 1 on error; hardened to fail-closed
 
 ---
 
-## [0.9.6] - 2026-04-07 (In Progress)
-
-### Summary
-
-**v0.9.6 — Fleet Management (Tier 3)**
-
-d3kOS v0.9.6 delivers fleet management for Tier 3 operators. Multiple vessels push GPS position and engine snapshots to HostPapa every 60 seconds. The PWA fleet screen shows all vessels on a Leaflet.js map with real-time age indicators and per-vessel health cards. Fleet join/create/leave is fully self-service from the PWA — no manual configuration required. The Pi receives its fleet assignment automatically via the cloud command queue within 30 seconds of the operator joining.
-
-**Status:** Phase 1 + Phase 2 + Phase 3 complete. Phase 4 (tier gate verification) in progress.
-
-### Added (S21–S27b)
-
-- **Fleet data pipeline** — `d3kos-fleet-push.service` (Port 8108) pushes GPS + engine snapshots every 60s when engine on or GPS fix active. Idles completely otherwise. T3 gate.
-
-- **Fleet HostPapa endpoints** — `fleet-create.php`, `fleet-join.php`, `fleet-ingest.php`, `fleet-map.php`, `fleet-analytics.php`, `fleet-status.php`, `fleet-leave.php`. MySQL: `amboat_fleets`, `amboat_fleet_members`, `amboat_fleet_positions`, `amboat_fleet_engine_snapshots`. 17/17 e2e tests passed.
-
-- **PWA Fleet screen** — Tier 3 tab: Leaflet.js map (green/amber/red age markers), vessel list health cards (SOG/COG/RPM/engine hours/status dot), join/create/status/leave flows. Fleet code displayed prominently for sharing.
-
-- **Fleet membership auto-detection** — Fleet tab checks `fleet-status.php` on load. If already in a fleet (even after clearing localStorage), shows membership card with fleet code + View Fleet → button. No manual re-entry required.
-
-- **Fleet leave/delete** — Owners delete entire fleet and all data. Members remove themselves. Two-tap confirmation prevents accidental deletion. Pi receives `fleet_unassign` command automatically.
-
-- **Pi fleet_assign command** — `cloud_agent.py` handles `fleet_assign`: writes `/opt/d3kos/config/fleet.json` + restarts `d3kos-fleet-push.service`. Enqueued automatically by `fleet-create.php` and `fleet-join.php`. Pi picks up within 30s. No SSH required.
-
-- **Pi fleet_unassign command** — `cloud_agent.py` handles `fleet_unassign`: removes `fleet.json` + stops `d3kos-fleet-push.service`. Enqueued automatically by `fleet-leave.php`.
-
-- **Fleet analytics screen** *(Phase 3 — S27b)* — Per-vessel engine hours bar chart (Chart.js), alert history breakdown (last 30 days from `amboat_alerts` — engine_roughness, engine_overtemp, engine_oil_pressure), fleet-wide summary card (active vessels, total hours, avg RPM, total alerts), CSV export with 4 alert columns. Backend `fleet-analytics.php` updated to return `alerts_30d` per vessel and `fleet_alerts_30d` in fleet_summary.
-
-- **Admin console fleet view** *(Phase 4 partial — S24)* — `/fleets` list (all fleets, member count, last activity) + `/fleet/<id>` detail (member device tokens, positions, roles) + fleet suspension (`amboat_fleets.suspended` column). Flask routes + fleet.html deployed to CRM VM.
-
-### Deferred to Phase 4 completion / future
-- T1/T2 tier gate verification with test accounts
-- Two-device join test (requires second paired T3 device)
-- Privacy toggle (500m position randomization per vessel)
-
----
-
-## [0.9.5] - 2026-04-07
-
-### Summary
-
-**v0.9.5 — Predictive Maintenance**
-
-d3kOS v0.9.5 delivers proactive engine health monitoring. The system continuously analyzes engine history against a statistical baseline and alerts the operator before a failure occurs — not after. Alerts surface through the existing notification infrastructure: voice (Piper TTS), dashboard status bar ticker, and automatic boat log entries.
-
-**Status:** Complete — deployed and validated on Pi with synthetic test data. On-water validation documented separately for completion at the boat.
+## [v0.9.9.4-post] — 2026-09-04 — Device-Gated Registration Live
 
 ### Added
-
-- **Engine historian service** (`d3kos-predictive.service`, Port 8106) — SQLite time-series database recording engine snapshots from SignalK every 60 seconds. Stores RPM, coolant temperature, oil pressure, boost pressure, fuel level, engine hours.
-
-- **Statistical anomaly detection** — 2σ z-score analysis against rolling 1,000-row baseline. Hard limits: coolant >100°C → ALERT critical, oil pressure <150 kPa → ALERT critical. Fields: `coolant_temp_c`, `oil_pressure_kpa`, `rpm`. Detection cycle every 5 minutes.
-
-- **Predictive alert notifications** — WATCH/ALERT fires through three channels simultaneously: voice (Piper TTS via AI bridge), dashboard ticker (AI bridge SSE → `_setAlertTicker()`), boat log auto-entry (1-hour dedup cooldown per field).
-
-- **Engine Monitor predictive readouts** — Predictive Health section on `/engine-monitor` page. Four status cards (Overall, Coolant, Oil Press, RPM Trend) using existing `adv`/`crit` CSS. No changes to main dashboard.
-
-- **AI bridge self-healing** — `d3kos-ai-bridge.service` enabled on boot, added to watchdog `CRITICAL_SERVICES` with `auto_restart=True`.
-
-- **AI bridge Piper TTS fixed** — `utils/tts.py` corrected to use `/usr/local/bin/piper` + `/opt/d3kos/models/piper/en_US-amy-medium.onnx` via `PIPER_BIN`/`PIPER_VOICE` env vars. Was using wrong hardcoded path and `--output_raw` method.
-
-- **Tier gates** — `predictive_alerts` T1+, `maintenance_schedule` T2+ added to tier_service.py feature matrix.
-
-- **Test data tooling** — `generate_test_data.py` (2,000 synthetic readings, 3 injected anomalies) and `test_predictive.py` (TDD 6/6 passing).
-
-### Deferred
-
-- Phase 4 ML models — needs on-water training data
-- Phase 5 advanced automation (fuel optimization, geofence) — Tier 3, future version
-
----
-
-## [0.9.4-S6c] - 2026-03-27
+- **Device-gated registration (Option B)** — Pi-generated one-time short code replaces UUID copy-paste. Pi dashboard → Settings → "Get Registration Code" displays a 7-character code + QR code. User scans or clicks, lands on `/register/` with a green "d3kOS Pi verified" badge. Token is single-use, 30-minute expiry. No copying between applications required.
+- **`amboat_reg_tokens` table** — production database schema updated; stores token, pi_id, device_token, expiry, and used_at.
+- **User manual Section 17.4** — "Creating Your AtMyBoat.com Account (Device-Gated Registration)" with 4-step walkthrough and troubleshooting table. v2.4.1.
 
 ### Fixed
-- **TURN relay (cellular WebRTC)** — aioice `get_component_candidates` has a hardcoded 5s timeout; TURN relay allocation takes 5.11s and was silently cancelled. Patched timeout to 12s. TURN server URL corrected. Cellular WebRTC confirmed working over CGNAT.
-- **Camera stream service alert storm** — `d3kos-camera-stream.service` ExecStartPre called `/tier/feature/camera`; route did not exist. Service crash-looped every ~3s generating 131 alerts. Fixed by adding `camera` feature flag to tier matrix (T1+) and adding `/tier/feature/<name>` route to tier_service.py.
-- **Camera live feed green screen** — `get_camera_url()` returned `/camera/stream/hw/<id>` but `camera_stream_manager.py` only had `/camera/frame/hw/<id>` (single JPEG). MediaPlayer received 404, fell back to blank YUV frame. Fixed by adding proper MJPEG stream endpoint to camera_stream_manager.py.
-- **Camera tap crashed WebRTC session** — `asyncio.ensure_future(video_sender.replaceTrack(...))` raised `TypeError` because `replaceTrack()` is synchronous in aiortc 1.x (returns None). Fixed by calling replaceTrack() directly.
+- **BUG-60 CLOSED** — WordPress comment settings confirmed: manual approval required, open commenting permitted (no login gate required).
 
----
-
-## [0.9.2.2] - 2026-03-23
-
-### Summary
-
-**v0.9.2.2 — Release Candidate: Full Marine Intelligence Dashboard**
-
-d3kOS v0.9.2.2 is the complete marine intelligence platform. This release delivers the full instrument dashboard, AI assistant, camera system, engine monitoring, boat logging with voice notes, weather integration, onboarding wizard, and an 18-language i18n framework — all running locally on a Raspberry Pi 4.
-
-**Status:** Release Candidate — all code complete and deployed. UAT (5 metric + 5 imperial users) is the only remaining gate before final release.
-
-**Hardware:** Raspberry Pi 4, 10.1" touchscreen (1280×800), Anker S330 USB audio, NMEA 2000 gateway (optional), IP cameras (optional).
-
-**Design system:** Bebas Neue (numerals) + Chakra Petch (UI). White day mode / near-black night mode (`#020702`). Single green accent. IEC 62288 / ISO 9241-303 font sizing for 1m helm viewing distance.
-
----
-
-### Added
-
-#### Dashboard & UI
-- **Instrument dashboard** — continuous layout: status bar, row toggle (ENGINE/NAV/BOTH), engine row, nav row, AvNav chart pane, split pane (AI/Weather/Cameras), 6-tab bottom nav with protruding HELM button.
-- **Day/Night theme** — auto-schedule + manual override. `manualTheme` flag prevents auto-timer from overriding manual selection.
-- **Weather panel** — fullscreen Windy embed (free public tile, no API key). WX toggle in bottom nav. Weather snapshot auto-logged to Boat Log every 30 minutes while panel is open.
-- **HELM AI overlay** — voice command passthrough to voice assistant. Software mute toggle (persists via localStorage). Cancels speechSynthesis on mute.
-- **More menu** — 40px icons, 28px labels, Windowed Mode toggle, Helm Assistant link.
-- **AvNav beforeunload fix** — `navTo()` sets `avnav-frame.src = 'about:blank'` before navigating, preventing Chromium's "Leave site?" dialog on AvNav iframe navigation.
-
-#### Onboarding Wizard (8 steps)
-- Step 1: Welcome
-- Step 2: Vessel Identity (name required; particulars optional)
-- Step 3: Engine & Drive
-- Step 4: Electronics & NMEA (gateway selection, tank sender)
-- Step 5: Gateway Configuration — dedicated DIP switch step (CX5106 Row 1+Row 2 diagrams, computed switch positions for twin engine and single engine)
-- Step 6: Mobile Pairing (skip button)
-- Step 7: Gemini API Key (skip button)
-- Step 8: Done (camera setup opens new tab; wizard state preserved)
-- Back arrow on every step. Full-width layout. localStorage persistence (`d3kos_wiz_v3`). Skip buttons for optional fields. Settings page shows return banner when opened from wizard.
-
-#### Engine Dashboard
-- Full rebuild: 5 sections — Engine, Electrical, Tanks, System Status, Network Status.
-- Progress bars on all metric cells. Alert states (warning/critical). DAY/NGT toggle. Back arrow. One-finger scroll. Full 1280px width.
-
-#### Helm Assistant (AI Chat)
-- Dedicated page at `/helm-assistant`. 4 quick-action buttons (Engine Status, Check Issues, System Health, Run Diagnostics).
-- RAG → Gemini fallback with source badge (MANUAL / GEMINI). AODA fonts (18px min). on-screen keyboard support.
-- Gemini system prompt covers: engine diagnostics, electrical, mechanical, maintenance, on-board systems, navigation, safety.
-
-#### Marine Vision — Camera System
-- **Slot/Hardware architecture** — named positions (slots) decouple from physical cameras (hardware). Supports 1–20 cameras. `slots.json` + `hardware.json` replace `cameras.json`.
-- **camera_stream_manager.py** — frame buffer (1 background thread per hardware), full CRUD API, discovery scan (probes TCP 554, reads ARP for MAC).
-- **Dynamic tile renderer** — focus+filmstrip default, grid mode, staggered polling, canvas fish bbox overlay, bfcache-safe `pageshow` handling.
-- **Settings Camera Setup tab** — scan, live thumbnails, position input with datalist, role presets, Assign All, Unassign.
-- **Fish Detection** — YOLOv8n ONNX pipeline + EfficientNet-483 species classifier. Multi-slot. Gemini Vision on-demand species ID (common name, scientific name, confidence, Ontario regulation note). 21 Ontario freshwater species in ChromaDB RAG.
-
-#### Boat Log
-- **Voice notes** — MediaRecorder → Vosk speech-to-text (singleton, cached at startup). Transcript saved to SQLite. HELM voice service paused during recording. MIME type probe for Pi ARM64 compatibility.
-- **Engine auto-capture** — `boatlog-engine.js` subscribes to Signal K WebSocket. Records engine start, 30-min snapshots, stop, and alert threshold crossings (oil low, coolant high, battery out of range). ENGINE badge + data grid in Boat Log view.
-- **Data export** — CSV + JSON with `unit_metadata`. Metric and imperial configs verified.
-
-#### Metric/Imperial Conversion
-- `units.js` — 25 conversion functions, 25 passing unit tests.
-- Preferences API (:8107) — persists user unit preference.
-- Settings toggle. All pages updated to respect unit preference.
-
-#### Remote Access API (:8111)
-- API key auth. Endpoints: `/remote/health`, `/remote/status`, `/remote/maintenance`, `/remote/note`.
-- SSE endpoint `/remote/status-stream` — real-time push to `remote-access.html` via `EventSource`.
-
-#### Signal K v2.23.0
-- Upgraded from v2.22.1. AIS memory leak fixed. mDNS disabled. `@signalk/resources-provider` built-in (no install needed). Resources API on `/signalk/v2/api/resources/`.
-
-#### i18n Framework (18 Languages)
-- All 13 HTML pages wired with `data-i18n` attributes. 38 translation keys. All 15 index.html menu tiles wired.
-- Languages: ar, da, de, el, en, es, fi, fr, hr, it, ja, nl, no, pt, sv, tr, uk, zh.
-
-#### Documentation
-- `deployment/docs/D3KOS_USER_MANUAL_v0922.md` v1.0.0 — full user manual (11 sections, 626 lines). Ingested into Pi ChromaDB RAG — Helm Assistant can answer how-to questions directly from the manual.
-
----
-
-### Fixed
-
-- **Wayland kiosk bug** — `--kiosk` → `--app --start-maximized`. Kiosk mode placed Chromium above Squeekboard, permanently hiding on-screen keyboard. New launch script: `scripts/launch-d3kos.sh`.
-- **Gemini CORS** — `@app.after_request` CORS handler added to `gemini_proxy.py`. Browser at :3000 was blocked reading cross-origin responses from :3001.
-- **Vosk 504 timeout** — Vosk model loaded per-request (~9s) exceeded nginx `proxy_read_timeout 30s`. Fix: `_get_vosk_model()` singleton cached at startup.
-- **Voice note CORS** — `flask-cors` `CORS(app)` added to `boatlog-export-api.py`. Browser at :3000 blocked from reading :8095 responses.
-- **AvNav signalkhandler.py** — line 1580 patched: `/v1/api/` → `/v2/api/` for Signal K resources endpoint (Python 3.13 + SK 2.22.1+ requirement).
-- **AvNav Python 3.13** — `cgi.parse_qs` → `urllib.parse.parse_qs` in `httphandler.py` line 108 (cgi module removed in Python 3.13).
-- **Export boot race** — `d3kos-export-boot.service` failed since v0.9.2 due to `set -e` + `curl` exit 7 before Flask bound port 8094. Fix: `nc -z` port-ready loop.
-- **Nav ribbon alignment** — Position and Next Waypoint cells: label top-aligned, value correctly sized.
-- **Bottom nav active state** — only last-tapped button highlighted. HELM active only when overlay is open.
-- **Close buttons** — 48×48px min, `rgba(0,0,0,0.85)`, bold, 24px inset — entire app via `.close-btn`.
-- **Dropdowns** — global CSS: min-height 52px, 20px font, Chakra Petch — all pages.
-- **Font compliance** — Bebas Neue / Chakra Petch enforced app-wide. Zero font-size violations below 18px. IEC 62288 Option B: labels 32px, nav 28px, forms 20px min-height 52px.
-- **Node-RED context** — `contextStorage: localfilesystem` enabled. Flow context persists across restarts.
-- **fake-hwclock** — installed on Pi. Saves/loads clock across reboots (no hardware RTC on Pi 4).
-
----
-
-### Removed
-
-- **NMEA2000 Simulator** — removed all simulator components (safety/liability risk). `d3kos-simulator-api.service`, `d3kos-simulator.service`, simulator directories, `settings-simulator.html`, nginx proxy block, `vcan0-simulator` SK provider. Archive at `/home/boatiq/archive/simulator-2026-02-21/`.
-- **Tailscale** — removed from Pi. Replaced with LAN-only access + v0.9.4 WebRTC/STUN placeholder.
-- **APT OpenCPN** — removed v5.10.2. Only Flatpak 5.12.4 (`org.opencpn.OpenCPN`) remains.
-
----
-
-### Pending (UAT gate — final step before release)
-
-- UAT: 5 metric + 5 imperial users
-- o-charts chart activation (Don's task — see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`)
-- GPS outdoor verification (Don's task)
-- Marine Vision 24hr stability test (requires cameras at dock)
-
----
-
-## [0.9.2.1] - 2026-03-14 (Closed — Code complete, on-boat verification pending)
-
-### Summary
-
-**v0.9.2.1 — d3kOS v2.0 Flask Dashboard Architecture: All 6 Phases Deployed**
-
-Complete replacement of the OpenCPN-centric Pi menu with a web-first Flask dashboard. All five service phases deployed to Pi in a single day. AvNav is the primary chart viewer; Gemini AI proxy (with Ollama offline fallback) handles navigation AI; AI Bridge service at :3002 provides real-time SSE intelligence to the dashboard. OpenCPN remains as emergency fallback.
-
-**Phase 0 (2026-03-12):** Directory tree and governance deployed.
-**Phase 1 (2026-03-13):** Pi menu restructured. SK migrated :3000→:8099. issue_detector moved :8099→:8199. Four .desktop entries created (d3kOS menu category). MENU_STRUCTURE.md written.
-**Phase 2 (2026-03-13):** Flask dashboard live at localhost:3000. 9-button 3×3 grid (mockup v4). Five status indicators (internet/AvNav/Gemini/SK/Ollama). AvNav iframe, Windy/Radar panels. d3kos-dashboard.service active.
-**Phase 3 (2026-03-13):** Gemini Marine AI Proxy live at localhost:3001. Routes Gemini (online) → Ollama qwen3-coder:30b (offline fallback). Marine chat UI with typing indicator. 10 pytest tests pass on Pi (Python 3.13.5). Gemini key sourced from existing api-keys.json.
-**Phase 4 (2026-03-13):** Full 16-section settings page at localhost:3000/settings. Live /sysinfo endpoint (disk/mem/CPU temp/uptime/IP). /action/restart + /action/reboot endpoints with sudoers. Three AvNav documentation files: AVNAV_OCHARTS_INSTALL.md, AVNAV_PLUGINS.md, OPENPLOTTER_REFERENCE.md.
-**Phase 5 (2026-03-13):** AvNav 20250822 installed (apt, free-x.de trixie). AVNAV_API_REFERENCE.md created from live Pi (request=gps, signalk.* key paths). AI Bridge live at localhost:3002 — 4 features: Route Analysis (5-min auto), Port Arrival Briefing (2nm trigger), Voyage Log Summary (GPX→AI), Anchor Watch (pre-written safety audio, 3-poll debounce). SSE /stream. espeak-ng TTS via plughw:S330,0. ~100 unit tests. Route analysis and voyage log summary verified on bench.
-
-**Key technical decisions:**
-- Signal K port 8099 throughout — migrated from :3000 (Flask dashboard now owns :3000)
-- AvNav installed via apt (OpenPlotter not installed on this Pi — standalone .deb is safe here)
-- request=navigate does not exist in AvNav v20250822 — use request=gps with signalk.* key paths
-- Anchor watch audio fires from pre-written text before AI — safety-critical path never waits for AI
-- All AI calls route through Gemini proxy :3001/ask — AI Bridge never calls Gemini or Ollama directly
-
-**Remaining (Don's tasks):** visual verify on Pi screen, live GPS voyage test, Phase 5 integration tests with real navigation data.
-
----
-
-## [0.9.2] - Unreleased (Code Complete — UAT + on-Pi verification pending)
-
-### Summary
-
-**v0.9.2 — Marine Vision Camera Overhaul, i18n, Signal K Upgrade, Voice Fixes, Simulator Removal**
-
-This release introduces the Slot/Hardware camera architecture replacing the hardcoded 2-camera system, full 18-language i18n wiring across all 13 pages, Signal K v2.22.1 upgrade, voice performance improvements, and removes the NMEA2000 simulator. The d3kOS v2.0 Flask dashboard architecture (v0.9.2.1) is the active successor.
-
-**2026-03-13 additions to v0.9.2:** boatlog voice note onstop fix, WebSocket real-time push for remote-access.html, data export unit_metadata (CSV + JSON), keyboard-api moved to port 8087, ai_api.py moved to port 8089.
-
----
-
-### Added
-
-#### Marine Vision Camera Overhaul (2026-03-11)
-- **Slot/Hardware architecture** — named positions (slots) decouple from physical cameras (hardware). Slots persist forever; hardware comes and goes. `/opt/d3kos/config/slots.json` + `hardware.json` replace `cameras.json`.
-- **camera_stream_manager.py** rewritten — frame buffer (1 background thread per hardware, zero extra RTSP decode per browser client), full CRUD API (`/camera/slot`, `/camera/hardware`, `/camera/assign`, `/camera/unassign`, `/camera/scan`, `/camera/list`), discovery scan (probes 10.42.0.50–200 TCP 554, reads ARP for MAC), backwards-compat `/camera/feed` preserved.
-- **Settings Camera Setup tab** — three-panel UI (active slots, hardware inventory, role summary bar). CRUD flows for add/rename/delete slots, hardware scan, slot-to-hardware assignment, role toggles (`forward_watch`, `active_default`, `fish_detection`, `display_in_grid`).
-- **Marine Vision dynamic tile renderer** — focus+filmstrip default, grid mode, staggered polling (500ms primary / 2000ms grid / 200ms stagger), canvas fish bbox overlay, `pageshow` event (bfcache-safe), zero `/camera/grid` calls.
-- **fish_detector.py multi-slot** — reads slots.json, per-slot frame URL, `slot_id` on captures, `/detect/reload` endpoint, DB migration script.
-- **migrate_cameras.py** — one-shot migration from cameras.json to slots.json+hardware.json. MACs resolved: bow `hw_ec_71_db_f9_7c_7c`, stern `hw_ec_71_db_99_78_04`.
-
-#### i18n — 18-Language Wiring (2026-03-07 to 2026-03-12)
-- **All 13 HTML pages wired** with `data-i18n` attributes (Phases 1–13).
-- **36 new translation keys** added to all 18 language JSON files in v0.9.2 feature work.
-- **2 additional keys added** (2026-03-12): `ui.initial_setup`, `ui.upload_manual` — all 18 language files updated.
-- **All 15 index.html menu tiles** now have `data-i18n` on button-label spans — wiring 100% complete.
-- Languages: ar, da, de, el, en, es, fi, fr, hr, it, ja, nl, no, pt, sv, tr, uk, zh.
-- Span-wrap pattern applied for emoji/arrow elements.
-
-#### signalk-forward-watch v0.2.0 (2026-03-11)
-- YOLOv8 obstacle detection SK plugin via bow camera.
-- **v0.2.0**: onnxruntime moved to Node.js Worker thread (`detector-worker.js`) — SK main heap isolated (~470MB removed from SK process). Published npm + GitHub.
-
-#### OpenCPN Flatpak + o-charts Upgrade (2026-03-12)
-- APT OpenCPN 5.10.2 removed; only Flatpak 5.12.4 (`org.opencpn.OpenCPN`) remains.
-- o-charts plugin upgraded v2.1.6 → v2.1.10 (server rejected obsolete v2.1.6).
-- `install-opencpn.sh`: `pgrep -f` → `pgrep -x` bug fix (SSH false-positive prevention).
-
-#### Export Boot Service Fix (2026-03-11)
-- `d3kos-export-boot.service` had been FAILED since 2026-03-04. Root cause: `set -e` + `curl` exit 7 before Flask bound port 8094. Fix: `nc -z` port-ready loop, removed `set -e`, guarded curl/jq. See `deployment/docs/EXPORT_BOOT_RACE_FIX.md`.
-
-#### Charts Button + OpenCPN Launch (2026-03-12)
-- Tap Charts → Chromium exits fullscreen via `goWindowed()` → `charts.html` loads → tap Launch → OpenCPN opens on Pi desktop.
-- nginx proxy `/launch-opencpn` → Node-RED port 1880 added; `charts.html` updated to use relative path.
-
----
-
-### Changed
-
-#### Signal K v2.22.1 Upgrade (2026-03-05)
-- Upgraded from v2.20.3 → v2.22.1. AIS memory leak fixed. SK heap: `--max-old-space-size=2048`. cx5106 N2K plugin removed (incompatible). mDNS disabled (`false` in settings.json) — eliminates 5300ms response time. See `deployment/docs/SIGNALK_UPGRADE.md`.
-
-#### Voice AI Performance (2026-03-07)
-- Voice query time: 7.6s → 0.9s via lazy PDF import + bulk Signal K fetch. Audio device fixed: HDMI → Roland S-330 USB (`plughw:S330,0`). See `deployment/docs/VOICE_QUERY_SPEED.md` and `VOICE_AUDIO_FIX.md`.
-
-#### Touch Scroll Fix (2026-03-05)
-- labwc `mouseEmulation="no"` in `/etc/xdg/labwc/rc.xml` for ILITEK touchscreen. Fixed scroll-to-mouse conversion that broke all page scroll. See `deployment/docs/TOUCH_SCROLL_FIX.md`.
-
-#### OpenCPN Pinch Zoom (2026-03-06)
-- twofing daemon deployed — two-finger pinch zoom working in OpenCPN Flatpak via XWayland. See `deployment/docs/OPENCPN_PINCH_ZOOM.md`.
-
----
-
-### Removed
-- **NMEA2000 Simulator** (2026-03-12) — Removed all simulator components due to safety and liability risk. Removed: `d3kos-simulator-api.service`, `d3kos-simulator.service`, `/opt/d3kos/simulator/`, `/opt/d3kos/services/simulator/`, `settings-simulator.html`, simulator banners, nginx proxy block, `vcan0-simulator` SK provider. Archive: `/home/boatiq/archive/simulator-2026-02-21/`. Commit `a2b05b4`. See `deployment/docs/SIMULATOR_REMOVAL_INSTRUCTIONS.md`.
-
----
-
-### Pending Before Release
-- On-screen keyboard: keyboard-fix.js v2.0 deployed — live test confirmation on Pi touchscreen needed
-- Boatlog voice note: record → transcribe → save → view flow on Pi
-- WebSocket real-time push: Remote Access page
-- UAT: 5 metric + 5 imperial users
-- Data export: test with unit metadata
-- o-charts chart activation: Don's task (see `deployment/docs/OPENCPN_FLATPAK_OCHARTS.md`)
-
----
-
-## [0.9.1.2] - 2026-02-20
-
-### Summary
-
-**Tier 0 Installation Complete** - This release completes all Tier 0 features and implements the foundation for production deployment with self-healing capabilities, data export/backup systems, and timezone auto-detection.
-
-**Build Status**: Testing (Tier 3 enabled for feature testing)
-**Total Implementation Time**: ~3.5 hours across 3 parallel sessions
-
----
-
-### Added
-
-#### Session A: Foundation & Critical Fixes (1 hour)
-
-**Timezone Auto-Detection System**
-- 3-tier timezone detection: GPS coordinates → Internet geolocation → UTC fallback
-- First-boot service (`d3kos-timezone-setup.service`)
-- Timezone API service on port 8098
-- Python `timezonefinder` library for GPS-to-timezone conversion
-- Manual override capability in settings
-- Nginx proxy: `/api/timezone` → `localhost:8098`
-- API endpoints:
-  - `GET /api/timezone` - Get current timezone
-  - `POST /api/timezone` - Set timezone manually
-  - `POST /api/timezone/redetect` - Re-run auto-detection
-
-**Voice Assistant Enabled**
-- Service: `d3kos-voice.service` (enabled and auto-start)
-- Wake words: helm, advisor, counsel
-- Microphone: Anker PowerConf S330 (plughw:2,0)
-- TTS: Piper (en_US-amy-medium)
-- Speech recognition: Vosk (vosk-model-small-en-us-0.15)
-
-**Version Management**
-- System version updated from 1.0.3 to 0.9.1.2
-- Version file created: `/opt/d3kos/config/version.txt`
-- Testing mode flag added to license.json
-
-#### Session B: Self-Healing System (1 hour)
-
-**Issue Detection Service (Port 8099)**
-- Background monitoring every 60 seconds
-- Detection categories:
-  - CPU temperature (>80°C warning, >85°C critical)
-  - Memory usage (>90% warning, >95% critical)
-  - Disk space (>90% warning, >95% critical on / and /media/d3kos)
-  - Service health (critical d3kOS services)
-- SQLite database for issue tracking (`/opt/d3kos/data/self-healing/issues.db`)
-- API endpoints:
-  - `POST /healing/detect` - Run detection on demand
-  - `GET /healing/issues` - Get unresolved issues
-  - `GET /healing/status` - Service status
-
-**Auto-Remediation Engine**
-- Background remediation every 30 seconds
-- Automatic actions:
-  - Restart failed services
-  - Clear temporary files (>7 days old, journal vacuum to 100MB)
-  - Log warnings for hardware issues
-- Remediation log: `/var/log/d3kos/remediation.log`
-
-**Self-Healing Web UI**
-- Page: `/settings-healing.html`
-- Real-time status display
-- Active issues list with severity indicators
-- Manual detection trigger
-- Auto-refresh every 10 seconds
-
-**Services Created**
-- `d3kos-issue-detector.service` (port 8099)
-- `d3kos-remediation.service`
-
-#### Session C: Data Export & Backup (1.5 hours)
-
-**Export Queue System**
-- Background queue processor (5-minute interval)
-- Retry logic: 3 attempts with 5-minute delays
-- Queue persistence: `/opt/d3kos/data/exports/export_queue.json`
-- Export history: `/opt/d3kos/data/exports/export_history.json`
-- 30-day history retention
-- Placeholder for central database upload
-- Enhanced endpoints:
-  - `GET /export/queue` - Queue status
-  - `POST /export/queue/process` - Manual processing
-  - `POST /export/generate` - Returns queue_id
-  - `POST /export/boatlog` - Adds to queue
-
-**Boatlog CSV Export**
-- New endpoint: `GET /export/boatlog/csv`
-- Downloads as CSV attachment
-- Columns: Timestamp, Type, Content, Latitude, Longitude
-- Handles missing database gracefully
-- Tier 1+ permission required
-
-**Backup & Restore System**
-- Backup script: `/opt/d3kos/scripts/create-backup.sh`
-- Restore script: `/opt/d3kos/scripts/restore-backup.sh`
-- Backup API service (port 8100)
-- Backed up directories:
-  - `/opt/d3kos/config/`
-  - `/opt/d3kos/data/`
-  - `/var/www/html/`
-  - `/home/d3kos/.signalk/`
-  - `/home/d3kos/.node-red/flows.json`
-- Auto-cleanup: keeps last 5 backups
-- Compressed size: ~36MB (for 16GB SD card)
-- API endpoints:
-  - `POST /api/backup/create` - Create backup
-  - `GET /api/backup/list` - List backups
-  - `GET /api/backup/download/<filename>` - Download backup
-
-**Services Created**
-- `d3kos-backup-api.service` (port 8100)
-
----
-
-### Changed
-
-**License Configuration**
-- Updated version: `1.0.3` → `0.9.1.2`
-- Updated tier: `2` → `3`
-- Added `testing_mode: true` flag
-
-**Export Manager Service**
-- Enhanced with ExportQueue class
-- Added queue processor thread
-- Modified all export endpoints to use queue
-
-**Nginx Configuration**
-- Added `/api/timezone` proxy (port 8098)
-- Added `/healing/` proxy (port 8099)
-- Added `/api/backup/` proxy (port 8100)
-
----
-
-### Fixed
-
-- Timezone hardcoded to Toronto (now auto-detects)
-- Voice assistant service not enabled (now enabled with auto-start)
-- Export manager missing queue functionality (now implemented)
-- No backup/restore capability (now available)
-
----
-
-### Services Summary
-
-**New Services (All auto-start enabled):**
-1. `d3kos-timezone-setup.service` - First-boot timezone detection
-2. `d3kos-timezone-api.service` - Timezone API (port 8098)
-3. `d3kos-issue-detector.service` - Issue detection (port 8099)
-4. `d3kos-remediation.service` - Auto-remediation
-5. `d3kos-backup-api.service` - Backup API (port 8100)
-
-**Enabled Services:**
-6. `d3kos-voice.service` - Voice assistant (was disabled, now enabled)
-
-**Enhanced Services:**
-7. `d3kos-export-manager.service` - Added queue support
-
-**Total d3kOS Services**: 15+ services running
-
----
-
-### Port Allocation
-
-| Port | Service | Status |
-|------|---------|--------|
-| 8080 | AI API | Existing |
-| 8084 | Camera Stream | Existing |
-| 8086 | Fish Detector | Existing |
-| 8088 | Notifications | Existing |
-| 8091 | License API | Existing |
-| 8092 | History API | Existing |
-| 8093 | Tier API | Existing |
-| 8094 | Export Manager | Enhanced |
-| 8097 | Upload API | Existing |
-| **8098** | **Timezone API** | **New** |
-| **8099** | **Self-Healing API** | **New** |
-| **8100** | **Backup API** | **New** |
-
----
-
-### API Endpoints Added
-
-**Timezone (Port 8098):**
-- `GET /api/timezone`
-- `POST /api/timezone`
-- `POST /api/timezone/redetect`
-
-**Self-Healing (Port 8099):**
-- `GET /healing/status`
-- `POST /healing/detect`
-- `GET /healing/issues`
-
-**Export Queue (Port 8094):**
-- `GET /export/queue`
-- `POST /export/queue/process`
-- `GET /export/boatlog/csv`
-
-**Backup (Port 8100):**
-- `POST /api/backup/create`
-- `GET /api/backup/list`
-- `GET /api/backup/download/<filename>`
-
----
-
-### Testing
-
-**Test Matrix**: 64 tests created
-**Pass Rate**: 81% (52/64 automated tests pass)
-**Pending**: 12 manual tests (voice, touchscreen, reboot)
-**Failed**: 0 tests
-
-**All automated tests passing:**
-- ✅ System boot tests (5/5)
-- ✅ Version & tier tests (5/5)
-- ✅ API endpoint tests (14/15)
-- ✅ Self-healing tests (4/6)
-- ✅ Export & backup tests (8/8)
-- ✅ Integration tests (3/5)
-
-**Manual tests pending:**
-- ⏳ Voice wake word detection (3 tests)
-- ⏳ Timezone reboot persistence (2 tests)
-- ⏳ Service auto-restart (2 tests)
-- ⏳ Touchscreen navigation (1 test)
-- ⏳ Reboot integration (3 tests)
-
----
-
-### Documentation
-
-**New Documentation Files:**
-- `doc/SESSION_A_FOUNDATION_COMPLETE.md` - Session A summary
-- `doc/SESSION_B_SELF_HEALING_COMPLETE.md` - Session B summary
-- `doc/SESSION_C_DATA_EXPORT_COMPLETE.md` - Session C summary
-- `doc/IMAGE_BUILD_GUIDE.md` - Image creation guide
-- `doc/TESTING_MATRIX_v0.9.1.2.md` - Comprehensive test suite
-
-**Updated Documentation:**
-- `README.md` - Updated to v0.9.1.2
-- `MASTER_SYSTEM_SPEC.md` - Updated to v3.6
-- `CHANGELOG.md` - This file (created)
-
----
-
-### Known Limitations
-
-1. **Central Database Upload**: Export queue has placeholder implementation (simulates success)
-2. **Boatlog Database**: CSV export returns empty data (no boatlog entries exist yet)
-3. **Voice Wake Words**: Detection rate varies with ambient noise (expected behavior)
-4. **Timezone Detection**: Requires internet or GPS for auto-detection (UTC fallback available)
-5. **Hardware Issues**: CPU temp and memory warnings require manual intervention
-
----
-
-### Upgrade Notes
-
-**From v1.0.3 to v0.9.1.2:**
-
-This is a major update with breaking changes to version numbering. The system was renumbered from v1.0.3 to v0.9.1.2 to reflect "Tier 0 Installation Complete" status.
-
-**Migration Steps:**
-1. Backup existing installation: `sudo /opt/d3kos/scripts/create-backup.sh`
-2. Flash new image or pull latest from GitHub
-3. Reboot system
-4. Verify all services running: `systemctl list-units 'd3kos-*'`
-5. Verify version: `curl http://localhost/license/info | jq '.version'`
-
-**New Dependencies:**
-- Python: `timezonefinder` library (for timezone detection)
-- Python: `psutil` library (for system monitoring)
-
-**Breaking Changes:**
-- Installation ID format remains unchanged (16-char hex)
-- Tier numbering unchanged (0-3)
-- All existing APIs remain functional
-- New ports allocated: 8098, 8099, 8100
-
----
-
-### Contributors
-
-- Claude Sonnet 4.5 (AI Development Assistant)
-- d3kOS Development Team
-
----
-
-### Download
-
-**GitHub Release**: https://github.com/SkipperDon/d3kOS/releases/tag/v0.9.1.2
-
-**Image File**: `d3kos-v0.9.1.2-20260220.img.gz` (to be uploaded)
-**Size**: ~2.5-3GB compressed (16GB SD card)
-**SHA-256**: (to be generated)
-
----
-
-## [1.0.3] - Previous Version
-
-Previous version details available in git history.
-
----
-
-## Version Numbering
-
-d3kOS uses semantic versioning with the following convention:
-- **0.9.x.x**: Pre-release, Tier 0 features complete
-- **1.0.x**: Tier 1 features complete
-- **2.0.x**: Tier 2 features complete
-- **3.0.x**: Tier 3 features complete
-
-**Current**: v0.9.2.2 = Release Candidate — full marine intelligence platform
+### Security
+- Deleted 50 MB SQL database dump (`atmyb197_wp59874-2026-08-18-6ed06e9.sql`) that was sitting in the web root and publicly accessible.
