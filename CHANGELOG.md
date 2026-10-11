@@ -7,17 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v0.9.9.5.1] — OTA patch + Forward Watch v0.2.5 — 2026-10-07
-
-### Fixed
-- OTA update pill never appeared on the kiosk browser (cross-origin :3000 from the :80 dashboard); same-origin URLs enforced.
-- Multiple devices shared one device identity after cloning; each device now regenerates its own unique identity on first boot.
-- AtMyBoat.com Gemini API calls sent deprecated `temperature` parameter; corrected across all endpoints.
-- signalk-forward-watch v0.2.5: alarms persist across 3 consecutive detection cycles (or immediately when target ≤75 m); auto-clear when target no longer detected; alerts suppressed below 1.0 kn (moored). Sea trial validation: moored false alarms 97→0, approaching vessels correctly detected.
-
-### Changed
-- v0.9.9.5.1 OTA package delivered to Pi 4 and Pi 5; includes AIS redesign and Signal K source priority fixes.
-
 ## [v0.9.9.5] — OTA Self-Update · Helm Voice AI · SafeHelm · USB-CAN-A — 2026-10-09
 
 The most significant d3kOS release since v0.9.9.4. Five headline capabilities: automated over-the-air updates (Pi now keeps itself current without operator intervention), the Helm Voice AI assistant, SafeHelm collision avoidance advisory, USB-CAN-A NMEA 2000 adapter support, and a fully redesigned AIS subsystem. Dozens of stability, first-boot, and wizard reliability fixes included. Lab-validated on Raspberry Pi 3B+, Pi 4, and Pi 5.
@@ -193,3 +182,4 @@ Complete overhaul of the first-boot experience for new installs and cloned image
 
 ### Security
 - Deleted 50 MB SQL database dump (`atmyb197_wp59874-2026-08-18-6ed06e9.sql`) that was sitting in the web root and publicly accessible.
+
