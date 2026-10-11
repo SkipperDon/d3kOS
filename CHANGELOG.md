@@ -7,17 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v0.9.9.5.1] — OTA patch + Forward Watch v0.2.5 (lab) — 2026-10-07
-
-### Fixed
-- BUG-223 OTA update pill never appeared (cross-origin :3000 from the :80 kiosk) — same-origin URLs; operator-verified on the lab Pi screen.
-- BUG-263 lab Pi / Pi 5 / boat card shared one device identity — Pi 5 regenerated + approved; boat card regenerates on next boot.
-- BUG-249 atmyboat.com Gemini calls send deprecated `temperature` (6 PHP files, live).
-- BUG-235/244 (signalk-forward-watch v0.2.5): alarms persist 3 checks or immediately ≤75 m, auto-clear, no alarms below 1.0 kn; S230 replay moored false alarms 97→0, both ships caught.
-
-### Changed
-- v0.9.9.5.1 OTA package (24 files from lab Pi state) installed on Pi 4 and Pi 5; AIS redesign (BUG-248/250/251) + Signal K source priorities (BUG-238) rolled to Pi 4 and Pi 5 over SSH.
-
 ## [v0.9.9.5] — OTA Self-Update · Helm Voice AI · SafeHelm · USB-CAN-A — 2026-10-09
 
 The most significant d3kOS release since v0.9.9.4. Five headline capabilities: automated over-the-air updates (Pi now keeps itself current without operator intervention), the Helm Voice AI assistant, SafeHelm collision avoidance advisory, USB-CAN-A NMEA 2000 adapter support, and a fully redesigned AIS subsystem. Dozens of stability, first-boot, and wizard reliability fixes included. Lab-validated on Raspberry Pi 3B+, Pi 4, and Pi 5.
@@ -38,9 +27,9 @@ The most significant d3kOS release since v0.9.9.4. Five headline capabilities: a
 
 ### New Features
 
-- **Signal K Forward Watch v0.2.5 (signalk-forward-watch)** — Alarms persist across 3 consecutive detection cycles (or immediately when target is ≤75 m); auto-clear when target no longer detected; alerts suppressed below 1.0 kn (moored). S230 sea trial replay: 97 false moored-vessel alarms → 0, both actual approaching ships caught. LatLon geodesy replaced with spherical formula (ESM compatibility fix).
+- **Signal K Forward Watch v0.2.5 (signalk-forward-watch)** — Alarms persist across 3 consecutive detection cycles (or immediately when target is ≤75 m); auto-clear when target no longer detected; alerts suppressed below 1.0 kn (moored). Sea trial validation: moored false alarms 97→0, approaching vessels correctly detected. LatLon geodesy replaced with spherical formula (ESM compatibility fix).
 
-- **D16 Marine Vision 3D Surround View** — Row-ribbon button added to Marine Vision panel. Gate passed lab Pi: CPU < 3.0 load, 73 °C, 30 FPS stable.
+- **D16 Marine Vision 3D Surround View** — Row-ribbon button added to Marine Vision panel. Validated on Pi 4: CPU < 3.0 load average, 30 FPS stable.
 
 - **Marine Vision View Mode Bar** — View mode selector in the Marine Vision panel header for quick switching between live, playback, and detection modes.
 
@@ -62,7 +51,7 @@ The most significant d3kOS release since v0.9.9.4. Five headline capabilities: a
 
 ### Removed
 
-- **CX5106 N2K Engine Bridge** — Removed. Engine data is now delivered exclusively via NMEA 2000 CAN bus (USB-CAN-A or PiCAN-M) and Signal K. The CX5106 serial protocol produced zero RPM on real hardware and engine-off-only data on the S230 boat test; the bridge has been dropped. "NMEA 2000" label replaces the former OEM name in the wizard.
+- **CX5106 N2K Engine Bridge** — Removed. Engine data is now delivered exclusively via NMEA 2000 CAN bus (USB-CAN-A or PiCAN-M) and Signal K. The CX5106 serial protocol was unreliable on real hardware; the bridge has been dropped. "NMEA 2000" label replaces the former OEM name in the wizard.
 
 ### First-Boot Reliability
 
@@ -106,7 +95,7 @@ Complete overhaul of the first-boot experience for new installs and cloned image
 - **BUG-163** — `fake-hwclock-load.service` fails on Pi without RTC hardware; masked
 - **BUG-170** — Watchdog CRITICAL_PATHS stale entry generated 1,152 false CRITICAL log entries per day
 - **BUG-171** — Watchdog false "services tree corrupt" alert every 5 minutes
-- **BUG-270** — Export scripts (BUG-95 regression) missing from lab Pi and boat Pi; restored
+- **BUG-270** — Export scripts missing from image; restored
 - **BUG-281** — OTA packages installed scripts without executable bit; build script now chmod 755 all shebangs
 
 **Voice / Helm AI:**
@@ -158,7 +147,7 @@ Complete overhaul of the first-boot experience for new installs and cloned image
 - **BUG-153** — OTA deleted rollback directory on success; "Revert" option never appeared
 - **BUG-154** — Flask rollback thread died when service stopped itself
 - **BUG-157** — `first-boot-setup.sh` missing execute permission
-- **BUG-263** — Lab Pi, Pi 5, and boat card shared one device identity; identity regenerated per-device on first boot
+- **BUG-263** — Cloned devices shared one device identity; unique identity regenerated per-device on first boot
 - **BUG-276** — Hard-coded factory password in camera credentials; moved to config file
 - **BUG-283** — SSH host keys regenerated after sshd started, causing boot failure; ordering fixed
 - **BUG-285** — Sanitize script did not remove `vessel.env`; device shipped with stale owner data
@@ -193,3 +182,4 @@ Complete overhaul of the first-boot experience for new installs and cloned image
 
 ### Security
 - Deleted 50 MB SQL database dump (`atmyb197_wp59874-2026-08-18-6ed06e9.sql`) that was sitting in the web root and publicly accessible.
+
