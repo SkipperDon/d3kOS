@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.9.9.5.1] — Pi Health RSS Alerting · CAN Auto-Detect · issues.db Retention — 2026-10-24
+
+Patch release extending the D27-RSS notification system and adding automatic CAN adapter detection. Delivered as a signed OTA package from GitHub; verified on Pi 4, Pi 5 and the test Pi on 2026-10-24.
+
+### Fixed
+
+- **BUG-293: Pi health pill button** — Replaced static non-clickable dot (5-min poll, often stale) with a self-injecting clickable pill button on all 5 dashboard pages (index, engine-monitor, anchor-watch, marine-vision). Pill shows Pi: OK / Pi: WARN / Pi: CRITICAL in green / amber / red. Click opens a detail modal listing every agent's current status and last-updated time. Poll interval reduced from 300 s to 60 s.
+- **BUG-273: CAN adapter auto-detection** — `hardware-probe.sh` now detects PiCAN-M (can0 + mcp251x driver) and USB-CAN-A (USB ID 1a86:7523) automatically. Switches the correct Signal K provider on/off, enables/disables can0-check timer and usbcan bridge service, and restarts Signal K only when configuration changes. Self-installs systemd units and udev rule from `/opt/d3kos/system/` (OTA-deliverable). udev hot-plug trigger re-runs the probe on USB adapter insert/remove. Every cloned Pi now configures itself correctly without manual intervention.
+- **BUG-306: Helm voice restored** — v0.9.9.5 shipped an untested rewrite of `voice-assistant-hybrid.py` that never answered a question that never answered a question on the test Pi. Restored the last working version. Verified on the test Pi: wake word "Helm" → question heard → answer spoken, including after a reboot.
+- **BUG-307: Helm faster time answers + no mid-answer restarts** — the voice watchdog now waits 45 s and rechecks before restarting Helm (Helm pauses its wake-word listener while answering, which the watchdog mistook for a fault). Bare "time" added to Helm's quick-answer list, so "time is it" (Vosk often drops "what") no longer loads the 12 s manual-search engine — measured 0.4 s vs 12.1 s on the test Pi.
+- **BUG-308: SafeHelm speaks in Helm's voice** — ai-bridge (SafeHelm and other alerts) used robotic espeak-ng. `_piper()` in `ai-bridge/utils/tts.py` now plays with `aplay` (its old sounddevice player was silent under systemd), and OTA migration `0006-tts-piper.sh` switches ai-bridge to Piper when Piper and its voice model are installed. Ear-tested on the test Pi.
+- **BUG-309: Helm no longer wakes itself on SafeHelm alerts** — now that SafeHelm speaks in Helm's clear voice, "SafeHelm …" could trigger Helm's wake word. Helm ignores its wake word while ai-bridge is speaking and for 3 s after (stale speaking flag ignored after 60 s).
+- **BUG-310: Helm answers no longer lost; SafeHelm always has the speaker first** — Helm, SafeHelm and other ai-bridge alerts each grabbed the S330 speaker directly, so an answer could be silently dropped ("Device or resource busy"). ai-bridge (`utils/tts.py`) now owns the speaker through one priority queue: urgent alerts (SafeHelm, anchor drag) say "Captain, standby.", pause 4 s, then speak, and Helm gets "Captain, ask the question again. We were interrupted." if it was cut off; busy speaker is retried and never silently dropped. Helm (`voice-assistant-hybrid.py`) speaks through the queue (`POST :3002/speak`), waiting up to 30 s for ai-bridge at boot. Helm no longer hears its own speaker (mic audio discarded while ai-bridge speaks — monotonic flag, immune to the boot clock jump), no longer wakes on talk or steady noise (`wake_word_vosk.py`: `[unk]` + wake word must be ≤ 1.5 s), and the voice watchdog uses a Helm heartbeat (`/dev/shm/d3kos-helm-heartbeat.json`) instead of thread counting, so it no longer restarts Helm mid-answer (supersedes the BUG-307 45 s recheck). Verified by ear test on the test Pi.
+- **BUG-311: OTA refuses downgrades** — the installer now rejects any release whose version is older than the installed one (result "not_newer"); re-applying the same release stays harmless.
+- **BUG-300/301: SafeHelm widget restored; stray battery cell removed** — main dashboard layout regression fixed.
+- **Dashboard: 3D button removed** — the 3D row button is removed from the main dashboard row selector; the old "Pi: OK" text indicator is replaced by the BUG-293 health pill on the main page.
+
+### Added
+
+- **RSS health alerting** — `GET /rss` (port 3000) now includes Pi health events when overall agent status is warning or critical. Description lists every non-green agent with its message. Stable guid (`pi-health-yellow` / `pi-health-red`) prevents d3kTV duplicate ticker entries for ongoing conditions.
+- **"All systems OK" RSS item** — When no active alerts exist, the feed emits a single `INFO: d3kOS — All systems OK` item so d3kTV always has content to display.
+- **1-hour issues.db auto-prune** — `alert_watcher` now deletes issues.db records older than 1 hour at each 30-second poll cycle. Prevents simulator data and resolved alerts from accumulating in the RSS feed.
+
+
 ## [v0.9.9.5] — OTA Self-Update · Helm Voice AI · SafeHelm · USB-CAN-A — 2026-10-09
 
 The most significant d3kOS release since v0.9.9.4. Five headline capabilities: automated over-the-air updates (Pi now keeps itself current without operator intervention), the Helm Voice AI assistant, SafeHelm collision avoidance advisory, USB-CAN-A NMEA 2000 adapter support, and a fully redesigned AIS subsystem. Dozens of stability, first-boot, and wizard reliability fixes included. Lab-validated on Raspberry Pi 3B+, Pi 4, and Pi 5.
