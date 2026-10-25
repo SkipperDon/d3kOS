@@ -40,7 +40,7 @@ The setup wizard walks you through the rest.
 
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/) — free, works on Windows, Mac, Linux
 2. Open Imager → **Choose OS** → **Use custom** → select the `.img` file
-3. **Choose Storage** → select your SD card (32 GB or larger recommended)
+3. **Choose Storage** → select your SD card (128 GB minimum)
 4. Click **Write** — done
 
 Power on your Pi, wait 60 seconds, and the d3kOS setup wizard will launch automatically on your screen.
@@ -93,7 +93,7 @@ AtMyBoat.com is free to join. The mobile app has free and supported tiers.
 | Item | What to Look For |
 |------|-----------------|
 | Raspberry Pi 4B | 4 GB RAM minimum — 8 GB recommended |
-| microSD Card | 32 GB minimum, Class 10 or better |
+| microSD Card | 128 GB minimum, Class 10 or better |
 | Touchscreen | 10.1 inch, 1280×800, HDMI + USB touch. Must be rated for your environment. |
 | Power supply | 12V to 5V DC-DC converter rated at 5A minimum. Use a marine-grade isolated converter. |
 | USB GPS receiver | Any standard USB GPS (gpsd-compatible) |
