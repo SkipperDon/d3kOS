@@ -5,7 +5,7 @@
 If your boat doesn't have radar, a weather station, or a $5,000 multifunction display — d3kOS was built for you.
 Flash an SD card, plug it into a Raspberry Pi 4 at your helm, and you have a fully working marine intelligence centre running on a touchscreen. No programming required after installation.
 
-**Version**: v0.9.9.2 | **Released**: April 12, 2026 | **Platform**: Raspberry Pi 4B
+**Version**: v0.9.9.5 | **Released**: October 9, 2026 | **Platform**: Raspberry Pi 4B (8 GB RAM)
 
 ---
 
@@ -33,7 +33,7 @@ The setup wizard walks you through the rest.
 | **Direct download** | https://archive.org/download/d3kos-v0.9.9.5-20261009.img/d3kos-v0.9.9.5-20261009.img.gz |
 | **Format** | `.img.gz` — flash directly with Raspberry Pi Imager |
 | **Size** | 128 GB SD card minimum |
-| **Hardware** | Raspberry Pi 4B or 5 — 8 GB RAM minimum |
+| **Hardware** | Raspberry Pi 4B, 8 GB RAM minimum |
 | **SHA-256** | `28437d4bd6b29a2640a5303cfdc5510781a648945aea82ff141b8b264f85f878` |
 
 **How to flash:**
@@ -45,7 +45,7 @@ The setup wizard walks you through the rest.
 
 Power on your Pi, wait 60 seconds, and the d3kOS setup wizard will launch automatically on your screen.
 
-> **Over-the-Air Updates:** Once your Pi is running, you do not need to reflash to keep it current. To receive incremental over-the-air (OTA) updates, your Pi must be registered at [AtMyBoat.com](https://atmyboat.com) — scan the QR code in the setup wizard. Registration also enables the mobile companion app.
+> **Updates require registration.** Download and install v0.9.9.5 once. To receive all incremental over-the-air (OTA) updates after that, your Pi must be registered at [AtMyBoat.com](https://atmyboat.com) — scan the QR code in the setup wizard.
 
 ---
 
@@ -55,13 +55,13 @@ d3kOS gives you nine dedicated tools, all accessible from the touchscreen at you
 
 | Tool | What It Does |
 |------|-------------|
-| **AI Navigation** | Ask plain-English questions about navigation, regulations, or your route — powered by Gemini AI with an offline knowledge base backup |
+| **AI Navigation** | Ask plain-English questions about navigation, regulations, or your route — powered by Gemini AI (your own free API key) |
 | **Engine Dashboard** | Live engine gauges — RPM, coolant temperature, oil pressure, battery voltage, fuel level. Alerts when something needs attention |
-| **Helm Assistant** | Hands-free voice AI. Say "Helm" and ask anything. Works offline using a local knowledge base when there is no internet |
+| **Helm Assistant** | Hands-free voice AI. Say "Helm" and ask anything. Voice needs free registration (Tier 1) in this release |
 | **Anchor Watch** | Monitors your anchor position while you rest. Sounds an alarm if the boat drifts beyond your set radius |
-| **Marine Vision** | Connects up to 20 IP cameras. Monitors your deck, dock lines, and surroundings. Includes fish detection for fishing boats |
+| **Marine Vision** | IP cameras for your deck, dock lines and surroundings, plus Forward Watch bow-camera hazard detection. Cameras need free registration (Tier 1) in this release. Fish species identification is in development |
 | **Boat Log** | Keeps an automatic log of your trips — engine starts and stops, position snapshots, and voice notes you record yourself |
-| **Upload Documents** | Load your engine manual, flare checklist, or any PDF onto the Pi so HELM can answer questions from your own documents |
+| **Upload Documents** | Load your engine manual, flare checklist, or any PDF onto the Pi |
 | **Settings** | Configure your vessel, units (metric or imperial), language, display, and connected hardware |
 | **Help / Manual** | The full user manual, always available on the Pi even without internet |
 
@@ -79,6 +79,7 @@ d3kOS is the open-source software. **[AtMyBoat.com](https://atmyboat.com)** is t
 
 When you register at AtMyBoat.com you get:
 
+- **Cameras, Helm voice and over-the-air updates** — in this release these need a free, approved registration (Tier 1)
 - **Mobile companion app** — check your boat's status from your phone, receive engine alerts, and view your boat log remotely
 - **Fix My Pi** — if something goes wrong, the app walks you through diagnosing and recovering your system
 - **Community forum** — other d3kOS boaters, setup questions, tips, and trip reports
@@ -98,7 +99,6 @@ AtMyBoat.com is free to join. The mobile app has free and supported tiers.
 | microSD Card | 128 GB minimum, Class 10 or better |
 | Touchscreen | 10.1 inch, 1280×800, HDMI + USB touch. Must be rated for your environment. |
 | Power supply | 12V to 5V DC-DC converter rated at 5A minimum. Use a marine-grade isolated converter. |
-| USB GPS receiver | Any standard USB GPS (gpsd-compatible) |
 
 ### Optional Hardware
 
@@ -106,9 +106,10 @@ AtMyBoat.com is free to join. The mobile app has free and supported tiers.
 |------|-------------|
 | USB speakerphone (e.g. Anker S330) | Hands-free HELM voice assistant |
 | IP cameras (PoE, RTSP stream) | Marine Vision camera system |
-| NMEA 2000 gateway (e.g. CX5106 or PiCAN-M) | Live engine data from your NMEA 2000 network |
+| NMEA 2000 adapter (PiCAN-M or USB-CAN-A) | Live engine data from your NMEA 2000 network — detected automatically at boot |
+| USB GPS receiver | GPS position — needed only if your NMEA 2000 network has no GPS |
 
-See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) and [`docs/CX5106_CONFIGURATION_GUIDE.md`](docs/CX5106_CONFIGURATION_GUIDE.md) for detailed setup guides.
+See the [user manual](https://github.com/SkipperDon/d3kOS/blob/main/docs/D3KOS_USER_MANUAL_v2.9.0.md) and [`INSTALLATION.md`](https://github.com/SkipperDon/d3kOS/blob/main/docs/INSTALLATION.md) for detailed setup guides.
 
 ---
 
@@ -124,12 +125,9 @@ Arabic · Danish · German · Greek · English · Spanish · Finnish · French �
 
 | Document | Description |
 |----------|-------------|
-| [`docs/D3KOS_USER_MANUAL_v2.3.0.md`](docs/D3KOS_USER_MANUAL_v2.3.0.md) | Full user manual — installation, setup wizard, all features, troubleshooting |
-| [`docs/INSTALLATION.md`](docs/INSTALLATION.md) | Step-by-step installation guide |
-| [`docs/SIGNALK_CONFIGURATION.md`](docs/SIGNALK_CONFIGURATION.md) | Connecting NMEA 0183 and NMEA 2000 instruments |
-| [`docs/CX5106_CONFIGURATION_GUIDE.md`](docs/CX5106_CONFIGURATION_GUIDE.md) | CX5106 NMEA gateway setup and DIP switch reference |
-| [`docs/REMOTE_ACCESS_SETUP.md`](docs/REMOTE_ACCESS_SETUP.md) | Accessing d3kOS from another device on your network |
-| [`docs/OPENCPN_FLATPAK_OCHARTS.md`](docs/OPENCPN_FLATPAK_OCHARTS.md) | Installing OpenCPN and paid o-charts chart packs |
+| [User Manual v2.9.0](https://github.com/SkipperDon/d3kOS/blob/main/docs/D3KOS_USER_MANUAL_v2.9.0.md) | Full user manual for v0.9.9.5 — setup wizard, all features, troubleshooting (also at [atmyboat.com/manual](https://atmyboat.com/manual/)) |
+| [`INSTALLATION.md`](https://github.com/SkipperDon/d3kOS/blob/main/docs/INSTALLATION.md) | Step-by-step installation guide |
+| [`OPENCPN_FLATPAK_OCHARTS.md`](https://github.com/SkipperDon/d3kOS/blob/main/docs/OPENCPN_FLATPAK_OCHARTS.md) | Installing OpenCPN and paid o-charts chart packs |
 | [`CHANGELOG.md`](CHANGELOG.md) | Full version history |
 
 ---
@@ -169,7 +167,7 @@ Any derivative works must also be released under GPL v3. See [LICENSE](LICENSE).
 
 **Commercial License**
 Commercial use — including bundling with hardware for resale or distribution in paid products — requires a separate commercial license agreement.
-Contact: skipperdont@atmyboat.com
+Contact: skipperdon@atmyboat.com
 
 ---
 
