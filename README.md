@@ -122,6 +122,7 @@ readability standards — sized for reading from a metre away, in sunlight and i
 | **Direct download** | https://archive.org/download/d3kos-v0.9.9.5-20261009.img/d3kos-v0.9.9.5-20261009.img.gz |
 | **Format** | `.img.gz` — flash with Raspberry Pi Imager |
 | **Hardware** | Raspberry Pi 4B, 8 GB RAM minimum |
+| **SHA-256** | `28437d4bd6b29a2640a5303cfdc5510781a648945aea82ff141b8b264f85f878` |
 
 **How to flash:**
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/) — free, works on Windows, Mac, and Linux
