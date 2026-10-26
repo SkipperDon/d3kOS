@@ -288,8 +288,6 @@ For licensing inquiries, visit [AtMyBoat.com](https://atmyboat.com).
 
 ### Platform
 - Target hardware: Raspberry Pi 4B
-- Raspberry Pi 5: [CONFIRM: unsupported / untested / planned]
-- OS base: [CONFIRM: Raspberry Pi OS version/base]
 - License: GPL v3
 - Current version: v0.9.9.5
 - Backend: Flask
@@ -308,11 +306,6 @@ displays the following on the main dashboard:
 - Oil pressure: YES
 - Engine hours: YES
 - Trim tabs (tilt/trim): YES — displayed on main screen
-- Fuel level: [CONFIRM: YES/NO]
-- Freshwater level: [CONFIRM: YES/NO]
-- Wastewater level: [CONFIRM: YES/NO]
-- Rudder angle: [CONFIRM: YES/NO]
-- Volt meter: [CONFIRM: YES/NO]
 
 ### Camera Features
 - Forward Watch (bow camera, AI object/hazard identification): YES
@@ -326,12 +319,10 @@ displays the following on the main dashboard:
 
 ### NOT Included (as of v0.9.9.2)
 - Autopilot control (e.g. Pypilot integration): NO
-- Tank level monitoring via dedicated tank sensors: [CONFIRM]
 - Seatalk protocol conversion: NO
 - GRIB weather file download: NO (uses Windy API instead)
 - IMU-based compass/heel/trim sensing: NO
 - General-purpose sensor framework (humidity, door, bilge, etc.): NO
-- Raspberry Pi 5 support: [CONFIRM]
 
 ### Connectivity
 - WiFi: built-in (Pi 4B onboard radio)
