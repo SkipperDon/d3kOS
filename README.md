@@ -33,7 +33,7 @@ The setup wizard walks you through the rest.
 | **Direct download** | https://archive.org/download/d3kos-v0.9.9.5-20261009.img/d3kos-v0.9.9.5-20261009.img.gz |
 | **Format** | `.img.gz` — flash directly with Raspberry Pi Imager |
 | **Size** | 128 GB SD card minimum |
-| **Hardware** | Raspberry Pi 3B+, 4B, or 5 — 4 GB RAM minimum |
+| **Hardware** | Raspberry Pi 4B or 5 — 8 GB RAM minimum |
 | **SHA-256** | `28437d4bd6b29a2640a5303cfdc5510781a648945aea82ff141b8b264f85f878` |
 
 **How to flash:**
@@ -44,6 +44,8 @@ The setup wizard walks you through the rest.
 4. Click **Write** — done
 
 Power on your Pi, wait 60 seconds, and the d3kOS setup wizard will launch automatically on your screen.
+
+> **Over-the-Air Updates:** Once your Pi is running, you do not need to reflash to keep it current. Registered [AtMyBoat.com](https://atmyboat.com) users receive incremental OTA updates automatically — your system updates itself overnight. Register free at AtMyBoat.com after installation to enable OTA, the mobile companion app, and release notifications.
 
 ---
 
@@ -92,7 +94,7 @@ AtMyBoat.com is free to join. The mobile app has free and supported tiers.
 
 | Item | What to Look For |
 |------|-----------------|
-| Raspberry Pi 4B | 4 GB RAM minimum — 8 GB recommended |
+| Raspberry Pi 4B | 8 GB RAM minimum |
 | microSD Card | 128 GB minimum, Class 10 or better |
 | Touchscreen | 10.1 inch, 1280×800, HDMI + USB touch. Must be rated for your environment. |
 | Power supply | 12V to 5V DC-DC converter rated at 5A minimum. Use a marine-grade isolated converter. |
