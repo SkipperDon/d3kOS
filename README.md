@@ -214,7 +214,7 @@ and privacy at every layer.
 - Developed with the OWASP Top 10 as the security reference
 
 ### Privacy — GDPR / PIPEDA / CCPA
-- d3kOS runs fully on your Pi without an account. If you register at AtMyBoat.com, your Pi sends boat data to your account to power the mobile app and alerts.
+- Charts, engine data and the dashboard work on your Pi without an account. Cameras, Helm voice, over-the-air updates and the mobile app need free registration at AtMyBoat.com; once registered, your Pi sends boat data to your account to power the mobile app and alerts.
 - GDPR Article 15 (data export) and Article 17 (right to deletion) both implemented
 - No user question text stored — anonymised usage counts only
 - Designed to **GDPR** (EU), **PIPEDA** (Canada), and **CCPA** (United States) requirements
