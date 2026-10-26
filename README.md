@@ -101,7 +101,7 @@ diagnosis and recovery step by step — from anywhere.
 ![d3kOS Night Mode](assets/screenshots/dashboard-night.png)
 *Night mode — all gauges readable at the helm in the dark.*
 
-One tap switches between day and night themes. Fonts meet marine display
+One tap switches between day and night themes. Fonts are designed to marine display
 readability standards — sized for reading from a metre away, in sunlight and in darkness.
 
 ---
@@ -144,7 +144,7 @@ Power on. Wait 60 seconds. The setup wizard launches automatically.
 | Item | What It Adds |
 |------|-------------|
 | USB speakerphone | Hands-free HELM voice assistant |
-| IP cameras (PoE, RTSP) | Marine Vision, Forward Watch, fish detection |
+| IP cameras (PoE, RTSP) | Marine Vision, Forward Watch, fish species identification (in development) |
 | NMEA 2000 adapter | Live engine data from your NMEA 2000 network (PiCAN-M or USB-CAN-A — auto-detected on boot) |
 
 ![Installing d3kOS hardware](assets/lifestyle/hardware-man.png)
@@ -164,7 +164,7 @@ Tap **More** on the dashboard to access all nine:
 | ⚙️ **Engine Dashboard** | Live gauges with AI analysis on every reading — tap any value for instant diagnosis |
 | 🔧 **Helm Assistant** | Full AI chat — engine diagnostics, voyage planning, any question |
 | ⚓ **Anchor Watch** | Monitors your position at anchor — alarms the moment you drag |
-| 📷 **Marine Vision** | All cameras on one screen — Forward Watch, fish detection, deck and dock view |
+| 📷 **Marine Vision** | All cameras on one screen — Forward Watch, deck and dock view; fish species identification in development |
 | 📓 **Boat Log** | Automatic trip log — engine events, position snapshots, voice notes |
 | 📄 **Upload Documents** | Add your manuals — AI reads them and answers questions from them |
 | ⚙️ **Settings** | Vessel configuration, units (metric/imperial), language, connected hardware |
@@ -189,16 +189,16 @@ community, support, and connected services ecosystem built around it.
 
 ## Built to Standards
 
-d3kOS and the AtMyBoat.com platform are built with accessibility, security,
-and privacy compliance at every layer.
+d3kOS and the AtMyBoat.com platform are designed for accessibility, security,
+and privacy at every layer.
 
-### Accessibility — AODA / WCAG 2.0 AA
+### Accessibility — designed to AODA / WCAG 2.0 AA
 - Minimum 18px body text across all screens — readable at the helm
 - All touch targets minimum 48×48px — usable with gloves or in motion
 - WCAG 2.0 AA 4.5:1 colour contrast on all text and controls
 - Skip navigation and full keyboard accessibility throughout
 - Screen reader compatible
-- Meets **AODA** (Canada), **ADA** (United States), and **EN 301 549** (European Union) accessibility standards
+- Designed to **AODA** (Canada), **ADA** (United States), and **EN 301 549** (European Union) accessibility standards
 
 ### Security
 - Software updates are cryptographically signed — your Pi installs only releases signed by the d3kOS release key, and refuses to install an older version
@@ -210,7 +210,7 @@ and privacy compliance at every layer.
 - d3kOS runs fully on your Pi without an account. If you register at AtMyBoat.com, your Pi sends boat data to your account to power the mobile app and alerts.
 - GDPR Article 15 (data export) and Article 17 (right to deletion) both implemented
 - No user question text stored — anonymised usage counts only
-- Compliant with **GDPR** (EU), **PIPEDA** (Canada), and **CCPA** (United States)
+- Designed to **GDPR** (EU), **PIPEDA** (Canada), and **CCPA** (United States) requirements
 
 ---
 
@@ -307,7 +307,7 @@ dashboard when the data is present on your NMEA 2000 network:
 
 ### Camera Features
 - Forward Watch (bow camera, AI object/hazard identification): YES
-- Fish species identification: YES, 483 freshwater species
+- Fish species identification: in development
 - Day/night IR camera support: YES
 
 ### Safety/Monitoring
