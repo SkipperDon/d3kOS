@@ -235,7 +235,7 @@ Turkish · Ukrainian · Chinese
 
 | Document | Description |
 |----------|-------------|
-| [`docs/D3KOS_USER_MANUAL_v2.4.0.md`](docs/D3KOS_USER_MANUAL_v2.4.0.md) | Complete user manual — all features, setup, troubleshooting |
+| [`docs/D3KOS_USER_MANUAL_v2.9.0.md`](docs/D3KOS_USER_MANUAL_v2.9.0.md) | Complete user manual for v0.9.9.5 — all features, setup, troubleshooting |
 | [`docs/INSTALLATION.md`](docs/INSTALLATION.md) | Step-by-step installation guide |
 | [`docs/OPENCPN_FLATPAK_OCHARTS.md`](docs/OPENCPN_FLATPAK_OCHARTS.md) | OpenCPN and paid o-charts chart packs |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
