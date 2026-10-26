@@ -70,7 +70,7 @@ page into the AI knowledge base. Ask Helm any question and it answers from your
 documents — even without internet.
 
 ### No Radar Required
-- **Forward Watch** — AI-powered bow camera identifies vessels, debris, and navigational markers ahead of you in real time
+- **Forward Watch** — AI-powered bow camera watches ahead and alerts you to boats, ships, kayaks, logs and floating debris in your path
 - **Windy** — satellite wind, wave, and weather data built into the dashboard. Full route weather at a glance, no weather station required.
 
 ### Run It on Any Screen
@@ -200,16 +200,14 @@ and privacy compliance at every layer.
 - Screen reader compatible
 - Meets **AODA** (Canada), **ADA** (United States), and **EN 301 549** (European Union) accessibility standards
 
-### Security — OWASP Top 10
-- All database queries use parameterised statements — SQL injection not possible
-- All authentication uses timing-safe comparison functions
-- Input validated at every external boundary
-- HTTPS enforced on all endpoints
-- No credentials stored in source code or logs
-- Security hardened against the OWASP Top 10 web application risks
+### Security
+- Software updates are cryptographically signed — your Pi installs only releases signed by the d3kOS release key, and refuses to install an older version
+- Each Pi registers with AtMyBoat.com using its own device signing key
+- AtMyBoat.com is served over HTTPS; the helm dashboard runs on your boat's private network
+- Developed with the OWASP Top 10 as the security reference
 
 ### Privacy — GDPR / PIPEDA / CCPA
-- Your data stays on your Pi — no telemetry, no tracking without your knowledge
+- d3kOS runs fully on your Pi without an account. If you register at AtMyBoat.com, your Pi sends boat data to your account to power the mobile app and alerts.
 - GDPR Article 15 (data export) and Article 17 (right to deletion) both implemented
 - No user question text stored — anonymised usage counts only
 - Compliant with **GDPR** (EU), **PIPEDA** (Canada), and **CCPA** (United States)
