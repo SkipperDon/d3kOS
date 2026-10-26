@@ -145,7 +145,7 @@ Power on. Wait 60 seconds. The setup wizard launches automatically.
 |------|-------------|
 | USB speakerphone | Hands-free HELM voice assistant |
 | IP cameras (PoE, RTSP) | Marine Vision, Forward Watch, fish detection |
-| NMEA 2000 gateway | Live engine data from your instruments (CX5106 or PiCAN-M) |
+| NMEA 2000 adapter | Live engine data from your NMEA 2000 network (PiCAN-M or USB-CAN-A — auto-detected on boot) |
 
 ![Installing d3kOS hardware](assets/lifestyle/hardware-man.png)
 ![Setting up at the helm](assets/lifestyle/hardware-woman.png)
@@ -232,7 +232,6 @@ Turkish · Ukrainian · Chinese
 |----------|-------------|
 | [`docs/D3KOS_USER_MANUAL_v2.4.0.md`](docs/D3KOS_USER_MANUAL_v2.4.0.md) | Complete user manual — all features, setup, troubleshooting |
 | [`docs/INSTALLATION.md`](docs/INSTALLATION.md) | Step-by-step installation guide |
-| [`docs/CX5106_CONFIGURATION_GUIDE.md`](docs/CX5106_CONFIGURATION_GUIDE.md) | CX5106 NMEA gateway setup and DIP switch reference |
 | [`docs/OPENCPN_FLATPAK_OCHARTS.md`](docs/OPENCPN_FLATPAK_OCHARTS.md) | OpenCPN and paid o-charts chart packs |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 
@@ -298,9 +297,10 @@ For licensing inquiries, visit [AtMyBoat.com](https://atmyboat.com).
 - Chart plotter: OpenCPN (auto-launch), AvNav 20250822
 - Voice assistant: Vosk (wake word), Gemini (analysis), local RAG knowledge base
 
-### Engine Monitoring — via CX5106 gateway
-CX5106 hardware supports 13 total analog channels. d3kOS v0.9.9.2 reads and
-displays the following on the main dashboard:
+### Engine Monitoring — via NMEA 2000 (PiCAN-M or USB-CAN-A)
+Engine data is read from the boat's NMEA 2000 network through Signal K. The CX5106
+gateway was dropped in v0.9.9.5. d3kOS v0.9.9.5 displays the following on the main
+dashboard when the data is present on your NMEA 2000 network:
 - RPM: YES
 - Coolant temperature: YES
 - Oil pressure: YES
@@ -317,7 +317,7 @@ displays the following on the main dashboard:
 - Motion detection while stationary: YES
 - Autonomous service monitoring/restart: YES
 
-### NOT Included (as of v0.9.9.2)
+### NOT Included (as of v0.9.9.5)
 - Autopilot control (e.g. Pypilot integration): NO
 - Seatalk protocol conversion: NO
 - GRIB weather file download: NO (uses Windy API instead)
