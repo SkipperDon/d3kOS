@@ -58,7 +58,7 @@ d3kOS is for the boater who:
 
 **If you can burn an SD card, you can run d3kOS.**
 The system configures itself. The AI sets itself up. The setup wizard walks you
-through the rest in under 15 minutes.
+through the rest in about 10 minutes.
 
 ---
 
