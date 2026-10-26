@@ -14,7 +14,7 @@ Flash an SD card. Mount a screen. Your boat has a brain.
 
 [![Community](https://img.shields.io/badge/Community-AtMyBoat.com-0a7ea4)](https://atmyboat.com)
 [![Forum](https://img.shields.io/badge/Forum-Join%20the%20Discussion-22a090)](https://atmyboat.com/forum/)
-[![Download v0.9.9.4.2](https://img.shields.io/badge/Download-v0.9.9.4.2-brightgreen)](https://archive.org/details/d3kos-v0.9.9.4.2-20260909.img)
+[![Download v0.9.9.5](https://img.shields.io/badge/Download-v0.9.9.5-brightgreen)](https://archive.org/details/d3kos-v0.9.9.5-20261009.img)
 
 ---
 
@@ -108,14 +108,14 @@ readability standards — sized for reading from a metre away, in sunlight and i
 
 ## Download
 
-**Latest Release: v0.9.9.4.2**
+**Latest Release: v0.9.9.5**
 
 | | |
 |---|---|
-| **Archive.org page** | https://archive.org/details/d3kos-v0.9.9.4.2-20260909.img |
-| **Direct download** | https://archive.org/download/d3kos-v0.9.9.4.2-20260909.img/d3kos-v0.9.9.4.2-20260909.img.gz |
+| **Archive.org page** | https://archive.org/details/d3kos-v0.9.9.5-20261009.img |
+| **Direct download** | https://archive.org/download/d3kos-v0.9.9.5-20261009.img/d3kos-v0.9.9.5-20261009.img.gz |
 | **Format** | `.img.gz` — flash with Raspberry Pi Imager |
-| **Hardware** | Raspberry Pi 4B, 4 GB RAM minimum |
+| **Hardware** | Raspberry Pi 4B, 8 GB RAM minimum |
 
 **How to flash:**
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/) — free, works on Windows, Mac, and Linux
@@ -125,13 +125,15 @@ readability standards — sized for reading from a metre away, in sunlight and i
 
 Power on. Wait 60 seconds. The setup wizard launches automatically.
 
+> **Updates require registration.** Download and install v0.9.9.5 once. To receive all incremental over-the-air (OTA) updates after that, your Pi must be registered at [AtMyBoat.com](https://atmyboat.com) — scan the QR code in the setup wizard.
+
 ---
 
 ## What You Need
 
 | Item | What to Look For |
 |------|-----------------|
-| Raspberry Pi 4B | 8 GB RAM minimum — 8 GB recommended |
+| Raspberry Pi 4B | 8 GB RAM minimum |
 | microSD Card | 128 GB minimum, Class 10 A2 or better |
 | Touchscreen | 10.1 inch, 1280×800, HDMI + USB touch |
 | Power supply | 12V to 5V DC-DC converter, 5A minimum, marine-grade isolated |
@@ -289,7 +291,7 @@ For licensing inquiries, visit [AtMyBoat.com](https://atmyboat.com).
 - Raspberry Pi 5: [CONFIRM: unsupported / untested / planned]
 - OS base: [CONFIRM: Raspberry Pi OS version/base]
 - License: GPL v3
-- Current version: v0.9.9.4.2 (pre-release)
+- Current version: v0.9.9.5
 - Backend: Flask
 - Frontend: vanilla JavaScript, no UI framework
 
