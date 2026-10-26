@@ -144,7 +144,6 @@ Power on. Wait 60 seconds. The setup wizard launches automatically.
 | microSD Card | 128 GB minimum, Class 10 A2 or better |
 | Touchscreen | 10.1 inch, 1280×800, HDMI + USB touch |
 | Power supply | 12V to 5V DC-DC converter, 5A minimum, marine-grade isolated |
-| USB GPS receiver | Any standard USB GPS (gpsd-compatible) |
 
 **Optional — expands what d3kOS can do:**
 
@@ -153,6 +152,7 @@ Power on. Wait 60 seconds. The setup wizard launches automatically.
 | USB speakerphone | Hands-free HELM voice assistant |
 | IP cameras (PoE, RTSP) | Marine Vision, Forward Watch, fish species identification (in development) |
 | NMEA 2000 adapter | Live engine data from your NMEA 2000 network (PiCAN-M or USB-CAN-A — auto-detected on boot) |
+| USB GPS receiver | GPS position — needed only if your NMEA 2000 network has no GPS (any gpsd-compatible USB GPS) |
 
 ![Installing d3kOS hardware](assets/lifestyle/hardware-man.png)
 ![Setting up at the helm](assets/lifestyle/hardware-woman.png)
