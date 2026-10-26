@@ -16,6 +16,12 @@ Flash an SD card. Mount a screen. Your boat has a brain.
 [![Forum](https://img.shields.io/badge/Forum-Join%20the%20Discussion-22a090)](https://atmyboat.com/forum/)
 [![Download v0.9.9.5](https://img.shields.io/badge/Download-v0.9.9.5-brightgreen)](https://archive.org/details/d3kos-v0.9.9.5-20261009.img)
 
+## New in v0.9.9.5
+
+- **SafeHelm collision advisory** — watches AIS targets around you, calculates closest point of approach (CPA) and time to it (TCPA), and applies the COLREGs head-on, crossing and overtaking rules (13, 14, 15, 18). Advisory only, with spoken alerts — it never takes control of your boat. Requires an AIS receiver.
+- **AIS** — receives AIS from an RTL-SDR USB dongle or from your NMEA 2000 network and shows targets on the AvNav chart. Your AIS data is not shared with third-party sites.
+- **Automatic over-the-air updates** — registered Pis receive signed updates without reflashing the SD card. An "Update Available" pill appears on the dashboard; two taps install it, and a failed install rolls back automatically.
+
 ---
 
 ## This Is Your Boat on AI
@@ -314,6 +320,9 @@ dashboard when the data is present on your NMEA 2000 network:
 - Anchor watch with radius alarm: YES
 - Motion detection while stationary: YES
 - Autonomous service monitoring/restart: YES
+- SafeHelm collision advisory (AIS, CPA/TCPA, COLREGs): YES — advisory only
+- AIS receive (RTL-SDR or NMEA 2000), AvNav chart overlay: YES
+- Over-the-air updates: YES — signed; requires AtMyBoat.com registration
 
 ### NOT Included (as of v0.9.9.5)
 - Autopilot control (e.g. Pypilot integration): NO
