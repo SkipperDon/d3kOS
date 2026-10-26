@@ -45,7 +45,7 @@ The setup wizard walks you through the rest.
 
 Power on your Pi, wait 60 seconds, and the d3kOS setup wizard will launch automatically on your screen.
 
-> **Over-the-Air Updates:** Once your Pi is running, you do not need to reflash to keep it current. Registered [AtMyBoat.com](https://atmyboat.com) users receive incremental OTA updates automatically — your system updates itself overnight. Register free at AtMyBoat.com after installation to enable OTA, the mobile companion app, and release notifications.
+> **Over-the-Air Updates:** Once your Pi is running, you do not need to reflash to keep it current. To receive incremental over-the-air (OTA) updates, your Pi must be registered at [AtMyBoat.com](https://atmyboat.com) — scan the QR code in the setup wizard. Registration also enables the mobile companion app.
 
 ---
 
