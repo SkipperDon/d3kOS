@@ -1247,9 +1247,15 @@ Click **Download My Data** to receive a ZIP file containing all personal data At
 
 ---
 
-### Forgot Password
+### Forgot Your Password
 
-On the login page, click **Forgot your password?** and enter your email address. A password reset link is sent immediately. The link expires after 1 hour. Check your spam folder if it does not arrive within a few minutes.
+If you cannot log in because you have forgotten your password:
+
+1. Go to **https://atmyboat.com/wp-login.php**
+2. Click **Lost your password?**
+3. Enter your username or email
+4. Click **Get New Password**
+5. Check your email for the reset link
 
 ---
 
